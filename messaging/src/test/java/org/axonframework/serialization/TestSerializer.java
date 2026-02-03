@@ -28,9 +28,15 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
+import org.axonframework.serialization.jackson3.Jackson3Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DatabindContext;
+import tools.jackson.databind.DefaultTyping;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator.TypeMatcher;
 
 import java.beans.ConstructorProperties;
 import java.util.Base64;
@@ -81,45 +87,80 @@ public enum TestSerializer {
         }
     },
     JACKSON {
-        private final Serializer serializer = JacksonSerializer.defaultSerializer();
+        private Serializer serializer;
 
         @Override
-        public Serializer getSerializer() {
+        public synchronized Serializer getSerializer() {
+            if (serializer == null) {
+                serializer = JacksonSerializer.defaultSerializer();
+            }
+
+            return serializer;
+        }
+    },
+    JACKSON3 {
+        private Serializer serializer;
+
+        @Override
+        public synchronized Serializer getSerializer() {
+            if (serializer == null) {
+                serializer = Jackson3Serializer.builder()
+                    .jsonMapperBuilderCustomizer(builder -> {
+                        builder.enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION);
+                        builder.polymorphicTypeValidator(
+                            BasicPolymorphicTypeValidator.builder()
+                                .allowIfSubType("org.axonframework.")
+                                .build()
+                        );
+                    })
+                    .build();
+            }
+
             return serializer;
         }
     },
     CBOR {
-        private final Serializer serializer = JacksonSerializer.builder()
-                .objectMapper(CBORMapper
-                        .builder()
-                        .findAndAddModules()
-                        .build()).build();
+        private Serializer serializer;
 
         @Override
-        public Serializer getSerializer() {
+        public synchronized Serializer getSerializer() {
+            if (serializer == null) {
+                serializer = JacksonSerializer.builder()
+                    .objectMapper(CBORMapper.builder().findAndAddModules().build())
+                    .build();
+            }
+
             return serializer;
         }
     },
     JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS {
-        private final Serializer serializer =
-                JacksonSerializer.builder()
-                                 .objectMapper(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()))
-                                 .build();
+        private Serializer serializer;
 
         @Override
-        public Serializer getSerializer() {
+        public synchronized Serializer getSerializer() {
+            if (serializer == null) {
+                serializer = JacksonSerializer.builder()
+                    .objectMapper(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()))
+                    .build();
+            }
+
             return serializer;
         }
     },
     JACKSON_IGNORE_NULL {
-        private final ObjectMapper objectMapper = new ObjectMapper()
-            .setSerializationInclusion(Include.NON_NULL);
-        private final Serializer serializer = JacksonSerializer.builder()
-                                                               .objectMapper(objectMapper)
-                                                               .build();
+        private Serializer serializer;
 
         @Override
-        public Serializer getSerializer() {
+        public synchronized Serializer getSerializer() {
+            if (serializer == null) {
+                ObjectMapper objectMapper = new ObjectMapper()
+                    .setSerializationInclusion(Include.NON_NULL);
+
+                serializer = JacksonSerializer.builder()
+                    .objectMapper(objectMapper)
+                    .build();
+            }
+
             return serializer;
         }
     };

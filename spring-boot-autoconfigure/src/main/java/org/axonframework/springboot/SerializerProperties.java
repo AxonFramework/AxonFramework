@@ -132,11 +132,17 @@ public class SerializerProperties {
          */
         XSTREAM,
         /**
-         * Uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to serialize objects into JSON. Provides
+         * Uses Jackson 2's {@link com.fasterxml.jackson.databind.ObjectMapper} to serialize objects into JSON. Provides
          * highly interoperable JSON output, but does require the objects to adhere to a certain structure. The Jackson
          * based serializer is generally suitable as a Message Serializer.
          */
         JACKSON,
+        /**
+         * Uses Jackson 3's {@link tools.jackson.databind.ObjectMapper} to serialize objects into JSON. Provides
+         * highly interoperable JSON output, but does require the objects to adhere to a certain structure. The Jackson
+         * based serializer is generally suitable as a Message Serializer.
+         */
+        JACKSON3,
         /**
          * Uses Jackson's {@link com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper} to serialize objects into CBOR.
          * This format is not human-readable, but can save on the size of messages. When using this Serializer, make

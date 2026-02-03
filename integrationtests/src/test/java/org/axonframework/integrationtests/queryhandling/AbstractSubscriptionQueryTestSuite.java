@@ -65,8 +65,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
+@Timeout(30)
 public abstract class AbstractSubscriptionQueryTestSuite {
-
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String FOUND = "found";
     private static final String TEST_PAYLOAD = "axonFrameworkCR";
 
@@ -145,11 +146,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         StepVerifier.create(result1.initialResult().map(Message::getPayload))
                     .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
                     .expectComplete()
-                    .verify();
+                    .verify(TIMEOUT);
         StepVerifier.create(result1.updates().map(Message::getPayload))
                     .expectNext("Update11")
                     .expectComplete()
-                    .verify();
+                    .verify(TIMEOUT);
 
         chatQueryHandler.emitter.emit(Integer.class,
                                       m -> m == 5,
@@ -254,7 +255,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         StepVerifier.create(result.updates().map(Message::getPayload))
                     .expectNext("Update1")
                     .expectErrorMatches(toBeThrown::equals)
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @Deprecated
@@ -287,7 +288,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         StepVerifier.create(result.updates().map(Message::getPayload))
                     .expectNext("Update1")
                     .expectErrorMatches(toBeThrown::equals)
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @Test
@@ -450,7 +451,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         StepVerifier.create(result.initialResult().map(Message::getPayload))
                     .expectNext("Initial")
                     .expectComplete()
-                    .verify();
+                    .verify(TIMEOUT);
 
         StepVerifier.create(result.updates().map(Message::getPayload))
                     .expectNext("Update1", "Update2")
@@ -478,7 +479,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                         Assertions.assertEquals(chatQueryHandler.toBeThrown, m.exceptionResult());
                     })
                     .expectComplete()
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @Test
@@ -924,7 +925,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                                     t.getMessage()
                             )
                     )
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @Deprecated

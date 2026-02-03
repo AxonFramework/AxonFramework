@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import org.axonframework.serialization.ContentTypeConverter;
 import org.axonframework.serialization.SerializationException;
 
 /**
- * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} object into an {@link ObjectNode}.
- * Intended to simplify JSON-typed event upcasters, which generally deal with an {@code ObjectNode} as the event.
+ * A {@link ContentTypeConverter} implementation for Jackson 2 that converts a {@link JsonNode} object
+ * into an {@link ObjectNode}. Intended to simplify JSON-typed event upcasters, which generally deal
+ * with an {@code ObjectNode} as the event.
  * <p>
  * Will succeed if the {@code JsonNode} has a node type of {@link JsonNodeType#OBJECT}.
  *
