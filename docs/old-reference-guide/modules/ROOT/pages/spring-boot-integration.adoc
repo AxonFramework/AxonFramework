@@ -5,6 +5,28 @@ components can be configured programmatically and do not require Spring on the c
 much of the configuration is made easier with the use of Spring's annotation support. Axon provides Spring Boot starters
 on the top of that, so you can benefit from auto-configuration as well.
 
+The following table shows which Spring Boot versions are supported by each Axon Framework version:
+
+[cols="2,1,1,1", options="header"]
+|===
+|Axon Framework Version |Spring Boot 2 |Spring Boot 3 |Spring Boot 4
+
+|4.0 - 4.6
+|✓
+|
+|
+
+|4.7 - 4.12
+|✓
+|✓
+|
+
+|4.13
+|✓
+|✓
+|✓
+|===
+
 == Auto-configuration
 
 Axon's Spring Boot auto-configuration is by far the easiest option to get started configuring your Axon components. By
