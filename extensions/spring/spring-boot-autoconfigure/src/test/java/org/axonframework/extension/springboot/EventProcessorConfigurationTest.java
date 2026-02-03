@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Configuration;
@@ -35,7 +36,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -128,9 +128,9 @@ class EventProcessorConfigurationTest {
     private static class StubInterceptor implements MessageHandlerInterceptor<Message> {
 
         @Override
-        public @NonNull MessageStream<?> interceptOnHandle(@NonNull Message message,
-                                                           @NonNull ProcessingContext context,
-                                                           @NonNull MessageHandlerInterceptorChain<Message> interceptorChain) {
+        public @Nonnull MessageStream<?> interceptOnHandle(@Nonnull Message message,
+                                                           @Nonnull ProcessingContext context,
+                                                           @Nonnull MessageHandlerInterceptorChain<Message> interceptorChain) {
             return interceptorChain.proceed(message, context);
         }
     }

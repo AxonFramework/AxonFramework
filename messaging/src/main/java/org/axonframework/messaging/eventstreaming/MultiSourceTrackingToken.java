@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.processing.streaming.token;
+package org.axonframework.messaging.eventstreaming;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.eventhandling.processing.streaming.MultiStreamableMessageSource;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
-import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ import java.util.StringJoiner;
 
 /**
  * A {@link TrackingToken} implementation combining several {@code TrackingTokens} into one. Used to keep track of
- * several message sources at once, like the {@link MultiStreamableMessageSource}.
+ * several event sources at once, like the {@link MultiStreamableEventSource}.
  *
  * @author Greg Woods
  * @since 4.2
@@ -45,9 +45,9 @@ public class MultiSourceTrackingToken implements TrackingToken {
     private final Map<String, TrackingToken> trackingTokens;
 
     /**
-     * Construct a new {@link MultiSourceTrackingToken} from a map of existing tokens.
+     * Construct a new {@code MultiSourceTrackingToken} from a map of existing tokens.
      *
-     * @param trackingTokens the map of tokens which make up the {@link MultiSourceTrackingToken}
+     * @param trackingTokens the map of tokens which make up the {@code MultiSourceTrackingToken}
      */
     @JsonCreator
     @ConstructorProperties({"trackingTokens"})
@@ -58,8 +58,8 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare to this one
      * @return token representing the lower bound of both tokens
@@ -82,14 +82,14 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} by comparing each member token with its counterpart in the {@code other}
      * token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare this token to
      * @return a token that represents the furthest position of this or the other streams
      */
     @Override
-    public TrackingToken upperBound(TrackingToken other) {
+    public MultiSourceTrackingToken upperBound(TrackingToken other) {
         MultiSourceTrackingToken otherMultiToken = assertSameKeysMultiSourceTrackingToken(other);
 
         Map<String, TrackingToken> tokenMap = new HashMap<>();
@@ -114,8 +114,8 @@ public class MultiSourceTrackingToken implements TrackingToken {
     /**
      * Compares this token to {@code other} checking each member token with its counterpart to see if they are covered
      * in the {@code other} token. If the two tokens contain different number of constituent tokens, or have the same number but
-     * different names, then these two {@link MultiSourceTrackingToken}s must be tracking different
-     * {@code MultiStreamableMessageSource}s.
+     * different names, then these two {@code MultiSourceTrackingToken}s must be tracking different
+     * {@link MultiStreamableEventSource MultiStreamableEventSources}.
      *
      * @param other The token to compare to this one
      * @return {@code true} if this token covers the other, otherwise {@code false}
