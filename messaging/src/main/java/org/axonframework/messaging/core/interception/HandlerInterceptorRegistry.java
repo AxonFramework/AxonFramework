@@ -76,7 +76,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * The builder will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
      * {@link HandlerInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
-     * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
+     * ensuring uniqueness per given type and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerInterceptor(ComponentBuilder)} instead.
      *
      * @param interceptorBuilder the generic {@link Message} {@link MessageHandlerInterceptor} builder to register
