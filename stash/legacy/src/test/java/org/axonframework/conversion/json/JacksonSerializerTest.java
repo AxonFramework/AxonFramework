@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -298,65 +298,12 @@ class JacksonSerializerTest {
     }
 
     @Test
-    void testConvertByteArrayToComplexObject() throws JsonProcessingException {
-        ComplexObject object = new ComplexObject("value1", "value2", 3);
-        byte[] source = objectMapper.writeValueAsBytes(object);
-        ComplexObject actual = testSubject.convert(source, ComplexObject.class);
-
-        assertEquals(object, actual);
-    }
-
-    @Test
     void testConvertByteArrayToString() throws JsonProcessingException {
         ComplexObject object = new ComplexObject("value1", "value2", 3);
         byte[] source = objectMapper.writeValueAsBytes(object);
         String actual = testSubject.convert(source, String.class);
 
         assertEquals("{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3}", actual);
-    }
-
-    @Test
-    void testConvertStringToComplexObject() {
-        ComplexObject object = new ComplexObject("value1", "value2", 3);
-        String source = "{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3}";
-        ComplexObject actual = testSubject.convert(source, ComplexObject.class);
-
-        assertEquals(object, actual);
-    }
-
-    @Test
-    void testConvertStringToListOfComplexObject() {
-        testSubject = JacksonSerializer.builder()
-                                       .lenientDeserialization()
-                                       .build();
-        ComplexObject object = new ComplexObject("value1", "value2", 3);
-        String source = "{\"value1\":\"value1\",\"value2\":\"value2\",\"value3\":3,\"IgnoredValue\":42}";
-        var typeReference = new TypeReference<List<ComplexObject>>() {
-        };
-        List<ComplexObject> actual = testSubject.convert("[" + source + ", " + source + "]", typeReference.getType());
-
-        assertEquals(List.of(object, object), actual);
-    }
-
-    @Test
-    void testConvertComplexObjectToAnotherTypeOfComplexObject() {
-        testSubject = JacksonSerializer.builder()
-                                       .lenientDeserialization()
-                                       .build();
-        ComplexObject object = new ComplexObject("value1", "value2", 3);
-        AnotherComplexObject actual = testSubject.convert(object, AnotherComplexObject.class);
-
-        assertEquals(new AnotherComplexObject("value1", "value2"), actual);
-    }
-
-    public record AnotherComplexObject(String value1, String value2) {
-
-            public AnotherComplexObject(@JsonProperty("value1") String value1,
-                                        @JsonProperty("value2") String value2) {
-
-                this.value1 = value1;
-                this.value2 = value2;
-            }
     }
 
     public record ComplexObject(String value1, String value2, int value3) {

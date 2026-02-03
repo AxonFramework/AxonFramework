@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ class CommandHandlingModuleTest {
 
         Configuration resultConfig =
                 setupPhase.commandHandlers()
-                          .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                          .autodetectedCommandHandlingComponent(c -> myCommandHandlingObject)
                           .build()
                           .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
 
@@ -139,7 +139,7 @@ class CommandHandlingModuleTest {
                 ModellingConfigurer.create()
                                    .registerCommandHandlingModule(
                                            setupPhase.commandHandlers()
-                                                     .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                                                     .autodetectedCommandHandlingComponent(c -> myCommandHandlingObject)
                                                      .build()
                                    ).build();
 
@@ -210,7 +210,7 @@ class CommandHandlingModuleTest {
     @Test
     void annotatedCommandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> commandHandlerPhase.annotatedCommandHandlingComponent(null));
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.autodetectedCommandHandlingComponent(null));
     }
 
     @Test
