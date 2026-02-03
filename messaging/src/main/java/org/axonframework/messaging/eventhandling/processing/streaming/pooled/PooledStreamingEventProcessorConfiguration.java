@@ -106,9 +106,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
     private List<MessageHandlerInterceptor<? super EventMessage>> psepInterceptors;
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
-                                          .onMessageIngested(eventMessage).reportIgnored();
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
@@ -654,6 +652,12 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 

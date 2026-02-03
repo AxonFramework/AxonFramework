@@ -52,9 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
-                                          .onMessageIngested(eventMessage).reportIgnored();
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
 
     /**
@@ -125,7 +123,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The current Builder instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration ignoredMessageHandler(
-            Consumer<? super EventMessage> ignoredMessageHandler) {
+            Consumer<? super EventMessage> ignoredMessageHandler
+    ) {
         this.ignoredMessageHandler = ignoredMessageHandler;
         return this;
     }
@@ -196,6 +195,12 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 
