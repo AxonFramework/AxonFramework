@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          *                                 of the query handling component.
          * @return The query handler phase of this builder, for a fluent API.
          */
-        default QueryHandlingModule.QueryHandlerPhase annotatedQueryHandlingComponent(
+        default QueryHandlingModule.QueryHandlerPhase autodetectedQueryHandlingComponent(
                 @Nonnull ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");

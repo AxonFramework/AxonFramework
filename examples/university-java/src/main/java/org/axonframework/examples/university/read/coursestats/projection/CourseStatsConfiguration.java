@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,9 @@ public class CourseStatsConfiguration {
 
         QueryHandlingModule queryModule = QueryHandlingModule.named("Stats-Handler")
                 .queryHandlers()
-                .annotatedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
-                .annotatedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
                 .build();
 
