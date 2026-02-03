@@ -127,7 +127,10 @@ In Axon Framework 4, events were implicitly associated with an aggregate through
 Axon Framework 5 moves towards a more flexible tagging system.
 
 When migrating events that were previously associated with an aggregate, you must ensure that the event's aggregate identifier field is annotated with `@EventTag`.
-The key for this tag should be the **aggregate's type** (typically the simple class name of the aggregate).
+
+The key for this tag should reflect the **aggregate's type** (typically the simple class name of the aggregate).
+
+This ensures compatibility with an aggregate-based storage solution, wherein events are stored with an aggregate `type` column.
 
 [source,java]
 ----
