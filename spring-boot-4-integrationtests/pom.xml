@@ -21,11 +21,11 @@
     <parent>
         <artifactId>axon</artifactId>
         <groupId>org.axonframework</groupId>
-        <version>4.12.4-SNAPSHOT</version>
+        <version>4.13.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-spring-boot-4-integrationtests</artifactId>
-    <version>4.12.4-SNAPSHOT</version>
+
 
     <name>Axon Framework - Spring Boot 4 Integration Tests</name>
     <description>
