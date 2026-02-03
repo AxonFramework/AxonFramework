@@ -112,7 +112,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             var queryHandlingModuleBuilder = QueryHandlingModule
                     .named(moduleName)
                     .queryHandlers();
-            beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.annotatedQueryHandlingComponent(
+            beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.autodetectedQueryHandlingComponent(
                     this.asComponent(namedBeanDefinition.name())
             ));
             registry.registerModule(queryHandlingModuleBuilder.build());
@@ -126,7 +126,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                     .named(moduleName)
                     .commandHandlers();
             beanDefs.forEach(namedBeanDefinition -> commandHandlingModuleBuilder
-                    .annotatedCommandHandlingComponent(this.asComponent(namedBeanDefinition.name())));
+                    .autodetectedCommandHandlingComponent(this.asComponent(namedBeanDefinition.name())));
             registry.registerModule(commandHandlingModuleBuilder.build());
         });
     }
