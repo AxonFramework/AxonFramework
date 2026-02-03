@@ -128,7 +128,7 @@
         <jackson3.version>3.0.3</jackson3.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
+        <db-scheduler.version>16.6.0</db-scheduler.version>
         <jobrunr.version>8.0.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
