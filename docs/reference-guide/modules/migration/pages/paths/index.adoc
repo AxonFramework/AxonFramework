@@ -10,7 +10,7 @@ Whether you are performing a straightforward version bump or a deep architectura
 * Import and Package Changes
 * Module Restructuring
 2. **Specific Migration Paths**
-* _Message changes [@EventTag,@Event/@Command/@Query] (Coming soon)_
+* xref:migration:paths/messages.adoc[Message changes (@Event, @Command, @Query)]
 * _Aggregate to Entity (Coming soon)_
 * _Event Processor configuration in AF5 (Coming soon)_
 * _Test fixtures (Coming soon)_
@@ -289,3 +289,4 @@ If you find that your specific migration challenge is not addressed here, or if 
 2.  **Open an Issue**: Let us know by opening a documentation issue on our link:https://github.com/AxonFramework/AxonFramework/issues[GitHub repository].
 
 Your feedback helps us make this guide better for everyone!
+

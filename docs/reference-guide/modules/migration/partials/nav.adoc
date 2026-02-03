@@ -5,4 +5,4 @@
 ** xref:migration:solved-architecture-choices.adoc[]
 ** xref:migration:understanding-architecture-principles.adoc[]
 ** xref:migration:paths/index.adoc[]
-//** xref:migration:paths/message-changes.adoc[] - shows how sub pages are added to nav
+*** xref:migration:paths/messages.adoc[]
