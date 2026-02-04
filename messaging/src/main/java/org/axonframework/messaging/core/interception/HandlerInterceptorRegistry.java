@@ -89,7 +89,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage} {@link MessageHandlerInterceptor} for
      * all command handling infrastructure components.
      * <p>
-     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
      *
      * @param interceptorBuilder the {@link CommandMessage}-specific {@link MessageHandlerInterceptor} builder to
      *                           register
