@@ -3,7 +3,7 @@
 
 When migrating from Axon Framework 4 to Axon Framework 5, the configuration of aggregates has undergone significant changes to align with the new entity-based modeling approach. The following sections outline the key changes required to update your aggregate configurations.
 
-== EventSourcedEntityModule instead of AggregateConfigurer
+== `EventSourcedEntityModule` instead of `AggregateConfigurer`
 
 The declarative configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of Axon Framework 5.
 
@@ -25,7 +25,7 @@ If you have been using Spring Boot with Axon Framework 4, you will need to adjus
 Most significant, the `@Aggregate` annotation is replaced by `@EventSourced`.
 
 [#event-sourced-instead-of-aggregate-spring]
-=== @EventSourced instead of @Aggregate (Spring)
+=== `@EventSourced` instead of `@Aggregate` (Spring)
 
 [source,java]
 ----

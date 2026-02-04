@@ -28,7 +28,7 @@ How to configure polymorphic/hierarchical entities.
 xref:migration:paths/aggregates/multi-entity-migration.adoc[Multi-Entity Migration]::
 How to migrate aggregates with child entities and use `@EntityMember`.
 
-== Simple EventSourcedEntity example
+== Simple `EventSourcedEntity` example
 
 To visualize the shift for a "simple" entity, here is a side-by-side comparison of a standard `GiftCard` implementation. This represents the minimal, architecture-neutral way to move from Axon Framework 4 to 5.
 
@@ -260,7 +260,7 @@ public void handle(RedeemCardCommand cmd, EventAppender eventAppender) {
 }
 ----
 
-=== Removal of @CreationPolicy
+=== Removal of `@CreationPolicy`
 
 The `@CreationPolicy` annotation was removed in Axon Framework 5. You can use stateful/stateless command handlers to replace its functionality.
 
