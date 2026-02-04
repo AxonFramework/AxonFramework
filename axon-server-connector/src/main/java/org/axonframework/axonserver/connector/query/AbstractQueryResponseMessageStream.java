@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * An abstract implementation of the {@link MessageStream} interface that wraps a {@link ResultStream}. This class
@@ -43,8 +44,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
 
     private final ResultStream<T> stream;
     private final AtomicReference<Throwable> error = new AtomicReference<>();
-    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-    });
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
      * Constructs an instance of the AbstractQueryResponseMessageStream class with the provided result stream.

@@ -34,7 +34,8 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleValueMessageStream<M extends Message> implements MessageStream.Single<M> {
+class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<M>
+        implements MessageStream.Single<M> {
 
     private final CompletableFuture<Entry<M>> source;
     private final AtomicBoolean read = new AtomicBoolean(false);
@@ -57,8 +58,15 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
      * @param source The {@link CompletableFuture} resulting in the singular {@link Entry entry} contained in this
      *               {@link MessageStream stream}.
      */
-    SingleValueMessageStream(@Nonnull CompletableFuture<Entry<M>> source) {
+    SingleValueMessageStream(CompletableFuture<Entry<M>> source) {
         this.source = source;
+        this.source.whenComplete((entry, throwable) -> {
+            if (throwable != null) {
+                completeExceptionally(throwable);
+            } else {
+                invokeCallbackSafely();
+            }
+        });
     }
 
     @Override
@@ -68,6 +76,9 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
 
     @Override
     public Optional<Entry<M>> next() {
+        if (error().isPresent()) {
+            return Optional.empty();
+        }
         if (source.isDone() && !source.isCompletedExceptionally()) {
             Entry<M> current = source.getNow(null);
             if (read.compareAndSet(false, true)) {
@@ -78,27 +89,13 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        if (source.isDone()) {
-            callback.run();
-        } else {
-            source.whenComplete((entry, throwable) -> callback.run());
-        }
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return source.isCompletedExceptionally() ? Optional.of(source.exceptionNow()) : Optional.empty();
-    }
-
-    @Override
     public boolean isCompleted() {
-        return source.isCompletedExceptionally() || read.get();
+        return super.isCompleted() || source.isCompletedExceptionally() || read.get();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return source.isDone() && !source.isCompletedExceptionally() && !read.get();
+        return error().isEmpty() && source.isDone() && !source.isCompletedExceptionally() && !read.get();
     }
 
     @Override
@@ -106,6 +103,7 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
         if (!source.isDone()) {
             source.cancel(false);
         }
+        complete();
     }
 
     @Override
@@ -114,13 +112,16 @@ class SingleValueMessageStream<M extends Message> implements MessageStream.Singl
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(R identity,
+                                           BiFunction<R, Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 
     @Override
     public Optional<Entry<M>> peek() {
+        if (error().isPresent()) {
+            return Optional.empty();
+        }
         if (source.isDone() && !source.isCompletedExceptionally() && !read.get()) {
             return Optional.ofNullable(source.getNow(null));
         }

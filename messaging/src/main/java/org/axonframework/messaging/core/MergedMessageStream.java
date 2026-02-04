@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core;
 
+import jakarta.annotation.Nonnull;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Comparator;
@@ -90,7 +91,7 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(@Nonnull @NonNull Runnable callback) {
         first.setCallback(callback);
         second.setCallback(callback);
     }
