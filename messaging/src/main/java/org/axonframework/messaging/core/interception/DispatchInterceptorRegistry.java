@@ -61,7 +61,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     /**
      * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageDispatchInterceptor}.
      * <p>
-     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only build <b>once</b>.
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
      *
      * @param interceptorBuilder the generic {@link Message} {@link MessageDispatchInterceptor} builder to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
