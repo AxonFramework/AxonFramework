@@ -10,6 +10,8 @@ The configuration of entities now uses the `EventSourcedEntityModule` instead of
 [source,java]
 ----
 // Axon Framework 5
+
+
 public void configure(EventSourcingConfigurer configurer) {
     configurer.modelling().registerEventSourcedEntity(
         EventSourcedEntityModule.autodetected(String.class, GiftCard.class)
@@ -17,11 +19,16 @@ public void configure(EventSourcingConfigurer configurer) {
 }
 ----
 
+One notable change in this configuration is that the identifier type of the entity must be explicitly provided. 
+This requirement stems from the `EventSourcedEntityModule`, which uses the identifier type to set up the necessary components for event sourcing and command handling.
+
+Because the identifier type is now part of the configuration, the `@AggregateIdentifier` annotation on the field within your aggregate/entity is no longer required on the id property of your entity.
+
 == Spring Boot
 
 If you have been using Spring Boot with Axon Framework 4, you will need to adjust your aggregate annotations and configuration to comply with the new standards in Axon Framework 5. The automatic detection and configuration of aggregates remains as before.
 
-Most significant, the `@Aggregate` annotation is replaced by `@EventSourced`.
+Most significant, the `@Aggregate` annotation is replaced by `@EventSourced`. The main difference between the Spring-specific `@EventSourced` annotation and the core `@EventSourcedEntity` annotation is that `@EventSourced` allows you to define the `idType` directly in the annotation (defaulting to `String.class`) and thus relying on the autoconfigured `EventSourcedEntityModule`.
 
 [#event-sourced-instead-of-aggregate-spring]
 === `@EventSourced` instead of `@Aggregate` (Spring)
@@ -31,12 +38,15 @@ Most significant, the `@Aggregate` annotation is replaced by `@EventSourced`.
 // Axon Framework 4
 @Aggregate
 public class GiftCard {
+    @AggregateIdentifier
+    private String giftCardId;
     // ...
 }
 
 // Axon Framework 5
 @EventSourced
 public class GiftCard {
+    private String giftCardId;
     // ...
 }
 ----
