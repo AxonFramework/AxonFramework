@@ -38,16 +38,12 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FluxMessageStream<M extends Message> implements MessageStream<M> {
+class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
     private final Flux<Entry<M>> source;
     private final BlockingQueue<Entry<M>> peeked = new LinkedBlockingQueue<>(5);
     private final AtomicBoolean sourceSubscribed = new AtomicBoolean();
     private final AtomicReference<Subscription> subscription = new AtomicReference<>();
-    private final AtomicReference<Runnable> availabilityCallback = new AtomicReference<>(() -> {
-    });
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
-    private final AtomicBoolean completed = new AtomicBoolean(false);
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
@@ -83,26 +79,11 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        this.availabilityCallback.set(callback);
-        if (hasNextAvailable() || isCompleted()) {
-            callback.run();
-        }
-        subscribeToSource();
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        if (peeked.isEmpty()) {
-            return Optional.ofNullable(error.get());
-        }
-        // there is still data to read, so we're not reporting an error
-        return Optional.empty();
-    }
-
-    @Override
     public boolean isCompleted() {
-        return peeked.isEmpty() && completed.get();
+        // Consider the stream completed when the source has completed AND
+        // - there is no data left to consume
+        // - or an error occurred (in which case we want immediate completion)
+        return super.isCompleted() && (peeked.isEmpty() || super.error().isPresent());
     }
 
     @Override
@@ -126,6 +107,12 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
         return Optional.ofNullable(peeked.peek());
     }
 
+    @Override
+    public void setCallback(@Nonnull Runnable callback) {
+        super.setCallback(callback);
+        subscribeToSource();
+    }
+
     private void subscribeToSource() {
         if (!sourceSubscribed.getAndSet(true)) {
             //noinspection ReactiveStreamsSubscriberImplementation
@@ -140,21 +127,21 @@ class FluxMessageStream<M extends Message> implements MessageStream<M> {
                 @Override
                 public void onNext(Entry<M> mEntry) {
                     peeked.add(mEntry);
-                    availabilityCallback.get().run();
+                    invokeCallbackSafely();
+                    // If the callback failed, clear buffered entries to ensure immediate error propagation
+                    if (error().isPresent()) {
+                        peeked.clear();
+                    }
                 }
 
                 @Override
                 public void onError(Throwable t) {
-                    error.set(t);
-                    completed.set(true);
-                    availabilityCallback.get().run();
+                    completeExceptionally(t);
                 }
 
                 @Override
                 public void onComplete() {
-                    error.set(null);
-                    completed.set(true);
-                    availabilityCallback.get().run();
+                    complete();
                 }
             });
         }

@@ -259,7 +259,7 @@ public interface MessageStream<M extends Message> {
      * @return An empty stream.
      */
     static Empty<Message> empty() {
-        return EmptyMessageStream.instance();
+        return new EmptyMessageStream();
     }
 
     /**

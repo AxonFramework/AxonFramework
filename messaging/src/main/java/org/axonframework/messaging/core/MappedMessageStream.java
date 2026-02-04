@@ -33,7 +33,6 @@ import java.util.function.Function;
 class MappedMessageStream<DM extends Message, RM extends Message> extends DelegatingMessageStream<DM, RM> {
 
     private final Function<Entry<DM>, Entry<RM>> mapper;
-    private final MessageStream<DM> delegate;
 
     /**
      * Construct a {@link MessageStream stream} mapping the {@link Entry entries} of the given
@@ -46,18 +45,17 @@ class MappedMessageStream<DM extends Message, RM extends Message> extends Delega
     MappedMessageStream(@Nonnull MessageStream<DM> delegate,
                         @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
         super(delegate);
-        this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
     public Optional<Entry<RM>> next() {
-        return delegate.next().map(mapper);
+        return delegate().next().map(mapper);
     }
 
     @Override
     public Optional<Entry<RM>> peek() {
-        return delegate.peek().map(mapper);
+        return delegate().peek().map(mapper);
     }
 
     /**

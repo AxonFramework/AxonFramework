@@ -31,9 +31,8 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M> {
+class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
     private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
     private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
@@ -50,7 +49,7 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
      */
     OnErrorContinueMessageStream(@Nonnull MessageStream<M> delegate,
                                  @Nonnull Function<Throwable, MessageStream<M>> onError) {
-        this.delegate = delegate;
+        super(delegate);
         this.onError = onError;
     }
 
@@ -71,15 +70,15 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     }
 
     private MessageStream<M> resolveCurrentDelegate() {
-        if (!delegate.isCompleted() || delegate.error().isEmpty()) {
-            return delegate;
+        if (!delegate().isCompleted() || delegate().error().isEmpty()) {
+            return delegate();
         } else if (onErrorStream.get() != null) {
             return onErrorStream.get();
         } else {
             synchronized (this) {
                 MessageStream<M> newMessageStream = onErrorStream.updateAndGet((c) -> {
                     if (c == null) {
-                        return onError.apply(delegate.error().orElse(null));
+                        return onError.apply(delegate().error().orElse(null));
                     }
                     return c;
                 });
@@ -108,5 +107,4 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     public void close() {
         resolveCurrentDelegate().close();
     }
-
 }

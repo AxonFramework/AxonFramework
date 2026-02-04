@@ -31,9 +31,8 @@ import java.util.function.Predicate;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FilteringMessageStream<M extends Message> implements MessageStream<M> {
+class FilteringMessageStream<M extends Message> extends DelegatingMessageStream<M,M> {
 
-    private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
     private Entry<M> peeked = null;
 
@@ -48,7 +47,7 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
      */
     FilteringMessageStream(@Nonnull MessageStream<M> delegate,
                            @Nonnull Predicate<Entry<M>> filter) {
-        this.delegate = delegate;
+        super(delegate);
         this.filter = filter;
     }
 
@@ -59,9 +58,9 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
             peeked = null;
             return Optional.of(result);
         }
-        Optional<Entry<M>> result = delegate.next();
+        Optional<Entry<M>> result = delegate().next();
         while (result.isPresent() && !filter.test(result.get())) {
-            result = delegate.next();
+            result = delegate().next();
         }
         return result;
     }
@@ -71,9 +70,9 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
         if (peeked != null) {
             return Optional.of(peeked);
         }
-        Optional<Entry<M>> result = delegate.next();
+        Optional<Entry<M>> result = delegate().next();
         while (result.isPresent() && !filter.test(result.get())) {
-            result = delegate.next();
+            result = delegate().next();
         }
         if (result.isPresent()) {
             peeked = result.get();
@@ -83,28 +82,13 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        delegate.setCallback(callback);
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return delegate.error();
-    }
-
-    @Override
     public boolean isCompleted() {
-        return delegate.isCompleted() && peeked == null;
+        return delegate().isCompleted() && peeked == null;
     }
 
     @Override
     public boolean hasNextAvailable() {
         return peeked != null || peek().isPresent();
-    }
-
-    @Override
-    public void close() {
-        delegate.close();
     }
 
     /**
