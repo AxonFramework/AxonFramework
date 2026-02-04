@@ -1,0 +1,39 @@
+%%{
+    init: {
+        'theme':'base',
+        "fontFamily": "Verdana, Arial, Sans-Serif"
+    }
+}%%
+classDiagram
+    direction RL
+
+    AbstractMessage~T~ ..|> Message
+    CommandMessage~T~ ..|> Message
+    QueryMessage~T,R~ ..|> Message
+    EventMessage~T~ ..|> Message
+
+
+    GenericMessage~T~ --|> AbstractMessage~T~
+    GenericCommandMessage~T~ --|> CommandMessage~T~
+    GenericQueryMessage~T,R~ --|> QueryMessage~T,R~
+    GenericEventMessage~T~ --|> EventMessage~T~
+
+    class Message{
+        <<interface>>
+        String identifier
+        Class payloadType
+        Object payload
+        MetaData metdata
+    }
+
+    class CommandMessage~T~ {
+        <<interface>>
+    }
+
+    class QueryMessage~T,R~ {
+        <<interface>>
+    }
+
+    class EventMessage~T~ {
+        <<interface>>
+    }

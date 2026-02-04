@@ -1,0 +1,443 @@
+= Command Dispatchers
+:navtitle: Dispatching
+
+The dispatching of a command is the starting point of such a message.
+Commands have to be dispatched, just like any type of message, before they can be handled.
+To that end Axon provides three interfaces:
+
+1. The <<command-bus,CommandBus>>,
+2. the <<command-gateway,CommandGateway>>, and
+3. the <<command-dispatcher,CommandDispatcher>>.
+
+This page shows how and when to use these components.
+How to configure and specifics of the gateway, dispatcher, and bus are discussed in the xref:infrastructure.adoc[infrastructure section].
+
+[[command-bus]]
+== The `CommandBus`
+
+The `CommandBus` is the mechanism that dispatches commands to their respective command handlers.
+As such, it is the infrastructure component that is aware of which component can handle which command.
+
+Each command is always sent to exactly one command handler.
+If no command handler is available for the dispatched command, a `NoHandlerForCommandException` exception is thrown.
+
+The `CommandBus` provides a single `dispatch` method that is async-native and returns a `CompletableFuture`.
+
+[NOTE]
+====
+The `CommandBus` is a low-level infrastructure component.
+For typical application code, prefer using the <<command-gateway,CommandGateway>> (when dispatching from outside a handler) or the <<command-dispatcher,CommandDispatcher>> (when dispatching from within a handler).
+These components provide a more convenient API and handle message creation for you.
+====
+
+If you do need to use the `CommandBus` directly, you must manually create a `CommandMessage`:
+
+[source,java]
+----
+private CommandBus commandBus; // <1>
+
+public void dispatchCommands() {
+    // <2>
+    MessageType commandType = new MessageType(IssueCardCommand.class);
+    IssueCardCommand payload = new IssueCardCommand(UUID.randomUUID().toString(), 100, "shopId");
+    CommandMessage commandMessage = new GenericCommandMessage(commandType, payload);
+
+    // <3>
+    CompletableFuture<CommandResultMessage> resultFuture = commandBus.dispatch(
+            commandMessage,
+            null // <4>
+    );
+
+    // <5>
+    resultFuture.whenComplete((resultMsg, exception) -> {
+        if (exception != null) {
+            // Handle exception
+        } else if (resultMsg.isExceptional()) {
+            Throwable throwable = resultMsg.exceptionResult();
+            // Handle command execution failure
+        } else {
+            String commandResult = resultMsg.getPayload();
+            // Handle successful result
+        }
+    });
+}
+// omitted class and constructor
+----
+
+The command dispatching example above exemplifies several important aspects:
+
+<1> The `CommandBus` interface providing the functionality to dispatch command messages.
+
+<2> To dispatch a command on the `CommandBus`, you must manually create a `CommandMessage`.
+This requires creating a `MessageType` (which identifies the command type) and wrapping your command payload in a `GenericCommandMessage`.
+You can also add xref:messaging-concepts:anatomy-message.adoc#meta-data[metadata] by using the appropriate constructor.
+
+<3> The `CommandBus#dispatch(CommandMessage, ProcessingContext)` method dispatches the provided `CommandMessage` on the bus for delivery to a command handler.
+It returns a `CompletableFuture<CommandResultMessage>` that completes when command handling finishes.
+
+<4> The second parameter is the `ProcessingContext`, which is *optional* when dispatching commands.
+Pass `null` when dispatching from outside a message handler (for example, from an HTTP endpoint).
+If you are dispatching from within a message handler and have access to a `ProcessingContext`, you can pass it to propagate correlation data.
+See the <<command-dispatcher,CommandDispatcher>> section for a more convenient approach when dispatching from handlers.
+
+<5> Use the `CompletableFuture#whenComplete` method (or other `CompletableFuture` methods) to handle the result.
+The `CommandResultMessage` provides the API to verify whether command execution was exceptional or successful.
+
+[TIP]
+====
+When dispatching commands from within a message handler, prefer using the <<command-dispatcher,CommandDispatcher>> instead of the `CommandBus` directly.
+The `CommandDispatcher` automatically provides the current `ProcessingContext` and offers a more convenient API.
+====
+
+[[command-gateway]]
+== The `CommandGateway`
+
+The 'command gateway' is a convenience approach towards dispatching commands.
+It abstracts certain aspects for you when dispatching a command, while using the `CommandBus` underneath to perform the actual dispatching of the message.
+While you are not required to use a gateway to dispatch commands, it is generally the easiest option to do so.
+
+The `CommandGateway` interface provides two sets of methods: `send` (for asynchronous dispatch) and `sendAndWait` (for synchronous dispatch).
+
+[TIP]
+====
+The `CommandGateway` accepts plain command objects (POJOs) and automatically wraps them in a `CommandMessage` for you.
+You don't need to manually create `CommandMessage` instances when using the gateway.
+====
+
+=== Asynchronous command dispatching with `send`
+
+The `send` methods return immediately without waiting for command handling to complete:
+
+[source,java]
+----
+private CommandGateway commandGateway; // <1>
+
+public void sendCommand() {
+    String cardId = UUID.randomUUID().toString();
+
+    // <2>
+    CommandResult result = commandGateway.send(new IssueCardCommand(cardId, 100, "shopId"));
+
+    // <3>
+    result.onSuccess(String.class, cardNumber -> {
+        System.out.println("Card issued with number: " + cardNumber);
+    }).onError(exception -> {
+        System.err.println("Command failed: " + exception.getMessage());
+    });
+
+    // <4>
+    CompletableFuture<String> futureResult = result.resultAs(String.class);
+}
+// omitted class and constructor
+----
+
+<1> The `CommandGateway` interface providing the functionality to dispatch command messages.
+It internally leverages the `CommandBus` interface to dispatch messages.
+
+<2> The `send(Object)` method requires a single parameter: the command object.
+This is an asynchronous approach to dispatching commands.
+The response is a `CommandResult` that allows you to attach callbacks or retrieve a `CompletableFuture`.
+
+<3> You can attach success and error handlers directly to the `CommandResult` using `onSuccess()` and `onError()` methods.
+These methods return the `CommandResult` itself, allowing method chaining.
+
+<4> To get a `CompletableFuture`, use the `resultAs(Class)` method, which converts the result to the expected type.
+This allows for chaining of follow-up operations after the command result has been returned.
+
+The gateway automatically wraps your command object in a `CommandMessage` and handles metadata management for you.
+
+==== Alternative `send` variants
+
+The `CommandGateway` provides several variants of the `send` method:
+
+[source,java]
+----
+// Send with metadata
+CommandResult result = commandGateway.send(command, Metadata.with("userId", "12345"));
+
+// Send with ProcessingContext (when dispatching from within a handler)
+CommandResult result = commandGateway.send(command, processingContext);
+
+// Send with both metadata and ProcessingContext
+CommandResult result = commandGateway.send(command, metadata, processingContext);
+
+// Send and get CompletableFuture directly
+CompletableFuture<String> future = commandGateway.send(command, String.class);
+----
+
+When dispatching from outside a message handler (for example, from an HTTP endpoint), use the variants without `ProcessingContext` or pass `null`.
+When dispatching from within a handler, you can provide the `ProcessingContext` to propagate correlation data.
+
+[TIP]
+====
+When dispatching commands from within a message handler, prefer using the <<command-dispatcher,CommandDispatcher>> instead of the `CommandGateway`.
+The `CommandDispatcher` automatically provides the current `ProcessingContext` for you.
+====
+
+=== Synchronous command dispatching with `sendAndWait`
+
+For scenarios where you need to wait for the command result before continuing, use the `sendAndWait` methods:
+
+[source,java]
+----
+private CommandGateway commandGateway;
+
+public void sendCommandAndWaitOnResult() {
+    IssueCardCommand commandPayload = new IssueCardCommand(UUID.randomUUID().toString(), 100, "shopId");
+
+    // <1>
+    String result = commandGateway.sendAndWait(commandPayload, String.class);
+
+    // <2>
+    Object genericResult = commandGateway.sendAndWait(commandPayload);
+}
+// omitted class and constructor
+----
+
+<1> The `CommandGateway#sendAndWait(Object, Class)` method takes the command object and the expected result type.
+It blocks the current thread until command handling completes.
+If command handling throws an exception, it is rethrown (wrapped in a `CommandExecutionException` for checked exceptions).
+
+<2> If you don't need the result or don't know the result type, you can use `sendAndWait(Object)` which returns `Object`.
+The result will be `null` if the command handler doesn't return a value.
+
+[WARNING]
+====
+The `sendAndWait` methods block the calling thread until command handling completes.
+Use these methods only when you genuinely need to wait for the result.
+For most use cases, the asynchronous `send` methods are preferred.
+====
+
+[[command-dispatcher]]
+== The `CommandDispatcher`
+
+The `CommandDispatcher` is the *preferred* way to dispatch commands from within a message handler (for example, from within a command handler, event handler, or query handler).
+
+The key advantage of the `CommandDispatcher` is that it automatically uses the current `ProcessingContext`, ensuring that correlation data flows from one message to another.
+This is important for features like distributed tracing and correlation IDs.
+
+[TIP]
+====
+Like the `CommandGateway`, the `CommandDispatcher` accepts plain command objects (POJOs) and automatically wraps them in a `CommandMessage`.
+You don't need to manually create `CommandMessage` instances.
+====
+
+=== Injecting the `CommandDispatcher`
+
+The `CommandDispatcher` can be injected as a parameter in any message handler:
+
+[source,java]
+----
+@EventSourced
+public class GiftCard {
+
+    @CommandHandler
+    public void handle(RedeemCardCommand command, EventAppender eventAppender, CommandDispatcher dispatcher) { // <1>
+        // Validate and apply event
+        eventAppender.append(new CardRedeemedEvent(command.cardId(), command.amount()));
+
+        // Dispatch another command using the dispatcher
+        dispatcher.send(new SendThankYouEmailCommand(command.cardId())); // <2>
+    }
+}
+----
+
+<1> The `CommandDispatcher` is injected as a parameter alongside the command.
+The framework automatically provides it with the current `ProcessingContext`.
+
+<2> When you use the `dispatcher.send()` method, it automatically includes the current `ProcessingContext`, ensuring correlation data is propagated.
+
+=== `CommandDispatcher` API
+
+The `CommandDispatcher` provides a simple API for dispatching commands:
+
+[source,java]
+----
+// Send command and get CommandResult
+CommandResult result = dispatcher.send(command);
+
+// Send command with metadata
+CommandResult result = dispatcher.send(command, metadata);
+
+// Send command and get CompletableFuture with expected type
+CompletableFuture<String> future = dispatcher.send(command, String.class);
+
+// Attach handlers to the result
+dispatcher.send(command)
+         .onSuccess(String.class, cardNumber -> {
+             // Handle success
+         })
+         .onError(exception -> {
+             // Handle error
+         });
+----
+
+Notice that the `CommandDispatcher` API does *not* have a `ProcessingContext` parameter.
+This is because the `CommandDispatcher` is created for a specific `ProcessingContext` and automatically uses it for all dispatched commands.
+
+[TIP]
+====
+Use the `CommandDispatcher` whenever you dispatch commands from within a message handler.
+Use the `CommandGateway` (with `null` for `ProcessingContext`) when dispatching from outside a handler (for example, from an HTTP endpoint).
+====
+
+== Command dispatching results
+
+Dispatching commands will generally have two possible outcomes:
+
+. Command handled successfully, and
+. command handled exceptionally
+
+The outcome depends on the implementation of the command handler.
+If the `@CommandHandler` annotated function throws an exception due to some business logic, it will be that exception which will be the result of dispatching the command.
+
+=== Return values from command handlers
+
+Command handlers can return values, and the framework will propagate these through the `CommandResultMessage` (or directly through `CommandResult`/`CompletableFuture` depending on the API used).
+However, it's important to understand the intent behind commands versus queries:
+
+* **Commands** express an intent to change application state.
+The primary goal of dispatching a command is to execute that state change, not to retrieve information.
+* **Queries** are designed specifically for retrieving information from the application.
+
+If the primary purpose of sending a message is to obtain a result value, consider whether it should be designed as a xref:queries:index.adoc[query message] instead of a command.
+
+That said, there are legitimate cases where command handlers return values:
+
+* **Entity identifiers**: Returning the identifier of a newly created aggregate or entity is a common pattern.
+The framework has built-in support for this: when a `@CommandHandler` annotated static handler executes successfully, the value of the `@AggregateIdentifier` annotated field is automatically returned.
+* **Confirmation data**: Sometimes you may need to return confirmation information or generated values (such as reference numbers, timestamps, or other data produced during command handling).
+* **Synchronous workflows**: In certain integration scenarios, returning a value from a command handler may be necessary for synchronous processing flows.
+
+When command handlers don't return a value, the result will be `null`.
+
+== Command routing
+
+Commands are routed to their handlers based on a *routing key*.
+This routing mechanism is important for efficiency, as it helps avoid optimistic concurrency conflicts when multiple commands affect the same state.
+
+=== Why routing keys matter
+
+When multiple instances of a command handler exist (for example, in a distributed system or when using load balancing), commands targeting the same state should be routed to the same handler instance.
+The routing key ensures this happens consistently.
+
+For example, if two commands both modify the same entity (identified by `giftCardId`), they should use the same routing key (the `giftCardId` value) to ensure they are routed to the same destination where that entity is loaded.
+The framework can handle concurrent modifications through optimistic locking.
+However, routing commands with the same routing key to the same instance avoids these conflicts in the first place.
+This is more efficient than detecting and resolving conflicts after the fact.
+
+[#configuring-routing-keys-with-command]
+=== Configuring routing keys with `@Command`
+
+The simplest way to specify a routing key is using the `routingKey` attribute on the `@Command` annotation:
+
+[source,java]
+----
+@Command(routingKey = "cardId") // <1>
+public record IssueCardCommand(String cardId, int amount, String shopId) {
+}
+----
+
+<1> The `routingKey` attribute specifies which property of the command should be used as the routing key.
+In this example, the `cardId` property will be extracted and used as the routing key.
+
+The framework will automatically extract the value from the specified property (field or method) and use it as the routing key when dispatching the command.
+If a method name is provided, it can be the actual method name (`getCardId`) or the property name (`cardId`).
+When using the property name for a method, the framework resolves it by looking for methods starting with `get`, `is`, or matching the name exactly.
+
+[NOTE]
+====
+In Axon 4, the `@TargetAggregateIdentifier` annotation was used to specify routing keys.
+In Axon 5, this is replaced with the `routingKey` attribute on the `@Command` annotation for a more explicit and flexible approach.
+====
+
+=== Custom routing strategies
+
+For more advanced routing scenarios, you can configure a custom `RoutingStrategy`.
+The `RoutingStrategy` is used by the `CommandGateway` when building the `CommandMessage` to determine the routing key.
+
+==== Built-in routing strategies
+
+Axon provides several routing strategy implementations:
+
+* `AnnotationRoutingStrategy` - Extracts the routing key from a property specified in the `@Command` annotation's `routingKey` attribute (this is the default)
+* `MetadataRoutingStrategy` - Extracts the routing key from a specific metadata entry
+
+==== Configuring a custom routing strategy
+
+You can register a custom `RoutingStrategy` using the configuration API:
+
+[source,java]
+----
+// Using Configuration API
+public ApplicationConfigurer configureRouting(ApplicationConfigurer configurer) {
+    return configurer.messagingConfigurer(messagingConfigurer ->
+        messagingConfigurer.registerComponent(
+            RoutingStrategy.class,
+            config -> new MetadataRoutingStrategy("tenantId") // <1>
+        )
+    );
+}
+----
+
+<1> This example uses `MetadataRoutingStrategy` to extract the routing key from metadata with key `"tenantId"`.
+
+When using Spring Boot, you can register a custom `RoutingStrategy` as a Spring bean:
+
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public RoutingStrategy routingStrategy() {
+        return new MetadataRoutingStrategy("tenantId"); // <1>
+    }
+}
+----
+
+<1> Spring Boot auto-configuration will automatically detect and use this `RoutingStrategy`.
+
+You can also implement your own `RoutingStrategy` for completely custom routing logic:
+
+[source,java]
+----
+public class CustomRoutingStrategy implements RoutingStrategy {
+
+    @Override
+    public String getRoutingKey(CommandMessage command) {
+        // Custom logic to determine routing key
+        MyCommand payload = command.payload();
+        return payload.tenantId() + ":" + payload.entityId(); // <1>
+    }
+}
+----
+
+<1> This example creates a composite routing key from multiple properties.
+
+[NOTE]
+====
+The routing key must have a consistent `toString()` implementation.
+Inconsistent `toString()` methods may result in different handler instances receiving commands that should go to the same instance.
+====
+
+== Understanding `ProcessingContext` in command dispatching
+
+The `ProcessingContext` is a key concept in Axon that coordinates all components involved in processing a message.
+Understanding when to provide it is important:
+
+**When dispatching commands:**
+
+* `ProcessingContext` is *optional* on the dispatching side.
+* Pass `null` (or use method variants without the parameter) when dispatching from outside a handler, such as from an HTTP endpoint.
+* When dispatching from within a handler, you _can_ provide the `ProcessingContext` to propagate correlation data (such as trace IDs) to the command being dispatched.
+* The easiest way to dispatch from a handler is to use the <<command-dispatcher,CommandDispatcher>>, which automatically provides the current `ProcessingContext`.
+
+**When handling commands:**
+
+* `ProcessingContext` is *mandatory* on the handling side.
+* Axon always creates a `ProcessingContext` when processing a message.
+* The `ProcessingContext` can be injected as a parameter in command handlers.
+* All components involved in handling the command must receive and use the same `ProcessingContext`.
+
+For more details on `ProcessingContext`, see xref:messaging-concepts:processing-context.adoc[].

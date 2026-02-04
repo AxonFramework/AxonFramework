@@ -1,0 +1,37 @@
+
+= University Domain
+
+In this tutorial, we'll be working with a Axon University domain.
+Our initial examples will focus on the Faculty Bounded Context, where we'll implement features related to course management and student registrations.
+
+Within this context, the business capabilities are:
+
+* The faculty can create courses with assigned capacity (the maximum number of students allowed).
+* Course capacity can be modified after creation.
+* Course name can be changed after creation.
+* Students can enroll in the faculty.
+* Students can subscribe to courses (within capacity limits), there is also a limit of course subscriptions per student.
+* Students can unsubscribe from courses.
+
+== Event modeling
+
+Before diving into code, let's take a moment to design our system using Event Modeling.
+This approach helps us identify the messages that will flow through our application and ensures our flow of information is complete, and we are ready to go into implementation.
+
+We conducted an Event Modeling session to identify the command and events that will be used in our system.
+
+image::FacultyContext_EventModeling.png[]
+
+After an Event Modeling (which you can see above) session we have identified the following events:
+
+* `StudentEnrolledInFaculty` - A fact that a student has enrolled faculty.
+* `CourseCreated` - A fact that a course has been created with assigned capacity.
+* `CourseCapacityChanged` - A fact that a course's capacity has been modified.
+* `StudentSubscribedToCourse` - A fact that the student has subscribed to a course.
+* `StudentUnsubscribedFromCourse` - A fact that the student has unsubscribed from a course.
+
+These events form the backbone of our system and serve as the contract between different slices of our application.
+By focusing on the events first, we can clearly define how information flows through our system.
+
+With this domain understanding established, we're ready to start building our Axon University application following the Vertical Slice Architecture pattern that Axon Framework 5 supports so well.
+

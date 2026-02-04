@@ -1,0 +1,37 @@
+= Major Releases
+:navtitle: Major Releases
+
+All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
+
+[#release_5_0]
+== Release 5.0
+
+Axon Framework 5 is finally here!
+The list below contains all the features, enhancements, bugs, and documentation changes we've done since the **start** of development of Axon Framework 5. Hence, the list includes changes made in all milestones and release candidates, to be as complete as possible.
+
+For those looking to start with Axon Framework 5, we recommend you go through the [Getting Started](https://docs.axoniq.io/axon-framework-5-getting-started/) section of Axoniq Docs.
+If you have an Axon Framework 4 background, for example because you are looking to migrate an Axon Framework 4 application to Axon Framework 5, note that thorough migration tooling will follow in release 5.1.0 (please follow [this issue](https://github.com/AxonFramework/AxonFramework/issues/3195) when curious).
+If you want to give a manual migration a go, we strongly recommend that you check out the `/axon-5/api-changes.md` [file](https://github.com/AxonFramework/AxonFramework/blob/main/axon-5/api-changes.md) present in the Axon Framework project.
+Although the `api-changes.md` is not strictly the migration guide, we will use it as the basis to form our future migration guide and documentation.
+
+Given the shear amount of changes, we recommend checking out the full change list link:https://github.com/AxonFramework/AxonFramework/releases/tag/axon-5.0.0[here].
+
+=== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/abuijze[@abuijze]
+- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+- link:https://github.com/gklijs[@gklijs]
+- link:https://github.com/hjohn[@hjohn]
+- link:https://github.com/jangalinski[@jangalinski]
+- link:https://github.com/m1l4n54v1c[@m1l4n54v1c]
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+- link:https://github.com/nordicthings[@nordicthings]
+- link:https://github.com/mnegacz[@mnegacz]
+- link:https://github.com/rubenahrens[@rubenahrens]
+- link:https://github.com/saratry[@saratry]
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/TeraSeo[@TeraSeo]
+- link:https://github.com/trimoq[@trimoq]
+- link:https://github.com/zambrovski[@zambrovski]

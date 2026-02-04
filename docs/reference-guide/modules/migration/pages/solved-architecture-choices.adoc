@@ -1,0 +1,167 @@
+= Application Design Problems Solved by Axon Framework 5
+:navtitle: Resolved Problems
+
+Now let's explore some of the most significant architectural changes you'll encounter when migrating from Axon Framework 4.x to Axon Framework 5. Each change builds upon a core philosophy, such as: embracing asynchronicity, eliminating hidden state management, decoupling business logic from technical concerns, and providing developers with clearer, more expressive APIs.
+
+== 1. Aggregate boundaries cannot be changed after initial design
+
+**Problem:** Once you define an aggregate boundary in Axon Framework 4.x, that decision is permanent for the lifetime of the system.
+If business requirements evolve, and you need to restructure how entities relate to each other, you must either live with a suboptimal model or perform costly event migration across your entire event store.
+
+**Axon Framework 5 Solution:** Dynamic Consistency Boundaries allow boundaries to be defined per operation rather than permanently per aggregate type.
+The same events can be opened with different consistency scopes based on the specific command being executed.
+
+**For more info:** Read the blog entitled, link:https://www.axoniq.io/blog/dcb-in-af-5[“Dynamic Consistency Boundary (DCB) in Axon Framework 5 - Event Sourcing That’s Adaptable”]
+
+== 2. ThreadLocal usage prevents proper asynchronous and reactive programming
+
+**Problem:** Axon Framework 4.x's reliance on ThreadLocal variables (particularly in `AggregateLifecycle`) creates errors when working with asynchronous code, reactive streams, or modern concurrency patterns.
+Developers encounter cryptic errors like "Cannot retrieve current `AggregateLifecycle`; none is yet defined" when attempting to use async operations.
+
+**Axon Framework 5 Solution:** Complete removal of ThreadLocal dependencies throughout the framework.
+The Unit of Work has been rebuilt to be fully composable from async functions, enabling native support for Project Reactor, Kotlin Coroutines, and Java virtual threads.
+
+**For more info:** xref:messaging-concepts:processing-context.adoc[Processing Context]
+
+== 3. Required use of static utility methods in aggregates
+
+**Problem:**  The static `AggregateLifecycle.apply()` method hides the fact that aggregates depend on framework infrastructure to publish events.
+This makes testing more difficult, creates tight coupling to Axon internals, and violates dependency inversion principles by hiding essential dependencies behind static calls.
+
+**Axon Framework 5 Solution:** The static `AggregateLifecycle` has been replaced with explicit `EventAppender` dependency injection.
+Aggregates receive an `EventAppender` instance as a method parameters, making event publication visible in method signatures.
+
+**For more info:** Axon Framework 5 link:https://github.com/AxonFramework/AxonFramework/blob/main/axon-5/getting-rid-of-aggregatelifecycle.md[getting-rid-of-aggregatelifecycle.md]
+
+== 4. Multiple feature teams cannot work independently when they need related business concepts
+
+**Problem:**  When different vertical slices (features) need to interact with related business concepts, they must share the same aggregate inAxon Framework 4.x.
+This forces teams to coordinate changes, creates merge conflicts, and prevents true parallel development of independent features.
+
+**Axon Framework 5 Solution:** Dynamic Consistency Boundaries allow each vertical slice to maintain its own entity models based on the same underlying events.
+Teams can work completely independently without coordination overhead.
+
+**For more info:** link:https://github.com/AxonIQ/university-demo[University Demo README]
+
+== 5. Spring Boot was the only real configuration option
+
+**Problem:** Axon Framework 4.x's Spring Boot auto-configuration automatically registers components based on classpath scanning and conventions. Those that did not want to use Spring had a rough time, as the `Configurer` did not for all the features provided to the automated Spring approach.
+
+**Axon Framework 5 Solution:** New explicit Configuration API requires deliberate component registration through clear, compartmentalized setup.
+The framework segments into intuitive compartments for messaging, automations, and command models, with every component registered explicitly.
+
+**For more info:** Axon Framework 5 link:https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy[Configuration Blog]
+
+== 6. Evolving aggregate structure is hard
+
+**Problem:** As business understanding evolves, aggregates naturally accumulate more responsibilities and handle increasingly complex workflows.
+However, splitting an overgrown aggregate into more focused components requires migrating historical events, which is risky and expensive for production systems.
+
+**Axon Framework 5 Solution:** Dynamic Consistency Boundaries enable retroactive aggregate restructuring without event migration.
+By tagging events with multiple business entity identifiers, you can define new handlers that open streams for specific entity combinations while keeping the original events unchanged.
+
+**For more info:** link:https://www.axoniq.io/blog/dcb-in-af-5[DCB Blog]
+
+== 7. TrackingEventProcessor threading model is suboptimal
+
+**Problem:**  The `TrackingEventProcessor's` threading model involves complex concepts like segment claiming, token management, and thread-to-segment mapping.
+Achieving optimal performance requires deep framework knowledge and careful tuning of multiple configuration parameters.
+
+**Axon Framework 5 Solution:** `PooledStreamingEventProcessor` replaces `TrackingEventProcessor` as the default, offering a more straightforward threading approach.
+The simplified model makes it easier to configure and tune event processing for different workload characteristics.
+
+**For more info:**Axon Framework 5 link:https://docs.axoniq.io/axon-framework-5-getting-started/[Getting Started]
+
+== 8. Reactive programming patterns require workarounds
+
+**Problem:** While Axon Framework 4.x added reactive support through extensions, the underlying architecture was designed for blocking operations.
+Integrating reactive streams, handling backpressure properly, and mixing blocking with reactive code requires awkward workarounds and compromises.
+
+**Axon Framework 5 Solution:** The framework has been redesigned from the ground up with async-native architecture.
+Event handlers can naturally return `Mono` or `Flux` types, and the entire event processing pipeline supports non-blocking I/O with proper backpressure handling.
+
+**For more info:** Axon Framework 5 link:https://docs.axoniq.io/axon-framework-5-getting-started/[Getting Started]
+
+== 9. Requirement to share concrete Java classes for your messages
+
+**Problem:** In distributed systems where multiple services communicate through messages, each service must use identical class names and packages for the same logical message.
+This creates unnecessary coupling and prevents services from organizing their code according to their own domain models.
+
+**Axon Framework 5 Solution:** New message-type annotations (`@Command`, `@Event`, `@Query`) include explicit properties for name, namespace, and version.
+This enables message aliasing where different services can use different class names while the framework maps them to the same logical message type. If more additions are not desired, the `MessageTypeResolver` can be customized to achieve the same decoupling.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/issues/722[GitHub Issue] #722
+
+== 10. Heavy reflection usage
+
+**Problem:**  The `MessageHandlingMember` abstraction in Axon Framework 4.x uses extensive reflection to introspect handler methods, extract annotations, and manage handler enhancement.
+This creates coupling to implementation details and adds runtime overhead every time a handler is invoked.
+
+**Axon Framework 5 Solution:** `MessageHandlingMember` has been removed as the main handler description in favor of the cleaner `MessageHandlingComponent` abstraction.
+The builder-based configuration approach reduces dependency on reflection, resulting in simpler processor implementations with less runtime overhead.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/blob/main/axon-5/getting-rid-of-messagehandlingmember.md[Axon Framework 5 getting-rid-of-messagehandlingmember.md]
+
+== 11. Tests run against duplicated production configuration
+
+**Problem:** Axon Framework 4.x tests typically run against the in-memory Event Store for speed, while production uses Axon Server.
+This environment mismatch means configuration issues, connectivity problems, and Axon Server-specific behavior only surface in production rather than during testing.
+
+**Axon Framework 5 Solution:** The `AxonTestFixture` has been enhanced to work seamlessly with both in-memory Event Store and Axon Server.
+The same test code can run against either environment, and adding the `axon-server-connector` dependency automatically enables Axon Server in tests.
+
+**For more info:** link:https://github.com/AxonIQ/university-demo[University Demo]
+
+== 12. Tightly coupled models through annotations necessity
+
+**Problem:** Axon Framework 4.x aggregates require framework-specific annotations like `@Aggregate`, `@CommandHandler`, `@AggregateIdentifier`, and `@EventSourcingHandler`.
+This couples business domain logic to infrastructure concerns and makes it difficult to test domain models independently of the framework.
+
+**Axon Framework 5 Solution:** Axon Framework 5 supports both annotation-based modeling (for convenience and backward compatibility) and declarative modeling with pure domain models.
+Teams can choose to write entities without any framework annotations and register them explicitly through the Configuration API.
+
+**For more info:** Axon Framework 5 link:https://docs.axoniq.io/axon-framework-5-getting-started/[Getting Started]
+
+== 13. Simplified query API
+
+**Problem:** Axon Framework 4.x's Query API includes scatter-gather support for querying multiple handlers and aggregating results.
+While powerful, this adds complexity that most applications don't require.
+The `ResponseType` abstraction is particularly confusing, and developers struggle to understand when to use which query pattern.
+
+**Axon Framework 5 Solution:** Scatter-gather support has been removed to simplify the Query API.
+The focus is now on direct queries with clearer patterns.
+The API has been restructured with reintroduction of `QueryBus#streamingQuery` and `QueryBus#subscriptionQuery` with better reactive integration.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/issues/3079[GitHub Issue #3079]
+
+== 14. Serializer-based architecture limits flexibility in event schema evolution
+
+**Problem:** Axon Framework 4.x's Serializer-based architecture makes complex event transformations and schema evolution more difficult than necessary.
+Teams often avoid necessary schema changes because the upcasting process is cumbersome and the serialization layer doesn't provide flexible transformation pipelines.
+
+**Axon Framework 5 Solution:** Migration to a Converter-based architecture that provides cleaner transformation pipelines and better support for context-aware transformations.
+The Serializer flow has been marked as deprecated in favor of the more flexible Converter approach.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/issues/3102[GitHub Issue #3102]
+
+== 15. Understanding and describing the full Axon application
+
+**Problem:** Understanding what's happening inside Axon Framework 4.x applications in production requires building custom metrics, health checks, and tracing.
+Event processor health, command processing latency, aggregate performance, and other critical operational metrics aren't easily accessible without significant custom instrumentation work.
+
+**Axon Framework 5 Solution:** Enhanced integration with metrics and monitoring frameworks.
+Event processors expose better health indicators, components implement `DescribableComponent` for improved introspection, and tracing support has been significantly improved throughout the framework.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/releases[GitHub Release Notes]
+
+== 16. Traditional package-by-layer structure doesn't match how teams think about features
+
+**Problem:** Axon Framework 4.x documentation and examples typically organize code by technical layer (aggregates in one package, projections in another, sagas elsewhere).
+This entity-centric organization creates artificial boundaries that don't match how teams conceptualize features.
+Finding all the code for a single business capability requires navigating multiple packages and modules.
+
+**Axon Framework 5 Solution:** Explicit support and documentation for Vertical Slice Architecture.
+Applications are structured so each vertical slice (feature) contains its complete implementation—commands, events, handlers, and projections together.
+This "Screaming Architecture" makes system capabilities immediately obvious from the codebase structure.
+
+**For more info:** Axon Framework 5 link:https://docs.axoniq.io/axon-framework-5-getting-started/project-structure/[Project Structure]

@@ -1,0 +1,33 @@
+skinparam linetype ortho
+left to right direction
+
+together {
+
+  interface Message{
+    -identifier: String
+    -payloadType: Class
+    -payload: Object
+    -metdata:  MetaData
+  }
+
+  interface ResultMessage<R> {
+    -exceptional: boolean
+    -exceptionDetails: Throwable
+  }
+
+  abstract AbstractMessage<T> {}
+  class GenericMessage<T> {}
+  class GenericResultMessage<T>
+
+  abstract MessageDecorator<T> {
+    -delegate: Message
+  }
+}
+
+
+AbstractMessage ..|> Message
+MessageDecorator ..|> Message
+ResultMessage --|> Message
+GenericMessage --|> AbstractMessage
+GenericResultMessage ..|> ResultMessage
+

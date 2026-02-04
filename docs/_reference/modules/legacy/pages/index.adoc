@@ -1,0 +1,12 @@
+= Legacy Module
+:navtitle: Legacy
+:page-needs-improvement: content
+:page-needs-content: This page is a placeholder. Add meaningful content.
+
+== Design considerations
+
+== Implementation
+
+== Usage
+
+== Reference

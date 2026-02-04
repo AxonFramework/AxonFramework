@@ -1,0 +1,296 @@
+= Understanding the Architecture Principles of Axon Framework 5
+:navtitle: Understanding Choices
+
+Now let's explore some of the most significant architectural changes you'll encounter when migrating from Axon Framework 4.x to Axon Framework 5.
+Each change builds upon a core philosophy, such as: embracing asynchronicity, eliminating hidden state management, decoupling business logic from technical concerns, and providing developers with clearer, more expressive APIs.
+
+== Async-native APIs for better concurrency and throughput
+
+Axon Framework 5 fundamentally reimagines how the framework interacts with your code.
+In Axon Framework 4.x, many operations were synchronous and contained bottlenecks.
+
+Axon Framework 5 makes asynchronicity explicit and pervasive.
+Rather than hiding `CompletableFuture` chains behind method returns, the framework embraces them as first-class citizens.
+Every infrastructure component that touches message processing, event storage, or command/query handling now operates natively with `CompletableFuture` and reactive streams.
+
+This change flows through:
+
+* The `CommandBus` and `CommandGateway`
+* The `EventStore` and `EventStorageEngine`
+* Event Processors and message handlers
+* The `QueryBus` and `QueryGateway`
+* The entire `Repository` layer
+
+Modern systems increasingly demand non-blocking execution.
+By making async explicit, developers can reason about concurrency clearly and therefore can optimize scheduling effectively.
+
+== The improved configuration architecture makes configuring your project easier
+
+One of the most architecturally significant changes is how Axon Framework approaches configuration.
+Axon Framework 4.x had a centralized `axon-configuration` module that depended on all other modules to provide a global configuration.
+This created:
+
+* High coupling between modules
+* Difficult modularization for custom extensions
+* All-or-nothing configuration initialization
+
+Axon Framework 5 inverts the dependency structure.
+Instead of having an `axon-configuration` module that depends on all other modules, the core module (`axon-messaging`) now contains an `ApplicationConfigurer` interface.
+The key insight: different layers provide different configurers based on what you're trying to build.
+
+The new `ApplicationConfigurer` interface now only provides basic operations to register components, decorate components, register modules, and register lifecycle handlers.
+This breaks down into specific layer configurers:
+
+* **MessagingConfigurer** - For basic messaging concepts (`CommandBus`, `QueryBus`, `EventSink`)
+* **ModellingConfigurer** - Wraps `MessagingConfigurer`, adds modeling-specific registration
+* **EventSourcingConfigurer** - Wraps `ModellingConfigurer`, adds event store and event storage engine registration
+
+Instead of a monolithic configuration class, you now compose modular configurers:
+
+[source,java]
+----
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.messaging.core.interception.LoggingInterceptor;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+class AxonConfig {
+
+    public ApplicationConfigurer configurer() {
+        return EventSourcingConfigurer.create()
+                                      .registerEventStorageEngine(config -> new AxonServerEventStorageEngine(
+                                              config.getComponent(AxonServerConnection.class),
+                                              config.getComponent(EventConverter.class)
+                                      ))
+                                      // Accessing the modelling layer...
+                                      .modelling(modelling -> {
+                                          CommandHandlingModule.CommandHandlerPhase commandHandlingModule =
+                                                  CommandHandlingModule.named("orders")
+                                                                       .commandHandlers();
+                                          modelling.registerCommandHandlingModule(commandHandlingModule);
+                                      })
+                                      // Accessing the messaging layer...
+                                      .messaging(messaging -> messaging.registerDispatchInterceptor(
+                                              config -> new LoggingInterceptor<>()
+                                      ));
+    }
+}
+----
+
+Each layer wraps the one below it, creating a delegation chain that lets you move up and down to access layer-specific APIs.
+
+The benefits of this architecture include:
+
+* **Clear separation**: Each module configures its own concerns.
+* **Lazy initialization**: Components only initialize when needed.
+* **Custom modules**: Easier to create domain-specific configuration modules.
+* **Composability**: Pick and choose exactly what you need from Axon.
+
+**For more info:** link:https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy[Configuration Blog]
+
+[#moving-away-from-aggregates]
+== Moving away from fixed aggregates to entities with tags: the Dynamic Consistency Boundary approach
+
+One of the most significant changes is how Axon Framework 5 conceptualizes event storage.
+Axon Framework 4.x's event store was fundamentally aggregate-centric.
+An `EventStore` stored events grouped by aggregate root.
+This made sense for a certain class of applications, but imposed constraints:
+
+* Complex event sourcing patterns spanning multiple entities.
+* Systems needing to event-source entire bounded contexts.
+* Read models sourced from multiple aggregate streams.
+
+Axon Framework 5 moves to a "Dynamic Consistency Boundary" (DCB) model.
+Rather than assuming a single aggregate root per stream, events can be organized by tags.
+
+**For more info:** link:https://www.axoniq.io/blog/dcb-in-af-5[DCB Blog] and xref:events:event-store-internals.adoc[Event Store internals].
+
+== Rethinking Unit of Work with the `ProcessingContext`
+
+One of the most profound architectural changes in Axon Framework 5 is the complete rewrite of the `UnitOfWork` abstraction.
+
+In Axon Framework 4, the `UnitOfWork` relied on `ThreadLocal` to track the currently active unit of work.
+This approach broke down in modern execution environments:
+
+* Virtual threads can move between OS threads, invalidating `ThreadLocal` semantics.
+* Reactive stacks execute multiple logical flows on the same OS thread.
+* Distributed tracing needs explicit context propagation.
+* Hidden state made it difficult to understand code flow without deep framework knowledge.
+
+The removal of `ThreadLocal` is paramount for a reactive programming style.
+Axon Framework 5 breaks down the `UnitOfWork` interface into two interfaces and a concrete implementation:
+
+1. The `ProcessingLifecycle`, describing methods to register actions into distinct `ProcessingLifeCycle.Phases`, thus managing the "lifecycle of a process."
+2. The `ProcessingContext`, an implementation of the `ProcessingLifecycle` adding resource management.
+3. The `UnitOfWork`, an implementation of the `ProcessingContext` and thus `ProcessingLifecycle`.
+
+The `ProcessingContext` replaces the use of the `ThreadLocal`.
+As such, you will notice that the `ProcessingContext` will become a parameter throughout virtually all infrastructure interfaces Axon Framework provides.
+This will become most apparent on all message handlers.
+
+[source,java]
+----
+// Axon Framework 4.x: Implicit ThreadLocal-based unit of work
+@EventHandler
+public void handle(MyEvent event) {
+    UnitOfWork uow = CurrentUnitOfWork.get();
+    // Process event
+}
+
+// Axon Framework 5: Explicit ProcessingContext
+@EventHandler
+public void handle(MyEvent event, ProcessingContext context) {
+    // Context is explicit, can be reasoned about
+    // Flows through all nested operations
+}
+----
+
+The `ProcessingContext` provides:
+
+* **Explicit resource management**: Store and retrieve resources bound to the current message processing operation.
+* **Clear lifecycle management**: Resources are bound to the logical processing unit, not the OS thread.
+* **Distributed tracing support**: The context can carry trace information through async boundaries.
+* **Better integration with reactive stacks**: Works seamlessly with reactive frameworks.
+
+**For more info:** xref:messaging-concepts:processing-context.adoc[Processing Context]
+
+== Message type and qualified name: Decoupling from Java's type system
+
+Axon Framework 4.x coupled message identity tightly to Java's type system.
+A command's type was its class, an event's type was determined by its class name.
+This approach had fundamental limitations.
+For example, what happens when you need to:
+
+* Support multiple versions of the same message simultaneously?
+* Deploy messages across JVM and non-JVM systems?
+* Evolve message schemas independent of code deployments?
+
+In Axon Framework 4.x, these scenarios required workarounds.
+Message versioning was handled through a separate `RevisionResolver` mechanism.
+Cross-platform compatibility required custom serialization logic.
+
+Axon Framework 5 introduces two new foundational concepts: `QualifiedName` and `MessageType`.
+
+The `QualifiedName` represents the business identity of a message, completely independent of Java's type system.
+
+Rather than relying on convention, you now explicitly declare message identity.
+
+This decoupling has profound implications for your entire architecture:
+
+* Version negotiation happens at the message level, not the serializer level.
+* Non-JVM systems can understand message identity without reflection.
+* Schema registries can track messages by qualified name and version independent of deployment artifacts.
+* Upcasting and down casting becomes more explicit and controllable.
+
+**For more info:** xref:messaging-concepts:anatomy-message.adoc#message_type[Message Types]
+
+== The `MessageStream` significantly improves messaging for Axon throughout
+
+In Axon Framework 4.x, retrieving multiple messages from the event store required understanding different APIs.
+`DomainEventStream` was used for events, `BlockingStream` for certain operations, and standard `Stream` or `List` for other scenarios.
+This fragmentation made it difficult to write generic code.
+
+Each required different handling patterns.
+Worse, Axon Framework 4.x couldn't easily support both synchronous and reactive message handlers with the same infrastructure.
+
+Axon Framework 5 introduces `MessageStream`, a unified abstraction that elegantly handles:
+
+* Empty results (like event handlers, which return nothing).
+* Single results (like command handlers, which return one response).
+* Multiple results (like query handlers, which may return N values).
+
+`MessageStream` also supports attaching context information to each message.
+
+This context carries metadata about each message (like aggregate identifier, sequence number) without coupling the message itself to the source.
+
+The introduction of `MessageStream` has cascading effects throughout Axon Framework 5:
+
+* `EventStore` operations return `MessageStream` instead of custom stream types.
+* `EventStorageEngine` operations work with `MessageStream` internally.
+* Event processors consume messages as `MessageStream`.
+* Handlers can return `MessageStream` for flexible result types.
+The `MessageStream` is enforced when registering lambdas as your message handlers.
+
+== Serialization to conversion: A cleaner separation of concerns
+
+Axon Framework 4.x placed serialization concerns into a large `Serializer` abstraction that handled everything: payload conversion, metadata handling, and revision resolution.
+In Axon Framework 4.x, a `Serializer` had to:
+
+1. Convert payloads to/from wire format.
+2. Handle metadata serialization.
+3. Resolve revisions via `RevisionResolver`.
+4. Support multiple serialization formats (XStream, Jackson, etc.).
+
+This breadth of responsibility made it difficult to reason about serialization and prevented flexibility in format choice.
+
+Axon Framework 5 breaks this into focused, composable pieces and replaces `Serializer` with a three-level `Converter` hierarchy with concrete types:
+
+1. **General Converter**: Used for all conversions unless a more specific converter is provided
+2. **MessageConverter**: Specifically handles conversion of `Message` implementations
+3. **EventConverter**: Specifically handles conversion of `EventMessage` implementations
+
+Infrastructure components now enforce the use of the appropriate converter due to the concrete types for each layer:
+
+[source,java]
+----
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.context.annotation.Bean;
+
+class AxonConfig {
+
+    @Bean
+    public EventStorageEngine eventStorageEngine(
+            AxonServerConnectionManager connectionManager,
+            EventConverter eventConverter
+    ) {
+        return new AxonServerEventStorageEngine(connectionManager.getConnection(), eventConverter);
+    }
+}
+----
+
+The default converter switched from XStream to Jackson, eliminating the problematic reflection behavior of XStream.
+However, if you need XML serialization:
+
+[source,java]
+----
+// Configure Jackson with XML support
+JacksonConverter xmlConverter = new JacksonConverter(
+    new ObjectMapper(new XmlFactory())
+);
+----
+
+Version resolution moved from the `Serializer` layer to the `MessageType` itself.
+Rather than having a `RevisionResolver` determine message version at serialization time, the version is now part of the message's identity:
+
+[source,java]
+----
+// Old Axon Framework 4.x approach
+@Revision("2.0")
+public class AccountCreatedEvent { }
+
+// New Axon 5 approach
+@Event(name = "AccountCreatedEvent", version = "2.0")
+public class AccountCreatedEvent { }
+----
+
+This makes versioning explicit and independent of serialization concerns.
+
+**For more info:** link:https://github.com/AxonFramework/AxonFramework/issues/3102[GitHub Issue #3102]
+
+== `PooledStreamingEventProcessor` replaces `TrackingEventProcessor`
+
+Axon Framework 4's event processing architecture centered on the `TrackingEventProcessor`, which maintained position in event streams.
+While functional, the `TrackingEventProcessor` had limitations in resource management and scalability.
+
+Axon Framework 5 removes the `TrackingEventProcessor` entirely.
+In its place, the `PooledStreamingEventProcessor` provides similar capabilities with better resource management.
+The pooled approach allows for more efficient thread utilization, as worker threads are shared across segments rather than dedicated per segment.
+This results in better scalability when processing high volumes of events across many segments.
+
+**For more info:** xref:events:event-processors/streaming.adoc[Streaming Event Processors]

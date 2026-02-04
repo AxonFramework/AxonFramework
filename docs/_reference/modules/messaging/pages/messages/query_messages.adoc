@@ -1,0 +1,47 @@
+= Query Messages
+:page-needs-improvement: considerations, usage, ref
+:page-needs-considerations: Design considerations needs more details
+:page-needs-usage: Usage section need detailed examples
+:page-needs-ref: Reference section need more links to samples, source code, etc.
+
+
+This document provides information about the design, implementation, and intended usage of query messages in Axon Framework.
+
+== Design considerations
+
+Queries are specific type of messages, used to request information. To distinguish them from other message types, the framework must provide a dedicates objects.
+
+=== Name
+
+=== Response type
+
+== Implementation
+
+In Axon Framework, a query message is an immutable, serializable Java object implementing the `QueryMessage` interface.
+
+[plantuml, svg, title="Query messaging class diagram"]
+....
+include::attachment$generic_messaging_classes.puml[]
+include::attachment$query_messaging_classes.puml[]
+....
+
+With queries the communication is always bidirectional, and the response is an object that implements `QueryResponseMessage`.
+
+
+== Usage
+
+
+== Reference
+
+
+.Javadoc
+[%collapsible]
+====
+* &nbsp;
+====
+
+.Source code
+[%collapsible]
+====
+* &nbsp;
+====

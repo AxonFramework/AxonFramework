@@ -1,0 +1,23 @@
+= Message Correlation
+:page-needs-improvement: content
+:page-needs-content: This page is a placeholder. Add meaningful content.
+
+
+== Design considerations
+
+
+== Implementation
+
+=== Correlation data provider
+
+=== Message origin provider
+
+=== `SimpleCorrelationDataProvider`
+
+=== `MultiCorrelationDataProvider`
+
+== Usage
+
+== Reference
+
+// The xref:af_customization:ROOT:correlation_data_provider.adoc[] explains how to implement your own

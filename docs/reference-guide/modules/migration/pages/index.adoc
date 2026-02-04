@@ -1,0 +1,42 @@
+= Axon Framework 5 Migration Guide
+:navtitle: Migration Guide
+
+Axon Framework 5 represents the most significant evolution in the framework's history.
+This comprehensive migration guide will help you navigate the transition from Axon Framework 4.x to Axon Framework 5, equipping you with the knowledge, patterns, and practical steps needed to modernize your event-sourced applications successfully.
+
+Whether you're running a small microservice or a large distributed system, this guide provides pathways for every scenario—from maintaining compatibility with your existing architecture to embracing the transformative new capabilities that Axon Framework 5 enables.
+
+== What You'll Find in This Guide
+
+This migration guide is structured as follows:
+
+Why Upgrade to Axon Framework 5::
+Before you commit to migration, understand what you're gaining.
+This section explores the transformative new capabilities available only in Axon Framework 5: async-native architectures that eliminate ThreadLocal bottlenecks, Dynamic Consistency Boundaries (DCB) that liberate you from fixed aggregate structures, simplified configurations that adapt to your preferences, domain entities free from framework annotations, and a thriving ecosystem of first-class extensions like the Apache Kafka and PostgreSQL integrations.
+
+Prerequisites & System Requirements::
+Verify your infrastructure readiness.
+We cover Java version alignment, Spring Boot compatibility, and Axon Server requirements to ensure smooth migration.
+
+Application Design Problems Solved by Axon Framework 5::
+Understand the "why" behind each major change.
+We walk through the application design problems that Axon Framework 5 solves, the architectural philosophy driving those solutions, and how they cascade through your codebase.
+
+Understanding the Architecture Principles of Axon Framework 5::
+Detailed explanations of how foundational components have evolved, providing a conceptual background how we adjusted the architecture principles for Axon Framework 5.
+
+Migration Paths::
+The practical heart of the guide.
+Acts as the starting point for every code migration from Axon Framework 4 to Axon Framework 5. Contains numerous subsections (or "paths") showing how Framework 4 approached things like messaging, aggregates, and testing, and how those should be tackled in Axon Framework 5.
+
+== Scope of this guide
+
+This guide assumes you're running Axon Framework 4.x and moving to Axon Framework 5. We focus on:
+
+* Applications using Spring Boot or standalone Java
+* Event sourcing patterns with aggregates (or entities with DCB!)
+* Synchronous and reactive command/query patterns
+* Integration with Axon Server
+* Testing strategies and fixtures
+
+For questions about topics outside this scope, consult the xref:ROOT:index.adoc[Axon Framework documentation], reach out on the link:https://discuss.axoniq.io/[Axon Community Forum], or contact AxonIQ support.

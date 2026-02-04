@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010-2026. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.axonframework</groupId>
+    <artifactId>axon</artifactId>
+    <version>5.0.3-SNAPSHOT</version>
+
+    <modules>
+        <module>build/parent</module>
+        <module>axon-framework-bom</module>
+
+        <module>axon-server-connector</module>
+        <module>common</module>
+        <module>conversion</module>
+        <module>extensions</module>
+        <module>eventsourcing</module>
+        <module>messaging</module>
+        <module>modelling</module>
+        <module>test</module>
+        <module>update</module>
+
+        <module>integrationtests</module>
+
+        <module>stash/migration</module>
+        <module>stash/todo</module>
+        <module>stash/legacy</module>
+        <module>stash/legacy-aggregate</module>
+        <module>stash/legacy-saga</module>
+    </modules>
+    <packaging>pom</packaging>
+
+    <name>Axon Framework - Root</name>
+    <description>
+        The Axon framework supports developers with the plumbing and wiring required to build a CQRS architecture, by
+        providing (abstract) implementations of common CQRS building blocks.
+    </description>
+
+    <inceptionYear>2010</inceptionYear>
+    <url>https://axoniq.io/</url>
+    <licenses>
+        <license>
+            <name>Apache 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/AxonFramework/AxonFramework/issues</url>
+    </issueManagement>
+    <organization>
+        <name>AxonIQ B.V.</name>
+        <url>https://axoniq.io</url>
+    </organization>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <!-- Main -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.basedir}/coverage-report/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- Build / Plugin -->
+        <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
+        <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
+        <jacoco-maven.version>0.8.14</jacoco-maven.version>
+        <maven-assembly.version>3.7.1</maven-assembly.version>
+        <maven-clean.version>3.5.0</maven-clean.version>
+        <maven-compiler.version>3.14.1</maven-compiler.version>
+        <maven-enforcer.version>3.6.2</maven-enforcer.version>
+        <maven-failsafe.version>3.5.4</maven-failsafe.version>
+        <maven-gpg.version>3.2.8</maven-gpg.version>
+        <maven-install.version>3.1.4</maven-install.version>
+        <maven-jar.version>3.5.0</maven-jar.version>
+        <maven-javadoc.version>3.12.0</maven-javadoc.version>
+        <maven-release.version>3.2.0</maven-release.version>
+        <maven-source.version>3.3.1</maven-source.version>
+        <maven-surefire.version>3.5.4</maven-surefire.version>
+        <maven-resources.version>3.3.1</maven-resources.version>
+    </properties>
+
+    <!-- Framework dependencies are managed in axon-parent -->
+    <dependencyManagement />
+
+    <!-- Framework dependencies are managed in axon-parent -->
+    <dependencies />
+
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean.version}</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven-install.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>21</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>3.9</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- deploy -->
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven-release.version}</version>
+                <configuration>
+                    <!-- prepare goal configuration -->
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <pushChanges>false</pushChanges>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <!-- perform goal configuration -->
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <localCheckout>true</localCheckout>
+                    <releaseProfiles>javadoc,sources,sign</releaseProfiles>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central-publishing-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <excludeArtifacts>
+                        axon-integrationtests,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-migration,axon-todo
+                    </excludeArtifacts>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
+            <modules>
+                <module>build/coverage-report</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>examples</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>examples</name>
+                </property>
+            </activation>
+            <modules>
+                <module>examples</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>javadoc</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven-javadoc.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadoc</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <doclint>none</doclint>
+                            <legacyMode>true</legacyMode>
+                            <skippedModules>axon-todo,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-migration,axon-integrationtests</skippedModules>
+                            <!-- These parameters are in preparation for resolution of this issue: -->
+                            <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
+                            <tags>
+                                <tag>
+                                    <name>apiNote</name>
+                                    <placement>a</placement>
+                                    <head>API Note:</head>
+                                </tag>
+                                <tag>
+                                    <name>implSpec</name>
+                                    <placement>a</placement>
+                                    <head>Implementation Requirements:</head>
+                                </tag>
+                                <tag>
+                                    <name>implNote</name>
+                                    <placement>a</placement>
+                                    <head>Implementation Note:</head>
+                                </tag>
+                            </tags>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>sign</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <repositories>
+        <repository>
+            <name>Central Portal Snapshots</name>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <scm>
+        <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
+        <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
+        <url>https://github.com/AxonFramework/AxonFramework</url>
+        <tag>axon-5.0.0-RC3</tag>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Allard Buijze</name>
+            <email>allard.buijze@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
+            <roles>
+                <role>Project Owner</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Steven van Beelen</name>
+            <email>steven.vanbeelen@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
+            <roles>
+                <role>Lead Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Mitchell Herrijgers</name>
+            <email>mitchell.herrijgers@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <name>Mateusz Nowak</name>
+            <email>mateusz.nowak@axoniq.io</email>
+            <organization>AxonIQ</organization>
+            <organizationUrl>https://axoniq.io</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>zambrovski</id>
+            <name>Simon Zambrovski</name>
+            <email>simon.zambrovski@holisticon.de</email>
+            <organization>Holisticon AG</organization>
+            <organizationUrl>https://holisticon.de</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>jangalinski</id>
+            <name>Jan Galinski</name>
+            <email>jan.galinski@holisticon.de</email>
+            <organization>Holisticon AG</organization>
+            <organizationUrl>https://holisticon.de</organizationUrl>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+    </developers>
+</project>

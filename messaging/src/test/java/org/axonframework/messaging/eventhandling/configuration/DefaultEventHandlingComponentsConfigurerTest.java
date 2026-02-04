@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.eventhandling.configuration;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.junit.jupiter.api.*;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Test class validating the {@link DefaultEventHandlingComponentsConfigurer} functionality.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+class DefaultEventHandlingComponentsConfigurerTest {
+
+    private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
+
+    @Nested
+    class SingleWithComponentTest {
+
+        @Test
+        void shouldCreateSingleComponentFromEventHandlingComponent() {
+            //given
+            ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> {
+                SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create("test");
+                handlingComponent.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+                return handlingComponent;
+            };
+
+            //when
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer().declarative(componentBuilder);
+            var components = componentsConfigurer.toList();
+
+            //then
+            assertThat(components).hasSize(1);
+            assertThat(components.getFirst()).isSameAs(componentBuilder);
+        }
+    }
+
+    @Nested
+    class ManyWithComponentsTest {
+
+        @Test
+        void shouldCreateManyComponentsFromEventHandlingComponents() {
+            //given
+            ComponentBuilder<EventHandlingComponent> componentBuilder1 =
+                    cfg -> SimpleEventHandlingComponent.create("component1");
+            ComponentBuilder<EventHandlingComponent> componentBuilder2 =
+                    cfg -> SimpleEventHandlingComponent.create("component2");
+            ComponentBuilder<EventHandlingComponent> componentBuilder3 =
+                    cfg -> SimpleEventHandlingComponent.create("component3");
+
+            //when
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative(componentBuilder1)
+                    .declarative(componentBuilder2)
+                    .declarative(componentBuilder3);
+            var components = componentsConfigurer.toList();
+
+            //then
+            assertThat(components).hasSize(3);
+            assertThat(components).containsExactly(componentBuilder1, componentBuilder2, componentBuilder3);
+        }
+    }
+
+    @Nested
+    class DecoratedTest {
+
+        @Test
+        void shouldDecorateAllComponents() {
+            //given
+            var component1 = SimpleEventHandlingComponent.create("component1");
+            component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component2 = SimpleEventHandlingComponent.create("component2");
+            component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative(cfg -> component1)
+                    .declarative(cfg -> component2);
+
+            //when
+            var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
+            var decoratedComponents = decoratedConfigurer.build(MessagingConfigurer.create().build());
+
+            //then
+            assertThat(decoratedComponents).hasSize(2);
+
+            SampleDecoration decoration1 = (SampleDecoration) decoratedComponents.get(0);
+            SampleDecoration decoration2 = (SampleDecoration) decoratedComponents.get(1);
+
+            EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
+            decoration1.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
+            decoration2.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
+
+            assertThat(decoration1.invoked).isTrue();
+            assertThat(decoration2.invoked).isTrue();
+        }
+
+        static class SampleDecoration extends DelegatingEventHandlingComponent {
+
+            AtomicBoolean invoked = new AtomicBoolean();
+
+            public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
+                super(delegate);
+            }
+
+            @Nonnull
+            @Override
+            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                                       @Nonnull ProcessingContext context) {
+                invoked.set(true);
+                return super.handle(event, context);
+            }
+        }
+    }
+}

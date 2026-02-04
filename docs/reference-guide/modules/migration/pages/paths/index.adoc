@@ -1,0 +1,292 @@
+= Migration Paths
+:navtitle: Migration Paths
+
+Axon Framework 5 introduces several architectural shifts that may require different migration strategies depending on your application's complexity and the features you use.
+This section outlines the common migration tasks and provides detailed "paths" for specific components.
+
+Whether you are performing a straightforward version bump or a deep architectural refactoring to embrace Dynamic Consistency Boundaries (DCB), the following sections will guide you through the process.
+
+1. **Base Migration Changes**
+* Import and Package Changes
+* Module Restructuring
+2. **Specific Migration Paths**
+* xref:migration:paths/messages.adoc[Message changes (@Event, @Command, @Query)]
+* _Aggregate to Entity (Coming soon)_
+* _Event Processor configuration in AF5 (Coming soon)_
+* _Test fixtures (Coming soon)_
+* _Serializer to Converter configuration changes (Coming soon)_
+* _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
+* _Message Interceptors in AF5 (Coming soon)_
+3. **What is not yet there**
+4. **Missing a Migration Path?**
+
+== Base migration changes
+
+Every user migrating from Axon Framework 4.x to 5.x will encounter a set of base changes. These primarily involve package renames and module restructurings.
+
+=== Import and package changes
+
+Many classes have been moved to better align with the new modular structure. The most notable change is the move of Spring-specific and monitoring components into their own extension namespaces, and the nesting of core messaging components under the `org.axonframework.messaging` package.
+
+[tabs]
+====
+Framework::
++
+[cols="1,2"]
+|===
+| Description | Changes (AF4 to AF5)
+
+| Command Handler annotation
+| `org.axonframework.commandhandling.CommandHandler`
+
+to
+
+`org.axonframework.messaging.commandhandling.annotation.CommandHandler`
+
+| Event Handler annotation
+| `org.axonframework.eventhandling.EventHandler`
+
+to
+
+`org.axonframework.messaging.eventhandling.annotation.EventHandler`
+
+| Query Handler annotation
+| `org.axonframework.queryhandling.QueryHandler`
+
+to
+
+`org.axonframework.messaging.queryhandling.annotation.QueryHandler`
+
+| Message Handler Interceptor annotation
+| `org.axonframework.messaging.interceptors.MessageHandlerInterceptor`
+
+to
+
+`org.axonframework.messaging.core.annotation.interceptors.MessageHandlerInterceptor`
+
+| Configuration API
+| `org.axonframework.config`
+
+to
+
+`org.axonframework.common.configuration`
+
+| Serialization API (replaced by Conversion)
+| `org.axonframework.serialization`
+
+to
+
+`org.axonframework.conversion`
+
+| Command Handling Core
+| `org.axonframework.commandhandling`
+
+to
+
+`org.axonframework.messaging.commandhandling`
+
+| Event Handling Core
+| `org.axonframework.eventhandling`
+
+to
+
+`org.axonframework.messaging.eventhandling`
+
+| Query Handling Core
+| `org.axonframework.queryhandling`
+
+to
+
+`org.axonframework.messaging.queryhandling`
+
+| Unit of Work
+| `org.axonframework.messaging.unitofwork`
+
+to
+
+`org.axonframework.messaging.core.unitofwork`
+
+| Modelling (Aggregates to Entities)
+| `org.axonframework.modelling.command`
+
+to
+
+`org.axonframework.modelling.entity`
+
+| Target Entity Id annotation
+| `org.axonframework.modelling.command.TargetAggregateIdentifier`
+
+to
+
+`org.axonframework.modelling.annotation.TargetEntityId`
+
+|===
+
+Extension::
++
+[cols="1,2"]
+|===
+| Description | Changes (AF4 to AF5)
+
+| Core Spring support
+| `org.axonframework.spring`
+
+to
+
+`org.axonframework.extension.spring`
+
+| Spring Boot auto-configuration
+| `org.axonframework.springboot`
+
+to
+
+`org.axonframework.extension.springboot`
+
+| Spring Boot Actuator support
+| `org.axonframework.actuator`
+
+to
+
+`org.axonframework.extension.springboot.actuator`
+
+| Dropwizard Metrics support
+| `org.axonframework.metrics`
+
+to
+
+`org.axonframework.extension.metrics.dropwizard`
+
+| Micrometer support
+| `org.axonframework.micrometer`
+
+to
+
+`org.axonframework.extension.metrics.micrometer`
+
+| OpenTelemetry support
+| `org.axonframework.tracing.opentelemetry`
+
+to
+
+`org.axonframework.extension.tracing.opentelemetry`
+|===
+====
+
+For an exhaustive list of all class-level renames and moves, please refer to the `api-changes.md` file in the root of the Axon Framework repository.
+
+=== Module restructuring
+
+Axon Framework 5 has been restructured into more focused modules. This allows for better dependency management and smaller deployment footprints. The following table provides an exhaustive list of the modules available in Axon Framework 5 and their Axon Framework 4 equivalents.
+
+[cols="1,1,1"]
+|===
+| Description | Axon 4 module name | Axon 5 module name
+
+| **New.** Contains shared utilities, configuration basics, and common exceptions.
+| N/A
+| `axon-common`
+
+| **New.** Contains the new `Converter` API which replaces the `Serializer`.
+| N/A
+| `axon-conversion`
+
+| Remains the core messaging module.
+| `axon-messaging`
+| `axon-messaging`
+
+| Contains the logic for entities (formerly aggregates) and repositories.
+| `axon-modelling`
+| `axon-modelling`
+
+| Focused on event sourcing logic and event store implementations.
+| `axon-eventsourcing`
+| `axon-eventsourcing`
+
+| Connectivity for Axon Server.
+| `axon-server-connector`
+| `axon-server-connector`
+
+| Testing infrastructure and fixtures.
+| `axon-test`
+| `axon-test`
+
+| **New.** Provides automated update support and migration utilities.
+| N/A
+| `axon-update`
+
+| Core Spring Framework integration.
+| `axon-spring`
+| `extensions/axon-spring`
+
+| Spring Boot auto-configuration support.
+| `axon-spring-boot-autoconfigure`
+| `extensions/axon-spring-boot-autoconfigure`
+
+| Spring Boot starter for Axon.
+| `axon-spring-boot-starter`
+| `extensions/axon-spring-boot-starter`
+
+| Dropwizard Metrics integration.
+| `axon-metrics`
+| `extensions/axon-metrics-dropwizard`
+
+| Micrometer integration.
+| `axon-micrometer`
+| `extensions/axon-metrics-micrometer`
+
+| OpenTelemetry tracing support.
+| `axon-tracing-opentelemetry`
+| `extensions/axon-tracing-opentelemetry`
+|===
+
+Users should update their dependency management (Maven/Gradle) to reflect these changes. Note that the modules in `extensions` have moved to a different group ID (`org.axonframework.extensions.*`) as well.
+
+=== Axon Framework BOM
+
+For ease of dependency management, it is highly recommended to use the Axon Framework Bill of Materials (BOM). This ensures that all Axon modules in your project use the same compatible version.
+
+
+[source,xml]
+----
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-framework-bom</artifactId>
+            <version>${axon.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+----
+
+== What is not yet there
+
+As Axon Framework 5.0 is the first step in this new major version, not all features from the 4.x lineage have been fully migrated or redesigned yet.
+
+- **Saga & Deadline Overhaul**: Sagas and Deadlines do not have a native "async-native" replacement yet. A full redesign is in progress.
+- **Event Upcasters**: Event upcasting is not yet available.
+- **Snapshots**: The snapshotting feature for entities is not yet available. Currently scheduled for 5.1.
+- **Dead-Letter Queue (DLQ)**: Support for DLQs in event processors is not yet available.
+- **Event Replaying**: The ability to replay events for streaming event processors is not yet implemented.
+- **Multiple Event Sources**: `MultiStreamableEventSource` support is not yet available. Currently scheduled for 5.1.
+- **Annotated Features (Coming in 5.2.0)**:
+    *   **Timeouts**: Built-in timeout support for message handlers and processing contexts.
+    *   **Interceptors**: Declarative and annotated interceptor support for message handling components.
+    *   **Exception Handling**: Annotated exception handling support (`@ExceptionHandler`).
+- **Extensions**: Specialized external extensions are not yet migrated to support Axon Framework 5.x yet. As these are community-driven, their availability may vary.
+
+If your application relies heavily on these features, we recommend checking the release notes for future 5.x versions or contacting us for guidance.
+
+== Missing a migration path?
+
+We aim to cover the most common migration scenarios in the following subsections. However, every application is unique.
+
+If you find that your specific migration challenge is not addressed here, or if you encounter an undocumented breaking change, please:
+
+1.  **Contact Us**: Reach out via the link:https://discuss.axoniq.io/[Axon Community Forum].
+2.  **Open an Issue**: Let us know by opening a documentation issue on our link:https://github.com/AxonFramework/AxonFramework/issues[GitHub repository].
+
+Your feedback helps us make this guide better for everyone!
+

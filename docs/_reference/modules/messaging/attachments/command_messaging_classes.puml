@@ -1,0 +1,22 @@
+' This is a fragment of a diagram
+' It is meant to be used together with generic_messaging_classes.puml
+
+package "command messages" <<Folder>> {
+  interface CommandMessage<T> {
+    -commandName: String
+  }
+
+  class GenericCommandMessage<T> {}
+
+  class GenericCommandResultMessage<T>{}
+
+  interface CommandResultMessage<T> {}
+
+}
+
+CommandMessage --|> Message
+GenericCommandMessage ..|> CommandMessage
+GenericCommandMessage --|> MessageDecorator
+CommandResultMessage --|> ResultMessage
+GenericCommandResultMessage ..|> CommandResultMessage
+GenericCommandResultMessage --|> GenericResultMessage

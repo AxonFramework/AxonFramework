@@ -1,0 +1,1 @@
+* xref:legacy:index.adoc[]

@@ -1,0 +1,8 @@
+
+* xref:migration:index.adoc[]
+** xref:migration:why-upgrade.adoc[]
+** xref:migration:prerequisites.adoc[]
+** xref:migration:solved-architecture-choices.adoc[]
+** xref:migration:understanding-architecture-principles.adoc[]
+** xref:migration:paths/index.adoc[]
+*** xref:migration:paths/messages.adoc[]
