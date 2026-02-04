@@ -34,7 +34,7 @@ import org.axonframework.messaging.monitoring.MessageMonitor;
  * @since 5.0.3
  */
 @FunctionalInterface
-public interface MessageMonitorBuilder<M extends Message> {
+public interface MessageMonitorFactory<M extends Message> {
 
     /**
      * Builds a {@link MessageMonitor} for the specified component.

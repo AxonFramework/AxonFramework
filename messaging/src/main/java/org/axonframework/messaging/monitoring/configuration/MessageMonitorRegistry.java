@@ -65,7 +65,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *
      * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor} instance
      *                       for generic {@link Message} types
-     * @return the updated MessageMonitorRegistry instance for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance for fluent configuration
      */
     @Nonnull
     MessageMonitorRegistry registerMonitor(
@@ -73,21 +73,21 @@ public interface MessageMonitorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers a component-aware {@link MessageMonitor} for generic {@link Message} types using the supplied monitor
-     * builder.
+     * Registers a component-aware {@link MessageMonitor} for generic {@link Message} types using the given
+     * {@code monitorFactory}.
      * <p>
-     * The builder will receive the component type and name when the monitor is retrieved allowing for omponent-specific
-     * customization of the monitor. Registering a monitor per a {@link MessageMonitorBuilder} enforces construction of
-     * the monitor for every invocation of the builder, ensuring uniqueness per given typa and name. If the monitor will
+     * The factory will receive the component type and name when the monitor is retrieved allowing for omponent-specific
+     * customization of the monitor. Registering a monitor per a {@link MessageMonitorFactory} enforces construction of
+     * the monitor for every invocation of the factory, ensuring uniqueness per given type and name. If the monitor will
      * be identical regardless of the given type or name, please use {@link #registerMonitor(ComponentBuilder)}
      * instead.
      *
-     * @param monitorBuilder the {@link MessageMonitorBuilder} responsible for creating the {@link MessageMonitor}
+     * @param monitorFactory the {@link MessageMonitorFactory} responsible for creating the {@link MessageMonitor}
      *                       instance for generic {@link Message} types
-     * @return the updated MessageMonitorRegistry instance for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance for fluent configuration
      */
     @Nonnull
-    MessageMonitorRegistry registerMonitor(final @Nonnull MessageMonitorBuilder<Message> monitorBuilder);
+    MessageMonitorRegistry registerMonitor(final @Nonnull MessageMonitorFactory<Message> monitorFactory);
 
     /**
      * Registers a {@link MessageMonitor} specifically for monitoring the processing of {@link CommandMessage}
@@ -97,7 +97,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *
      * @param monitorBuilder the {@link ComponentBuilder} used to create the {@link MessageMonitor} instance for
      *                       {@link CommandMessage} types
-     * @return the updated MessageMonitorRegistry instance, allowing for a fluent configuration approach
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerCommandMonitor(
@@ -106,21 +106,21 @@ public interface MessageMonitorRegistry extends DescribableComponent {
 
     /**
      * Registers a component-aware {@link MessageMonitor} specifically for monitoring the processing of
-     * {@link CommandMessage} instances.
+     * {@link CommandMessage} instances using the given {@code monitorFactory}.
      * <p>
-     * The builder will receive the component type and name when the monitor is retrieved allowing for
-     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorBuilder}
-     * enforces construction of the monitor for every invocation of the builder, ensuring uniqueness per given typa and
+     * The factory will receive the component type and name when the monitor is retrieved allowing for
+     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorFactory}
+     * enforces construction of the monitor for every invocation of the factory, ensuring uniqueness per given type and
      * name. If the monitor will be identical regardless of the given type or name, please use
      * {@link #registerCommandMonitor(ComponentBuilder)} instead.
      *
-     * @param monitorBuilder the {@link MessageMonitorBuilder} used to create the {@link MessageMonitor} instance for
+     * @param monitorFactory the {@link MessageMonitorFactory} used to create the {@link MessageMonitor} instance for
      *                       {@link CommandMessage} types
-     * @return the updated MessageMonitorRegistry instance, allowing for a fluent configuration approach
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerCommandMonitor(
-            final @Nonnull MessageMonitorBuilder<? super CommandMessage> monitorBuilder
+            final @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
     );
 
     /**
@@ -130,7 +130,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *
      * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor} instance
      *                       for {@link EventMessage} types
-     * @return the updated MessageMonitorRegistry instance, allowing fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerEventMonitor(
@@ -138,22 +138,22 @@ public interface MessageMonitorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers a component-aware {@link MessageMonitor} specific for {@link EventMessage} types using the supplied
-     * monitor builder.
+     * Registers a component-aware {@link MessageMonitor} specifically for monitoring the processing of
+     * {@link EventMessage} instances using the given {@code monitorFactory}.
      * <p>
-     * The builder will receive the component type and name when the monitor is retrieved allowing for
-     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorBuilder}
-     * enforces construction of the monitor for every invocation of the builder, ensuring uniqueness per given typa and
+     * The factory will receive the component type and name when the monitor is retrieved allowing for
+     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorFactory}
+     * enforces construction of the monitor for every invocation of the factory, ensuring uniqueness per given type and
      * name. If the monitor will be identical regardless of the given type or name, please use
      * {@link #registerEventMonitor(ComponentBuilder)} instead.
      *
-     * @param monitorBuilder the {@link MessageMonitorBuilder} responsible for creating the {@link MessageMonitor}
+     * @param monitorFactory the {@link MessageMonitorFactory} responsible for creating the {@link MessageMonitor}
      *                       instance for {@link EventMessage} types
-     * @return the updated MessageMonitorRegistry instance, allowing fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerEventMonitor(
-            final @Nonnull MessageMonitorBuilder<? super EventMessage> monitorBuilder
+            final @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
     );
 
     /**
@@ -164,7 +164,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *
      * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor} for
      *                       {@link QueryMessage} types
-     * @return the updated {@code MessageMonitorRegistry} instance, allowing for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerQueryMonitor(
@@ -172,22 +172,22 @@ public interface MessageMonitorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers a component-aware {@link MessageMonitor} specifically for {@link QueryMessage} types using the provided
-     * {@link MessageMonitorBuilder}.
+     * Registers a component-aware {@link MessageMonitor} specifically for monitoring the processing of
+     * {@link QueryMessage} instances using the given {@code monitorFactory}.
      * <p>
-     * The builder will receive the component type and name when the monitor is retrieved allowing for
-     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorBuilder}
-     * enforces construction of the monitor for every invocation of the builder, ensuring uniqueness per given typa and
+     * The factory will receive the component type and name when the monitor is retrieved allowing for
+     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorFactory}
+     * enforces construction of the monitor for every invocation of the factory, ensuring uniqueness per given type and
      * name. If the monitor will be identical regardless of the given type or name, please use
      * {@link #registerQueryMonitor(ComponentBuilder)} instead.
      *
-     * @param monitorBuilder the {@link MessageMonitorBuilder} responsible for creating the {@link MessageMonitor} for
+     * @param monitorFactory the {@link MessageMonitorFactory} responsible for creating the {@link MessageMonitor} for
      *                       {@link QueryMessage} types
-     * @return the updated {@code MessageMonitorRegistry} instance, allowing for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerQueryMonitor(
-            final @Nonnull MessageMonitorBuilder<? super QueryMessage> monitorBuilder);
+            final @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types using the
@@ -197,36 +197,37 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *
      * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor} for
      *                       {@link SubscriptionQueryUpdateMessage} types
-     * @return the updated {@code MessageMonitorRegistry} instance, allowing for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
             final @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
     );
+
     /**
-     * Registers a component-aware {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types
-     * using the provided {@link MessageMonitorBuilder}.
+     * Registers a component-aware {@link MessageMonitor} specifically for monitoring the processing of
+     * {@link SubscriptionQueryUpdateMessage} instances using the given {@code monitorFactory}.
      * <p>
-     * The builder will receive the component type and name when the monitor is retrieved allowing for
-     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorBuilder}
-     * enforces construction of the monitor for every invocation of the builder, ensuring uniqueness per given typa and
+     * The factory will receive the component type and name when the monitor is retrieved allowing for
+     * component-specific customization of the monitor. Registering a monitor per a {@link MessageMonitorFactory}
+     * enforces construction of the monitor for every invocation of the factory, ensuring uniqueness per given type and
      * name. If the monitor will be identical regardless of the given type or name, please use
      * {@link #registerSubscriptionQueryUpdateMonitor(ComponentBuilder)} instead.
      *
-     * @param monitorBuilder the {@link MessageMonitorBuilder} responsible for creating the {@link MessageMonitor} for
+     * @param monitorFactory the {@link MessageMonitorFactory} responsible for creating the {@link MessageMonitor} for
      *                       {@link SubscriptionQueryUpdateMessage} types
-     * @return the updated {@code MessageMonitorRegistry} instance, allowing for fluent configuration
+     * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     @Nonnull
     MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            final @Nonnull MessageMonitorBuilder<? super SubscriptionQueryUpdateMessage> monitorBuilder
+            final @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     );
 
     /**
      * Retrieves a {@link MessageMonitor} dedicated for monitoring {@link CommandMessage} processing for a specific
      * {@code componentType} and {@code componentName}.
      * <p>
-     * The returned monitor contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerMonitor(MessageMonitorBuilder) registered} when the generic builder returns an instance.
+     * The returned monitor contains generic {@link Message} {@code MessageMonitors} that have been
+     * {@link #registerMonitor(MessageMonitorFactory) registered} when the generic builder/factory returns an instance.
      *
      * @param config        the {@link Configuration} instance used to create the {@link MessageMonitor} instances
      * @param componentType the type of the component to retrieve a monitor for
@@ -244,8 +245,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * Retrieves a {@link MessageMonitor} specifically designed to monitor the processing of {@link EventMessage}
      * instances for a specific {@code componentType} and {@code componentName}.
      * <p>
-     * The returned monitor contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerMonitor(MessageMonitorBuilder) registered} when the generic builder returns an instance.
+     * The returned monitor contains generic {@link Message} {@code MessageMonitors} that have been
+     * {@link #registerMonitor(MessageMonitorFactory) registered} when the generic builder/factory returns an instance.
      *
      * @param config        the {@link Configuration} instance used to create or retrieve the {@link MessageMonitor}
      *                      instances
@@ -264,8 +265,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link QueryMessage} instances for a specific
      * {@code componentType} and {@code componentName}.
      * <p>
-     * The returned monitor contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerMonitor(MessageMonitorBuilder) registered} when the generic builder returns an instance.
+     * The returned monitor contains generic {@link Message} {@code MessageMonitors} that have been
+     * {@link #registerMonitor(MessageMonitorFactory) registered} when the generic builder/factory returns an instance.
      *
      * @param config        the {@link Configuration} used to create or retrieve the {@link MessageMonitor} for
      *                      {@link QueryMessage} types
@@ -284,8 +285,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link SubscriptionQueryUpdateMessage}
      * instances for a specific  {@code componentType} and {@code componentName}.
      * <p>
-     * The returned monitor contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerMonitor(MessageMonitorBuilder) registered} when the generic builder returns an instance.
+     * The returned monitor contains generic {@link Message} {@code MessageMonitors} that have been
+     * {@link #registerMonitor(MessageMonitorFactory) registered} when the generic builder/factory returns an instance.
      *
      * @param config        the {@link Configuration} used to create or retrieve the {@link MessageMonitor} for
      *                      {@link SubscriptionQueryUpdateMessage} types
