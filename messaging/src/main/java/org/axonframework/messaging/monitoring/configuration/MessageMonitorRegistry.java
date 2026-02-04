@@ -61,7 +61,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
     /**
      * Registers a {@link MessageMonitor} for generic {@link Message} types using the supplied monitor builder.
      * <p>
-     * Registering a monitor per a {@link ComponentBuilder} ensures the monitor is only build <b>once</b>.
+     * Registering a monitor per a {@link ComponentBuilder} ensures the monitor is only built <b>once</b>.
      *
      * @param monitorBuilder the {@link ComponentBuilder} responsible for creating the {@link MessageMonitor} instance
      *                       for generic {@link Message} types
