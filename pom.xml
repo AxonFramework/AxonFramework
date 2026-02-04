@@ -861,6 +861,8 @@
                         </executions>
                         <configuration>
                             <doclint>none</doclint>
+                            <legacyMode>true</legacyMode>
+                            <skippedModules>axon-integrationtests,axon-reactorless-test,axon-hibernate-6-integrationtests,axon-spring-boot3-dummy,axon-spring-boot-3-integrationtests,axon-spring-boot-4-integrationtests</skippedModules>
                             <!-- These parameters are in preparation for resolution of this issue: -->
                             <!-- https://bugs.openjdk.java.net/browse/JDK-8068562 -->
                             <tags>
