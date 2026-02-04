@@ -25,7 +25,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>axon-spring-boot-3-integrationtests</artifactId>
-    <version>4.13.0-SNAPSHOT</version>
 
     <name>Axon Framework - Spring Boot 3 Integration Tests</name>
     <description>
@@ -34,7 +33,6 @@
 
     <properties>
         <!-- Main -->
-        <axon.version>${project.version}</axon.version>
         <spring-boot-3.version>3.5.6</spring-boot-3.version>
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <!-- Database -->
@@ -51,26 +49,26 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring-boot-autoconfigure</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-spring</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -237,7 +235,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
-            <version>${axon.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
