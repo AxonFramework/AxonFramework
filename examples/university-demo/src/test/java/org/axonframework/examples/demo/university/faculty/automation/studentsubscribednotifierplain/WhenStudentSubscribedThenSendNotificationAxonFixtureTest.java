@@ -1,0 +1,54 @@
+package org.axonframework.examples.demo.university.faculty.automation.studentsubscribednotifierplain;
+
+import org.axonframework.examples.demo.university.faculty.FacultyAxonTestFixture;
+import org.axonframework.examples.demo.university.faculty.Ids;
+import org.axonframework.examples.demo.university.faculty.events.StudentSubscribedToCourse;
+import org.axonframework.examples.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.examples.demo.university.shared.configuration.NotificationServiceConfiguration;
+import org.axonframework.examples.demo.university.shared.ids.CourseId;
+import org.axonframework.examples.demo.university.shared.ids.StudentId;
+import org.axonframework.examples.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class WhenStudentSubscribedThenSendNotificationAxonFixtureTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void beforeEach() {
+        fixture = FacultyAxonTestFixture.slice(configurer -> {
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return StudentSubscribedNotifierConfiguration.configure(configurer);
+        });
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
+    @Test
+    void automationTest() {
+        var studentId = StudentId.random();
+        var courseId = CourseId.random();
+
+        var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
+
+        fixture.given()
+                .events(new StudentSubscribedToCourse(Ids.FACULTY_ID, studentId, courseId))
+                .then()
+                .await(r -> r.expect(cfg -> assertNotificationSent(cfg, expectedNotification)));
+    }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification);
+    }
+
+}

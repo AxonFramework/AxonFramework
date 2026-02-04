@@ -1,0 +1,72 @@
+package org.axonframework.examples.demo.university.faculty.write.subscribestudentmulti;
+
+import org.axonframework.examples.demo.university.faculty.FacultyTags;
+import org.axonframework.examples.demo.university.faculty.Ids;
+import org.axonframework.examples.demo.university.faculty.events.StudentSubscribedToCourse;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.modelling.annotation.InjectEntity;
+
+import java.util.List;
+
+class SubscribeStudentToCourseCommandHandler {
+
+    private static final int MAX_COURSES_PER_STUDENT = 3;
+
+    @CommandHandler
+    void handle(
+            SubscribeStudentToCourse command,
+            @InjectEntity(idProperty = FacultyTags.COURSE_ID) Course course,
+            @InjectEntity(idProperty = FacultyTags.STUDENT_ID) Student student,
+            EventAppender eventAppender
+    ) {
+        var events = decide(command, course, student);
+        eventAppender.append(events);
+    }
+
+    private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, Course course, Student student) {
+        assertStudentEnrolledFaculty(student);
+        assertStudentNotSubscribedToTooManyCourses(student);
+        assertCourseExists(course);
+        assertEnoughVacantSpotsInCourse(course);
+        assertStudentNotAlreadySubscribed(course, student);
+
+        return List.of(new StudentSubscribedToCourse(Ids.FACULTY_ID, command.studentId(), command.courseId()));
+    }
+
+    private void assertStudentEnrolledFaculty(Student student) {
+        var studentId = student.id();
+        if (studentId == null) {
+            throw new RuntimeException("Student with given id never enrolled the faculty");
+        }
+    }
+
+    private void assertStudentNotSubscribedToTooManyCourses(Student student) {
+        var noOfCoursesStudentSubscribed = student.subscribedCourses().size();
+        if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
+            throw new RuntimeException("Student subscribed to too many courses");
+        }
+    }
+
+    private void assertEnoughVacantSpotsInCourse(Course course) {
+        var noOfStudentsSubscribedToCourse = course.studentsSubscribed().size();
+        var courseCapacity = course.capacity();
+        if (noOfStudentsSubscribedToCourse >= courseCapacity) {
+            throw new RuntimeException("Course is fully booked");
+        }
+    }
+
+    private void assertStudentNotAlreadySubscribed(Course course, Student student) {
+        var alreadySubscribed = course.studentsSubscribed().contains(student.id());
+        if (alreadySubscribed) {
+            throw new RuntimeException("Student already subscribed to this course");
+        }
+    }
+
+    private void assertCourseExists(Course course) {
+        var courseId = course.id();
+        if (courseId == null) {
+            throw new RuntimeException("Course with given id does not exist");
+        }
+    }
+}
