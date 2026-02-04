@@ -283,6 +283,7 @@ As Axon Framework 5.0 is the first step in this new major version, not all featu
 
 If your application relies heavily on these features, we recommend checking the release notes for future 5.x versions or contacting us for guidance.
 
+[#missing-a-migration-path]
 == Missing a migration path?
 
 We aim to cover the most common migration scenarios in the following subsections. However, every application is unique.

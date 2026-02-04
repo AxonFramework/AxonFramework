@@ -5,15 +5,14 @@ When migrating from Axon Framework 4 to Axon Framework 5, the configuration of a
 
 == `EventSourcedEntityModule` instead of `AggregateConfigurer`
 
-The declarative configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of Axon Framework 5.
+The configuration of entities now uses the `EventSourcedEntityModule` instead of `AggregateConfigurer`. This aligns with the new modular configuration architecture of Axon Framework 5.
 
 [source,java]
 ----
 // Axon Framework 5
 public void configure(EventSourcingConfigurer configurer) {
     configurer.modelling().registerEventSourcedEntity(
-        EventSourcedEntityModule.repository(GiftCard.class)
-                                .entityIdResolver(new MyCustomIdResolver())
+        EventSourcedEntityModule.autodetected(String.class, GiftCard.class)
     );
 }
 ----
@@ -44,14 +43,6 @@ public class GiftCard {
 
 Also, `@AggregateMember` is replaced by `@EntityMember` for child entities within an aggregate, see the xref:migration:paths/aggregates/multi-entity-migration.adoc[multi-entity migration] section for more details.
 
-The `@EventSourced` annotation in Axon Framework 5 maintains full compatibility with the attributes previously available in the `@Aggregate` annotation. All configuration options you might have used in AF4 are still present and function similarly:
-
-* `type`: Used to specify the aggregate type name (defaults to the class name).
-* `idType`: Defines the class of the aggregate identifier.
-* `tagKey`: The key used for event criteria when resolving the aggregate state.
-* `concreteTypes`: Specifies concrete implementations for polymorphic aggregates.
-* `criteriaResolverDefinition`: Customizes how event criteria are resolved.
-* `entityFactoryDefinition`: Overrides the default entity factory behavior.
-* `entityIdResolverDefinition`: Defines a custom strategy for resolving the entity ID from commands.
-
-These attributes are now internally aliased to the `@EventSourcedEntity` meta-annotation, ensuring a seamless transition for Spring-based configurations.
+[IMPORTANT]
+.
+The `@EventSourced` annotation in Axon Framework 5/Spring Boot is the configuration replacement for `@Aggregate`, but not a fully functional/feature replacement, as attributes you may have used in AF4 (like caching, snapshotting, ...) are no longer supported. xref:migration:paths/index.adoc#missing-a-migration-path[Contact us] if you require these use-cases.

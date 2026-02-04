@@ -295,15 +295,7 @@ public static void handle(IssueGiftCard cmd,
 
 * *`CreationPolicy.NEVER`*
 +
-For commands that should never create a new instance, use a static handler that fails and doesn't append any events.
-+
-[source,java]
-----
-@CommandHandler
-public static void handle(IssueGiftCard cmd) {
-    throw new IllegalStateException("Do not create!");
-}
-----
+New entites are created when a command appends an event that can be routed to an `@EntityCreator`. So any `@CommandHandler` that does not append such an event will implicitly follow the `NEVER` policy.
 
 [#see-also]
 == See also
