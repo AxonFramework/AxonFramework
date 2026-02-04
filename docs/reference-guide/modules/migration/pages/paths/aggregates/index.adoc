@@ -205,7 +205,7 @@ public class GiftCard {
 [#entitycreator-annotation]
 === Patterns of `@EntityCreator` usage
 
-There are three common patterns for using `@EntityCreator` you need to understand and apply to your setup:
+There are three common patterns for using `@EntityCreator` that you can apply to your setup based on preference:
 
 * **Pattern 1: No-arg constructor** (Recommended for most migrations)
 +
