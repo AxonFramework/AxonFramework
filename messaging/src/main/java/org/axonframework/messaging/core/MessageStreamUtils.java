@@ -36,6 +36,16 @@ public abstract class MessageStreamUtils {
     }
 
     /**
+     * A reusable no-operation {@code Runnable} instance.
+     * <p>
+     * This constant can be used in contexts where a non-null callback is required, but no specific action
+     * needs to be performed. When executed, it performs no operation and immediately returns.
+     */
+    public static final Runnable NO_OP_CALLBACK = () -> {
+    };
+
+
+    /**
      * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the
      * {@code source}. The reduction is computed by applying the given {@code accumulator} function on the result of the
      * previous invocation in combination with each {@link MessageStream.Entry entry} returned by the given

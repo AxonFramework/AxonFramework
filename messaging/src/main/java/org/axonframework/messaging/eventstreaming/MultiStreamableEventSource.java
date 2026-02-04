@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
+import org.axonframework.messaging.core.DelegatingMessageStream;
 import org.axonframework.messaging.core.MergedMessageStream;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -265,20 +266,19 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         }
     }
 
-    private class MultiStreamEventStream implements MessageStream<EventMessage> {
+    private class MultiStreamEventStream extends DelegatingMessageStream<EventMessage, EventMessage> {
 
         private final AtomicReference<MultiSourceTrackingToken> currentToken;
-        private final MessageStream<EventMessage> delegate;
 
         public MultiStreamEventStream(
                 MultiSourceTrackingToken token, MessageStream<EventMessage> delegate) {
+            super(delegate);
             this.currentToken = new AtomicReference<>(token);
-            this.delegate = delegate;
         }
 
         @Override
         public Optional<Entry<EventMessage>> next() {
-            return delegate.next().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
+            return delegate().next().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
                                                            currentToken.updateAndGet(t -> t.advancedTo(e.getResource(
                                                                                                                SOURCE_ID_RESOURCE),
                                                                                                        e.getResource(
@@ -287,35 +287,10 @@ public class MultiStreamableEventSource implements StreamableEventSource {
 
         @Override
         public Optional<Entry<EventMessage>> peek() {
-            return delegate.peek().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
+            return delegate().peek().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
                                                            currentToken.get()
                                                                        .advancedTo(e.getResource(SOURCE_ID_RESOURCE),
                                                                                    e.getResource(TrackingToken.RESOURCE_KEY))));
-        }
-
-        @Override
-        public void setCallback(@Nonnull Runnable callback) {
-            delegate.setCallback(callback);
-        }
-
-        @Override
-        public Optional<Throwable> error() {
-            return delegate.error();
-        }
-
-        @Override
-        public boolean isCompleted() {
-            return delegate.isCompleted();
-        }
-
-        @Override
-        public boolean hasNextAvailable() {
-            return delegate.hasNextAvailable();
-        }
-
-        @Override
-        public void close() {
-            delegate.close();
         }
     }
 }

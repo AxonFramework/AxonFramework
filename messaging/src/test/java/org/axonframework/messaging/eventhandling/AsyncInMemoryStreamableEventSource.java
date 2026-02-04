@@ -18,17 +18,17 @@ package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.SimpleEntry;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -44,6 +44,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
@@ -224,8 +226,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     private class AsyncMessageStream implements MessageStream<EventMessage> {
 
         private final AtomicLong currentPosition;
-        private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-        });
+        private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
         private final StreamingCondition condition;
         private volatile boolean closed = false;
 

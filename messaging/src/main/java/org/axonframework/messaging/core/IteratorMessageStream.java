@@ -29,11 +29,10 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class IteratorMessageStream<M extends Message> implements MessageStream<M> {
+class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
     private final Iterator<? extends Entry<M>> source;
     private Entry<M> peeked = null;
-    private Throwable error = null;
 
     /**
      * Constructs a {@link MessageStream stream} using the given {@code source} to provide the {@link Entry entries}.
@@ -46,7 +45,7 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
-        if (error != null) {
+        if (error().isPresent()) {
             return Optional.empty();
         }
         if (peeked != null) {
@@ -57,12 +56,16 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
         if (source.hasNext()) {
             return Optional.of(source.next());
         } else {
+            complete();
             return Optional.empty();
         }
     }
 
     @Override
     public Optional<Entry<M>> peek() {
+        if (error().isPresent()) {
+            return Optional.empty();
+        }
         if (peeked != null) {
             return Optional.of(peeked);
         }
@@ -74,30 +77,21 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        try {
-            callback.run();
-        } catch (Throwable e) {
-            error = e;
-        }
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return Optional.ofNullable(error);
-    }
-
-    @Override
     public boolean isCompleted() {
-        return (peeked == null && !source.hasNext()) || error != null;
+        return super.isCompleted();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return (peeked != null || source.hasNext()) && error == null;
+        boolean hasNext = error().isEmpty() && (peeked != null || source.hasNext());
+        if (!hasNext && error().isEmpty()) {
+            complete();
+        }
+        return hasNext;
     }
 
     @Override
     public void close() {
+        //complete();
     }
 }
