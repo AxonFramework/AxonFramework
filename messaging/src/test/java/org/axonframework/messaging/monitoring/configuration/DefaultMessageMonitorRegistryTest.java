@@ -81,12 +81,12 @@ class DefaultMessageMonitorRegistryTest {
             return testMonitor;
         });
 
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
         MessageMonitor<? super CommandMessage> commandMonitor =
                 result.commandMonitor(config, CommandBus.class, null);
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
-        commandMonitor = result.commandMonitor(config, CommandBus.class, null);
-        commandMonitor = result.commandMonitor(config, CommandBus.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
+        commandMonitor = result.commandMonitor(config, CommandBus.class, "this-name");
+        commandMonitor = result.commandMonitor(config, CommandBus.class, "that-name");
         assertThat(commandMonitor).isEqualTo(testMonitor);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
@@ -147,12 +147,12 @@ class DefaultMessageMonitorRegistryTest {
             return testMonitor;
         });
 
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
         MessageMonitor<? super EventMessage> eventMonitor =
                 result.eventMonitor(config, EventSink.class, null);
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
-        eventMonitor = result.eventMonitor(config, EventSink.class, null);
-        eventMonitor = result.eventMonitor(config, EventSink.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
+        eventMonitor = result.eventMonitor(config, EventSink.class, "this-name");
+        eventMonitor = result.eventMonitor(config, EventSink.class, "that-name");
         assertThat(eventMonitor).isEqualTo(testMonitor);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
@@ -213,12 +213,12 @@ class DefaultMessageMonitorRegistryTest {
             return testMonitor;
         });
 
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
         MessageMonitor<? super QueryMessage> queryMonitor =
                 result.queryMonitor(config, QueryBus.class, null);
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
-        queryMonitor = result.queryMonitor(config, QueryBus.class, null);
-        queryMonitor = result.queryMonitor(config, QueryBus.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
+        queryMonitor = result.queryMonitor(config, QueryBus.class, "this-name");
+        queryMonitor = result.queryMonitor(config, QueryBus.class, "that-name");
         assertThat(queryMonitor).isEqualTo(testMonitor);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
@@ -280,12 +280,12 @@ class DefaultMessageMonitorRegistryTest {
             return testMonitor;
         });
 
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
         MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor =
                 result.subscriptionQueryUpdateMonitor(config, QueryBus.class, null);
-        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
-        subscriptionQueryUpdateMonitor = result.subscriptionQueryUpdateMonitor(config, QueryBus.class, null);
-        subscriptionQueryUpdateMonitor = result.subscriptionQueryUpdateMonitor(config, QueryBus.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once, regardless of input.
+        subscriptionQueryUpdateMonitor = result.subscriptionQueryUpdateMonitor(config, QueryBus.class, "this-name");
+        subscriptionQueryUpdateMonitor = result.subscriptionQueryUpdateMonitor(config, QueryBus.class, "that-name");
         assertThat(subscriptionQueryUpdateMonitor).isEqualTo(testMonitor);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
