@@ -46,6 +46,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     private Method nonDeadLetterParameterMethod;
     private Method deadLetterMethod;
+    private Method eventWithDeadLetterMethod;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -53,6 +54,7 @@ class DeadLetterParameterResolverFactoryTest {
 
         nonDeadLetterParameterMethod = getClass().getMethod("nonDeadLetterParameterMethod", Object.class);
         deadLetterMethod = getClass().getMethod("someDeadLetterMethod", DeadLetter.class);
+        eventWithDeadLetterMethod = getClass().getMethod("eventWithDeadLetterMethod", String.class, DeadLetter.class);
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})
@@ -62,6 +64,11 @@ class DeadLetterParameterResolverFactoryTest {
 
     @SuppressWarnings({"unused", "WeakerAccess"})
     public void someDeadLetterMethod(DeadLetter<?> deadLetter) {
+        // Used in setUp()
+    }
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
+    public void eventWithDeadLetterMethod(String event, DeadLetter<EventMessage> deadLetter) {
         // Used in setUp()
     }
 
@@ -78,6 +85,28 @@ class DeadLetterParameterResolverFactoryTest {
         @Test
         void createsResolverForDeadLetterParameterContainingMethod() {
             assertNotNull(testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0));
+        }
+
+        @Test
+        void ignoredForEventParameterInMethodWithDeadLetter() {
+            // given / when
+            var result = testSubject.createInstance(eventWithDeadLetterMethod,
+                                                    eventWithDeadLetterMethod.getParameters(),
+                                                    0);
+
+            // then
+            assertNull(result);
+        }
+
+        @Test
+        void createsResolverForDeadLetterAsSecondParameter() {
+            // given / when
+            var result = testSubject.createInstance(eventWithDeadLetterMethod,
+                                                    eventWithDeadLetterMethod.getParameters(),
+                                                    1);
+
+            // then
+            assertNotNull(result);
         }
     }
 
@@ -140,6 +169,29 @@ class DeadLetterParameterResolverFactoryTest {
 
             // then
             assertNull(result);
+        }
+
+        @Test
+        void resolvesDeadLetterAsSecondParameterFromProcessingContext() {
+            // given
+            EventMessage testMessage = EventTestUtils.asEventMessage("some-event");
+            DeadLetter<EventMessage> expected = new GenericDeadLetter<>(
+                    "sequenceId", testMessage, new RuntimeException("some-cause")
+            );
+            ProcessingContext context = StubProcessingContext.forMessage(testMessage)
+                    .withResource(DeadLetter.RESOURCE_KEY, expected);
+
+            ParameterResolver<DeadLetter<?>> resolver =
+                    testSubject.createInstance(eventWithDeadLetterMethod,
+                                               eventWithDeadLetterMethod.getParameters(),
+                                               1);
+            assertNotNull(resolver);
+
+            // when
+            var result = resolver.resolveParameterValue(context).join();
+
+            // then
+            assertEquals(expected, result);
         }
     }
 }
