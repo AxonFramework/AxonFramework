@@ -30,6 +30,7 @@ The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the
 You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
 The `MetricsConfigurationEnhancer` contained in both the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
 
+[[monitor-defaults]]
 The following table shows the default `MessageMonitor` implementations registered for each component type, including the registered metric's name:
 
 [cols="1,2,2", options="header"]
@@ -107,7 +108,7 @@ implementation 'org.axonframework.extensions.metrics:axon-metrics-dropwizard:${a
 --
 ====
 
-With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+With the dependency in place the <<monitor-defaults,default>> `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
 If you need to specify the `MetricRegistry` used, please check the following examples:
 
 [tabs]
@@ -184,7 +185,7 @@ implementation 'org.axonframework.extensions.metrics:axon-metrics-micrometer:${a
 --
 ====
 
-With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+With the dependency in place the <<monitor-defaults,default>> `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
 If you are using an automated configuration flow, as with Spring, be sure to set the following properties:
 
 [source,properties]
