@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Implementation of the {@link ConfigurationEnhancer} that uses the {@link MetricRegistry} to decorate several
  * components with {@link MessageMonitor MessageMonitors} with unique {@code MetricRegistries} by registering
- * {@link org.axonframework.messaging.monitoring.configuration.MessageMonitorBuilder MessageMonitorBuilders} with the
+ * {@link org.axonframework.messaging.monitoring.configuration.MessageMonitorFactory MessageMonitorFactories} with the
  * {@link MessageMonitorRegistry}.
  * <p>
  * Components that are decorated are:
