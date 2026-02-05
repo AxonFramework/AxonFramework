@@ -25,7 +25,10 @@ Note that xref:events:event-processors/streaming.adoc#replaying-events[triggerin
 . `MessageCountingMonitor` - Counts the number of ingested, successful, failed, ignored and processed messages.
 . `MessageTimerMonitor` - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.
 
-The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`. This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.
+The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`.
+This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component.
+This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support.
+As a result, any measurement can be tagged with the payload type automatically.
 
 You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
 The `MetricsConfigurationEnhancer` contained in both the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
@@ -33,7 +36,7 @@ The `MetricsConfigurationEnhancer` contained in both the `axon-metrics-dropwizar
 [[monitor-defaults]]
 The following table shows the default `MessageMonitor` implementations registered for each component type, including the registered metric's name:
 
-[cols="1,2,2", options="header"]
+[cols="1,2,2",options="header"]
 |===
 | Component Type | Default Message Monitors | Metric Name Pattern
 
@@ -70,6 +73,7 @@ For configuring `MessageMonitors` in your application, please read the section f
 .Spring Boot Property-based disabling
 ====
 When using Spring Boot, you can disable metrics entirely by setting the following property:
+
 [source,text]
 ----
 axon.metrics.enabled=false
@@ -198,7 +202,9 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
 
-Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages. By default, dimensions are enabled.
+Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements.
+This allows you to filter the measurements on, for example, the payload type of messages.
+By default, dimensions are enabled.
 If you want to adjust this, please check the following examples:
 
 [tabs]
