@@ -88,7 +88,7 @@ class MonitorRegistrationWithMessagingConfigurerTest {
     }
 
     @Test
-    void registerMessageMonitorBuilderMakesMonitorRetrievableThroughTheMonitorRegistryForTheExpectedTypeAndName() {
+    void registerMessageMonitorFactoryMakesMonitorRetrievableThroughTheMonitorRegistryForTheExpectedTypeAndName() {
         AtomicInteger counter = new AtomicInteger();
         AtomicReference<Class<?>> givenType = new AtomicReference<>();
         AtomicReference<String> givenName = new AtomicReference<>();
