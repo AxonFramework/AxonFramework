@@ -63,7 +63,7 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
     private final MetricRegistry registry;
 
     /**
-     * Initializes a new {@code MetricsConfigurerModule} constructing {@link MessageMonitor MessageMonitors} that are
+     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that are
      * registered with a new {@link MetricRegistry} with default settings.
      */
     public MetricsConfigurationEnhancer() {
