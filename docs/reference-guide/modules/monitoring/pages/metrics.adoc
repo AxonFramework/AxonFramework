@@ -321,33 +321,32 @@ class MetricsConfiguration {
 }
 ----
 
-If registering `MessageMonitors` per message type is not fine-grained enough, we recommend the registration of a component decorator. Axon's decorator registration allows you to wrap infrastructure components with custom logic, including monitoring. It is actually how Axon Framework itself attaches the `MessageMonitors` as a special type of xref:messaging-concepts:message-intercepting.adoc[interceptor] to the right infrastructure components.
+If registering `MessageMonitors` per message type is not fine-grained enough, we recommend the registration of a `MessageMonitorFactory`.
+A `MessageMonitorFactory` is a functional interface that builds a `MessageMonitor` for a specific component type and component name.
+This allows for fine-grained control over which monitors are created based on the component being monitored.
+It is this `MessageMonitorFactory` which Axon Framework uses to set the <<monitor-defaults,default monitors>> in the `MetricsConfigurationEnhancer`.
 
-The following example shows how to create register a decorator specifically for an `EventSink` to include a specific `MessageMonitor`:
+The following example shows how to register a `MessageMonitorFactory` that only creates a monitor for a specific `EventProcessor`:
 
 [source,java]
 ----
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.InterceptingEventSink;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.interception.MonitoringEventDispatchInterceptor;
-
-import java.util.List;
 
 class AxonConfig {
 
-    public void registerMonitorDecorator(MessagingConfigurer configurer,
-                                         MessageMonitor<? super EventMessage> eventMonitor) {
-        configurer.componentRegistry(componentRegistry -> componentRegistry.registerDecorator(
-                EventSink.class,
-                0,
-                (config, name, delegate) -> new InterceptingEventSink(
-                        delegate,
-                        List.of(new MonitoringEventDispatchInterceptor(eventMonitor))
-                )
-        ));
+    public void registerEventProcessorMonitorFactory(MessagingConfigurer configurer) {
+        configurer.registerEventMonitor((config, componentType, componentName) -> {
+            // Only create a monitor for EventProcessors with a specific name
+            if (EventProcessor.class.isAssignableFrom(componentType)
+                    && "my-processor".equals(componentName)) {
+                return new MyCustomEventMonitor();
+            }
+            // Return null to skip monitoring for other components
+            return null;
+        });
     }
 }
 ----
