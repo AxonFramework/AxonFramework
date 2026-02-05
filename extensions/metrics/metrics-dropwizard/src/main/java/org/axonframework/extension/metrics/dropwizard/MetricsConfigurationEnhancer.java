@@ -71,7 +71,7 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
     }
 
     /**
-     * Initializes a new {@code MetricsConfigurerModule} constructing {@link MessageMonitor MessageMonitors} that are
+     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that are
      * registered with the given {@code registry}.
      *
      * @param registry the {@link MetricRegistry} which will record the metrics
