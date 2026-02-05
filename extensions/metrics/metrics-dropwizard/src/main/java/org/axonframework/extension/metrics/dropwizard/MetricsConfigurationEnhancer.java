@@ -85,38 +85,56 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
         registry.registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerCommandMonitor(
-                        (c, componentType, componentName) -> componentType.isAssignableFrom(CommandBus.class)
-                                ? constructHandlerMonitor(resolveToMonitorName(componentType, componentName))
-                                : NoOpMessageMonitor.instance()
-                )
+                        (c, componentType, componentName) -> {
+                            if (CommandBus.class.isAssignableFrom(componentType)) {
+                                return constructHandlerMonitor(resolveToMonitorName(componentType, componentName));
+                            } else {
+                                return NoOpMessageMonitor.instance();
+                            }
+                        })
         ).registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerEventMonitor(
-                        (c, componentType, componentName) -> componentType.isAssignableFrom(EventSink.class)
-                                ? constructEventSinkMonitors(resolveToMonitorName(componentType, componentName))
-                                : NoOpMessageMonitor.instance()
-                )
+                        (c, componentType, componentName) -> {
+                            if (EventSink.class.isAssignableFrom(componentType)) {
+                                return constructEventSinkMonitors(resolveToMonitorName(componentType, componentName));
+                            } else {
+                                return NoOpMessageMonitor.instance();
+                            }
+                        })
         ).registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerQueryMonitor(
-                        (c, componentType, componentName) -> componentType.isAssignableFrom(QueryBus.class)
-                                ? constructHandlerMonitor(resolveToMonitorName(componentType, componentName))
-                                : NoOpMessageMonitor.instance()
-                )
+                        (c, componentType, componentName) -> {
+                            if (QueryBus.class.isAssignableFrom(componentType)) {
+                                return constructHandlerMonitor(resolveToMonitorName(componentType, componentName));
+                            } else {
+                                return NoOpMessageMonitor.instance();
+                            }
+                        })
         ).registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerEventMonitor(
-                        (c, componentType, componentName) -> componentType.isAssignableFrom(EventProcessor.class)
-                                ? constructEventProcessorMonitors(resolveToMonitorName(componentType, componentName))
-                                : NoOpMessageMonitor.instance()
-                )
+                        (c, componentType, componentName) -> {
+                            if (EventProcessor.class.isAssignableFrom(componentType)) {
+                                return constructEventProcessorMonitors(resolveToMonitorName(componentType,
+                                                                                            componentName));
+                            } else {
+                                return NoOpMessageMonitor.instance();
+                            }
+                        })
         ).registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerSubscriptionQueryUpdateMonitor(
-                        (c, componentType, componentName) -> componentType.isAssignableFrom(QueryBus.class)
-                                ? constructHandlerMonitor(resolveToMonitorName(componentType, componentName) + "-emitter")
-                                : NoOpMessageMonitor.instance()
-                )
+                        (c, componentType, componentName) -> {
+                            if (QueryBus.class.isAssignableFrom(componentType)) {
+                                return constructHandlerMonitor(
+                                        resolveToMonitorName(componentType, componentName) + "-emitter"
+                                );
+                            } else {
+                                return NoOpMessageMonitor.instance();
+                            }
+                        })
         );
     }
 
