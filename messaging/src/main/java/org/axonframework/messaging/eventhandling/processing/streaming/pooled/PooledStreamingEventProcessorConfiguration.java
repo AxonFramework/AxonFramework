@@ -106,25 +106,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
     private List<MessageHandlerInterceptor<? super EventMessage>> psepInterceptors;
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
-                                          .onMessageIngested(eventMessage).reportIgnored();
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
-
-    /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
-     * global default values.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public PooledStreamingEventProcessorConfiguration() {
-        super();
-    }
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} copying properties from the given
@@ -654,6 +638,12 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 

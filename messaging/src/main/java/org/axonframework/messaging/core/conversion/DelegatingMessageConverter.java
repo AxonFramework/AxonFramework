@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Message;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -45,11 +45,6 @@ public class DelegatingMessageConverter implements MessageConverter {
      */
     public DelegatingMessageConverter(@Nonnull Converter delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
-    }
-
-    @Override
-    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
-        return delegate.canConvert(targetType, sourceType);
     }
 
     @Nullable

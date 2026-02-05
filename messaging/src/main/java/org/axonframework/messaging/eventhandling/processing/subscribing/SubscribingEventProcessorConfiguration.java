@@ -31,7 +31,6 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,23 +51,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
-                                          .onMessageIngested(eventMessage).reportIgnored();
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
-
-    /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration}.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public SubscribingEventProcessorConfiguration() {
-        super();
-    }
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration} copying properties from the given configuration.
@@ -84,6 +68,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values and retrieve global default
      * values.
      *
+     * @param base          The {@link EventProcessorConfiguration} to copy properties from.
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
@@ -107,8 +92,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                    {@link EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration eventSource(
-            @Nonnull SubscribableEventSource eventSource) {
+    public SubscribingEventProcessorConfiguration eventSource(@Nonnull SubscribableEventSource eventSource) {
         assertNonNull(eventSource, "SubscribableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
@@ -125,7 +109,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The current Builder instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration ignoredMessageHandler(
-            Consumer<? super EventMessage> ignoredMessageHandler) {
+            Consumer<? super EventMessage> ignoredMessageHandler
+    ) {
         this.ignoredMessageHandler = ignoredMessageHandler;
         return this;
     }
@@ -184,7 +169,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
         if (sepInterceptors == null) {
             sepInterceptors = new ArrayList<>();
-            sepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            sepInterceptors.addAll(super.interceptorBuilder.apply(SubscribingEventProcessor.class, processorName));
             sepInterceptors.addAll(super.interceptors);
         }
         return new ArrayList<>(sepInterceptors);
@@ -196,6 +181,12 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 

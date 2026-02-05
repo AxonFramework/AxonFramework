@@ -48,7 +48,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventBusConfigura
 import org.axonframework.messaging.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.configuration.MessageMonitorBuilder;
+import org.axonframework.messaging.monitoring.configuration.MessageMonitorFactory;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryMessage;
@@ -254,7 +254,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given generic {@link Message} {@link MessageDispatchInterceptor} factory in this
+     * Registers the given generic {@link Message} {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a generic
@@ -279,7 +279,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link CommandMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link CommandMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
@@ -304,7 +304,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link EventMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link EventMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
@@ -329,7 +329,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link QueryMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link QueryMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
@@ -354,7 +354,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given generic {@link Message} {@link MessageHandlerInterceptor} factory in this
+     * Registers the given generic {@link Message} {@link MessageHandlerInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a generic
@@ -379,7 +379,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link CommandMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link CommandMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code CommandMessage} {@code MessageHandlerInterceptor} instance.
@@ -402,7 +402,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link EventMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link EventMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code EventMessage} {@code MessageHandlerInterceptor} instance.
@@ -425,7 +425,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link QueryMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link QueryMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code QueryMessage} {@code MessageHandlerInterceptor} instance.
@@ -493,7 +493,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * Registers a {@link MessageMonitor} builder for any type of messaging component in this configuration.
      * <p>
      * If more fine-grained control is needed how and when a monitor should be created, use the
-     * {@link #registerMessageMonitor(MessageMonitorBuilder)} operation instead.
+     * {@link #registerMessageMonitor(MessageMonitorFactory)} operation instead.
      *
      * @param monitorBuilder a builder for creating a {@link MessageMonitor} instance to monitor messages.
      * @return the current instance of the {@code Configurer} for a fluent API
@@ -505,19 +505,19 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a {@link MessageMonitorBuilder message monitor builder} for any type of messaging component in this
+     * Registers a {@link MessageMonitorFactory message monitor factory} for any type of messaging component in this
      * configuration.
      * <p>
-     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * The factory receives the component's type and name for which it is invoked, ensuring unique
      * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param monitorBuilder a builder for creating a {@link MessageMonitor} instance to monitor messages
+     * @param monitorFactory a factory for creating a {@link MessageMonitor} instance to monitor messages
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerMessageMonitor(
-            @Nonnull MessageMonitorBuilder<Message> monitorBuilder
+            @Nonnull MessageMonitorFactory<Message> monitorFactory
     ) {
-        return registerWithRegistry(registry -> registry.registerMonitor(monitorBuilder));
+        return registerWithRegistry(registry -> registry.registerMonitor(monitorFactory));
     }
 
     /**
@@ -525,7 +525,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * components component in this configuration.
      * <p>
      * If more fine-grained control is needed how and when a monitor should be created, use the
-     * {@link #registerCommandMonitor(MessageMonitorBuilder)} operation instead.
+     * {@link #registerCommandMonitor(MessageMonitorFactory)} operation instead.
      *
      * @param monitorBuilder a builder for creating a {@link CommandMessage command-specific} {@link MessageMonitor}
      *                       instance
@@ -538,20 +538,20 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link CommandMessage command-specific}
+     * Registers a {@link MessageMonitorFactory message monitor factory} for {@link CommandMessage command-specific}
      * infrastructure components in this configuration.
      * <p>
-     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * The factory receives the component's type and name for which it is invoked, ensuring unique
      * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param monitorBuilder a builder for creating a {@link CommandMessage command-specific} {@link MessageMonitor}
+     * @param monitorFactory a factory for creating a {@link CommandMessage command-specific} {@link MessageMonitor}
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandMonitor(
-            @Nonnull MessageMonitorBuilder<? super CommandMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
     ) {
-        return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorBuilder));
+        return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorFactory));
     }
 
     /**
@@ -559,7 +559,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * components component in this configuration.
      * <p>
      * If more fine-grained control is needed how and when a monitor should be created, use the
-     * {@link #registerEventMonitor(MessageMonitorBuilder)} operation instead.
+     * {@link #registerEventMonitor(MessageMonitorFactory)} operation instead.
      *
      * @param monitorBuilder a builder for creating a {@link EventMessage event-specific} {@link MessageMonitor}
      *                       instance
@@ -572,27 +572,27 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link EventMessage event-specific}
+     * Registers a {@link MessageMonitorFactory message monitor factory} for {@link EventMessage event-specific}
      * infrastructure components in this configuration.
      * <p>
-     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * The factory receives the component's type and name for which it is invoked, ensuring unique
      * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param monitorBuilder a builder for creating a {@link EventMessage event-specific} {@link MessageMonitor}
+     * @param monitorFactory a factory for creating a {@link EventMessage event-specific} {@link MessageMonitor}
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventMonitor(
-            @Nonnull MessageMonitorBuilder<? super EventMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
     ) {
-        return registerWithRegistry(registry -> registry.registerEventMonitor(monitorBuilder));
+        return registerWithRegistry(registry -> registry.registerEventMonitor(monitorFactory));
     }
 
     /**
      * Registers a query monitor using the specified {@code monitorBuilder}.
      * <p>
      * If more fine-grained control is needed how and when a monitor should be created, use the
-     * {@link #registerQueryMonitor(MessageMonitorBuilder)} operation instead.
+     * {@link #registerQueryMonitor(MessageMonitorFactory)} operation instead.
      *
      * @param monitorBuilder a builder for creating a {@link QueryMessage query-specific} {@link MessageMonitor}
      *                       instance
@@ -605,27 +605,27 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a {@link MessageMonitorBuilder message monitor builder} for {@link QueryMessage query-specific}
+     * Registers a {@link MessageMonitorFactory message monitor factory} for {@link QueryMessage query-specific}
      * infrastructure components in this configuration.
      * <p>
-     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * The factory receives the component's type and name for which it is invoked, ensuring unique
      * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param monitorBuilder a builder for creating a {@link QueryMessage query-specific} {@link MessageMonitor}
+     * @param monitorFactory a factory for creating a {@link QueryMessage query-specific} {@link MessageMonitor}
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryMonitor(
-            @Nonnull MessageMonitorBuilder<? super QueryMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory
     ) {
-        return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorBuilder));
+        return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorFactory));
     }
 
     /**
      * Registers a subscription query update monitor using the specified {@code monitorBuilder}.
      * <p>
      * If more fine-grained control is needed how and when a monitor should be created, use the
-     * {@link #registerSubscriptionQueryUpdateMonitor(MessageMonitorBuilder)} operation instead.
+     * {@link #registerSubscriptionQueryUpdateMonitor(MessageMonitorFactory)} operation instead.
      *
      * @param monitorBuilder a builder for creating a
      *                       {@link SubscriptionQueryUpdateMessage subscription-update-specific} {@link MessageMonitor}
@@ -639,22 +639,22 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers a {@link MessageMonitorBuilder message monitor builder} for
+     * Registers a {@link MessageMonitorFactory message monitor factory} for
      * {@link SubscriptionQueryUpdateMessage subscription-update-specific} infrastructure components in this
      * configuration.
      * <p>
-     * The monitor builder provides the component's type and name for which it is invoked, ensuring unique
+     * The factory receives the component's type and name for which it is invoked, ensuring unique
      * {@link MessageMonitor MessageMonitors} can be constructed for the component at hand.
      *
-     * @param monitorBuilder a builder for creating a
+     * @param monitorFactory a factory for creating a
      *                       {@link SubscriptionQueryUpdateMessage subscription-update-specific} {@link MessageMonitor}
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
-            @Nonnull MessageMonitorBuilder<? super SubscriptionQueryUpdateMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     ) {
-        return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorBuilder));
+        return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorFactory));
     }
 
     private MessagingConfigurer registerWithRegistry(UnaryOperator<MessageMonitorRegistry> registration) {

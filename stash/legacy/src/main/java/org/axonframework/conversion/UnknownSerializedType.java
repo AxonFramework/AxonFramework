@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,12 @@ public class UnknownSerializedType {
      * @return {@code true} if the format is supported, otherwise {@code false}
      */
     public <T> boolean supportsFormat(Class<T> desiredFormat) {
-        return serializer.getConverter().canConvert(serializedObject.getContentType(), desiredFormat);
+        Converter converter = serializer.getConverter();
+        if (converter instanceof ChainingContentTypeConverter chainingConverter) {
+            return chainingConverter.canConvert(serializedObject.getContentType(), desiredFormat);
+        } else {
+            return false;
+        }
     }
 
     /**

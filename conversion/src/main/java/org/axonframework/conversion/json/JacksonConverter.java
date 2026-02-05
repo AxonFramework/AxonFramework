@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.slf4j.Logger;
@@ -85,19 +85,6 @@ public class JacksonConverter implements Converter {
         this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
         this.converter.registerConverter(new JsonNodeToObjectNodeConverter());
         this.converter.registerConverter(new ObjectNodeToJsonNodeConverter());
-    }
-
-    @Override
-    public boolean canConvert(@Nonnull Type sourceType,
-                              @Nonnull Type targetType) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
-                         sourceType, targetType);
-        }
-        return sourceType.equals(targetType)
-                || converter.canConvert(sourceType, targetType)
-                || converter.canConvert(sourceType, byte[].class)
-                || converter.canConvert(byte[].class, targetType);
     }
 
     @Nullable

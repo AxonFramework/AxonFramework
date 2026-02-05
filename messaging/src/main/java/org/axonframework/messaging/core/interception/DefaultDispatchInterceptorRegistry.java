@@ -41,7 +41,8 @@ import java.util.List;
  * {@link EventMessage}, and {@link QueryMessage}-specific
  * {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
  * <p>
- * This implementation ensures give interceptor factory methods are only invoked once.
+ * This implementation ensures give interceptor {@link ComponentBuilder builders} methods are only invoked <b>once</b>.
+ * Note that this does not apply to given {@link DispatchInterceptorFactory factories}!
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -60,10 +61,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     private static final TypeReference<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> SUBSCRIPTION_QUERY_UPDATE_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
 
-    private final List<DispatchInterceptorBuilder<? super CommandMessage>> commandInterceptorBuilders = new ArrayList<>();
-    private final List<DispatchInterceptorBuilder<? super EventMessage>> eventInterceptorBuilders = new ArrayList<>();
-    private final List<DispatchInterceptorBuilder<? super QueryMessage>> queryInterceptorBuilders = new ArrayList<>();
-    private final List<DispatchInterceptorBuilder<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptorBuilders = new ArrayList<>();
+    private final List<DispatchInterceptorFactory<? super CommandMessage>> commandInterceptorFactories = new ArrayList<>();
+    private final List<DispatchInterceptorFactory<? super EventMessage>> eventInterceptorFactories = new ArrayList<>();
+    private final List<DispatchInterceptorFactory<? super QueryMessage>> queryInterceptorFactories = new ArrayList<>();
+    private final List<DispatchInterceptorFactory<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptorFactories = new ArrayList<>();
 
     @Nonnull
     @Override
@@ -105,12 +106,12 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull DispatchInterceptorBuilder<Message> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<Message> interceptorFactory
     ) {
-        registerCommandInterceptor(interceptorBuilder);
-        registerEventInterceptor(interceptorBuilder);
-        registerQueryInterceptor(interceptorBuilder);
-        registerSubscriptionQueryUpdateInterceptor(interceptorBuilder);
+        registerCommandInterceptor(interceptorFactory);
+        registerEventInterceptor(interceptorFactory);
+        registerQueryInterceptor(interceptorFactory);
+        registerSubscriptionQueryUpdateInterceptor(interceptorFactory);
         return this;
     }
 
@@ -121,15 +122,15 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     ) {
         ComponentDefinition<MessageDispatchInterceptor<? super CommandMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
-        return registerCommandInterceptor(builderOfComponentDefinition(interceptorDefinition));
+        return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super CommandMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
-        this.commandInterceptorBuilders.add(interceptorBuilder);
+        this.commandInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
@@ -140,15 +141,15 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     ) {
         ComponentDefinition<MessageDispatchInterceptor<? super EventMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
-        return registerEventInterceptor(builderOfComponentDefinition(interceptorDefinition));
+        return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super EventMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
-        this.eventInterceptorBuilders.add(interceptorBuilder);
+        this.eventInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
@@ -159,15 +160,15 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     ) {
         ComponentDefinition<MessageDispatchInterceptor<? super QueryMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
-        return registerQueryInterceptor(builderOfComponentDefinition(interceptorDefinition));
+        return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super QueryMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     ) {
-        this.queryInterceptorBuilders.add(interceptorBuilder);
+        this.queryInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
@@ -179,15 +180,15 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         ComponentDefinition<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_INTERCEPTOR_TYPE_REF)
                                    .withBuilder(interceptorBuilder);
-        return registerSubscriptionQueryUpdateInterceptor(builderOfComponentDefinition(interceptorDefinition));
+        return registerSubscriptionQueryUpdateInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super SubscriptionQueryUpdateMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super SubscriptionQueryUpdateMessage> interceptorFactory
     ) {
-        this.subscriptionQueryUpdateInterceptorBuilders.add(interceptorBuilder);
+        this.subscriptionQueryUpdateInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
@@ -198,7 +199,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveInterceptors(commandInterceptorBuilders, config, componentType, componentName);
+        return resolveInterceptors(commandInterceptorFactories, config, componentType, componentName);
     }
 
 
@@ -209,7 +210,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveInterceptors(eventInterceptorBuilders, config, componentType, componentName);
+        return resolveInterceptors(eventInterceptorFactories, config, componentType, componentName);
     }
 
 
@@ -220,7 +221,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveInterceptors(queryInterceptorBuilders, config, componentType, componentName);
+        return resolveInterceptors(queryInterceptorFactories, config, componentType, componentName);
     }
 
 
@@ -231,11 +232,11 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveInterceptors(subscriptionQueryUpdateInterceptorBuilders, config, componentType, componentName);
+        return resolveInterceptors(subscriptionQueryUpdateInterceptorFactories, config, componentType, componentName);
     }
 
     @Nonnull
-    private static <M extends Message> DispatchInterceptorBuilder<M> builderOfComponentDefinition(
+    private static <M extends Message> DispatchInterceptorFactory<M> factoryFromDefinition(
             ComponentDefinition<MessageDispatchInterceptor<? super M>> interceptorDefinition
     ) {
         if (!(interceptorDefinition instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super M>> creator)) {
@@ -246,12 +247,12 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     }
 
     /**
-     * Resolves and combines multiple {@link MessageDispatchInterceptor} instances from the supplied builders for a
-     * specific component type and name.
+     * Resolves and combines multiple {@link MessageDispatchInterceptor} instances from the supplied {@code factories}
+     * for a specific component type and name.
      *
      * @param <T>           the type of the {@link Message} the resulting {@link MessageDispatchInterceptor} will
      *                      intercept
-     * @param builders      a list of {@link DispatchInterceptorBuilder} instances for creating
+     * @param factories     a list of {@link DispatchInterceptorFactory} instances for creating
      *                      {@link MessageDispatchInterceptor} instances
      * @param config        the {@link Configuration} to be used for resolving the components
      * @param componentType the type of the component the dispatch interceptors are build for
@@ -260,14 +261,14 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
      * {@code componentName} combination
      */
     private static <T extends Message> List<MessageDispatchInterceptor<? super T>> resolveInterceptors(
-            List<DispatchInterceptorBuilder<? super T>> builders,
+            List<DispatchInterceptorFactory<? super T>> factories,
             Configuration config,
             Class<?> componentType,
             String componentName
     ) {
         List<MessageDispatchInterceptor<? super T>> dispatchInterceptors = new ArrayList<>();
-        for (DispatchInterceptorBuilder<? super T> builder : builders) {
-            MessageDispatchInterceptor<? super T> interceptor = builder.build(config, componentType, componentName);
+        for (DispatchInterceptorFactory<? super T> factory : factories) {
+            MessageDispatchInterceptor<? super T> interceptor = factory.build(config, componentType, componentName);
             if (interceptor != null) {
                 dispatchInterceptors.add(interceptor);
             }
@@ -277,11 +278,11 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("commandDispatchInterceptors", commandInterceptorBuilders);
-        descriptor.describeProperty("eventDispatchInterceptors", eventInterceptorBuilders);
-        descriptor.describeProperty("queryDispatchInterceptors", queryInterceptorBuilders);
+        descriptor.describeProperty("commandDispatchInterceptorFactories", commandInterceptorFactories);
+        descriptor.describeProperty("eventDispatchInterceptorFactories", eventInterceptorFactories);
+        descriptor.describeProperty("queryDispatchInterceptorFactories", queryInterceptorFactories);
         descriptor.describeProperty(
-                "subscriptionQueryUpdateDispatchInterceptors", subscriptionQueryUpdateInterceptorBuilders
+                "subscriptionQueryUpdateDispatchInterceptorFactories", subscriptionQueryUpdateInterceptorFactories
         );
     }
 

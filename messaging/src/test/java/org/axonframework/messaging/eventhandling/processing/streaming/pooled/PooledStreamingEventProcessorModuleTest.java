@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,32 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
+import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
+import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -173,10 +174,10 @@ class PooledStreamingEventProcessorModuleTest {
 
             // then
             await().untilAsserted(() -> {
-                       assertThat(component1.handled(sampleEvent)).isTrue();
-                       assertThat(component2.handled(sampleEvent)).isTrue();
-                       assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
-                   });
+                assertThat(component1.handled(sampleEvent)).isTrue();
+                assertThat(component2.handled(sampleEvent)).isTrue();
+                assertThat(component3HandledPayload.get()).isEqualTo(sampleEvent.payload());
+            });
 
             // cleanup
             configuration.shutdown();
@@ -366,8 +367,8 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative(cfg -> component1)
-                                                                      .declarative(cfg -> component2)
-                                                                      .declarative(cfg -> component3))
+                                                                     .declarative(cfg -> component2)
+                                                                     .declarative(cfg -> component3))
                     .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
 
             var configurer = MessagingConfigurer.create();
@@ -470,14 +471,11 @@ class PooledStreamingEventProcessorModuleTest {
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
-            configurer.eventProcessing(ep ->
-                                               ep.pooledStreaming(ps -> ps.defaults(
-                                                                          d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                                                .eventSource(typeEventSource)
-                                                                                .initialSegmentCount(typeSegmentCount)
-                                                                  )
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeEventSource)
+                          .initialSegmentCount(typeSegmentCount)
+            )));
 
             // and - instance-specific customization
             int instanceSegmentCount = 4;
@@ -485,10 +483,12 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration()
-                            .eventSource(p.eventSource())
-                            .tokenStore(instanceTokenStore)
-                            .initialSegmentCount(instanceSegmentCount));
+                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .tokenStore(instanceTokenStore)
+                                 .initialSegmentCount(instanceSegmentCount)
+                    );
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
 
             // when

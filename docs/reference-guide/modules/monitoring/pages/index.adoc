@@ -4,9 +4,9 @@
 The ability to monitor and measure what is going on is really important.
 This section contains all information regarding metrics, tracing and monitoring of your Axon Framework application.
 
-== New: Easy monitoring and management
+== Axoniq Platform: Easy monitoring and management
 
-Axoniq Platform is the platform to monitor and manage your Axon Framework applications in great detail.
+[Axoniq Platform](https://platform.axoniq.io/) is the platform to monitor and manage your Axon Framework applications in great detail.
 It provides insights into each handler, event processor and entity with almost zero configuration. You can set alerts on these metrics and get notified when something goes wrong, so you can act before it becomes a problem
 
 image::axoniq-console-teaser.png[alt="Statistics measured in Axoniq Platform"]

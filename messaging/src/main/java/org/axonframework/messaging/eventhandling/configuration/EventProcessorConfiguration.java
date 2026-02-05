@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
@@ -55,7 +56,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class EventProcessorConfiguration implements DescribableComponent {
 
-    protected String processorName;
+    protected final String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     protected List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
@@ -65,15 +66,11 @@ public class EventProcessorConfiguration implements DescribableComponent {
             (processorType, name) -> NoOpMessageMonitor.INSTANCE;
 
     /**
-     * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
-     * values.
-     */
-    @Internal
-    public EventProcessorConfiguration() {
-    }
-
-    /**
      * Constructs a new {@code EventProcessorConfiguration} with default values and retrieve global default values.
+     * <p>
+     * When the given {@code config} is {@code null}, the {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * and {@link MessageMonitor} will not be retrieved from the {@link HandlerInterceptorRegistry} and
+     * {@link MessageMonitorRegistry} respectively.
      *
      * @param processorName the name of the processor this configuration is for
      * @param config        the config, used to retrieve global default values, like
@@ -81,12 +78,14 @@ public class EventProcessorConfiguration implements DescribableComponent {
      */
     @Internal
     public EventProcessorConfiguration(@Nonnull String processorName,
-                                       @Nonnull Configuration config) {
+                                       @Nullable Configuration config) {
         this.processorName = Assert.nonEmpty(processorName, "The processor name cannot be null or empty.");
-        this.interceptorBuilder = (procType, procName) -> config.getComponent(HandlerInterceptorRegistry.class)
-                                                                .eventInterceptors(config, procType, procName);
-        this.monitorBuilder = (procType, procName) -> config.getComponent(MessageMonitorRegistry.class)
-                                                            .eventMonitor(config, procType, procName);
+        if (config != null) {
+            this.interceptorBuilder = (procType, procName) -> config.getComponent(HandlerInterceptorRegistry.class)
+                                                                    .eventInterceptors(config, procType, procName);
+            this.monitorBuilder = (procType, procName) -> config.getComponent(MessageMonitorRegistry.class)
+                                                                .eventMonitor(config, procType, procName);
+        }
     }
 
     /**

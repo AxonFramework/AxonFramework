@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,40 +139,9 @@ public class JacksonSerializer implements Serializer {
         converter.registerConverter(new ObjectNodeToJsonNodeConverter());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T convert(@Nullable Object source, @Nonnull Type targetRepresentation) {
-        if (source == null) {
-            return null;
-        }
-        Class<?> sourceType = source.getClass();
-        JavaType valueType = objectMapper.constructType(targetRepresentation);
-        if (converter.canConvert(sourceType, valueType.getRawClass())) {
-            return (T) converter.convert(source, valueType.getRawClass());
-        } else if (converter.canConvert(sourceType, byte[].class)) {
-            // must be a serialized form
-            byte[] bytes = converter.convert(source, byte[].class);
-            try {
-                return objectMapper.readValue(bytes, valueType);
-            } catch (IOException e) {
-                throw new SerializationException(
-                        "Exception when trying to convert object of type '" + sourceType.getTypeName() + "' to '"
-                                + targetRepresentation.getTypeName() + "'", e);
-            }
-        } else if (converter.canConvert(valueType.getRawClass(),
-                                        byte[].class)) {
-            // the target is a serialized form
-            try {
-                byte[] bytes = objectMapper.writeValueAsBytes(source);
-                return (T) converter.convert(bytes, valueType.getRawClass());
-            } catch (JsonProcessingException e) {
-                throw new SerializationException(
-                        "Exception when trying to convert object of type '" + sourceType.getTypeName() + "' to '"
-                                + targetRepresentation.getTypeName() + "'", e);
-            }
-        } else {
-            return objectMapper.convertValue(source, valueType);
-        }
+        return converter.convert(source, targetRepresentation);
     }
 
     @Override
@@ -225,8 +194,10 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
-        return JsonNode.class.equals(expectedRepresentation) || String.class.equals(expectedRepresentation) ||
-                converter.canConvert(byte[].class, expectedRepresentation);
+        return JsonNode.class.equals(expectedRepresentation)
+                || String.class.equals(expectedRepresentation)
+                || (converter instanceof ChainingContentTypeConverter
+                && ((ChainingContentTypeConverter) converter).canConvert(byte[].class, expectedRepresentation));
     }
 
     @Override

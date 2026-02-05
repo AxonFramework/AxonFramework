@@ -43,13 +43,14 @@ import java.util.List;
  * responsible for managing and providing components of {@link MessageMonitor} for various message types such as
  * {@link CommandMessage}, {@link EventMessage}, and {@link QueryMessage}.
  * <p>
- * This class allows registering monitor builders for each message type and resolves those monitors into properly
- * initialized components when required. If no custom monitors are registered for a specific type, default
+ * This class allows registering monitor builders and factories for each message type and resolves those monitors into
+ * properly initialized components when required. If no custom monitors are registered for a specific type, default
  * implementations like {@link NoOpMessageMonitor} are returned to ensure no operational interruptions.
  * <p>
- * Internally, it maintains separate lists of {@link ComponentDefinition} to store the registered monitor builders for
- * command, event, and query messages. It also supports registering a generic {@link MessageMonitor} for
- * {@link Message}, in which case a specialized {@link MessageMonitor} is created for each of the supported subtypes.
+ * When using the {@link ComponentBuilder} registration methods, this registry will internally maintain a separate lists
+ * of {@link ComponentDefinition} to store the registered monitor builders for command, event, and query messages. It
+ * also supports registering a generic {@link MessageMonitor} for {@link Message}, in which case a specialized
+ * {@link MessageMonitor} is created for each of the supported subtypes.
  *
  * @author Jan Galinski
  * @since 5.0.0
@@ -68,10 +69,10 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private static final TypeReference<MessageMonitor<? super SubscriptionQueryUpdateMessage>> SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF = new TypeReference<>() {
     };
 
-    private final List<MessageMonitorBuilder<? super CommandMessage>> commandMonitorBuilders = new ArrayList<>();
-    private final List<MessageMonitorBuilder<? super EventMessage>> eventMonitorBuilders = new ArrayList<>();
-    private final List<MessageMonitorBuilder<? super QueryMessage>> queryMonitorBuilders = new ArrayList<>();
-    private final List<MessageMonitorBuilder<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateMonitorBuilders = new ArrayList<>();
+    private final List<MessageMonitorFactory<? super CommandMessage>> commandMonitorFactories = new ArrayList<>();
+    private final List<MessageMonitorFactory<? super EventMessage>> eventMonitorFactories = new ArrayList<>();
+    private final List<MessageMonitorFactory<? super QueryMessage>> queryMonitorFactories = new ArrayList<>();
+    private final List<MessageMonitorFactory<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateMonitorFactories = new ArrayList<>();
 
     @Nonnull
     @Override
@@ -90,11 +91,11 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Nonnull
     @Override
-    public MessageMonitorRegistry registerMonitor(@Nonnull MessageMonitorBuilder<Message> monitorBuilder) {
-        registerCommandMonitor(monitorBuilder);
-        registerEventMonitor(monitorBuilder);
-        registerQueryMonitor(monitorBuilder);
-        registerSubscriptionQueryUpdateMonitor(monitorBuilder);
+    public MessageMonitorRegistry registerMonitor(@Nonnull MessageMonitorFactory<Message> monitorFactory) {
+        registerCommandMonitor(monitorFactory);
+        registerEventMonitor(monitorFactory);
+        registerQueryMonitor(monitorFactory);
+        registerSubscriptionQueryUpdateMonitor(monitorFactory);
         return this;
     }
 
@@ -105,15 +106,15 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     ) {
         ComponentDefinition<MessageMonitor<? super CommandMessage>> monitorDefinition =
                 ComponentDefinition.ofType(COMMAND_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
-        return registerCommandMonitor(builderOfComponentDefinition(monitorDefinition));
+        return registerCommandMonitor(factoryFromDefinition(monitorDefinition));
     }
 
     @Nonnull
     @Override
     public MessageMonitorRegistry registerCommandMonitor(
-            @Nonnull MessageMonitorBuilder<? super CommandMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
     ) {
-        this.commandMonitorBuilders.add(monitorBuilder);
+        this.commandMonitorFactories.add(monitorFactory);
         return this;
     }
 
@@ -124,15 +125,15 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     ) {
         ComponentDefinition<MessageMonitor<? super EventMessage>> monitorDefinition =
                 ComponentDefinition.ofType(EVENT_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
-        return registerEventMonitor(builderOfComponentDefinition(monitorDefinition));
+        return registerEventMonitor(factoryFromDefinition(monitorDefinition));
     }
 
     @Nonnull
     @Override
     public MessageMonitorRegistry registerEventMonitor(
-            @Nonnull MessageMonitorBuilder<? super EventMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
     ) {
-        this.eventMonitorBuilders.add(monitorBuilder);
+        this.eventMonitorFactories.add(monitorFactory);
         return this;
     }
 
@@ -143,15 +144,15 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     ) {
         ComponentDefinition<MessageMonitor<? super QueryMessage>> monitorDefinition =
                 ComponentDefinition.ofType(QUERY_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
-        return registerQueryMonitor(builderOfComponentDefinition(monitorDefinition));
+        return registerQueryMonitor(factoryFromDefinition(monitorDefinition));
     }
 
     @Nonnull
     @Override
     public MessageMonitorRegistry registerQueryMonitor(
-            @Nonnull MessageMonitorBuilder<? super QueryMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory
     ) {
-        this.queryMonitorBuilders.add(monitorBuilder);
+        this.queryMonitorFactories.add(monitorFactory);
         return this;
     }
 
@@ -161,15 +162,15 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     ) {
         ComponentDefinition<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorDefinition =
                 ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
-        return registerSubscriptionQueryUpdateMonitor(builderOfComponentDefinition(monitorDefinition));
+        return registerSubscriptionQueryUpdateMonitor(factoryFromDefinition(monitorDefinition));
     }
 
     @Nonnull
     @Override
     public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            @Nonnull MessageMonitorBuilder<? super SubscriptionQueryUpdateMessage> monitorBuilder
+            @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     ) {
-        this.subscriptionQueryUpdateMonitorBuilders.add(monitorBuilder);
+        this.subscriptionQueryUpdateMonitorFactories.add(monitorFactory);
         return this;
     }
 
@@ -179,7 +180,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveMonitor(commandMonitorBuilders, config, componentType, componentName);
+        return resolveMonitor(commandMonitorFactories, config, componentType, componentName);
     }
 
     @Override
@@ -188,7 +189,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveMonitor(eventMonitorBuilders, config, componentType, componentName);
+        return resolveMonitor(eventMonitorFactories, config, componentType, componentName);
     }
 
     @Override
@@ -197,7 +198,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveMonitor(queryMonitorBuilders, config, componentType, componentName);
+        return resolveMonitor(queryMonitorFactories, config, componentType, componentName);
     }
 
     @Override
@@ -206,11 +207,11 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
             @Nonnull Class<?> componentType,
             @Nullable String componentName
     ) {
-        return resolveMonitor(subscriptionQueryUpdateMonitorBuilders, config, componentType, componentName);
+        return resolveMonitor(subscriptionQueryUpdateMonitorFactories, config, componentType, componentName);
     }
 
     @Nonnull
-    private static <M extends Message> MessageMonitorBuilder<M> builderOfComponentDefinition(
+    private static <M extends Message> MessageMonitorFactory<M> factoryFromDefinition(
             ComponentDefinition<MessageMonitor<? super M>> monitorDefinition
     ) {
         if (!(monitorDefinition instanceof ComponentDefinition.ComponentCreator<MessageMonitor<? super M>> creator)) {
@@ -222,11 +223,11 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     /**
      * Resolves and combines multiple {@link MessageMonitor} components provided by the supplied definitions and
-     * builders for a specific component type and name. If no monitors are resolved, a {@link NoOpMessageMonitor} is
+     * factories for a specific component type and name. If no monitors are resolved, a {@link NoOpMessageMonitor} is
      * returned.
      *
      * @param <T>           the type of the {@link Message} the resulting {@link MessageMonitor} will monitor
-     * @param builders      a list of {@link MessageMonitorBuilder} instances for creating component-aware
+     * @param factories     a list of {@link MessageMonitorFactory} instances for creating component-aware
      *                      {@link MessageMonitor} components
      * @param config        the {@link Configuration} to be used for resolving the components
      * @param componentType the type of the component being monitored
@@ -236,14 +237,14 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
      * @throws IllegalArgumentException if a provided {@link ComponentDefinition} is of an unsupported type
      */
     private static <T extends Message> MessageMonitor<? super T> resolveMonitor(
-            List<MessageMonitorBuilder<? super T>> builders,
+            List<MessageMonitorFactory<? super T>> factories,
             Configuration config,
             Class<?> componentType,
             String componentName
     ) {
         List<MessageMonitor<? super T>> monitors = new ArrayList<>();
-        for (MessageMonitorBuilder<? super T> builder : builders) {
-            MessageMonitor<? super T> monitor = builder.build(config, componentType, componentName);
+        for (MessageMonitorFactory<? super T> factory : factories) {
+            MessageMonitor<? super T> monitor = factory.build(config, componentType, componentName);
             if (monitor != null && !(monitor instanceof NoOpMessageMonitor)) {
                 monitors.add(monitor);
             }
@@ -260,10 +261,10 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("commandMonitorBuilders", commandMonitorBuilders);
-        descriptor.describeProperty("eventMonitorBuilders", eventMonitorBuilders);
-        descriptor.describeProperty("queryMonitorBuilders", queryMonitorBuilders);
-        descriptor.describeProperty("subscriptionQueryUpdateMonitorBuilders", subscriptionQueryUpdateMonitorBuilders);
+        descriptor.describeProperty("commandMonitorFactories", commandMonitorFactories);
+        descriptor.describeProperty("eventMonitorFactories", eventMonitorFactories);
+        descriptor.describeProperty("queryMonitorFactories", queryMonitorFactories);
+        descriptor.describeProperty("subscriptionQueryUpdateMonitorFactories", subscriptionQueryUpdateMonitorFactories);
     }
 
     // Private class used to lazily resolve the generic Message monitor once and reuse it across registrations.
