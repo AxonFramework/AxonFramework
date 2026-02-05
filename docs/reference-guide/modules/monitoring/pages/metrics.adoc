@@ -28,7 +28,37 @@ Note that xref:events:event-processors/streaming.adoc#replaying-events[triggerin
 The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`. This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.
 
 You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
-The `GlobalMetricRegistry` contained in the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
+The `MetricsConfigurationEnhancer` contained in both the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
+
+The following table shows the default `MessageMonitor` implementations registered for each component type, including the registered metric's name:
+
+[cols="1,2,2", options="header"]
+|===
+| Component Type | Default Message Monitors | Metric Name Pattern
+
+| `CommandBus`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`
+
+| `EventSink`
+| `MessageCountingMonitor`, `MessageTimerMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`
+
+| `EventProcessor`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`, `EventProcessorLatencyMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`, `\{name}.latency`
+
+| `QueryBus`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`
+
+| `QueryBus` (Subscription Query Updates)
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}-emitter.messageCounter`, `\{name}-emitter.messageTimer`, `\{name}-emitter.capacity`
+|===
+
+The `\{name}` placeholder is either the configured component name or the simple class name of the component type (e.g., `CommandBus`, `QueryBus`) if the infrastructure component was registered without a name.
+
 The following example shows you how to configure default metrics for your message handling components:
 
 == Configuring message monitors
