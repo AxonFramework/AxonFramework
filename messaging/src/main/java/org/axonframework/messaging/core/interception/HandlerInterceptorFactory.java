@@ -34,7 +34,7 @@ import org.axonframework.messaging.core.MessageHandlerInterceptor;
  * @since 5.0.3
  */
 @FunctionalInterface
-public interface HandlerInterceptorBuilder<M extends Message> {
+public interface HandlerInterceptorFactory<M extends Message> {
 
     /**
      * Builds a {@link MessageHandlerInterceptor} for the specified component.

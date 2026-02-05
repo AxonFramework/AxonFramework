@@ -354,7 +354,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given generic {@link Message} {@link MessageHandlerInterceptor} factory in this
+     * Registers the given generic {@link Message} {@link MessageHandlerInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a generic
@@ -379,7 +379,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link CommandMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link CommandMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code CommandMessage} {@code MessageHandlerInterceptor} instance.
@@ -402,7 +402,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link EventMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link EventMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code EventMessage} {@code MessageHandlerInterceptor} instance.
@@ -425,7 +425,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link QueryMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
+     * Registers the given {@link QueryMessage} {@link MessageHandlerInterceptor} builder in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
      * {@code QueryMessage} {@code MessageHandlerInterceptor} instance.
