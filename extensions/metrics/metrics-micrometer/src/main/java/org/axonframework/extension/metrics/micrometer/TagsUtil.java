@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * different metrics, and functions responsible for creating the Micrometer {@link Tag Tags} based on the
  * {@link Message} that is ingested by a {@link org.axonframework.messaging.monitoring.MessageMonitor}.
  *
- * @author Ivan Dugali
+ * @author Ivan Dugalic
  * @author Steven van Beelen
  * @since 4.4.0
  */
