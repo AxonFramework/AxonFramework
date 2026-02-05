@@ -197,7 +197,8 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
 
-Furthermore, Micrometer offers to option to enable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages:
+Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages. By default, dimensions are enabled.
+If you want to adjust this, please check the following examples:
 
 [tabs]
 ====
@@ -214,9 +215,9 @@ class MetricsConfiguration {
 
     public void configureDefaultMetrics(MessagingConfigurer configurer,
                                         MeterRegistry meterRegistry) {
-        boolean useDimensions = true;
+        boolean disableDimensions = false;
         configurer.componentRegistry(componentRegistry -> componentRegistry.registerEnhancer(
-                new MetricsConfigurationEnhancer(meterRegistry, useDimensions)
+                new MetricsConfigurationEnhancer(meterRegistry, disableDimensions)
         ));
     }
 }
@@ -228,11 +229,11 @@ Automated configuration - Spring Boot::
 --
 [source,properties]
 ----
-# The default value is `false`.
+# The default value is `true`.
 # By enabling this property you will have message (event, command, query)
 #   payload type set as a micrometer tag/dimension by default.
 # Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
-axon.metrics.micrometer.dimensional=true
+axon.metrics.micrometer.dimensional=false
 ----
 --
 ====
