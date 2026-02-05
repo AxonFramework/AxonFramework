@@ -71,7 +71,7 @@ For configuring `MessageMonitors` in your application, please read the section f
 When using Spring Boot, you can disable metrics entirely by setting the following property:
 [source,text]
 ----
-axon.metrics.auto-configuration.enabled=false
+axon.metrics.enabled=false
 ----
 
 This property will influence both <<dropwizard,Dropwizard>> and <<micrometer,Micrometer>> metrics.
