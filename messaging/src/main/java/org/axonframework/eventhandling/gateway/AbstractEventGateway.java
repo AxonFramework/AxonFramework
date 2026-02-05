@@ -102,8 +102,8 @@ public abstract class AbstractEventGateway {
      * @return The event message to dispatch
      */
     @SuppressWarnings("unchecked")
-    protected <E> EventMessage<? extends E> processInterceptors(EventMessage<E> eventMessage) {
-        EventMessage<? extends E> message = eventMessage;
+    protected <E> EventMessage<E> processInterceptors(EventMessage<E> eventMessage) {
+        EventMessage<E> message = eventMessage;
         for (MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor : dispatchInterceptors) {
             message = (EventMessage) dispatchInterceptor.handle(message);
         }
