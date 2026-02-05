@@ -254,7 +254,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given generic {@link Message} {@link MessageDispatchInterceptor} factory in this
+     * Registers the given generic {@link Message} {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a generic
@@ -279,7 +279,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link CommandMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link CommandMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
@@ -304,7 +304,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link EventMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link EventMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
@@ -329,7 +329,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link QueryMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * Registers the given {@link QueryMessage}-specific {@link MessageDispatchInterceptor} builder in this
      * {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a

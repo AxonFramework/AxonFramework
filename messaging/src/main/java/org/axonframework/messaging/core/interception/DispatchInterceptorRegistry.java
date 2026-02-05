@@ -72,20 +72,20 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given component-aware {@code interceptorBuilder} for a generic {@link Message}
+     * Registers the given component-aware {@code interceptorFactory} for a generic {@link Message}
      * {@link MessageDispatchInterceptor}.
      * <p>
-     * The builder will receive the component type and name when the interceptor is retrieved allowing for
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
-     * {@link DispatchInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
+     * {@link DispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the factory,
      * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptorBuilder the generic {@link Message} {@link MessageDispatchInterceptor} builder to register
+     * @param interceptorFactory the generic {@link Message} {@link MessageDispatchInterceptor} factory to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
-    DispatchInterceptorRegistry registerInterceptor(@Nonnull DispatchInterceptorBuilder<Message> interceptorBuilder);
+    DispatchInterceptorRegistry registerInterceptor(@Nonnull DispatchInterceptorFactory<Message> interceptorFactory);
 
     /**
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage}-specific
@@ -103,22 +103,22 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given component-aware {@code interceptorBuilder} for a {@link CommandMessage}-specific
+     * Registers the given component-aware {@code interceptorFactory} for a {@link CommandMessage}-specific
      * {@link MessageDispatchInterceptor}.
      * <p>
-     * The builder will receive the component type and name when the interceptor is retrieved allowing for
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
-     * {@link DispatchInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
+     * {@link DispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the factory,
      * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerCommandInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptorBuilder the {@link CommandMessage}-specific {@link MessageDispatchInterceptor} builder to
+     * @param interceptorFactory the {@link CommandMessage}-specific {@link MessageDispatchInterceptor} factory to
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super CommandMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
     );
 
     /**
@@ -137,22 +137,22 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given component-aware {@code interceptorBuilder} for a {@link EventMessage}-specific
+     * Registers the given component-aware {@code interceptorFactory} for a {@link EventMessage}-specific
      * {@link MessageDispatchInterceptor}.
      * <p>
-     * The builder will receive the component type and name when the interceptor is retrieved allowing for
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
-     * {@link DispatchInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
+     * {@link DispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the factory,
      * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerEventInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptorBuilder the {@link EventMessage}-specific {@link MessageDispatchInterceptor} builder to
+     * @param interceptorFactory the {@link EventMessage}-specific {@link MessageDispatchInterceptor} factory to
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super EventMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
     );
 
     /**
@@ -171,22 +171,22 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given component-aware {@code interceptorBuilder} for a {@link QueryMessage}-specific
+     * Registers the given component-aware {@code interceptorFactory} for a {@link QueryMessage}-specific
      * {@link MessageDispatchInterceptor}.
      * <p>
-     * The builder will receive the component type and name when the interceptor is retrieved allowing for
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
-     * {@link DispatchInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
+     * {@link DispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the factory,
      * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerQueryInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptorBuilder the {@link QueryMessage}-specific {@link MessageDispatchInterceptor} builder to
+     * @param interceptorFactory the {@link QueryMessage}-specific {@link MessageDispatchInterceptor} factory to
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super QueryMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     );
 
     /**
@@ -205,22 +205,22 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given component-aware {@code interceptorBuilder} for a
+     * Registers the given component-aware {@code interceptorFactory} for a
      * {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}.
      * <p>
-     * The builder will receive the component type and name when the interceptor is retrieved allowing for
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
      * component-specific customization of the interceptor. Registering an interceptor per a
-     * {@link DispatchInterceptorBuilder} enforces construction of the interceptor for every invocation of the builder,
+     * {@link DispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the factory,
      * ensuring uniqueness per given typa and name. If the interceptor will be identical regardless of the given type or
      * name, please use {@link #registerSubscriptionQueryUpdateInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptorBuilder the {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}
-     *                           builder to register
+     * @param interceptorFactory the {@link SubscriptionQueryUpdateMessage}-specific {@link MessageDispatchInterceptor}
+     *                           factory to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
     @Nonnull
     DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
-            @Nonnull DispatchInterceptorBuilder<? super SubscriptionQueryUpdateMessage> interceptorBuilder
+            @Nonnull DispatchInterceptorFactory<? super SubscriptionQueryUpdateMessage> interceptorFactory
     );
 
     /**
@@ -229,7 +229,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * {@code componentType} and {@code componentName}.
      * <p>
      * This collection contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerInterceptor(DispatchInterceptorBuilder) registered} when the generic builder returns an
+     * {@link #registerInterceptor(DispatchInterceptorFactory) registered} when the generic builder returns an
      * instance.
      *
      * @param config        the configuration to build all {@link CommandMessage}-specific
@@ -251,7 +251,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * registered in this registry for a specific {@code componentType} and {@code componentName}.
      * <p>
      * This collection contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerInterceptor(DispatchInterceptorBuilder) registered} when the generic builder returns an
+     * {@link #registerInterceptor(DispatchInterceptorFactory) registered} when the generic builder returns an
      * instance.
      *
      * @param config        the configuration to build all {@link EventMessage}-specific
@@ -272,7 +272,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * registered in this registry for a specific {@code componentType} and {@code componentName}.
      * <p>
      * This collection contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerInterceptor(DispatchInterceptorBuilder) registered} when the generic builder returns an
+     * {@link #registerInterceptor(DispatchInterceptorFactory) registered} when the generic builder returns an
      * instance.
      *
      * @param config        the configuration to build all {@link QueryMessage}-specific
@@ -294,7 +294,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * {@code componentType} and {@code componentName}.
      * <p>
      * This collection contains generic {@link Message} {@code MessageDispatchInterceptors} that have been
-     * {@link #registerInterceptor(DispatchInterceptorBuilder) registered} when the generic builder returns an
+     * {@link #registerInterceptor(DispatchInterceptorFactory) registered} when the generic builder returns an
      * instance.
      *
      * @param config        the configuration to build all {@link SubscriptionQueryUpdateMessage}-specific

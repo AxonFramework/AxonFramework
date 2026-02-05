@@ -34,7 +34,7 @@ import org.axonframework.messaging.core.MessageDispatchInterceptor;
  * @since 5.0.3
  */
 @FunctionalInterface
-public interface DispatchInterceptorBuilder<M extends Message> {
+public interface DispatchInterceptorFactory<M extends Message> {
 
     /**
      * Builds a {@link MessageDispatchInterceptor} for the specified component.
