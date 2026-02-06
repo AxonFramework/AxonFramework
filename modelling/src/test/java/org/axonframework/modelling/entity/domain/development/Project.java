@@ -43,10 +43,18 @@ import java.util.List;
  * changes in the project state. This model does use events to evolve its state, but does not use an event store to
  * source the model from earlier events. As such, it is a state-stored model rather than an event-sourced model.
  * <p>
- * It uses various features, as many as possible in fact, of the entity model, such as: - Polymorphic entities - Entity
- * members in abstract entity - Entity member in concrete entity - Commands in abstract entity - Commands in concrete
- * entity - Multiple EntityMember-annotated fields that use the same routing key - Variations of routing key usage -
- * Evolving mutable child entities - Evolving immutable child entities
+ * It uses various features, as many as possible in fact, of the entity model, such as:
+ * <ul>
+ * <li>Polymorphic entities</li>
+ * <li>Entity members in abstract entity</li>
+ * <li>Entity member in concrete entity</li>
+ * <li>Commands in abstract entity</li>
+ * <li>Commands in concrete entity</li>
+ * <li>Multiple EntityMember-annotated fields that use the same routing key</li>
+ * <li>Variations of routing key usage</li>
+ * <li>Evolving mutable child entities</li>
+ * <li>Evolving immutable child entities</li>
+ * </ul>
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

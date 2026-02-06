@@ -22,7 +22,6 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
-import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
@@ -45,9 +44,8 @@ public class RoutingKeyEventTargetMatcherDefinition implements EventTargetMatche
     @Override
     public <E> EventTargetMatcher<E> createChildEntityMatcher(@Nonnull AnnotatedEntityMetamodel<E> entity,
                                                               @Nonnull Member member) {
-        Optional<String> optionalRoutingKey = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
-        if (optionalRoutingKey.isPresent()) {
-            String routingKey = optionalRoutingKey.get();
+        String routingKey = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member).orElse(null);
+        if (routingKey != null) {
             return new RoutingKeyEventTargetMatcher<>(entity, routingKey, routingKey);
         }
 

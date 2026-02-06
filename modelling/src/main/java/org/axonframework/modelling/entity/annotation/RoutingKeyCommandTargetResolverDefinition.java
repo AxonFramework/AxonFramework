@@ -22,7 +22,6 @@ import org.axonframework.modelling.entity.child.CommandTargetResolver;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
-import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
