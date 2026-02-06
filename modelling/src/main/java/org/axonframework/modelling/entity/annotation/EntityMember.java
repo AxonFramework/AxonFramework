@@ -89,7 +89,7 @@ public @interface EntityMember {
      * single entity.
      * <p>
      * The result can also be {@code null} to indicate that no child entity should handle the command. This allows users
-     * to declare multiple fields with the same child entity type, but with different routing key properties, and thus
+     * to declare multiple fields with the same child entity type, but with different routing key properties, with
      * different routing logic for commands.
      * <p>
      * Defaults to using the {@link RoutingKeyCommandTargetResolverDefinition}, which matches messages based on the
