@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.university.read.coursestats.projection;
 
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.springframework.context.annotation.Bean;
@@ -38,12 +38,12 @@ public class CoursesStatsProjectionConfiguration {
     }
 
     @Bean
-    ProcessorDefinition coursesProcessor() {
-        return ProcessorDefinition
-                .pooledStreamingProcessor(PROCESSOR_NAME)
+    EventProcessorDefinition coursesProcessor() {
+        return EventProcessorDefinition
+                .pooledStreaming(PROCESSOR_NAME)
                 .assigningHandlers(descriptor -> descriptor.beanType().getPackageName()
                                                            .endsWith("coursestats.projection"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                         .initialSegmentCount(4)
                         .batchSize(10)
                 );

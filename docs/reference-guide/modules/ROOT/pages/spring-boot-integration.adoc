@@ -98,13 +98,13 @@ This approach is ideal for:
 * Environment-specific settings (dev, test, prod)
 * Quick prototyping
 
-==== Programmatic configuration with `ProcessorDefinition`
+==== Programmatic configuration with `EventProcessorDefinition`
 
-For advanced configuration and type safety, use `ProcessorDefinition` beans:
+For advanced configuration and type safety, use `EventProcessorDefinition` beans:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -112,18 +112,18 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition orderProcessor() {
-        return ProcessorDefinition.pooledStreamingProcessor("order-processor")
+    public EventProcessorDefinition orderProcessor() {
+        return EventProcessorDefinition.pooledStreaming("order-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanName().startsWith("order"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialSegmentCount(4)
                     .batchSize(100));
     }
 }
 ----
 
-The `ProcessorDefinition` API provides:
+The `EventProcessorDefinition` API provides:
 
 * **Type-safe configuration** - Compile-time checking of configuration options
 * **Fluent API** - Chain configuration methods for readability
@@ -156,33 +156,33 @@ This allows flexible handler assignment based on naming conventions, package str
 
 ===== Configuration options
 
-Use `withConfiguration()` to customize processor settings, or `withDefaultSettings()` when you only need handler assignment:
+Use `customized()` to customize processor settings, or `notCustomized()` when you only need handler assignment:
 
 [source,java]
 ----
 // With custom configuration
-ProcessorDefinition.pooledStreamingProcessor("custom-processor")
+EventProcessorDefinition.pooledStreaming("custom-processor")
     .assigningHandlers(descriptor -> descriptor.beanName().startsWith("custom"))
-    .withConfiguration(config -> config
+    .customized(config -> config
         .initialSegmentCount(16)
         .batchSize(100)
         .tokenClaimInterval(5000));
 
 // With default settings (only handler assignment)
-ProcessorDefinition.pooledStreamingProcessor("default-processor")
+EventProcessorDefinition.pooledStreaming("default-processor")
     .assigningHandlers(descriptor -> descriptor.beanName().startsWith("default"))
-    .withDefaultSettings();
+    .notCustomized();
 ----
 
 ==== Configuration precedence
 
 When using multiple configuration approaches:
 
-1. `ProcessorDefinition` beans take precedence over properties-based configuration
-2. If a handler matches multiple `ProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
-3. Handlers not matched by any `ProcessorDefinition` are assigned based on their package name (default behavior)
+1. `EventProcessorDefinition` beans take precedence over properties-based configuration
+2. If a handler matches multiple `EventProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
+3. Handlers not matched by any `EventProcessorDefinition` are assigned based on their package name (default behavior)
 
-To avoid conflicts, ensure each handler is matched by at most one `ProcessorDefinition` using mutually exclusive selectors.
+To avoid conflicts, ensure each handler is matched by at most one `EventProcessorDefinition` using mutually exclusive selectors.
 
 ==== When to use each approach
 
@@ -192,7 +192,7 @@ Use **properties-based configuration** when:
 * Settings may vary per environment
 * You're prototyping or getting started
 
-Use **ProcessorDefinition** when:
+Use **EventProcessorDefinition** when:
 
 * You need fine-grained control over handler assignment
 * Configuration requires conditional logic

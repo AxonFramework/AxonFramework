@@ -33,28 +33,28 @@ import java.util.function.Predicate;
  * <p>
  * This interface provides a fluent API for defining event processors. The typical usage flow is:
  * <ol>
- *     <li>Start with a static factory method (e.g., {@link #pooledStreamingProcessor(String)} or
- *     {@link #subscribingProcessor(String)})</li>
+ *     <li>Start with a static factory method (e.g., {@link #pooledStreaming(String)} or
+ *     {@link #subscribing(String)})</li>
  *     <li>Define which event handlers should be assigned to this processor using
  *     {@link ProcessorDefinitionSelectorStep#assigningHandlers(Predicate)}</li>
- *     <li>Either apply custom configuration using {@link ProcessorDefinitionConfigurationStep#withConfiguration(Function)}
- *     or use default settings with {@link ProcessorDefinitionConfigurationStep#withDefaultSettings()}</li>
+ *     <li>Either apply custom configuration using {@link ProcessorDefinitionConfigurationStep#customized(Function)}
+ *     or use default settings with {@link ProcessorDefinitionConfigurationStep#notCustomized()}</li>
  * </ol>
  * <p>
  * Example usage:
  * <pre>{@code
- * ProcessorDefinition.pooledStreamingProcessor("myProcessor")
+ * EventProcessorDefinition.pooledStreaming("myProcessor")
  *     .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
- *     .withConfiguration(config -> config.maxClaimedSegments(4));
+ *     .customized(config -> config.maxClaimedSegments(4));
  * }</pre>
  *
- * Any configuration set by the `.withConfiguration` method will override any configuration provided using properties
+ * Any configuration set by the `.customized` method will override any configuration provided using properties
  * files.
  *
  * @author Allard Buijze
  * @since 5.0.2
  */
-public interface ProcessorDefinition {
+public interface EventProcessorDefinition {
 
     /**
      * Creates a new processor definition for a pooled streaming event processor with the given name.
@@ -66,7 +66,7 @@ public interface ProcessorDefinition {
      * @return The next step in the fluent API to define the handler selection criteria.
      */
     @Nonnull
-    static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreamingProcessor(
+    static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(
             @Nonnull String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
@@ -83,7 +83,7 @@ public interface ProcessorDefinition {
      * @return The next step in the fluent API to define the handler selection criteria.
      */
     @Nonnull
-    static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribingProcessor(
+    static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribing(
             @Nonnull String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
@@ -212,7 +212,7 @@ public interface ProcessorDefinition {
          * <p>
          * Example:
          * <pre>{@code
-         * withConfiguration(config -> config
+         * customized(config -> config
          *     .maxClaimedSegments(4)
          *     .batchSize(100))
          * }</pre>
@@ -221,7 +221,7 @@ public interface ProcessorDefinition {
          * @return The completed processor definition.
          */
         @Nonnull
-        ProcessorDefinition withConfiguration(@Nonnull Function<T, T> configurer);
+        EventProcessorDefinition customized(@Nonnull Function<T, T> configurer);
 
         /**
          * Completes the processor definition using default settings for this processor type.
@@ -232,6 +232,6 @@ public interface ProcessorDefinition {
          * @return The completed processor definition.
          */
         @Nonnull
-        ProcessorDefinition withDefaultSettings();
+        EventProcessorDefinition notCustomized();
     }
 }

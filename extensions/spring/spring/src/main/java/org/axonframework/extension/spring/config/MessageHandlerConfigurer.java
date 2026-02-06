@@ -97,7 +97,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
-        Set<ProcessorDefinition.EventHandlerDescriptor> handlers =
+        Set<EventProcessorDefinition.EventHandlerDescriptor> handlers =
                 handlerBeansRefs.stream()
                                 .map(name -> new SimpleEventHandlerDescriptor(name, beanFactory))
                                 .collect(Collectors.toSet());
@@ -198,7 +198,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     private record SimpleEventHandlerDescriptor(String beanName, ConfigurableListableBeanFactory beanFactory)
-                implements ProcessorDefinition.EventHandlerDescriptor {
+                implements EventProcessorDefinition.EventHandlerDescriptor {
 
         @Override
         public BeanDefinition beanDefinition() {

@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link ProcessorModuleFactory} that assigns event handlers to processors using
- * {@link ProcessorDefinition ProcessorDefinitions}.
+ * {@link EventProcessorDefinition ProcessorDefinitions}.
  * <p>
  * This factory evaluates each event handler against the configured processor definitions. When a handler matches a
  * definition's selector, it is assigned to that processor. If no processor definition matches, the handler is assigned
@@ -50,28 +50,28 @@ import java.util.stream.Collectors;
  *
  * @author Allard Buijze
  * @see ProcessorModuleFactory
- * @see ProcessorDefinition
+ * @see EventProcessorDefinition
  * @since 5.0.2
  */
 public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultProcessorModuleFactory.class);
 
-    private final List<ProcessorDefinition> processorDefinitions;
+    private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
     private final Configuration axonConfiguration;
 
     /**
      * Creates a new factory with the given processor definitions, settings, and Axon configuration.
      *
-     * @param processorDefinitions The list of processor definitions that define handler assignment rules.
+     * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
      * @param settings             The map of processor settings, keyed by processor name.
      * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(@Nonnull List<ProcessorDefinition> processorDefinitions,
+    public DefaultProcessorModuleFactory(@Nonnull List<EventProcessorDefinition> eventProcessorDefinitions,
                                          @Nonnull Map<String, EventProcessorSettings> settings,
                                          @Nonnull Configuration axonConfiguration) {
-        this.processorDefinitions = processorDefinitions;
+        this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
         this.axonConfiguration = axonConfiguration;
     }
@@ -80,18 +80,18 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@inheritDoc}
      * <p>
      * This implementation groups handlers by their assigned processor name (determined by
-     * {@link #assignedProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
+     * {@link #assignedProcessor(EventProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
     @Nonnull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<EventProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 
         var assignments = handlers.stream().collect(Collectors.groupingBy(this::assignedProcessor));
 
-        for (ProcessorDefinition definition : processorDefinitions) {
+        for (EventProcessorDefinition definition : eventProcessorDefinitions) {
             if (!assignments.containsKey(definition.name())) {
                 logger.warn("No handlers assigned to explicitly defined processor: {}", definition.name());
             }
@@ -100,7 +100,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         assignments.forEach((processorName, beanDefs) -> {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
-                for (ProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
+                for (EventProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
                     resultOfRegistration = resultOfRegistration.autodetected(namedBeanDefinition.component());
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
@@ -110,7 +110,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
             var settings = Optional.ofNullable(allSettings.get(processorName))
                                    .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
-            var processorMode = definitionFor(processorName).map(ProcessorDefinition::mode)
+            var processorMode = definitionFor(processorName).map(EventProcessorDefinition::mode)
                                                             .orElse(settings.processorMode());
             var module = switch (processorMode) {
                 case POOLED -> {
@@ -157,9 +157,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      */
     @SuppressWarnings({"unchecked"})
     private <T extends EventProcessorConfiguration> UnaryOperator<T> customizeConfiguration(String processorName) {
-        for (ProcessorDefinition processorDefinition : processorDefinitions) {
-            if (processorDefinition.name().equals(processorName)) {
-                return c -> (T) processorDefinition.applySettings(c);
+        for (EventProcessorDefinition eventProcessorDefinition : eventProcessorDefinitions) {
+            if (eventProcessorDefinition.name().equals(processorName)) {
+                return c -> (T) eventProcessorDefinition.applySettings(c);
             }
         }
         return UnaryOperator.identity();
@@ -176,11 +176,11 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @return The name of the processor this handler should be assigned to.
      * @throws AxonConfigurationException If multiple processor definitions match the handler.
      */
-    private String assignedProcessor(ProcessorDefinition.EventHandlerDescriptor handler) {
+    private String assignedProcessor(EventProcessorDefinition.EventHandlerDescriptor handler) {
         Set<String> matches = new HashSet<>();
-        for (ProcessorDefinition processorDefinition : processorDefinitions) {
-            if (processorDefinition.matchesSelector(handler)) {
-                matches.add(processorDefinition.name());
+        for (EventProcessorDefinition eventProcessorDefinition : eventProcessorDefinitions) {
+            if (eventProcessorDefinition.matchesSelector(handler)) {
+                matches.add(eventProcessorDefinition.name());
             }
         }
         if (matches.isEmpty()) {
@@ -201,10 +201,10 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @param name The processor name.
      * @return An Optional containing the processor definition if found, or empty if not found.
      */
-    private Optional<ProcessorDefinition> definitionFor(String name) {
-        for (ProcessorDefinition processorDefinition : processorDefinitions) {
-            if (processorDefinition.name().equals(name)) {
-                return Optional.of(processorDefinition);
+    private Optional<EventProcessorDefinition> definitionFor(String name) {
+        for (EventProcessorDefinition eventProcessorDefinition : eventProcessorDefinitions) {
+            if (eventProcessorDefinition.name().equals(name)) {
+                return Optional.of(eventProcessorDefinition);
             }
         }
         return Optional.empty();
