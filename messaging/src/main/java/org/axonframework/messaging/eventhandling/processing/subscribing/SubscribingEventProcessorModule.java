@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
@@ -31,7 +32,6 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCus
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.common.lifecycle.Phase;
 
 import java.util.List;
 import java.util.Objects;
@@ -158,11 +158,10 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     public SubscribingEventProcessorModule customized(
             @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
-        this.customizedProcessorConfigurationBuilder = cfg -> {
-            var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
-                                                                               defaultEventProcessorsConfiguration(
-                                                                                       cfg));
-            return instanceCustomization.apply(cfg, typeCustomization);
+        this.customizedProcessorConfigurationBuilder = config -> {
+            var typeCustomization = typeSpecificCustomizationOrNoOp(config)
+                    .apply(config, defaultEventProcessorsConfiguration(config, processorName));
+            return instanceCustomization.apply(config, typeCustomization);
         };
         return this;
     }
@@ -176,11 +175,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     @Nonnull
-    private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+    private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(
+            Configuration config,
+            String processorName
+    ) {
         return new SubscribingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg)),
-                cfg
+                parentSharedCustomizationOrDefault(config)
+                        .apply(config, new EventProcessorConfiguration(processorName, config)),
+                config
         );
     }
 

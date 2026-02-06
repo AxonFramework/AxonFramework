@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.configuration.EventBusConfigurationDefaults;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -33,15 +28,20 @@ import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventBus;
+import org.axonframework.messaging.eventhandling.configuration.EventBusConfigurationDefaults;
 
 import java.util.List;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
  * <p>
- * This enhancer disables the {@link EventBusConfigurationDefaults} to prevent duplicate {@link EventBus}
- * registration, as the {@link EventStore} implementation serves as the EventBus in event sourcing scenarios.
+ * This enhancer disables the {@link EventBusConfigurationDefaults} to prevent duplicate {@link EventBus} registration,
+ * as the {@link EventStore} implementation serves as the EventBus in event sourcing scenarios.
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
@@ -84,7 +84,9 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                 InterceptingEventStore.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .eventInterceptors(config, EventStore.class, name);
+
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventStore(delegate, dispatchInterceptors);
