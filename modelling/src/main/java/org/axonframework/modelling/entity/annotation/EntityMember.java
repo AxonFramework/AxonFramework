@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * property on the child entity and the message that matches the {@link #routingKey()} attribute.
  * <p>
  * The {@link #routingKey()} property is <b>required</b> whenever there are several child entities of the same type
- * within a class. Hence, it is required when a collection of child entities is used. However, it also holds when
+ * within a class. Hence, it is required when a collection of child entities is used. However, it also applies when
  * <b>several</b> singular child entity fields of the same type exist within an entity. For purely singular child
  * entities (not backed by an {@link Iterable} nor reoccurring within the class), this can be omitted.
  * <p>
