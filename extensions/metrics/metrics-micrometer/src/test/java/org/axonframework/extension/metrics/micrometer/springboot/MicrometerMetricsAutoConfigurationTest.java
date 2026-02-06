@@ -52,6 +52,18 @@ class MicrometerMetricsAutoConfigurationTest {
     }
 
     @Test
+    void defaultMetricAutoConfigSetsMetricRegistryBeanForEnhancerWorkWithoutProperty() {
+        testContext.withPropertyValues(
+                           "axon.axonserver.enabled=false"
+                           // Deliberately not included "axon.metrics.enabled=true" per test!
+                   )
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(MeterRegistry.class);
+                       assertThat(context).hasSingleBean(MetricsConfigurationEnhancer.class);
+                   });
+    }
+
+    @Test
     void disabledMetricsDisablesMetricRegistryAndMetricsConfigurationEnhancer() {
         testContext.withPropertyValues(
                            "axon.axonserver.enabled=false",

@@ -60,7 +60,7 @@ public class MicrometerMetricsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MeterRegistry.class)
-    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
+    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public MeterRegistry meterRegistry() {
         return new SimpleMeterRegistry();
     }
@@ -81,7 +81,7 @@ public class MicrometerMetricsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
+    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public MetricsConfigurationEnhancer metricsConfigurationEnhancer(MeterRegistry registry,
                                                                      MetricsProperties properties) {
         return new MetricsConfigurationEnhancer(registry, properties.getMicrometer().isDimensional());

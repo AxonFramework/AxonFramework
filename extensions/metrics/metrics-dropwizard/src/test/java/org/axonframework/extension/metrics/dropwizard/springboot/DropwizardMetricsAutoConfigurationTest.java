@@ -18,7 +18,6 @@ package org.axonframework.extension.metrics.dropwizard.springboot;
 
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
-import org.axonframework.extension.metrics.dropwizard.springboot.DropwizardMetricsAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -45,6 +44,18 @@ class DropwizardMetricsAutoConfigurationTest {
         testContext.withPropertyValues(
                            "axon.axonserver.enabled=false",
                            "axon.metrics.enabled=true"
+                   )
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(MetricRegistry.class);
+                       assertThat(context).hasSingleBean(MetricsConfigurationEnhancer.class);
+                   });
+    }
+
+    @Test
+    void defaultMetricAutoConfigSetsMetricRegistryBeanForEnhancerWorkWithoutProperty() {
+        testContext.withPropertyValues(
+                           "axon.axonserver.enabled=false"
+                           // Deliberately not included "axon.metrics.enabled=true" per test!
                    )
                    .run(context -> {
                        assertThat(context).hasSingleBean(MetricRegistry.class);

@@ -53,7 +53,7 @@ public class DropwizardMetricsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MetricRegistry.class)
-    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
+    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public MetricRegistry metricRegistry() {
         return new MetricRegistry();
     }
@@ -71,7 +71,7 @@ public class DropwizardMetricsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true")
+    @ConditionalOnProperty(value = "axon.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public MetricsConfigurationEnhancer metricsConfigurationEnhancer(MetricRegistry registry) {
         return new MetricsConfigurationEnhancer(registry);
     }
