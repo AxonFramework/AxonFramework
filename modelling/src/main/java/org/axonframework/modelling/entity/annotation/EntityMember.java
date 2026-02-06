@@ -71,7 +71,7 @@ public @interface EntityMember {
      * filter.
      * <p>
      * Defaults to using the {@link RoutingKeyEventTargetMatcher}, which matches messages based on the
-     * {@link #routingKey()}. Users can choose to create their own definition, and thus their own forwarding mode, that
+     * {@link #routingKey()}. Users can choose to create their own definition, with their own forwarding mode, that
      * has specific routing logic.
      *
      * @return the class defining the {@link EventTargetMatcher} for this child entity
