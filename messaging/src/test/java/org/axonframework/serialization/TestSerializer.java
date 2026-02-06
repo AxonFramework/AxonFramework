@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,16 +104,7 @@ public enum TestSerializer {
         @Override
         public synchronized Serializer getSerializer() {
             if (serializer == null) {
-                serializer = Jackson3Serializer.builder()
-                    .jsonMapperBuilderCustomizer(builder -> {
-                        builder.enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION);
-                        builder.polymorphicTypeValidator(
-                            BasicPolymorphicTypeValidator.builder()
-                                .allowIfSubType("org.axonframework.")
-                                .build()
-                        );
-                    })
-                    .build();
+                serializer = Jackson3Serializer.defaultSerializer();
             }
 
             return serializer;

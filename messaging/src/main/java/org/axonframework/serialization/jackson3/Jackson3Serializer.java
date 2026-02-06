@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import tools.jackson.databind.ObjectReader;
 import tools.jackson.databind.ObjectWriter;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.type.TypeFactory;
 
@@ -60,6 +61,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class Jackson3Serializer implements Serializer {
 
+    private static final PolymorphicTypeValidator ALLOW_ALL = BasicPolymorphicTypeValidator.builder()
+        .allowIfBaseType(Object.class)
+        .build();
+
+    private static final PolymorphicTypeValidator AXON_ONLY = BasicPolymorphicTypeValidator.builder()
+        .allowIfSubType("org.axonframework.")
+        .build();
+
     private final RevisionResolver revisionResolver;
     private final Converter converter;
     private final ObjectMapper objectMapper;
@@ -80,6 +89,22 @@ public class Jackson3Serializer implements Serializer {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Instantiate a default {@link JacksonSerializer3}.
+     * <p>
+     * The {@link RevisionResolver} is defaulted to an {@link AnnotationRevisionResolver}, the {@link Converter} to a
+     * {@link ChainingConverter}, and the {@link ClassLoader} to the ClassLoader of {@code this} class.
+     * <p>
+     * Upon instantiation, an ObjectMapper will be created with the {@link MetaDataDeserializer} registered to it.
+     * Lastly, if the provided converter is of type ChainingConverter, the {@link Jackson3Serializer#registerConverters}
+     * is performed to automatically add the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
+     *
+     * @return a {@link Jackson3Serializer}
+     */
+    public static Jackson3Serializer defaultSerializer() {
+        return builder().build();
     }
 
     /**
@@ -105,13 +130,13 @@ public class Jackson3Serializer implements Serializer {
             jmb.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         }
 
-        if (builder.defaultTyping) {
-            BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(Object.class)
-                .build();
+        PolymorphicTypeValidator typeValidator = builder.defaultTyping ? ALLOW_ALL : AXON_ONLY;
 
+        if (builder.defaultTyping) {
             jmb.activateDefaultTyping(typeValidator, DefaultTyping.NON_CONCRETE_AND_ARRAYS);
         }
+
+        jmb.polymorphicTypeValidator(typeValidator);
 
         jmb.typeFactory(builder.classLoader == null
             ? TypeFactory.createDefaultInstance()
