@@ -36,9 +36,9 @@ import java.util.function.Predicate;
  *     <li>Start with a static factory method (e.g., {@link #pooledStreaming(String)} or
  *     {@link #subscribing(String)})</li>
  *     <li>Define which event handlers should be assigned to this processor using
- *     {@link ProcessorDefinitionSelectorStep#assigningHandlers(Predicate)}</li>
- *     <li>Either apply custom configuration using {@link ProcessorDefinitionConfigurationStep#customized(Function)}
- *     or use default settings with {@link ProcessorDefinitionConfigurationStep#notCustomized()}</li>
+ *     {@link SelectorStep#assigningHandlers(Predicate)}</li>
+ *     <li>Either apply custom configuration using {@link ConfigurationStep#customized(Function)}
+ *     or use default settings with {@link ConfigurationStep#notCustomized()}</li>
  * </ol>
  * <p>
  * Example usage:
@@ -66,10 +66,10 @@ public interface EventProcessorDefinition {
      * @return The next step in the fluent API to define the handler selection criteria.
      */
     @Nonnull
-    static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(
+    static SelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(
             @Nonnull String name
     ) {
-        return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
+        return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
 
     /**
@@ -83,10 +83,10 @@ public interface EventProcessorDefinition {
      * @return The next step in the fluent API to define the handler selection criteria.
      */
     @Nonnull
-    static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribing(
+    static SelectorStep<SubscribingEventProcessorConfiguration> subscribing(
             @Nonnull String name
     ) {
-        return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
+        return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
     }
 
     /**
@@ -176,7 +176,7 @@ public interface EventProcessorDefinition {
      *
      * @param <T> The type of {@link EventProcessorConfiguration} for this processor.
      */
-    interface ProcessorDefinitionSelectorStep<T extends EventProcessorConfiguration> {
+    interface SelectorStep<T extends EventProcessorConfiguration> {
 
         /**
          * Defines the selection criteria for event handlers to be assigned to this processor.
@@ -193,7 +193,7 @@ public interface EventProcessorDefinition {
          * @return The next step in the fluent API to configure the processor settings.
          */
         @Nonnull
-        ProcessorDefinitionConfigurationStep<T> assigningHandlers(@Nonnull Predicate<EventHandlerDescriptor> selector);
+        ConfigurationStep<T> assigningHandlers(@Nonnull Predicate<EventHandlerDescriptor> selector);
     }
 
     /**
@@ -201,7 +201,7 @@ public interface EventProcessorDefinition {
      *
      * @param <T> The type of {@link EventProcessorConfiguration} for this processor.
      */
-    interface ProcessorDefinitionConfigurationStep<T extends EventProcessorConfiguration> {
+    interface ConfigurationStep<T extends EventProcessorConfiguration> {
 
         /**
          * Applies custom configuration to the processor using the provided configuration function.

@@ -19,8 +19,8 @@ package org.axonframework.extension.spring.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.extension.spring.config.EventProcessorDefinition.ProcessorDefinitionConfigurationStep;
-import org.axonframework.extension.spring.config.EventProcessorDefinition.ProcessorDefinitionSelectorStep;
+import org.axonframework.extension.spring.config.EventProcessorDefinition.ConfigurationStep;
+import org.axonframework.extension.spring.config.EventProcessorDefinition.SelectorStep;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 
 import java.util.function.Function;
@@ -37,8 +37,8 @@ import java.util.function.Predicate;
  * @since 5.0.2
  */
 @Internal
-class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
-        implements ProcessorDefinitionSelectorStep<T>, ProcessorDefinitionConfigurationStep<T> {
+class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
+        implements SelectorStep<T>, ConfigurationStep<T> {
 
     private final EventProcessorSettings.ProcessorMode mode;
     private final String name;
@@ -50,7 +50,7 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
      * @param name The processor name.
      * @param mode The processor mode (type).
      */
-    public ProcessorDefinitionBuilder(@Nonnull String name, @Nonnull EventProcessorSettings.ProcessorMode mode) {
+    public EventProcessorDefinitionBuilder(@Nonnull String name, @Nonnull EventProcessorSettings.ProcessorMode mode) {
         Assert.notNull(mode, () -> "Processor mode must not be null");
         this.mode = mode;
         this.name = Assert.nonEmpty(name, "Processor name must not be null");
@@ -71,7 +71,7 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
 
     @Override
     @Nonnull
-    public ProcessorDefinitionConfigurationStep<T> assigningHandlers(
+    public ConfigurationStep<T> assigningHandlers(
             @Nonnull Predicate<EventProcessorDefinition.EventHandlerDescriptor> selector
     ) {
         Assert.notNull(selector, () -> "Selector predicate must not be null");
