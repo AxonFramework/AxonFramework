@@ -45,9 +45,8 @@ public class RoutingKeyCommandTargetResolverDefinition implements CommandTargetR
     @Override
     public <E> CommandTargetResolver<E> createCommandTargetResolver(@Nonnull AnnotatedEntityMetamodel<E> entity,
                                                                     @Nonnull Member member) {
-        Optional<String> optionalRoutingKey = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
-        if (optionalRoutingKey.isPresent()) {
-            String routingKey = optionalRoutingKey.get();
+        String routingKey = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member).orElse(null);
+        if (routingKey != null) {
             return new RoutingKeyCommandTargetResolver<>(entity, routingKey, routingKey);
         }
 
