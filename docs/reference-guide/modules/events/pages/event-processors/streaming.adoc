@@ -185,9 +185,9 @@ axon.eventhandling.processors[example.processor].source=eventStore
 ----
 
 [#bean_based_config_pooled]
-=== Bean-based configuration - Spring Boot with ProcessorDefinition
+=== Bean-based configuration - Spring Boot with EventProcessorDefinition
 
-For programmatic, type-safe configuration of event processors, Spring Boot users can define `ProcessorDefinition` beans.
+For programmatic, type-safe configuration of event processors, Spring Boot users can define `EventProcessorDefinition` beans.
 This approach provides several advantages:
 
 * Compile-time validation of configuration
@@ -197,7 +197,7 @@ This approach provides several advantages:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -205,12 +205,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.orders"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialSegmentCount(4)
                     .batchSize(100)
                     .claimExtensionThreshold(5000)
@@ -228,13 +228,13 @@ The `assigningHandlers` method receives an `EventHandlerDescriptor` that provide
 
 This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
-Use `withDefaultSettings()` instead of `withConfiguration()` when you don't need custom processor settings but still want explicit handler assignment:
+Use `notCustomized()` instead of `customized()` when you don't need custom processor settings but still want explicit handler assignment:
 
 [source,java]
 ----
-ProcessorDefinition.pooledStreamingProcessor("example-processor")
+EventProcessorDefinition.pooledStreaming("example-processor")
         .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
-        .withDefaultSettings();
+        .notCustomized();
 ----
 
 [IMPORTANT]
@@ -243,11 +243,11 @@ ProcessorDefinition.pooledStreamingProcessor("example-processor")
 
 When using multiple configuration approaches:
 
-1. `ProcessorDefinition` beans take precedence over properties-based configuration
-2. If a handler matches multiple `ProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
-3. Handlers not matched by any `ProcessorDefinition` are assigned to a processor based on their package name (default behavior)
+1. `EventProcessorDefinition` beans take precedence over properties-based configuration
+2. If a handler matches multiple `EventProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
+3. Handlers not matched by any `EventProcessorDefinition` are assigned to a processor based on their package name (default behavior)
 
-To avoid conflicts, ensure each handler is matched by at most one `ProcessorDefinition` using mutually exclusive selectors.
+To avoid conflicts, ensure each handler is matched by at most one `EventProcessorDefinition` using mutually exclusive selectors.
 ====
 
 [[error_mode]]
@@ -400,11 +400,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, the initial token can be configured through the `initialToken()` method:
+When using `EventProcessorDefinition`, the initial token can be configured through the `initialToken()` method:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -412,12 +412,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialToken(source -> source.latestToken(null)));
     }
 }
@@ -486,11 +486,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, configure token claim settings through the configuration methods:
+When using `EventProcessorDefinition`, configure token claim settings through the configuration methods:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -498,11 +498,11 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanName().startsWith("example"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .claimExtensionThreshold(2500)
                     .tokenClaimInterval(7500));
     }
@@ -790,11 +790,11 @@ Spring Boot::
 
 The default number of segments for the `PooledStreamingEventProcessor` is sixteen.
 
-When using `ProcessorDefinition`, you can configure the initial segment count programmatically:
+When using `EventProcessorDefinition`, you can configure the initial segment count programmatically:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -802,12 +802,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialSegmentCount(32));
     }
 }
@@ -1134,12 +1134,12 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, you can configure custom thread pools for the coordinator and worker executors:
+When using `EventProcessorDefinition`, you can configure custom thread pools for the coordinator and worker executors:
 
 [source,java]
 ----
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1149,12 +1149,12 @@ import java.util.concurrent.Executors;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .startsWith("com.example"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .coordinatorExecutor(Executors.newScheduledThreadPool(
                         1, new AxonThreadFactory("Coordinator - example-processor")
                     ))
@@ -1686,11 +1686,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, first create a `MultiStreamableEventSource` bean, then reference it in your processor configuration:
+When using `EventProcessorDefinition`, first create a `MultiStreamableEventSource` bean, then reference it in your processor configuration:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.MultiStreamableEventSource;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.eventhandling.tokenstore.StreamableEventSource;
@@ -1713,11 +1713,11 @@ public class EventProcessorConfig {
     }
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanName().contains("multi"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .eventSource(multiEventSource));
     }
 }

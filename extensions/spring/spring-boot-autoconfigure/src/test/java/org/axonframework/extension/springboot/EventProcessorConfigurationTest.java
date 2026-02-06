@@ -19,8 +19,8 @@ package org.axonframework.extension.springboot;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
 import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.axonframework.messaging.core.Message;
@@ -96,10 +96,10 @@ class EventProcessorConfigurationTest {
     public static class SubscribingEventProcessorDefinitionContext {
 
         @Bean
-        public ProcessorDefinition processor1Definition() {
-            return ProcessorDefinition.subscribingProcessor(KEY1)
+        public EventProcessorDefinition processor1Definition() {
+            return EventProcessorDefinition.subscribing(KEY1)
                                       .assigningHandlers(p -> p.beanType().getPackageName().equals(KEY1))
-                                      .withConfiguration(c -> c.withInterceptor(new StubInterceptor()));
+                                      .customized(c -> c.withInterceptor(new StubInterceptor()));
         }
     }
 
@@ -107,10 +107,10 @@ class EventProcessorConfigurationTest {
     public static class PooledStreamingEventProcessorDefinitionContext {
 
         @Bean
-        public ProcessorDefinition processor2Definition() {
-            return ProcessorDefinition.pooledStreamingProcessor(KEY2)
+        public EventProcessorDefinition processor2Definition() {
+            return EventProcessorDefinition.pooledStreaming(KEY2)
                                       .assigningHandlers(p -> p.beanType().getPackageName().equals(KEY2))
-                                      .withConfiguration(c -> c.withInterceptor(new StubInterceptor()));
+                                      .customized(c -> c.withInterceptor(new StubInterceptor()));
         }
     }
 
@@ -118,10 +118,10 @@ class EventProcessorConfigurationTest {
     public static class BroadlyMatchingProcessorDefinitionContext {
 
         @Bean
-        public ProcessorDefinition processor3Definition() {
-            return ProcessorDefinition.pooledStreamingProcessor(KEY2)
+        public EventProcessorDefinition processor3Definition() {
+            return EventProcessorDefinition.pooledStreaming(KEY2)
                                       .assigningHandlers(p -> true)
-                                      .withDefaultSettings();
+                                      .notCustomized();
         }
     }
 
