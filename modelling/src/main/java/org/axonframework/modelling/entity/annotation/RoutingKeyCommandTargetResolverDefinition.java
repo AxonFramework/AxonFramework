@@ -32,7 +32,7 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
  * {@link EntityMember#routingKey routing key attribute}.
  * <p>
  * The routing key of <b>both</b> the message and entity is determined by the {@link EntityMember#routingKey attribute}
- * on the declaring member in the parent entity. The routing key of the message and of the entity are then matched to
+ * on the declaring member in the parent entity. The routing key of the message and of the entity are matched to
  * determine if a child entity should handle a given message.
  *
  * @author Mitchell Herrijgers
