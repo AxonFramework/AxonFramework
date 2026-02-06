@@ -58,7 +58,7 @@ public @interface EntityMember {
      * This attribute is <b>required</b> whenever there are several child entities of the same type. For example, when a
      * collection of child entities is used.
      * <p>
-     * Defaults to an empty string, which means no matching is taking place.
+     * Defaults to an empty string, which means no matching will take place.
      *
      * @return the routing key to use for matching messages to this child entity
      */
