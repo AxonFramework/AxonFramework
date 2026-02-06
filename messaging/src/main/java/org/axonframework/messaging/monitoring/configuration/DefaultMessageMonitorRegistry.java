@@ -245,7 +245,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         List<MessageMonitor<? super T>> monitors = new ArrayList<>();
         for (MessageMonitorFactory<? super T> factory : factories) {
             MessageMonitor<? super T> monitor = factory.build(config, componentType, componentName);
-            if (monitor != null) {
+            if (monitor != null && !(monitor instanceof NoOpMessageMonitor)) {
                 monitors.add(monitor);
             }
         }

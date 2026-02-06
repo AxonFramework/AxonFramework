@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.axonframework.extension.metrics.micrometer.TagsUtil.MESSAGE_TYPE_TAG;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -44,11 +45,13 @@ class EventProcessorLatencyMonitorTest {
     private static final String METER_NAME_PREFIX = "processor";
 
     private MeterRegistry meterRegistry;
+
     private EventProcessorLatencyMonitor.Builder testSubjectBuilder;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
+
         testSubjectBuilder = EventProcessorLatencyMonitor.builder()
                                                          .meterNamePrefix(METER_NAME_PREFIX)
                                                          .meterRegistry(meterRegistry);
@@ -58,12 +61,10 @@ class EventProcessorLatencyMonitorTest {
     void messagesWithoutTags() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.build();
 
-        //noinspection unchecked
         EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
         Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
-        //noinspection unchecked
         EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(1000));
         Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);
@@ -79,15 +80,13 @@ class EventProcessorLatencyMonitorTest {
     @Test
     void messagesWithPayloadAsCustomTag() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
+                message -> Tags.of(MESSAGE_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
-        //noinspection unchecked
         EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.now());
         Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
-        //noinspection unchecked
         EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
         Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);
@@ -99,7 +98,7 @@ class EventProcessorLatencyMonitorTest {
         assertEquals(2, meterRegistry.find(METER_NAME_PREFIX + ".latency").gauges().size());
 
         Gauge latencyGauge = Objects.requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".latency")
-                                                                 .tags("payloadType", Integer.class.getSimpleName())
+                                                                 .tags(MESSAGE_TYPE_TAG, Integer.class.getSimpleName())
                                                                  .gauge());
         assertTrue(latencyGauge.value() >= 1000);
     }
@@ -107,15 +106,13 @@ class EventProcessorLatencyMonitorTest {
     @Test
     void failureMessageWithPayloadAsCustomTag() {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
+                message -> Tags.of(MESSAGE_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
-        //noinspection unchecked
         EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
         Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
-        //noinspection unchecked
         EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now());
         Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);

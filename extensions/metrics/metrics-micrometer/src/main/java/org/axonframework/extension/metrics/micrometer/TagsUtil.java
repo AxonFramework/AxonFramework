@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,24 @@ package org.axonframework.extension.metrics.micrometer;
 
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
 
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Utility class for micrometer tag management.
+ * Utility class for Micrometer tag management.
  * <p>
- * Contains 'static final' fields which represent the micrometer tag KEY that should be consistent across different
- * metrics, and functions responsible for creating the Micrometer {@link Tag}s based on the message that is ingested.
+ * Contains {@code static final} fields which represent the micrometer tag KEY that should be consistent across
+ * different metrics, and functions responsible for creating the Micrometer {@link Tag Tags} based on the
+ * {@link Message} that is ingested by a {@link org.axonframework.messaging.monitoring.MessageMonitor}.
  *
  * @author Ivan Dugalic
- * @since 4.4
+ * @author Steven van Beelen
+ * @since 4.4.0
  */
 public class TagsUtil {
 
@@ -38,24 +43,60 @@ public class TagsUtil {
     }
 
     /**
-     * The micrometer {@link Tag} key that represents the Axon message payload type
+     * The micrometer {@link Tag} key that represents Axon Framework's {@link Message#type() message type}
+     * {@link MessageType#name() name}.
      */
-    public static final String PAYLOAD_TYPE_TAG = "payloadType";
-    /**
-     * The micrometer {@link Tag} key that represents the Axon event processor name
-     */
-    public static final String PROCESSOR_NAME_TAG = "processorName";
-    /**
-     * The function for creating the Micrometer {@link Tag}s based on the message payload type.
-     */
-    public static final Function<Message, Iterable<Tag>> PAYLOAD_TYPE_TAGGER_FUNCTION = message -> Tags.of(
-            PAYLOAD_TYPE_TAG,
-            message.payloadType().getSimpleName());
+    public static final String MESSAGE_TYPE_TAG = "messageType";
 
     /**
-     * The function for creating the Micrometer {@link Tag}s based on the message metadata.
+     * The micrometer {@link Tag} key that represents the Axon Framework's
+     * {@link org.axonframework.messaging.eventhandling.processing.EventProcessor} name.
      */
-    public static final Function<Message, Iterable<Tag>> METADATA_TAGGER_FUNCTION = message -> message
-            .metadata().entrySet().stream().map(it -> Tag.of(it.getKey(), it.getValue().toString()))
-            .collect(Collectors.toList());
+    public static final String PROCESSOR_NAME_TAG = "processorName";
+
+    /**
+     * A function for creating the Micrometer {@link Tag} based on the {@link Message#type() message type}
+     * {@link MessageType#name() name}.
+     */
+    public static final Function<Message, Iterable<Tag>> MESSAGE_TYPE_TAGGER =
+            message -> Tags.of(MESSAGE_TYPE_TAG, message.type().name());
+
+    /**
+     * A function for creating the Micrometer {@link Tag Tags} based on the {@link Message message's}
+     * {@link Message#metadata() metadata}.
+     */
+    public static final Function<Message, Iterable<Tag>> METADATA_TAGGER = message ->
+            message.metadata().entrySet().stream()
+                   .map(it -> Tag.of(it.getKey(), it.getValue()))
+                   .collect(Collectors.toList());
+
+    /**
+     * A function for creating no Micrometer {@link Tag Tags} at all.
+     */
+    public static final Function<Message, Iterable<Tag>> NO_OP = m -> List.of();
+
+    /**
+     * A function for creating a Micrometer {@link Tag} based on the given {@code processorName} only, using the
+     * {@link #PROCESSOR_NAME_TAG} key.
+     *
+     * @param processorName the name of the processor to add under the {@link #PROCESSOR_NAME_TAG} key as a tag
+     * @return a function for creating a Micrometer {@link Tag} based on the given {@code processorName} only, using the
+     * {@link #PROCESSOR_NAME_TAG} key
+     */
+    public static Function<Message, Iterable<Tag>> processorNameTag(@Nonnull String processorName) {
+        return message -> Tags.of(PROCESSOR_NAME_TAG, processorName);
+    }
+
+    /**
+     * A function for creating a Micrometer {@link Tag Tags} based on the given {@code processorName}, using the
+     * {@link #PROCESSOR_NAME_TAG} key, and the {@link #MESSAGE_TYPE_TAGGER}.
+     *
+     * @param processorName the name of the processor to add under the {@link #PROCESSOR_NAME_TAG} key as a tag
+     * @return a function for creating a Micrometer {@link Tag Tags} based on the given {@code processorName}, using the
+     * {@link #PROCESSOR_NAME_TAG} key, and the {@link #MESSAGE_TYPE_TAGGER}
+     */
+    public static Function<Message, Iterable<Tag>> processorTags(@Nonnull String processorName) {
+        return message -> Tags.of(PROCESSOR_NAME_TAG, processorName)
+                              .and(MESSAGE_TYPE_TAGGER.apply(message));
+    }
 }

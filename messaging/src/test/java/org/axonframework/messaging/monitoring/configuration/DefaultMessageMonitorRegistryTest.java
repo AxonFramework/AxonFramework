@@ -323,6 +323,25 @@ class DefaultMessageMonitorRegistryTest {
     }
 
     @Test
+    void providesNoopMessageMonitorWhenRegisteredMonitorsAreAllNoOpMessageMonitors() {
+        // Registers several no-op monitors to ensure we do not collect no-op monitors in a multi-monitor
+        testSubject.registerCommandMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerCommandMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerEventMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerEventMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerQueryMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerQueryMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerSubscriptionQueryUpdateMonitor(c -> NoOpMessageMonitor.INSTANCE)
+                   .registerSubscriptionQueryUpdateMonitor(c -> NoOpMessageMonitor.INSTANCE);
+
+        assertThat(testSubject.commandMonitor(config, CommandBus.class, null)).isInstanceOf(NoOpMessageMonitor.class);
+        assertThat(testSubject.eventMonitor(config, EventSink.class, null)).isInstanceOf(NoOpMessageMonitor.class);
+        assertThat(testSubject.queryMonitor(config, QueryBus.class, null)).isInstanceOf(NoOpMessageMonitor.class);
+        assertThat(testSubject.subscriptionQueryUpdateMonitor(config, QueryBus.class, null))
+                .isInstanceOf(NoOpMessageMonitor.class);
+    }
+
+    @Test
     void registersGenericMessageMonitorAsFourSpecializedMonitors() {
         MessageMonitor<Message> monitor = genericMessageMonitor();
         testSubject.registerMonitor(c -> monitor);
