@@ -85,7 +85,7 @@ public @interface EntityMember {
      * The {@link CommandTargetResolverDefinition} is used to determine to which of the child entities a
      * {@link CommandMessage} should be forwarded.
      * <p>
-     * The result should always be a single child entity, or no child entity at all, as command can only be handled by a
+     * The result should always be a single child entity, or no child entity at all, as a command can only be handled by a
      * single entity.
      * <p>
      * The result can also be {@code null} to indicate that no child entity should handle the command. This allows users
