@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package org.axonframework.messaging.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.RoutingStrategy;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.RoutingStrategy;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
-import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
@@ -121,23 +120,7 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
                                     .findFirst()
                                     .map(ReflectionUtils::ensureAccessible)
                                     .map(m -> new RoutingKeyResolver(null, m)));
-        }).orElseGet(() -> createLegacyResolver(type));
-    }
-
-    private RoutingKeyResolver createLegacyResolver(Class<?> type) {
-        var legacyAnnotationType = RoutingKey.class;
-        for (Field f : fieldsOf(type)) {
-            if (AnnotationUtils.findAnnotationAttributes(f, legacyAnnotationType).isPresent()) {
-                return new RoutingKeyResolver(f, null);
-            }
-        }
-        for (Method m : methodsOf(type)) {
-            if (AnnotationUtils.findAnnotationAttributes(m, legacyAnnotationType).isPresent()) {
-                ensureAccessible(m);
-                return new RoutingKeyResolver(null, m);
-            }
-        }
-        return NO_RESOLVE;
+        }).orElse(NO_RESOLVE);
     }
 
     private record RoutingKeyResolver(Field field, Method method) {
