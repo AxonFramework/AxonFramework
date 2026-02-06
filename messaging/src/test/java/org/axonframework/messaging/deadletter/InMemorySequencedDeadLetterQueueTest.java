@@ -17,19 +17,23 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test class validating the {@link InMemorySequencedDeadLetterQueue}.
  *
  * @author Steven van Beelen
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
@@ -65,9 +69,9 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Override
     protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
-                                                                 Instant lastTouched,
-                                                                 Throwable requeueCause,
-                                                                 Metadata diagnostics) {
+                                                              Instant lastTouched,
+                                                              Throwable requeueCause,
+                                                              Metadata diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause)
                        .withDiagnostics(diagnostics)
@@ -79,40 +83,53 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
         GenericDeadLetter.clock = clock;
     }
 
-    @Test
-    void buildDefaultQueue() {
-        assertDoesNotThrow(() -> InMemorySequencedDeadLetterQueue.defaultQueue());
-    }
+    @Nested
+    class WhenBuilding {
 
-    @Test
-    void buildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
-                InMemorySequencedDeadLetterQueue.builder();
+        @Test
+        void buildDefaultQueue() {
+            // when / then
+            assertDoesNotThrow(() -> InMemorySequencedDeadLetterQueue.defaultQueue());
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
-    }
+        @Test
+        void buildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
+            // given
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
+                    InMemorySequencedDeadLetterQueue.builder();
 
-    @Test
-    void buildWithZeroMaxSequencesThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
-                InMemorySequencedDeadLetterQueue.builder();
+            // when / then
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
-    }
+        @Test
+        void buildWithZeroMaxSequencesThrowsAxonConfigurationException() {
+            // given
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
+                    InMemorySequencedDeadLetterQueue.builder();
 
-    @Test
-    void buildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
-                InMemorySequencedDeadLetterQueue.builder();
+            // when / then
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
-    }
+        @Test
+        void buildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
+            // given
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
+                    InMemorySequencedDeadLetterQueue.builder();
 
-    @Test
-    void buildWithZeroMaxSequenceSizeThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
-                InMemorySequencedDeadLetterQueue.builder();
+            // when / then
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
+        @Test
+        void buildWithZeroMaxSequenceSizeThrowsAxonConfigurationException() {
+            // given
+            InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
+                    InMemorySequencedDeadLetterQueue.builder();
+
+            // when / then
+            assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
+        }
     }
 }

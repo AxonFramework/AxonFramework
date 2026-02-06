@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.deadletter.annotation;
+package org.axonframework.messaging.deadletter;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -34,14 +31,14 @@ import java.util.concurrent.CompletableFuture;
  * A {@link ParameterResolverFactory} constructing a {@link ParameterResolver} resolving the {@link DeadLetter} that is
  * being processed.
  * <p>
- * Expects the {@code DeadLetter} to reside under the {@link LegacyUnitOfWork#resources()} using the class
- * {@link Class#getName() name} of the {@code DeadLetter} as the key. Hence, the {@code DeadLetter} processor is
- * required to add it to the resources before invoking the message handlers. If no {@link LegacyUnitOfWork} is active or
- * there is no {@code DeadLetter} is present, the resolver will return {@code null}.
+ * Expects the {@code DeadLetter} to reside in the {@link ProcessingContext} using the {@link DeadLetter#RESOURCE_KEY}.
+ * Hence, the {@code DeadLetter} processor is required to add it to the context before invoking the message handlers. If
+ * no {@code DeadLetter} is present in the context, the resolver will return {@code null}.
  * <p>
  * The parameter resolver matches for any type of {@link Message}.
  *
  * @author Steven van Beelen
+ * @author Mateusz Nowak
  * @since 4.7.0
  */
 public class DeadLetterParameterResolverFactory implements ParameterResolverFactory {
@@ -57,21 +54,15 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     /**
      * A {@link ParameterResolver} implementation resolving the current {@link DeadLetter}.
      * <p>
-     * Expects the {@code DeadLetter} to reside under the {@link LegacyUnitOfWork#resources()} using the class
-     * {@link Class#getName() name} of the {@code DeadLetter} as the key. Furthermore, this resolver matches for any
-     * type of {@link Message}.
+     * Expects the {@code DeadLetter} to reside in the {@link ProcessingContext} using the
+     * {@link DeadLetter#RESOURCE_KEY}. Furthermore, this resolver matches for any type of {@link Message}.
      */
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
         @Nonnull
         @Override
         public CompletableFuture<DeadLetter<?>> resolveParameterValue(@Nonnull ProcessingContext context) {
-            return CompletableFuture.completedFuture(
-                    CurrentUnitOfWork.isStarted()
-                            ? (DeadLetter<?>) CurrentUnitOfWork.map(uow -> uow.getResource(DeadLetter.class.getName()))
-                                                               .orElse(null)
-                            : null
-            );
+            return CompletableFuture.completedFuture(DeadLetter.fromContext(context).orElse(null));
         }
 
         @Override

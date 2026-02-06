@@ -30,8 +30,8 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -42,7 +42,7 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
+class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
 
@@ -131,7 +131,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    public SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
+    public SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         return JpaSequencedDeadLetterQueue
                 .builder()
@@ -187,14 +187,14 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Test
     void cannotRequeueGenericDeadLetter() {
-        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter();
         assertThrows(WrongDeadLetterTypeException.class, () -> queue.requeue(letter, d -> d));
     }
 
     @Test
     void cannotEvictGenericDeadLetter() {
-        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter();
         assertThrows(WrongDeadLetterTypeException.class, () -> queue.evict(letter));
     }
