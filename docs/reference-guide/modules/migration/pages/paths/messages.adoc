@@ -7,7 +7,7 @@ This path covers the message-model migration from Axon Framework 4.x annotations
 == Message-specific annotations
 
 In Axon Framework 4, the type of a message was often implicitly determined by its class or by how it was dispatched. 
-AF5 introduces dedicated annotations to explicitly define the nature of your message objects.
+Axon Framework 5 introduces dedicated annotations to explicitly define the nature of your message objects.
 
 The following table summarizes the primary annotation changes:
 
@@ -17,11 +17,11 @@ The following table summarizes the primary annotation changes:
 
 | `@TargetAggregateIdentifier`
 | `@TargetEntityId`
-| AF5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. See the xref:migration:understanding-architecture-principles.adoc#moving-away-from-aggregates[architecture principles] for more details.
+| Axon Framework 5 moves from the "Aggregate" terminology towards a more general "Entity" model. This aligns with the Dynamic Consistency Boundary (DCB) principles where boundaries are more fluid. See the xref:migration:understanding-architecture-principles.adoc#moving-away-from-aggregates[architecture principles] for more details.
 
 | `@Revision`
 | `@Event(version = "...")`
-| Consolidation of message metadata. The version is now part of the `MessageType`, which is a core concept in AF5 for message identification and conversion.
+| Consolidation of message metadata. The version is now part of the `MessageType`, which is a core concept in Axon Framework 5 for message identification and conversion.
 
 | `@RoutingKey`
 | `@Command(routingKey = "...")`
@@ -30,6 +30,8 @@ The following table summarizes the primary annotation changes:
 
 == Explicit message types
 
+One of the most significant changes in Axon Framework 5 is the introduction of `MessageType`.
+It decouples the logical name and version of a message from its Java class.
 One of the most significant changes in AF5 is the introduction of xref:messaging-concepts:anatomy-message.adoc#message_type[`MessageType`], which introduces the `QualifiedName` and decouples the logical name and version of a message from its implementing class.
 
 To embrace this, you should use the `@Command`, `@Event`, and `@Query` annotations on your message classes.
@@ -79,7 +81,7 @@ If you used `@Revision` in AF4, ensure to migrate to the new versioning approach
 === Target entity identification
 
 When sending a command to an entity (formerly aggregate), you previously used `@TargetAggregateIdentifier`. 
-In AF5, this is replaced by `@TargetEntityId`. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the xref:migration:understanding-architecture-principles.adoc#moving-away-from-aggregates[architecture principles] for more context.
+In Axon Framework 5, this is replaced by `@TargetEntityId`. This shift is part of the broader move towards Dynamic Consistency Boundaries. See the xref:migration:understanding-architecture-principles.adoc#moving-away-from-aggregates[architecture principles] for more context.
 
 [source,java]
 ----
@@ -115,7 +117,7 @@ public class MyCommand {
 }
 ----
 
-Note that in AF5, the `routingKey` property in the annotation refers to the **name of the property** (field or method) in the class that should be used for routing.
+Note that in Axon Framework 5, the `routingKey` property in the annotation refers to the **name of the property** (field or method) in the class that should be used for routing.
 If a method name is provided, it can be the actual method name (`getCardId`) or the property name (`cardId`).
 For more details, see the xref:commands:command-dispatchers.adoc#configuring-routing-keys-with-command[Configuring routing keys with @Command] section in the Command Dispatching guide.
 
