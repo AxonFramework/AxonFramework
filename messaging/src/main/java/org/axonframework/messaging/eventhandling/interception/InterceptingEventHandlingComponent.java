@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,17 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An {@link EventHandlingComponent} implementation that supports intercepting event handling through
@@ -60,20 +62,22 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
      */
     public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
+    private final List<MessageHandlerInterceptor<? super EventMessage>> interceptors;
     private final EventMessageHandlerInterceptorChain interceptorChain;
 
     /**
      * Constructs the component with the given delegate and interceptors.
      *
-     * @param delegate                   The EventHandlingComponent to delegate to.
-     * @param messageHandlerInterceptors The list of interceptors to initialize with.
+     * @param delegate     the EventHandlingComponent to delegate to
+     * @param interceptors the list of interceptors to initialize with
      */
     public InterceptingEventHandlingComponent(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> messageHandlerInterceptors,
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
-        this.interceptorChain = new EventMessageHandlerInterceptorChain(messageHandlerInterceptors, delegate);
+        this.interceptors = new ArrayList<>(Objects.requireNonNull(interceptors, "The interceptors must not be null."));
+        this.interceptorChain = new EventMessageHandlerInterceptorChain(interceptors, delegate);
     }
 
     @Nonnull
@@ -88,6 +92,6 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
-        descriptor.describeProperty("interceptorChain", interceptorChain);
+        descriptor.describeProperty("interceptors", interceptors);
     }
 }
