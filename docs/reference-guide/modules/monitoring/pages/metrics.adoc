@@ -61,7 +61,7 @@ The following table shows the default `MessageMonitor` implementations registere
 | `\{name}-emitter.messageCounter`, `\{name}-emitter.messageTimer`, `\{name}-emitter.capacity`
 |===
 
-The `\{name}` placeholder is either the configured component name or the simple class name of the component type (e.g., `CommandBus`, `QueryBus`) if the infrastructure component was registered without a name.
+The `\{name}` placeholder is either the configured component name or the simple class name of the component type (for example, `CommandBus`, `QueryBus`) if the infrastructure component was registered without a name.
 
 The following example shows you how to configure default metrics for your message handling components:
 
