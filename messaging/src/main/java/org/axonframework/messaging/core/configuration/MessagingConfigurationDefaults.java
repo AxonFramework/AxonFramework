@@ -31,7 +31,11 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.commandhandling.interception.CommandSequencingInterceptor;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
+import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
+import org.axonframework.messaging.commandhandling.sequencing.RoutingKeyCommandSequencingPolicy;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -94,6 +98,7 @@ import java.util.List;
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DefaultCorrelationDataProviderRegistry} for class {@link CorrelationDataProviderRegistry} containing the {@link MessageOriginProvider}.</li>
+ *     <li>Registers a {@link RoutingKeyCommandSequencingPolicy} for class {@link CommandSequencingPolicy}</li>
  *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
@@ -162,6 +167,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CorrelationDataProviderRegistry.class,
                                       MessagingConfigurationDefaults::defaultCorrelationDataProviderRegistry)
+                .registerIfNotPresent(CommandSequencingPolicy.class,
+                                      MessagingConfigurationDefaults::defaultCommandSequencingPolicy)
                 .registerIfNotPresent(DispatchInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
                 .registerIfNotPresent(HandlerInterceptorRegistry.class,
@@ -210,6 +217,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static CorrelationDataProviderRegistry defaultCorrelationDataProviderRegistry(Configuration config) {
         return new DefaultCorrelationDataProviderRegistry().registerProvider(c -> new MessageOriginProvider());
+    }
+
+    private static CommandSequencingPolicy defaultCommandSequencingPolicy(Configuration config) {
+        return new RoutingKeyCommandSequencingPolicy();
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {
@@ -311,6 +322,12 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         if (!providers.isEmpty()) {
             handlerInterceptorRegistry = handlerInterceptorRegistry
                     .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
+        }
+
+        CommandSequencingPolicy commandSequencingPolicy = config.getComponent(CommandSequencingPolicy.class);
+        if (!(commandSequencingPolicy instanceof NoOpCommandSequencingPolicy)) {
+            handlerInterceptorRegistry = handlerInterceptorRegistry
+                    .registerCommandInterceptor(c -> new CommandSequencingInterceptor<>(commandSequencingPolicy));
         }
         return handlerInterceptorRegistry;
     }

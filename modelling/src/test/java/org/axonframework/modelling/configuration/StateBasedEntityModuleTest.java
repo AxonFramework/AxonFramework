@@ -19,6 +19,8 @@ package org.axonframework.modelling.configuration;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
+import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
@@ -143,12 +145,15 @@ class StateBasedEntityModuleTest {
     @Test
     void doesRegisterCommandHandlingComponentWithModel() {
         CommandBus commandBus = mock(CommandBus.class);
-        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
+        // and the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor
         // This ensures we keep the SimpleCommandBus, from which we can capture the handling component subscribe method.
         ModellingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
+                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+                                                              c -> new NoOpCommandSequencingPolicy()))
                 .componentRegistry(cr -> cr.registerModule(stateBasedModuleWithModel()))
                 .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> commandBus))
                 .start();
@@ -171,7 +176,7 @@ class StateBasedEntityModuleTest {
         return baseModule()
                 .messagingModel((config, builder) -> builder
                         .instanceCommandHandler(new QualifiedName("myQualifiedName"),
-                                                                 (c1, command, ctx) -> MessageStream.empty().cast())
+                                                (c1, command, ctx) -> MessageStream.empty().cast())
                         .build())
                 .entityIdResolver(c -> (message, context) -> new CourseId());
     }

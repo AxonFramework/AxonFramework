@@ -21,6 +21,7 @@ import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -89,6 +90,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasBean(QueryGateway.class.getName());
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean(QueryBus.class.getName());
+            assertThat(context).hasSingleBean(CommandSequencingPolicy.class);
         });
     }
 
@@ -119,6 +121,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasBean("customQueryGateway");
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean("customQueryBus");
+            assertThat(context).hasSingleBean(CommandSequencingPolicy.class);
+            assertThat(context).hasBean("customCommandSequencingPolicy");
         });
     }
 
@@ -206,6 +210,11 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         @Bean
         public QueryBus customQueryBus() {
             return mock(QueryBus.class);
+        }
+
+        @Bean
+        public CommandSequencingPolicy customCommandSequencingPolicy() {
+            return mock(CommandSequencingPolicy.class);
         }
     }
 }
