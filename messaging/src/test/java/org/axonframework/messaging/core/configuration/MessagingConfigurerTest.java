@@ -155,7 +155,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         CommandBus expected = aCommandBus();
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
-        // This otherwise leads to the InterceptingCommandBus
+        // The ApplicationContextHandlerInterceptor is always present, so the bus is wrapped in InterceptingCommandBus.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
@@ -163,7 +163,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .registerCommandBus(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(CommandBus.class));
+        CommandBus actual = result.getComponent(CommandBus.class);
+        assertThat(actual).isInstanceOf(InterceptingCommandBus.class);
     }
 
     @Test
@@ -197,7 +198,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         QueryBus expected = QueryBusTestUtils.aQueryBus();
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
-        // This otherwise leads to the InterceptingQueryBus
+        // The ApplicationContextHandlerInterceptor is always present, so the bus is wrapped in InterceptingQueryBus.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
@@ -205,7 +206,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .registerQueryBus(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(QueryBus.class));
+        QueryBus actual = result.getComponent(QueryBus.class);
+        assertThat(actual).isInstanceOf(InterceptingQueryBus.class);
     }
 
     @Test
@@ -313,6 +315,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         };
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
+        // The ApplicationContextHandlerInterceptor is always registered, so each list has 2 interceptors.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
@@ -323,23 +326,23 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors =
                 handlerInterceptorRegistry.commandInterceptors(result);
-        assertThat(commandInterceptors).hasSize(1);
+        assertThat(commandInterceptors).hasSize(2);
         //noinspection DataFlowIssue | Input is not important to validate invocation
-        commandInterceptors.getFirst().interceptOnHandle(null, null, null);
+        commandInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(1);
 
         List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors =
                 handlerInterceptorRegistry.eventInterceptors(result);
-        assertThat(eventInterceptors).hasSize(1);
+        assertThat(eventInterceptors).hasSize(2);
         //noinspection DataFlowIssue | Input is not important to validate invocation
-        eventInterceptors.getFirst().interceptOnHandle(null, null, null);
+        eventInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(2);
 
         List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors =
                 handlerInterceptorRegistry.queryInterceptors(result);
-        assertThat(queryInterceptors).hasSize(1);
+        assertThat(queryInterceptors).hasSize(2);
         //noinspection DataFlowIssue | Input is not important to validate invocation
-        queryInterceptors.getFirst().interceptOnHandle(null, null, null);
+        queryInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(3);
     }
 

@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.configuration;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
@@ -62,7 +63,8 @@ class SimpleQueryHandlingModuleTest {
     @Test
     void buildRegistersQueryHandlers() {
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        // This ensures we keep the SimpleQueryBus, from which we can retrieve the subscription for validation.
+        // The ApplicationContextHandlerInterceptor is always present, so the QueryBus will be wrapped in
+        // InterceptingQueryBus. We need to describe the delegate (SimpleQueryBus) to retrieve subscriptions.
         AxonConfiguration configuration = MessagingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(
@@ -80,8 +82,13 @@ class SimpleQueryHandlingModuleTest {
 
         Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
 
+        MockComponentDescriptor outerDescriptor = new MockComponentDescriptor();
+        resultConfig.getComponent(QueryBus.class).describeTo(outerDescriptor);
+
+        // The QueryBus is wrapped by InterceptingQueryBus, so get the delegate and describe it.
+        Object delegate = outerDescriptor.getProperty("delegate");
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
-        resultConfig.getComponent(QueryBus.class).describeTo(descriptor);
+        ((DescribableComponent) delegate).describeTo(descriptor);
 
         Map<QualifiedName, QueryHandlingComponent> subscriptions = descriptor.getProperty("subscriptions");
         assertTrue(subscriptions.containsKey(QUERY_NAME));

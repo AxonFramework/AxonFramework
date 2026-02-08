@@ -42,6 +42,17 @@ import java.util.function.UnaryOperator;
 public interface ProcessingContext extends ProcessingLifecycle, ApplicationContext, Context {
 
     /**
+     * {@link ResourceKey} used to override the {@link ApplicationContext} for component resolution within this
+     * {@link ProcessingContext}.
+     * <p>
+     * When present, {@link #component(Class)} and {@link #component(Class, String)} resolve components from the
+     * {@code ApplicationContext} stored under this key instead of the default one.
+     *
+     * @see #withResource(ResourceKey, Object)
+     */
+    ResourceKey<ApplicationContext> APPLICATION_CONTEXT = ResourceKey.withLabel("ApplicationContext");
+
+    /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.
      * <p>
      * The given {@code resource} as added to the branched {@code ProcessingContext} under the given {@code key}.

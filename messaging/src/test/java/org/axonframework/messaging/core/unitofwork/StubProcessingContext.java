@@ -289,6 +289,10 @@ public class StubProcessingContext implements ProcessingContext {
     @Nonnull
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        ApplicationContext ctx = getResource(APPLICATION_CONTEXT);
+        if (ctx != null) {
+            return ctx.component(type, name);
+        }
         return applicationContext.component(type, name);
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.messaging.core.ApplicationContext;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -78,88 +79,19 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.on(phase, action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOn(phase, action);
-    }
-
-    @Override
-    public ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPreInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPreInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPostInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPostInvocation(action);
-    }
-
-    @Override
-    public ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPrepareCommit(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPrepareCommit(action);
-    }
-
-    @Override
-    public ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onCommit(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnCommit(action);
-    }
-
-    @Override
-    public ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onAfterCommit(action);
-    }
-
-    @Override
-    public ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnAfterCommit(action);
+    public ProcessingLifecycle on(@Nonnull Phase phase,
+                                  @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+        return delegate.on(phase, ctx -> action.apply(this));
     }
 
     @Override
     public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
-        return delegate.onError(action);
+        return delegate.onError((ctx, phase, error) -> action.handle(this, phase, error));
     }
 
     @Override
     public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.whenComplete(action);
-    }
-
-    @Override
-    public ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.doFinally(action);
+        return delegate.whenComplete(ctx -> action.accept(this));
     }
 
     @Override
@@ -239,12 +171,20 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     @Nonnull
     @Override
     public <C> C component(@Nonnull Class<C> type) {
+        ApplicationContext ctx = getResource(APPLICATION_CONTEXT);
+        if (ctx != null) {
+            return ctx.component(type);
+        }
         return delegate.component(type);
     }
 
     @Nonnull
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        ApplicationContext ctx = getResource(APPLICATION_CONTEXT);
+        if (ctx != null) {
+            return ctx.component(type, name);
+        }
         return delegate.component(type, name);
     }
 }

@@ -499,12 +499,20 @@ public class UnitOfWork implements ProcessingLifecycle {
         @Nonnull
         @Override
         public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+            ApplicationContext ctx = getResource(APPLICATION_CONTEXT);
+            if (ctx != null) {
+                return ctx.component(type, name);
+            }
             return applicationContext.component(type, name);
         }
 
         @Nonnull
         @Override
         public <C> C component(@Nonnull Class<C> type) {
+            ApplicationContext ctx = getResource(APPLICATION_CONTEXT);
+            if (ctx != null) {
+                return ctx.component(type);
+            }
             return applicationContext.component(type);
         }
 

@@ -45,6 +45,7 @@ import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.MessageOriginProvider;
+import org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor;
 import org.axonframework.messaging.core.interception.CorrelationDataInterceptor;
 import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
@@ -230,6 +231,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static HandlerInterceptorRegistry defaultHandlerInterceptorRegistry(Configuration config) {
         HandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
+
+        // Register ApplicationContext interceptor first, so all handlers resolve module-specific components.
+        handlerInterceptorRegistry = handlerInterceptorRegistry.registerInterceptor(
+                c -> new ApplicationContextHandlerInterceptor(new ConfigurationApplicationContext(c))
+        );
 
         handlerInterceptorRegistry = registerMonitoringHandlerInterceptors(handlerInterceptorRegistry, config);
 
