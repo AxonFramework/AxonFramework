@@ -86,7 +86,7 @@
         <jacoco-maven.version>0.8.14</jacoco-maven.version>
         <maven-assembly.version>3.8.0</maven-assembly.version>
         <maven-clean.version>3.5.0</maven-clean.version>
-        <maven-compiler.version>3.14.1</maven-compiler.version>
+        <maven-compiler.version>3.15.0</maven-compiler.version>
         <maven-enforcer.version>3.6.2</maven-enforcer.version>
         <maven-failsafe.version>3.5.4</maven-failsafe.version>
         <maven-gpg.version>3.2.8</maven-gpg.version>

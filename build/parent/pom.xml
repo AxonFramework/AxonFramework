@@ -55,10 +55,10 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.0.2</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.2.3.Final</hibernate-core.version>
+        <hibernate-core.version>7.2.4.Final</hibernate-core.version>
         <mysql-connector-java.version>9.6.0</mysql-connector-java.version>
         <postgresql.version>42.7.9</postgresql.version>
-        <ojdbc.version>23.26.0.0.0</ojdbc.version>
+        <ojdbc.version>23.26.1.0.0</ojdbc.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.el.version>6.0.1</jakarta.el.version>
@@ -90,7 +90,7 @@
         <jackson.version>2.21.0</jackson.version>
         <!-- Scheduling -->
         <db-scheduler.version>16.7.1</db-scheduler.version>
-        <jobrunr.version>8.4.1</jobrunr.version>
+        <jobrunr.version>8.4.2</jobrunr.version>
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.15</spring.version>

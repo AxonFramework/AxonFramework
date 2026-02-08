@@ -198,7 +198,7 @@
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
-            <version>23.26.0.0.0</version>
+            <version>23.26.1.0.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Scheduling -->
