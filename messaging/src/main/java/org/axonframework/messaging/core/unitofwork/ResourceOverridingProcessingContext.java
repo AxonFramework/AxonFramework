@@ -78,87 +78,89 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
 
     @Override
     public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.on(phase, action);
+        return delegate.on(phase, ignored -> action.apply(this));
     }
 
     @Override
     public ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOn(phase, action);
+        return delegate.runOn(phase, ignored -> action.accept(this));
     }
 
     @Override
     public ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPreInvocation(action);
+        return on(DefaultPhases.PRE_INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPreInvocation(action);
+        return runOn(DefaultPhases.PRE_INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onInvocation(action);
+        return on(DefaultPhases.INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnInvocation(action);
+        return runOn(DefaultPhases.INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPostInvocation(action);
+        return on(DefaultPhases.POST_INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPostInvocation(action);
+        return runOn(DefaultPhases.POST_INVOCATION, action);
     }
 
     @Override
     public ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPrepareCommit(action);
+        return on(DefaultPhases.PREPARE_COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPrepareCommit(action);
+        return runOn(DefaultPhases.PREPARE_COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onCommit(action);
+        return on(DefaultPhases.COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnCommit(action);
+        return runOn(DefaultPhases.COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onAfterCommit(action);
+        return on(DefaultPhases.AFTER_COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnAfterCommit(action);
+        return runOn(DefaultPhases.AFTER_COMMIT, action);
     }
 
     @Override
     public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
-        return delegate.onError(action);
+        return delegate.onError((context, phase, error) -> action.handle(this, phase, error));
     }
 
     @Override
     public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.whenComplete(action);
+        return delegate.whenComplete(ignored -> action.accept(this));
     }
 
     @Override
     public ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.doFinally(action);
+        onError((context, phase, error) -> action.accept(context));
+        whenComplete(action);
+        return this;
     }
 
     @Override
