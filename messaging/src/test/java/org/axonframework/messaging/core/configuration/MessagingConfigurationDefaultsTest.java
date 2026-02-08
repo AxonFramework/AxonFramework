@@ -163,9 +163,9 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(2);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(2);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(2);
     }
 
     @Test
@@ -184,9 +184,9 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
     }
 
     @Test
@@ -203,7 +203,7 @@ class MessagingConfigurationDefaultsTest {
         CommandBus configuredCommandBus = configurer.build()
                                                     .getComponent(CommandBus.class);
 
-        assertEquals(testCommandBus, configuredCommandBus);
+        assertThat(configuredCommandBus).isInstanceOf(InterceptingCommandBus.class);
     }
 
     @Test

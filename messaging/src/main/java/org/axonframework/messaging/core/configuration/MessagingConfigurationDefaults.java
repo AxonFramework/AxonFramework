@@ -50,6 +50,7 @@ import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorR
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -229,17 +230,22 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static HandlerInterceptorRegistry defaultHandlerInterceptorRegistry(Configuration config) {
-        HandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
+        DefaultHandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
 
-        handlerInterceptorRegistry = registerMonitoringHandlerInterceptors(handlerInterceptorRegistry, config);
+        handlerInterceptorRegistry.registerInterceptor(
+                -1,
+                c -> new ApplicationContextHandlerInterceptor(new ConfigurationApplicationContext(config))
+        );
+
+        handlerInterceptorRegistry = (DefaultHandlerInterceptorRegistry)
+                registerMonitoringHandlerInterceptors(handlerInterceptorRegistry, config);
 
         List<CorrelationDataProvider> providers = config
                 .getComponent(CorrelationDataProviderRegistry.class)
                 .correlationDataProviders(config);
 
         if (!providers.isEmpty()) {
-            handlerInterceptorRegistry = handlerInterceptorRegistry
-                    .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
+            handlerInterceptorRegistry.registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
         }
 
         return handlerInterceptorRegistry;

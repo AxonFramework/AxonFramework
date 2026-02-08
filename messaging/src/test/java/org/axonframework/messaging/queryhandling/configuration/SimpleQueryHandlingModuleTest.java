@@ -17,6 +17,7 @@
 package org.axonframework.messaging.queryhandling.configuration;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -81,9 +82,17 @@ class SimpleQueryHandlingModuleTest {
         Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
 
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
-        resultConfig.getComponent(QueryBus.class).describeTo(descriptor);
+        QueryBus queryBus = resultConfig.getComponent(QueryBus.class);
+        queryBus.describeTo(descriptor);
 
         Map<QualifiedName, QueryHandlingComponent> subscriptions = descriptor.getProperty("subscriptions");
+        if (subscriptions == null) {
+            Object delegate = descriptor.getProperty("delegate");
+            assertTrue(delegate instanceof DescribableComponent);
+            MockComponentDescriptor delegateDescriptor = new MockComponentDescriptor();
+            ((DescribableComponent) delegate).describeTo(delegateDescriptor);
+            subscriptions = delegateDescriptor.getProperty("subscriptions");
+        }
         assertTrue(subscriptions.containsKey(QUERY_NAME));
     }
 

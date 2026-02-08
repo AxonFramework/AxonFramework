@@ -17,8 +17,10 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.ApplicationContext;
 import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.EmptyApplicationContext;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -42,6 +44,13 @@ import java.util.function.UnaryOperator;
 public interface ProcessingContext extends ProcessingLifecycle, ApplicationContext, Context {
 
     /**
+     * The {@link ResourceKey} used to store and retrieve the {@link ApplicationContext} from this
+     * {@link ProcessingContext}.
+     */
+    ResourceKey<ApplicationContext> APPLICATION_CONTEXT_RESOURCE =
+            ResourceKey.withLabel("ApplicationContext");
+
+    /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.
      * <p>
      * The given {@code resource} as added to the branched {@code ProcessingContext} under the given {@code key}.
@@ -55,6 +64,22 @@ public interface ProcessingContext extends ProcessingLifecycle, ApplicationConte
     default <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
                                                @Nonnull T resource) {
         return new ResourceOverridingProcessingContext<>(this, key, resource);
+    }
+
+    /**
+     * Returns the component declared under the given {@code type} and {@code name} from the
+     * {@link ApplicationContext} stored as a resource in this {@code ProcessingContext}.
+     * <p>
+     * If no {@link ApplicationContext} is present, the {@link EmptyApplicationContext} is used as a fallback.
+     */
+    @Nonnull
+    @Override
+    default <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        ApplicationContext applicationContext = getResource(APPLICATION_CONTEXT_RESOURCE);
+        if (applicationContext == null) {
+            applicationContext = EmptyApplicationContext.INSTANCE;
+        }
+        return applicationContext.component(type, name);
     }
 
     /**

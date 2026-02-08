@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
@@ -32,6 +33,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
@@ -39,7 +41,9 @@ import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
@@ -50,10 +54,12 @@ import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProvid
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryBusTestUtils;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
@@ -163,7 +169,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .registerCommandBus(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(CommandBus.class));
+        assertThat(result.getComponent(CommandBus.class))
+                .isInstanceOf(org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus.class);
     }
 
     @Test
@@ -205,7 +212,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .registerQueryBus(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(QueryBus.class));
+        assertThat(result.getComponent(QueryBus.class))
+                .isInstanceOf(org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus.class);
     }
 
     @Test
@@ -308,8 +316,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         AtomicInteger counter = new AtomicInteger();
         MessageHandlerInterceptor<Message> handlerInterceptor = (message, context, interceptorChain) -> {
             counter.incrementAndGet();
-            //noinspection DataFlowIssue | Result is not important to validate invocation
-            return null;
+            return interceptorChain.proceed(message, context);
         };
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
@@ -320,26 +327,33 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);
+        ProcessingContext context = new StubProcessingContext();
 
         List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors =
                 handlerInterceptorRegistry.commandInterceptors(result);
-        assertThat(commandInterceptors).hasSize(1);
-        //noinspection DataFlowIssue | Input is not important to validate invocation
-        commandInterceptors.getFirst().interceptOnHandle(null, null, null);
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        MessageHandlerInterceptorChain commandChain =
+                (message, processingContext) -> MessageStream.empty().cast();
+        CommandMessage command = new GenericCommandMessage(new MessageType("test.command"), "payload");
+        commandInterceptors.forEach(interceptor -> interceptor.interceptOnHandle(command, context, commandChain));
         assertThat(counter).hasValue(1);
 
         List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors =
                 handlerInterceptorRegistry.eventInterceptors(result);
-        assertThat(eventInterceptors).hasSize(1);
-        //noinspection DataFlowIssue | Input is not important to validate invocation
-        eventInterceptors.getFirst().interceptOnHandle(null, null, null);
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        MessageHandlerInterceptorChain eventChain =
+                (message, processingContext) -> MessageStream.empty().cast();
+        EventMessage event = new GenericEventMessage(new MessageType("test.event"), "payload");
+        eventInterceptors.forEach(interceptor -> interceptor.interceptOnHandle(event, context, eventChain));
         assertThat(counter).hasValue(2);
 
         List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors =
                 handlerInterceptorRegistry.queryInterceptors(result);
-        assertThat(queryInterceptors).hasSize(1);
-        //noinspection DataFlowIssue | Input is not important to validate invocation
-        queryInterceptors.getFirst().interceptOnHandle(null, null, null);
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        MessageHandlerInterceptorChain queryChain =
+                (message, processingContext) -> MessageStream.empty().cast();
+        QueryMessage query = new GenericQueryMessage(new MessageType("test.query"), "payload");
+        queryInterceptors.forEach(interceptor -> interceptor.interceptOnHandle(query, context, queryChain));
         assertThat(counter).hasValue(3);
     }
 

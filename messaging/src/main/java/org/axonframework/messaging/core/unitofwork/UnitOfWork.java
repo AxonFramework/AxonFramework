@@ -219,6 +219,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             this.forceSyncProcessing = forceSyncProcessing;
             this.resources = new ConcurrentHashMap<>();
             this.applicationContext = applicationContext;
+            this.resources.put(APPLICATION_CONTEXT_RESOURCE, applicationContext);
         }
 
         @Override
@@ -496,17 +497,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             return resources.remove(key, expectedResource);
         }
 
-        @Nonnull
-        @Override
-        public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-            return applicationContext.component(type, name);
-        }
-
-        @Nonnull
-        @Override
-        public <C> C component(@Nonnull Class<C> type) {
-            return applicationContext.component(type);
-        }
+        // component(...) is resolved through ProcessingContext default implementation
 
         @Override
         public String toString() {

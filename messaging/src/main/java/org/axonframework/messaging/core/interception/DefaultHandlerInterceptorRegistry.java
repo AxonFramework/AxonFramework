@@ -65,6 +65,18 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     public HandlerInterceptorRegistry registerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
+        return registerInterceptor(0, interceptorBuilder);
+    }
+
+    /**
+     * Registers the given {@code interceptorBuilder} constructing a generic {@link Message}
+     * {@link MessageHandlerInterceptor} for all handling infrastructure components at the given {@code order}.
+     */
+    @Nonnull
+    public HandlerInterceptorRegistry registerInterceptor(
+            int order,
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+    ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
         registerCommandInterceptor(config -> {
@@ -74,7 +86,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
                     context,
                     (m, c) -> chain.proceed((CommandMessage) m, c)
             );
-        });
+        }, order);
         registerEventInterceptor(config -> {
             MessageHandlerInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
             return (message, context, chain) -> genericInterceptor.interceptOnHandle(
@@ -82,7 +94,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
                     context,
                     (m, c) -> chain.proceed((EventMessage) m, c)
             );
-        });
+        }, order);
         registerQueryInterceptor(config -> {
             MessageHandlerInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
             return (message, context, chain) -> genericInterceptor.interceptOnHandle(
@@ -90,7 +102,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
                     context,
                     (m, c) -> chain.proceed((QueryMessage) m, c)
             );
-        });
+        }, order);
         return this;
     }
 
@@ -99,13 +111,25 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     public HandlerInterceptorRegistry registerCommandInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
+        return registerCommandInterceptor(interceptorBuilder, 0);
+    }
+
+    @Nonnull
+    public HandlerInterceptorRegistry registerCommandInterceptor(
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder,
+            int order
+    ) {
         //noinspection unchecked | Casting to CommandMessage is safe.
-        this.commandInterceptorDefinitions.add(
+        ComponentDefinition<MessageHandlerInterceptor<? super CommandMessage>> definition =
                 ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF)
                                    .withBuilder(
                                            c -> (MessageHandlerInterceptor<CommandMessage>) interceptorBuilder.build(c)
-                                   )
-        );
+                                   );
+        if (order < 0) {
+            this.commandInterceptorDefinitions.add(0, definition);
+        } else {
+            this.commandInterceptorDefinitions.add(definition);
+        }
         return this;
     }
 
@@ -114,13 +138,25 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     public HandlerInterceptorRegistry registerEventInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
+        return registerEventInterceptor(interceptorBuilder, 0);
+    }
+
+    @Nonnull
+    public HandlerInterceptorRegistry registerEventInterceptor(
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder,
+            int order
+    ) {
         //noinspection unchecked | Casting to EventMessage is safe.
-        this.eventInterceptorDefinitions.add(
+        ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>> definition =
                 ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF)
                                    .withBuilder(
                                            c -> (MessageHandlerInterceptor<EventMessage>) interceptorBuilder.build(c)
-                                   )
-        );
+                                   );
+        if (order < 0) {
+            this.eventInterceptorDefinitions.add(0, definition);
+        } else {
+            this.eventInterceptorDefinitions.add(definition);
+        }
         return this;
     }
 
@@ -129,13 +165,25 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     public HandlerInterceptorRegistry registerQueryInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
+        return registerQueryInterceptor(interceptorBuilder, 0);
+    }
+
+    @Nonnull
+    public HandlerInterceptorRegistry registerQueryInterceptor(
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder,
+            int order
+    ) {
         //noinspection unchecked | Casting to QueryMessage is safe.
-        this.queryInterceptorDefinitions.add(
+        ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>> definition =
                 ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF)
                                    .withBuilder(
                                            c -> (MessageHandlerInterceptor<QueryMessage>) interceptorBuilder.build(c)
-                                   )
-        );
+                                   );
+        if (order < 0) {
+            this.queryInterceptorDefinitions.add(0, definition);
+        } else {
+            this.queryInterceptorDefinitions.add(definition);
+        }
         return this;
     }
 

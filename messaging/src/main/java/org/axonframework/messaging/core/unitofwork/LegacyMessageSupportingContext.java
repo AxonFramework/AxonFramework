@@ -18,7 +18,7 @@ package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.configuration.ComponentNotFoundException;
+import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
@@ -52,6 +52,7 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
      */
     public LegacyMessageSupportingContext(@Nonnull Message message) {
         this.resources = new ConcurrentHashMap<>();
+        this.resources.put(APPLICATION_CONTEXT_RESOURCE, EmptyApplicationContext.INSTANCE);
         Message.addToContext(this, message);
     }
 
@@ -146,9 +147,5 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
         return resources.remove(key, expectedResource);
     }
 
-    @Nonnull
-    @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-        throw new ComponentNotFoundException(type, name);
-    }
+    // component(...) is resolved through ProcessingContext default implementation
 }

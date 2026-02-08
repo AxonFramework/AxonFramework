@@ -17,7 +17,6 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -236,15 +235,5 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
                 : delegate.removeResource(key, expectedResource);
     }
 
-    @Nonnull
-    @Override
-    public <C> C component(@Nonnull Class<C> type) {
-        return delegate.component(type);
-    }
-
-    @Nonnull
-    @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-        return delegate.component(type, name);
-    }
+    // component(...) is resolved through ProcessingContext default implementation
 }

@@ -17,7 +17,6 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -76,6 +75,7 @@ public class StubProcessingContext implements ProcessingContext {
     public StubProcessingContext(@Nonnull ApplicationContext applicationContext) {
         Objects.requireNonNull(applicationContext, "The application context may not be null");
         this.applicationContext = applicationContext;
+        this.resources.put(APPLICATION_CONTEXT_RESOURCE, applicationContext);
     }
 
     @Override
@@ -286,9 +286,5 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(this, message);
     }
 
-    @Nonnull
-    @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-        return applicationContext.component(type, name);
-    }
+    // component(...) is resolved through ProcessingContext default implementation
 }

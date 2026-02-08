@@ -53,6 +53,7 @@ class EventSchedulingProcessingContext implements ProcessingContext {
 
     EventSchedulingProcessingContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        this.resources.put(APPLICATION_CONTEXT_RESOURCE, applicationContext);
     }
 
     @Override
@@ -146,9 +147,5 @@ class EventSchedulingProcessingContext implements ProcessingContext {
         return resources.remove(key, expectedResource);
     }
 
-    @Nonnull
-    @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-        return applicationContext.component(type, name);
-    }
+    // component(...) is resolved through ProcessingContext default implementation
 }
