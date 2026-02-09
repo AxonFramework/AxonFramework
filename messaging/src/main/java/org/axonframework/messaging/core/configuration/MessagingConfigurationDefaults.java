@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.RoutingStrategy;
@@ -32,6 +33,7 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandHandlingComponent;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -45,6 +47,7 @@ import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.MessageOriginProvider;
+import org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor;
 import org.axonframework.messaging.core.interception.CorrelationDataInterceptor;
 import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
@@ -69,6 +72,7 @@ import org.axonframework.messaging.monitoring.interception.MonitoringEventHandle
 import org.axonframework.messaging.monitoring.interception.MonitoringQueryHandlerInterceptor;
 import org.axonframework.messaging.monitoring.interception.MonitoringSubscriptionQueryUpdateDispatchInterceptor;
 import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryPriorityCalculator;
 import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
@@ -79,6 +83,7 @@ import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
+import org.axonframework.messaging.queryhandling.interception.InterceptingQueryHandlingComponent;
 
 import java.util.List;
 import java.util.Optional;
@@ -112,12 +117,18 @@ import java.util.function.UnaryOperator;
  * Furthermore, this enhancer will decorate the:
  * <ul>
  *     <li>The {@link CommandGateway} in a {@link ConvertingCommandGateway} with the present {@link MessageConverter}.</li>
+ *     <li>All {@link org.axonframework.messaging.commandhandling.CommandHandlingComponent CommandHandlingComponent}
+ *     instances in an {@link org.axonframework.messaging.commandhandling.interception.InterceptingCommandHandlingComponent
+ *     InterceptingCommandHandlingComponent} <b>if</b> there are any
+ *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
+ *     <li>All {@link org.axonframework.messaging.queryhandling.QueryHandlingComponent QueryHandlingComponent}
+ *     instances in an {@link org.axonframework.messaging.queryhandling.interception.InterceptingQueryHandlingComponent
+ *     InterceptingQueryHandlingComponent} <b>if</b> there are any
+ *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
  *     <li>The {@link CommandBus} in a {@link InterceptingCommandBus} <b>if</b> there are any
- *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry} or
- *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  *     <li>The {@link QueryBus} in a {@link InterceptingQueryBus} <b>if</b> there are any
- *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry} or
- *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -231,6 +242,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     private static HandlerInterceptorRegistry defaultHandlerInterceptorRegistry(Configuration config) {
         HandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
 
+        // ApplicationContext interceptor first — ensures module-specific component resolution for all handlers
+        handlerInterceptorRegistry = handlerInterceptorRegistry.registerInterceptor(
+                c -> new ApplicationContextHandlerInterceptor(new ConfigurationApplicationContext(c))
+        );
+
         handlerInterceptorRegistry = registerMonitoringHandlerInterceptors(handlerInterceptorRegistry, config);
 
         List<CorrelationDataProvider> providers = config
@@ -296,34 +312,50 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 )
         );
         registry.registerDecorator(
-                CommandBus.class,
-                InterceptingCommandBus.DECORATION_ORDER,
+                CommandHandlingComponent.class,
+                InterceptingCommandHandlingComponent.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors =
                             config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
+                    return handlerInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingCommandHandlingComponent(handlerInterceptors, delegate);
+                }
+        );
+        registry.registerDecorator(
+                QueryHandlingComponent.class,
+                InterceptingQueryHandlingComponent.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors =
+                            config.getComponent(HandlerInterceptorRegistry.class).queryInterceptors(config);
+                    return handlerInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingQueryHandlingComponent(handlerInterceptors, delegate);
+                }
+        );
+        registry.registerDecorator(
+                CommandBus.class,
+                InterceptingCommandBus.DECORATION_ORDER,
+                (config, name, delegate) -> {
                     List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).commandInterceptors(config);
-                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
+                    return dispatchInterceptors.isEmpty()
                             ? delegate
-                            : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
+                            : new InterceptingCommandBus(delegate, dispatchInterceptors);
                 }
         );
         registry.registerDecorator(
                 QueryBus.class,
                 InterceptingQueryBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
-                    List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors =
-                            config.getComponent(HandlerInterceptorRegistry.class).queryInterceptors(config);
                     List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).queryInterceptors(config);
                     List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).subscriptionQueryUpdateInterceptors(
                                     config);
-                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
-                            && updateDispatchInterceptors.isEmpty()
+                    return dispatchInterceptors.isEmpty() && updateDispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingQueryBus(delegate,
-                                                       handlerInterceptors,
                                                        dispatchInterceptors,
                                                        updateDispatchInterceptors);
                 }

@@ -21,15 +21,12 @@ import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.SimpleCommandHandlingComponent;
-import org.axonframework.messaging.commandhandling.interception.InterceptingCommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -106,12 +103,7 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
                     handlingComponentBuilders.forEach(handlingComponent -> commandHandlingComponent.subscribe(
                             handlingComponent.build(c)));
                     handlerBuilders.forEach((key, value) -> commandHandlingComponent.subscribe(key, value.build(c)));
-                    return new InterceptingCommandHandlingComponent(
-                            List.of(new ApplicationContextHandlerInterceptor(
-                                    new ConfigurationApplicationContext(c)
-                            )),
-                            commandHandlingComponent
-                    );
+                    return commandHandlingComponent;
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
                     configuration.getComponent(CommandBus.class)

@@ -65,21 +65,16 @@ class InterceptingQueryBusTest {
 
     private InterceptingQueryBus testSubject;
     private QueryBus delegateQueryBus;
-    private MessageHandlerInterceptor<QueryMessage> handlerInterceptor1;
-    private MessageHandlerInterceptor<QueryMessage> handlerInterceptor2;
     private MessageDispatchInterceptor<Message> dispatchInterceptor1;
     private MessageDispatchInterceptor<Message> dispatchInterceptor2;
 
     @BeforeEach
     void setUp() {
         delegateQueryBus = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
-        handlerInterceptor1 = new AddMetadataCountInterceptor<>("handler1", "value");
-        handlerInterceptor2 = new AddMetadataCountInterceptor<>("handler2", "value");
         dispatchInterceptor1 = new AddMetadataCountInterceptor<>("dispatch1", "value");
         dispatchInterceptor2 = new AddMetadataCountInterceptor<>("dispatch2", "value");
 
         testSubject = new InterceptingQueryBus(delegateQueryBus,
-                                               List.of(handlerInterceptor1, handlerInterceptor2),
                                                List.of(dispatchInterceptor1, dispatchInterceptor2),
                                                List.of());
     }
@@ -141,7 +136,7 @@ class InterceptingQueryBusTest {
                 return chain.proceed(message, context);
             };
             InterceptingQueryBus countingTestSubject =
-                    new InterceptingQueryBus(delegateQueryBus, List.of(), List.of(countingInterceptor), List.of());
+                    new InterceptingQueryBus(delegateQueryBus, List.of(countingInterceptor), List.of());
 
             QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
                     TEST_RESPONSE_TYPE,
@@ -168,7 +163,6 @@ class InterceptingQueryBusTest {
 
             InterceptingQueryBus throwingTestSubject =
                     new InterceptingQueryBus(delegateQueryBus,
-                                             List.of(),
                                              List.of(dispatchInterceptor1, throwingInterceptor),
                                              List.of());
 
@@ -196,7 +190,6 @@ class InterceptingQueryBusTest {
 
             InterceptingQueryBus failingTestSubject =
                     new InterceptingQueryBus(delegateQueryBus,
-                                             List.of(),
                                              List.of(dispatchInterceptor1, failingInterceptor),
                                              List.of());
 
@@ -214,110 +207,6 @@ class InterceptingQueryBusTest {
             assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
             assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
             assertThat(handler.getRecordedQueries()).isEmpty(); // Handler should not be invoked when interceptor returns failed stream
-        }
-    }
-
-    @Nested
-    @DisplayName("Handler interceptor tests")
-    class HandlerInterceptorTests {
-
-        @Test
-        void handlerInterceptorsModifyRequestMessage() {
-            // given
-            RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, handler);
-
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
-            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
-
-            // when
-            testSubject.query(testQuery, context);
-
-            // then - Verify REQUEST interception: handler interception added metadata to the query BEFORE handler saw it
-            // Handler interception apply within the Processing Context, after dispatch interception
-            assertThat(handler.getRecordedQueries()).hasSize(1);
-            QueryMessage recordedQuery = handler.getRecordedQueries().getFirst();
-            assertTrue(recordedQuery.metadata().containsKey("handler1"),
-                       "Expected handler1 interceptor to add metadata to REQUEST");
-            assertTrue(recordedQuery.metadata().containsKey("handler2"),
-                       "Expected handler2 interceptor to add metadata to REQUEST");
-        }
-
-        @Test
-        void handlerInterceptorsModifyResponseMessage() {
-            // given
-            RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, handler);
-
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
-            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
-
-            // when
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, context);
-
-            // then - Verify RESPONSE interception: handler interception added metadata to the response AFTER handler executed
-            // Handler interception can enrich responses within the UnitOfWork context
-            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
-            assertTrue(response.metadata().containsKey("handler1"),
-                       "Expected handler1 interceptor to add metadata to RESPONSE");
-            assertTrue(response.metadata().containsKey("handler2"),
-                       "Expected handler2 interceptor to add metadata to RESPONSE");
-        }
-
-        @Test
-        void handlerInterceptorsAreInvokedForEveryQuery() {
-            // given
-            AtomicInteger counter = new AtomicInteger(0);
-            MessageHandlerInterceptor<QueryMessage> countingInterceptor = (message, context, chain) -> {
-                counter.incrementAndGet();
-                return chain.proceed(message, context);
-            };
-            InterceptingQueryBus countingTestSubject =
-                    new InterceptingQueryBus(delegateQueryBus, List.of(countingInterceptor), List.of(), List.of());
-
-            QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
-                    TEST_RESPONSE_TYPE,
-                    "ok"));
-            countingTestSubject.subscribe(QUERY_NAME, handler);
-
-            QueryMessage firstQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "first");
-            QueryMessage secondQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "second");
-
-            // when
-            countingTestSubject.query(firstQuery, StubProcessingContext.forMessage(firstQuery)).first();
-            countingTestSubject.query(secondQuery, StubProcessingContext.forMessage(secondQuery)).first();
-
-            // then
-            assertThat(counter.get()).isEqualTo(2);
-        }
-
-        @Test
-        void exceptionsInHandlerInterceptorReturnFailedStream() {
-            // given
-            MessageHandlerInterceptor<QueryMessage> failingInterceptor = (message, context, chain) -> {
-                throw new MockException("Simulating failure in interceptor");
-            };
-
-            InterceptingQueryBus failingTestSubject =
-                    new InterceptingQueryBus(delegateQueryBus,
-                                             List.of(handlerInterceptor1, failingInterceptor),
-                                             List.of(),
-                                             List.of());
-
-            QueryHandler handler = (query, context) -> MessageStream.just(new GenericQueryResponseMessage(
-                    TEST_RESPONSE_TYPE,
-                    "ok"));
-            failingTestSubject.subscribe(QUERY_NAME, handler);
-
-            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "Request");
-            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
-
-            // when
-            var result = failingTestSubject.query(testQuery, context);
-
-            // then
-            assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
-            assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
         }
     }
 
@@ -368,36 +257,6 @@ class InterceptingQueryBusTest {
             // then
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
             assertThat(response.payload()).isEqualTo("initial");
-        }
-
-        @Test
-        void subscriptionQueryHandlerInterceptorsApplied() {
-            // given
-            RecordingQueryHandler handler = new RecordingQueryHandler();
-            testSubject.subscribe(QUERY_NAME, handler);
-
-            QueryMessage testQuery = new GenericQueryMessage(
-                    TEST_QUERY_TYPE, "test"
-            );
-            ProcessingContext context = StubProcessingContext.forMessage(testQuery);
-
-            // when
-            MessageStream<QueryResponseMessage> result = testSubject.subscriptionQuery(testQuery, context, 10);
-
-            // then
-            QueryResponseMessage response = result.first().asCompletableFuture().join().message();
-            assertTrue(response.metadata().containsKey("handler1"),
-                       "Expected handler1 interceptor to be applied to response");
-            assertTrue(response.metadata().containsKey("handler2"),
-                       "Expected handler2 interceptor to be applied to response");
-
-            // Verify handler interception added metadata to the query received by handler
-            assertThat(handler.getRecordedQueries()).hasSize(1);
-            QueryMessage recordedQuery = handler.getRecordedQueries().get(0);
-            assertTrue(recordedQuery.metadata().containsKey("handler1"),
-                       "Expected handler1 interceptor to add metadata to query");
-            assertTrue(recordedQuery.metadata().containsKey("handler2"),
-                       "Expected handler2 interceptor to add metadata to query");
         }
 
         @Test
@@ -453,7 +312,6 @@ class InterceptingQueryBusTest {
             InterceptingQueryBus testSubjectWithUpdateInterceptors = new InterceptingQueryBus(
                     delegateQueryBus,
                     List.of(),
-                    List.of(),
                     List.of(updateInterceptor1, updateInterceptor2)
             );
 
@@ -506,7 +364,6 @@ class InterceptingQueryBusTest {
             InterceptingQueryBus testSubjectWithFailingInterceptor = new InterceptingQueryBus(
                     delegateQueryBus,
                     List.of(),
-                    List.of(),
                     List.of(failingInterceptor)
             );
 
@@ -544,7 +401,7 @@ class InterceptingQueryBusTest {
         assertThat(properties).containsKey("delegate");
         assertThat((Object) mockComponentDescriptor.getProperty("delegate")).isEqualTo(delegateQueryBus);
         assertThat(properties).containsKey("dispatchInterceptors");
-        assertThat(properties).containsKey("handlerInterceptors");
+        assertThat(properties).doesNotContainKey("handlerInterceptors");
         assertThat(properties).containsKey("updateDispatchInterceptors");
     }
 

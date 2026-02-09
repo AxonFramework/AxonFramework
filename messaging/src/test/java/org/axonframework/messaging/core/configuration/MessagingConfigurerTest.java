@@ -321,25 +321,26 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);
 
+        // 2 handler interceptors per type: ApplicationContextHandlerInterceptor + user-registered
         List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors =
                 handlerInterceptorRegistry.commandInterceptors(result);
-        assertThat(commandInterceptors).hasSize(1);
-        //noinspection DataFlowIssue | Input is not important to validate invocation
-        commandInterceptors.getFirst().interceptOnHandle(null, null, null);
+        assertThat(commandInterceptors).hasSize(2);
+        //noinspection DataFlowIssue | Input is not important to validate invocation — invoke the user-registered one (last)
+        commandInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(1);
 
         List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors =
                 handlerInterceptorRegistry.eventInterceptors(result);
-        assertThat(eventInterceptors).hasSize(1);
+        assertThat(eventInterceptors).hasSize(2);
         //noinspection DataFlowIssue | Input is not important to validate invocation
-        eventInterceptors.getFirst().interceptOnHandle(null, null, null);
+        eventInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(2);
 
         List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors =
                 handlerInterceptorRegistry.queryInterceptors(result);
-        assertThat(queryInterceptors).hasSize(1);
+        assertThat(queryInterceptors).hasSize(2);
         //noinspection DataFlowIssue | Input is not important to validate invocation
-        queryInterceptors.getFirst().interceptOnHandle(null, null, null);
+        queryInterceptors.getLast().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(3);
     }
 

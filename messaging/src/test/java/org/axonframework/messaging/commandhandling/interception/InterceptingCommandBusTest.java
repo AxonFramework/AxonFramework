@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,21 +58,16 @@ class InterceptingCommandBusTest {
 
     private InterceptingCommandBus testSubject;
     private CommandBus mockCommandBus;
-    private MessageHandlerInterceptor<CommandMessage> handlerInterceptor1;
-    private MessageHandlerInterceptor<CommandMessage> handlerInterceptor2;
     private MessageDispatchInterceptor<Message> dispatchInterceptor1;
     private MessageDispatchInterceptor<Message> dispatchInterceptor2;
 
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        handlerInterceptor1 = spy(new AddMetadataCountInterceptor<>("handler1", "value"));
-        handlerInterceptor2 = spy(new AddMetadataCountInterceptor<>("handler2", "value"));
         dispatchInterceptor1 = spy(new AddMetadataCountInterceptor<>("dispatch1", "value"));
         dispatchInterceptor2 = spy(new AddMetadataCountInterceptor<>("dispatch2", "value"));
 
         testSubject = new InterceptingCommandBus(mockCommandBus,
-                                                 List.of(handlerInterceptor1, handlerInterceptor2),
                                                  List.of(dispatchInterceptor1, dispatchInterceptor2));
     }
 
@@ -111,7 +105,7 @@ class InterceptingCommandBusTest {
             return chain.proceed(message, context);
         };
         InterceptingCommandBus countingTestSubject =
-                new InterceptingCommandBus(mockCommandBus, List.of(), List.of(countingInterceptor));
+                new InterceptingCommandBus(mockCommandBus, List.of(countingInterceptor));
 
         when(mockCommandBus.dispatch(any(), any()))
                 .thenAnswer(invocation -> completedFuture(commandResult("ok")));
@@ -162,83 +156,15 @@ class InterceptingCommandBusTest {
     }
 
     @Test
-    void handlerInterceptorsInvokedOnHandle() throws Exception {
+    void subscribeDelegatesDirectlyToDelegate() {
         QualifiedName testHandlerName = new QualifiedName("handler");
-        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
-        AtomicReference<CommandMessage> handledMessage = new AtomicReference<>();
-        testSubject.subscribe(testHandlerName,
-                              (command, context) -> {
-                                  handledMessage.set(command);
-                                  return MessageStream.just(commandResult("ok"));
-                              }
-        );
+        CommandHandler handler = (command, context) -> MessageStream.just(commandResult("ok"));
 
-        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
-        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
+        // when
+        testSubject.subscribe(testHandlerName, handler);
 
-        CommandHandler actualHandler = handlerCaptor.getValue();
-
-        ProcessingContext processingContext = mock(ProcessingContext.class);
-        var result = actualHandler.handle(testCommand, processingContext);
-
-        CommandMessage actualHandled = handledMessage.get();
-        assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     actualHandled.metadata(),
-                     "Expected command interception to be invoked in registered order");
-
-        assertEquals(Metadata.from(
-                             Map.of(
-                                     "handler1", "value-1",
-                                     "handler2", "value-0"
-                             )
-                     ),
-                     result.first().asCompletableFuture().get().message().metadata(),
-                     "Expected result interception to be invoked in reverse order");
-    }
-
-    @Test
-    void handlerInterceptorsAreInvokedForEveryMessage() {
-        AtomicInteger counter = new AtomicInteger(0);
-        MessageHandlerInterceptor<CommandMessage> countingInterceptor = (message, context, chain) -> {
-            counter.incrementAndGet();
-            return chain.proceed(message, context);
-        };
-        InterceptingCommandBus countingTestSubject =
-                new InterceptingCommandBus(mockCommandBus, List.of(countingInterceptor), List.of());
-
-        QualifiedName testHandlerName = new QualifiedName("handler");
-        countingTestSubject.subscribe(testHandlerName, (command, context) -> MessageStream.just(commandResult("ok")));
-
-        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
-        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
-
-        CommandHandler actualHandler = handlerCaptor.getValue();
-
-        CommandMessage firstCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "first");
-        actualHandler.handle(firstCommand, StubProcessingContext.forMessage(firstCommand)).first();
-        CommandMessage secondCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "second");
-        actualHandler.handle(secondCommand, StubProcessingContext.forMessage(secondCommand)).first();
-
-        assertThat(counter.get()).isEqualTo(2);
-    }
-
-    @Test
-    void exceptionsInHandlerInterceptorReturnFailedStream() {
-        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "Request");
-        doThrow(new MockException("Simulating failure in interceptor"))
-                .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
-
-        CommandHandler actualHandler = subscribeHandler(
-                (command, context) -> MessageStream.just(commandResult("ok"))
-        );
-
-        ProcessingContext context = mock(ProcessingContext.class);
-        var result = actualHandler.handle(testCommand, context);
-        assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
-        assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
-
-        verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
-        verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
+        // then — handler is passed directly without wrapping
+        verify(mockCommandBus).subscribe(eq(testHandlerName), eq(handler));
     }
 
     @Test
@@ -249,23 +175,6 @@ class InterceptingCommandBusTest {
         verify(mockComponentDescriptor).describeWrapperOf(eq(mockCommandBus));
         verify(mockComponentDescriptor).describeProperty(argThat(i -> i.contains("dispatch")),
                                                          eq(List.of(dispatchInterceptor1, dispatchInterceptor2)));
-        verify(mockComponentDescriptor).describeProperty(argThat(i -> i.contains("handler")),
-                                                         eq(List.of(handlerInterceptor1, handlerInterceptor2)));
-    }
-
-    /**
-     * Subscribes the given handler with the command bus and returns the handler as it is subscribed with its delegate
-     *
-     * @param handler The handling logic for the command
-     * @return the handler as wrapped by the surrounding command bus
-     */
-    private CommandHandler subscribeHandler(CommandHandler handler) {
-        QualifiedName name = new QualifiedName("handler");
-        testSubject.subscribe(name, handler);
-
-        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
-        verify(mockCommandBus).subscribe(eq(name), handlerCaptor.capture());
-        return handlerCaptor.getValue();
     }
 
 

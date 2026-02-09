@@ -22,14 +22,11 @@ import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryHandler;
 import org.axonframework.messaging.queryhandling.QueryHandlingComponent;
 import org.axonframework.messaging.queryhandling.SimpleQueryHandlingComponent;
-import org.axonframework.messaging.queryhandling.interception.InterceptingQueryHandlingComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -103,12 +100,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
                     handlingComponentBuilders.forEach(handlingComponent -> queryHandlingComponent.subscribe(
                             handlingComponent.build(c)));
                     handlerBuilders.forEach((key, value) -> queryHandlingComponent.subscribe(key, value.build(c)));
-                    return new InterceptingQueryHandlingComponent(
-                            List.of(new ApplicationContextHandlerInterceptor(
-                                    new ConfigurationApplicationContext(c)
-                            )),
-                            queryHandlingComponent
-                    );
+                    return queryHandlingComponent;
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
                     configuration.getComponent(QueryBus.class)

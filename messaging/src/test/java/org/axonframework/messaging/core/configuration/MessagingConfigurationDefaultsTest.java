@@ -163,9 +163,10 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        // 2 handler interceptors per type: ApplicationContextHandlerInterceptor + CorrelationDataInterceptor
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(2);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(2);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(2);
     }
 
     @Test
@@ -184,9 +185,10 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+        // 1 handler interceptor per type: ApplicationContextHandlerInterceptor (no CorrelationDataInterceptor)
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
     }
 
     @Test
@@ -238,8 +240,9 @@ class MessagingConfigurationDefaultsTest {
     }
 
     @Test
-    void decoratorsCommandBusAsInterceptorCommandBusWhenCommandHandlerInterceptorIsPresent() {
+    void commandBusNotDecoratedWhenOnlyHandlerInterceptorsPresent() {
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // Handler interceptors are now applied at the component level, not the bus level.
         //noinspection unchecked
         MessagingConfigurer configurer =
                 MessagingConfigurer.create()
@@ -251,7 +254,8 @@ class MessagingConfigurationDefaultsTest {
 
         Configuration resultConfig = configurer.build();
 
-        assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+        // Bus should NOT be wrapped — handler interceptors are applied at the component level
+        assertThat(resultConfig.getComponent(CommandBus.class)).isNotInstanceOf(InterceptingCommandBus.class);
     }
 
     @Test

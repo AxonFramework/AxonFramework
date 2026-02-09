@@ -135,7 +135,7 @@ public class HierarchicalSpringContextTest {
             return registry -> registry.registerDecorator(
                     CommandBus.class, 0,
                     (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
-                            new InterceptingCommandBus(delegate, List.of(), List.of())
+                            new InterceptingCommandBus(delegate, List.of())
             );
         }
     }

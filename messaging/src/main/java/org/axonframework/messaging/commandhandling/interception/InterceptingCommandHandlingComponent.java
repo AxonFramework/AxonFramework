@@ -18,6 +18,8 @@ package org.axonframework.messaging.commandhandling.interception;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -34,10 +36,14 @@ import java.util.Set;
  * A {@link CommandHandlingComponent} decorator that applies a list of
  * {@link MessageHandlerInterceptor MessageHandlerInterceptors} before delegating to the wrapped component.
  * <p>
- * This is used within modules to apply module-specific interceptors (such as the
+ * This is typically registered as a
+ * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to automatically wrap all
+ * {@link CommandHandlingComponent} instances with handler interceptors from the
+ * {@link org.axonframework.messaging.core.interception.HandlerInterceptorRegistry HandlerInterceptorRegistry},
+ * ensuring that interceptors (such as the
  * {@link org.axonframework.messaging.core.interception.ApplicationContextHandlerInterceptor
- * ApplicationContextHandlerInterceptor}) at the component level, ensuring that handlers within a module resolve
- * components from the module's
+ * ApplicationContextHandlerInterceptor}) are applied at the component level. This means handlers within a module
+ * resolve components from the module's
  * {@link org.axonframework.common.configuration.Configuration Configuration} rather than the root one.
  *
  * @author Mateusz Nowak
@@ -46,6 +52,16 @@ import java.util.Set;
  */
 @Internal
 public class InterceptingCommandHandlingComponent implements CommandHandlingComponent {
+
+    /**
+     * The order in which the {@link InterceptingCommandHandlingComponent} is applied as a
+     * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to
+     * {@link CommandHandlingComponent} instances.
+     * <p>
+     * Set to {@code Integer.MAX_VALUE - 100} to ensure handler interceptors wrap as an outer layer,
+     * while still leaving room for decorators that need to wrap even further outside.
+     */
+    public static final int DECORATION_ORDER = Integer.MAX_VALUE - 100;
 
     private final CommandHandlingComponent delegate;
     private final CommandMessageHandlerInterceptorChain chain;

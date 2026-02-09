@@ -389,7 +389,7 @@ public class AxonAutoConfigurationTest {
         DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator() {
             return DecoratorDefinition.forType(CommandBus.class)
                                       .with((config, name, delegate) ->
-                                                    new InterceptingCommandBus(delegate, List.of(), List.of()))
+                                                    new InterceptingCommandBus(delegate, List.of()))
                                       .order(0);
         }
     }
@@ -403,7 +403,7 @@ public class AxonAutoConfigurationTest {
             return registry -> registry.registerDecorator(
                     CommandBus.class, 0,
                     (ComponentDecorator<CommandBus, CommandBus>) (config, name, delegate) ->
-                            new InterceptingCommandBus(delegate, List.of(), List.of())
+                            new InterceptingCommandBus(delegate, List.of())
             );
         }
     }

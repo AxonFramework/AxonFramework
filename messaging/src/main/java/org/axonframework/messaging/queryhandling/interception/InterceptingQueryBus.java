@@ -24,7 +24,6 @@ import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.messaging.core.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -44,14 +43,17 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@code QueryBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
- * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of queries is done by
- * a delegate.
+ * A {@code QueryBus} wrapper that supports {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
+ * Actual dispatching and handling of queries is done by a delegate.
+ * <p>
+ * Handler interceptors are applied at the component level via
+ * {@link InterceptingQueryHandlingComponent} rather than at the bus level,
+ * ensuring each module gets its own set of handler interceptors with the correct
+ * {@link org.axonframework.messaging.core.ApplicationContext ApplicationContext}.
  * <p>
  * This {@code InterceptingQueryBus} is typically registered as a
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
- * {@link QueryMessage} specific {@code MessageHandlerInterceptors} or any {@code MessageDispatchInterceptors} are
- * present.
+ * any {@code MessageDispatchInterceptors} are present.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -74,7 +76,6 @@ public class InterceptingQueryBus implements QueryBus {
     public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
     private final QueryBus delegate;
-    private final List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors;
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors;
 
@@ -85,28 +86,21 @@ public class InterceptingQueryBus implements QueryBus {
 
     /**
      * Constructs a {@code InterceptingQueryBus}, delegating dispatching and handling logic to the given
-     * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
-     * {@link QueryHandler query handlers} when subscribing. The given {@code dispatchInterceptors} are invoked before
-     * dispatching is provided to the given {@code delegate}. The given {@code updateDispatchInterceptors} are invoked
-     * before emitting subscription query update.
+     * {@code delegate}. The given {@code dispatchInterceptors} are invoked before dispatching is provided to the
+     * given {@code delegate}. The given {@code updateDispatchInterceptors} are invoked before emitting subscription
+     * query update.
      *
      * @param delegate                   The delegate {@code QueryBus} that will handle all dispatching and handling
      *                                   logic.
-     * @param handlerInterceptors        The interception to invoke before handling a query and if present on the query
-     *                                   result.
      * @param dispatchInterceptors       The interception to invoke before dispatching a query and on the query result.
      * @param updateDispatchInterceptors The interception to invoke before emitting subscription query update.
      */
     public InterceptingQueryBus(
             @Nonnull QueryBus delegate,
-            @Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors,
             @Nonnull List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors,
             @Nonnull List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The query bus delegate must not be null.");
-        this.handlerInterceptors = new ArrayList<>(
-                requireNonNull(handlerInterceptors, "The handler interception must not be null.")
-        );
         this.dispatchInterceptors = new ArrayList<>(
                 requireNonNull(dispatchInterceptors, "The dispatch interception must not be null.")
         );
@@ -124,11 +118,7 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public InterceptingQueryBus subscribe(@Nonnull QualifiedName queryName,
                                           @Nonnull QueryHandler queryHandler) {
-        if (handlerInterceptors.isEmpty()) {
-            delegate.subscribe(queryName, queryHandler);
-        } else {
-            delegate.subscribe(queryName, new InterceptingHandler(queryHandler, handlerInterceptors));
-        }
+        delegate.subscribe(queryName, queryHandler);
         return this;
     }
 
@@ -202,27 +192,8 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
-        descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
         descriptor.describeProperty("updateDispatchInterceptors", updateDispatchInterceptors);
-    }
-
-    private static class InterceptingHandler implements QueryHandler {
-
-        private final QueryMessageHandlerInterceptorChain interceptorChain;
-
-        private InterceptingHandler(QueryHandler handler,
-                                    List<MessageHandlerInterceptor<? super QueryMessage>> interceptors) {
-            this.interceptorChain = new QueryMessageHandlerInterceptorChain(interceptors, handler);
-        }
-
-        @Nonnull
-        @Override
-        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                          @Nonnull ProcessingContext context) {
-            return interceptorChain.proceed(query, context)
-                                   .cast();
-        }
     }
 
     private static class QueryInterceptingDispatcher {
