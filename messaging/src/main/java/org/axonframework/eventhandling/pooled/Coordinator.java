@@ -1323,7 +1323,14 @@ class Coordinator {
                                    throwable);
                            return null;
                        })
-                       .thenRun(() -> abortingSegments.remove(segmentId));
+                       .thenRun(() -> {
+                           abortingSegments.remove(segmentId);
+                           logger.trace(
+                                   "Processor [{}] (Coordination Task [{}]). Abort guard lifted for segment [{}].",
+                                   name,
+                                   generation,
+                                   segmentId);
+                       });
         }
 
         private void advanceReleaseDeadlineFor(int segmentId) {
