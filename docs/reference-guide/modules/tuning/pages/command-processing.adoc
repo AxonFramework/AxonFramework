@@ -67,7 +67,7 @@ Command sequencing is implemented through the `CommandSequencingInterceptor`, a 
 
 Because sequencing happens at the handler interceptor level (after routing), it has no impact on command dispatch or routing logic. The sequencing is completely transparent to your command handlers - no code changes are required.
 
-=== The CommandSequencingPolicy interface
+=== The `CommandSequencingPolicy` interface
 
 The `CommandSequencingPolicy` interface determines which commands should be sequenced together:
 
