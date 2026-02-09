@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.messaging.eventhandling.processing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
@@ -47,7 +49,7 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 @Internal
-public class ProcessorEventHandlingComponents {
+public class ProcessorEventHandlingComponents implements DescribableComponent {
 
     private final List<? extends EventHandlingComponent> components;
 
@@ -144,5 +146,10 @@ public class ProcessorEventHandlingComponents {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("components", components);
     }
 }
