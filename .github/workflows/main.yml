@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - master
-      - axon-*.*.x
+      - 'axon-5.*.x'
     paths-ignore:
       - 'docs/**'
 

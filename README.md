@@ -22,8 +22,8 @@
 # Axon Framework
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.axonframework/axon-framework-bom)](https://central.sonatype.com/artifact/org.axonframework/axon-framework-bom)
-![Build Status](https://github.com/AxonFramework/AxonFramework/workflows/Axon%20Framework/badge.svg?branch=master)
-[![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_AxonFramework&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_AxonFramework)
+[![Build Status](https://github.com/AxonFramework/AxonFramework/actions/workflows/main.yml/badge.svg)](https://github.com/AxonFramework/AxonFramework/actions/workflows/main.yml)
+[![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_AxonFramework&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AxonFramework_AxonFramework)
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems based on the principles of Domain-Driven Design (DDD), Command-Query Responsibility Separation (CQRS), and Event Sourcing.
 
