@@ -124,10 +124,12 @@ public class InterceptingQueryBus implements QueryBus {
     @Override
     public InterceptingQueryBus subscribe(@Nonnull QualifiedName queryName,
                                           @Nonnull QueryHandler queryHandler) {
-        if (handlerInterceptors.isEmpty()) {
+        List<MessageHandlerInterceptor<? super QueryMessage>> interceptors =
+                resolveHandlerInterceptors(queryHandler);
+        if (interceptors.isEmpty()) {
             delegate.subscribe(queryName, queryHandler);
         } else {
-            delegate.subscribe(queryName, new InterceptingHandler(queryHandler, handlerInterceptors));
+            delegate.subscribe(queryName, new InterceptingHandler(queryHandler, interceptors));
         }
         return this;
     }
@@ -205,6 +207,27 @@ public class InterceptingQueryBus implements QueryBus {
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
         descriptor.describeProperty("updateDispatchInterceptors", updateDispatchInterceptors);
+    }
+
+    private List<MessageHandlerInterceptor<? super QueryMessage>> resolveHandlerInterceptors(
+            QueryHandler queryHandler
+    ) {
+        if (!(queryHandler instanceof QueryHandlerInterceptorProvider provider)) {
+            return handlerInterceptors;
+        }
+
+        List<MessageHandlerInterceptor<? super QueryMessage>> providerInterceptors =
+                requireNonNull(provider.queryHandlerInterceptors(),
+                               "queryHandlerInterceptors may not return null");
+        if (providerInterceptors.isEmpty()) {
+            return handlerInterceptors;
+        }
+
+        List<MessageHandlerInterceptor<? super QueryMessage>> merged =
+                new ArrayList<>(providerInterceptors.size() + handlerInterceptors.size());
+        merged.addAll(providerInterceptors);
+        merged.addAll(handlerInterceptors);
+        return merged;
     }
 
     private static class InterceptingHandler implements QueryHandler {

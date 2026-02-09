@@ -101,7 +101,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());
-        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // Intercepting at all times to support handler-specific interceptors.
         assertInstanceOf(InterceptingCommandBus.class, commandBus.get());
 
         Optional<EventGateway> eventGateway = result.getOptionalComponent(EventGateway.class);
@@ -122,7 +122,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<QueryBus> queryBus = result.getOptionalComponent(QueryBus.class);
         assertTrue(queryBus.isPresent());
-        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // Intercepting at all times to support handler-specific interceptors.
         assertInstanceOf(InterceptingQueryBus.class, queryBus.get());
     }
 
@@ -160,8 +160,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = aCommandBus();
 
-        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
-        // This otherwise leads to the InterceptingCommandBus
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
@@ -188,8 +187,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
             }
         };
 
-        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
-        // This otherwise leads to the InterceptingCommandBus
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
@@ -204,7 +202,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         QueryBus expected = QueryBusTestUtils.aQueryBus();
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
-        // This otherwise leads to the InterceptingQueryBus
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()

@@ -319,6 +319,63 @@ class InterceptingQueryBusTest {
             assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
             assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
         }
+
+        @Test
+        void providerInterceptorsAreInvokedWithoutGlobalInterceptors() {
+            // given
+            MessageHandlerInterceptor<QueryMessage> providerInterceptor =
+                    new AddMetadataCountInterceptor<>("provider", "value");
+            InterceptingQueryBus interceptingQueryBus =
+                    new InterceptingQueryBus(delegateQueryBus, List.of(), List.of(), List.of());
+            ProviderQueryHandler handler = new ProviderQueryHandler(List.of(providerInterceptor));
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
+
+            // when
+            interceptingQueryBus.query(testQuery, StubProcessingContext.forMessage(testQuery))
+                                .first()
+                                .asCompletableFuture()
+                                .join();
+
+            // then
+            QueryMessage recorded = handler.getRecordedQueries().getFirst();
+            assertEquals("value-0", recorded.metadata().get("provider"));
+        }
+
+        @Test
+        void providerInterceptorsRunBeforeGlobalInterceptors() {
+            // given
+            AtomicInteger orderCounter = new AtomicInteger();
+            MessageHandlerInterceptor<QueryMessage> providerInterceptor = (message, context, chain) ->
+                    chain.proceed(message.andMetadata(Map.of("providerOrder",
+                                                            String.valueOf(orderCounter.getAndIncrement()))),
+                                  context);
+            MessageHandlerInterceptor<QueryMessage> globalInterceptor = (message, context, chain) ->
+                    chain.proceed(message.andMetadata(Map.of("globalOrder",
+                                                            String.valueOf(orderCounter.getAndIncrement()))),
+                                  context);
+            InterceptingQueryBus interceptingQueryBus =
+                    new InterceptingQueryBus(delegateQueryBus,
+                                             List.of(globalInterceptor),
+                                             List.of(),
+                                             List.of());
+            ProviderQueryHandler handler = new ProviderQueryHandler(List.of(providerInterceptor));
+            interceptingQueryBus.subscribe(QUERY_NAME, handler);
+
+            QueryMessage testQuery = new GenericQueryMessage(TEST_QUERY_TYPE, "test");
+
+            // when
+            interceptingQueryBus.query(testQuery, StubProcessingContext.forMessage(testQuery))
+                                .first()
+                                .asCompletableFuture()
+                                .join();
+
+            // then
+            QueryMessage recorded = handler.getRecordedQueries().getFirst();
+            assertEquals("0", recorded.metadata().get("providerOrder"));
+            assertEquals("1", recorded.metadata().get("globalOrder"));
+        }
     }
 
     @Nested
@@ -554,6 +611,33 @@ class InterceptingQueryBusTest {
     private static class RecordingQueryHandler implements QueryHandler {
 
         private final List<QueryMessage> recordedQueries = new ArrayList<>();
+
+        @Nonnull
+        @Override
+        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage message,
+                                                          @Nonnull ProcessingContext context) {
+            recordedQueries.add(message);
+            return MessageStream.just(new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, "ok"));
+        }
+
+        public List<QueryMessage> getRecordedQueries() {
+            return recordedQueries;
+        }
+    }
+
+    private static class ProviderQueryHandler implements QueryHandler, QueryHandlerInterceptorProvider {
+
+        private final List<MessageHandlerInterceptor<? super QueryMessage>> interceptors;
+        private final List<QueryMessage> recordedQueries = new ArrayList<>();
+
+        private ProviderQueryHandler(List<MessageHandlerInterceptor<? super QueryMessage>> interceptors) {
+            this.interceptors = interceptors;
+        }
+
+        @Override
+        public List<MessageHandlerInterceptor<? super QueryMessage>> queryHandlerInterceptors() {
+            return interceptors;
+        }
 
         @Nonnull
         @Override

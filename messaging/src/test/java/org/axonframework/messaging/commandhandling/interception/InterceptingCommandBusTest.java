@@ -197,6 +197,61 @@ class InterceptingCommandBusTest {
     }
 
     @Test
+    void providerInterceptorsAreInvokedWithoutGlobalInterceptors() {
+        CommandBus commandBus = mock(CommandBus.class);
+        MessageHandlerInterceptor<CommandMessage> providerInterceptor =
+                new AddMetadataCountInterceptor<>("provider", "value");
+        InterceptingCommandBus interceptingCommandBus =
+                new InterceptingCommandBus(commandBus, List.of(), List.of());
+
+        ProviderCommandHandler handler = new ProviderCommandHandler(List.of(providerInterceptor));
+        QualifiedName handlerName = new QualifiedName("provider-handler");
+        interceptingCommandBus.subscribe(handlerName, handler);
+
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(commandBus).subscribe(eq(handlerName), handlerCaptor.capture());
+
+        CommandHandler actualHandler = handlerCaptor.getValue();
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
+        actualHandler.handle(command, StubProcessingContext.forMessage(command))
+                     .first()
+                     .asCompletableFuture()
+                     .join();
+
+        CommandMessage handled = handler.handledMessage();
+        assertEquals("value-0", handled.metadata().get("provider"));
+    }
+
+    @Test
+    void providerInterceptorsRunBeforeGlobalInterceptors() {
+        CommandBus commandBus = mock(CommandBus.class);
+        MessageHandlerInterceptor<CommandMessage> providerInterceptor =
+                new AddMetadataCountInterceptor<>("provider", "value");
+        MessageHandlerInterceptor<CommandMessage> globalInterceptor =
+                new AddMetadataCountInterceptor<>("global", "value");
+        InterceptingCommandBus interceptingCommandBus =
+                new InterceptingCommandBus(commandBus, List.of(globalInterceptor), List.of());
+
+        ProviderCommandHandler handler = new ProviderCommandHandler(List.of(providerInterceptor));
+        QualifiedName handlerName = new QualifiedName("provider-handler");
+        interceptingCommandBus.subscribe(handlerName, handler);
+
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(commandBus).subscribe(eq(handlerName), handlerCaptor.capture());
+
+        CommandHandler actualHandler = handlerCaptor.getValue();
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
+        actualHandler.handle(command, StubProcessingContext.forMessage(command))
+                     .first()
+                     .asCompletableFuture()
+                     .join();
+
+        CommandMessage handled = handler.handledMessage();
+        assertEquals("value-0", handled.metadata().get("provider"));
+        assertEquals("value-1", handled.metadata().get("global"));
+    }
+
+    @Test
     void handlerInterceptorsAreInvokedForEveryMessage() {
         AtomicInteger counter = new AtomicInteger(0);
         MessageHandlerInterceptor<CommandMessage> countingInterceptor = (message, context, chain) -> {
@@ -266,6 +321,33 @@ class InterceptingCommandBusTest {
         ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
         verify(mockCommandBus).subscribe(eq(name), handlerCaptor.capture());
         return handlerCaptor.getValue();
+    }
+
+    private static class ProviderCommandHandler implements CommandHandler, CommandHandlerInterceptorProvider {
+
+        private final List<MessageHandlerInterceptor<? super CommandMessage>> interceptors;
+        private final AtomicReference<CommandMessage> handledMessage = new AtomicReference<>();
+
+        private ProviderCommandHandler(List<MessageHandlerInterceptor<? super CommandMessage>> interceptors) {
+            this.interceptors = interceptors;
+        }
+
+        @Override
+        public List<MessageHandlerInterceptor<? super CommandMessage>> commandHandlerInterceptors() {
+            return interceptors;
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                                 @Nonnull ProcessingContext context) {
+            handledMessage.set(command);
+            return MessageStream.just(commandResult("ok"));
+        }
+
+        private CommandMessage handledMessage() {
+            return handledMessage.get();
+        }
     }
 
 

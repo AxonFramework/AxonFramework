@@ -104,7 +104,13 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
-        delegate.subscribe(name, new InterceptingHandler(commandHandler, handlerInterceptors));
+        List<MessageHandlerInterceptor<? super CommandMessage>> interceptors =
+                resolveHandlerInterceptors(commandHandler);
+        if (interceptors.isEmpty()) {
+            delegate.subscribe(name, commandHandler);
+        } else {
+            delegate.subscribe(name, new InterceptingHandler(commandHandler, interceptors));
+        }
         return this;
     }
 
@@ -128,6 +134,27 @@ public class InterceptingCommandBus implements CommandBus {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
+    }
+
+    private List<MessageHandlerInterceptor<? super CommandMessage>> resolveHandlerInterceptors(
+            CommandHandler commandHandler
+    ) {
+        if (!(commandHandler instanceof CommandHandlerInterceptorProvider provider)) {
+            return handlerInterceptors;
+        }
+
+        List<MessageHandlerInterceptor<? super CommandMessage>> providerInterceptors =
+                requireNonNull(provider.commandHandlerInterceptors(),
+                               "commandHandlerInterceptors may not return null");
+        if (providerInterceptors.isEmpty()) {
+            return handlerInterceptors;
+        }
+
+        List<MessageHandlerInterceptor<? super CommandMessage>> merged =
+                new ArrayList<>(providerInterceptors.size() + handlerInterceptors.size());
+        merged.addAll(providerInterceptors);
+        merged.addAll(handlerInterceptors);
+        return merged;
     }
 
     private static class InterceptingHandler implements CommandHandler {

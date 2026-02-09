@@ -109,7 +109,7 @@ class MessagingConfigurationDefaultsTest {
         assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
                 .isInstanceOf(DefaultHandlerInterceptorRegistry.class);
         assertInstanceOf(TransactionalUnitOfWorkFactory.class, resultConfig.getComponent(UnitOfWorkFactory.class));
-        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // Intercepting at all times to support handler-specific interceptors.
         assertInstanceOf(InterceptingCommandBus.class, resultConfig.getComponent(CommandBus.class));
         assertEquals(CommandPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(CommandPriorityCalculator.class));
@@ -123,7 +123,7 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(InterceptingEventBus.class, eventBus);
         assertThat(resultConfig.getComponent(SubscribableEventSource.class)).isSameAs(eventBus);
 
-        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // Intercepting at all times to support handler-specific interceptors.
         assertInstanceOf(InterceptingQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
@@ -163,9 +163,9 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(2);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(2);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(2);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
     }
 
     @Test
@@ -184,9 +184,9 @@ class MessagingConfigurationDefaultsTest {
         assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
         HandlerInterceptorRegistry handlerInterceptorRegistry =
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
-        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
-        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
     }
 
     @Test

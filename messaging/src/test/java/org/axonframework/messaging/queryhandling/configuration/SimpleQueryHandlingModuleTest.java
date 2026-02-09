@@ -63,7 +63,7 @@ class SimpleQueryHandlingModuleTest {
     @Test
     void buildRegistersQueryHandlers() {
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        // This ensures we keep the SimpleQueryBus, from which we can retrieve the subscription for validation.
+        // We still resolve the subscriptions from the delegate QueryBus for validation.
         AxonConfiguration configuration = MessagingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(
