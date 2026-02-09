@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -209,6 +210,31 @@ class CoordinatorTest {
 
         //asserts
         verify(messageSource, never()).openStream(any(TrackingToken.class));
+    }
+
+    @Test
+    void segmentMidAbortIsNotReclaimed() throws NoSuchFieldException {
+        //arrange
+        final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
+
+        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(Collections.singletonList(SEGMENT_ONE)).when(tokenStore).fetchAvailableSegments(PROCESSOR_NAME);
+        doReturn(token).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), any(Segment.class));
+        doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
+
+        // Use reflection to mark segment 0 as mid-abort before starting the coordinator.
+        // This simulates a previous CoordinationTask having started an abort for this segment
+        // that has not yet completed.
+        Set<Integer> abortingSegments =
+                ReflectionUtils.getFieldValue(Coordinator.class.getDeclaredField("abortingSegments"), testSubject);
+        abortingSegments.add(SEGMENT_ID);
+
+        //act
+        testSubject.start();
+
+        //assert - fetchToken should never be called because segment 0 is still being aborted
+        verify(tokenStore, never()).fetchToken(eq(PROCESSOR_NAME), any(Segment.class));
+        verify(tokenStore, never()).fetchToken(eq(PROCESSOR_NAME), anyInt());
     }
 
     private Answer<Future<Void>> runTaskSync() {

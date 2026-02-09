@@ -1,0 +1,14 @@
+2026-02-09T10:41:19.736Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:19.836Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:19.936Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:20.037Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:20.137Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:20.238Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:20.338Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] was requested and will comply with releasing claim for segment 1.
+2026-02-09T10:41:34.829Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] claimed the token for segment 0.
+2026-02-09T10:41:34.829Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] claimed 1 new segments for processing
+2026-02-09T10:41:34.831Z  WARN 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Exception occurred while Processor [TacticRegistrar] was coordinating the work packages.
+java.lang.NullPointerException: null
+2026-02-09T10:41:34.831Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] is releasing claims and scheduling a new coordination task in 500ms
+2026-02-09T10:41:34.839Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] claimed the token for segment 0.
+2026-02-09T10:41:34.839Z  INFO 1 --- [ticRegistrar]-0] o.a.eventhandling.pooled.Coordinator     : Processor [TacticRegistrar] claimed 1 new segments for processing

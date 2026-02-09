@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -98,6 +99,7 @@ class Coordinator {
     private final Consumer<Segment> segmentReleasedAction;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
+    private final Set<Integer> abortingSegments = ConcurrentHashMap.newKeySet();
     private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
@@ -1031,6 +1033,12 @@ class Coordinator {
             int maxSegmentsToClaim = maxSegmentProvider.apply(name) - workPackages.size();
             for (Segment segment : unClaimedSegments) {
                 int segmentId = segment.getSegmentId();
+                if (abortingSegments.contains(segmentId)) {
+                    logger.debug(
+                            "Processor [{}] (Coordination Task [{}]). Segment {} has an in-progress abort. Skipping claim.",
+                            name, generation, segmentId);
+                    continue;
+                }
                 if (isSegmentBlockedFromClaim(segmentId)) {
                     logger.debug(
                             "Processor [{}] (Coordination Task [{}]). Segment {} is still marked to not be claimed till [{}].",
@@ -1292,6 +1300,7 @@ class Coordinator {
 
         private CompletableFuture<Void> abortWorkPackage(WorkPackage work, Exception cause) {
             int segmentId = work.segment().getSegmentId();
+            abortingSegments.add(segmentId);
             return work.abort(cause)
                        .thenRun(() -> {
                            if (workPackages.remove(segmentId, work)) {
@@ -1305,16 +1314,16 @@ class Coordinator {
                                    segmentReleasedAction.accept(work.segment());
                                }
                        ))
-
                        .exceptionally(throwable -> {
-                           logger.info(
+                           logger.warn(
                                    "Processor [{}] (Coordination Task [{}]). An exception occurred during the abort of work package [{}].",
                                    name,
                                    generation,
                                    segmentId,
                                    throwable);
                            return null;
-                       });
+                       })
+                       .thenRun(() -> abortingSegments.remove(segmentId));
         }
 
         private void advanceReleaseDeadlineFor(int segmentId) {
