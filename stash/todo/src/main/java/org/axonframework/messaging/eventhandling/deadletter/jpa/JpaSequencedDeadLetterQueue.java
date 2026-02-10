@@ -16,10 +16,12 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
@@ -128,8 +130,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
-            throws DeadLetterQueueOverflowException {
+    public void enqueue(@Nonnull Object sequenceIdentifier,
+                        @Nonnull DeadLetter<? extends M> letter,
+                        @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
         if (isFull(stringSequenceIdentifier)) {
             throw new DeadLetterQueueOverflowException(
@@ -150,10 +153,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                     stringSequenceIdentifier);
         }
 
-        // Note: Context.empty() is used here as the DeadLetter interface doesn't carry context.
-        // Tracking token and domain info from context resources won't be preserved in this case.
         DeadLetterEventEntry entry = converter.convert(
-                letter.message(), Context.empty(), eventConverter, genericConverter
+                letter.message(), context, eventConverter, genericConverter
         );
 
         transactionManager.executeInTransaction(() -> {

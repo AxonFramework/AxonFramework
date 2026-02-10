@@ -83,7 +83,7 @@ class CachingSequencedDeadLetterQueueTest {
             DeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_1, event);
 
             // when
-            cachingQueue.enqueue(SEQUENCE_ID_1, letter).join();
+            cachingQueue.enqueue(SEQUENCE_ID_1, letter, null).join();
 
             // then
             assertThat(cachingQueue.contains(SEQUENCE_ID_1).join()).isTrue();
@@ -98,7 +98,8 @@ class CachingSequencedDeadLetterQueueTest {
             // when
             var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_1,
-                    () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event)
+                    () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event),
+                    null
             ).join();
 
             // then
@@ -111,12 +112,13 @@ class CachingSequencedDeadLetterQueueTest {
             // given
             EventMessage event1 = EventTestUtils.createEvent(1);
             EventMessage event2 = EventTestUtils.createEvent(2);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1)).join();
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1), null).join();
 
             // when
             var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_1,
-                    () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event2)
+                    () -> new GenericDeadLetter<>(SEQUENCE_ID_1, event2),
+                    null
             ).join();
 
             // then
@@ -128,7 +130,7 @@ class CachingSequencedDeadLetterQueueTest {
         void clearClearsCache() {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
 
             // when
@@ -143,7 +145,7 @@ class CachingSequencedDeadLetterQueueTest {
         void invalidateCacheClearsCacheOnly() {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
             long delegateSizeBefore = delegate.size().join();
 
@@ -162,7 +164,7 @@ class CachingSequencedDeadLetterQueueTest {
             // If delegate is modified before first cache use, the cache will see that state.
             EventMessage event = EventTestUtils.createEvent(1);
             // Bypass caching queue and add directly to delegate BEFORE first cache use
-            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
+            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
 
             // when
             // First cache use initializes by checking amountOfSequences(), which is now 1.
@@ -185,7 +187,7 @@ class CachingSequencedDeadLetterQueueTest {
             delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
             // Pre-populate delegate before creating caching queue
             EventMessage event = EventTestUtils.createEvent(1);
-            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event)).join();
+            delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
 
             cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
         }
@@ -255,7 +257,8 @@ class CachingSequencedDeadLetterQueueTest {
             // when
             var result = cachingQueue.enqueueIfPresent(
                     SEQUENCE_ID_2,
-                    () -> new GenericDeadLetter<>(SEQUENCE_ID_2, event)
+                    () -> new GenericDeadLetter<>(SEQUENCE_ID_2, event),
+                    null
             ).join();
 
             // then
@@ -269,7 +272,7 @@ class CachingSequencedDeadLetterQueueTest {
             // When the queue started non-empty, cache must query delegate for unknown identifiers
             EventMessage event = EventTestUtils.createEvent(2);
             // Add directly to delegate - cache doesn't know about this yet
-            delegate.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event)).join();
+            delegate.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event), null).join();
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
 
             // when
@@ -291,7 +294,7 @@ class CachingSequencedDeadLetterQueueTest {
             delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
             // Pre-populate to make startedEmpty=false
             EventMessage event = EventTestUtils.createEvent(1);
-            delegate.enqueue("existing", new GenericDeadLetter<>("existing", event)).join();
+            delegate.enqueue("existing", new GenericDeadLetter<>("existing", event), null).join();
 
             int customMaxSize = 3;
             cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate, customMaxSize);

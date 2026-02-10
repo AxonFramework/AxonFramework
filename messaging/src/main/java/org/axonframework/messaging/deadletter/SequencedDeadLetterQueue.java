@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Interface describing the required functionality for a dead letter queue. Contains several FIFO-ordered sequences of
@@ -56,12 +58,14 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      *
      * @param sequenceIdentifier The identifier of the sequence the {@code letter} belongs to.
      * @param letter             The {@link DeadLetter} to enqueue.
+     * @param context            The processing context in which the dead letters are processed.
      * @return A {@link CompletableFuture} that completes when the operation is done. The future completes exceptionally
      * with a {@link DeadLetterQueueOverflowException} when this queue {@link #isFull(Object) is full}.
      */
     @Nonnull
     CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                    @Nonnull DeadLetter<? extends M> letter);
+                                    @Nonnull DeadLetter<? extends M> letter,
+                                    @Nullable ProcessingContext context);
 
     /**
      * Enqueue the result of the given {@code letterBuilder} only if there already are other
@@ -70,6 +74,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param sequenceIdentifier The identifier of the sequence to store the result of the {@code letterBuilder} in.
      * @param letterBuilder      The {@link DeadLetter} builder constructing the letter to enqueue. Only invoked if the
      *                           given {@code sequenceIdentifier} is contained.
+     * @param context            The processing context in which the dead letters are processed.
      * @return A {@link CompletableFuture} with {@code true} if there are {@link DeadLetter dead letters} for the given
      * {@code sequenceIdentifier} and thus the {@code letterBuilder's} outcome is inserted. Otherwise the future
      * completes with {@code false}. The future completes exceptionally with a
@@ -79,14 +84,15 @@ public interface SequencedDeadLetterQueue<M extends Message> {
     @Nonnull
     default CompletableFuture<Boolean> enqueueIfPresent(
             @Nonnull Object sequenceIdentifier,
-            @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder
+            @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+            @Nullable ProcessingContext context
     ) {
         return contains(sequenceIdentifier)
                 .thenCompose(containsSequence -> {
                     if (!containsSequence) {
                         return CompletableFuture.completedFuture(false);
                     }
-                    return enqueue(sequenceIdentifier, letterBuilder.get())
+                    return enqueue(sequenceIdentifier, letterBuilder.get(), context)
                             .thenApply(v -> true);
                 });
     }

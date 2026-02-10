@@ -113,7 +113,7 @@ class DeadLetteringEventHandlingComponentTest {
 
             EventMessage firstEvent = EventTestUtils.asEventMessage("first-payload");
             DeadLetter<EventMessage> firstLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, firstEvent);
-            queue.enqueue(TEST_SEQUENCE_ID, firstLetter).join();
+            queue.enqueue(TEST_SEQUENCE_ID, firstLetter, null).join();
 
             EventMessage secondEvent = EventTestUtils.asEventMessage("second-payload");
             ProcessingContext context = new StubProcessingContext();
@@ -198,8 +198,8 @@ class DeadLetteringEventHandlingComponentTest {
             // given
             RuntimeException enqueueException = new RuntimeException("queue failure");
             SequencedDeadLetterQueue<EventMessage> failingQueue = mock(SequencedDeadLetterQueue.class);
-            when(failingQueue.enqueueIfPresent(any(), any())).thenReturn(CompletableFuture.completedFuture(false));
-            when(failingQueue.enqueue(any(), any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
+            when(failingQueue.enqueueIfPresent(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(false));
+            when(failingQueue.enqueue(any(), any(), any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
 
             testSubject = new DeadLetteringEventHandlingComponent(
                     delegate, failingQueue, enqueuePolicy, unitOfWorkFactory, true
@@ -225,6 +225,7 @@ class DeadLetteringEventHandlingComponentTest {
             RuntimeException enqueueException = new RuntimeException("queue failure");
             SequencedDeadLetterQueue<EventMessage> failingQueue = mock(SequencedDeadLetterQueue.class);
             when(failingQueue.enqueueIfPresent(any(),
+                                               any(),
                                                any())).thenReturn(CompletableFuture.failedFuture(enqueueException));
 
             testSubject = new DeadLetteringEventHandlingComponent(
@@ -253,7 +254,7 @@ class DeadLetteringEventHandlingComponentTest {
             );
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
 
             ResetContext resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
@@ -276,7 +277,7 @@ class DeadLetteringEventHandlingComponentTest {
             );
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
 
             ResetContext resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
@@ -310,7 +311,7 @@ class DeadLetteringEventHandlingComponentTest {
             GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
             assertTrue(queue.contains(TEST_SEQUENCE_ID).join());
 
             // when
@@ -346,8 +347,8 @@ class DeadLetteringEventHandlingComponentTest {
                     delegate, queue, enqueuePolicy, unitOfWorkFactory, true
             );
 
-            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent1)).join();
-            queue.enqueue(otherSequenceId, new GenericDeadLetter<>(otherSequenceId, testEvent2)).join();
+            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent1), null).join();
+            queue.enqueue(otherSequenceId, new GenericDeadLetter<>(otherSequenceId, testEvent2), null).join();
 
             // when - process only letters matching TEST_SEQUENCE_ID
             boolean result = testSubject.process(
@@ -366,7 +367,7 @@ class DeadLetteringEventHandlingComponentTest {
             GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
             EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+            queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
             // Configure delegate to fail
             RuntimeException testException = new RuntimeException("processing failed");
@@ -633,7 +634,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
@@ -658,7 +659,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
@@ -683,7 +684,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
@@ -712,7 +713,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 // when - delegate does not fail, so processing succeeds
                 boolean result = testSubject.processAny().join();
@@ -747,7 +748,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);
@@ -785,7 +786,7 @@ class DeadLetteringEventHandlingComponentTest {
                 );
 
                 EventMessage testEvent = EventTestUtils.asEventMessage("test-payload");
-                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent)).join();
+                queue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, testEvent), null).join();
 
                 RuntimeException testException = new RuntimeException("processing failed");
                 delegate.failingWith(testException);

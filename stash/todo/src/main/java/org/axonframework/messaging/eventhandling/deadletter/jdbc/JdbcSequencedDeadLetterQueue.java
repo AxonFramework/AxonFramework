@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -189,8 +191,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier,
-                        @Nonnull DeadLetter<? extends E> letter) throws DeadLetterQueueOverflowException {
+    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends E> letter,
+                        @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (isFull(sequenceId)) {
             throw new DeadLetterQueueOverflowException(

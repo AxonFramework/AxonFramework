@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +54,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * maximum amount of {@link DeadLetter dead letters} per sequence also defaults to {@code 1024} (configurable through
  * {@link Builder#maxSequenceSize(int)}).
  * <p>
- * All methods return {@link CompletableFuture}, but since this is an in-memory implementation,
- * all futures complete immediately with the result.
+ * All methods return {@link CompletableFuture}, but since this is an in-memory implementation, all futures complete
+ * immediately with the result.
  *
  * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
  *            {@link SequencedDeadLetterQueue}.
@@ -112,8 +114,11 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends M> letter) {
+    public CompletableFuture<Void> enqueue(
+            @Nonnull Object sequenceIdentifier,
+            @Nonnull DeadLetter<? extends M> letter,
+            @Nullable ProcessingContext context
+    ) {
         return isFull(sequenceIdentifier)
                 .thenCompose(full -> {
                     if (full) {

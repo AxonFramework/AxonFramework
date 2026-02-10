@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.function.Function;
@@ -24,19 +25,21 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Synchronous interface describing the required functionality for a dead letter queue. Contains several FIFO-ordered
  * sequences of dead letters.
  * <p>
  * The contained sequences are uniquely identifiable through the "sequence identifier." Dead-letters are kept in the
- * form of a {@link DeadLetter}. It is highly recommended to use the {@link #process(Predicate, Function) process
- * operation} (or any of its variants) to consume letters from the queue for retrying. This method ensures sequences
- * cannot be concurrently accessed, thus protecting the user against handling messages out of order.
+ * form of a {@link DeadLetter}. It is highly recommended to use the
+ * {@link #process(Predicate, Function) process operation} (or any of its variants) to consume letters from the queue
+ * for retrying. This method ensures sequences cannot be concurrently accessed, thus protecting the user against
+ * handling messages out of order.
  * <p>
- * This synchronous interface is intended for implementations that perform blocking I/O operations, such as
- * JPA or JDBC-based queues. These implementations can be wrapped with
- * {@link SyncToAsyncDeadLetterQueueAdapter} to provide the asynchronous {@link SequencedDeadLetterQueue} interface.
+ * This synchronous interface is intended for implementations that perform blocking I/O operations, such as JPA or
+ * JDBC-based queues. These implementations can be wrapped with {@link SyncToAsyncDeadLetterQueueAdapter} to provide the
+ * asynchronous {@link SequencedDeadLetterQueue} interface.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Steven van Beelen
@@ -59,10 +62,12 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      *
      * @param sequenceIdentifier The identifier of the sequence the {@code letter} belongs to.
      * @param letter             The {@link DeadLetter} to enqueue.
+     * @param context            The processing context in which the dead letters are processed.
      * @throws DeadLetterQueueOverflowException when this queue {@link #isFull(Object) is full}.
      */
-    void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends M> letter)
-            throws DeadLetterQueueOverflowException;
+    void enqueue(@Nonnull Object sequenceIdentifier,
+                 @Nonnull DeadLetter<? extends M> letter,
+                 @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException;
 
     /**
      * Enqueue the result of the given {@code letterBuilder} only if there already are other
@@ -71,18 +76,19 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param sequenceIdentifier The identifier of the sequence to store the result of the {@code letterBuilder} in.
      * @param letterBuilder      The {@link DeadLetter} builder constructing the letter to enqueue. Only invoked if the
      *                           given {@code sequenceIdentifier} is contained.
+     * @param context            The processing context in which the dead letters are processed.
      * @return {@code true} if there are {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} and
      * thus the {@code letterBuilder's} outcome is inserted. Otherwise {@code false}.
      * @throws DeadLetterQueueOverflowException when this queue is {@link #isFull(Object)} for the given
      *                                          {@code sequenceIdentifier}.
      */
     default boolean enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                     @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder)
-            throws DeadLetterQueueOverflowException {
+                                     @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder, // todo: BiFunction accepts the context?
+                                     @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         if (!contains(sequenceIdentifier)) {
             return false;
         }
-        enqueue(sequenceIdentifier, letterBuilder.get());
+        enqueue(sequenceIdentifier, letterBuilder.get(), context);
         return true;
     }
 
@@ -202,8 +208,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      *                       used to deduce whether to {@link #evict(DeadLetter)} or
      *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead letters} was processed successfully,
-     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters}
-     * of a sequence and the outcome was to evict each instance.
+     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
+     * sequence and the outcome was to evict each instance.
      */
     boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
                     @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask);
@@ -228,8 +234,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      *                       used to deduce whether to {@link #evict(DeadLetter)} or
      *                       {@link #requeue(DeadLetter, UnaryOperator)} the dead letter.
      * @return {@code true} if an entire sequence of {@link DeadLetter dead letters} was processed successfully,
-     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters}
-     * of a sequence and the outcome was to evict each instance.
+     * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
+     * sequence and the outcome was to evict each instance.
      */
     default boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
         return process(letter -> true, processingTask);

@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Adapter that wraps a {@link SyncSequencedDeadLetterQueue} and provides the asynchronous
@@ -58,9 +60,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Nonnull
     @Override
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends M> letter) {
+                                           @Nonnull DeadLetter<? extends M> letter,
+                                           @Nullable ProcessingContext context) {
         try {
-            delegate.enqueue(sequenceIdentifier, letter);
+            delegate.enqueue(sequenceIdentifier, letter, context);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -70,9 +73,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Nonnull
     @Override
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder) {
+                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+                                                       @Nullable ProcessingContext context) {
         try {
-            boolean result = delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder);
+            boolean result = delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);

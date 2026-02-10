@@ -16,8 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -137,10 +139,11 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Nonnull
     @Override
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends M> letter) {
+                                           @Nonnull DeadLetter<? extends M> letter,
+                                           @Nullable ProcessingContext context) {
         // Initialize cache before enqueue to ensure we track this sequence
         return getOrInitializeCache()
-                .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter)
+                .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter, context)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
                                                       cache.markEnqueued(sequenceIdentifier);
@@ -151,12 +154,13 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Nonnull
     @Override
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder) {
+                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+                                                       @Nullable ProcessingContext context) {
         SequenceIdentifierCache cache = getInitializedCacheOrNull();
         if (cache != null && !cache.mightBePresent(sequenceIdentifier)) {
             return CompletableFuture.completedFuture(false);
         }
-        return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder)
+        return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context)
                        .whenComplete((result, error) -> {
                            if (error == null) {
                                SequenceIdentifierCache c = getInitializedCacheOrNull();
