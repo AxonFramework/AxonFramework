@@ -207,7 +207,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
         if (allowReset) {
-            CompletableFuture<MessageStream<Message>> resultFuture = queue.clear()
+            CompletableFuture<MessageStream<Message>> resultFuture = queue.clear(context)
                                                                           .thenApply(v -> delegate.handle(resetContext,
                                                                                                           context));
             return DelayedMessageStream.create(resultFuture).ignoreEntries().cast();
@@ -221,6 +221,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy, unitOfWorkFactory
         );
-        return queue.process(sequenceFilter, processingTask::process);
+        return queue.process(sequenceFilter, processingTask::process, null);
     }
 }

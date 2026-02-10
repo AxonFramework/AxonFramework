@@ -134,7 +134,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                         @Nonnull DeadLetter<? extends M> letter,
                         @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        if (isFull(stringSequenceIdentifier)) {
+        if (isFull(stringSequenceIdentifier, context)) {
             throw new DeadLetterQueueOverflowException(
                     "No room left to enqueue [" + letter.message() + "] for identifier ["
                             + stringSequenceIdentifier + "] since the queue is full."
@@ -179,7 +179,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
 
     @Override
     @SuppressWarnings("unchecked")
-    public void evict(DeadLetter<? extends M> letter) {
+    public void evict(@Nonnull DeadLetter<? extends M> letter, @Nullable ProcessingContext context) {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(
                     String.format("Evict should be called with a JpaDeadLetter instance. Instead got: [%s]",
@@ -208,7 +208,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
 
     @Override
     public void requeue(@Nonnull DeadLetter<? extends M> letter,
-                        @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater)
+                        @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+                        @Nullable ProcessingContext context)
             throws NoSuchDeadLetterException {
         if (!(letter instanceof JpaDeadLetter)) {
             throw new WrongDeadLetterTypeException(String.format(
@@ -234,13 +235,13 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public boolean contains(@Nonnull Object sequenceIdentifier) {
+    public boolean contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        return sequenceSize(stringSequenceIdentifier) > 0;
+        return sequenceSize(stringSequenceIdentifier, context) > 0;
     }
 
     @Override
-    public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier) {
+    public Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
 
         return new PagingJpaQueryIterable<>(
@@ -262,7 +263,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters() {
+    public Iterable<Iterable<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context) {
         List<String> sequenceIdentifiers = entityManagerProvider
                 .getEntityManager()
                 .createQuery(
@@ -286,7 +287,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                 @Override
                 public Iterable<DeadLetter<? extends M>> next() {
                     String next = sequenceIterator.next();
-                    return deadLetterSequence(next);
+                    return deadLetterSequence(next, context);
                 }
             };
         };
@@ -314,15 +315,16 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public boolean isFull(@Nonnull Object sequenceIdentifier) {
+    public boolean isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-        long numberInSequence = sequenceSize(stringSequenceIdentifier);
-        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences() >= maxSequences;
+        long numberInSequence = sequenceSize(stringSequenceIdentifier, context);
+        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences(context) >= maxSequences;
     }
 
     @Override
     public boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+                           @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask,
+                           @Nullable ProcessingContext context) {
 
         JpaDeadLetter<M> claimedLetter = null;
         Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(10);
@@ -334,19 +336,21 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
         }
 
         if (claimedLetter != null) {
-            return processLetterAndFollowing(claimedLetter, processingTask);
+            return processLetterAndFollowing(claimedLetter, processingTask, context);
         }
         logger.info("No claimable and/or matching dead letters found to process.");
         return false;
     }
 
     @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+    public boolean process(@Nonnull Function<DeadLetter<? extends M>,
+                                   EnqueueDecision<M>> processingTask,
+                           @Nullable ProcessingContext context) {
         Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(1);
         if (iterator.hasNext()) {
             JpaDeadLetter<M> deadLetter = iterator.next();
             claimDeadLetter(deadLetter);
-            return processLetterAndFollowing(deadLetter, processingTask);
+            return processLetterAndFollowing(deadLetter, processingTask, context);
         }
         return false;
     }
@@ -366,7 +370,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
      * @return Whether processing all letters in this sequence was successful.
      */
     private boolean processLetterAndFollowing(JpaDeadLetter<M> firstDeadLetter,
-                                              Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask) {
+                                              Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask,
+                                              ProcessingContext context) {
         JpaDeadLetter<M> deadLetter = firstDeadLetter;
         while (deadLetter != null) {
             logger.info("Processing dead letter with id [{}] at index [{}]", deadLetter.getId(), deadLetter.getIndex());
@@ -380,11 +385,12 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
                 } else {
                     deadLetter = null;
                 }
-                evict(oldLetter);
+                evict(oldLetter, context);
             } else {
                 requeue(deadLetter,
                         l -> decision.withDiagnostics(l)
-                                     .withCause(decision.enqueueCause().orElse(null))
+                                     .withCause(decision.enqueueCause().orElse(null)),
+                        context
                 );
                 return false;
             }
@@ -487,7 +493,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public void clear() {
+    public void clear(@Nullable ProcessingContext context) {
         transactionManager.executeInTransaction(
                 () -> entityManagerProvider.getEntityManager()
                                            .createQuery(
@@ -497,7 +503,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public long sequenceSize(@Nonnull Object sequenceIdentifier) {
+    public long sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(dl) from DeadLetterEntry dl "
@@ -511,7 +517,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public long size() {
+    public long size(@Nullable ProcessingContext context) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(dl) from DeadLetterEntry dl "
@@ -523,7 +529,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sync
     }
 
     @Override
-    public long amountOfSequences() {
+    public long amountOfSequences(@Nullable ProcessingContext context) {
         return transactionManager.fetchInTransaction(
                 () -> entityManagerProvider.getEntityManager().createQuery(
                                                    "select count(distinct dl.sequenceIdentifier) from DeadLetterEntry dl "

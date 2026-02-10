@@ -110,8 +110,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // then
-            assertTrue(testSubject.contains(testId).join());
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            assertTrue(testSubject.contains(testId, null).join());
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -181,7 +181,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertFalse(result);
-            assertFalse(testSubject.contains(testId).join());
+            assertFalse(testSubject.contains(testId, null).join());
         }
 
         @Test
@@ -196,8 +196,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertFalse(result);
-            assertTrue(testSubject.contains(testFirstId).join());
-            assertFalse(testSubject.contains(testSecondId).join());
+            assertTrue(testSubject.contains(testFirstId, null).join());
+            assertFalse(testSubject.contains(testSecondId, null).join());
         }
 
         @Test
@@ -212,8 +212,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueueIfPresent(testId, () -> testSecondLetter, null).join();
 
             // then
-            assertTrue(testSubject.contains(testId).join());
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            assertTrue(testSubject.contains(testId, null).join());
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testFirstLetter, resultLetters.next());
             assertTrue(resultLetters.hasNext());
@@ -233,11 +233,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // when
-            testSubject.evict(mapToQueueImplementation(generateInitialLetter())).join();
+            testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null).join();
 
             // then
-            assertTrue(testSubject.contains(testId).join());
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            assertTrue(testSubject.contains(testId, null).join());
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -251,11 +251,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // when
-            testSubject.evict(mapToQueueImplementation(generateInitialLetter())).join();
+            testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null).join();
 
             // then
-            assertTrue(testSubject.contains(testId).join());
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            assertTrue(testSubject.contains(testId, null).join());
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(testLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -267,14 +267,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             Object testId = generateId();
             DeadLetter<M> testLetter = generateInitialLetter();
             testSubject.enqueue(testId, testLetter, null).join();
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId).join().iterator().next();
+            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).join().iterator().next();
 
             // when
-            testSubject.evict(resultLetter).join();
+            testSubject.evict(resultLetter, null).join();
 
             // then
-            assertFalse(testSubject.contains(testId).join());
-            assertFalse(testSubject.deadLetters().join().iterator().hasNext());
+            assertFalse(testSubject.contains(testId, null).join());
+            assertFalse(testSubject.deadLetters(null).join().iterator().hasNext());
         }
     }
 
@@ -287,7 +287,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> testLetter = generateInitialLetter();
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l).join())
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l, null).join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(NoSuchDeadLetterException.class);
         }
@@ -301,7 +301,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherTestLetter), l -> l).join())
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherTestLetter), l -> l, null).join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(NoSuchDeadLetterException.class);
         }
@@ -313,15 +313,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> testLetter = generateInitialLetter();
             Throwable testCause = generateThrowable();
             testSubject.enqueue(testId, testLetter, null).join();
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId).join().iterator().next();
+            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).join().iterator().next();
             DeadLetter<M> expectedLetter = generateRequeuedLetter(testLetter, testCause);
 
             // when
-            testSubject.requeue(resultLetter, l -> l.withCause(testCause)).join();
+            testSubject.requeue(resultLetter, l -> l.withCause(testCause), null).join();
 
             // then
-            assertTrue(testSubject.contains(testId).join());
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            assertTrue(testSubject.contains(testId, null).join());
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(expectedLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -338,10 +338,10 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             Object otherTestId = generateId();
 
             // when / then
-            assertFalse(testSubject.contains(testId).join());
+            assertFalse(testSubject.contains(testId, null).join());
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertTrue(testSubject.contains(testId).join());
-            assertFalse(testSubject.contains(otherTestId).join());
+            assertTrue(testSubject.contains(testId, null).join());
+            assertFalse(testSubject.contains(otherTestId, null).join());
         }
 
         @Test
@@ -351,12 +351,12 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             DeadLetter<M> expected = generateInitialLetter();
 
             // when / then
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId).join().iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertFalse(resultIterator.hasNext());
 
             testSubject.enqueue(testId, expected, null).join();
 
-            resultIterator = testSubject.deadLetterSequence(testId).join().iterator();
+            resultIterator = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultIterator.hasNext());
             assertLetter(expected, resultIterator.next());
             assertFalse(resultIterator.hasNext());
@@ -379,7 +379,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
                      });
 
             // when
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId).join().iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).join().iterator();
 
             // then
             for (Map.Entry<Integer, DeadLetter<M>> entry : enqueuedLetters.entrySet()) {
@@ -405,7 +405,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(thatTestId, thatSecondExpected, null).join();
 
             // when
-            Iterator<Iterable<DeadLetter<? extends M>>> result = testSubject.deadLetters().join().iterator();
+            Iterator<Iterable<DeadLetter<? extends M>>> result = testSubject.deadLetters(null).join().iterator();
 
             // then
             int count = 0;
@@ -434,7 +434,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         @Test
         void isFullReturnsTrueAfterMaximumAmountOfSequencesIsReached() {
             // given
-            assertFalse(testSubject.isFull(generateId()).join());
+            assertFalse(testSubject.isFull(generateId(), null).join());
             long maxSequences = maxSequences();
             assertTrue(maxSequences > 0);
             for (int i = 0; i < maxSequences; i++) {
@@ -442,14 +442,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             }
 
             // when / then
-            assertTrue(testSubject.isFull(generateId()).join());
+            assertTrue(testSubject.isFull(generateId(), null).join());
         }
 
         @Test
         void isFullReturnsTrueAfterMaximumSequenceSizeIsReached() {
             // given
             Object testId = generateId();
-            assertFalse(testSubject.isFull(testId).join());
+            assertFalse(testSubject.isFull(testId, null).join());
             long maxSequenceSize = maxSequenceSize();
             assertTrue(maxSequenceSize > 0);
             for (int i = 0; i < maxSequenceSize; i++) {
@@ -457,57 +457,57 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             }
 
             // when / then
-            assertTrue(testSubject.isFull(testId).join());
+            assertTrue(testSubject.isFull(testId, null).join());
         }
 
         @Test
         void sizeReturnsOverallNumberOfContainedDeadLetters() {
             // given / when / then
-            assertEquals(0, testSubject.size().join());
+            assertEquals(0, testSubject.size(null).join());
 
             Object testId = generateId();
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertEquals(1, testSubject.size().join());
+            assertEquals(1, testSubject.size(null).join());
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertEquals(2, testSubject.size().join());
+            assertEquals(2, testSubject.size(null).join());
 
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
-            assertEquals(3, testSubject.size().join());
+            assertEquals(3, testSubject.size(null).join());
         }
 
         @Test
         void sequenceSizeForSequenceIdentifierReturnsTheNumberOfContainedLettersForGivenSequenceIdentifier() {
             // given / when / then
-            assertEquals(0, testSubject.sequenceSize("some-id").join());
+            assertEquals(0, testSubject.sequenceSize("some-id", null).join());
 
             Object testId = generateId();
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertEquals(0, testSubject.sequenceSize("some-id").join());
-            assertEquals(1, testSubject.sequenceSize(testId).join());
+            assertEquals(0, testSubject.sequenceSize("some-id", null).join());
+            assertEquals(1, testSubject.sequenceSize(testId, null).join());
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertEquals(2, testSubject.sequenceSize(testId).join());
+            assertEquals(2, testSubject.sequenceSize(testId, null).join());
 
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
-            assertEquals(0, testSubject.sequenceSize("some-id").join());
-            assertEquals(2, testSubject.sequenceSize(testId).join());
+            assertEquals(0, testSubject.sequenceSize("some-id", null).join());
+            assertEquals(2, testSubject.sequenceSize(testId, null).join());
         }
 
         @Test
         void amountOfSequencesReturnsTheNumberOfUniqueSequences() {
             // given / when / then
-            assertEquals(0, testSubject.amountOfSequences().join());
+            assertEquals(0, testSubject.amountOfSequences(null).join());
 
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
-            assertEquals(1, testSubject.amountOfSequences().join());
+            assertEquals(1, testSubject.amountOfSequences(null).join());
 
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
-            assertEquals(2, testSubject.amountOfSequences().join());
+            assertEquals(2, testSubject.amountOfSequences(null).join());
 
             Object testId = generateId();
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
             testSubject.enqueue(testId, generateInitialLetter(), null).join();
-            assertEquals(3, testSubject.amountOfSequences().join());
+            assertEquals(3, testSubject.amountOfSequences(null).join());
         }
     }
 
@@ -524,7 +524,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             };
 
             // when
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertFalse(result);
@@ -545,13 +545,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // when
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertTrue(result);
             assertLetter(testLetter, resultLetter.get());
 
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertFalse(resultLetters.hasNext());
         }
 
@@ -575,13 +575,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
                     generateRequeuedLetter(testLetter, expectedLastTouched, testThrowable, testDiagnostics);
 
             // when
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertFalse(result);
             assertLetter(testLetter, resultLetter.get());
 
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             assertLetter(expectedRequeuedLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -606,11 +606,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testThatId, testThatLetter, null).join();
 
             // when / then
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
             assertTrue(result);
             assertLetter(testThisLetter, resultLetter.get());
 
-            result = testSubject.process(testTask).join();
+            result = testSubject.process(testTask, null).join();
             assertTrue(result);
             assertLetter(testThatLetter, resultLetter.get());
         }
@@ -645,7 +645,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
 
             // when
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertTrue(result);
@@ -683,7 +683,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             }
 
             // when
-            boolean result = testSubject.process(testTask).join();
+            boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertTrue(result);
@@ -729,11 +729,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testId, testLetter, null).join();
 
             // when
-            Thread blockingProcess = new Thread(() -> testSubject.process(blockingTask).join());
+            Thread blockingProcess = new Thread(() -> testSubject.process(blockingTask, null).join());
             blockingProcess.start();
             assertTrue(isBlocking.await(100, TimeUnit.MILLISECONDS));
 
-            boolean result = testSubject.process(nonBlockingTask).join();
+            boolean result = testSubject.process(nonBlockingTask, null).join();
 
             // then
             assertFalse(result);
@@ -761,7 +761,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(generateId(), generateInitialLetter(), null).join();
 
             // when
-            boolean result = testSubject.process(letter -> false, testTask).join();
+            boolean result = testSubject.process(letter -> false, testTask, null).join();
 
             // then
             assertFalse(result);
@@ -784,15 +784,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // when
             // Filter rejects all letters - no sequences match
-            boolean result = testSubject.process(letter -> false, testTask).join();
+            boolean result = testSubject.process(letter -> false, testTask, null).join();
 
             // then
             assertFalse(result);
             assertEquals(0, taskInvocations.get());
             // Verify letters are still in the queue (not evicted)
-            assertTrue(testSubject.contains(idOne).join());
-            assertTrue(testSubject.contains(idTwo).join());
-            assertEquals(2, testSubject.amountOfSequences().join());
+            assertTrue(testSubject.contains(idOne, null).join());
+            assertTrue(testSubject.contains(idTwo, null).join());
+            assertEquals(2, testSubject.amountOfSequences(null).join());
         }
 
         @Test
@@ -813,11 +813,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(testThatId, testThatLetter, null).join();
 
             // when / then
-            boolean result = testSubject.process(letterMatches(testThisLetter), testTask).join();
+            boolean result = testSubject.process(letterMatches(testThisLetter), testTask, null).join();
             assertTrue(result);
             assertLetter(testThisLetter, resultLetter.get());
 
-            result = testSubject.process(letterMatches(testThatLetter), testTask).join();
+            result = testSubject.process(letterMatches(testThatLetter), testTask, null).join();
             assertTrue(result);
             assertLetter(testThatLetter, resultLetter.get());
         }
@@ -840,16 +840,17 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // when
             boolean result = testSubject.process(
                     letter -> letter.message().payload().equals(testLetter.message().payload()),
-                    testTask
+                    testTask,
+                    null
             ).join();
 
             // then
             assertTrue(result);
             assertLetter(testLetter, resultLetter.get());
 
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId).join().iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertFalse(resultLetters.hasNext());
-            assertTrue(testSubject.deadLetters().join().iterator().hasNext());
+            assertTrue(testSubject.deadLetters(null).join().iterator().hasNext());
         }
     }
 
@@ -867,17 +868,17 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueue(idTwo, generateInitialLetter(), null).join();
             testSubject.enqueue(idThree, generateInitialLetter(), null).join();
 
-            assertTrue(testSubject.contains(idOne).join());
-            assertTrue(testSubject.contains(idTwo).join());
-            assertTrue(testSubject.contains(idThree).join());
+            assertTrue(testSubject.contains(idOne, null).join());
+            assertTrue(testSubject.contains(idTwo, null).join());
+            assertTrue(testSubject.contains(idThree, null).join());
 
             // when
-            testSubject.clear().join();
+            testSubject.clear(null).join();
 
             // then
-            assertFalse(testSubject.contains(idOne).join());
-            assertFalse(testSubject.contains(idTwo).join());
-            assertFalse(testSubject.contains(idThree).join());
+            assertFalse(testSubject.contains(idOne, null).join());
+            assertFalse(testSubject.contains(idTwo, null).join());
+            assertFalse(testSubject.contains(idThree, null).join());
         }
     }
 

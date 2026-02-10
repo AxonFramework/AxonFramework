@@ -119,7 +119,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
             @Nonnull DeadLetter<? extends M> letter,
             @Nullable ProcessingContext context
     ) {
-        return isFull(sequenceIdentifier)
+        return isFull(sequenceIdentifier, context)
                 .thenCompose(full -> {
                     if (full) {
                         return CompletableFuture.failedFuture(
@@ -151,7 +151,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter) {
+    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter,
+                                         @Nullable ProcessingContext context) {
         try {
             Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
                     deadLetters.entrySet()
@@ -184,7 +185,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Nonnull
     @Override
     public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
+                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+                                           @Nullable ProcessingContext context) {
         try {
             Optional<Map.Entry<String, Deque<DeadLetter<? extends M>>>> optionalSequence =
                     deadLetters.entrySet()
@@ -216,7 +218,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+                                               @Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(containsSync(sequenceIdentifier));
     }
 
@@ -232,7 +235,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Nonnull
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
-            @Nonnull Object sequenceIdentifier) {
+            @Nonnull Object sequenceIdentifier,
+            @Nullable ProcessingContext context) {
         String identifier = toIdentifier(sequenceIdentifier);
         synchronized (deadLetters) {
             Iterable<DeadLetter<? extends M>> result = deadLetters.containsKey(identifier)
@@ -244,13 +248,15 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters() {
+    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+            @Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(new ArrayList<>(deadLetters.values()));
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+                                             @Nullable ProcessingContext context) {
         String identifier = toIdentifier(sequenceIdentifier);
         boolean full = maximumNumberOfSequencesReached(identifier) || maximumSequenceSizeReached(identifier);
         return CompletableFuture.completedFuture(full);
@@ -266,7 +272,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> size() {
+    public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         long result = deadLetters.values()
                                  .stream()
                                  .mapToLong(Deque::size)
@@ -276,7 +282,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+                                                @Nullable ProcessingContext context) {
         String identifier = toIdentifier(sequenceIdentifier);
         synchronized (deadLetters) {
             long result = deadLetters.containsKey(identifier) ? deadLetters.get(identifier).size() : 0L;
@@ -292,7 +299,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> amountOfSequences() {
+    public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture((long) deadLetters.size());
     }
 
@@ -300,7 +307,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     @Override
     public CompletableFuture<Boolean> process(
             @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            @Nullable ProcessingContext context) {
         if (deadLetters.isEmpty()) {
             logger.debug("Received a request to process dead letters but there are none.");
             return CompletableFuture.completedFuture(false);
@@ -349,11 +357,12 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
                     FutureUtils.joinAndUnwrap(
                             requeue(letter,
                                     l -> decision.withDiagnostics(l)
-                                                 .withCause(decision.enqueueCause().orElse(null)))
+                                                 .withCause(decision.enqueueCause().orElse(null)),
+                                    null)
                     );
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    FutureUtils.joinAndUnwrap(evict(letter));
+                    FutureUtils.joinAndUnwrap(evict(letter, null));
                 }
             }
             return CompletableFuture.completedFuture(true);
@@ -381,7 +390,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> clear() {
+    public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         List<String> sequencesToClear = new ArrayList<>(deadLetters.keySet());
 
         sequencesToClear.forEach(sequenceId -> {

@@ -85,9 +85,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter) {
+    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter,
+                                         @Nullable ProcessingContext context) {
         try {
-            delegate.evict(letter);
+            delegate.evict(letter, context);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -97,9 +98,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Nonnull
     @Override
     public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater) {
+                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+                                           @Nullable ProcessingContext context) {
         try {
-            delegate.requeue(letter, letterUpdater);
+            delegate.requeue(letter, letterUpdater, context);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -108,9 +110,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+                                               @Nullable ProcessingContext context) {
         try {
-            boolean result = delegate.contains(sequenceIdentifier);
+            boolean result = delegate.contains(sequenceIdentifier, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -120,9 +123,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Nonnull
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
-            @Nonnull Object sequenceIdentifier) {
+            @Nonnull Object sequenceIdentifier,
+            @Nullable ProcessingContext context) {
         try {
-            Iterable<DeadLetter<? extends M>> result = delegate.deadLetterSequence(sequenceIdentifier);
+            Iterable<DeadLetter<? extends M>> result = delegate.deadLetterSequence(sequenceIdentifier, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -131,9 +135,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters() {
+    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+            @Nullable ProcessingContext context) {
         try {
-            Iterable<Iterable<DeadLetter<? extends M>>> result = delegate.deadLetters();
+            Iterable<Iterable<DeadLetter<? extends M>>> result = delegate.deadLetters(context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -142,9 +147,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+                                             @Nullable ProcessingContext context) {
         try {
-            boolean result = delegate.isFull(sequenceIdentifier);
+            boolean result = delegate.isFull(sequenceIdentifier, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -153,9 +159,9 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> size() {
+    public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         try {
-            long result = delegate.size();
+            long result = delegate.size(context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -164,9 +170,10 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier) {
+    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+                                                @Nullable ProcessingContext context) {
         try {
-            long result = delegate.sequenceSize(sequenceIdentifier);
+            long result = delegate.sequenceSize(sequenceIdentifier, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -175,9 +182,9 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Long> amountOfSequences() {
+    public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         try {
-            long result = delegate.amountOfSequences();
+            long result = delegate.amountOfSequences(context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -188,12 +195,13 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Override
     public CompletableFuture<Boolean> process(
             @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            @Nullable ProcessingContext context) {
         try {
             // Convert async processing task to sync by joining the future
             Function<DeadLetter<? extends M>, EnqueueDecision<M>> syncTask =
                     letter -> processingTask.apply(letter).join();
-            boolean result = delegate.process(sequenceFilter, syncTask);
+            boolean result = delegate.process(sequenceFilter, syncTask, context);
             return CompletableFuture.completedFuture(result);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -202,9 +210,9 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> clear() {
+    public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         try {
-            delegate.clear();
+            delegate.clear(context);
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);

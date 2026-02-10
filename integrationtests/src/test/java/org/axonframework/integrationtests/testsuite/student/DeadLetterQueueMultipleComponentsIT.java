@@ -103,11 +103,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
-                assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                assertThat(getDlq(0).contains(failingStudentId, null).join()).isTrue();
+                assertThat(getDlq(0).size(null).join()).isEqualTo(1L);
 
-                assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
-                assertThat(getDlq(1).size().join()).isEqualTo(0L);
+                assertThat(getDlq(1).contains(failingStudentId, null).join()).isFalse();
+                assertThat(getDlq(1).size(null).join()).isEqualTo(0L);
 
                 assertThat(components[0].successfullyHandled()).containsOnly(successStudentId);
                 assertThat(components[1].successfullyHandled()).contains(failingStudentId, successStudentId);
@@ -136,10 +136,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudentId).join()).isTrue();
-                assertThat(getDlq(0).sequenceSize(failingStudentId).join()).isEqualTo(3L);
+                assertThat(getDlq(0).contains(failingStudentId, null).join()).isTrue();
+                assertThat(getDlq(0).sequenceSize(failingStudentId, null).join()).isEqualTo(3L);
 
-                assertThat(getDlq(1).contains(failingStudentId).join()).isFalse();
+                assertThat(getDlq(1).contains(failingStudentId, null).join()).isFalse();
             });
         }
     }
@@ -165,11 +165,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
-                assertThat(getDlq(0).contains(failingStudent1).join()).isFalse();
+                assertThat(getDlq(0).contains(failingStudent0, null).join()).isTrue();
+                assertThat(getDlq(0).contains(failingStudent1, null).join()).isFalse();
 
-                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
-                assertThat(getDlq(1).contains(failingStudent0).join()).isFalse();
+                assertThat(getDlq(1).contains(failingStudent1, null).join()).isTrue();
+                assertThat(getDlq(1).contains(failingStudent0, null).join()).isFalse();
 
                 assertThat(components[0].successfullyHandled()).contains(successStudent);
                 assertThat(components[1].successfullyHandled()).contains(successStudent);
@@ -195,11 +195,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(failingStudent1, courseId);
 
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
-                assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                assertThat(getDlq(0).contains(failingStudent0, null).join()).isTrue();
+                assertThat(getDlq(0).size(null).join()).isEqualTo(1L);
 
-                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
-                assertThat(getDlq(1).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).contains(failingStudent1, null).join()).isTrue();
+                assertThat(getDlq(1).size(null).join()).isEqualTo(1L);
             });
 
             // and - fix component0's failure condition
@@ -210,11 +210,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then - component0's DLQ should be empty, component1's DLQ unchanged
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudent0).join()).isFalse();
-                assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                assertThat(getDlq(0).contains(failingStudent0, null).join()).isFalse();
+                assertThat(getDlq(0).size(null).join()).isEqualTo(0L);
 
-                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
-                assertThat(getDlq(1).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).contains(failingStudent1, null).join()).isTrue();
+                assertThat(getDlq(1).size(null).join()).isEqualTo(1L);
 
                 assertThat(components[0].successfullyHandled()).contains(failingStudent0);
             });
@@ -234,11 +234,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             studentEnrolledToCourse(failingStudent1, courseId);
 
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudent0).join()).isTrue();
-                assertThat(getDlq(0).size().join()).isEqualTo(1L);
+                assertThat(getDlq(0).contains(failingStudent0, null).join()).isTrue();
+                assertThat(getDlq(0).size(null).join()).isEqualTo(1L);
 
-                assertThat(getDlq(1).contains(failingStudent1).join()).isTrue();
-                assertThat(getDlq(1).size().join()).isEqualTo(1L);
+                assertThat(getDlq(1).contains(failingStudent1, null).join()).isTrue();
+                assertThat(getDlq(1).size(null).join()).isEqualTo(1L);
             });
 
             // and - fix both components' failure conditions
@@ -251,11 +251,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
             // then - both DLQs should be empty
             await().untilAsserted(() -> {
-                assertThat(getDlq(0).contains(failingStudent0).join()).isFalse();
-                assertThat(getDlq(0).size().join()).isEqualTo(0L);
+                assertThat(getDlq(0).contains(failingStudent0, null).join()).isFalse();
+                assertThat(getDlq(0).size(null).join()).isEqualTo(0L);
 
-                assertThat(getDlq(1).contains(failingStudent1).join()).isFalse();
-                assertThat(getDlq(1).size().join()).isEqualTo(0L);
+                assertThat(getDlq(1).contains(failingStudent1, null).join()).isFalse();
+                assertThat(getDlq(1).size(null).join()).isEqualTo(0L);
 
                 assertThat(components[0].successfullyHandled()).contains(failingStudent0);
                 assertThat(components[1].successfullyHandled()).contains(failingStudent1);

@@ -56,7 +56,7 @@ class CachingSequencedDeadLetterQueueTest {
             // empty queue
 
             // when
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_1, null).join();
 
             // then
             assertThat(result).isFalse();
@@ -68,8 +68,8 @@ class CachingSequencedDeadLetterQueueTest {
             // empty queue, unknown sequence is not present
 
             // when
-            Boolean firstResult = cachingQueue.contains(SEQUENCE_ID_1).join();
-            Boolean secondResult = cachingQueue.contains(SEQUENCE_ID_1).join();
+            Boolean firstResult = cachingQueue.contains(SEQUENCE_ID_1, null).join();
+            Boolean secondResult = cachingQueue.contains(SEQUENCE_ID_1, null).join();
 
             // then
             assertThat(firstResult).isFalse();
@@ -86,7 +86,7 @@ class CachingSequencedDeadLetterQueueTest {
             cachingQueue.enqueue(SEQUENCE_ID_1, letter, null).join();
 
             // then
-            assertThat(cachingQueue.contains(SEQUENCE_ID_1).join()).isTrue();
+            assertThat(cachingQueue.contains(SEQUENCE_ID_1, null).join()).isTrue();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
 
@@ -104,7 +104,7 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(result).isFalse();
-            assertThat(delegate.size().join()).isZero();
+            assertThat(delegate.size(null).join()).isZero();
         }
 
         @Test
@@ -123,7 +123,7 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(result).isTrue();
-            assertThat(delegate.sequenceSize(SEQUENCE_ID_1).join()).isEqualTo(2);
+            assertThat(delegate.sequenceSize(SEQUENCE_ID_1, null).join()).isEqualTo(2);
         }
 
         @Test
@@ -134,11 +134,11 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
 
             // when
-            cachingQueue.clear().join();
+            cachingQueue.clear(null).join();
 
             // then
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
-            assertThat(delegate.size().join()).isZero();
+            assertThat(delegate.size(null).join()).isZero();
         }
 
         @Test
@@ -147,14 +147,14 @@ class CachingSequencedDeadLetterQueueTest {
             EventMessage event = EventTestUtils.createEvent(1);
             cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
-            long delegateSizeBefore = delegate.size().join();
+            long delegateSizeBefore = delegate.size(null).join();
 
             // when
             cachingQueue.invalidateCache();
 
             // then
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
-            assertThat(delegate.size().join()).isEqualTo(delegateSizeBefore);
+            assertThat(delegate.size(null).join()).isEqualTo(delegateSizeBefore);
         }
 
         @Test
@@ -169,7 +169,7 @@ class CachingSequencedDeadLetterQueueTest {
             // when
             // First cache use initializes by checking amountOfSequences(), which is now 1.
             // Cache sees queue as non-empty, so it queries delegate for the sequence.
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_1, null).join();
 
             // then
             // With lazy init, cache discovers the entry that was added directly to delegate
@@ -198,7 +198,7 @@ class CachingSequencedDeadLetterQueueTest {
             // Queue started non-empty, so unknown sequences might be present
 
             // when
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_2).join();
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_2, null).join();
 
             // then
             // Must query delegate since cache doesn't know about SEQUENCE_ID_2
@@ -213,8 +213,8 @@ class CachingSequencedDeadLetterQueueTest {
             // Unknown sequence in non-empty queue
 
             // when
-            cachingQueue.contains(SEQUENCE_ID_2).join();
-            cachingQueue.contains(SEQUENCE_ID_2).join();
+            cachingQueue.contains(SEQUENCE_ID_2, null).join();
+            cachingQueue.contains(SEQUENCE_ID_2, null).join();
 
             // then
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
@@ -226,7 +226,7 @@ class CachingSequencedDeadLetterQueueTest {
             // SEQUENCE_ID_1 was pre-populated
 
             // when
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_1).join();
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_1, null).join();
 
             // then
             assertThat(result).isTrue();
@@ -236,7 +236,7 @@ class CachingSequencedDeadLetterQueueTest {
         @Test
         void invalidateCacheClearsNonEnqueuedCache() {
             // given
-            cachingQueue.contains(SEQUENCE_ID_2).join();
+            cachingQueue.contains(SEQUENCE_ID_2, null).join();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
 
             // when
@@ -250,7 +250,7 @@ class CachingSequencedDeadLetterQueueTest {
         @Test
         void enqueueIfPresentUsesCache() {
             // given
-            cachingQueue.contains(SEQUENCE_ID_2).join();
+            cachingQueue.contains(SEQUENCE_ID_2, null).join();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
             EventMessage event = EventTestUtils.createEvent(2);
 
@@ -277,7 +277,7 @@ class CachingSequencedDeadLetterQueueTest {
 
             // when
             // Cache queries delegate and discovers SEQUENCE_ID_2 is present
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_2).join();
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_2, null).join();
 
             // then
             assertThat(result).isTrue();
@@ -301,7 +301,7 @@ class CachingSequencedDeadLetterQueueTest {
 
             // when
             for (int i = 0; i < 5; i++) {
-                cachingQueue.contains("unknown-" + i).join();
+                cachingQueue.contains("unknown-" + i, null).join();
             }
 
             // then
