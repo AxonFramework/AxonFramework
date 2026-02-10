@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
@@ -46,15 +48,16 @@ import java.util.Map;
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
     @Override
-    public DeadLetterEventEntry convert(EventMessage message,
-                                        Context context,
-                                        EventConverter eventConverter,
-                                        Converter genericConverter) {
+    public @Nonnull DeadLetterEventEntry convert(@Nonnull EventMessage message,
+                                                 @Nullable Context context,
+                                                 @Nonnull EventConverter eventConverter,
+                                                 @Nonnull Converter genericConverter) {
         // Serialize payload and metadata
         byte[] serializedPayload = eventConverter.convert(message.payload(), byte[].class);
         byte[] serializedMetadata = eventConverter.convert(message.metadata(), byte[].class);
 
         // Extract tracking token from context (if present)
+        // TODO: Maybe context should be Nonnull? Decide later.
         TrackingToken token = context.getResource(TrackingToken.RESOURCE_KEY);
         byte[] serializedToken = null;
         String tokenTypeName = null;
@@ -85,10 +88,11 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         );
     }
 
+    @Nonnull
     @Override
-    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
-                                                     EventConverter eventConverter,
-                                                     Converter genericConverter) {
+    public MessageStream.Entry<EventMessage> convert(@Nonnull DeadLetterEventEntry entry,
+                                                     @Nonnull EventConverter eventConverter,
+                                                     @Nonnull Converter genericConverter) {
         // Deserialize payload and metadata
         Object payload = eventConverter.convert(entry.getPayload(), ClassUtils.loadClass(entry.getPayloadType()));
         @SuppressWarnings("unchecked")

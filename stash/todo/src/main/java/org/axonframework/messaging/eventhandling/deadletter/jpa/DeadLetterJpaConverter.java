@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
@@ -48,7 +50,8 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @param genericConverter The {@link Converter} for conversion of the tracking token, if present.
      * @return The created {@link DeadLetterEventEntry}.
      */
-    DeadLetterEventEntry convert(M message, Context context, EventConverter eventConverter, Converter genericConverter);
+    @Nonnull
+    DeadLetterEventEntry convert(@Nonnull M message, @Nullable Context context, @Nonnull EventConverter eventConverter, @Nonnull Converter genericConverter);
 
     /**
      * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
@@ -62,5 +65,6 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
-    MessageStream.Entry<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter, Converter genericConverter);
+    @Nonnull
+    MessageStream.Entry<M> convert(@Nonnull DeadLetterEventEntry entry, @Nonnull EventConverter eventConverter, @Nonnull Converter genericConverter);
 }
