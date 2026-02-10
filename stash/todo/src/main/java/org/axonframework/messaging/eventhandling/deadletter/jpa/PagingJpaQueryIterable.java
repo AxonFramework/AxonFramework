@@ -16,15 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.tx.TransactionalExecutor;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Enables iterating through a JPA query using paging while lazily mapping the results when necessary. Paging is taken
@@ -44,27 +45,28 @@ import java.util.function.Supplier;
 public class PagingJpaQueryIterable<T, R> implements Iterable<R> {
 
     private final int pageSize;
-    private final Supplier<TypedQuery<T>> querySupplier;
-    private final TransactionManager transactionManager;
+    private final TransactionalExecutor<EntityManager> executor;
+    private final Function<EntityManager, TypedQuery<T>> queryFunction;
     private final Function<T, R> lazyMappingFunction;
 
     /**
-     * Constructs a new {@link Iterable} using the provided {@code querySupplier} to construct queries when a new page
+     * Constructs a new {@link Iterable} using the provided {@code queryFunction} to construct queries when a new page
      * needs to be fetched. Items are lazily mapped by the provided {@code lazyMappingFunction} when iterating.
      *
      * @param pageSize            The size of the pages.
-     * @param transactionManager  The {@link TransactionManager} to use when fetching items.
-     * @param querySupplier       The supplier of the queries. Will be invoked for each page.
+     * @param executor            The {@link TransactionalExecutor} to use when fetching items.
+     * @param queryFunction       A function that, given an {@link EntityManager}, produces a {@link TypedQuery}. Will
+     *                            be invoked for each page.
      * @param lazyMappingFunction The mapping function to map items to the desired representation.
      */
     public PagingJpaQueryIterable(int pageSize,
-                                  TransactionManager transactionManager,
-                                  Supplier<TypedQuery<T>> querySupplier,
+                                  TransactionalExecutor<EntityManager> executor,
+                                  Function<EntityManager, TypedQuery<T>> queryFunction,
                                   Function<T, R> lazyMappingFunction
     ) {
         this.pageSize = pageSize;
-        this.transactionManager = transactionManager;
-        this.querySupplier = querySupplier;
+        this.executor = executor;
+        this.queryFunction = queryFunction;
         this.lazyMappingFunction = lazyMappingFunction;
     }
 
@@ -72,6 +74,7 @@ public class PagingJpaQueryIterable<T, R> implements Iterable<R> {
      * The {@link Iterator} that loops through the provided query's pages until it runs out of items.
      */
     public class PagingIterator implements Iterator<R> {
+
         private final Deque<T> queue = new ArrayDeque<>();
         private int page = 0;
 
@@ -95,12 +98,13 @@ public class PagingJpaQueryIterable<T, R> implements Iterable<R> {
             if (!queue.isEmpty()) {
                 return;
             }
-            transactionManager.executeInTransaction(() -> querySupplier
-                    .get()
-                    .setMaxResults(pageSize)
-                    .setFirstResult(page * pageSize)
-                    .getResultList()
-                    .forEach(queue::offerLast));
+            FutureUtils.joinAndUnwrap(
+                    executor.accept(em -> queryFunction.apply(em)
+                                                       .setMaxResults(pageSize)
+                                                       .setFirstResult(page * pageSize)
+                                                       .getResultList()
+                                                       .forEach(queue::offerLast))
+            );
             page++;
         }
     }

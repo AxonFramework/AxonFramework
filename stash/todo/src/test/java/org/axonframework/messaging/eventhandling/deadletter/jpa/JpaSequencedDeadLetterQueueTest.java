@@ -22,10 +22,8 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -50,14 +48,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
     private final AtomicLong sequenceCounter = new AtomicLong(0);
 
-    private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
     private final EntityManager entityManager = emf.createEntityManager();
     private EntityTransaction transaction;
@@ -137,9 +133,9 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Override
     protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
-                                                                 Instant lastTouched,
-                                                                 Throwable requeueCause,
-                                                                 Metadata diagnostics) {
+                                                              Instant lastTouched,
+                                                              Throwable requeueCause,
+                                                              Metadata diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause).withDiagnostics(diagnostics).markTouched();
     }
@@ -168,12 +164,11 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Override
     public SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
-        EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
-                .transactionManager(transactionManager)
-                .entityManagerProvider(entityManagerProvider)
+                // TODO #3517 - why it doesn't work with: .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
+                .transactionalExecutorProvider(pc -> new EntityManagerExecutor(() -> entityManager))
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
@@ -282,33 +277,18 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
         JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
-                .transactionManager(transactionManager)
-                .entityManagerProvider(() -> entityManager)
+                .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
                 .eventConverter(new DelegatingEventConverter(jacksonConverter))
                 .genericConverter(jacksonConverter);
         assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     @Test
-    void canNotBuildWithoutTransactionManager() {
+    void canNotBuildWithoutTransactionalExecutorProvider() {
         JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
-                .entityManagerProvider(() -> entityManager)
-                .eventConverter(new DelegatingEventConverter(jacksonConverter))
-                .genericConverter(jacksonConverter);
-
-        assertThrows(AxonConfigurationException.class, builder::build);
-    }
-
-    @Test
-    void canNotBuildWithoutEntityManagerProvider() {
-        JacksonConverter jacksonConverter = new JacksonConverter();
-        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
-                .builder()
-                .processingGroup("my_processing_Group")
-                .transactionManager(transactionManager)
                 .eventConverter(new DelegatingEventConverter(jacksonConverter))
                 .genericConverter(jacksonConverter);
 

@@ -450,8 +450,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends E>,
-                                   EnqueueDecision<E>> processingTask,
+    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
                            @Nullable ProcessingContext context) {
         logger.debug("Received a request to process any dead letters.");
         Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);

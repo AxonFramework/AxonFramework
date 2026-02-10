@@ -20,8 +20,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
-import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.common.tx.TransactionalExecutor;
 import org.junit.jupiter.api.*;
 
 import java.util.Iterator;
@@ -32,14 +32,13 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class PagingJpaQueryIterableTest {
 
-    private final TransactionManager transactionManager = spy(new NoOpTransactionManager());
-    // We use te the jpatest which includes the simple TestJpaEntry as entity
+    // We use the jpatest which includes the simple TestJpaEntry as entity
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpatest");
     private final EntityManager entityManager = emf.createEntityManager();
+    private final TransactionalExecutor<EntityManager> executor = new EntityManagerExecutor(() -> entityManager);
     private EntityTransaction transaction;
 
     @BeforeEach
@@ -59,8 +58,8 @@ class PagingJpaQueryIterableTest {
 
         PagingJpaQueryIterable<TestJpaEntry, String> iterable = new PagingJpaQueryIterable<>(
                 10,
-                transactionManager,
-                () -> entityManager.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
+                executor,
+                em -> em.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
                 TestJpaEntry::getId);
 
         List<String> result = StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
@@ -77,8 +76,8 @@ class PagingJpaQueryIterableTest {
 
         PagingJpaQueryIterable<TestJpaEntry, String> iterable = new PagingJpaQueryIterable<>(
                 10,
-                transactionManager,
-                () -> entityManager.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
+                executor,
+                em -> em.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
                 TestJpaEntry::getId);
 
         List<String> result = StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
@@ -92,8 +91,8 @@ class PagingJpaQueryIterableTest {
     void throwsExceptionWhenNoItemPresent() {
         PagingJpaQueryIterable<TestJpaEntry, String> iterable = new PagingJpaQueryIterable<>(
                 10,
-                transactionManager,
-                () -> entityManager.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
+                executor,
+                em -> em.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
                 TestJpaEntry::getId);
         Iterator<String> iterator = iterable.iterator();
         assertThrows(NoSuchElementException.class, iterator::next);
