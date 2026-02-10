@@ -29,6 +29,7 @@ import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.Context;
 import org.slf4j.Logger;
 
 import java.util.Comparator;
@@ -107,18 +108,21 @@ public class StubProcessingContext implements ProcessingContext {
         }
         ProcessingLifecycle.Phase initialPhase = currentPhase;
         CompletableFuture<Object> result = phaseActions.keySet().stream()
-                                                       .filter(p -> p.isAfter(initialPhase) && p.order() <= phase.order())
+                                                       .filter(p -> p.isAfter(initialPhase)
+                                                               && p.order() <= phase.order())
                                                        .sorted(Comparator.comparing(ProcessingLifecycle.Phase::order))
                                                        .flatMap(p -> phaseActions.get(p).stream())
                                                        .reduce(CompletableFuture.completedFuture(null),
-                                                               (cf, action) -> cf.thenCompose(v -> (CompletableFuture<Object>) action.apply(this)),
+                                                               (cf, action) -> cf.thenCompose(v -> (CompletableFuture<Object>) action.apply(
+                                                                       this)),
                                                                (cf1, cf2) -> cf2);
         currentPhase = phase;
         return result;
     }
 
     @Override
-    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@Nonnull Phase phase,
+                                  @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
         if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
         }
@@ -232,6 +236,36 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
+     * Creates a new {@link StubProcessingContext} instance that contains a copy of this context's resources and the
+     * resources from the provided {@link Context}. The returned instance uses this instance's
+     * {@link ApplicationContext}.
+     *
+     * @param context the Context whose resources should be copied
+     * @return a new StubProcessingContext containing the merged resources
+     */
+    public StubProcessingContext withResources(@Nonnull Context context) {
+        Objects.requireNonNull(context, "The context may not be null");
+        StubProcessingContext copy = new StubProcessingContext(this.applicationContext);
+        // Copy existing resources from this stub
+        copy.resources.putAll(this.resources);
+        // Copy resources from the provided Context (may override existing keys)
+        copy.resources.putAll(context.resources());
+        return copy;
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} by copying all resources from the provided {@link Context}.
+     *
+     * @param context the Context whose resources should be copied into the returned StubProcessingContext
+     * @return a new StubProcessingContext containing the same resources as {@code context}
+     */
+    public static StubProcessingContext fromContext(@Nonnull Context context) {
+        Objects.requireNonNull(context, "The context may not be null");
+        // Delegate to the instance helper to construct a new StubProcessingContext with the provided resources
+        return new StubProcessingContext().withResources(context);
+    }
+
+    /**
      * Creates a new stub {@link ProcessingContext} with the given {@code component}. You can use this to create a
      * context compatible with most of the framework. Do note that this context does not commit or advance phases on its
      * own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
@@ -292,3 +326,4 @@ public class StubProcessingContext implements ProcessingContext {
         return applicationContext.component(type, name);
     }
 }
+
