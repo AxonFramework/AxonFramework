@@ -112,8 +112,8 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(R identity,
-                                           BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
+                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 

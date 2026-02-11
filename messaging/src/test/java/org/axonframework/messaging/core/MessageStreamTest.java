@@ -185,11 +185,15 @@ public abstract class MessageStreamTest<M extends Message> {
 
     @Test
     void shouldCloseStreamWithErrorIfCallbackFails() {
-        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
+        M msg = createRandomMessage();
+        MessageStream<M> testSubject = completedTestSubject(List.of(msg));
 
-        testSubject.setCallback(() -> { throw new RuntimeException("Callback failed"); });
+        testSubject.setCallback(() -> {
+            throw new RuntimeException("Callback failed");
+        });
 
         StepVerifier.create(FluxUtils.of(testSubject))
+                    //.expectNextMatches(it -> it.message().equals(msg))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Callback failed"))
                     .verify();
     }

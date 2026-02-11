@@ -96,4 +96,24 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message> {
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
     }
+
+    @Test
+    void shouldProvideFutureWithIsDone() {
+        var invoked = new AtomicBoolean(false);
+        var cf = MessageStream.empty().onComplete(() -> invoked.set(true)).asCompletableFuture();
+        assertTrue(cf.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldNotProcessOnNext() {
+        var processed = new AtomicBoolean(false);
+        var testSubject = MessageStream.empty();
+
+        var result = testSubject.onNext(e -> processed.set(true))
+                                .asCompletableFuture();
+        assertTrue(result.isDone());
+        assertNull(result.join());
+        assertFalse(processed.get());
+    }
 }

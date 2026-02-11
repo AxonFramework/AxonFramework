@@ -67,10 +67,10 @@ class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message> {
         var processed = new AtomicBoolean(false);
         var messages = List.of(createRandomMessage());
 
-        var result = MessageStream.fromIterable(messages)
-                                  .ignoreEntries()
-                                  .onNext(e -> processed.set(true))
-                                  .asCompletableFuture();
+        var testSubject = MessageStream.fromIterable(messages).ignoreEntries();
+
+        var result = testSubject.onNext(e -> processed.set(true)).asCompletableFuture();
+
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(processed.get());

@@ -33,12 +33,6 @@ import java.util.function.Function;
  */
 class EmptyMessageStream extends AbstractMessageStream<Message> implements MessageStream.Empty<Message> {
 
-
-    public EmptyMessageStream() {
-        super();
-        complete();
-    }
-
     @Override
     public CompletableFuture<Entry<Message>> asCompletableFuture() {
         return (error().isPresent())
