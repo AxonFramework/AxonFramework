@@ -20,6 +20,7 @@ import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Lob;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -32,8 +33,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Represents an {@link EventMessage} when stored into the database. It contains all properties known in the framework
- * implementations. In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as
- * context resources and persisted separately, allowing them to be restored when processing dead letters.
+ * implementations. Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored as {@link Context} resources.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0

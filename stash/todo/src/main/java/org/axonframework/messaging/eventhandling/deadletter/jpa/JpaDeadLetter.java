@@ -57,12 +57,12 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      * The context contains restored resources such as tracking token and domain info (aggregate identifier, type,
      * sequence number) that were stored when the dead letter was enqueued.
      *
-     * @param entry        The {@link DeadLetterEntry} to construct this letter from.
-     * @param diagnostics  The deserialized diagnostics {@link Metadata}.
-     * @param messageEntry The reconstructed {@link MessageStream.Entry} containing the {@link EventMessage} and its
-     *                     associated {@link Context}.
+     * @param entry       The {@link DeadLetterEntry} to construct this letter from.
+     * @param diagnostics The deserialized diagnostics {@link Metadata}.
+     * @param message     The message that was enqueued.
+     * @param context     The context containing restored resources such as tracking token and aggregate data.
      */
-    public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, MessageStream.Entry<M> messageEntry) {
+    public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, M message, Context context) {
         this.id = entry.getDeadLetterId();
         this.index = entry.getSequenceIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
@@ -74,8 +74,8 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
             cause = null;
         }
         this.diagnostics = diagnostics;
-        this.message = messageEntry.message();
-        this.context = messageEntry;
+        this.message = message;
+        this.context = context;
     }
 
     /**

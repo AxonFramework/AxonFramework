@@ -27,8 +27,8 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 /**
  * Converter that can convert an {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
  * <p>
- * In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are no longer part of message
- * subtypes. Instead, they are stored as context resources. This converter handles storing these resources as separate
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored as {@link Context} resources. This converter handles storing these resources as separate
  * columns in the database and restoring them when converting back.
  *
  * @param <M> The type of the event message this converter will convert.

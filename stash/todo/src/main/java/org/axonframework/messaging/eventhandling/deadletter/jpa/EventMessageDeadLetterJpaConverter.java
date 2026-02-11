@@ -38,8 +38,8 @@ import java.util.Map;
  * Converter responsible for converting to and from {@link EventMessage} implementations for storage in a
  * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
  * <p>
- * In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as context resources
- * rather than message subtypes. This converter extracts these resources from the context during serialization and
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored as {@link Context} resources. This converter extracts these resources from the context during serialization and
  * restores them to the context when deserializing.
  *
  * @author Mitchell Herrijgers

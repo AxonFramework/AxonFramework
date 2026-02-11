@@ -46,8 +46,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link EventMessageDeadLetterJpaConverter}.
  * <p>
- * In AF5, tracking tokens and domain info (aggregate identifier, type, sequence number) are stored as context resources
- * rather than message subtypes. This test verifies that the converter correctly handles these resources.
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored as {@link Context} resources. This test verifies that the converter correctly handles these
+ * resources.
  */
 class EventMessageDeadLetterJpaConverterTest {
 
@@ -71,7 +72,7 @@ class EventMessageDeadLetterJpaConverterTest {
         EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
         TrackingToken token = new GlobalSequenceTrackingToken(232323L);
         Context context = Context.empty()
-                .withResource(TrackingToken.RESOURCE_KEY, token);
+                                 .withResource(TrackingToken.RESOURCE_KEY, token);
 
         testConversionWithContext(message, context);
     }
@@ -81,7 +82,7 @@ class EventMessageDeadLetterJpaConverterTest {
         EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
         TrackingToken token = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
         Context context = Context.empty()
-                .withResource(TrackingToken.RESOURCE_KEY, token);
+                                 .withResource(TrackingToken.RESOURCE_KEY, token);
 
         testConversionWithContext(message, context);
     }
@@ -90,9 +91,9 @@ class EventMessageDeadLetterJpaConverterTest {
     void canConvertEventMessageWithDomainInfoInContext() {
         EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
         Context context = Context.empty()
-                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "MyAggregateType")
-                .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-123")
-                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 42L);
+                                 .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "MyAggregateType")
+                                 .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-123")
+                                 .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 42L);
 
         testConversionWithContext(message, context);
     }
@@ -102,16 +103,19 @@ class EventMessageDeadLetterJpaConverterTest {
         EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
         TrackingToken token = new GlobalSequenceTrackingToken(999L);
         Context context = Context.empty()
-                .withResource(TrackingToken.RESOURCE_KEY, token)
-                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "OrderAggregate")
-                .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "order-456")
-                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 10L);
+                                 .withResource(TrackingToken.RESOURCE_KEY, token)
+                                 .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "OrderAggregate")
+                                 .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "order-456")
+                                 .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 10L);
 
         testConversionWithContext(message, context);
     }
 
     private void testConversion(EventMessage message, Context context) {
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message,
+                                                                      context,
+                                                                      eventConverter,
+                                                                      genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
@@ -121,7 +125,10 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void testConversionWithContext(EventMessage message, Context context) {
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, context, eventConverter, genericConverter);
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message,
+                                                                      context,
+                                                                      eventConverter,
+                                                                      genericConverter);
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 

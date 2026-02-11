@@ -29,8 +29,8 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterWithContext;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
-import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
-import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueueTest;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.core.Context;
@@ -44,12 +44,13 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<EventMessage> {
+class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
     private final AtomicLong sequenceCounter = new AtomicLong(0);
@@ -163,7 +164,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
     }
 
     @Override
-    public SyncSequencedDeadLetterQueue<EventMessage> buildTestSubject() {
+    public SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
@@ -220,7 +221,7 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
     @Test
     void enqueuedLetterWithoutAggregateResourcesPreservesTrackingToken() {
         // given
-        SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         Object sequenceId = generateId();
         GlobalSequenceTrackingToken expectedToken = new GlobalSequenceTrackingToken(42L);
         Context contextWithTokenOnly = Context.with(TrackingToken.RESOURCE_KEY, expectedToken);
@@ -229,10 +230,11 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
         );
 
         // when
-        queue.enqueue(sequenceId, letter, StubProcessingContext.fromContext(contextWithTokenOnly));
+        queue.enqueue(sequenceId, letter, StubProcessingContext.fromContext(contextWithTokenOnly)).join();
 
         // then
-        Iterator<DeadLetter<? extends EventMessage>> result = queue.deadLetterSequence(sequenceId, null).iterator();
+        Iterator<DeadLetter<? extends EventMessage>> result =
+                queue.deadLetterSequence(sequenceId, null).join().iterator();
         assertThat(result.hasNext()).isTrue();
         JpaDeadLetter<? extends EventMessage> retrieved = (JpaDeadLetter<? extends EventMessage>) result.next();
 
@@ -248,16 +250,20 @@ class JpaSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<E
 
     @Test
     void cannotRequeueGenericDeadLetter() {
-        SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter().letter();
-        assertThrows(WrongDeadLetterTypeException.class, () -> queue.requeue(letter, d -> d, null));
+        CompletionException exception =
+                assertThrows(CompletionException.class, () -> queue.requeue(letter, d -> d, null).join());
+        assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);
     }
 
     @Test
     void cannotEvictGenericDeadLetter() {
-        SyncSequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
         DeadLetter<EventMessage> letter = generateInitialLetter().letter();
-        assertThrows(WrongDeadLetterTypeException.class, () -> queue.evict(letter, null));
+        CompletionException exception =
+                assertThrows(CompletionException.class, () -> queue.evict(letter, null).join());
+        assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);
     }
 
     @Test
