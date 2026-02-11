@@ -30,11 +30,10 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -168,13 +167,13 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(PooledStreamingEventProcessor.class,
+            assertThat(eventProcessorConfig1.getOptionalComponent(StreamingEventProcessor.class,
                                                                   "EventProcessor[" + KEY1 + "]")).isPresent();
 
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
                                                                   "EventProcessor[" + KEY2 + "]")).isPresent();
         }
     }
@@ -276,13 +275,13 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
                                                                   "EventProcessor[" + KEY1 + "]")).isPresent();
 
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
                                                                   "EventProcessor[" + KEY2 + "]")).isPresent();
         }
     }
@@ -315,7 +314,7 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
                                                                   "EventProcessor[" + KEY1 + "]")).isPresent();
             assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // there is an additional custom interceptor
@@ -325,7 +324,7 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
                                                                   "EventProcessor[" + KEY2 + "]")).isPresent();
             assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // we should not see the custom interceptor here
@@ -363,7 +362,7 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessor.class,
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
                                                                   "EventProcessor[" + KEY1 + "]")).isPresent();
             assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // there is an additional custom interceptor
@@ -373,7 +372,7 @@ class EventProcessorConfigurationTest {
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessor.class,
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
                                                                   "EventProcessor[" + KEY2 + "]")).isPresent();
             assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // we should not see the custom interceptor here
