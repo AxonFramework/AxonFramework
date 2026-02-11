@@ -42,10 +42,10 @@ public interface CommandSequencingPolicy {
      * defined by their equals method), they will be executed sequentially. A {@code Optional#empty()} value indicates
      * that there are no sequencing requirements for the handling of this command.
      * <p>
-     * The {@code Optional#empty()} should ONLY be returned when the policy cannot determine a sequence identifier for
+     * The {@code Optional#empty()} should <b>only</b> be returned when the policy cannot determine a sequence identifier for
      * the given event. This typically happens when the policy is not applicable for the specific command type. When
      * {@code Optional#empty()} is returned, it is up to the component using this policy to provide a default behavior,
-     * use another policy, or throw an exception / react in any other way - as appropriate.
+     * use another policy, throw an exception or react in any other way - as appropriate.
      *
      * @param command The command for which to get the sequencing identifier.
      * @param context The processing context in which the command is being handled.

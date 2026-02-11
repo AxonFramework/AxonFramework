@@ -102,9 +102,7 @@ public class TenantBasedSequencingPolicy implements CommandSequencingPolicy {
     public Optional<Object> getSequenceIdentifierFor(CommandMessage command,
                                                      ProcessingContext context) {
         // Sequence commands by tenant ID from metadata
-        return command.getMetaData().get("tenantId") != null
-            ? Optional.of(command.getMetaData().get("tenantId"))
-            : Optional.empty();
+        return Optional.ofNullable(command.metadata().get("tenantId"));
     }
 }
 ----
