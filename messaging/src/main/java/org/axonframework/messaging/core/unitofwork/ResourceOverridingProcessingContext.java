@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.messaging.core.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -175,9 +176,9 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
 
     @Override
     public Map<ResourceKey<?>, Object> resources() {
-        var allResources = delegate.resources();
-        allResources.put(key, resource.get());
-        return allResources;
+        Map<ResourceKey<?>, Object> all = new HashMap<>(delegate.resources());
+        all.put(key, resource.get());
+        return Map.copyOf(all);
     }
 
     @Override
