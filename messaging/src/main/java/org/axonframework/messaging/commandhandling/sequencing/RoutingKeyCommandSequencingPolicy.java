@@ -36,7 +36,7 @@ import java.util.function.Predicate;
 public class RoutingKeyCommandSequencingPolicy implements CommandSequencingPolicy {
 
     /**
-     * Singleton instance of the {@link org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy}
+     * Singleton instance of the {@link RoutingKeyCommandSequencingPolicy}
      */
     public static final RoutingKeyCommandSequencingPolicy INSTANCE = new RoutingKeyCommandSequencingPolicy();
 
