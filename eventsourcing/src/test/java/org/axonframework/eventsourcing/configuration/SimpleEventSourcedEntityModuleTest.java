@@ -182,7 +182,7 @@ class SimpleEventSourcedEntityModuleTest {
                                        c -> new DefaultCorrelationDataProviderRegistry())
                                )
                                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                             c -> new NoOpCommandSequencingPolicy()))
+                                                                             c -> NoOpCommandSequencingPolicy.INSTANCE))
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();

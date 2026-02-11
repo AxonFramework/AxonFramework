@@ -179,7 +179,7 @@ Axon Configuration API::
 ----
 MessagingConfigurer.enhance(new DefaultAxonApplication())
                 .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                c -> new NoOpCommandSequencingPolicy()));
+                                                                c -> NoOpCommandSequencingPolicy.INSTANCE));
 ----
 --
 
@@ -193,7 +193,7 @@ public class AxonConfig {
 
     @Bean
     public CommandSequencingPolicy commandSequencingPolicy() {
-        return new NoOpCommandSequencingPolicy();
+        return NoOpCommandSequencingPolicy.INSTANCE;
     }
 }
 ----

@@ -153,7 +153,7 @@ class StateBasedEntityModuleTest {
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                              c -> new NoOpCommandSequencingPolicy()))
+                                                              c -> NoOpCommandSequencingPolicy.INSTANCE))
                 .componentRegistry(cr -> cr.registerModule(stateBasedModuleWithModel()))
                 .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> commandBus))
                 .start();

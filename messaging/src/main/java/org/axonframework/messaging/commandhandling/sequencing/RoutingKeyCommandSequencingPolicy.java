@@ -35,11 +35,20 @@ import java.util.function.Predicate;
  */
 public class RoutingKeyCommandSequencingPolicy implements CommandSequencingPolicy {
 
+    /**
+     * Singleton instance of the {@link org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy}
+     */
+    public static final RoutingKeyCommandSequencingPolicy INSTANCE = new RoutingKeyCommandSequencingPolicy();
+
+    private RoutingKeyCommandSequencingPolicy() {
+        // empty private singleton constructor
+    }
+
     @Override
     public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage command,
                                                      @NonNull ProcessingContext context) {
         return command.routingKey()
                       .filter(Predicate.not(String::isEmpty))
-                      .map(k -> (Object) k);
+                      .map(Object.class::cast);
     }
 }

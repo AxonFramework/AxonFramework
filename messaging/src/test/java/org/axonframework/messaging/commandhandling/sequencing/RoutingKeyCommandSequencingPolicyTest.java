@@ -41,7 +41,7 @@ class RoutingKeyCommandSequencingPolicyTest {
         final String exPayload1 = "payload1";
         final String exPayload2 = "payload2";
         final String exRoutingKey = "exRoutingKey";
-        final RoutingKeyCommandSequencingPolicy testSubject = new RoutingKeyCommandSequencingPolicy();
+        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey),
                                                                     new StubProcessingContext()).orElseThrow();
@@ -57,7 +57,7 @@ class RoutingKeyCommandSequencingPolicyTest {
         final String exPayload2 = "payload2";
         final String exRoutingKey1 = "exRoutingKey1";
         final String exRoutingKey2 = "exRoutingKey2";
-        final RoutingKeyCommandSequencingPolicy testSubject = new RoutingKeyCommandSequencingPolicy();
+        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey1),
                                                                     new StubProcessingContext()).orElseThrow();
@@ -71,7 +71,7 @@ class RoutingKeyCommandSequencingPolicyTest {
     @NullAndEmptySource
     void handlesNullAndEmptyAsMissingRoutingKey(String exRoutingKey) {
         final String exPayload = "payload1";
-        final RoutingKeyCommandSequencingPolicy testSubject = new RoutingKeyCommandSequencingPolicy();
+        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Optional<Object> acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload, exRoutingKey),
                                                                               new StubProcessingContext());

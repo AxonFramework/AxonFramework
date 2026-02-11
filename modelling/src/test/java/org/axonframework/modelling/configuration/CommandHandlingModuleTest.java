@@ -84,7 +84,7 @@ class CommandHandlingModuleTest {
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                              c -> new NoOpCommandSequencingPolicy()))
+                                                              c -> NoOpCommandSequencingPolicy.INSTANCE))
                 .componentRegistry(cr -> cr.registerModule(entityModule))
                 .componentRegistry(cr -> cr.registerModule(
                         setupPhase.commandHandlers()

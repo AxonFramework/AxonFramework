@@ -30,6 +30,15 @@ import java.util.Optional;
  */
 public class NoOpCommandSequencingPolicy implements CommandSequencingPolicy {
 
+    /**
+     * Singleton instance of the {@link NoOpCommandSequencingPolicy}
+     */
+    public static final NoOpCommandSequencingPolicy INSTANCE = new NoOpCommandSequencingPolicy();
+
+    private NoOpCommandSequencingPolicy() {
+        // empty private singleton constructor
+    }
+
     @Override
     public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage command,
                                                      @NonNull ProcessingContext context) {
