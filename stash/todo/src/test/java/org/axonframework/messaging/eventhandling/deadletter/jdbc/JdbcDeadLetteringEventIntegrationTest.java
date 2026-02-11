@@ -20,12 +20,12 @@ import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SyncToAsyncDeadLetterQueueAdapter;
 import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -54,11 +54,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and
- * {@link DeadLetteringEventHandlerInvoker}.
+ * {@code DeadLetteringEventHandlingComponent}.
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3517 - Support dead lettering with EventHandlingComponent instead of EventHandlerInvoker")
 class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
@@ -91,7 +90,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                           .genericSerializer(eventSerializer)
                                                           .eventSerializer(genericSerializer)
                                                           .build();
-        return jdbcDeadLetterQueue;
+        return new SyncToAsyncDeadLetterQueueAdapter<>(jdbcDeadLetterQueue);
     }
 
     private DataSource dataSource() {
