@@ -112,7 +112,7 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
         assertEquals(0, invoked.get());
         testSubject.close();
         assertEquals(1, invoked.get());
-        // TODO: we closed the stream 2 lines above, why do we expect it nit to be completed? - assertFalse(testSubject.isCompleted());
+        assertFalse(testSubject.isCompleted());
 
         // closing the stream again should not invoke the close handler again
         testSubject.close();
