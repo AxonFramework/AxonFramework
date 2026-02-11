@@ -44,6 +44,7 @@ class FailedMessageStream<M extends Message> extends AbstractMessageStream<M> im
 
     @Override
     public CompletableFuture<Entry<M>> asCompletableFuture() {
+        //noinspection OptionalGetWithoutIsPresent
         return CompletableFuture.failedFuture(error().get());
     }
 
@@ -75,6 +76,7 @@ class FailedMessageStream<M extends Message> extends AbstractMessageStream<M> im
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
                                            @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+        //noinspection OptionalGetWithoutIsPresent
         return CompletableFuture.failedFuture(error().get());
     }
 

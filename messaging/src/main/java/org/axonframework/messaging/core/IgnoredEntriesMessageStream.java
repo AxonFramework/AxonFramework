@@ -17,8 +17,10 @@
 package org.axonframework.messaging.core;
 
 import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Implementation of the {@link MessageStream} that ignores all {@link Entry entries} of the {@code delegate} stream and
@@ -36,6 +38,8 @@ class IgnoredEntriesMessageStream<M extends Message>
         extends DelegatingMessageStream<M, Message>
         implements MessageStream.Empty<Message> {
 
+    private final Empty<Message> empty;
+
     /**
      * Constructs the IgnoreMessageStream with given {@code delegate} to receive and ignore entries from.
      *
@@ -43,6 +47,7 @@ class IgnoredEntriesMessageStream<M extends Message>
      */
     IgnoredEntriesMessageStream(@Nonnull MessageStream<M> delegate) {
         super(delegate);
+        this.empty = MessageStream.empty();
     }
 
     @Override
@@ -54,4 +59,40 @@ class IgnoredEntriesMessageStream<M extends Message>
     public Optional<Entry<Message>> peek() {
         return Optional.empty();
     }
+//
+//    @Override
+//    public Empty<Message> first() {
+//        return empty.first();
+//    }
+//
+//    @Override
+//    public <RM extends Message> Empty<RM> map(@NonNull Function<Entry<Message>, Entry<RM>> mapper) {
+//        return empty.map(mapper);
+//    }
+//
+//    @Override
+//    public <RM extends Message> Empty<RM> mapMessage(@NonNull Function<Message, RM> mapper) {
+//        return empty.mapMessage(mapper);
+//    }
+//
+    @Override
+    public Empty<Message> onNext(@NonNull Consumer<Entry<Message>> onNext) {
+        return empty.onNext(onNext);
+    }
+//
+//    @Override
+//    public MessageStream<Message> concatWith(@NonNull MessageStream<Message> other) {
+//        return empty.concatWith(other);
+//    }
+//
+//    @Override
+//    public Empty<Message> onComplete(@NonNull Runnable completeHandler) {
+//        return empty.onComplete(completeHandler);
+//    }
+//
+//    @Override
+//    public <T extends Message> Empty<T> cast() {
+//        return empty.cast();
+//    }
+    // TODO: error propagation, when callback on
 }

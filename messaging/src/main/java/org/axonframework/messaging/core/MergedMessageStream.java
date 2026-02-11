@@ -22,6 +22,8 @@ import org.jspecify.annotations.NonNull;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A {@link MessageStream} implementation that merges two underlying message streams into a single stream. Messages
@@ -47,6 +49,11 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     private final MessageStream<M> first;
     private final MessageStream<M> second;
     private final Comparator<Entry<M>> comparator;
+
+    private final AtomicReference<Runnable> callbackRef = new AtomicReference<>();
+    private final AtomicBoolean callbackRunning = new AtomicBoolean(false);
+    private final AtomicReference<Throwable> error = new AtomicReference<>();
+
 
     /**
      * Constructs a {@code MergedMessageStream} that merges two message streams based on the given comparator.
@@ -92,18 +99,39 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public void setCallback(@Nonnull @NonNull Runnable callback) {
-        first.setCallback(callback);
-        second.setCallback(callback);
+        callbackRef.set(callback);
+        Runnable delegating = () -> {
+            if (hasNextAvailable() || isCompleted() || error().isPresent()) {
+                invokeCallbackIfNeeded();
+            }
+        };
+        first.setCallback(delegating);
+        second.setCallback(delegating);
+        delegating.run();
+    }
+
+    private void invokeCallbackIfNeeded() {
+        Runnable callback = callbackRef.get();
+        if (callback == null || !callbackRunning.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            callback.run();
+        } catch (Throwable e) {
+            this.error.set(e);
+        } finally {
+            callbackRunning.set(false);
+        }
     }
 
     @Override
     public Optional<Throwable> error() {
-        return first.error().or(second::error);
+        return Optional.ofNullable(this.error.get()).or(first::error).or(second::error);
     }
 
     @Override
     public boolean isCompleted() {
-        return first.isCompleted() && second.isCompleted();
+        return !hasNextAvailable() &&  first.isCompleted() && second.isCompleted();
     }
 
     @Override
