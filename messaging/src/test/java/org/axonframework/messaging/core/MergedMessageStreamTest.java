@@ -17,6 +17,7 @@
 package org.axonframework.messaging.core;
 
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -160,11 +161,15 @@ class MergedMessageStreamTest extends MessageStreamTest<Message> {
 
         Runnable callback = () -> {
         };
+
+        ArgumentCaptor<Runnable> rc = ArgumentCaptor.forClass(Runnable.class);
         testSubject.setCallback(callback);
 
-        verify(firstStream).setCallback(callback);
-        verify(secondStream).setCallback(callback);
-        verifyNoMoreInteractions(firstStream, secondStream);
+
+        verify(firstStream).setCallback(rc.capture());
+        verify(secondStream).setCallback(rc.capture());
+
+        assertSame(rc.getAllValues().get(0), rc.getAllValues().get(1));
     }
 
     @Test

@@ -208,7 +208,8 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first));
             FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.isCompleted()).isFalse();
-            stream.next();
+            assertThat(stream.next()).isPresent();
+            assertThat(stream.next()).isEmpty(); // only completes, when no more entries
             assertThat(stream.isCompleted()).isTrue();
         }
     }
