@@ -53,14 +53,19 @@ class CommandSequencingInterceptorTest {
                                                                                    "payload");
     private static final CommandMessage TEST_MESSAGE_2 = new GenericCommandMessage(new MessageType("message"),
                                                                                    "payload");
+    @Mock
     private CommandSequencingPolicy sequencingPolicy;
+    @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain1;
+    @Mock
     private ProcessingContext ctx1;
     @Captor
     private ArgumentCaptor<Consumer<ProcessingContext>> ctx1CompleteOnSuccessCapture;
     @Captor
     private ArgumentCaptor<ProcessingLifecycle.ErrorHandler> ctx1CompleteOnErrorCapture;
+    @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain2;
+    @Mock
     private ProcessingContext ctx2;
     @Captor
     private ArgumentCaptor<Consumer<ProcessingContext>> ctx2CompleteOnSuccessCapture;
@@ -69,11 +74,6 @@ class CommandSequencingInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        sequencingPolicy = mock();
-        interceptorChain1 = mock();
-        interceptorChain2 = mock();
-        ctx1 = mock();
-        ctx2 = mock();
         testSubject = new CommandSequencingInterceptor<>(sequencingPolicy);
     }
 
