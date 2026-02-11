@@ -320,7 +320,7 @@ class MessagingConfigurationDefaultsTest {
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
         assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null)
                                              .stream()
-                                             .filter(i -> i instanceof CommandSequencingInterceptor)
+                                             .filter(CommandSequencingInterceptor.class::isInstance)
                                              .count()).isEqualTo(1);
     }
 
@@ -335,8 +335,8 @@ class MessagingConfigurationDefaultsTest {
                 resultConfig.getComponent(HandlerInterceptorRegistry.class);
         assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig, CommandBus.class, null)
                                              .stream()
-                                             .filter(i -> i instanceof CommandSequencingInterceptor)
-                                             .count()).isEqualTo(0);
+                                             .filter(CommandSequencingInterceptor.class::isInstance)
+                                             .count()).isZero();
     }
 
     @Test

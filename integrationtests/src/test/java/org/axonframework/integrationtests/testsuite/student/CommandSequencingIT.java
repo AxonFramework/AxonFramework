@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
 
-    public static final String ROUTINGKEY_METADATA_KEY = "CommandSequencingIT#routingKey";
+    public static final String ROUTING_KEY_METADATA_KEY = "CommandSequencingIT#routingKey";
 
     /**
      * Tests that multiple concurrent commands targeting the same entity (Course) do not cause optimistic locking
@@ -69,9 +69,9 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
     @Test
     void concurrentEnrollmentsToSameCourseDoNotCauseOptimisticLockingFailures() throws InterruptedException {
         // Setup
-        final int numberOfStudents = 10;
-        final String courseId = createId("course-1");
-        final ExecutorService executor = Executors.newFixedThreadPool(numberOfStudents);
+        int numberOfStudents = 10;
+        String courseId = createId("course-1");
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfStudents);
 
         CountDownLatch startGate = new CountDownLatch(1);
         CountDownLatch completionGate = new CountDownLatch(numberOfStudents);
@@ -79,7 +79,6 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
         ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
 
         // Register command handler
-        //registerCommandHandlerInterceptor(new CommandSequencingInterceptor<>());
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new org.axonframework.messaging.core.QualifiedName(EnrollStudentToCourseCommand.class),
                 c -> (command, context) -> {
@@ -99,12 +98,12 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
 
         // Submit concurrent enrollment commands
         for (int i = 0; i < numberOfStudents; i++) {
-            final String studentId = createId("student-" + i);
+            String studentId = createId("student-" + i);
             CompletableFuture.runAsync(() -> {
                 try {
                     startGate.await();
                     commandGateway.send(new EnrollStudentToCourseCommand(studentId, courseId),
-                                        Metadata.from(Map.of(ROUTINGKEY_METADATA_KEY, courseId)))
+                                        Metadata.from(Map.of(ROUTING_KEY_METADATA_KEY, courseId)))
                                   .onSuccess(m -> completionGate.countDown())
                                   .onError(e -> {
                                       exceptions.add(e);
@@ -149,14 +148,13 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
      */
     private void verifyCourseHasEnrolledStudents(String courseId, int expectedCount) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        uow.executeWithResult(context -> context.component(StateManager.class)
-                                                .repository(Course.class, String.class)
-                                                .load(courseId, context)
-                                                .thenAccept(course -> assertEquals(
-                                                        expectedCount,
-                                                        course.entity().getStudentsEnrolled().size(),
-                                                        "Course should have " + expectedCount + " enrolled students"
-                                                ))).join();
+        Course course = uow.executeWithResult(context -> context.component(StateManager.class)
+                                                                .repository(Course.class, String.class)
+                                                                .load(courseId, context))
+                           .join().entity();
+        assertEquals(expectedCount,
+                     course.getStudentsEnrolled().size(),
+                     "Course should have " + expectedCount + " enrolled students");
     }
 
     @Override
@@ -165,7 +163,7 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
                     .messaging(messaging ->
                                        messaging.componentRegistry(cr -> cr.registerComponent(RoutingStrategy.class,
                                                                                               c -> new MetadataRoutingStrategy(
-                                                                                                      ROUTINGKEY_METADATA_KEY)))
+                                                                                                      ROUTING_KEY_METADATA_KEY)))
                     );
     }
 }

@@ -174,7 +174,7 @@ class SimpleEventSourcedEntityModuleTest {
     void registersAnEntityCommandHandlingComponentWithTheCommandBus() {
         CommandBus commandBus = mock(CommandBus.class);
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        // and the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor
+        // Registers the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor.
         // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         EventSourcingConfigurer.create()
                                .componentRegistry(cr -> cr.registerComponent(

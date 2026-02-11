@@ -157,8 +157,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = aCommandBus();
 
-        // Overriding CorrelationDataProviderRegistry ensures Co1rrelationDataInterceptor is not build.
-        // Setting NoOpCommandSequencingPolicy ensures CommandSequencingInterceptor ist not built.
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
+        // Setting NoOpCommandSequencingPolicy ensures CommandSequencingInterceptor is not built.
         // This otherwise leads to the InterceptingCommandBus
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
