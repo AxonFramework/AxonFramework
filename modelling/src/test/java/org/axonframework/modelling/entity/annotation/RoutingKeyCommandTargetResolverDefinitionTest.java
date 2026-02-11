@@ -17,6 +17,9 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -27,6 +30,7 @@ import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link RoutingKeyCommandTargetResolverDefinition}.
@@ -73,6 +77,25 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
                           .isNotEqualTo(CommandTargetResolver.MATCH_ANY());
     }
 
+    @Test
+    void doesNotAllowRoutingKeyMismatchBetweenMessageAndEntity() throws NoSuchFieldException {
+        CommandTargetResolver<ChildEntity> result = definition.createCommandTargetResolver(
+                childEntityMetamodel,
+                ListChildEntityWithNonMatchingRoutingKey.class.getDeclaredField("child")
+        );
+
+        MessageType messageType = new MessageType(TestCommand.class);
+        //noinspection unchecked,rawtypes
+        when(childEntityMetamodel.getExpectedRepresentation(messageType.qualifiedName()))
+                .thenReturn((Class) TestCommand.class);
+
+        assertThatThrownBy(() -> result.getTargetChildEntity(
+                List.of(new ChildEntity()),
+                new GenericCommandMessage(messageType, new TestCommand("someValue")),
+                new StubProcessingContext()
+        )).isInstanceOf(UnknownRoutingKeyException.class);
+    }
+
     static class SingleChildEntity {
 
         @SuppressWarnings("unused")
@@ -94,11 +117,22 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
         private List<ChildEntity> child;
     }
 
+    static class ListChildEntityWithNonMatchingRoutingKey {
+
+        @SuppressWarnings("unused")
+        @EntityMember(routingKey = "incorrect")
+        private List<ChildEntity> child;
+    }
+
     static class ChildEntity {
 
         @SuppressWarnings("unused")
         String key() {
             return "key";
         }
+    }
+
+    private record TestCommand(String key) {
+
     }
 }
