@@ -74,7 +74,7 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
         );
 
         assertThat(result).isNotNull()
-                          .isNotEqualTo(CommandTargetResolver.MATCH_ANY());
+                          .isNotEqualTo(EventTargetMatcher.MATCH_ANY());
     }
 
     @Test
