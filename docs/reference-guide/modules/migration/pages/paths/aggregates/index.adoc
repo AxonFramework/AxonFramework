@@ -22,11 +22,11 @@ Do not use static/thread local references any more.
 xref:migration:paths/aggregates/index.adoc#entitycreator-annotation[The @EntityCreator annotation]::
 Required for entity construction.
 
-xref:migration:paths/aggregates/polymorphism-migration.adoc[Polymorphic Entities]::
-How to configure polymorphic/hierarchical entities.
-
 xref:migration:paths/aggregates/multi-entity-migration.adoc[Multi-Entity Migration]::
 How to migrate aggregates with child entities and use `@EntityMember`.
+
+xref:migration:paths/aggregates/polymorphism-migration.adoc[Polymorphic Entities]::
+How to configure polymorphic/hierarchical entities.
 
 == Simple `EventSourcedEntity` example
 

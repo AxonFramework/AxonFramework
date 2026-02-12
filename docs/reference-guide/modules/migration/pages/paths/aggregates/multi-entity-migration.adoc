@@ -27,7 +27,7 @@ public class GiftCard {
 
     private String cardId;
 
-    @EntityMember // <1>
+    @EntityMember(routingKey = "transactionId") // <1>
     private List<Transaction> transactions = new ArrayList<>();
 
     @CommandHandler
