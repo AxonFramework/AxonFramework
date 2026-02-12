@@ -99,24 +99,17 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
         @Override
         public void attachToProcessingLifecycle(@Nonnull ProcessingLifecycle processingLifecycle) {
-            processingLifecycle.runOnPreInvocation(pc -> pc.putResource(
-                    JpaTransactionalExecutorProvider.SUPPLIER_KEY,
-                    CachingSupplier.of(() -> new EntityManagerExecutor(() -> entityManager))
-            ));
+            processingLifecycle.runOnPreInvocation(pc -> {
+                Transaction transaction = startTransaction();
+                pc.putResource(
+                        JpaTransactionalExecutorProvider.SUPPLIER_KEY,
+                        CachingSupplier.of(() -> new EntityManagerExecutor(() -> entityManager))
+                );
+                pc.runOnCommit(p -> transaction.commit());
+                pc.onError((p, phase, e) -> transaction.rollback());
+            });
         }
     });
-    private EntityTransaction transaction;
-
-    @BeforeEach
-    public void setUpJpa() {
-        transaction = entityManager.getTransaction();
-        transaction.begin();
-    }
-
-    @AfterEach
-    public void rollback() {
-        transaction.rollback();
-    }
 
     @Override
     protected void setClock(Clock clock) {
