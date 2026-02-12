@@ -10,7 +10,7 @@ However, dealing with hierarchical entity models and handling and correctly rout
 Axon Framework 5 continues to support this hierarchical model but shifts the terminology towards a more generic **Entity** model, where the distinction between the "root" and "members" is expressed through `@EventSourcedEntity` and `@EntityMember`.
 
 
-== @EntityMember instead of @AggregateMember
+== `@EntityMember` instead of `@AggregateMember`
 
 When defining child entities within an aggregate (now entity), use `@EntityMember` instead of `@AggregateMember`.
 
