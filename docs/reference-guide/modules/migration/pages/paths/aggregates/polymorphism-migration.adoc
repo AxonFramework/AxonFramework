@@ -19,7 +19,7 @@ public class RechargeableGiftCard extends GiftCard {}
 In Axon Framework 4, polymorphic aggregates were often configured using Spring's `@Aggregate` annotation on both the base and subclasses.
 When using the manual configuration API, you would use `AggregateConfigurer`.
 
-In Axon Framework 5, you register the hierarchy through the `EventSourcingConfigurer`.
+In Axon Framework 5, you register the hierarchy through the `EventSourcingConfigurer` or the `@EventSourcedEntity` annotation:
 
 [tabs]
 ====
