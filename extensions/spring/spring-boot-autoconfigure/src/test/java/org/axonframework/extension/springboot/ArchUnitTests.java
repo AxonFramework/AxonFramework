@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,14 +78,11 @@ class ArchUnitTests {
 
     @Test
     void allClassesSuffixedWithAutoConfigurationAreAnnotated() {
-        classes()
-                .that()
-                .haveSimpleNameEndingWith("AutoConfiguration")
-                .and()
-                .areNotAssignableTo(MetricsProperties.AutoConfiguration.class)
-                .should()
-                .beAnnotatedWith(AutoConfiguration.class)
-                .check(importedClasses);
+        classes().that()
+                 .haveSimpleNameEndingWith("AutoConfiguration")
+                 .should()
+                 .beAnnotatedWith(AutoConfiguration.class)
+                 .check(importedClasses);
     }
 
     private static ArchCondition<JavaClass> listedInAutoConfigurationImports() {

@@ -20,6 +20,7 @@ jobs:
       matrix:
         include:
           - java-version: 21
+          - java-version: 25
 
     steps:
       - name: Checkout code

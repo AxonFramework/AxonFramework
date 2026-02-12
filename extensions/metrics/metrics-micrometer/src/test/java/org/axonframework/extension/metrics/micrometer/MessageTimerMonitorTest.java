@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,8 @@ import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -39,6 +37,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -52,12 +51,14 @@ class MessageTimerMonitorTest {
 
     private MockClock mockedClock;
     private SimpleMeterRegistry meterRegistry;
+
     private MessageTimerMonitor.Builder testSubjectBuilder;
 
     @BeforeEach
     void setUp() {
         mockedClock = new MockClock();
         meterRegistry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, mockedClock);
+
         testSubjectBuilder = MessageTimerMonitor.builder()
                                                 .meterNamePrefix(METER_NAME_PREFIX)
                                                 .meterRegistry(meterRegistry)
@@ -80,10 +81,10 @@ class MessageTimerMonitorTest {
         callbacks.get(bar).reportFailure(null);
         callbacks.get(baz).reportIgnored();
 
-        Timer all = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".allTimer").timer());
-        Timer successTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".successTimer").timer());
-        Timer failureTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".failureTimer").timer());
-        Timer ignoredTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".ignoredTimer").timer());
+        Timer all = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.all").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.success").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.failure").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.ignored").timer());
 
         assertEquals(3, all.totalTime(TimeUnit.SECONDS), 0);
         assertEquals(1, successTimer.totalTime(TimeUnit.SECONDS), 0);
@@ -94,7 +95,7 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithPayloadTypeAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
+                message -> Tags.of(TagsUtil.MESSAGE_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
         EventMessage foo = asEventMessage(1);
@@ -109,10 +110,10 @@ class MessageTimerMonitorTest {
         callbacks.get(bar).reportFailure(null);
         callbacks.get(baz).reportIgnored();
 
-        Collection<Timer> all = meterRegistry.find(METER_NAME_PREFIX + ".allTimer").timers();
-        Collection<Timer> successTimer = meterRegistry.find(METER_NAME_PREFIX + ".successTimer").timers();
-        Collection<Timer> failureTimer = meterRegistry.find(METER_NAME_PREFIX + ".failureTimer").timers();
-        Collection<Timer> ignoredTimer = meterRegistry.find(METER_NAME_PREFIX + ".ignoredTimer").timers();
+        Collection<Timer> all = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.all").timers();
+        Collection<Timer> successTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.success").timers();
+        Collection<Timer> failureTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.failure").timers();
+        Collection<Timer> ignoredTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.ignored").timers();
 
         // Expecting two timers with the same meter name ([name=PROCESSOR_NAME.suffix ; payloadType=Integer] , [name=PROCESSOR_NAME.suffix ; payloadType=String])
         assertEquals(2, all.size(), 0);
@@ -147,15 +148,15 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithMetadataAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of("myMetadata", message.metadata().get("myMetadataKey").toString())
+                message -> Tags.of("myMetadata", message.metadata().get("myMetadataKey"))
         ).build();
 
-        EventMessage foo = asEventMessage("foo").withMetadata(Collections.singletonMap("myMetadataKey",
-                                                                                               "myMetadataValue1"));
-        EventMessage bar = asEventMessage("bar").withMetadata(Collections.singletonMap("myMetadataKey",
-                                                                                               "myMetadataValue2"));
-        EventMessage baz = asEventMessage("baz").withMetadata(Collections.singletonMap("myMetadataKey",
-                                                                                               "myMetadataValue2"));
+        EventMessage foo = asEventMessage("foo")
+                .withMetadata(Collections.singletonMap("myMetadataKey", "myMetadataValue1"));
+        EventMessage bar = asEventMessage("bar")
+                .withMetadata(Collections.singletonMap("myMetadataKey", "myMetadataValue2"));
+        EventMessage baz = asEventMessage("baz")
+                .withMetadata(Collections.singletonMap("myMetadataKey", "myMetadataValue2"));
 
         Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
                 testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
@@ -165,10 +166,10 @@ class MessageTimerMonitorTest {
         callbacks.get(bar).reportFailure(null);
         callbacks.get(baz).reportIgnored();
 
-        Collection<Timer> all = meterRegistry.find(METER_NAME_PREFIX + ".allTimer").timers();
-        Collection<Timer> successTimer = meterRegistry.find(METER_NAME_PREFIX + ".successTimer").timers();
-        Collection<Timer> failureTimer = meterRegistry.find(METER_NAME_PREFIX + ".failureTimer").timers();
-        Collection<Timer> ignoredTimer = meterRegistry.find(METER_NAME_PREFIX + ".ignoredTimer").timers();
+        Collection<Timer> all = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.all").timers();
+        Collection<Timer> successTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.success").timers();
+        Collection<Timer> failureTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.failure").timers();
+        Collection<Timer> ignoredTimer = meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.ignored").timers();
 
         // Expecting two timers with the same meter name ([name=PROCESSOR_NAME.suffix ; payloadType=Integer] , [name=PROCESSOR_NAME.suffix ; payloadType=String])
         assertEquals(2, all.size(), 0);
@@ -215,10 +216,10 @@ class MessageTimerMonitorTest {
         mockedClock.addSeconds(1);
         result.get(testEvent).reportSuccess();
 
-        Timer all = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".allTimer").timer());
-        Timer successTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".successTimer").timer());
-        Timer failureTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".failureTimer").timer());
-        Timer ignoredTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".ignoredTimer").timer());
+        Timer all = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.all").timer());
+        Timer successTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.success").timer());
+        Timer failureTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.failure").timer());
+        Timer ignoredTimer = requireNonNull(meterRegistry.find(METER_NAME_PREFIX + ".messageTimer.ignored").timer());
 
         assertPercentiles(all.takeSnapshot());
         assertPercentiles(successTimer.takeSnapshot());
@@ -281,9 +282,5 @@ class MessageTimerMonitorTest {
     void buildWithNullTimerCustomizationThrowsAxonConfigurationException() {
         MessageTimerMonitor.Builder testSubject = MessageTimerMonitor.builder();
         assertThrows(AxonConfigurationException.class, () -> testSubject.timerCustomization(null));
-    }
-
-    private static EventMessage asEventMessage(Object payload) {
-        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

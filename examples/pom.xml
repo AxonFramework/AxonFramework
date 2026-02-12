@@ -31,6 +31,10 @@
     <name>Axon Examples</name>
     <description>Collection of examples used for demonstration and test purposes.</description>
 
+    <properties>
+        <lombok.version>1.18.42</lombok.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -44,7 +48,26 @@
     </dependencyManagement>
 
     <modules>
+        <module>university-demo</module>
         <module>university-java-springboot</module>
         <module>university-java</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

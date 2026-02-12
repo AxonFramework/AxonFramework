@@ -18,17 +18,51 @@ Furthermore, the `MessageMonitors` provided by this module are registered agains
 The following monitor implementations are available through **both** modules:
 
 . `CapacityMonitor` - Measures message capacity by keeping track of the total time spent on message handling compared to total time it is active.
-This returns a number between 0 and n number of threads.
+This returns a number between 0 and n, n being the number of threads.
 Thus, if there are 4 threads working, the maximum capacity is 4 if every thread is active 100% of the time.
 . `EventProcessorLatencyMonitor` - Measures the difference between an event's timestamp and the current time, showing how far behind an xref:events:event-processors/index.adoc[event processor] is.
 Note that xref:events:event-processors/streaming.adoc#replaying-events[triggering a reset] will impact this metric!
 . `MessageCountingMonitor` - Counts the number of ingested, successful, failed, ignored and processed messages.
 . `MessageTimerMonitor` - Keeps a timer for all successful, failed and ignored messages, as well as an overall timer for all three combined.
 
-The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`. This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component. This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support. As a result, any measurement can be tagged with the payload type automatically.
+The `axon-metrics-dropwizard` module has one unique `MessageMonitor`, called the `PayloadTypeMessageMonitorWrapper`.
+This is a `MessageMonitor` implementation that allows setting a monitor per message type instead of per message publishing/handling component.
+This monitor is not mandatory for `axon-metrics-micrometer` due to Micrometer's dimensional-first support.
+As a result, any measurement can be tagged with the payload type automatically.
 
 You are free to configure any combination of `MessageMonitors` through constructors on your messaging components, simply by using the Configuration API.
-The `GlobalMetricRegistry` contained in the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
+The `MetricsConfigurationEnhancer` contained in both the `axon-metrics-dropwizard` and `axon-metrics-micrometer` modules provides a set of sensible defaults per type of messaging component.
+
+[[monitor-defaults]]
+The following table shows the default `MessageMonitor` implementations registered for each component type, including the registered metric's name:
+
+[cols="1,2,2",options="header"]
+|===
+| Component Type | Default Message Monitors | Metric Name Pattern
+
+| `CommandBus`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`
+
+| `EventSink`
+| `MessageCountingMonitor`, `MessageTimerMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`
+
+| `EventProcessor`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`, `EventProcessorLatencyMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`, `\{name}.latency`
+
+| `QueryBus`
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}.messageCounter`, `\{name}.messageTimer`, `\{name}.capacity`
+
+| `QueryBus` (Subscription Query Updates)
+| `MessageCountingMonitor`, `MessageTimerMonitor`, `CapacityMonitor`
+| `\{name}-emitter.messageCounter`, `\{name}-emitter.messageTimer`, `\{name}-emitter.capacity`
+|===
+
+The `\{name}` placeholder is either the configured component name or the simple class name of the component type (for example, `CommandBus`, `QueryBus`) if the infrastructure component was registered without a name.
+
 The following example shows you how to configure default metrics for your message handling components:
 
 == Configuring message monitors
@@ -39,9 +73,10 @@ For configuring `MessageMonitors` in your application, please read the section f
 .Spring Boot Property-based disabling
 ====
 When using Spring Boot, you can disable metrics entirely by setting the following property:
+
 [source,text]
 ----
-axon.metrics.auto-configuration.enabled=false
+axon.metrics.enabled=false
 ----
 
 This property will influence both <<dropwizard,Dropwizard>> and <<micrometer,Micrometer>> metrics.
@@ -77,7 +112,7 @@ implementation 'org.axonframework.extensions.metrics:axon-metrics-dropwizard:${a
 --
 ====
 
-With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+With the dependency in place the <<monitor-defaults,default>> `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
 If you need to specify the `MetricRegistry` used, please check the following examples:
 
 [tabs]
@@ -154,7 +189,7 @@ implementation 'org.axonframework.extensions.metrics:axon-metrics-micrometer:${a
 --
 ====
 
-With the dependency in place the default `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
+With the dependency in place the <<monitor-defaults,default>> `MessageMonitors` will be set for all `CommandBus`, `EventSink`, `EventProcessor`, and `QueryBus` implementations present in the application.
 If you are using an automated configuration flow, as with Spring, be sure to set the following properties:
 
 [source,properties]
@@ -167,7 +202,10 @@ management.metrics.export.prometheus.enabled=true
 management.endpoint.prometheus.enabled=true
 ----
 
-Furthermore, Micrometer offers to option to enable dimensions to your measurements. This allows you to filter the measurements on, for example, the payload type of messages:
+Furthermore, Micrometer offers to option to enable/disable dimensions to your measurements.
+This allows you to filter the measurements on, for example, the payload type of messages.
+By default, dimensions are enabled.
+If you want to adjust this, please check the following examples:
 
 [tabs]
 ====
@@ -184,9 +222,9 @@ class MetricsConfiguration {
 
     public void configureDefaultMetrics(MessagingConfigurer configurer,
                                         MeterRegistry meterRegistry) {
-        boolean useDimensions = true;
+        boolean disableDimensions = false;
         configurer.componentRegistry(componentRegistry -> componentRegistry.registerEnhancer(
-                new MetricsConfigurationEnhancer(meterRegistry, useDimensions)
+                new MetricsConfigurationEnhancer(meterRegistry, disableDimensions)
         ));
     }
 }
@@ -198,11 +236,11 @@ Automated configuration - Spring Boot::
 --
 [source,properties]
 ----
-# The default value is `false`.
+# The default value is `true`.
 # By enabling this property you will have message (event, command, query)
 #   payload type set as a micrometer tag/dimension by default.
 # Additionally, the processor name will be a tag/dimension instead of it being part of the metric name.
-axon.metrics.micrometer.dimensional=true
+axon.metrics.micrometer.dimensional=false
 ----
 --
 ====
@@ -289,33 +327,32 @@ class MetricsConfiguration {
 }
 ----
 
-If registering `MessageMonitors` per message type is not fine-grained enough, we recommend the registration of a component decorator. Axon's decorator registration allows you to wrap infrastructure components with custom logic, including monitoring. It is actually how Axon Framework itself attaches the `MessageMonitors` as a special type of xref:messaging-concepts:message-intercepting.adoc[interceptor] to the right infrastructure components.
+If registering `MessageMonitors` per message type is not fine-grained enough, we recommend the registration of a `MessageMonitorFactory`.
+A `MessageMonitorFactory` is a functional interface that builds a `MessageMonitor` for a specific component type and component name.
+This allows for fine-grained control over which monitors are created based on the component being monitored.
+It is this `MessageMonitorFactory` which Axon Framework uses to set the <<monitor-defaults,default monitors>> in the `MetricsConfigurationEnhancer`.
 
-The following example shows how to create register a decorator specifically for an `EventSink` to include a specific `MessageMonitor`:
+The following example shows how to register a `MessageMonitorFactory` that only creates a monitor for a specific `EventProcessor`:
 
 [source,java]
 ----
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.InterceptingEventSink;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.interception.MonitoringEventDispatchInterceptor;
-
-import java.util.List;
 
 class AxonConfig {
 
-    public void registerMonitorDecorator(MessagingConfigurer configurer,
-                                         MessageMonitor<? super EventMessage> eventMonitor) {
-        configurer.componentRegistry(componentRegistry -> componentRegistry.registerDecorator(
-                EventSink.class,
-                0,
-                (config, name, delegate) -> new InterceptingEventSink(
-                        delegate,
-                        List.of(new MonitoringEventDispatchInterceptor(eventMonitor))
-                )
-        ));
+    public void registerEventProcessorMonitorFactory(MessagingConfigurer configurer) {
+        configurer.registerEventMonitor((config, componentType, componentName) -> {
+            // Only create a monitor for EventProcessors with a specific name
+            if (EventProcessor.class.isAssignableFrom(componentType)
+                    && "my-processor".equals(componentName)) {
+                return new MyCustomEventMonitor();
+            }
+            // Return null to skip monitoring for other components
+            return null;
+        });
     }
 }
 ----
