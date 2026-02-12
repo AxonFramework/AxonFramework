@@ -53,7 +53,7 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy {
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         Objects.requireNonNull(message, "Message may not be null.");
-        if (message instanceof EventMessage event) {
+        if (message instanceof EventMessage) {
             Objects.requireNonNull(context, "ProcessingContext may not be null.");
             return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
         } else {

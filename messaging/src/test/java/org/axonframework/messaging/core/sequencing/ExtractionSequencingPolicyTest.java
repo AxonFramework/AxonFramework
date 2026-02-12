@@ -45,7 +45,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldExtractSequenceIdentifierFromMatchingPayloadType() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
@@ -60,7 +60,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldExtractComplexSequenceIdentifier() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> event.id() + "-" + event.version()
         );
@@ -75,7 +75,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldReturnNullWhenExtractorReturnsNull() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> null
         );
@@ -90,7 +90,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldReturnEmptyWhenExtractorReturnsNull() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> null
         );
@@ -107,7 +107,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldConvertPayloadWhenNotDirectlyAssignable() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
@@ -124,25 +124,27 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldThrowConversionExceptionWhenPayloadCannotBeConverted() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
+        EventMessage exEvent = anEvent("unconvertible-string");
+        StubProcessingContext exContext = aProcessingContext();
 
         // when / then
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("unconvertible-string"),
-                                                                     aProcessingContext()));
+                     () -> sequencingPolicy.getSequenceIdentifierFor(exEvent,
+                                                                     exContext));
     }
 
     @Test
     void shouldWorkWithFallbackPolicyForConversionErrors() {
         // given
-        final SequencingPolicy expressionPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy expressionPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
-        final SequencingPolicy fallbackPolicy = new FallbackSequencingPolicy<>(
+        SequencingPolicy fallbackPolicy = new FallbackSequencingPolicy<>(
                 expressionPolicy,
                 (event, context) -> Optional.of("fallback-result"),
                 ConversionException.class
@@ -242,27 +244,29 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenEventMessageIsNull() {
             // given
-            final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+            SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestPayload.class,
                     TestPayload::id
             );
+            StubProcessingContext exContext = aProcessingContext();
 
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    sequencingPolicy.getSequenceIdentifierFor(null, aProcessingContext()));
+                    sequencingPolicy.getSequenceIdentifierFor(null, exContext));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenProcessingContextIsNull() {
             // given
-            final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+            SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestPayload.class,
                     TestPayload::id
             );
+            EventMessage exMessage = anEvent(new TestPayload("42", 1));
 
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    sequencingPolicy.getSequenceIdentifierFor(anEvent(new TestPayload("42", 1)), null));
+                    sequencingPolicy.getSequenceIdentifierFor(exMessage, null));
         }
     }
 

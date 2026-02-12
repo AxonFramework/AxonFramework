@@ -117,10 +117,12 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback-result");
             FallbackSequencingPolicy<IllegalArgumentException> policy =
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
+            EventMessage exMessage = anEvent("test");
+            ProcessingContext exContext = aProcessingContext();
 
             // when / then
             assertThrows(RuntimeException.class,
-                    () -> policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext()));
+                         () -> policy.getSequenceIdentifierFor(exMessage, exContext));
         }
 
         @Test
@@ -188,9 +190,7 @@ final class FallbackSequencingPolicyTest {
 
             SequencingPolicy generalPolicy = (event, context) -> Optional.of("default-sequence");
 
-            FallbackSequencingPolicy<ConversionException> policy =
-                    new FallbackSequencingPolicy<>(propertyBasedPolicy, generalPolicy, ConversionException.class);
-            return policy;
+            return new FallbackSequencingPolicy<>(propertyBasedPolicy, generalPolicy, ConversionException.class);
         }
 
         @Test

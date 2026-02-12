@@ -69,9 +69,11 @@ final class PropertySequencingPolicyTest {
                 TestEvent.class,
                 "id"
         );
+        EventMessage exMessage = anEvent("42");
+        StubProcessingContext exContext = aProcessingContext();
 
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
+                     () -> sequencingPolicy.getSequenceIdentifierFor(exMessage, exContext));
     }
 
     @Test

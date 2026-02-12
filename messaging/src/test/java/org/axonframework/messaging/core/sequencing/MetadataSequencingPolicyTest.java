@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Lucas Campos
  */
-public class MetadataSequencingPolicyTest {
+class MetadataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {

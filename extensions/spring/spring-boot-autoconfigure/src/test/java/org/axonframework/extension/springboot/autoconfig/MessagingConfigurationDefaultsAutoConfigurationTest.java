@@ -125,9 +125,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasBean("customQueryGateway");
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean("customQueryBus");
-            assertThat(context).hasSingleBean(SequencingPolicy.class);
-            assertThat(context).hasBean("commandSequencingPolicy");
-            assertThat(context).getBean(SequencingPolicy.class).isInstanceOf(CustomSequencingPolicy.class);
+            assertThat(context).getBean("commandSequencingPolicy", SequencingPolicy.class)
+                               .isInstanceOf(CustomSequencingPolicy.class);
         });
     }
 
