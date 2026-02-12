@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3496")
+@Disabled("TODO #3597")
 class UpcasterOrderingTest {
 
     private ApplicationContextRunner testApplicationContext;

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 
-@Disabled("TODO #3521")
+@Disabled("TODO #3521") // Left over to remove
 class EventProcessorInfoConfigurationTest {
 
     private StubServer stubServer;
