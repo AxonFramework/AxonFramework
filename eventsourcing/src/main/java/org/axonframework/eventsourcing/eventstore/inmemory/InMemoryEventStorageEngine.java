@@ -322,9 +322,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public void setCallback(@Nonnull Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.isEmpty() || eventStorage.containsKey(Math.max(0, this.position.get()))) {
-                callback.run();
-            }
+            callback.run();
         }
 
         @Override
