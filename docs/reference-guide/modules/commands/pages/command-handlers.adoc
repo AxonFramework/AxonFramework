@@ -96,6 +96,7 @@ Stateless handlers are useful for:
 * Commands that perform operations using state from external services or repositories.
 * Commands that don't require building up and maintaining state within the handler itself.
 
+[#stateful-command-handlers]
 == Stateful command handlers
 
 Stateful command handlers maintain state in the handler itself across command invocations.
