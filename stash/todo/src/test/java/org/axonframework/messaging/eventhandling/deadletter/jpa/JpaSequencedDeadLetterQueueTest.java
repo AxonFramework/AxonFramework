@@ -16,14 +16,24 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.conversion.CachingSupplier;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.transaction.NoOpTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -49,6 +59,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
@@ -57,6 +68,43 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
     private final EntityManager entityManager = emf.createEntityManager();
+    private final TransactionManager transactionManager = spy(new TransactionManager() {
+        @Override
+        public Transaction startTransaction() {
+            EntityTransaction tx = entityManager.getTransaction();
+            if (tx.isActive()) {
+                return new Transaction() {
+                    @Override
+                    public void commit() {
+                    }
+
+                    @Override
+                    public void rollback() {
+                    }
+                };
+            }
+            tx.begin();
+            return new Transaction() {
+                @Override
+                public void commit() {
+                    tx.commit();
+                }
+
+                @Override
+                public void rollback() {
+                    tx.rollback();
+                }
+            };
+        }
+
+        @Override
+        public void attachToProcessingLifecycle(@Nonnull ProcessingLifecycle processingLifecycle) {
+            processingLifecycle.runOnPreInvocation(pc -> pc.putResource(
+                    JpaTransactionalExecutorProvider.SUPPLIER_KEY,
+                    CachingSupplier.of(() -> new EntityManagerExecutor(() -> entityManager))
+            ));
+        }
+    });
     private EntityTransaction transaction;
 
     @BeforeEach
@@ -168,8 +216,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
-                // TODO #3517 - why it doesn't work with: .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
-                .transactionalExecutorProvider(pc -> new EntityManagerExecutor(() -> entityManager))
+                .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
+//                .transactionalExecutorProvider(pc -> new EntityManagerExecutor(() -> entityManager))
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
@@ -230,7 +278,14 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         );
 
         // when
-        queue.enqueue(sequenceId, letter, StubProcessingContext.fromContext(contextWithTokenOnly)).join();
+        var unitOfWorkFactory = new TransactionalUnitOfWorkFactory(
+                transactionManager,
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)
+        );
+        var unitOfWork = unitOfWorkFactory.create();
+        unitOfWork.runOnPreInvocation(ctx -> ctx.putResource(TrackingToken.RESOURCE_KEY, expectedToken));
+        unitOfWork.runOnInvocation(ctx -> queue.enqueue(sequenceId, letter, ctx));
+        FutureUtils.joinAndUnwrap(unitOfWork.execute());
 
         // then
         Iterator<DeadLetter<? extends EventMessage>> result =
