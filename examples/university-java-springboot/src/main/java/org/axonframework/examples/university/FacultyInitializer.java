@@ -27,7 +27,7 @@ import org.axonframework.examples.university.shared.CourseId;
 import org.axonframework.examples.university.write.changecoursecapacity.ChangeCourseCapacity;
 import org.axonframework.examples.university.write.createcourse.CreateCourse;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -66,7 +66,7 @@ public class FacultyInitializer implements ApplicationRunner {
     }
 
     private void waitUntilReady() {
-        var processor = axonConfiguration.getComponents(PooledStreamingEventProcessor.class).get(
+        var processor = axonConfiguration.getComponents(StreamingEventProcessor.class).get(
                 "EventProcessor[" + PROCESSOR_NAME + "]");
         log.info("[FACULTY] Waiting for course statistics projection replay to finish...");
         executeUntilTrue(

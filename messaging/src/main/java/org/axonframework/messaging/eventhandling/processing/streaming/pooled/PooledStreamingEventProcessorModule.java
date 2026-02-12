@@ -39,6 +39,7 @@ import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQ
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.common.lifecycle.Phase;
@@ -206,7 +207,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     private void registerEventProcessor() {
         var processorComponentDefinition = ComponentDefinition
-                .ofTypeAndName(PooledStreamingEventProcessor.class, processorName)
+                .ofTypeAndName(StreamingEventProcessor.class, processorName)
                 .withBuilder(cfg -> new PooledStreamingEventProcessor(
                         processorName,
                         getEventHandlingComponents(cfg),
