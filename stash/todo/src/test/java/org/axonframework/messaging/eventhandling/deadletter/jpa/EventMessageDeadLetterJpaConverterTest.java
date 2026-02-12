@@ -40,19 +40,25 @@ import org.junit.jupiter.api.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link EventMessageDeadLetterJpaConverter}.
  * <p>
- * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources. This test verifies that the converter correctly handles these
- * resources.
+ * Configured {@link Context} resources are serialized into a context-resources blob. This test verifies that the
+ * converter correctly handles these resources.
  */
 class EventMessageDeadLetterJpaConverterTest {
 
-    private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
+    private final EventMessageDeadLetterJpaConverter converter =
+            new EventMessageDeadLetterJpaConverter(Set.of(
+                    TrackingToken.RESOURCE_KEY,
+                    LegacyResources.AGGREGATE_TYPE_KEY,
+                    LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                    LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY
+            ));
     private final JacksonConverter jacksonConverter = new JacksonConverter();
     private final EventConverter eventConverter = new DelegatingEventConverter(jacksonConverter);
     private final Converter genericConverter = jacksonConverter;
@@ -189,33 +195,23 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(eventMessage.timestamp().toString(), entry.getTimeStamp());
         assertEquals(eventMessage.payload().getClass().getName(), entry.getPayloadType());
 
-        // Check tracking token storage from context
-        if (context.containsResource(TrackingToken.RESOURCE_KEY)) {
-            assertNotNull(entry.getToken());
-            assertNotNull(entry.getTokenType());
-            TrackingToken expectedToken = context.getResource(TrackingToken.RESOURCE_KEY);
-            assertEquals(expectedToken.getClass().getName(), entry.getTokenType());
+        boolean hasSerializableResource =
+                context.containsResource(TrackingToken.RESOURCE_KEY)
+                        || context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)
+                        || context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+                        || context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
+
+        if (hasSerializableResource) {
+            assertNotNull(entry.getContextResources());
         } else {
-            assertNull(entry.getToken());
-            assertNull(entry.getTokenType());
+            assertNull(entry.getContextResources());
         }
 
-        // Check domain info storage from context
-        if (context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)) {
-            assertEquals(context.getResource(LegacyResources.AGGREGATE_TYPE_KEY), entry.getAggregateType());
-        } else {
-            assertNull(entry.getAggregateType());
-        }
-        if (context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)) {
-            assertEquals(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY), entry.getAggregateIdentifier());
-        } else {
-            assertNull(entry.getAggregateIdentifier());
-        }
-        if (context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
-            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY), entry.getSequenceNumber());
-        } else {
-            assertNull(entry.getSequenceNumber());
-        }
+        assertNull(entry.getToken());
+        assertNull(entry.getTokenType());
+        assertNull(entry.getAggregateType());
+        assertNull(entry.getAggregateIdentifier());
+        assertNull(entry.getSequenceNumber());
     }
 
     @Event

@@ -83,6 +83,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
+
     @Nonnull
     @Override
     public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter,

@@ -69,6 +69,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
                  @Nonnull DeadLetter<? extends M> letter,
                  @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException;
 
+
     /**
      * Enqueue the result of the given {@code letterBuilder} only if there already are other
      * {@link DeadLetter dead letters} with the same {@code sequenceIdentifier} present in this queue.

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -125,6 +126,36 @@ class DeadLetteringEventHandlingComponentTest {
             assertSuccessfulStream(result);
             assertFalse(delegate.wasHandled());
             assertThat(queue.sequenceSize(TEST_SEQUENCE_ID, null).join()).isEqualTo(2);
+        }
+
+        @Test
+        void snapshotsConfiguredContextResourcesIntoDeadLetter() {
+            // given
+            Context.ResourceKey<String> resourceKey = Context.ResourceKey.withLabel("test-resource");
+            SequencedDeadLetterQueue<EventMessage> configuredQueue =
+                    InMemorySequencedDeadLetterQueue.<EventMessage>builder()
+                                                    .serializableResources(Set.of(resourceKey))
+                                                    .build();
+            StubEventHandlingComponent failingDelegate = new StubEventHandlingComponent(TEST_SEQUENCE_ID);
+            failingDelegate.failingWith(new RuntimeException("fail"));
+            DeadLetteringEventHandlingComponent component = new DeadLetteringEventHandlingComponent(
+                    failingDelegate,
+                    configuredQueue,
+                    enqueuePolicy,
+                    unitOfWorkFactory,
+                    true
+            );
+
+            EventMessage event = EventTestUtils.asEventMessage("payload");
+            ProcessingContext context = new StubProcessingContext().withResource(resourceKey, "resource-value");
+
+            // when
+            component.handle(event, context).asCompletableFuture().join();
+
+            // then
+            DeadLetter<? extends EventMessage> letter =
+                    configuredQueue.deadLetterSequence(TEST_SEQUENCE_ID, null).join().iterator().next();
+            assertThat(letter.context().getResource(resourceKey)).isEqualTo("resource-value");
         }
 
         @Test
@@ -903,11 +934,40 @@ class DeadLetteringEventHandlingComponentTest {
                 );
             }
         }
+    }
 
-        private DeadLetter<? extends EventMessage> getFirstDeadLetter(String sequenceId) {
-            Iterable<DeadLetter<? extends EventMessage>> sequence = queue.deadLetterSequence(sequenceId, null).join();
-            return sequence.iterator().next();
-        }
+    private DeadLetter<? extends EventMessage> getFirstDeadLetter(String sequenceId) {
+        Iterable<DeadLetter<? extends EventMessage>> sequence = queue.deadLetterSequence(sequenceId, null).join();
+        return sequence.iterator().next();
+    }
+
+    @Test
+    void processingDeadLetterCopiesContextResourcesToProcessingContext() {
+        // given
+        Context.ResourceKey<String> resourceKey = Context.ResourceKey.withLabel("processing-resource");
+        SequencedDeadLetterQueue<EventMessage> configuredQueue =
+                InMemorySequencedDeadLetterQueue.<EventMessage>builder()
+                                                .serializableResources(Set.of(resourceKey))
+                                                .build();
+        ContextCapturingEventHandlingComponent capturingDelegate =
+                new ContextCapturingEventHandlingComponent(TEST_SEQUENCE_ID, resourceKey);
+        DeadLetteringEventHandlingComponent component = new DeadLetteringEventHandlingComponent(
+                capturingDelegate,
+                configuredQueue,
+                enqueuePolicy,
+                unitOfWorkFactory,
+                true
+        );
+
+        EventMessage event = EventTestUtils.asEventMessage("payload");
+        ProcessingContext enqueueContext = new StubProcessingContext().withResource(resourceKey, "value");
+        configuredQueue.enqueue(TEST_SEQUENCE_ID, new GenericDeadLetter<>(TEST_SEQUENCE_ID, event), enqueueContext).join();
+
+        // when
+        component.process(letter -> true).join();
+
+        // then
+        assertThat(capturingDelegate.capturedResource()).isEqualTo("value");
     }
 
     private static void assertSuccessfulStream(MessageStream.Empty<Message> result) {
@@ -955,6 +1015,53 @@ class DeadLetteringEventHandlingComponentTest {
             if (failWith != null) {
                 return MessageStream.failed(failWith).ignoreEntries();
             }
+            return MessageStream.empty();
+        }
+
+        @Nonnull
+        @Override
+        public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+            return sequenceId;
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
+                                                   @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
+        }
+
+        @Nonnull
+        @Override
+        public Set<QualifiedName> supportedEvents() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            // not needed
+        }
+    }
+
+    private static class ContextCapturingEventHandlingComponent implements EventHandlingComponent {
+
+        private final String sequenceId;
+        private final Context.ResourceKey<String> resourceKey;
+        private final AtomicReference<String> captured = new AtomicReference<>();
+
+        private ContextCapturingEventHandlingComponent(String sequenceId, Context.ResourceKey<String> resourceKey) {
+            this.sequenceId = sequenceId;
+            this.resourceKey = resourceKey;
+        }
+
+        String capturedResource() {
+            return captured.get();
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+            captured.set(context.getResource(resourceKey));
             return MessageStream.empty();
         }
 

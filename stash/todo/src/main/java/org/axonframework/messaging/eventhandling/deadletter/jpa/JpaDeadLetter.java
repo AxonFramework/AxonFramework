@@ -54,13 +54,13 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      * Constructs a new {@link JpaDeadLetter} from a {@link DeadLetterEntry}, deserialized diagnostics and a
      * reconstructed message entry containing both the message and its associated context.
      * <p>
-     * The context contains restored resources such as tracking token and domain info (aggregate identifier, type,
-     * sequence number) that were stored when the dead letter was enqueued.
+     * The context contains restored resources that were stored when the dead letter was enqueued, based on the queue's
+     * configured serializable resource keys.
      *
      * @param entry       The {@link DeadLetterEntry} to construct this letter from.
      * @param diagnostics The deserialized diagnostics {@link Metadata}.
      * @param message     The message that was enqueued.
-     * @param context     The context containing restored resources such as tracking token and aggregate data.
+     * @param context     The context containing restored resources.
      */
     public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, M message, Context context) {
         this.id = entry.getDeadLetterId();
@@ -75,7 +75,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         }
         this.diagnostics = diagnostics;
         this.message = message;
-        this.context = context;
+        this.context = context != null ? context : Context.empty();
     }
 
     /**
@@ -90,7 +90,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      *                           in the same {@code sequenceIdentifier} queued.
      * @param diagnostics        The diagnostics provided during enqueueing.
      * @param message            The message that was enqueued.
-     * @param context            The context containing restored resources such as tracking token and domain info.
+     * @param context            The context containing restored resources.
      */
     JpaDeadLetter(String id,
                   Long index,
@@ -109,7 +109,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         this.cause = cause;
         this.diagnostics = diagnostics;
         this.message = message;
-        this.context = context;
+        this.context = context != null ? context : Context.empty();
     }
 
     @Override
@@ -167,11 +167,11 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     /**
-     * Returns the context associated with this dead letter, containing restored resources such as tracking token and
-     * domain info (aggregate identifier, type, sequence number).
+     * Returns the context associated with this dead letter, containing restored resources.
      *
      * @return The context with restored resources, or an empty context if no resources were stored.
      */
+    @Override
     public Context context() {
         return context != null ? context : Context.empty();
     }

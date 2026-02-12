@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.deadletter;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -96,14 +97,23 @@ class DeadLetteredEventProcessingTask {
 
         UnitOfWork unitOfWork = unitOfWorkFactory.create();
         return unitOfWork.executeWithResult(context -> {
+            ProcessingContext contextWithResources = copyResources(letter.context(), context);
             MessageStream.Empty<Message> result = delegate.handle(
                     message,
-                    context.withResource(DeadLetter.RESOURCE_KEY, letter).withResource(Message.RESOURCE_KEY, message)
+                    contextWithResources
+                            .withResource(DeadLetter.RESOURCE_KEY, letter)
+                            .withResource(Message.RESOURCE_KEY, message)
             );
 
             return result.asCompletableFuture()
                          .handle((ignored, error) -> error == null ? onSuccess(letter) : onError(letter, error));
         });
+    }
+
+    private static ProcessingContext copyResources(Context from, ProcessingContext to) {
+        //noinspection unchecked
+        from.resources().forEach((k, v) -> to.putResource((Context.ResourceKey<Object>) k, v));
+        return to;
     }
 
     /**

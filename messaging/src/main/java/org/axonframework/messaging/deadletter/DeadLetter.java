@@ -58,6 +58,15 @@ public interface DeadLetter<M extends Message> {
     }
 
     /**
+     * The {@link Context} associated with this {@link DeadLetter}. Defaults to an empty context.
+     *
+     * @return The {@link Context} associated with this {@link DeadLetter}.
+     */
+    default Context context() {
+        return Context.empty();
+    }
+
+    /**
      * The {@link Message} of type {@code M} contained in this letter.
      *
      * @return The {@link Message} of type {@code M} contained in this letter.

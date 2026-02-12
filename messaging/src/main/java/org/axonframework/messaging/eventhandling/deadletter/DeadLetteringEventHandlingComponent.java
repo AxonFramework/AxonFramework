@@ -114,7 +114,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                @Nonnull ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
-
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, event),

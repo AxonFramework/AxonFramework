@@ -19,6 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.Context;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -79,7 +80,7 @@ class GenericDeadLetterTest {
         Metadata expectedDiagnostics = Metadata.with("key", "value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
-                SEQUENCE_IDENTIFIER, MESSAGE, expectedCause, expectedEnqueuedAt, expectedLastTouched,
+                SEQUENCE_IDENTIFIER, MESSAGE, expectedCause, Context.empty(), expectedEnqueuedAt, expectedLastTouched,
                 expectedDiagnostics
         );
 
@@ -200,7 +201,7 @@ class GenericDeadLetterTest {
         Metadata expectedDiagnostics = Metadata.with("new-key", "new-value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
-                SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
+                SEQUENCE_IDENTIFIER, MESSAGE, null, Context.empty(), expectedTime, expectedTime, originalDiagnostics
         );
 
         DeadLetter<EventMessage> result = testSubject.withDiagnostics(expectedDiagnostics);
@@ -223,7 +224,7 @@ class GenericDeadLetterTest {
         Metadata expectedDiagnostics = Metadata.with("old-key", "old-value").and("new-key", "new-value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
-                SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
+                SEQUENCE_IDENTIFIER, MESSAGE, null, Context.empty(), expectedTime, expectedTime, originalDiagnostics
         );
 
         DeadLetter<EventMessage> result =

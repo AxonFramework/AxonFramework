@@ -17,8 +17,10 @@
 package org.axonframework.messaging.deadletter;
 
 import jakarta.annotation.Nullable;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.StringUtils;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +47,8 @@ import java.util.stream.Collectors;
 
 import jakarta.annotation.Nonnull;
 
+import static org.axonframework.common.BuilderUtils.assertNonBlank;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 
 /**
@@ -72,6 +77,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     private final int maxSequences;
     private final int maxSequenceSize;
+    private final Set<Context.ResourceKey<?>> serializableResources;
 
     /**
      * Instantiate an in-memory {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
@@ -82,6 +88,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
         builder.validate();
         this.maxSequences = builder.maxSequences;
         this.maxSequenceSize = builder.maxSequenceSize;
+        this.serializableResources = builder.serializableResources;
     }
 
     /**
@@ -141,12 +148,46 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
                     }
 
                     synchronized (deadLetters) {
+                        DeadLetter<? extends M> letterToStore = attachSnapshot(sequenceIdentifier, letter, context);
                         deadLetters.computeIfAbsent(toIdentifier(sequenceIdentifier),
                                                     id -> new ConcurrentLinkedDeque<>())
-                                   .addLast(letter);
+                                   .addLast(letterToStore);
                     }
                     return FutureUtils.emptyCompletedFuture();
                 });
+    }
+
+    private DeadLetter<? extends M> attachSnapshot(Object sequenceIdentifier,
+                                                   DeadLetter<? extends M> letter,
+                                                   @Nullable ProcessingContext context) {
+        if (context == null || serializableResources.isEmpty()) {
+            return letter;
+        }
+        Context snapshot = snapshotContext(context);
+        if (snapshot.resources().isEmpty() || !(letter instanceof GenericDeadLetter)) {
+            return letter;
+        }
+        return new GenericDeadLetter<>(
+                sequenceIdentifier,
+                letter.message(),
+                letter.cause().orElse(null),
+                snapshot,
+                letter.enqueuedAt(),
+                letter.lastTouched(),
+                letter.diagnostics()
+        );
+    }
+
+    private Context snapshotContext(ProcessingContext context) {
+        Context result = Context.empty();
+        for (Context.ResourceKey<?> key : serializableResources) {
+            Object resource = context.getResource(key);
+            if (resource != null) {
+                //noinspection unchecked
+                result = result.withResource((Context.ResourceKey<Object>) key, resource);
+            }
+        }
+        return result;
     }
 
     @Nonnull
@@ -414,6 +455,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
+        private Set<Context.ResourceKey<?>> serializableResources = Set.of();
 
         /**
          * Sets the maximum number of sequences this {@link SequencedDeadLetterQueue} may contain. This requirement
@@ -449,6 +491,19 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
         }
 
         /**
+         * Sets the {@link Context.ResourceKey ResourceKeys} for which resources should be snapshotted from the
+         * {@link ProcessingContext} when a dead letter is created.
+         *
+         * @param serializableResources The resource keys to snapshot.
+         * @return The current Builder, for fluent interfacing.
+         */
+        public Builder<M> serializableResources(Set<Context.ResourceKey<?>> serializableResources) {
+            assertNonNull(serializableResources, "The serializableResources may not be null.");
+            this.serializableResources = Set.copyOf(serializableResources);
+            return this;
+        }
+
+        /**
          * Initializes a {@link InMemorySequencedDeadLetterQueue} as specified through this Builder.
          *
          * @return A {@link InMemorySequencedDeadLetterQueue} as specified through this Builder.
@@ -458,7 +513,20 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
         }
 
         protected void validate() {
-            // No assertions required, kept for overriding
+            validateSerializableResources(serializableResources);
+        }
+
+        private void validateSerializableResources(Set<Context.ResourceKey<?>> keys) {
+            Set<String> labels = new HashSet<>();
+            for (Context.ResourceKey<?> key : keys) {
+                String label = assertNonBlank(key.label(),
+                                              "All serializable ResourceKeys must have a non-blank label.");
+                if (!labels.add(label)) {
+                    throw new AxonConfigurationException(
+                            "All serializable ResourceKeys must have unique labels. Duplicate: [" + label + "]."
+                    );
+                }
+            }
         }
     }
 }

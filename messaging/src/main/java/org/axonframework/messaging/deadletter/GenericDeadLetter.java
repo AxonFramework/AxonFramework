@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
@@ -48,6 +49,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Metadata diagnostics;
+    private final Context context;
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier} and {@code message}. The
@@ -58,7 +60,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
      */
     public GenericDeadLetter(Object sequenceIdentifier, M message) {
-        this(sequenceIdentifier, message, null);
+        this(sequenceIdentifier, message, null, Context.empty());
     }
 
     /**
@@ -74,16 +76,50 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         this(sequenceIdentifier,
              message,
              cause != null ? new ThrowableCause(cause) : null,
+             Context.empty(),
+             () -> clock.instant());
+    }
+
+    /**
+     * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier}, {@code message}, and
+     * {@code context}. The {@link #cause()} is left empty in this case. This method is typically used to construct
+     * a dead letter that's part of a sequence.
+     *
+     * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
+     * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
+     * @param context            The {@link Context} associated with this dead letter.
+     */
+    public GenericDeadLetter(Object sequenceIdentifier, M message, Context context) {
+        this(sequenceIdentifier, message, null, context);
+    }
+
+    /**
+     * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier}, {@code message},
+     * {@code cause}, and {@code context}. This method is typically used to construct the first dead letter entry
+     * for the given {@code queueIdentifier}.
+     *
+     * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
+     * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
+     * @param cause              The cause for the {@code message} to be dead lettered.
+     * @param context            The {@link Context} associated with this dead letter.
+     */
+    public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause, Context context) {
+        this(sequenceIdentifier,
+             message,
+             cause != null ? new ThrowableCause(cause) : null,
+             context,
              () -> clock.instant());
     }
 
     private GenericDeadLetter(Object sequenceIdentifier,
                               M message,
                               Cause cause,
+                              Context context,
                               Supplier<Instant> timeSupplier) {
         this(sequenceIdentifier,
              message,
              cause,
+             context,
              timeSupplier.get(),
              timeSupplier.get(),
              Metadata.emptyInstance());
@@ -93,6 +129,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         this(delegate.sequenceIdentifier,
              delegate.message(),
              delegate.cause().orElse(null),
+             delegate.context(),
              delegate.enqueuedAt(),
              touched,
              delegate.diagnostics);
@@ -102,6 +139,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         this(delegate.sequenceIdentifier,
              delegate.message(),
              delegate.cause().orElse(null),
+             delegate.context(),
              delegate.enqueuedAt(),
              clock.instant(),
              diagnostics);
@@ -111,6 +149,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         this(delegate.sequenceIdentifier,
              delegate.message(),
              requeueCause != null ? ThrowableCause.asCause(requeueCause) : delegate.cause,
+             delegate.context(),
              delegate.enqueuedAt(),
              clock.instant(),
              delegate.diagnostics());
@@ -129,12 +168,14 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     public GenericDeadLetter(Object sequenceIdentifier,
                              M message,
                              Cause cause,
+                             Context context,
                              Instant enqueuedAt,
                              Instant lastTouched,
                              Metadata diagnostics) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.message = message;
         this.cause = cause;
+        this.context = context != null ? context : Context.empty();
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
         this.diagnostics = diagnostics;
@@ -163,6 +204,11 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     @Override
     public Metadata diagnostics() {
         return diagnostics;
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     public DeadLetter<M> markTouched() {
@@ -200,6 +246,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         return Objects.equals(sequenceIdentifier, that.sequenceIdentifier)
                 && Objects.equals(message, that.message)
                 && Objects.equals(cause, that.cause)
+                && Objects.equals(context, that.context)
                 && Objects.equals(enqueuedAt, that.enqueuedAt)
                 && Objects.equals(lastTouched, that.lastTouched)
                 && Objects.equals(diagnostics, that.diagnostics);
@@ -207,7 +254,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(sequenceIdentifier, message, cause, enqueuedAt, lastTouched, diagnostics);
+        return Objects.hash(sequenceIdentifier, message, cause, context, enqueuedAt, lastTouched, diagnostics);
     }
 
     @Override
@@ -216,6 +263,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
                 "sequenceIdentifier=" + sequenceIdentifier +
                 ", message=" + message +
                 ", cause=" + cause +
+                ", context=" + context +
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +
                 ", diagnostics=" + diagnostics +

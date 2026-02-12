@@ -27,9 +27,8 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 /**
  * Converter that can convert an {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
  * <p>
- * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources. This converter handles storing these resources as separate
- * columns in the database and restoring them when converting back.
+ * Context resources can be stored alongside the message by this converter. Implementations decide which resources to
+ * serialize and how to restore them, typically based on configuration provided by the queue.
  *
  * @param <M> The type of the event message this converter will convert.
  * @author Mitchell Herrijgers
@@ -41,13 +40,12 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * Converts an {@link EventMessage} implementation and its associated {@link Context} to a
      * {@link DeadLetterEventEntry}.
      * <p>
-     * The context is used to extract tracking token and domain info (aggregate identifier, type, sequence number) if
-     * present, as these are stored as context resources in AF5 rather than message subtypes.
+     * The context may carry resources that the converter serializes alongside the message, depending on configuration.
      *
      * @param message          The message to convert.
-     * @param context          The context containing resources such as tracking token and domain info.
+     * @param context          The context containing resources to be serialized.
      * @param eventConverter   The {@link EventConverter} for conversion of payload and metadata.
-     * @param genericConverter The {@link Converter} for conversion of the tracking token, if present.
+     * @param genericConverter The {@link Converter} used for conversion of any configured context resources.
      * @return The created {@link DeadLetterEventEntry}.
      */
     @Nonnull
@@ -57,12 +55,11 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
      * implementation and a {@link Context} with restored resources.
      * <p>
-     * The returned entry's context contains the restored tracking token and domain info (aggregate identifier, type,
-     * sequence number) if they were stored when the dead letter was enqueued.
+     * The returned entry's context contains restored resources that were stored when the dead letter was enqueued.
      *
      * @param entry            The database entry to convert.
      * @param eventConverter   The {@link EventConverter} for deserialization of payload and metadata.
-     * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
+     * @param genericConverter The {@link Converter} used for deserialization of configured context resources.
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
     @Nonnull

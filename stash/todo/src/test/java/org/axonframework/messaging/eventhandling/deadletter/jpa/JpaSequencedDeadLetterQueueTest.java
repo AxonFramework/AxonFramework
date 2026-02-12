@@ -44,6 +44,7 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -175,6 +176,12 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .processingGroup("my_processing_group")
                 .eventConverter(new DelegatingEventConverter(jacksonConverter))
                 .genericConverter(jacksonConverter)
+                .serializableResources(Set.of(
+                        TrackingToken.RESOURCE_KEY,
+                        LegacyResources.AGGREGATE_TYPE_KEY,
+                        LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                        LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY
+                ))
                 .build();
     }
 

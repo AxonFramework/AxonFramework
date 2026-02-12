@@ -33,8 +33,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Represents an {@link EventMessage} when stored into the database. It contains all properties known in the framework
- * implementations. Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources.
+ * implementations. Configured {@link Context} resources can be stored in the {@link #contextResources} blob. Legacy
+ * aggregate/token columns remain for backward compatibility but are not populated by the default converter.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -87,15 +87,18 @@ public class DeadLetterEventEntry {
     @Column(length = 10000)
     private byte[] token;
 
+    @Basic
+    @Lob
+    @Column(length = 10000)
+    private byte[] contextResources;
+
     protected DeadLetterEventEntry() {
         // required by JPA
     }
 
     /**
      * Constructs a new {@link DeadLetterEventEntry} using the provided parameters. Parameters can be null if not
-     * relevant. For example, aggregate info (type, identifier, sequence number) is stored when the event was published
-     * in an aggregate context (stored as context resources), and tracking token is stored when processing from an event
-     * stream.
+     * relevant. Configured context resources are stored in {@code contextResources}.
      *
      * @param eventType           The event type (required).
      * @param eventIdentifier     The identifier of the message (required).
@@ -106,11 +109,12 @@ public class DeadLetterEventEntry {
      * @param payloadRevision     The payload's revision of the message.
      * @param payload             The serialized payload of the message.
      * @param metadata            The serialized metadata of the message.
-     * @param aggregateType       The aggregate type of the message.
-     * @param aggregateIdentifier The aggregate identifier of the message.
-     * @param sequenceNumber      The aggregate sequence number of the message.
-     * @param tokenType           The type of tracking token the message.
-     * @param token               The serialized tracking token.
+     * @param aggregateType       The aggregate type of the message (legacy).
+     * @param aggregateIdentifier The aggregate identifier of the message (legacy).
+     * @param sequenceNumber      The aggregate sequence number of the message (legacy).
+     * @param tokenType           The type of tracking token the message (legacy).
+     * @param token               The serialized tracking token (legacy).
+     * @param contextResources    The serialized context resources blob.
      */
     public DeadLetterEventEntry(String eventType,
                                 String eventIdentifier,
@@ -124,7 +128,8 @@ public class DeadLetterEventEntry {
                                 String aggregateIdentifier,
                                 Long sequenceNumber,
                                 String tokenType,
-                                byte[] token) {
+                                byte[] token,
+                                byte[] contextResources) {
         requireNonNull(eventType,
                        "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
         requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
@@ -143,6 +148,7 @@ public class DeadLetterEventEntry {
         this.sequenceNumber = sequenceNumber;
         this.tokenType = tokenType;
         this.token = token;
+        this.contextResources = contextResources;
     }
 
     /**
@@ -223,7 +229,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the aggregate type, if the event was published in an aggregate context (stored as context resource).
+     * Returns the aggregate type (legacy column).
      *
      * @return The aggregate type, or {@code null} if not available.
      */
@@ -232,8 +238,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the aggregate identifier, if the event was published in an aggregate context (stored as context
-     * resource).
+     * Returns the aggregate identifier (legacy column).
      *
      * @return The aggregate identifier, or {@code null} if not available.
      */
@@ -242,8 +247,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the aggregate sequence number, if the event was published in an aggregate context (stored as context
-     * resource).
+     * Returns the aggregate sequence number (legacy column).
      *
      * @return The aggregate sequence number, or {@code null} if not available.
      */
@@ -252,7 +256,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the serialized tracking token as a byte array, if the event was being processed from an event stream.
+     * Returns the serialized tracking token as a byte array (legacy column).
      *
      * @return The serialized tracking token bytes, or {@code null} if not available.
      */
@@ -261,12 +265,21 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the tracking token type name.
+     * Returns the tracking token type name (legacy column).
      *
      * @return The fully qualified class name of the tracking token type, or {@code null} if no token was stored.
      */
     public String getTokenType() {
         return tokenType;
+    }
+
+    /**
+     * Returns the serialized context resources blob.
+     *
+     * @return The serialized context resources bytes, or {@code null} if not available.
+     */
+    public byte[] getContextResources() {
+        return contextResources;
     }
 
     @Override
@@ -290,7 +303,8 @@ public class DeadLetterEventEntry {
                 && Objects.equals(aggregateIdentifier, that.aggregateIdentifier)
                 && Objects.equals(sequenceNumber, that.sequenceNumber)
                 && Objects.equals(tokenType, that.tokenType)
-                && Objects.deepEquals(token, that.token);
+                && Objects.deepEquals(token, that.token)
+                && Objects.deepEquals(contextResources, that.contextResources);
     }
 
     @Override
@@ -307,7 +321,8 @@ public class DeadLetterEventEntry {
                             aggregateIdentifier,
                             sequenceNumber,
                             tokenType,
-                            Arrays.hashCode(token));
+                            Arrays.hashCode(token),
+                            Arrays.hashCode(contextResources));
     }
 
     @Override
@@ -326,6 +341,7 @@ public class DeadLetterEventEntry {
                 ", sequenceNumber=" + sequenceNumber +
                 ", tokenType='" + tokenType + '\'' +
                 ", token=" + Arrays.toString(token) +
+                ", contextResources=" + Arrays.toString(contextResources) +
                 '}';
     }
 }

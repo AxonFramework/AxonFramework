@@ -23,6 +23,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.tx.TransactionalExecutor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
@@ -49,6 +50,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -98,6 +101,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     private final EventConverter eventConverter;
     private final Converter genericConverter;
     private final Duration claimDuration;
+    private final Set<Context.ResourceKey<?>> serializableResources;
 
     /**
      * Instantiate a JPA {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
@@ -115,6 +119,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         this.converter = builder.converter;
         this.claimDuration = builder.claimDuration;
         this.queryPageSize = builder.queryPageSize;
+        this.serializableResources = builder.serializableResources;
     }
 
     /**
@@ -157,8 +162,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                         stringSequenceIdentifier);
             }
 
+            Context serializationContext = snapshotContext(context != null ? context : letter.context());
             DeadLetterEventEntry entry = converter.convert(
-                    letter.message(), context, eventConverter, genericConverter
+                    letter.message(), serializationContext, eventConverter, genericConverter
             );
 
             FutureUtils.joinAndUnwrap(
@@ -186,6 +192,21 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
+    }
+
+    private Context snapshotContext(@Nullable Context context) {
+        if (context == null || serializableResources.isEmpty()) {
+            return Context.empty();
+        }
+        Context result = Context.empty();
+        for (Context.ResourceKey<?> key : serializableResources) {
+            Object resource = context.getResource(key);
+            if (resource != null) {
+                //noinspection unchecked
+                result = result.withResource((Context.ResourceKey<Object>) key, resource);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -352,8 +373,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * {@link DeadLetterJpaConverter DeadLetterJpaConverters} to restore the original message from it.
      * <p>
      * The converter returns a {@link MessageStream.Entry} containing both the message and its associated context. The
-     * context includes restored resources such as tracking token and domain info (aggregate identifier, type, sequence
-     * number) that were stored when the dead letter was enqueued.
+     * context includes restored resources that were stored when the dead letter was enqueued.
      *
      * @param entry The entry to convert.
      * @return The {@link DeadLetter} result.
@@ -714,6 +734,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         private Converter genericConverter;
         private DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
         private Duration claimDuration = Duration.ofSeconds(30);
+        private Set<Context.ResourceKey<?>> serializableResources = Set.of();
 
         /**
          * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
@@ -792,10 +813,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         }
 
         /**
-         * Sets the {@link Converter} to convert the tracking token and diagnostics of the {@link DeadLetter} when
-         * storing it to and retrieving it from the database.
+         * Sets the {@link Converter} to convert configured context resources and diagnostics of the {@link DeadLetter}
+         * when storing it to and retrieving it from the database.
          *
-         * @param genericConverter The converter to use for tracking token and diagnostics conversion.
+         * @param genericConverter The converter to use for context resources and diagnostics conversion.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> genericConverter(Converter genericConverter) {
@@ -814,6 +835,19 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         public Builder<T> converter(DeadLetterJpaConverter<EventMessage> converter) {
             assertNonNull(converter, "The DeadLetterJpaConverter may not be null.");
             this.converter = converter;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Context.ResourceKey ResourceKeys} for which resources should be snapshotted from the
+         * {@link ProcessingContext} when a dead letter is created.
+         *
+         * @param serializableResources The resource keys to snapshot.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> serializableResources(Set<Context.ResourceKey<?>> serializableResources) {
+            assertNonNull(serializableResources, "The serializableResources may not be null.");
+            this.serializableResources = Set.copyOf(serializableResources);
             return this;
         }
 
@@ -871,6 +905,23 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                           "Must supply an eventConverter when constructing a JpaSequencedDeadLetterQueue");
             assertNonNull(genericConverter,
                           "Must supply a genericConverter when constructing a JpaSequencedDeadLetterQueue");
+            validateSerializableResources(serializableResources);
+            if (converter instanceof EventMessageDeadLetterJpaConverter) {
+                converter = new EventMessageDeadLetterJpaConverter(serializableResources);
+            }
+        }
+
+        private void validateSerializableResources(Set<Context.ResourceKey<?>> keys) {
+            Set<String> labels = new HashSet<>();
+            for (Context.ResourceKey<?> key : keys) {
+                String label = assertNonBlank(key.label(),
+                                              "All serializable ResourceKeys must have a non-blank label.");
+                if (!labels.add(label)) {
+                    throw new AxonConfigurationException(
+                            "All serializable ResourceKeys must have unique labels. Duplicate: [" + label + "]."
+                    );
+                }
+            }
         }
     }
 }
