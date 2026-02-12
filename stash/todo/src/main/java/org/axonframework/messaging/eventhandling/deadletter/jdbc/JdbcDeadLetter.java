@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
@@ -82,6 +83,11 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
     @Override
     public E message() {
         return message;
+    }
+
+    @Override
+    public Context context() {
+        return Context.empty(); // TODO #3517 - implement storing context for JDCB
     }
 
     @Override

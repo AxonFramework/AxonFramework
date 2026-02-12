@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
@@ -48,6 +49,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Metadata diagnostics;
+    private final Context context;
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier} and {@code message}. The
@@ -57,8 +59,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
      */
-    public GenericDeadLetter(Object sequenceIdentifier, M message) {
-        this(sequenceIdentifier, message, null);
+    public GenericDeadLetter(Object sequenceIdentifier, M message, Context context) {
+        this(sequenceIdentifier, message, null, context);
     }
 
     /**
@@ -70,23 +72,26 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
      * @param cause              The cause for the {@code message} to be dead lettered.
      */
-    public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause) {
+    public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause, Context context) {
         this(sequenceIdentifier,
              message,
              cause != null ? new ThrowableCause(cause) : null,
-             () -> clock.instant());
+             () -> clock.instant(),
+             context);
     }
 
     private GenericDeadLetter(Object sequenceIdentifier,
                               M message,
                               Cause cause,
-                              Supplier<Instant> timeSupplier) {
+                              Supplier<Instant> timeSupplier,
+                              Context context) {
         this(sequenceIdentifier,
              message,
              cause,
              timeSupplier.get(),
              timeSupplier.get(),
-             Metadata.emptyInstance());
+             Metadata.emptyInstance(),
+             context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Instant touched) {
@@ -95,7 +100,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              delegate.cause().orElse(null),
              delegate.enqueuedAt(),
              touched,
-             delegate.diagnostics);
+             delegate.diagnostics,
+             delegate.context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Metadata diagnostics) {
@@ -104,7 +110,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              delegate.cause().orElse(null),
              delegate.enqueuedAt(),
              clock.instant(),
-             diagnostics);
+             diagnostics,
+             delegate.context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Throwable requeueCause) {
@@ -113,7 +120,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              requeueCause != null ? ThrowableCause.asCause(requeueCause) : delegate.cause,
              delegate.enqueuedAt(),
              clock.instant(),
-             delegate.diagnostics());
+             delegate.diagnostics(),
+             delegate.context);
     }
 
     /**
@@ -131,18 +139,25 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
                              Cause cause,
                              Instant enqueuedAt,
                              Instant lastTouched,
-                             Metadata diagnostics) {
+                             Metadata diagnostics,
+                             Context context) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.message = message;
         this.cause = cause;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
         this.diagnostics = diagnostics;
+        this.context = context;
     }
 
     @Override
     public M message() {
         return message;
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     @Override

@@ -64,6 +64,8 @@ public interface DeadLetter<M extends Message> {
      */
     M message();
 
+    Context context();
+
     /**
      * The {@link Cause cause} for the {@link #message()} to be dead lettered. Can be an {@link Optional#empty()} in
      * case this letter is enqueued without a causal error. For instance, when another letter already present in the

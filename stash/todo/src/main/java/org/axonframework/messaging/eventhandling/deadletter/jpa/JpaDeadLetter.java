@@ -172,6 +172,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      *
      * @return The context with restored resources, or an empty context if no resources were stored.
      */
+    @Override
     public Context context() {
         return context != null ? context : Context.empty();
     }

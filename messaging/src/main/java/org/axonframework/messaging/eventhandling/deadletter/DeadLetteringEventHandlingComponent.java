@@ -117,7 +117,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
-                () -> new GenericDeadLetter<>(sequenceIdentifier, event),
+                () -> new GenericDeadLetter<>(sequenceIdentifier, event, context),
                 context
         ).thenCompose(wasEnqueued -> {
             if (wasEnqueued) {
@@ -168,7 +168,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @return a stream that completes after the error is handled (either enqueued or evicted)
      */
     private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier, Throwable error) {
-        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
+        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error, context);
         EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, error);
 
         if (decision.shouldEnqueue()) {
