@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,16 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.axonserver.connector.TopologyChangeListener;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.extension.springboot.TagsConfigurationProperties;
 import org.axonframework.extension.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -57,7 +59,10 @@ import java.util.List;
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
-@EnableConfigurationProperties(AxonServerConfiguration.class)
+@EnableConfigurationProperties(value = {
+        AxonServerConfiguration.class,
+        TagsConfigurationProperties.class
+})
 public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     /**
@@ -99,7 +104,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * <p>
      * This enhancer will set the {@link AxonServerConfiguration#getComponentName() component name} to the
      * {@link ApplicationContext#getId()}. Furthermore, it will set the
-     * {@link DistributedCommandBusConfiguration#numberOfThreads(int)} to align with the
+     * {@link DistributedCommandBusConfiguration#commandThreads(int)} to align with the
      * {@link AxonServerConfiguration#getCommandThreads()} property.
      * <p>
      * This enhancer is only constructed when {@code axon.axonserver.enabled} is set to {@code true}.
@@ -175,6 +180,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                     return axonServerConfig;
                 }
         );
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
+    public TagsConfiguration tagsConfiguration(TagsConfigurationProperties tagProperties) {
+        return tagProperties.toTagsConfiguration();
     }
 
     /**
