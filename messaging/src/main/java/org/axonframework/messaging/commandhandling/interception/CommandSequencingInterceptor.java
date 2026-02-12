@@ -28,6 +28,7 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -62,6 +63,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
      *                         the {@link CommandMessage}.
      */
     public CommandSequencingInterceptor(@Nonnull CommandSequencingPolicy sequencingPolicy) {
+        Objects.requireNonNull(sequencingPolicy, "The sequencingPolicy must not be null");
         this.sequencingPolicy = sequencingPolicy;
         this.inProgress = new ConcurrentHashMap<>();
     }
