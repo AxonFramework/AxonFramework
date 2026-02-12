@@ -286,7 +286,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
 
             Iterable<DeadLetter<? extends M>> result = new PagingJpaQueryIterable<>(
                     queryPageSize,
-                    entityManagerExecutor(null),
+                    entityManagerExecutor(context),
                     em -> em.createQuery(
                                     "select dl from DeadLetterEntry dl "
                                             + "where dl.processingGroup=:processingGroup "
@@ -311,7 +311,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     ) {
         try {
             List<String> sequenceIdentifiers = FutureUtils.joinAndUnwrap(
-                    entityManagerExecutor(null)
+                    entityManagerExecutor(context)
                             .apply(em ->
                                            em.createQuery(
                                                      "select dl.sequenceIdentifier from DeadLetterEntry dl "
@@ -405,10 +405,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                                 @Nullable ProcessingContext context) {
 
         JpaDeadLetter<M> claimedLetter = null;
-        Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(10);
+        Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(10, context);
         while (iterator.hasNext() && claimedLetter == null) {
             JpaDeadLetter<M> next = iterator.next();
-            if (sequenceFilter.test(next) && claimDeadLetter(next)) {
+            if (sequenceFilter.test(next) && claimDeadLetter(next, context)) {
                 claimedLetter = next;
             }
         }
@@ -443,10 +443,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
             EnqueueDecision<M> decision = processingTask.apply(deadLetter);
             if (!decision.shouldEnqueue()) {
                 JpaDeadLetter<M> oldLetter = deadLetter;
-                DeadLetterEntry deadLetterEntry = findNextDeadLetter(oldLetter);
+                DeadLetterEntry deadLetterEntry = findNextDeadLetter(oldLetter, context);
                 if (deadLetterEntry != null) {
                     deadLetter = toLetter(deadLetterEntry);
-                    claimDeadLetter(deadLetter);
+                    claimDeadLetter(deadLetter, context);
                 } else {
                     deadLetter = null;
                 }
@@ -477,10 +477,10 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      *                 better.
      * @return A list of first letters of each sequence.
      */
-    private Iterator<JpaDeadLetter<M>> findFirstLetterOfEachAvailableSequence(int pageSize) {
+    private Iterator<JpaDeadLetter<M>> findFirstLetterOfEachAvailableSequence(int pageSize, ProcessingContext context) {
         return new PagingJpaQueryIterable<>(
                 pageSize,
-                entityManagerExecutor(null),
+                entityManagerExecutor(context),
                 em -> em.createQuery(
                                 "select dl from DeadLetterEntry dl "
                                         + "where dl.processingGroup=:processingGroup "
@@ -502,9 +502,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @param oldLetter The base letter to search from.
      * @return The next letter to process.
      */
-    private DeadLetterEntry findNextDeadLetter(JpaDeadLetter<M> oldLetter) {
+    private DeadLetterEntry findNextDeadLetter(JpaDeadLetter<M> oldLetter, ProcessingContext context) {
         return FutureUtils.joinAndUnwrap(
-                entityManagerExecutor(null).apply(em -> {
+                entityManagerExecutor(context).apply(em -> {
                     try {
                         return em.createQuery(
                                          "select dl from DeadLetterEntry dl "
@@ -532,11 +532,11 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      *
      * @return Whether the letter was successfully claimed or not.
      */
-    private boolean claimDeadLetter(JpaDeadLetter<M> deadLetter) {
+    private boolean claimDeadLetter(JpaDeadLetter<M> deadLetter, ProcessingContext context) {
         Instant processingStartedLimit = getProcessingStartedLimit();
         //noinspection DataFlowIssue
         return FutureUtils.joinAndUnwrap(
-                entityManagerExecutor(null).apply(em -> {
+                entityManagerExecutor(context).apply(em -> {
                     int updatedRows = em.createQuery("update DeadLetterEntry dl set dl.processingStarted=:time "
                                                              + "where dl.deadLetterId=:deadletterId "
                                                              + "and (dl.processingStarted is null or dl.processingStarted < :processingStartedLimit)")
@@ -587,7 +587,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         try {
             //noinspection DataFlowIssue
             long result = FutureUtils.joinAndUnwrap(
-                    entityManagerExecutor(null)
+                    entityManagerExecutor(context)
                             .apply(em ->
                                            em.createQuery(
                                                      "select count(dl) from DeadLetterEntry dl "
@@ -612,7 +612,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         try {
             //noinspection DataFlowIssue
             long result = FutureUtils.joinAndUnwrap(
-                    entityManagerExecutor(null)
+                    entityManagerExecutor(context)
                             .apply(em ->
                                            em.createQuery(
                                                      "select count(dl) from DeadLetterEntry dl "
@@ -635,7 +635,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         try {
             //noinspection DataFlowIssue
             long result = FutureUtils.joinAndUnwrap(
-                    entityManagerExecutor(null)
+                    entityManagerExecutor(context)
                             .apply(em ->
                                            em.createQuery(
                                                      "select count(distinct dl.sequenceIdentifier) from DeadLetterEntry dl "
