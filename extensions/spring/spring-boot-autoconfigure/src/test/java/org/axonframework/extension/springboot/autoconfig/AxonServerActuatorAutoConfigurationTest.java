@@ -39,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3496")
 class AxonServerActuatorAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;
