@@ -47,10 +47,10 @@ public interface CommandSequencingPolicy {
      * {@code Optional#empty()} is returned, it is up to the component using this policy to provide a default behavior,
      * use another policy, throw an exception or react in any other way - as appropriate.
      *
-     * @param command The command for which to get the sequencing identifier.
-     * @param context The processing context in which the command is being handled.
-     * @return A sequence identifier for the given command, or {@code Optional#empty()} if this policy cannot determine
-     * a sequence identifier for the given command.
+     * @param command the command for which to get the sequencing identifier
+     * @param context the processing context in which the command is being handled
+     * @return a sequence identifier for the given command, or {@code Optional#empty()} if this policy cannot determine
+     * a sequence identifier for the given command
      */
     Optional<Object> getSequenceIdentifierFor(@Nonnull CommandMessage command, @Nonnull ProcessingContext context);
 }

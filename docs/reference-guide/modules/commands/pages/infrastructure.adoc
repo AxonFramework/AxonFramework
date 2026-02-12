@@ -452,6 +452,13 @@ It's recommended to annotate all command classes with `@Command` to explicitly d
 This makes your commands self-documenting and ensures consistent message identification across your application.
 ====
 
+[NOTE]
+====
+**Automatic command sequencing**: The command bus automatically includes a sequencing interceptor that prevents concurrent commands from causing optimistic locking failures. It defaults to using the routing key as sequencing identifier, processing commands targeting the same routing key sequentially while maintaining full concurrency for different routing keys.
+
+For more details and customization options, see xref:tuning:command-processing.adoc#command-sequencing[Command sequencing].
+====
+
 Custom routing strategies can be configured:
 
 [tabs]

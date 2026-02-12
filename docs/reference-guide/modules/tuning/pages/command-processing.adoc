@@ -5,7 +5,7 @@ This page provides specifics around tuning the command processing within an Axon
 [[command-sequencing]]
 == Command sequencing
 
-Command sequencing ensures that commands that aim to modify the same entities are processed sequentially, preventing optimistic locking in high-throughput applications. This feature is enabled by default in Axon Framework 5.0.3+ and operates transparently without requiring changes to existing command handlers.
+Command sequencing ensures that commands that aim to modify the same entities are processed sequentially, preventing optimistic locking in high-throughput applications. This feature is enabled by default in Axon Framework and operates transparently without requiring changes to existing command handlers.
 
 === Why command sequencing?
 
@@ -15,15 +15,15 @@ Command sequencing solves this problem by ensuring that commands targeting the s
 
 === Default behavior
 
-Command sequencing is enabled by default in Axon Framework 5.0.3+. The framework automatically configures a `CommandSequencingInterceptor` with the `RoutingKeyCommandSequencingPolicy`, which sequences commands based on their routing key.
+Command sequencing is enabled by default in Axon Framework. The framework automatically configures a `CommandSequencingInterceptor` with the `RoutingKeyCommandSequencingPolicy`, which sequences commands based on their routing key.
 
 The default behavior provides an optimal balance between consistency and performance:
 
 * Commands with the **same routing key** (typically part of the targeted entity identifier) execute sequentially - one must complete before the next begins
-* Commands with **different routing keys** execute concurrently - no waiting is required
-* Commands with **no routing key** or an **empty routing key** are not sequenced and execute concurrently
+* Commands with **different routing keys** can execute concurrently - no waiting is required
+* Commands with **no routing key** or an **empty routing key** are not sequenced and can execute concurrently
 
-This means your application benefits from command sequencing immediately upon upgrading to Axon Framework 5.0.3+, with no configuration required. The feature operates transparently at the handler interceptor level, after command routing has occurred.
+This means your application benefits from command sequencing immediately upon using Axon Framework, with no configuration required. The feature operates transparently at the handler interceptor level, after command routing has occurred.
 
 === How it works
 
@@ -50,7 +50,7 @@ public interface CommandSequencingPolicy {
 
 Axon Framework provides the following implementations:
 
-* **`RoutingKeyCommandSequencingPolicy` (default)**: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and execute concurrently. This is the default policy and works well for most applications.
+* **`RoutingKeyCommandSequencingPolicy` (default)**: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and thus can execute concurrently. This is the default policy and works well for most applications.
 
 * **`NoOpCommandSequencingPolicy`**: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.
 
@@ -84,9 +84,10 @@ Axon Configuration API::
 --
 [source,java]
 ----
-MessagingConfigurer.enhance(new DefaultAxonApplication())
-                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                c -> new TenantBasedSequencingPolicy()));
+public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+            c -> new TenantBasedSequencingPolicy()));
+}
 ----
 --
 
@@ -145,9 +146,10 @@ Axon Configuration API::
 --
 [source,java]
 ----
-MessagingConfigurer.enhance(new DefaultAxonApplication())
-                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                c -> NoOpCommandSequencingPolicy.INSTANCE));
+public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
+    configurer.componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+            c -> NoOpCommandSequencingPolicy.INSTANCE));
+}
 ----
 --
 
@@ -166,14 +168,4 @@ public class AxonConfig {
 }
 ----
 --
-====
-
-=== Performance considerations
-
-* **Keep handlers fast**: Since commands wait for previous commands to complete when sequencing them, ensure your command handlers execute quickly. Avoid I/O operations, complex calculations, or other slow operations in handlers.
-* **Use appropriate routing keys**: Ensure your commands have meaningful routing keys that correspond to entity identifiers for example. Commands without routing keys are not sequenced.
-
-[TIP]
-====
-Command sequencing is completely transparent to your command handlers. You don't need to modify existing handlers or add any sequencing-specific code. The interceptor handles all sequencing logic automatically.
 ====
