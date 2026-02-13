@@ -51,7 +51,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 2.1
  */
 @SuppressWarnings("PackageAccessibility")
-@Priority(Priority.LOW)
+@Priority(Priority.NEUTRAL)
 public class SpringBeanParameterResolverFactory implements ParameterResolverFactory, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
