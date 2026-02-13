@@ -262,6 +262,19 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
+    public ConsistencyMarker consistencyMarker(@Nullable TrackingToken token) {
+        if (token == null) {
+            return ConsistencyMarker.ORIGIN;
+        }
+        if (token instanceof GlobalSequenceTrackingToken gst) {
+            return new GlobalIndexConsistencyMarker(gst.getGlobalIndex());
+        }
+        throw new IllegalArgumentException(
+                "Token [" + token + "] is of the wrong type. Expected [" + GlobalSequenceTrackingToken.class.getSimpleName() + "]"
+        );
+    }
+
+    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("offset", offset);
     }

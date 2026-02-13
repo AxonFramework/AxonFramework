@@ -37,6 +37,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.core.Context;
@@ -287,6 +288,19 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         return connection.eventChannel().getTokenAt(at.toEpochMilli()).thenApply(GlobalSequenceTrackingToken::new);
+    }
+
+    @Override
+    public ConsistencyMarker consistencyMarker(@Nullable TrackingToken token) {
+        if (token == null) {
+            return ConsistencyMarker.ORIGIN;
+        }
+        if (token instanceof GlobalSequenceTrackingToken gst) {
+            return new GlobalIndexConsistencyMarker(gst.getGlobalIndex());
+        }
+        throw new IllegalArgumentException(
+                "Token [" + token + "] is of the wrong type. Expected [" + GlobalSequenceTrackingToken.class.getSimpleName() + "]"
+        );
     }
 
     @Override
