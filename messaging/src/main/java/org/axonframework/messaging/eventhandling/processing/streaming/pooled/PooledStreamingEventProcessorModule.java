@@ -126,18 +126,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                             );
                             var dlqEnabled = configuration.deadLetterQueue().isEnabled();
                             if (dlqEnabled) {
-                                var segmentReleasedAction = configuration.segmentReleasedAction();
-                                configuration.segmentReleasedAction(segment -> {
+                                configuration.addSegmentChangeListener(SegmentChangeListener.runOnRelease(segment -> {
                                     // Invalidate cache for ALL event handling component DLQs
                                     for (int idx = 0; idx < eventHandlingComponentBuilders.size(); idx++) {
                                         var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
                                                                    processorComponentCachingDlqName(idx));
                                         dlq.invalidateCache();
                                     }
-                                    segmentReleasedAction.accept(segment);
-                                });
-                            } else {
-                                configuration.segmentReleasedAction(configuration.segmentReleasedAction());
+                                }));
                             }
                             return configuration;
                         }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
