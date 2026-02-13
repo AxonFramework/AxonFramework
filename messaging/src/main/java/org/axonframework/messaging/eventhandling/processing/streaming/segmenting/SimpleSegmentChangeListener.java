@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
+package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Simple {@link SegmentChangeListener} implementation backed by claim and release handlers.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 5.1.0
  */
 public class SimpleSegmentChangeListener implements SegmentChangeListener {
 
@@ -41,22 +41,22 @@ public class SimpleSegmentChangeListener implements SegmentChangeListener {
      * @param onRelease The release handler.
      */
     public SimpleSegmentChangeListener(
-            Function<Segment, CompletableFuture<Void>> onClaim,
-            Function<Segment, CompletableFuture<Void>> onRelease
+            @Nonnull Function<Segment, CompletableFuture<Void>> onClaim,
+            @Nonnull Function<Segment, CompletableFuture<Void>> onRelease
     ) {
-        assertNonNull(onClaim, "Claim listener may not be null");
-        assertNonNull(onRelease, "Release listener may not be null");
+        Objects.requireNonNull(onClaim, "Claim listener may not be null");
+        Objects.requireNonNull(onRelease, "Release listener may not be null");
         this.onClaim = onClaim;
         this.onRelease = onRelease;
     }
 
     @Override
-    public CompletableFuture<Void> onSegmentClaimed(Segment segment) {
+    public @Nonnull CompletableFuture<Void> onSegmentClaimed(@NonNull Segment segment) {
         return onClaim.apply(segment);
     }
 
     @Override
-    public CompletableFuture<Void> onSegmentReleased(Segment segment) {
+    public @NonNull CompletableFuture<Void> onSegmentReleased(@Nonnull Segment segment) {
         return onRelease.apply(segment);
     }
 }
