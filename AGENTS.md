@@ -88,7 +88,26 @@ Additional modules:
 - `stash/migration/` — OpenRewrite migration recipes
 - `stash/todo/` — Axon Framework 4 parts to be ported to Axon Framework 5
 - `integrationtests/` — Cross-module integration test suite
-- `build/parent/` — Parent POM with dependency management
+- `build/parent/` — Parent POM with dependency management\
+- `examples/` — Example applications for smoke testing and demonstration (build with `-Pexamples`)
+- `docs/` — Reference guide and how-to guides written in AsciiDoc, built with Antora
+
+### Examples (`examples/`)
+
+Example applications demonstrating framework features with different setups and stacks:
+- `university-demo` — Plain Java example
+- `university-java-springboot` — Spring Boot example
+- `framework4-springboot4` — Framework 4 compatibility example
+
+When a new feature is implemented, it should be demonstrated in an appropriate example application when possible. This helps validate the feature in a realistic setting and serves as living documentation.
+
+Build examples: `./mvnw -Pexamples clean verify`
+
+### Documentation (`docs/`)
+
+Reference guide and how-to guides at `docs/reference-guide/`, written in AsciiDoc and built with Antora. Additional standalone guides cover topics like dead letter queues, deadlines, identifier generation, meta-annotations, and message handler customization.
+
+After implementing a feature, the relevant documentation in `docs/` should be updated to reflect the changes. See `docs/AGENTS.md` for detailed documentation migration guidelines (Axon 4 to 5 terminology, style rules, verification workflow).
 
 ## Architecture
 
