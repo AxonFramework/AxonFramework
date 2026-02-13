@@ -93,9 +93,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
-        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
-        verify(eventStore).transaction(processingContext);
+        // Both doLoad and updateActiveEntity call transaction(EventCriteria, ProcessingContext)
+        verify(eventStore, times(2)).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -184,9 +183,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally());
-        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
-        verify(eventStore).transaction(processingContext);
+        // Both doLoad and updateActiveEntity call transaction(EventCriteria, ProcessingContext)
+        verify(eventStore, times(2)).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -258,9 +256,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
-        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
-        verify(eventStore).transaction(processingContext);
+        // Both doLoad and updateActiveEntity call transaction(EventCriteria, ProcessingContext)
+        verify(eventStore, times(2)).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
@@ -280,9 +277,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
-        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
-        verify(eventStore).transaction(processingContext);
+        // Both doLoad and updateActiveEntity call transaction(EventCriteria, ProcessingContext)
+        verify(eventStore, times(2)).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));

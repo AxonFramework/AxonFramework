@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
@@ -94,6 +95,11 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * Boundaries (DCB) where the criteria used for sourcing events (loading state) can differ from the criteria used
      * for consistency checking (appending events).
      * <p>
+     * When {@code sourceCriteriaResolver} is {@code null}, no sourcing occurs — events are not loaded from the store.
+     * This is used for standalone {@code @AppendCriteriaBuilder} scenarios where only consistency checking is needed
+     * without loading state from events. The {@link ConsistencyMarker} is then resolved from the
+     * {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine#latestToken(ProcessingContext) latest token}.
+     * <p>
      * <b>Example - Accounting Use Case:</b>
      * <ul>
      *   <li><b>sourceCriteriaResolver</b>: Resolves to criteria that loads both CreditsIncreased AND CreditsDecreased
@@ -108,7 +114,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * @param entityFactory          A factory method to create new instances of the entity based on the entity's type and a
      *                               provided identifier.
      * @param sourceCriteriaResolver Converts the given identifier to an {@link EventCriteria} used to load (source)
-     *                               the entity's event stream.
+     *                               the entity's event stream. May be {@code null} to skip sourcing entirely.
      * @param appendCriteriaResolver Converts the given identifier to an {@link EventCriteria} used for consistency
      *                               checking when appending events.
      * @param entityEvolver          The function used to evolve the state of loaded entities based on events.
@@ -117,14 +123,14 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
                                    @Nonnull Class<E> entityType,
                                    @Nonnull EventStore eventStore,
                                    @Nonnull EventSourcedEntityFactory<ID, E> entityFactory,
-                                   @Nonnull CriteriaResolver<ID> sourceCriteriaResolver,
+                                   @Nullable CriteriaResolver<ID> sourceCriteriaResolver,
                                    @Nonnull CriteriaResolver<ID> appendCriteriaResolver,
                                    @Nonnull EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
         this.entityFactory = requireNonNull(entityFactory, "The entity factory must not be null.");
-        this.sourceCriteriaResolver = requireNonNull(sourceCriteriaResolver, "The source criteria resolver must not be null.");
+        this.sourceCriteriaResolver = sourceCriteriaResolver;
         this.appendCriteriaResolver = requireNonNull(appendCriteriaResolver, "The append criteria resolver must not be null.");
         this.entityEvolver = requireNonNull(entityEvolver, "The entity evolver must not be null.");
     }
@@ -194,6 +200,12 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext context) {
+        if (sourceCriteriaResolver == null) {
+            // Standalone append criteria without sourcing (e.g., only @AppendCriteriaBuilder defined).
+            // No events to load — the transaction will be created in updateActiveEntity when appending.
+            return CompletableFuture.completedFuture(new EventSourcedEntity<>(identifier));
+        }
+
         EventCriteria sourceCriteria = sourceCriteriaResolver.resolve(identifier, context);
         EventCriteria appendCriteria = appendCriteriaResolver.resolve(identifier, context);
 
@@ -238,7 +250,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      *                          {@link EventStoreTransaction}.
      */
     private void updateActiveEntity(EventSourcedEntity<ID, E> entity, ProcessingContext processingContext) {
-        eventStore.transaction(processingContext)
+        EventCriteria appendCriteria = appendCriteriaResolver.resolve(entity.identifier(), processingContext);
+        eventStore.transaction(appendCriteria, processingContext)
                   .onAppend(event -> {
                       if (entity.entity() == null) {
                           entity.applyStateChange(e -> entityFactory.create(
