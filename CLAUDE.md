@@ -122,7 +122,7 @@ Build examples: `./mvnw -Pexamples clean verify`
 
 Reference guide and how-to guides at `docs/reference-guide/`, written in AsciiDoc and built with Antora. Additional standalone guides cover topics like dead letter queues, deadlines, identifier generation, meta-annotations, and message handler customization.
 
-After implementing a feature, the relevant documentation in `docs/` should be updated to reflect the changes. See `docs/AGENTS.md` for detailed documentation migration guidelines (Axon 4 to 5 terminology, style rules, verification workflow).
+After implementing a feature, the relevant documentation in `docs/` should be updated to reflect the changes. See `docs/CLAUDE.md` for detailed documentation migration guidelines (Axon 4 to 5 terminology, style rules, verification workflow).
 
 ## Architecture
 
