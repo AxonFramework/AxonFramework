@@ -100,6 +100,15 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     }
 
     @Override
+    public EntityIdResolverPhase<ID, E> appendCriteriaResolver(
+            @Nonnull ComponentBuilder<CriteriaResolver<ID>> appendCriteriaResolver
+    ) {
+        this.sourceCriteriaResolver = null;
+        this.appendCriteriaResolver = requireNonNull(appendCriteriaResolver, "The append criteria resolver cannot be null.");
+        return this;
+    }
+
+    @Override
     public EntityIdResolverPhase<ID, E> criteriaResolvers(
             @Nonnull ComponentBuilder<CriteriaResolver<ID>> sourceCriteriaResolver,
             @Nonnull ComponentBuilder<CriteriaResolver<ID>> appendCriteriaResolver
@@ -135,7 +144,6 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     private void validate() {
         requireNonNull(entityFactory, "The EntityFactory must be provided to module [%s].".formatted(name()));
-        requireNonNull(sourceCriteriaResolver, "The source CriteriaResolver must be provided to module [%s].".formatted(name()));
         requireNonNull(appendCriteriaResolver, "The append CriteriaResolver must be provided to module [%s].".formatted(name()));
         requireNonNull(entityModel, "The EntityModel must be provided to module [%s].".formatted(name()));
     }
@@ -143,7 +151,9 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     private void registerComponents() {
         componentRegistry(cr -> {
             cr.registerComponent(entityFactory());
-            cr.registerComponent(sourceCriteriaResolver());
+            if (sourceCriteriaResolver != null) {
+                cr.registerComponent(sourceCriteriaResolver());
+            }
             cr.registerComponent(appendCriteriaResolver());
             cr.registerComponent(entityModel());
             cr.registerComponent(repository());
@@ -176,12 +186,16 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                 .ofTypeAndName(type, entityName())
                 .withBuilder(config -> {
                     //noinspection unchecked
+                    CriteriaResolver<ID> sourceResolver = sourceCriteriaResolver != null
+                            ? config.getComponent(CriteriaResolver.class, sourceCriteriaResolverName())
+                            : null;
+                    //noinspection unchecked
                     return new EventSourcingRepository<ID, E>(
                             idType,
                             entityType,
                             config.getComponent(EventStore.class),
                             config.getComponent(EventSourcedEntityFactory.class, entityName()),
-                            config.getComponent(CriteriaResolver.class, sourceCriteriaResolverName()),
+                            sourceResolver,
                             config.getComponent(CriteriaResolver.class, appendCriteriaResolverName()),
                             config.getComponent(EntityMetamodel.class, entityName())
                     );
