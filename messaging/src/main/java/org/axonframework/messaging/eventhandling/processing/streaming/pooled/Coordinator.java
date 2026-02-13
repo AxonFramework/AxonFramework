@@ -223,28 +223,6 @@ class Coordinator {
         return errorWaitBackOff > 500;
     }
 
-    private CompletableFuture<Void> onSegmentClaimed(Segment segment) {
-        try {
-            return Objects.requireNonNull(
-                    segmentChangeListener.onSegmentClaimed(segment),
-                    "Segment change listener may not return null for segment " + segment
-            );
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    private CompletableFuture<Void> onSegmentReleased(Segment segment) {
-        try {
-            return Objects.requireNonNull(
-                    segmentChangeListener.onSegmentReleased(segment),
-                    "Segment change listener may not return null for segment " + segment
-            );
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
     /**
      * Instructs this coordinator to release the segment with the given {@code segmentId}. Furthermore, it will be
      * ignored for "re-claiming" for the specified {@code releaseDuration}.
@@ -665,6 +643,8 @@ class Coordinator {
          *
          * @param segmentChangeListener The listener to add.
          * @return The current Builder instance, for fluent interfacing.
+         *
+         * @since 5.1.0
          */
         Builder addSegmentChangeListener(SegmentChangeListener segmentChangeListener) {
             this.segmentChangeListener = this.segmentChangeListener.andThen(
@@ -1011,7 +991,7 @@ class Coordinator {
             WorkPackage workPackage = workPackageFactory.apply(segment, token);
             workPackage.onBatchProcessed(() -> resetRetryExponentialBackoff(segment.getSegmentId()));
             try {
-                joinAndUnwrap(onSegmentClaimed(segment));
+                joinAndUnwrap(segmentChangeListener.onSegmentClaimed(segment));
             } catch (Exception e) {
                 logger.info(
                         "Processor [{}] (Coordination Task [{}]). An exception occurred while invoking claim listeners for [{}].",
@@ -1387,7 +1367,7 @@ class Coordinator {
                        })
                        .thenRun(() -> joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
                                context -> tokenStore.releaseClaim(name, segmentId, context)
-                                                    .thenCompose(unused -> onSegmentReleased(work.segment()))
+                                                    .thenCompose(unused -> segmentChangeListener.onSegmentReleased(work.segment()))
                        )))
                        .exceptionally(throwable -> {
                            logger.info(
