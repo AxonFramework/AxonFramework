@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -60,15 +59,13 @@ class CommandSequencingInterceptorTest {
     @Mock
     private ProcessingContext ctx1;
     @Captor
-    private ArgumentCaptor<Consumer<ProcessingContext>> ctx1CompleteOnSuccessCapture;
-    @Captor
-    private ArgumentCaptor<ProcessingLifecycle.ErrorHandler> ctx1CompleteOnErrorCapture;
+    private ArgumentCaptor<Consumer<ProcessingContext>> ctx1CompletionCapture;
     @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain2;
     @Mock
     private ProcessingContext ctx2;
     @Captor
-    private ArgumentCaptor<Consumer<ProcessingContext>> ctx2CompleteOnSuccessCapture;
+    private ArgumentCaptor<Consumer<ProcessingContext>> ctx2CompletionCapture;
 
     private CommandSequencingInterceptor<CommandMessage> testSubject;
 
@@ -84,23 +81,17 @@ class CommandSequencingInterceptorTest {
 
         when(sequencingPolicy.getSequenceIdentifierFor(any(), any()))
                 .thenReturn(Optional.of(exSequenceIdentifier));
-        when(ctx1.whenComplete(any()))
-                .thenReturn(ctx1);
-        when(ctx2.whenComplete(any()))
-                .thenReturn(ctx2);
 
         // handle first command
         Future<? extends MessageStream<?>> ctx1Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_1, ctx1, interceptorChain1));
-        // verify command 1 completes immediately and capture the context completion / error callbacks
+        // verify command 1 completes immediately and capture the context completion callback
         await()
                 .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
-                .whenComplete(ctx1CompleteOnSuccessCapture.capture());
-        verify(ctx1)
-                .onError(any());
+                .doFinally(ctx1CompletionCapture.capture());
         verify(interceptorChain1)
                 .proceed(TEST_MESSAGE_1, ctx1);
 
@@ -112,78 +103,20 @@ class CommandSequencingInterceptorTest {
                 .untilAsserted(() -> assertEquals(Future.State.RUNNING, ctx2Execution.state()));
 
         // release lock of ctx1
-        ctx1CompleteOnSuccessCapture.getValue().accept(ctx1);
+        ctx1CompletionCapture.getValue().accept(ctx1);
 
-        // verify command 2 is completed and capture the context completion / error callbacks
+        // verify command 2 is completed and capture the context completion callback
         await()
                 .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)
-                .whenComplete(ctx2CompleteOnSuccessCapture.capture());
-        verify(ctx2)
-                .onError(any());
+                .doFinally(ctx2CompletionCapture.capture());
         verify(interceptorChain2)
                 .proceed(TEST_MESSAGE_2, ctx2);
 
         // release lock of ctx2
-        ctx2CompleteOnSuccessCapture.getValue().accept(ctx2);
-
-        verifyNoMoreInteractions(sequencingPolicy, interceptorChain1, interceptorChain2, ctx1, ctx2);
-
-        executor.shutdown();
-    }
-
-    @Test
-    void interceptOnHandleReleasesSerializationLockOnCtxErrorCallback() {
-        Object exSequenceIdentifier = "sequenceIdentifier";
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        when(sequencingPolicy.getSequenceIdentifierFor(any(), any()))
-                .thenReturn(Optional.of(exSequenceIdentifier));
-        when(ctx1.whenComplete(any()))
-                .thenReturn(ctx1);
-        when(ctx2.whenComplete(any()))
-                .thenReturn(ctx2);
-
-        // handle first command
-        Future<? extends MessageStream<?>> ctx1Execution =
-                executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_1, ctx1, interceptorChain1));
-        // verify command 1 completes immediately and capture the context completion / error callbacks
-        await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
-        verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
-        verify(ctx1)
-                .whenComplete(any());
-        verify(ctx1)
-                .onError(ctx1CompleteOnErrorCapture.capture());
-        verify(interceptorChain1)
-                .proceed(TEST_MESSAGE_1, ctx1);
-
-        // verify command 2 is blocked until lock of ctx1 is released
-        Future<? extends MessageStream<?>> ctx2Execution =
-                executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_2, ctx2, interceptorChain2));
-        await()
-                .pollDelay(Duration.ofSeconds(1))
-                .untilAsserted(() -> assertEquals(Future.State.RUNNING, ctx2Execution.state()));
-
-        // release lock of ctx1 via error callback, arguments are ignored in implementation
-        ctx1CompleteOnErrorCapture.getValue().handle(ctx1, mock(), mock());
-
-        // verify command 2 is completed and capture the context completion / error callbacks
-        await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
-        verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
-        verify(ctx2)
-                .whenComplete(ctx2CompleteOnSuccessCapture.capture());
-        verify(ctx2)
-                .onError(any());
-        verify(interceptorChain2)
-                .proceed(TEST_MESSAGE_2, ctx2);
-
-        // release lock of ctx2
-        ctx2CompleteOnSuccessCapture.getValue().accept(ctx2);
+        ctx2CompletionCapture.getValue().accept(ctx2);
 
         verifyNoMoreInteractions(sequencingPolicy, interceptorChain1, interceptorChain2, ctx1, ctx2);
 
@@ -200,46 +133,38 @@ class CommandSequencingInterceptorTest {
                 .thenReturn(Optional.of(exSequenceIdentifier1));
         when(sequencingPolicy.getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2))
                 .thenReturn(Optional.of(exSequenceIdentifier2));
-        when(ctx1.whenComplete(any()))
-                .thenReturn(ctx1);
-        when(ctx2.whenComplete(any()))
-                .thenReturn(ctx2);
 
         // handle command 1
         Future<? extends MessageStream<?>> ctx1Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_1, ctx1, interceptorChain1));
 
-        // verify command1 completes immediately and capture the context completion / error callbacks
+        // verify command1 completes immediately and capture the context completion callback
         await()
                 .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
-                .whenComplete(ctx1CompleteOnSuccessCapture.capture());
-        verify(ctx1)
-                .onError(any());
+                .doFinally(ctx1CompletionCapture.capture());
         verify(interceptorChain1)
                 .proceed(TEST_MESSAGE_1, ctx1);
 
         // handle command 2
         Future<? extends MessageStream<?>> ctx2Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_2, ctx2, interceptorChain2));
-        // verify command 2 completes immediately independently of ctx1 and capture the context completion / error callbacks
+        // verify command 2 completes immediately independently of ctx1 and capture the context callback
         await()
                 .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)
-                .whenComplete(ctx2CompleteOnSuccessCapture.capture());
-        verify(ctx2)
-                .onError(any());
+                .doFinally(ctx2CompletionCapture.capture());
         verify(interceptorChain2)
                 .proceed(TEST_MESSAGE_2, ctx2);
 
         // release lock of ctx1
-        ctx1CompleteOnSuccessCapture.getValue().accept(ctx1);
+        ctx1CompletionCapture.getValue().accept(ctx1);
         // release lock of ctx2
-        ctx2CompleteOnSuccessCapture.getValue().accept(ctx2);
+        ctx2CompletionCapture.getValue().accept(ctx2);
 
         verifyNoMoreInteractions(sequencingPolicy, interceptorChain1, interceptorChain2, ctx1, ctx2);
 

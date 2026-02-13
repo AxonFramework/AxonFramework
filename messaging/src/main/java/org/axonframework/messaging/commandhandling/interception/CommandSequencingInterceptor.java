@@ -93,16 +93,9 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
 
             return previousLock
                     .handle((r, e) -> {
-                        context.whenComplete(ctx -> {
+                        context.doFinally(ctx -> {
                             logger.debug(
-                                    "Processing command for [{}] completed successfully in {}. Passing lock to next command.",
-                                    sequenceIdentifier,
-                                    ctx);
-                            currentLock.complete(null);
-                        });
-                        context.onError((ctx, phase, error) -> {
-                            logger.debug(
-                                    "Processing command for [{}] completed with error in {}. Passing lock to next command.",
+                                    "Processing command for [{}] completed in {}. Passing lock to next command.",
                                     sequenceIdentifier,
                                     ctx);
                             currentLock.complete(null);
