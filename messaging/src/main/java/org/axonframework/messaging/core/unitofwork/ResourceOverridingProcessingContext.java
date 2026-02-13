@@ -248,4 +248,11 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
         return delegate.component(type, name);
     }
+
+    @Override
+    public String toString() {
+        return "ResourceOverridingProcessingContext{"
+                + "delegate=" + delegate
+                + '}';
+    }
 }

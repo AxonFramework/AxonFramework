@@ -29,6 +29,8 @@ import org.axonframework.messaging.commandhandling.configuration.CommandHandling
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
+import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -96,6 +98,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // and a CommandSequencingPolicy that leads to CommandSequencingInterceptor
         assertInstanceOf(InterceptingCommandBus.class, commandBus.get());
 
         Optional<EventGateway> eventGateway = result.getOptionalComponent(EventGateway.class);
@@ -154,12 +157,15 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = aCommandBus();
 
-        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
+        // Setting NoOpCommandSequencingPolicy ensures CommandSequencingInterceptor is not built.
         // This otherwise leads to the InterceptingCommandBus
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
+                                          .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+                                                                                        c -> NoOpCommandSequencingPolicy.INSTANCE))
                                           .registerCommandBus(c -> expected)
                                           .build();
 
@@ -313,10 +319,13 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         };
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
+        // Overriding CommandSequencingPolicy ensures CommandSequencingInterceptor is not present.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
+                                          .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+                                                                                        c -> NoOpCommandSequencingPolicy.INSTANCE))
                                           .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);

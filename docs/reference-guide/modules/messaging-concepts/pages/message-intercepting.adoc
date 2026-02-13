@@ -255,6 +255,14 @@ public void registerCommandHandlerInterceptor(MessagingConfigurer configurer) {
 }
 ----
 
+[TIP]
+.Built-in command sequencing
+====
+Axon Framework provides built-in command sequencing through the `CommandSequencingInterceptor`, which is automatically configured by default. This interceptor prevents optimistic locking failures by ensuring commands targeting the same entities execute sequentially.
+
+See xref:tuning:command-processing.adoc#command-sequencing[Command sequencing] for details.
+====
+
 == Event interceptors
 
 Similar to command messages, event messages can also be intercepted prior to publishing and handling.
