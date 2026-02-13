@@ -20,7 +20,6 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
@@ -106,6 +105,9 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        // purge events to restart with an empty eventstore and avoid processing historic events
+        purgeEvents();
+
         // a noop setup that allows verification of ignored event
         configurer.messaging(mc -> mc
                 .registerMessageMonitor(c -> new RecordingMessageMonitor(reportedMessages))

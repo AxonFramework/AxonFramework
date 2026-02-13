@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
@@ -25,32 +23,32 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link RoutingKeyUtils}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class RoutingKeyUtilsTest {
 
     static class ComplexType {
+
     }
 
     static class MemberWithRoutingKey {
+
         @EntityMember(routingKey = "myKey")
-        private ComplexType someField = new ComplexType();
+        private final ComplexType someField = new ComplexType();
     }
 
     static class MemberWithEmptyRoutingKey {
-        @EntityMember()
-        private ComplexType someField = new ComplexType();
+
+        @EntityMember
+        private final ComplexType someField = new ComplexType();
     }
 
     static class MemberWithoutEntityMember {
-        private ComplexType someField = new ComplexType();
-    }
 
-    static class ChildWithRoutingKey {
-        @RoutingKey
-        private ComplexType id = new ComplexType();
-    }
-
-    static class ChildWithoutRoutingKey {
-        private ComplexType id = new ComplexType();
+        private final ComplexType someField = new ComplexType();
     }
 
     @Test
@@ -72,19 +70,6 @@ class RoutingKeyUtilsTest {
     void getMessageRoutingKey_returnsEmptyWhenEmptyKey() throws NoSuchFieldException {
         Field field = MemberWithEmptyRoutingKey.class.getDeclaredField("someField");
         Optional<String> key = RoutingKeyUtils.getMessageRoutingKey(field);
-        assertFalse(key.isPresent());
-    }
-
-    @Test
-    void getEntityRoutingKey_returnsFieldNameWhenRoutingKeyPresent() {
-        Optional<String> key = RoutingKeyUtils.getEntityRoutingKey(ChildWithRoutingKey.class);
-        assertTrue(key.isPresent());
-        assertEquals("id", key.get());
-    }
-
-    @Test
-    void getEntityRoutingKey_returnsEmptyWhenNoRoutingKey() {
-        Optional<String> key = RoutingKeyUtils.getEntityRoutingKey(ChildWithoutRoutingKey.class);
         assertFalse(key.isPresent());
     }
 }

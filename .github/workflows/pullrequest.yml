@@ -20,6 +20,8 @@ jobs:
         include:
           - java-version: 21
             sonar-enabled: true
+          - java-version: 25
+            sonar-enabled: false
 
     steps:
       - name: Checkout code

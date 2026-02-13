@@ -10,22 +10,22 @@ Whether you're running a small microservice or a large distributed system, this 
 
 This migration guide is structured as follows:
 
-Why Upgrade to Axon Framework 5::
+xref:migration:why-upgrade.adoc[Why Upgrade to Axon Framework 5]::
 Before you commit to migration, understand what you're gaining.
 This section explores the transformative new capabilities available only in Axon Framework 5: async-native architectures that eliminate ThreadLocal bottlenecks, Dynamic Consistency Boundaries (DCB) that liberate you from fixed aggregate structures, simplified configurations that adapt to your preferences, domain entities free from framework annotations, and a thriving ecosystem of first-class extensions like the Apache Kafka and PostgreSQL integrations.
 
-Prerequisites & System Requirements::
+xref:migration:prerequisites.adoc[Prerequisites & System Requirements]::
 Verify your infrastructure readiness.
 We cover Java version alignment, Spring Boot compatibility, and Axon Server requirements to ensure smooth migration.
 
-Application Design Problems Solved by Axon Framework 5::
+xref:migration:solved-architecture-choices.adoc[Application Design Problems Solved by Axon Framework 5]::
 Understand the "why" behind each major change.
 We walk through the application design problems that Axon Framework 5 solves, the architectural philosophy driving those solutions, and how they cascade through your codebase.
 
-Understanding the Architecture Principles of Axon Framework 5::
+xref:migration:understanding-architecture-principles.adoc[Understanding the Architecture Principles of Axon Framework 5]::
 Detailed explanations of how foundational components have evolved, providing a conceptual background how we adjusted the architecture principles for Axon Framework 5.
 
-Migration Paths::
+xref:migration:paths/index.adoc[Migration Paths]::
 The practical heart of the guide.
 Acts as the starting point for every code migration from Axon Framework 4 to Axon Framework 5. Contains numerous subsections (or "paths") showing how Framework 4 approached things like messaging, aggregates, and testing, and how those should be tackled in Axon Framework 5.
 
