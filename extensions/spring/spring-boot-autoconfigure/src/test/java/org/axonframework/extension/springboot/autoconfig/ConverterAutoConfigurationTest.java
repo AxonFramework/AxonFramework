@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,6 +222,16 @@ class ConverterAutoConfigurationTest {
         return getWrappedMessageConverter(((DelegatingEventConverter) eventConverter).delegate());
     }
 
+    @Test
+    void noObjectMapperBeanIsCreatedIfNoJacksonConverterIsSpecified() {
+        testContext.withUserConfiguration(JacksonlessTestContext.class).withPropertyValues(
+                "axon.axonserver.enabled=false",
+                "axon.converter.general=cbor",
+                "axon.converter.messages=avro",
+                "axon.converter.events=avro"
+        ).run(context -> assertThat(context).doesNotHaveBean("defaultAxonObjectMapper"));
+    }
+
     @Configuration
     @EnableAutoConfiguration(exclude = {
             JmxAutoConfiguration.class,
@@ -280,5 +290,17 @@ class ConverterAutoConfigurationTest {
         public CBORMapper cborMapper() {
             return new CBORMapper();
         }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {
+            JmxAutoConfiguration.class,
+            WebClientAutoConfiguration.class,
+            DataSourceAutoConfiguration.class,
+            HttpMessageConvertersAutoConfiguration.class,
+            JacksonAutoConfiguration.class
+    })
+    public static class JacksonlessTestContext {
+
     }
 }
