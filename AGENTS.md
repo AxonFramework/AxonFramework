@@ -6,6 +6,21 @@ This file provides guidance to AI Agents (Claude Code, Codex, Gemini, Cursor etc
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems based on Domain-Driven Design (DDD), Command-Query Responsibility Separation (CQRS), and Event Sourcing principles. This is **Axon Framework 5**, a major version under development with significant architectural changes from version 4.
 
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+## Workflow Orchestration
+
+1.  **Spec-first**: Enter plan mode for non-trivial tasks (3+ steps or architectural decisions). 
+2.  **Subagent strategy**: Use subagents liberally to keep main context clean. Offload research and parallel analysis. One task per subagent.
+3.  **Self-improvement**: After corrections, update `.ai/lessons.md` or relevant AGENTS.md. Write rules that prevent the same mistake.
+4.  **Verification**: Run tests, check build, suggest user verification. Ask: "Would a staff engineer approve this?"
+5.  **Elegance**: For non-trivial changes, pause and ask "is there a more elegant way?" Skip for simple fixes.
+6.  **Autonomous bug fixing**: When given a bug report, just fix it. Point at logs/errors, then resolve. Zero hand-holding.
+
 ### Key Architectural Principles
 
 - **JDK 21 Base**: Framework requires Java 21. During implementation use Java 21 features like sealed classes.
