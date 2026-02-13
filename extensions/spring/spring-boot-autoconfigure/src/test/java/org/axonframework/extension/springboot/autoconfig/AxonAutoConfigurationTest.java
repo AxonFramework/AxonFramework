@@ -50,6 +50,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -177,6 +179,12 @@ public class AxonAutoConfigurationTest {
         testContext.withUserConfiguration(DecoratorDefinitionContext.class).run(context -> {
             assertThat(context).hasBean("commandBus");
             assertThat(context).hasSingleBean(InterceptingCommandBus.class);
+
+            assertThat(context).hasBean("decoratorStarted");
+            AtomicBoolean decoratorStarted = context.getBean("decoratorStarted", AtomicBoolean.class);
+            await().pollDelay(Duration.ofMillis(50))
+                   .atMost(Duration.ofSeconds(1))
+                   .untilTrue(decoratorStarted);
         });
     }
 
@@ -386,11 +394,17 @@ public class AxonAutoConfigurationTest {
     public static class DecoratorDefinitionContext {
 
         @Bean
-        DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator() {
+        AtomicBoolean decoratorStarted() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator(AtomicBoolean decoratorStarted) {
             return DecoratorDefinition.forType(CommandBus.class)
                                       .with((config, name, delegate) ->
                                                     new InterceptingCommandBus(delegate, List.of(), List.of()))
-                                      .order(0);
+                                      .order(0)
+                                      .onStart(0, component -> decoratorStarted.set(true));
         }
     }
 

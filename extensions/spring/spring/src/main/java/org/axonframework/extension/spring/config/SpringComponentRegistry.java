@@ -334,7 +334,9 @@ public class SpringComponentRegistry implements
                 springComponent = decorator.decorate(springComponent);
             }
         }
-
+        // Initialize the components lifecycle handlers, by adapting them into SmartLifecycle beans through the SpringLifecycleRegistry.
+        // This ensures start or shutdown handlers included through a DecoratorDefinition also become SmartLifecycle beans.
+        springComponent.initLifecycle(configuration, lifecycleRegistry);
         return springComponent.resolve(configuration);
     }
 
