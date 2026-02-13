@@ -712,7 +712,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The configured segment change listeners.
      */
     public List<SegmentChangeListener> segmentChangeListeners() {
-        return List.copyOf(segmentChangeListeners);
+        return segmentChangeListeners;
     }
 
     /**

@@ -28,23 +28,21 @@ class PooledStreamingEventProcessorConfigurationTest {
 
     @Test
     void addSegmentChangeListenerAddsListenersWithoutOverriding() {
+        // given
         PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration();
         AtomicInteger releaseInvocations = new AtomicInteger();
-
         testSubject.addSegmentChangeListener(SegmentChangeListener.runOnRelease(
-                segment -> {
-                    releaseInvocations.incrementAndGet();
-                }
+                segment -> releaseInvocations.incrementAndGet()
         ));
         testSubject.addSegmentChangeListener(SegmentChangeListener.runOnRelease(
-                segment -> {
-                    releaseInvocations.incrementAndGet();
-                }
+                segment -> releaseInvocations.incrementAndGet()
         ));
 
+        // when
         testSubject.segmentChangeListeners()
                    .forEach(listener -> joinAndUnwrap(listener.onSegmentReleased(Segment.ROOT_SEGMENT)));
 
+        // then
         assertEquals(2, releaseInvocations.get());
     }
 

@@ -100,7 +100,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
-    private final List<SegmentChangeListener> segmentChangeListeners;
+    private final SegmentChangeListener segmentChangeListener;
     private final EventCriteria eventCriteria;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
@@ -112,6 +112,8 @@ class Coordinator {
     private final AtomicLong coordinationTaskGeneration = new AtomicLong(-1);
 
     private int errorWaitBackOff = 500;
+    private static final SegmentChangeListener NO_OP_SEGMENT_CHANGE_LISTENER =
+            new SimpleSegmentChangeListener(segment -> emptyCompletedFuture(), segment -> emptyCompletedFuture());
 
     /**
      * Instantiate a Builder to be able to create a {@code Coordinator}-instance. This builder <b>does not</b> validate
@@ -140,7 +142,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
-        this.segmentChangeListeners = List.copyOf(builder.segmentChangeListeners);
+        this.segmentChangeListener = builder.segmentChangeListener;
         this.eventCriteria = builder.eventCriteria;
     }
 
@@ -220,32 +222,25 @@ class Coordinator {
     }
 
     private CompletableFuture<Void> onSegmentClaimed(Segment segment) {
-        return notifySegmentChangeListeners(segment, listener -> listener.onSegmentClaimed(segment));
+        try {
+            return Objects.requireNonNull(
+                    segmentChangeListener.onSegmentClaimed(segment),
+                    "Segment change listener may not return null for segment " + segment
+            );
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     private CompletableFuture<Void> onSegmentReleased(Segment segment) {
-        return notifySegmentChangeListeners(segment, listener -> listener.onSegmentReleased(segment));
-    }
-
-    private CompletableFuture<Void> notifySegmentChangeListeners(
-            Segment segment,
-            Function<SegmentChangeListener, CompletableFuture<Void>> callback
-    ) {
-        CompletableFuture<Void> result = emptyCompletedFuture();
-        for (SegmentChangeListener listener : segmentChangeListeners) {
-            result = result.thenCompose(unused -> {
-                try {
-                    CompletableFuture<Void> callbackResult = callback.apply(listener);
-                    return Objects.requireNonNull(
-                            callbackResult,
-                            "Segment change listener may not return null for segment " + segment
-                    );
-                } catch (Exception e) {
-                    return CompletableFuture.failedFuture(e);
-                }
-            });
+        try {
+            return Objects.requireNonNull(
+                    segmentChangeListener.onSegmentReleased(segment),
+                    "Segment change listener may not return null for segment " + segment
+            );
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
-        return result;
     }
 
     /**
@@ -460,7 +455,7 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
-        private final List<SegmentChangeListener> segmentChangeListeners = new ArrayList<>();
+        private SegmentChangeListener segmentChangeListener = NO_OP_SEGMENT_CHANGE_LISTENER;
         private EventCriteria eventCriteria = EventCriteria.havingAnyTag();
 
         /**
@@ -670,7 +665,9 @@ class Coordinator {
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder addSegmentChangeListener(SegmentChangeListener segmentChangeListener) {
-            this.segmentChangeListeners.add(Objects.requireNonNull(segmentChangeListener, "Segment change listener may not be null"));
+            this.segmentChangeListener = this.segmentChangeListener.andThen(
+                    Objects.requireNonNull(segmentChangeListener, "Segment change listener may not be null")
+            );
             return this;
         }
 
