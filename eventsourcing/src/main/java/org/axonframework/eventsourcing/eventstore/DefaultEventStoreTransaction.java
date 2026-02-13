@@ -200,6 +200,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     AppendCondition appendCondition =
                             context.updateResource(appendConditionKey, current -> {
                                 if (current == null || AppendCondition.none().equals(current)) {
+                                    if (explicitAppendCriteria != null) {
+                                        // Standalone append criteria without sourcing.
+                                        // Marker will be resolved from the latest token.
+                                        return AppendCondition.withCriteria(explicitAppendCriteria);
+                                    }
                                     return AppendCondition.none();
                                 }
                                 return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
@@ -207,16 +212,39 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                             });
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
-                    return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
-                                             .thenApply(DefaultEventStoreTransaction::castTransaction)
-                                             .thenAccept(tx -> {
-                                                 processingContext.onCommit(c -> tx.commit(c)
-                                                     .thenAccept(v -> processingContext.onAfterCommit(c2 -> doAfterCommit(c2, tx, v)))
-                                                 );
-                                                 processingContext.onError((c, p, e) -> tx.rollback(c));
-                                             });
+                    return resolveAppendCondition(appendCondition)
+                            .thenCompose(condition ->
+                                    eventStorageEngine.appendEvents(condition, processingContext, eventQueue)
+                                                     .thenApply(DefaultEventStoreTransaction::castTransaction)
+                                                     .thenAccept(tx -> {
+                                                         processingContext.onCommit(c -> tx.commit(c)
+                                                             .thenAccept(v -> processingContext.onAfterCommit(c2 -> doAfterCommit(c2, tx, v)))
+                                                         );
+                                                         processingContext.onError((c, p, e) -> tx.rollback(c));
+                                                     })
+                            );
                 }
         );
+    }
+
+    /**
+     * Resolves the {@link AppendCondition} by obtaining the {@link ConsistencyMarker} from the
+     * {@link EventStorageEngine#latestToken(ProcessingContext) latest token} when no sourcing occurred.
+     * <p>
+     * When {@link #source(SourcingCondition)} is never called (e.g., standalone {@code @AppendCriteriaBuilder}),
+     * the append condition starts with {@link ConsistencyMarker#ORIGIN}. Rather than checking against all events
+     * from the beginning of time, this method resolves the latest position from the store, ensuring consistency
+     * is only checked against events appended concurrently.
+     */
+    private CompletableFuture<AppendCondition> resolveAppendCondition(AppendCondition appendCondition) {
+        if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN
+                && processingContext.getResource(appendPositionKey) == null) {
+            return eventStorageEngine.latestToken(processingContext)
+                                     .thenApply(token -> appendCondition.withMarker(
+                                             eventStorageEngine.consistencyMarker(token)
+                                     ));
+        }
+        return CompletableFuture.completedFuture(appendCondition);
     }
 
     private <R> CompletableFuture<ConsistencyMarker> doAfterCommit(ProcessingContext context,
