@@ -4,8 +4,8 @@ import org.axonframework.examples.demo.university.faculty.events.CourseCreated;
 import org.axonframework.examples.demo.university.faculty.events.CourseRenamed;
 import org.axonframework.examples.demo.university.shared.ids.CourseId;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 
 import java.util.HashMap;
 import java.util.Map;

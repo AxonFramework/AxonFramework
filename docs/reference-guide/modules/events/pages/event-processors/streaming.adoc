@@ -937,8 +937,8 @@ Hence, for the `PropertySequencingPolicy`, you are able to omit the first parame
 [source,java]
 ----
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -970,8 +970,8 @@ Thus, if you have an Event Handling Component with a `@SequencingPolicy` on the 
 [source,java]
 ----
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -1002,7 +1002,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 public class AxonConfig {
 

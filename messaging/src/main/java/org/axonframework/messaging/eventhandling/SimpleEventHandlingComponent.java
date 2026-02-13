@@ -25,10 +25,10 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 
 import java.util.List;
 import java.util.Objects;

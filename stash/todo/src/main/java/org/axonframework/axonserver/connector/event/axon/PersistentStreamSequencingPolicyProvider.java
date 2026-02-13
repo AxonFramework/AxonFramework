@@ -16,9 +16,13 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.sequencing.FullConcurrencyPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.sequencing.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -99,7 +103,7 @@ public class PersistentStreamSequencingPolicyProvider
         return (event, context) -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
-    private Object sequencingIdentifier(EventMessage event) {
+    private Object sequencingIdentifier(Message event) {
         if (SEQUENTIAL_PER_AGGREGATE_POLICY.equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage) event).getAggregateIdentifier();

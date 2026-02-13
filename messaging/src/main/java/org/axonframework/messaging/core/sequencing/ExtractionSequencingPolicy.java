@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
- * on a given property extractor.
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the message payload based on a
+ * given property extractor.
  *
- * @param <T> The type of the supported event payloads.
+ * @param <T> The type of the supported payload.
  * @param <K> The type of the extracted property.
  * @author Mateusz Nowak
  * @author Nils Christian Ehmke
@@ -42,12 +44,10 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     /**
      * Creates a new instance of the {@link ExtractionSequencingPolicy}, which extracts the sequence identifier from the
-     * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
+     * message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
      *
-     * @param payloadClass        The class of the supported event payloads.
-     * @param identifierExtractor The function to extract the sequence identifier from the event payload.
-     * @param eventConverter      The converter to use to convert event messages if their payload is not of the expected
-     *                            type.
+     * @param payloadClass        The class of the supported payload.
+     * @param identifierExtractor The function to extract the sequence identifier from the payload.
      */
     public ExtractionSequencingPolicy(
             @Nonnull Class<T> payloadClass,
@@ -60,14 +60,14 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(
-            @Nonnull final EventMessage eventMessage,
+            @Nonnull final Message message,
             @Nonnull ProcessingContext context
     ) {
-        Objects.requireNonNull(eventMessage, "EventMessage may not be null");
+        Objects.requireNonNull(message, "Message may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
 
-        var eventConverter = context.component(EventConverter.class);
-        var convertedPayload = eventMessage.payloadAs(payloadClass, eventConverter);
+        var converter = message instanceof EventMessage ? context.component(EventConverter.class) : context.component(MessageConverter.class);
+        var convertedPayload = message.payloadAs(payloadClass, converter);
         return Optional.ofNullable(identifierExtractor.apply(convertedPayload));
     }
 }

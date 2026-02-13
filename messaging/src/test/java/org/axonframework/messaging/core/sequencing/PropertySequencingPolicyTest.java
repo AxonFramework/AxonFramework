@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

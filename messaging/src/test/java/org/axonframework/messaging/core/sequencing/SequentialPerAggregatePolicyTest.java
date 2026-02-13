@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -84,6 +88,20 @@ class SequentialPerAggregatePolicyTest {
         assertNull(sequenceIdentifier);
     }
 
+    @Test
+    void wrongMessageTypeYieldsAxonConfigurationException() {
+        final Message message = new GenericCommandMessage(new MessageType("command"), "payload");
+        final ProcessingContext context = new StubProcessingContext();
+
+        final AxonConfigurationException acExc = assertThrows(AxonConfigurationException.class,
+                                                              () -> testSubject.getSequenceIdentifierFor(
+                                                                      message,
+                                                                      context));
+        assertEquals(
+                "SequentialPerAggregatePolicy is only applicable for sequencing EventMessages, but handled [org.axonframework.messaging.commandhandling.GenericCommandMessage]",
+                acExc.getMessage());
+    }
+
     @Nonnull
     private EventWithProcessingContext eventWithProcessingContext(String aggregateIdentifier) {
         EventMessage event = EventTestUtils.asEventMessage("payload");
@@ -95,5 +113,4 @@ class SequentialPerAggregatePolicyTest {
     private record EventWithProcessingContext(EventMessage event, StubProcessingContext processingContext) {
 
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
-import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
- * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
- * {@link Metadata}, based on a given {@code metadataKey}. In the absence of the given
- * {@code metadataKey} on the {@link Metadata}, the {@link Optional#empty()} is returned.
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link Message}'s
+ * {@link Metadata}, based on a given {@code metadataKey}. In the absence of the given {@code metadataKey} on the
+ * {@link Metadata}, the {@link Optional#empty()} is returned.
  *
  * @author Lucas Campos
  * @since 4.6.0
@@ -51,7 +51,7 @@ public class MetadataSequencingPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        return Optional.ofNullable(event.metadata().get(metadataKey));
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        return Optional.ofNullable(message.metadata().get(metadataKey));
     }
 }

@@ -27,18 +27,18 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.sequencing.FullConcurrencyPolicy;
+import org.axonframework.messaging.core.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.MetadataSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.axonframework.messaging.core.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 
 /**
  * Test class validating the {@link SimpleEventHandlingComponent} sequencing policy behavior. Verifies that

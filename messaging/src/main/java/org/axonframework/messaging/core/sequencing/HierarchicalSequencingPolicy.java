@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Objects;
@@ -25,10 +25,10 @@ import java.util.Optional;
 
 /**
  * Implementation of {@link SequencingPolicy} that combines two policies in a fallback pattern. When the primary policy
- * fails to determine a sequence identifier for an event (returns {@code Optional.empty()}), this implementation will
+ * fails to determine a sequence identifier for a message (returns {@code Optional.empty()}), this implementation will
  * delegate to a secondary fallback policy.
  * <p>
- * This allows for composing sequencing strategies where certain event types might be handled by specialized policies,
+ * This allows for composing sequencing strategies where certain message types might be handled by specialized policies,
  * falling back to more generic approaches when specialized sequencing fails.
  *
  * @author Mateusz Nowak
@@ -52,8 +52,8 @@ public class HierarchicalSequencingPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        return primary.getSequenceIdentifierFor(event, context)
-                      .or(() -> secondary.getSequenceIdentifierFor(event, context));
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        return primary.getSequenceIdentifierFor(message, context)
+                      .or(() -> secondary.getSequenceIdentifierFor(message, context));
     }
 }

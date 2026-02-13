@@ -6,7 +6,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
 public class StudentSubscribedNotifierConfiguration {

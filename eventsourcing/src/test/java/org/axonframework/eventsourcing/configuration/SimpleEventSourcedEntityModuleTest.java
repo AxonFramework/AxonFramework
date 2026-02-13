@@ -16,19 +16,20 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -174,15 +175,16 @@ class SimpleEventSourcedEntityModuleTest {
     void registersAnEntityCommandHandlingComponentWithTheCommandBus() {
         CommandBus commandBus = mock(CommandBus.class);
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
-        // Registers the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor.
+        // Registers the NoOpSequencingPolicy, thus removing the CommandSequencingInterceptor.
         // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         EventSourcingConfigurer.create()
                                .componentRegistry(cr -> cr.registerComponent(
                                        CorrelationDataProviderRegistry.class,
                                        c -> new DefaultCorrelationDataProviderRegistry())
                                )
-                               .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                             c -> NoOpCommandSequencingPolicy.INSTANCE))
+                               .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                             MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                             c -> NoOpSequencingPolicy.INSTANCE))
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();

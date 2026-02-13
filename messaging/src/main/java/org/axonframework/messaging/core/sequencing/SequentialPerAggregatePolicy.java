@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -27,9 +29,13 @@ import java.util.Optional;
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
  * aggregates may be processed in different threads.
+ * <p>
+ * This policy only applies for event messages, for other message types it will throw an
+ * {@link AxonConfigurationException} to indicate a misconfiguration.
  *
  * @author Allard Buijze
  * @since 0.3.0
+ *
  */
 public class SequentialPerAggregatePolicy implements SequencingPolicy {
 
@@ -45,9 +51,15 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        Objects.requireNonNull(event, "EventMessage may not be null.");
-        Objects.requireNonNull(context, "ProcessingContext may not be null.");
-        return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        Objects.requireNonNull(message, "Message may not be null.");
+        if (message instanceof EventMessage event) {
+            Objects.requireNonNull(context, "ProcessingContext may not be null.");
+            return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+        } else {
+            throw new AxonConfigurationException(
+                    "SequentialPerAggregatePolicy is only applicable for sequencing EventMessages, but handled [%s]".formatted(
+                            message.getClass().getName()));
+        }
     }
 }

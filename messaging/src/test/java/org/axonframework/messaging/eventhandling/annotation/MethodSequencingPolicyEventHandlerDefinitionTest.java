@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotatedMessageHandlingMemberDefinition;
@@ -26,12 +27,11 @@ import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFac
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.core.sequencing.MetadataSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,13 +196,13 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings({"unused", "DefaultAnnotationParam"})
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
         void sequentialPolicyMethod(String payload) {
         }
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(
                 type = MetadataSequencingPolicy.class,
                 parameters = {"userId"}
         )
@@ -211,7 +211,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(
                 type = PropertySequencingPolicy.class,
                 parameters = {"aggregateId"}
         )
@@ -220,7 +220,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(
                 type = MetadataSequencingPolicy.class,
                 parameters = {"param1", "param2", "param3"}
         )
@@ -229,7 +229,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(
                 type = InvalidClassPositionPolicy.class,
                 parameters = {"someParameter"}
         )
@@ -260,7 +260,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
 
         @Override
-        public java.util.Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event,
+        public java.util.Optional<Object> getSequenceIdentifierFor(@Nonnull Message event,
                                                                    @Nonnull ProcessingContext context) {
             return java.util.Optional.of("test");
         }
@@ -268,7 +268,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class with class-level annotation
     @SuppressWarnings("DefaultAnnotationParam")
-    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class ClassLevelPolicyTest {
 
         @SuppressWarnings("unused")
@@ -279,12 +279,12 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class where method overrides class-level annotation
     @SuppressWarnings("DefaultAnnotationParam")
-    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class MethodOverridesClassTest {
 
         @SuppressWarnings("unused")
         @EventHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(
                 type = MetadataSequencingPolicy.class,
                 parameters = {"override"}
         )

@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Objects;

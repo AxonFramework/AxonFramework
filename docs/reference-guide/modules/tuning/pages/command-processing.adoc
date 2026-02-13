@@ -15,7 +15,7 @@ Command sequencing solves this problem by ensuring that commands targeting the s
 
 === Default behavior
 
-Command sequencing is enabled by default in Axon Framework. The framework automatically configures a `CommandSequencingInterceptor` with the `RoutingKeyCommandSequencingPolicy`, which sequences commands based on their routing key.
+Command sequencing is enabled by default in Axon Framework. The framework automatically configures a `CommandSequencingInterceptor` with the `RoutingKeySequencingPolicy`, which sequences commands based on their routing key.
 
 The default behavior provides an optimal balance between consistency and performance:
 
@@ -50,9 +50,9 @@ public interface CommandSequencingPolicy {
 
 Axon Framework provides the following implementations:
 
-* **`RoutingKeyCommandSequencingPolicy` (default)**: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and thus can execute concurrently. This is the default policy and works well for most applications.
+* **`RoutingKeySequencingPolicy` (default)**: Sequences commands by their routing key, which typically corresponds to the entity identifier. Commands with null or empty routing keys are not sequenced and thus can execute concurrently. This is the default policy and works well for most applications.
 
-* **`NoOpCommandSequencingPolicy`**: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.
+* **`NoOpSequencingPolicy`**: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.
 
 You can implement the `CommandSequencingPolicy` interface to create custom sequencing logic based on command metadata, payload properties, or any other criteria to set up your own sequencing logic.
 
@@ -60,11 +60,11 @@ You can implement the `CommandSequencingPolicy` interface to create custom seque
 
 ==== Custom sequencing policy
 
-You can implement custom sequencing logic by implementing the `CommandSequencingPolicy` interface. For example, to sequence commands by tenant ID from metadata:
+You can implement custom sequencing logic by implementing the `SequencingPolicy` interface. For example, to sequence commands by tenant ID from metadata:
 
 [source,java]
 ----
-public class TenantBasedSequencingPolicy implements CommandSequencingPolicy {
+public class TenantBasedSequencingPolicy implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(CommandMessage command,
@@ -85,7 +85,8 @@ Axon Configuration API::
 [source,java]
 ----
 public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
-    configurer.componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+    configurer.componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
             c -> new TenantBasedSequencingPolicy()));
 }
 ----
@@ -137,7 +138,7 @@ public class SelectiveSequencingPolicy implements CommandSequencingPolicy {
 
 ==== Disabling command sequencing
 
-If you need to disable command sequencing entirely, register a `NoOpCommandSequencingPolicy`:
+If you need to disable command sequencing entirely, register a `NoOpSequencingPolicy`:
 
 [tabs]
 ====
@@ -147,7 +148,8 @@ Axon Configuration API::
 [source,java]
 ----
 public void registerCommandSequencingPolicy(MessagingConfigurer configurer) {
-    configurer.componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
+    configurer.componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
             c -> NoOpCommandSequencingPolicy.INSTANCE));
 }
 ----
@@ -163,7 +165,7 @@ public class AxonConfig {
 
     @Bean
     public CommandSequencingPolicy commandSequencingPolicy() {
-        return NoOpCommandSequencingPolicy.INSTANCE;
+        return NoOpSequencingPolicy.INSTANCE;
     }
 }
 ----

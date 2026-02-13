@@ -33,9 +33,6 @@ import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGate
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.CommandSequencingInterceptor;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.RoutingKeyCommandSequencingPolicy;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -54,6 +51,9 @@ import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorR
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.RoutingKeySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -98,7 +98,7 @@ import java.util.List;
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DefaultCorrelationDataProviderRegistry} for class {@link CorrelationDataProviderRegistry} containing the {@link MessageOriginProvider}.</li>
- *     <li>Registers a {@link RoutingKeyCommandSequencingPolicy} for class {@link CommandSequencingPolicy}</li>
+ *     <li>Registers a {@link RoutingKeySequencingPolicy} for class {@link SequencingPolicy}</li>
  *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
@@ -146,6 +146,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
      * applied.
      */
     public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
+    /**
+     * The component name for the default command sequencing policy.
+     */
+    public static final String COMMAND_SEQUENCING_POLICY = "commandSequencingPolicy";
 
     @Override
     public int order() {
@@ -167,7 +171,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CorrelationDataProviderRegistry.class,
                                       MessagingConfigurationDefaults::defaultCorrelationDataProviderRegistry)
-                .registerIfNotPresent(CommandSequencingPolicy.class,
+                .registerIfNotPresent(SequencingPolicy.class,
+                                      COMMAND_SEQUENCING_POLICY,
                                       MessagingConfigurationDefaults::defaultCommandSequencingPolicy)
                 .registerIfNotPresent(DispatchInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
@@ -219,8 +224,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultCorrelationDataProviderRegistry().registerProvider(c -> new MessageOriginProvider());
     }
 
-    private static CommandSequencingPolicy defaultCommandSequencingPolicy(Configuration config) {
-        return RoutingKeyCommandSequencingPolicy.INSTANCE;
+    private static SequencingPolicy defaultCommandSequencingPolicy(Configuration config) {
+        return RoutingKeySequencingPolicy.INSTANCE;
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {
@@ -324,8 +329,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                     .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
         }
 
-        CommandSequencingPolicy commandSequencingPolicy = config.getComponent(CommandSequencingPolicy.class);
-        if (!(commandSequencingPolicy instanceof NoOpCommandSequencingPolicy)) {
+        SequencingPolicy commandSequencingPolicy = config.getComponent(SequencingPolicy.class,
+                                                                       COMMAND_SEQUENCING_POLICY);
+        if (!(commandSequencingPolicy instanceof NoOpSequencingPolicy)) {
             handlerInterceptorRegistry = handlerInterceptorRegistry
                     .registerCommandInterceptor(c -> new CommandSequencingInterceptor<>(commandSequencingPolicy));
         }

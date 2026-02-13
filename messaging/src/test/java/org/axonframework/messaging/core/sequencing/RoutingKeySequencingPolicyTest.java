@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.commandhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -30,18 +34,24 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link RoutingKeyCommandSequencingPolicy}
+ * Test class validating the {@link RoutingKeySequencingPolicy}
  *
  * @author Jakob Hatzl
  */
-class RoutingKeyCommandSequencingPolicyTest {
+class RoutingKeySequencingPolicyTest {
+
+    private RoutingKeySequencingPolicy testSubject;
+
+    @BeforeEach
+    void setUp() {
+        testSubject = RoutingKeySequencingPolicy.INSTANCE;
+    }
 
     @Test
     void sameRoutingKeySameIdentifier() {
         final String exPayload1 = "payload1";
         final String exPayload2 = "payload2";
         final String exRoutingKey = "exRoutingKey";
-        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey),
                                                                     new StubProcessingContext()).orElseThrow();
@@ -57,7 +67,6 @@ class RoutingKeyCommandSequencingPolicyTest {
         final String exPayload2 = "payload2";
         final String exRoutingKey1 = "exRoutingKey1";
         final String exRoutingKey2 = "exRoutingKey2";
-        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey1),
                                                                     new StubProcessingContext()).orElseThrow();
@@ -71,11 +80,25 @@ class RoutingKeyCommandSequencingPolicyTest {
     @NullAndEmptySource
     void handlesNullAndEmptyAsMissingRoutingKey(String exRoutingKey) {
         final String exPayload = "payload1";
-        final RoutingKeyCommandSequencingPolicy testSubject = RoutingKeyCommandSequencingPolicy.INSTANCE;
 
         Optional<Object> acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload, exRoutingKey),
                                                                               new StubProcessingContext());
         assertTrue(acIdentifier1.isEmpty());
+    }
+
+
+    @Test
+    void wrongMessageTypeYieldsAxonConfigurationException() {
+        final Message message = new GenericEventMessage(new MessageType("event"), "payload");
+        final ProcessingContext context = new StubProcessingContext();
+
+        final AxonConfigurationException acExc = assertThrows(AxonConfigurationException.class,
+                                                              () -> testSubject.getSequenceIdentifierFor(
+                                                                      message,
+                                                                      context));
+        assertEquals(
+                "RoutingKeySequencingPolicy is only applicable for sequencing CommandMessages, but handled [org.axonframework.messaging.eventhandling.GenericEventMessage]",
+                acExc.getMessage());
     }
 
     private static CommandMessage asCommandMessage(String payload, String routingKey) {

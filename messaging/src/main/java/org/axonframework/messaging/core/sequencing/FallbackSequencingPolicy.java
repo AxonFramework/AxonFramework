@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Implementation of {@link SequencingPolicy} that provides exception-based fallback behavior. When the delegate
- * policy throws a specified exception type, this implementation will catch it and delegate to a fallback policy.
+ * Implementation of {@link SequencingPolicy} that provides exception-based fallback behavior. When the delegate policy
+ * throws a specified exception type, this implementation will catch it and delegate to a fallback policy.
  * <p>
  * This allows for composing sequencing strategies where certain policies might fail with exceptions for unsupported
- * event types, falling back to more generic approaches when exceptions occur.
+ * message types, falling back to more generic approaches when exceptions occur.
  *
  * @param <E> The type of exception to catch and handle.
  * @author Mateusz Nowak
@@ -53,18 +53,18 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
     public FallbackSequencingPolicy(@Nonnull SequencingPolicy delegate,
                                     @Nonnull SequencingPolicy fallback,
                                     @Nonnull Class<E> exceptionType) {
-        this.delegate =  Objects.requireNonNull(delegate, "Delegate may not be null.");
+        this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null.");
         this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
-        this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");;
+        this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         try {
-            return delegate.getSequenceIdentifierFor(event, context);
+            return delegate.getSequenceIdentifierFor(message, context);
         } catch (Exception e) {
             if (exceptionType.isInstance(e)) {
-                return fallback.getSequenceIdentifierFor(event, context);
+                return fallback.getSequenceIdentifierFor(message, context);
             }
             throw e;
         }

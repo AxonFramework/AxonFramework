@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
 /**
- * SequencingPolicy that requires sequential handling of all events delivered to an event handler.
+ * SequencingPolicy that requires sequential handling of all messages delivered to a message handler.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -46,7 +46,7 @@ public class SequentialPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage task, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

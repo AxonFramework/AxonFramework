@@ -31,8 +31,8 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Listen
 import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;

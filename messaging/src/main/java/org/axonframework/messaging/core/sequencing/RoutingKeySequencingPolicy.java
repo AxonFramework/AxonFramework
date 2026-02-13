@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.commandhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jspecify.annotations.NonNull;
 
@@ -24,31 +26,40 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * {@link CommandSequencingPolicy} that requires sequential processing of commands targeting the same
+ * {@link RoutingKeySequencingPolicy} that requires sequential processing of commands targeting the same
  * {@link CommandMessage#routingKey() routing key}.
  * <p>
  * For a {@code null} or {@code empty} routing key of a {@link CommandMessage} the policy returns
  * {@link Optional#empty()}.
+ * <p>
+ * This policy only applies for command messages, for other message types it will throw an
+ * {@link AxonConfigurationException} to indicate a misconfiguration.
  *
  * @author Jakob Hatzl
  * @since 5.0.3
  */
-public class RoutingKeyCommandSequencingPolicy implements CommandSequencingPolicy {
+public class RoutingKeySequencingPolicy implements SequencingPolicy {
 
     /**
-     * Singleton instance of the {@link RoutingKeyCommandSequencingPolicy}
+     * Singleton instance of the {@link RoutingKeySequencingPolicy}
      */
-    public static final RoutingKeyCommandSequencingPolicy INSTANCE = new RoutingKeyCommandSequencingPolicy();
+    public static final RoutingKeySequencingPolicy INSTANCE = new RoutingKeySequencingPolicy();
 
-    private RoutingKeyCommandSequencingPolicy() {
+    private RoutingKeySequencingPolicy() {
         // empty private singleton constructor
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage command,
+    public Optional<Object> getSequenceIdentifierFor(@NonNull Message message,
                                                      @NonNull ProcessingContext context) {
-        return command.routingKey()
-                      .filter(Predicate.not(String::isEmpty))
-                      .map(Object.class::cast);
+        if (message instanceof CommandMessage command) {
+            return command.routingKey()
+                          .filter(Predicate.not(String::isEmpty))
+                          .map(Object.class::cast);
+        } else {
+            throw new AxonConfigurationException(
+                    "RoutingKeySequencingPolicy is only applicable for sequencing CommandMessages, but handled [%s]".formatted(
+                            message.getClass().getName()));
+        }
     }
 }

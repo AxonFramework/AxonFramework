@@ -27,7 +27,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;

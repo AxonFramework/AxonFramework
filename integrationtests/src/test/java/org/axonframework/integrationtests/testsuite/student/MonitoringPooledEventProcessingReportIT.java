@@ -22,7 +22,7 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;

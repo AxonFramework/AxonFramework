@@ -18,12 +18,12 @@ package org.axonframework.messaging.commandhandling.interception;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -57,7 +57,7 @@ class CommandSequencingInterceptorTest {
     private static final CommandMessage TEST_MESSAGE_2 = new GenericCommandMessage(new MessageType("message"),
                                                                                    "payload");
     @Mock
-    private CommandSequencingPolicy sequencingPolicy;
+    private SequencingPolicy sequencingPolicy;
     @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain1;
     @Mock
