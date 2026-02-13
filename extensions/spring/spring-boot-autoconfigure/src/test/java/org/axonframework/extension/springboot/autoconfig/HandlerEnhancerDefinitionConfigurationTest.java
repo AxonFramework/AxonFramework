@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot;
+package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3496")
 class HandlerEnhancerDefinitionConfigurationTest {
 
     private static final AtomicBoolean VERIFY_ENHANCER = new AtomicBoolean(false);
