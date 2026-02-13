@@ -20,18 +20,19 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.InterceptingEventBus;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.InterceptingEventBus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
 
 import java.time.Instant;
 import java.util.List;
@@ -101,10 +102,10 @@ public class InterceptingEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+    public EventStoreTransaction transaction(@Nullable EventCriteria appendCriteria,
                                              @Nonnull ProcessingContext processingContext) {
         // Set the delegate transaction to ensure the InterceptingAppender can reach the correct EventStoreTransaction.
-        EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(appendCondition, processingContext);
+        EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(appendCriteria, processingContext);
         // Set the intercepting transaction to ensure subsequent transaction operation receive the same intercepting transaction.
         return processingContext.computeResourceIfAbsent(
                 interceptingTransactionKey,
@@ -115,8 +116,9 @@ public class InterceptingEventStore implements EventStore {
     /**
      * Gets the {@link EventStoreTransaction} from given {@code context}, if present.
      * <p>
-     * If not present, we invoked the delegate {@link EventStore#transaction(AppendCondition, ProcessingContext)} operation
-     * and set it afterward. This is deliberately not done in a
+     * If not present, we invoked the delegate
+     * {@link EventStore#transaction(EventCriteria, ProcessingContext)} operation and set it afterward.
+     * This is deliberately not done in a
      * {@link ProcessingContext#computeResourceIfAbsent(Context.ResourceKey, Supplier)}, as the delegate
      * {@link EventStore} typically uses the {@code computeResourceIfAbsent}. Hence, we are optionally faced with
      * concurrency exceptions by using {@code computeResourceIfAbsent} here.
@@ -129,18 +131,18 @@ public class InterceptingEventStore implements EventStore {
      * Lastly, note that we are making this loop to ensure the {@code InterceptingEventStore} does not have to create a
      * {@link DefaultMessageDispatchInterceptorChain} for every new transaction!
      *
-     * @param appendCondition The optional explicit {@link AppendCondition} for consistency checking.
-     * @param context         The context to retrieve the delegate {@code EventStoreTransaction} from. When not present, it will
-     *                        be added to this context.
+     * @param appendCriteria The optional explicit {@link EventCriteria} for consistency checking.
+     * @param context        The context to retrieve the delegate {@code EventStoreTransaction} from. When not present,
+     *                       it will be added to this context.
      * @return The {@code EventStoreTransaction} from the delegate {@link EventStore}.
      */
-    private EventStoreTransaction getAndSetDelegateTransaction(@Nullable AppendCondition appendCondition,
+    private EventStoreTransaction getAndSetDelegateTransaction(@Nullable EventCriteria appendCriteria,
                                                                @Nonnull ProcessingContext context) {
         EventStoreTransaction delegateTransaction;
         if (context.containsResource(delegateTransactionKey)) {
             delegateTransaction = context.getResource(delegateTransactionKey);
         } else {
-            delegateTransaction = delegate.transaction(appendCondition, context);
+            delegateTransaction = delegate.transaction(appendCriteria, context);
             context.putResourceIfAbsent(delegateTransactionKey, delegateTransaction);
         }
         return delegateTransaction;

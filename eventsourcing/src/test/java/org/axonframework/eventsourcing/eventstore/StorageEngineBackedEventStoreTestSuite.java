@@ -39,7 +39,6 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
 
-import static org.axonframework.eventsourcing.eventstore.AppendCondition.withCriteria;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -448,12 +447,12 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                 CountDownLatch latch1 = new CountDownLatch(1);
 
                 EventCriteria sourceCriteria = EventCriteria.havingTags(TAG1).or().havingTags(TAG2);
-                AppendCondition appendCondition = withCriteria(EventCriteria.havingTags(TAG1));
+                EventCriteria appendCriteria = EventCriteria.havingTags(TAG1);
 
                 // when
                 // Transaction 1: Source TAG1+TAG2, but append with criteria on TAG1 only
                 workUnit1.runOnInvocation(pc -> {
-                    EventStoreTransaction tx = eventStore.transaction(appendCondition, pc);
+                    EventStoreTransaction tx = eventStore.transaction(appendCriteria, pc);
                     MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(sourceCriteria));
 
                     // Should see all 5 events (3 TAG1 + 2 TAG2)
@@ -504,12 +503,12 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                 CountDownLatch latch1 = new CountDownLatch(1);
 
                 EventCriteria sourceCriteria = EventCriteria.havingTags(TAG1).or().havingTags(TAG2);
-                AppendCondition appendCondition = withCriteria(EventCriteria.havingTags(TAG1));
+                EventCriteria appendCriteria = EventCriteria.havingTags(TAG1);
 
                 // when
                 // Transaction 1: Source TAG1+TAG2, append with criteria on TAG1
                 workUnit1.runOnInvocation(pc -> {
-                    EventStoreTransaction tx = eventStore.transaction(appendCondition, pc);
+                    EventStoreTransaction tx = eventStore.transaction(appendCriteria, pc);
                     MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(sourceCriteria));
 
                     assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(5);
@@ -562,9 +561,9 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
 
                 // when
                 // Transaction 1: Source both, append with TAG1 criteria
-                AppendCondition appendCondition1 = withCriteria(EventCriteria.havingTags(TAG1));
+                EventCriteria appendCriteria1 = EventCriteria.havingTags(TAG1);
                 workUnit1.runOnInvocation(pc -> {
-                    EventStoreTransaction tx = eventStore.transaction(appendCondition1, pc);
+                    EventStoreTransaction tx = eventStore.transaction(appendCriteria1, pc);
                     tx.source(SourcingCondition.conditionFor(sourceCriteria)).reduce(0, (c, m) -> ++c).join();
 
                     sourcingFinished.countDown();
@@ -574,9 +573,9 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                 });
 
                 // Transaction 2: Source both, append with TAG2 criteria
-                AppendCondition appendCondition2 = withCriteria(EventCriteria.havingTags(TAG2));
+                EventCriteria appendCriteria2 = EventCriteria.havingTags(TAG2);
                 workUnit2.runOnInvocation(pc -> {
-                    EventStoreTransaction tx = eventStore.transaction(appendCondition2, pc);
+                    EventStoreTransaction tx = eventStore.transaction(appendCriteria2, pc);
                     tx.source(SourcingCondition.conditionFor(sourceCriteria)).reduce(0, (c, m) -> ++c).join();
 
                     sourcingFinished.countDown();

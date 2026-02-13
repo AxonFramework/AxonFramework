@@ -18,11 +18,12 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
     private final Function<EventMessage, TaggedEventMessage<?>> eventTagger;
-    private final AppendCondition explicitAppendCondition;
+    private final EventCriteria explicitAppendCriteria;
 
     private final List<Consumer<EventMessage>> callbacks;
 
@@ -84,28 +85,33 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     /**
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}, with an
-     * optional explicit {@link AppendCondition} for consistency checking.
+     * optional explicit {@link EventCriteria} for consistency checking.
      * <p>
      * This constructor enables Dynamic Consistency Boundaries (DCB) where the criteria used for sourcing events
      * (loading state) can differ from the criteria used for consistency checking (appending events).
+     * <p>
+     * The provided {@code explicitAppendCriteria} only controls <em>which</em> events to check for conflicts.
+     * The {@link ConsistencyMarker} (read position) is always determined by the events returned during
+     * {@link #source(SourcingCondition) sourcing} — these two concerns are orthogonal.
      *
-     * @param eventStorageEngine       The {@link EventStorageEngine} used to {@link #appendEvent(EventMessage) append events}
-     *                                 with.
-     * @param processingContext        The {@link ProcessingContext} from which to
-     *                                 {@link #appendEvent(EventMessage) append events} and attach resources to.
-     * @param eventTagger              A function that will process each {@link EventMessage} to attach
-     *                                 {@link Tag Tags}, before it is added to the transaction.
-     * @param explicitAppendCondition  An optional explicit {@link AppendCondition} for consistency checking.
-     *                                 If {@code null}, the append criteria will be derived from the source criteria.
+     * @param eventStorageEngine    The {@link EventStorageEngine} used to
+     *                              {@link #appendEvent(EventMessage) append events} with.
+     * @param processingContext     The {@link ProcessingContext} from which to
+     *                              {@link #appendEvent(EventMessage) append events} and attach resources to.
+     * @param eventTagger           A function that will process each {@link EventMessage} to attach
+     *                              {@link Tag Tags}, before it is added to the transaction.
+     * @param explicitAppendCriteria An optional explicit {@link EventCriteria} for consistency checking.
+     *                              If {@code null}, the append criteria will be derived from the source criteria.
+     * @see EventStore#transaction(EventCriteria, ProcessingContext)
      */
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
                                         @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger,
-                                        @Nullable AppendCondition explicitAppendCondition) {
+                                        @Nullable EventCriteria explicitAppendCriteria) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
-        this.explicitAppendCondition = explicitAppendCondition;
+        this.explicitAppendCriteria = explicitAppendCriteria;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -116,15 +122,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     @Override
     public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
         // CRITERIA handling:
-        // The marker is ORTHOGONAL to the criteria - marker represents read position,
-        // criteria defines which events to check for conflicts
+        // The criteria and the ConsistencyMarker are orthogonal concerns:
+        //  - Criteria defines WHICH events to check for conflicts
+        //  - Marker defines FROM WHERE to start checking (always extracted from sourced events)
         AppendCondition appendCondition;
-        if (explicitAppendCondition != null) {
-            // Use explicit append condition (set once at transaction creation)
-            // This enables DCB where source criteria differs from append criteria
+        if (explicitAppendCriteria != null) {
+            // Use explicit append criteria (set once at transaction creation).
+            // This enables DCB where source criteria differs from append criteria.
             appendCondition = processingContext.computeResourceIfAbsent(
                     appendConditionKey,
-                    () -> explicitAppendCondition
+                    () -> AppendCondition.withCriteria(explicitAppendCriteria)
             );
         } else {
             // Default behavior: derive append criteria from source criteria

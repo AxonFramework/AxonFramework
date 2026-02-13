@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -199,7 +198,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         EventCriteria appendCriteria = appendCriteriaResolver.resolve(identifier, context);
 
         return eventStore
-                .transaction(AppendCondition.withCriteria(appendCriteria), context)
+                .transaction(appendCriteria, context)
                 .source(SourcingCondition.conditionFor(sourceCriteria))
                 .reduce(new EventSourcedEntity<>(identifier),
                         (entity, entry) -> {

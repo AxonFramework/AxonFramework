@@ -19,14 +19,14 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 import java.util.List;
 
@@ -64,41 +64,42 @@ public interface EventStore extends StreamableEventSource, EventBus, Describable
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given
      * {@code processingContext}. If no transaction is available, a new, empty transaction is created.
      * <p>
-     * This is a convenience method equivalent to calling {@link #transaction(AppendCondition, ProcessingContext)}
-     * with a {@code null} append condition, which causes the append criteria to be derived from the source criteria.
+     * When using this method, the append criteria for consistency checking is automatically derived from the
+     * criteria used for {@link EventStoreTransaction#source(SourcingCondition) sourcing} events. This is the default
+     * behavior where the same criteria is used for both loading events and checking consistency.
      *
      * @param processingContext The context for which to retrieve the {@link EventStoreTransaction}.
      * @return The {@link EventStoreTransaction}, existing or newly created, for the given {@code processingContext}.
-     * @see #transaction(AppendCondition, ProcessingContext)
+     * @see #transaction(EventCriteria, ProcessingContext)
      */
     default EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         return transaction(null, processingContext);
     }
 
     /**
-     * Creates a transaction with an explicit {@link AppendCondition} for consistency checking.
+     * Creates a transaction with an explicit {@link EventCriteria} for consistency checking when appending events.
      * <p>
-     * This method enables Dynamic Consistency Boundaries (DCB) where the criteria used
-     * for sourcing events (loading state) can differ from the criteria used for
-     * consistency checking (appending events).
+     * This method enables Dynamic Consistency Boundaries (DCB) where the criteria used for
+     * {@link EventStoreTransaction#source(SourcingCondition) sourcing} events (loading state) can differ from the
+     * criteria used for consistency checking (appending events).
      * <p>
-     * <b>Understanding Marker vs Criteria (Orthogonal Concerns):</b>
+     * <b>Understanding {@link ConsistencyMarker} vs {@link EventCriteria} (Orthogonal Concerns):</b>
+     * <p>
+     * The {@link ConsistencyMarker} and the append {@link EventCriteria} are two orthogonal concerns that together
+     * define the {@link AppendCondition}:
      * <ul>
-     *   <li><b>ConsistencyMarker</b>: Represents the "read position" in the event stream.
-     *       It is always extracted from the events returned by {@link EventStoreTransaction#source}.
-     *       This tells the system: "I have seen events up to this position."</li>
-     *   <li><b>AppendCondition criteria</b>: Specifies WHICH events to check for conflicts
-     *       after the marker position. This tells the system: "Check if any events matching
-     *       this criteria exist after my read position."</li>
+     *   <li><b>{@link ConsistencyMarker}</b>: Represents the "read position" in the event stream.
+     *       It is always extracted from the events returned by
+     *       {@link EventStoreTransaction#source(SourcingCondition)}. This tells the system:
+     *       <em>"I have seen events up to this position."</em></li>
+     *   <li><b>Append {@link EventCriteria}</b>: Specifies WHICH events to check for conflicts after
+     *       the marker position. This tells the system:
+     *       <em>"Check if any events matching this criteria exist after my read position."</em></li>
      * </ul>
      * <p>
-     * These are orthogonal because:
-     * <ul>
-     *   <li>You might source events matching criteria A (e.g., all credit events)</li>
-     *   <li>But only want to check conflicts against criteria B (e.g., only credit decreases)</li>
-     *   <li>The marker still comes from sourcing criteria A events</li>
-     *   <li>The conflict check uses criteria B starting from that marker position</li>
-     * </ul>
+     * Because the {@link ConsistencyMarker} is always determined by the actual read position (extracted from sourced
+     * events), only the {@link EventCriteria} needs to be provided here. The marker will be set automatically during
+     * {@link EventStoreTransaction#source(SourcingCondition) sourcing}.
      * <p>
      * <b>Example - Accounting Use Case:</b>
      * <pre>{@code
@@ -110,19 +111,19 @@ public interface EventStore extends StreamableEventSource, EventBus, Describable
      * EventCriteria appendCriteria = EventCriteria.havingTags("accountId", id)
      *     .andBeingOneOfTypes("CreditsDecreased");
      *
-     * eventStore.transaction(AppendCondition.withCriteria(appendCriteria), context)
+     * eventStore.transaction(appendCriteria, context)
      *     .source(SourcingCondition.conditionFor(sourceCriteria))
      *     .reduce(...);
      * }</pre>
      *
-     * @param appendCondition The {@link AppendCondition} defining which events to check
-     *                        for conflicts. The marker will be updated from sourced events.
-     *                        If {@code null}, the append criteria will be derived from the source criteria.
+     * @param appendCriteria   The {@link EventCriteria} defining which events to check for conflicts when appending.
+     *                         The {@link ConsistencyMarker} will be determined automatically from sourced events.
+     *                         If {@code null}, the append criteria will be derived from the source criteria
+     *                         (same behavior as {@link #transaction(ProcessingContext)}).
      * @param processingContext The {@link ProcessingContext} for this transaction.
-     * @return An {@link EventStoreTransaction} configured with the explicit append condition.
-     * @see #transaction(ProcessingContext) for default behavior where append criteria
-     *      is derived from source criteria
+     * @return An {@link EventStoreTransaction} configured with the explicit append criteria.
+     * @see #transaction(ProcessingContext) for default behavior where append criteria is derived from source criteria
      */
-    EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+    EventStoreTransaction transaction(@Nullable EventCriteria appendCriteria,
                                       @Nonnull ProcessingContext processingContext);
 }

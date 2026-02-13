@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -65,7 +64,7 @@ class EventSourcingRepositoryTest {
         eventStore = mock();
         eventStoreTransaction = mock();
         when(eventStore.transaction(any(ProcessingContext.class))).thenReturn(eventStoreTransaction);
-        when(eventStore.transaction(any(AppendCondition.class), any(ProcessingContext.class))).thenReturn(eventStoreTransaction);
+        when(eventStore.transaction(any(EventCriteria.class), any(ProcessingContext.class))).thenReturn(eventStoreTransaction);
 
         factory = (id, event, ctx) -> {
             if (event != null) {
@@ -94,8 +93,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
-        // doLoad calls transaction(AppendCondition, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(AppendCondition.class), eq(processingContext));
+        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
+        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
@@ -185,8 +184,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(result.isDone());
         assertFalse(result.isCompletedExceptionally());
-        // doLoad calls transaction(AppendCondition, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(AppendCondition.class), eq(processingContext));
+        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
+        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
@@ -259,8 +258,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
-        // doLoad calls transaction(AppendCondition, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(AppendCondition.class), eq(processingContext));
+        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
+        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
@@ -281,8 +280,8 @@ class EventSourcingRepositoryTest {
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());
-        // doLoad calls transaction(AppendCondition, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
-        verify(eventStore).transaction(any(AppendCondition.class), eq(processingContext));
+        // doLoad calls transaction(EventCriteria, ProcessingContext), updateActiveEntity calls transaction(ProcessingContext)
+        verify(eventStore).transaction(any(EventCriteria.class), eq(processingContext));
         verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)

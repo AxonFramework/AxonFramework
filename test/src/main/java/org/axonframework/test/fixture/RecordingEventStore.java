@@ -21,14 +21,14 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -63,9 +63,9 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+    public EventStoreTransaction transaction(@Nullable EventCriteria appendCriteria,
                                              @NotNull ProcessingContext processingContext) {
-        return eventStore.transaction(appendCondition, processingContext);
+        return eventStore.transaction(appendCriteria, processingContext);
     }
 
     @Override

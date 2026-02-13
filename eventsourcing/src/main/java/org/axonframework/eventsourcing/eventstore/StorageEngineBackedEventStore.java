@@ -21,14 +21,15 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -77,13 +78,13 @@ public class StorageEngineBackedEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nullable AppendCondition appendCondition,
+    public EventStoreTransaction transaction(@Nullable EventCriteria appendCriteria,
                                              @Nonnull ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
                 () -> {
                     var eventStoreTransaction = new DefaultEventStoreTransaction(
-                            eventStorageEngine, processingContext, this::tagEvents, appendCondition);
+                            eventStorageEngine, processingContext, this::tagEvents, appendCriteria);
                     eventStoreTransaction.onAppend(events -> eventBus.publish(processingContext, events).join());
                     return eventStoreTransaction;
                 }
