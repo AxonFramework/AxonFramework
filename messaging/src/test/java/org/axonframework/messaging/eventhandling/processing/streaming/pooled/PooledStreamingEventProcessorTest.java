@@ -1150,6 +1150,7 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void segmentChangeListenerIsInvokedOnClaimAndRelease() {
+            // given
             int testSegmentId = 0;
             int testTokenClaimInterval = 100;
             List<Integer> claimedSegments = new CopyOnWriteArrayList<>();
@@ -1166,13 +1167,17 @@ class PooledStreamingEventProcessorTest {
                           .addSegmentChangeListener(listener)
             );
 
+            // when
             startEventProcessor();
 
+            // then
             await().atMost(2, TimeUnit.SECONDS)
                    .untilAsserted(() -> assertThat(claimedSegments).contains(testSegmentId));
 
+            // when
             FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId, 200, TimeUnit.MILLISECONDS));
 
+            // then
             await().atMost(2, TimeUnit.SECONDS)
                    .untilAsserted(() -> assertThat(releasedSegments).contains(testSegmentId));
 
