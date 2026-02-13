@@ -19,6 +19,8 @@ package org.axonframework.messaging.commandhandling.interception;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
+import org.axonframework.messaging.core.DelayedMessageStream;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -28,9 +30,11 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
+import org.mockito.stubbing.*;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -58,12 +62,16 @@ class CommandSequencingInterceptorTest {
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain1;
     @Mock
     private ProcessingContext ctx1;
+    @Mock
+    private Message exCmd1Result;
     @Captor
     private ArgumentCaptor<Consumer<ProcessingContext>> ctx1CompletionCapture;
     @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain2;
     @Mock
     private ProcessingContext ctx2;
+    @Mock
+    private Message exCmd2Result;
     @Captor
     private ArgumentCaptor<Consumer<ProcessingContext>> ctx2CompletionCapture;
 
@@ -75,19 +83,28 @@ class CommandSequencingInterceptorTest {
     }
 
     @Test
-    void interceptOnHandleSerializesCommandExecutionForSameSequence() {
+    void interceptOnHandleSerializesCommandExecutionForSameSequence() throws ExecutionException, InterruptedException {
         Object exSequenceIdentifier = "sequenceIdentifier";
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
         when(sequencingPolicy.getSequenceIdentifierFor(any(), any()))
                 .thenReturn(Optional.of(exSequenceIdentifier));
+        when(interceptorChain1.proceed(any(), any()))
+                .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd1Result));
+        when(interceptorChain2.proceed(any(), any()))
+                .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd2Result));
 
-        // handle first command
+        // handle command 1
         Future<? extends MessageStream<?>> ctx1Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_1, ctx1, interceptorChain1));
-        // verify command 1 completes immediately and capture the context completion callback
-        await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
+
+        // verify command 1 returns immediately with the result message stream not wrapped in DelayedMessageStream
+        await().untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
+        MessageStream<?> cmd1ResultStream = ctx1Execution.get();
+        assertFalse(cmd1ResultStream instanceof DelayedMessageStream<?>);
+        assertTrue(cmd1ResultStream.hasNextAvailable());
+        assertEquals(exCmd1Result, cmd1ResultStream.next().orElseThrow().message());
+        // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
@@ -95,19 +112,27 @@ class CommandSequencingInterceptorTest {
         verify(interceptorChain1)
                 .proceed(TEST_MESSAGE_1, ctx1);
 
-        // verify command 2 is blocked until lock of ctx1 is released
+        // handle command 2 before releasing ctx1 lock by invoking the context completion callback
         Future<? extends MessageStream<?>> ctx2Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_2, ctx2, interceptorChain2));
+
+        // verify command 2 returns immediately, but with the result message stream wrapped in DelayedMessageStream
+        // verify the wrapped command 2 result message stream does not have the result message available yet
+        await().untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
+        MessageStream<?> cmd2ResultStream = ctx2Execution.get();
+        assertInstanceOf(DelayedMessageStream.class, cmd2ResultStream);
         await()
                 .pollDelay(Duration.ofSeconds(1))
-                .untilAsserted(() -> assertEquals(Future.State.RUNNING, ctx2Execution.state()));
+                .untilAsserted(() -> assertFalse(cmd2ResultStream.hasNextAvailable()));
 
         // release lock of ctx1
         ctx1CompletionCapture.getValue().accept(ctx1);
 
-        // verify command 2 is completed and capture the context completion callback
+        // verify the wrapped command 2 result message stream has the result available now after releasing the lock
         await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
+                .untilAsserted(() -> assertTrue(cmd2ResultStream.hasNextAvailable()));
+        assertEquals(exCmd2Result, cmd2ResultStream.next().orElseThrow().message());
+        // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)
@@ -124,7 +149,8 @@ class CommandSequencingInterceptorTest {
     }
 
     @Test
-    void interceptOnHandleDoesNotSerializeCommandExecutionForDifferentSequence() {
+    void interceptOnHandleDoesNotSerializeCommandExecutionForDifferentSequence()
+            throws ExecutionException, InterruptedException {
         Object exSequenceIdentifier1 = "sequenceIdentifier1";
         Object exSequenceIdentifier2 = "sequenceIdentifier2";
         ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -133,14 +159,22 @@ class CommandSequencingInterceptorTest {
                 .thenReturn(Optional.of(exSequenceIdentifier1));
         when(sequencingPolicy.getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2))
                 .thenReturn(Optional.of(exSequenceIdentifier2));
+        when(interceptorChain1.proceed(any(), any()))
+                .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd1Result));
+        when(interceptorChain2.proceed(any(), any()))
+                .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd2Result));
 
         // handle command 1
         Future<? extends MessageStream<?>> ctx1Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_1, ctx1, interceptorChain1));
 
-        // verify command1 completes immediately and capture the context completion callback
-        await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
+        // verify command 1 returns immediately with the result message stream not wrapped in DelayedMessageStream
+        await().untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx1Execution.state()));
+        MessageStream<?> cmd1ResultStream = ctx1Execution.get();
+        assertFalse(cmd1ResultStream instanceof DelayedMessageStream<?>);
+        assertTrue(cmd1ResultStream.hasNextAvailable());
+        assertEquals(exCmd1Result, cmd1ResultStream.next().orElseThrow().message());
+        // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
@@ -151,9 +185,14 @@ class CommandSequencingInterceptorTest {
         // handle command 2
         Future<? extends MessageStream<?>> ctx2Execution =
                 executor.submit(() -> testSubject.interceptOnHandle(TEST_MESSAGE_2, ctx2, interceptorChain2));
-        // verify command 2 completes immediately independently of ctx1 and capture the context callback
-        await()
-                .untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
+
+        // verify command 2 returns immediately with the result message stream not wrapped in DelayedMessageStream, despite the lock on ctx1 not yet released
+        await().untilAsserted(() -> assertEquals(Future.State.SUCCESS, ctx2Execution.state()));
+        MessageStream<?> cmd2ResultStream = ctx2Execution.get();
+        assertFalse(cmd2ResultStream instanceof DelayedMessageStream<?>);
+        assertTrue(cmd2ResultStream.hasNextAvailable());
+        assertEquals(exCmd2Result, cmd2ResultStream.next().orElseThrow().message());
+        // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
                 .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)

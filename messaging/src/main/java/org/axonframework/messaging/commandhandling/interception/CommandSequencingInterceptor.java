@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
+import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
@@ -91,20 +92,21 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
                 previousLock = FutureUtils.emptyCompletedFuture();
             }
 
-            return previousLock
-                    .handle((r, e) -> {
-                        context.doFinally(ctx -> {
-                            logger.debug(
-                                    "Processing command for [{}] completed in {}. Passing lock to next command.",
-                                    sequenceIdentifier,
-                                    ctx);
-                            currentLock.complete(null);
-                        });
-                        logger.debug(
-                                "Proceeding command execution for [{}] in {}.", sequenceIdentifier, context);
-                        return interceptorChain.proceed(message, context);
-                    })
-                    .join();
+            return DelayedMessageStream.create(previousLock
+                                                       .handle((r, e) -> {
+                                                           context.doFinally(ctx -> {
+                                                               logger.debug(
+                                                                       "Processing command for [{}] completed in {}. Passing lock to next command.",
+                                                                       sequenceIdentifier,
+                                                                       ctx);
+                                                               currentLock.complete(null);
+                                                           });
+                                                           logger.debug(
+                                                                   "Proceeding command execution for [{}] in {}.",
+                                                                   sequenceIdentifier,
+                                                                   context);
+                                                           return interceptorChain.proceed(message, context);
+                                                       }));
         } else {
             logger.debug("Missing sequence identifier, skipping command execution sequencing in {}", context);
             return interceptorChain.proceed(message, context);
