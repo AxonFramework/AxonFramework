@@ -87,12 +87,12 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <version>3.8.2</version>
+            <version>3.8.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.28</version>
+            <version>1.5.31</version>
         </dependency>
 
 

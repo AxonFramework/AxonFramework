@@ -35,12 +35,12 @@
         <dependency>
             <groupId>org.openrewrite.recipe</groupId>
             <artifactId>rewrite-migrate-java</artifactId>
-            <version>3.26.0</version>
+            <version>3.27.0</version>
         </dependency>
         <dependency>
             <groupId>org.openrewrite</groupId>
             <artifactId>rewrite-test</artifactId>
-            <version>8.72.7</version>
+            <version>8.73.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
