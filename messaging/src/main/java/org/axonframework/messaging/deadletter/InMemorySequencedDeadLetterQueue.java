@@ -342,13 +342,15 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
         }
 
         String claimedSequenceId = sequenceId;
-        return processSequence(claimedSequenceId, processingTask)
+        return processSequence(claimedSequenceId, processingTask, context)
                 .whenComplete((result, error) -> takenSequences.remove(claimedSequenceId));
     }
 
     private CompletableFuture<Boolean> processSequence(
             String sequenceId,
-            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask) {
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            ProcessingContext context
+    ) {
         try {
             Deque<DeadLetter<? extends M>> sequence = deadLetters.get(sequenceId);
             while (sequence != null && !sequence.isEmpty()) {
@@ -359,11 +361,11 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
                             requeue(letter,
                                     l -> decision.withDiagnostics(l)
                                                  .withCause(decision.enqueueCause().orElse(null)),
-                                    null)
+                                    context)
                     );
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    FutureUtils.joinAndUnwrap(evict(letter, null));
+                    FutureUtils.joinAndUnwrap(evict(letter, context));
                 }
             }
             return CompletableFuture.completedFuture(true);
