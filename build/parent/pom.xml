@@ -57,7 +57,7 @@
         <hsqldb.version>2.7.2</hsqldb.version>
         <hibernate-core.version>7.2.4.Final</hibernate-core.version>
         <mysql-connector-java.version>9.6.0</mysql-connector-java.version>
-        <postgresql.version>42.7.9</postgresql.version>
+        <postgresql.version>42.7.10</postgresql.version>
         <ojdbc.version>23.26.1.0.0</ojdbc.version>
         <!-- Jakarta -->
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
@@ -71,9 +71,9 @@
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.38</dropwizard.metrics.version>
-        <micrometer.version>1.16.2</micrometer.version>
+        <micrometer.version>1.16.3</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.4</byte-buddy.version>
+        <byte-buddy.version>1.18.5</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -81,7 +81,7 @@
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <equalsverifier.version>4.3.1</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.8.2</projectreactor.version>
+        <projectreactor.version>3.8.3</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
         <avro.version>1.12.1</avro.version>
@@ -93,14 +93,14 @@
         <jobrunr.version>8.4.2</jobrunr.version>
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
-        <spring.version>6.2.15</spring.version>
+        <spring.version>6.2.16</spring.version>
         <spring.boot.version>3.5.10</spring.boot.version>
         <spring-data.version>2025.0.7</spring-data.version>
-        <spring-security.version>6.5.7</spring-security.version>
+        <spring-security.version>6.5.8</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <junit.jupiter.version>6.0.2</junit.jupiter.version>
+        <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <mockito.version>5.21.0</mockito.version>
         <testcontainers.version>2.0.3</testcontainers.version>
         <assertj.version>3.27.7</assertj.version>
