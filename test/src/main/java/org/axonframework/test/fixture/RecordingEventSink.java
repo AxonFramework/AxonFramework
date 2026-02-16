@@ -55,7 +55,7 @@ public class RecordingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @Nonnull List<? extends EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }

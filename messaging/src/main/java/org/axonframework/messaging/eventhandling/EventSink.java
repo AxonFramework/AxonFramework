@@ -78,5 +78,5 @@ public interface EventSink extends DescribableComponent {
      * successful completion of this future means the {@code events} where published.
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                    @Nonnull List<EventMessage> events);
+                                    @Nonnull List<? extends EventMessage> events);
 }

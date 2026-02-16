@@ -98,7 +98,7 @@ class CommandHandlingTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               @Nonnull List<? extends EventMessage> events) {
             if (context == null) {
                 storeEvents(events);
             } else {
@@ -107,7 +107,7 @@ class CommandHandlingTest {
             return super.publish(context, events);
         }
 
-        private void storeEvents(@Nonnull List<EventMessage> events) {
+        private void storeEvents(@Nonnull List<? extends EventMessage> events) {
             storedEvents.addAll(
                     events.stream()
                           .map(StubEventStore::asDomainEventMessage)

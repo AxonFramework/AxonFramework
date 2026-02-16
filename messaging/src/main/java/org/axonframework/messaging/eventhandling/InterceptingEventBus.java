@@ -82,7 +82,7 @@ public class InterceptingEventBus implements EventBus {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @Nonnull List<? extends EventMessage> events) {
         return delegateSink.publish(context, events);
     }
 
