@@ -4,7 +4,7 @@ This file provides guidance to AI Agents (Claude Code, Codex, Gemini, Cursor etc
 
 ## Project Overview
 
-This directory contains the **Axon Framework 5 Getting Started Guide**, a comprehensive tutorial for building applications with Axon Framework 5. This documentation is built using Antora and covers the milestone version 5.0.0-M3.
+This directory contains the **Axon Framework 5 Getting Started Guide**, a comprehensive tutorial for building applications with Axon Framework 5. This documentation is built using Antora for Axon Framework 5.
 
 ### Documentation Structure
 

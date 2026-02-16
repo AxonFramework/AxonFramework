@@ -16,7 +16,7 @@ Axon Framework is a framework for building evolutionary, event-driven microservi
 
 1.  **Spec-first**: Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 2.  **Subagent strategy**: Use subagents liberally to keep main context clean. Offload research and parallel analysis. One task per subagent.
-3.  **Self-improvement**: After corrections, update relevant CLAUDE.md or `./claude/resule` file or introduce a new one. Write rules that prevent the same mistake.
+3.  **Self-improvement**: After corrections, update the relevant CLAUDE.md or a file under `.claude/rules/`, or introduce a new one. Write rules that prevent the same mistake.
 4.  **Verification**: Run tests, check build, suggest user verification. Ask: "Would a staff engineer approve this?"
 5.  **Elegance**: For non-trivial changes, pause and ask "is there a more elegant way?" Skip for simple fixes.
 6.  **Autonomous bug fixing**: When given a bug report, just fix it. Point at logs/errors, then resolve. Zero hand-holding.
