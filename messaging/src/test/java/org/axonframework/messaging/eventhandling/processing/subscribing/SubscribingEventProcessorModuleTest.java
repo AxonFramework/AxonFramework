@@ -40,6 +40,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
@@ -666,7 +667,9 @@ class SubscribingEventProcessorModuleTest {
             String processorName
     ) {
         return configuration.getModuleConfiguration(processorName)
-                            .flatMap(m -> m.getOptionalComponent(SubscribingEventProcessor.class, processorName));
+                            .flatMap(m -> m.getOptionalComponent(EventProcessor.class, processorName))
+                            .filter(SubscribingEventProcessor.class::isInstance)
+                            .map(SubscribingEventProcessor.class::cast);
     }
 
     @Nullable

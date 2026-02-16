@@ -38,6 +38,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -1140,7 +1141,9 @@ class PooledStreamingEventProcessorModuleTest {
             String processorName
     ) {
         return configuration.getModuleConfiguration(processorName)
-                            .flatMap(m -> m.getOptionalComponent(PooledStreamingEventProcessor.class, processorName));
+                            .flatMap(m -> m.getOptionalComponent(StreamingEventProcessor.class, processorName))
+                            .filter(PooledStreamingEventProcessor.class::isInstance)
+                            .map(PooledStreamingEventProcessor.class::cast);
     }
 
     @Nullable
