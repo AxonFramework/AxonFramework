@@ -81,7 +81,7 @@ public class InterceptingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return interceptingPublisher.interceptAndPublish(events, context);
     }
 
@@ -109,7 +109,7 @@ public class InterceptingEventSink implements EventSink {
         }
 
         private CompletableFuture<Void> interceptAndPublish(
-                List<EventMessage> events,
+                List<? extends EventMessage> events,
                 @Nullable ProcessingContext context
         ) {
 

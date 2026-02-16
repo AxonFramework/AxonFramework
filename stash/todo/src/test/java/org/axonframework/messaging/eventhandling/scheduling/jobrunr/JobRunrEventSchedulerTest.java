@@ -221,7 +221,7 @@ class JobRunrEventSchedulerTest {
 
         @Override
         public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+                                                        List<? extends EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }

@@ -40,7 +40,7 @@ class ProcessingContextEventAppenderTest {
     private final EventSink mockEventSink = spy(new EventSink() {
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+                                               @NonNull List<? extends EventMessage> events) {
             return CompletableFuture.completedFuture(null);
         }
 

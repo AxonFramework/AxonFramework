@@ -145,7 +145,7 @@ public class InterceptingEventStore implements EventStore {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegateBus.publish(context, events);
     }
 
@@ -217,7 +217,7 @@ public class InterceptingEventStore implements EventStore {
 
         @Override // TODO #4199 remove this and the implemented interface
         public MessageStream<? extends EventMessage> source(
-            @Nonnull SourcingCondition condition,
+            SourcingCondition condition,
             @Nullable AtomicReference<ConsistencyMarker> consistencyMarkerRef
         ) {
             return switch(delegate) {
