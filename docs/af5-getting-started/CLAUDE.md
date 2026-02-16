@@ -48,7 +48,7 @@ The guide includes these main sections:
 - External links should include `role=external,window=_blank`
 
 ### Content Guidelines
-1. **Version Awareness**: Reference specific version (5.0.0-M3) and milestone nature
+1. **Version Awareness**: Reference specific version (5.0.0) and milestone nature
 2. **Migration Focus**: Address differences from Axon Framework 4
 3. **Practical Examples**: Include working code samples and GitHub repository links
 4. **Feedback Orientation**: Encourage user feedback for milestone version
@@ -71,7 +71,7 @@ The guide includes these main sections:
 - Update individual `.adoc` files in `modules/ROOT/pages/`
 - Maintain navigation structure in `nav.adoc`
 - Ensure cross-references and links remain valid
-- Test tutorial steps with actual Axon Framework 5.0.0-M3
+- Test tutorial steps with actual Axon Framework 5.0.0
 
 ### Repository References
 - Main tutorial GitHub repo: https://github.com/AxonIQ/university-demo/
