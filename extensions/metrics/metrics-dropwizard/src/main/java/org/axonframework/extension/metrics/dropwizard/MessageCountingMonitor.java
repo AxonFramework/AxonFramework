@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
+import io.dropwizard.metrics5.Counter;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricSet;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -64,15 +65,13 @@ public class MessageCountingMonitor implements MessageMonitor<Message>, MetricSe
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        Map<String, Metric> metricSet = new HashMap<>();
-        metricSet.put("ingestedCounter", ingestedCounter);
-        metricSet.put("processedCounter", processedCounter);
-        metricSet.put("successCounter", successCounter);
-        metricSet.put("failureCounter", failureCounter);
-        metricSet.put("ignoredCounter", ignoredCounter);
+    public Map<MetricName, Metric> getMetrics() {
+        Map<MetricName, Metric> metricSet = new HashMap<>();
+        metricSet.put(MetricName.build("ingestedCounter"), ingestedCounter);
+        metricSet.put(MetricName.build("processedCounter"), processedCounter);
+        metricSet.put(MetricName.build("successCounter"), successCounter);
+        metricSet.put(MetricName.build("failureCounter"), failureCounter);
+        metricSet.put(MetricName.build("ignoredCounter"), ignoredCounter);
         return metricSet;
     }
-
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
-import com.codahale.metrics.SlidingTimeWindowReservoir;
-import com.codahale.metrics.Snapshot;
+import io.dropwizard.metrics5.Clock;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Histogram;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricSet;
+import io.dropwizard.metrics5.SlidingTimeWindowReservoir;
+import io.dropwizard.metrics5.Snapshot;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -32,15 +33,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Calculates capacity by tracking, within the configured time window, the average message processing time
- * and multiplying that by the amount of messages processed.
- *
- * The capacity can be more than 1 if the monitored
- * message handler processes the messages in parallel. The capacity for a single threaded message handler will be
- * a value between 0 and 1.
- *
- * If the value for a single threaded message handler is 1 the component is active 100% of the time. This means
- * that messages will have to wait to be processed.
+ * Calculates capacity by tracking, within the configured time window, the average message processing time and
+ * multiplying that by the amount of messages processed.
+ * <p>
+ * The capacity can be more than 1 if the monitored message handler processes the messages in parallel. The capacity for
+ * a single threaded message handler will be a value between 0 and 1.
+ * <p>
+ * If the value for a single threaded message handler is 1 the component is active 100% of the time. This means that
+ * messages will have to wait to be processed.
  *
  * @author Marijn van Zelst
  * @since 3.0
@@ -63,7 +63,7 @@ public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
     /**
      * Creates a capacity monitor with the default time window 10 minutes
      *
-     * @param window The length of the window to measure the capacity over
+     * @param window   The length of the window to measure the capacity over
      * @param timeUnit The time unit of the time window
      */
     public CapacityMonitor(long window, TimeUnit timeUnit) {
@@ -71,12 +71,12 @@ public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     /**
-     * Creates a capacity monitor with the given time window. Uses the provided clock
-     * to measure process time per message.
+     * Creates a capacity monitor with the given time window. Uses the provided clock to measure process time per
+     * message.
      *
-     * @param window The length of the window to measure the capacity over
+     * @param window   The length of the window to measure the capacity over
      * @param timeUnit The time unit of the time window
-     * @param clock The clock used to measure the process time per message
+     * @param clock    The clock used to measure the process time per message
      */
     public CapacityMonitor(long window, TimeUnit timeUnit, Clock clock) {
         SlidingTimeWindowReservoir slidingTimeWindowReservoir = new SlidingTimeWindowReservoir(window, timeUnit, clock);
@@ -109,19 +109,20 @@ public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("capacity", capacity);
+    public Map<MetricName, Metric> getMetrics() {
+        Map<MetricName, Metric> metrics = new HashMap<>();
+        metrics.put(MetricName.build("capacity"), capacity);
         return metrics;
     }
 
     private class CapacityGauge implements Gauge<Double> {
+
         @Override
         public Double getValue() {
             Snapshot snapshot = processedDurationHistogram.getSnapshot();
             double meanProcessTime = snapshot.getMean();
             int numProcessed = snapshot.getValues().length;
-            return  (numProcessed * meanProcessTime) / timeUnit.toMillis(window);
+            return (numProcessed * meanProcessTime) / timeUnit.toMillis(window);
         }
     }
 }

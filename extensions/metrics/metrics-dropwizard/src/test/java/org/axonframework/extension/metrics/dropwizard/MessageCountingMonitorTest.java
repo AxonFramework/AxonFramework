@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Metric;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import io.dropwizard.metrics5.Counter;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -44,13 +45,13 @@ class MessageCountingMonitorTest {
         callbacks.get(bar).reportFailure(null);
         callbacks.get(baz).reportIgnored();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
 
-        Counter ingestedCounter = (Counter) metricSet.get("ingestedCounter");
-        Counter processedCounter = (Counter) metricSet.get("processedCounter");
-        Counter successCounter = (Counter) metricSet.get("successCounter");
-        Counter failureCounter = (Counter) metricSet.get("failureCounter");
-        Counter ignoredCounter = (Counter) metricSet.get("ignoredCounter");
+        Counter ingestedCounter = (Counter) metricSet.get(MetricName.build("ingestedCounter"));
+        Counter processedCounter = (Counter) metricSet.get(MetricName.build("processedCounter"));
+        Counter successCounter = (Counter) metricSet.get(MetricName.build("successCounter"));
+        Counter failureCounter = (Counter) metricSet.get(MetricName.build("failureCounter"));
+        Counter ignoredCounter = (Counter) metricSet.get(MetricName.build("ignoredCounter"));
 
         assertEquals(3, ingestedCounter.getCount());
         assertEquals(2, processedCounter.getCount());

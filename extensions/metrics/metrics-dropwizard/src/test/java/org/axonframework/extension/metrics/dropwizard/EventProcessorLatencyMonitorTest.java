@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -38,7 +39,7 @@ class EventProcessorLatencyMonitorTest {
 
     private final EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
 
-    private final Map<String, Metric> metricSet = testSubject.getMetrics();
+    private final Map<MetricName, Metric> metricSet = testSubject.getMetrics();
 
     @Test
     void messages() {
@@ -55,7 +56,7 @@ class EventProcessorLatencyMonitorTest {
         callbacks.get(firstEventMessage).reportSuccess();
 
         //noinspection unchecked
-        Gauge<Long> latency = (Gauge<Long>) metricSet.get("latency");
+        Gauge<Long> latency = (Gauge<Long>) metricSet.get(MetricName.build("latency"));
 
         assertTrue(latency.getValue() >= 1000);
     }
@@ -75,7 +76,7 @@ class EventProcessorLatencyMonitorTest {
         callbacks.get(firstEventMessage).reportFailure(null);
 
         //noinspection unchecked
-        Gauge<Long> latency = (Gauge<Long>) metricSet.get("latency");
+        Gauge<Long> latency = (Gauge<Long>) metricSet.get(MetricName.build("latency"));
 
         assertTrue(latency.getValue() >= 1000);
     }
@@ -85,7 +86,7 @@ class EventProcessorLatencyMonitorTest {
         testSubject.onMessageIngested(null).reportSuccess();
 
         //noinspection unchecked
-        Gauge<Long> latency = (Gauge<Long>) metricSet.get("latency");
+        Gauge<Long> latency = (Gauge<Long>) metricSet.get(MetricName.build("latency"));
 
         assertEquals(0, latency.getValue(), 0);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.SlidingTimeWindowReservoir;
-import com.codahale.metrics.Timer;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.SlidingTimeWindowReservoir;
+import io.dropwizard.metrics5.Timer;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -52,12 +53,12 @@ class MessageTimerMonitorTest {
         testClock.increase(1000);
         monitorCallback.reportSuccess();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
+        Timer all = (Timer) metricSet.get(MetricName.build("allTimer"));
+        Timer successTimer = (Timer) metricSet.get(MetricName.build("successTimer"));
+        Timer failureTimer = (Timer) metricSet.get(MetricName.build("failureTimer"));
+        Timer ignoredTimer = (Timer) metricSet.get(MetricName.build("ignoredTimer"));
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{1000000}, successTimer.getSnapshot().getValues());
@@ -71,12 +72,12 @@ class MessageTimerMonitorTest {
         testClock.increase(1000);
         monitorCallback.reportFailure(null);
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
+        Timer all = (Timer) metricSet.get(MetricName.build("allTimer"));
+        Timer successTimer = (Timer) metricSet.get(MetricName.build("successTimer"));
+        Timer failureTimer = (Timer) metricSet.get(MetricName.build("failureTimer"));
+        Timer ignoredTimer = (Timer) metricSet.get(MetricName.build("ignoredTimer"));
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
@@ -90,12 +91,12 @@ class MessageTimerMonitorTest {
         testClock.increase(1000);
         monitorCallback.reportIgnored();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
 
-        Timer all = (Timer) metricSet.get("allTimer");
-        Timer successTimer = (Timer) metricSet.get("successTimer");
-        Timer failureTimer = (Timer) metricSet.get("failureTimer");
-        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
+        Timer all = (Timer) metricSet.get(MetricName.build("allTimer"));
+        Timer successTimer = (Timer) metricSet.get(MetricName.build("successTimer"));
+        Timer failureTimer = (Timer) metricSet.get(MetricName.build("failureTimer"));
+        Timer ignoredTimer = (Timer) metricSet.get(MetricName.build("ignoredTimer"));
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
@@ -104,9 +105,9 @@ class MessageTimerMonitorTest {
     }
 
     /**
-     * A different {@link com.codahale.metrics.Reservoir} is used, which simply means the storage approach of the metric
-     * histogram is adjusted. Within the test space, this still renders the same results, hence the similar assertion as
-     * in {@link #testSuccessMessage()}.
+     * A different {@link io.dropwizard.metrics5.Reservoir} is used, which simply means the storage approach of the
+     * metric histogram is adjusted. Within the test space, this still renders the same results, hence the similar
+     * assertion as in {@link #successMessage()}.
      */
     @Test
     void customReservoir() {
@@ -120,11 +121,11 @@ class MessageTimerMonitorTest {
         testClock.increase(1000);
         result.reportSuccess();
 
-        Map<String, Metric> metrics = customReservoirTestSubject.getMetrics();
-        Timer all = (Timer) metrics.get("allTimer");
-        Timer successTimer = (Timer) metrics.get("successTimer");
-        Timer failureTimer = (Timer) metrics.get("failureTimer");
-        Timer ignoredTimer = (Timer) metrics.get("ignoredTimer");
+        Map<MetricName, Metric> metrics = customReservoirTestSubject.getMetrics();
+        Timer all = (Timer) metrics.get(MetricName.build("allTimer"));
+        Timer successTimer = (Timer) metrics.get(MetricName.build("successTimer"));
+        Timer failureTimer = (Timer) metrics.get(MetricName.build("failureTimer"));
+        Timer ignoredTimer = (Timer) metrics.get(MetricName.build("ignoredTimer"));
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{1000000}, successTimer.getSnapshot().getValues());
