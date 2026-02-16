@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.axonframework.common.util.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,12 +46,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.common.util.AssertUtils.assertWithin;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +62,7 @@ import static org.mockito.Mockito.*;
 class WorkPackageTest {
 
     private static final String PROCESSOR_NAME = "test";
+    private static final Duration TIMEOUT = Duration.ofMillis(500);
 
     private TokenStore tokenStore;
     private ScheduledExecutorService executorService;
@@ -86,6 +87,7 @@ class WorkPackageTest {
         batchProcessor = new TestBatchProcessor();
         segment = Segment.ROOT_SEGMENT;
         initialTrackingToken = new GlobalSequenceTrackingToken(0L);
+        tokenStore.initializeSegment(initialTrackingToken, PROCESSOR_NAME, segment, null);
 
         trackerStatus = new TrackerStatus(segment, initialTrackingToken);
         trackerStatusUpdates = new ArrayList<>();
@@ -182,7 +184,7 @@ class WorkPackageTest {
 
         testSubject.scheduleEvent(testEvent);
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertNull(trackerStatus));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertNull(trackerStatus));
         assertEquals(2, trackerStatusUpdates.size());
         assertTrue(trackerStatusUpdates.get(0).isErrorState());
         assertNull(trackerStatusUpdates.get(1));
@@ -206,7 +208,7 @@ class WorkPackageTest {
 
         testSubject.scheduleEvent(testEvent);
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertNull(trackerStatus));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertNull(trackerStatus));
         assertEquals(2, trackerStatusUpdates.size());
         assertTrue(trackerStatusUpdates.get(0).isErrorState());
         assertNull(trackerStatusUpdates.get(1));
@@ -229,14 +231,14 @@ class WorkPackageTest {
         testSubject.scheduleEvent(expectedEvent);
 
         List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, validatedEvents.size()));
         assertEquals(testMessage, validatedEvents.getFirst());
 
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, processedEvents.size()));
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> {
+        await().atMost(TIMEOUT).untilAsserted(() -> {
             ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
             verify(tokenStore).storeToken(
                     tokenCaptor.capture(),
@@ -264,7 +266,7 @@ class WorkPackageTest {
         testSubject.scheduleEvent(expectedEvent);
 
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, processedEvents.size()));
 
         TrackingToken resultAdvancedToken = TrackingToken.fromContext(processedEvents.getFirst().context()).get();
         assertInstanceOf(ReplayToken.class, resultAdvancedToken);
@@ -285,7 +287,7 @@ class WorkPackageTest {
         testSubject.scheduleEvent(expectedEvent);
 
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, processedEvents.size()));
 
         TrackingToken resultAdvancedToken = TrackingToken.fromContext(processedEvents.getFirst().context()).get();
         assertInstanceOf(ReplayToken.class, resultAdvancedToken);
@@ -293,7 +295,6 @@ class WorkPackageTest {
         assertEquals(expectedToken, ((ReplayToken) resultAdvancedToken).getTokenAtReset());
     }
 
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventExtendsTokenClaimAfterClaimThresholdExtension() {
         // The short threshold ensures the packages assume the token should be reclaimed.
@@ -309,29 +310,28 @@ class WorkPackageTest {
 
         // Should have handled one event, so a subsequent run of WorkPackage#processEvents will extend the claim.
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, processedEvents.size()));
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
         // We need to verify the TokenStore#storeToken operation, otherwise the extendClaim verify will not succeed.
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(
-                tokenCaptor.capture(),
-                eq(PROCESSOR_NAME),
-                eq(segment.getSegmentId()),
-                any(ProcessingContext.class)
-        );
-        assertEquals(expectedToken, tokenCaptor.getValue());
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            verify(tokenStore).storeToken(
+                    tokenCaptor.capture(),
+                    eq(PROCESSOR_NAME),
+                    eq(segment.getSegmentId()),
+                    any(ProcessingContext.class)
+            );
+            assertEquals(expectedToken, tokenCaptor.getValue());
+        });
 
-        assertWithin(
-                500, TimeUnit.MILLISECONDS,
-                () -> {
-                    // Consciously trigger the WorkPackage again to force it through WorkPackage#processEvents.
-                    // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
-                    // Furthermore, the test could be too fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
-                    testSubjectWithShortThreshold.scheduleWorker();
-                    verify(tokenStore, atLeastOnce())
-                            .extendClaim(eq(PROCESSOR_NAME), eq(segment.getSegmentId()), any());
-                }
-        );
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            // Consciously trigger the WorkPackage again to force it through WorkPackage#processEvents.
+            // This should be done inside the await, as the WorkPackage does not re-trigger itself.
+            // Furthermore, the test could be too fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
+            testSubjectWithShortThreshold.scheduleWorker();
+            verify(tokenStore, atLeastOnce())
+                    .extendClaim(eq(PROCESSOR_NAME), eq(segment.getSegmentId()), any());
+        });
     }
 
     /**
@@ -353,26 +353,23 @@ class WorkPackageTest {
         testSubjectWithShortThreshold.scheduleEvent(expectedEvent);
 
         var validatedEvents = eventFilter.getValidatedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, validatedEvents.size()));
         assertEquals(expectedPayload, validatedEvents.getFirst());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
 
-        assertWithin(
-                500, TimeUnit.MILLISECONDS,
-                () -> {
-                    // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents.
-                    // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
-                    // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
-                    testSubjectWithShortThreshold.scheduleWorker();
-                    verify(tokenStore, atLeastOnce())
-                            .storeToken(
-                                    tokenCaptor.capture(),
-                                    eq(PROCESSOR_NAME),
-                                    eq(segment.getSegmentId()),
-                                    any(ProcessingContext.class));
-                }
-        );
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents.
+            // This should be done inside the await, as the WorkPackage does not re-trigger itself.
+            // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
+            testSubjectWithShortThreshold.scheduleWorker();
+            verify(tokenStore, atLeastOnce())
+                    .storeToken(
+                            tokenCaptor.capture(),
+                            eq(PROCESSOR_NAME),
+                            eq(segment.getSegmentId()),
+                            any(ProcessingContext.class));
+        });
         assertEquals(expectedToken, tokenCaptor.getValue());
     }
 
@@ -382,8 +379,8 @@ class WorkPackageTest {
 
         testSubject.scheduleWorker();
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertNull(trackerStatus));
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertNull(trackerStatus));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertTrue(result.isDone()));
         assertNull(result.get());
     }
 
@@ -419,7 +416,7 @@ class WorkPackageTest {
 
         CompletableFuture<Exception> result = testSubject.abort(expectedResult);
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertTrue(result.isDone()));
         assertEquals(expectedResult, result.get());
     }
 
@@ -431,7 +428,7 @@ class WorkPackageTest {
 
         CompletableFuture<Exception> result = testSubject.abort(otherAbortReason);
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertTrue(result.isDone()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertTrue(result.isDone()));
         assertEquals(originalAbortReason, result.get());
     }
 
@@ -479,7 +476,6 @@ class WorkPackageTest {
         verifyNoInteractions(executorService);
     }
 
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventsReturnsTrueIfOnlyOneEventIsAcceptedByTheEventValidator() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -498,28 +494,29 @@ class WorkPackageTest {
         assertTrue(result);
 
         List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(2, validatedEvents.size()));
         assertTrue(validatedEvents.containsAll(testEvents.stream().map(MessageStream.Entry::message).toList()));
 
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(1, processedEvents.size()));
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context).get());
 
-        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(
-                tokenCaptor.capture(),
-                eq(PROCESSOR_NAME),
-                eq(segment.getSegmentId()),
-                any(ProcessingContext.class));
-        assertEquals(expectedToken, tokenCaptor.getValue());
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+            verify(tokenStore).storeToken(
+                    tokenCaptor.capture(),
+                    eq(PROCESSOR_NAME),
+                    eq(segment.getSegmentId()),
+                    any(ProcessingContext.class));
+            assertEquals(expectedToken, tokenCaptor.getValue());
 
-        assertEquals(1, trackerStatusUpdates.size());
-        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
-        assertTrue(resultPosition.isPresent());
-        assertEquals(1L, resultPosition.getAsLong());
+            assertEquals(1, trackerStatusUpdates.size());
+            OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+            assertTrue(resultPosition.isPresent());
+            assertEquals(1L, resultPosition.getAsLong());
+        });
     }
 
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventsHandlesAllEventsInOneTransactionWhenAllEventsCanBeHandled() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -536,28 +533,30 @@ class WorkPackageTest {
         assertTrue(result);
 
         List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(2, validatedEvents.size()));
         assertTrue(validatedEvents.containsAll(expectedEvents.stream().map(MessageStream.Entry::message).toList()));
 
         var processedEvents = batchProcessor.getProcessedEvents();
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, processedEvents.size()));
+        await().atMost(TIMEOUT).untilAsserted(() -> assertEquals(2, processedEvents.size()));
         assertEquals(expectedToken,
                      TrackingToken.fromContext(processedEvents.get(0).context).get());
         assertEquals(expectedToken,
                      TrackingToken.fromContext(processedEvents.get(1).context).get());
 
-        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(
-                tokenCaptor.capture(),
-                eq(PROCESSOR_NAME),
-                eq(segment.getSegmentId()),
-                any(ProcessingContext.class));
-        assertEquals(expectedToken, tokenCaptor.getValue());
+        await().atMost(TIMEOUT).untilAsserted(() -> {
+            ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+            verify(tokenStore).storeToken(
+                    tokenCaptor.capture(),
+                    eq(PROCESSOR_NAME),
+                    eq(segment.getSegmentId()),
+                    any(ProcessingContext.class));
+            assertEquals(expectedToken, tokenCaptor.getValue());
 
-        assertFalse(trackerStatusUpdates.isEmpty());
-        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
-        assertTrue(resultPosition.isPresent());
-        assertEquals(1L, resultPosition.getAsLong());
+            assertFalse(trackerStatusUpdates.isEmpty());
+            OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+            assertTrue(resultPosition.isPresent());
+            assertEquals(1L, resultPosition.getAsLong());
+        });
     }
 
     private static Context globalTrackingTokenContext(long globalIndex) {
