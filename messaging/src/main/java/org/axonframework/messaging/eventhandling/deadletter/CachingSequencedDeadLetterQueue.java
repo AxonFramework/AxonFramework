@@ -38,12 +38,12 @@ import jakarta.annotation.Nonnull;
 
 /**
  * A decorator for {@link SequencedDeadLetterQueue} that adds caching of sequence identifiers to optimize
- * {@link #contains(Object, ProcessingContext)} lookups. This is particularly important for high-throughput event processing where checking
- * if an event's sequence is already dead-lettered should be as fast as possible.
+ * {@link #contains(Object, ProcessingContext)} lookups. This is particularly important for high-throughput event
+ * processing where checking if an event's sequence is already dead-lettered should be as fast as possible.
  * <p>
  * The caching mechanism uses a {@link SequenceIdentifierCache} to track which sequence identifiers are known to be
- * enqueued or not enqueued. When {@link #contains(Object, ProcessingContext)} is called, the cache is checked first to potentially avoid a
- * roundtrip to the underlying queue.
+ * enqueued or not enqueued. When {@link #contains(Object, ProcessingContext)} is called, the cache is checked first to
+ * potentially avoid a roundtrip to the underlying queue.
  * <p>
  * The cache should be cleared when a segment is released to ensure consistency. Use {@link #invalidateCache()} to clear
  * the cache when segment ownership changes.
@@ -51,8 +51,9 @@ import jakarta.annotation.Nonnull;
  * <b>Thread-safety note:</b> This class is not thread-safe when performing operations for the same sequence identifier
  * concurrently. It is designed for internal use by {@link DeadLetteringEventHandlingComponent}, where operations on a
  * given sequence identifier are already serialized by the upstream
- * {@link org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent}. External synchronization must be
- * provided if this class is used in other contexts where concurrent access to the same sequence identifier is possible.
+ * {@link org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent}.
+ * External synchronization must be provided if this class is used in other contexts where concurrent access to the same
+ * sequence identifier is possible.
  *
  * @param <M> The type of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
@@ -101,15 +102,16 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * The initialization checks if the delegate queue is empty. This check is performed asynchronously and the returned
      * future completes when the cache is ready.
      *
+     * @param context The processing context in which the dead letters are processed.
      * @return a future that completes with the initialized cache
      */
-    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache() {
+    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache(@Nullable ProcessingContext context) {
         SequenceIdentifierCache existingCache = cacheRef.get();
         if (existingCache != null) {
             return CompletableFuture.completedFuture(existingCache);
         }
 
-        return delegate.amountOfSequences(null)
+        return delegate.amountOfSequences(context)
                        .thenApply(count -> {
                            boolean startedEmpty = count == 0L;
                            SequenceIdentifierCache newCache = new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
@@ -142,7 +144,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                                            @Nonnull DeadLetter<? extends M> letter,
                                            @Nullable ProcessingContext context) {
         // Initialize cache before enqueue to ensure we track this sequence
-        return getOrInitializeCache()
+        return getOrInitializeCache(context)
                 .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter, context)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
@@ -207,7 +209,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
         }
 
         // Cache not initialized or says it might be present - initialize cache and verify with delegate
-        return getOrInitializeCache()
+        return getOrInitializeCache(context)
                 .thenCompose(cache -> delegate.contains(sequenceIdentifier, context)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {

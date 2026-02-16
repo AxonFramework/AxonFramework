@@ -32,7 +32,7 @@ import org.axonframework.messaging.core.Message;
  * @param context The context with resources, or {@code null} if no context is needed.
  * @param <M>     The message type contained in the dead letter.
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 5.1.0
  */
 public record DeadLetterWithContext<M extends Message>(
         @Nonnull DeadLetter<M> letter,

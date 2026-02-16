@@ -308,7 +308,8 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
     public CompletableFuture<Boolean> process(
             @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
             @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
-            @Nullable ProcessingContext context) {
+            @Nullable ProcessingContext context
+    ) {
         if (deadLetters.isEmpty()) {
             logger.debug("Received a request to process dead letters but there are none.");
             return CompletableFuture.completedFuture(false);
