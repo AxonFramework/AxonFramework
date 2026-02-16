@@ -90,7 +90,7 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @Nonnull List<? extends EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
@@ -115,7 +115,7 @@ public class StorageEngineBackedEventStore implements EventStore {
     }
 
     private void appendToTransaction(ProcessingContext context,
-                                     List<EventMessage> events) {
+                                     List<? extends EventMessage> events) {
         EventStoreTransaction transaction = transaction(context);
         for (EventMessage event : events) {
             transaction.appendEvent(event);
