@@ -22,14 +22,6 @@ axon.iws
 # documentation's local bulid
 docs/_playbook/build
 
-# AI ASSISTANT - Claude Code
-CLAUDE.md
-.claude/
-.mcp.json
-
-# AI ASSISTANT - Kiro
-.kiro
-
-# AI ASSISTANT - Cursor
-.vscode
-.cursor
+# Claude Code
+.claude/settings.local.json
+.ai/temp

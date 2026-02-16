@@ -331,4 +331,4 @@ These terms are exceptions to sentence-case rules in H2-H6 headings:
 
 ---
 
-**Note for Claude:** When starting a new session, read this file and `docs/changes-to-process.md` to understand the current state of the migration. Ask the user which section they'd like to work on next.
+**Note for AI Agent:** When starting a new session, read this file and `docs/changes-to-process.md` to understand the current state of the migration. Ask the user which section they'd like to work on next.
