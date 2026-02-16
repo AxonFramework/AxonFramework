@@ -294,25 +294,28 @@ BDD-style testing:
     - Usage notes or common patterns
     - Cross-references to related methods
 
+**Internal API Annotation:**
+8. **Mark Internal Code with `@Internal`**: Use `@Internal` (`org.axonframework.common.annotation.Internal`) on classes and methods that are not part of the public API. This applies to code extracted purely for internal organization (e.g., helper classes, implementation details split out for readability). Internal code is still usable but may introduce breaking changes in minor/patch releases. Always document *why* the element is internal in its Javadoc.
+
 **Framework-Specific Guidelines:**
-8. **Emphasize Integration**: Explain how components fit into the framework
+9. **Emphasize Integration**: Explain how components fit into the framework
     - Who creates the component
     - How users should access it (don't instantiate directly)
     - Proper usage patterns through framework APIs
-9. **Focus on Purpose Over Implementation**:
+10. **Focus on Purpose Over Implementation**:
     - Emphasize the "why" (shared configuration, centralized management)
     - Don't focus on internal class relationships unless relevant to users
-10. **Examples Should Be Realistic**:
+11. **Examples Should Be Realistic**:
     - Use proper framework APIs (`MessagingConfigurer.create()`)
     - Show real-world configuration scenarios
     - Include method chaining patterns
 
 **Content Guidelines:**
-11. **Explain Defaults and Automation**:
+12. **Explain Defaults and Automation**:
     - Document automatic behaviors (transaction management setup)
     - Explain what the framework provides out-of-the-box
     - Clarify when manual configuration is needed
-12. **Cross-Reference Related Components**:
+13. **Cross-Reference Related Components**:
     - Link to sub-modules and delegated components
     - Reference configuration interfaces
     - Point to related framework classes
@@ -333,6 +336,6 @@ BDD-style testing:
  * }</pre>
  *
  * @author [Author Name]
- * @since [verson, like 5.1.0]
+ * @since [version, like 5.1.0]
  */
 ```
