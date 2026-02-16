@@ -50,7 +50,7 @@ public abstract class DelegatingEventBus implements EventBus {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @Nonnull List<? extends EventMessage> events) {
         return delegate.publish(context, events);
     }
 

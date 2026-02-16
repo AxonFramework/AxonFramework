@@ -105,7 +105,7 @@ public class SimpleEventBus implements EventBus {
     }
 
     @Override
-    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<? extends EventMessage> events) {
         if (context == null) {
             // No processing context, publish immediately
             eventSubscribers.notifySubscribers(events, context);
@@ -116,7 +116,7 @@ public class SimpleEventBus implements EventBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void registerEventPublishingHooks(@Nonnull ProcessingContext context, @Nonnull List<EventMessage> events) {
+    private void registerEventPublishingHooks(@Nonnull ProcessingContext context, @Nonnull List<? extends EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(

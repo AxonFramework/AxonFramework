@@ -80,87 +80,105 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
 
     @Override
     public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.on(phase, action);
+        delegate.on(phase, ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOn(phase, action);
+        delegate.runOn(phase, ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPreInvocation(action);
+        delegate.onPreInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPreInvocation(action);
+        delegate.runOnPreInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onInvocation(action);
+        delegate.onInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnInvocation(action);
+        delegate.runOnInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPostInvocation(action);
+        delegate.onPostInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPostInvocation(action);
+        delegate.runOnPostInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPrepareCommit(action);
+        delegate.onPrepareCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPrepareCommit(action);
+        delegate.runOnPrepareCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onCommit(action);
+        delegate.onCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnCommit(action);
+        delegate.runOnCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onAfterCommit(action);
+        delegate.onAfterCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnAfterCommit(action);
+        delegate.runOnAfterCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
-        return delegate.onError(action);
+        delegate.onError((ignoredContext, phase, error) -> action.handle(this, phase, error));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.whenComplete(action);
+        delegate.whenComplete(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
     public ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.doFinally(action);
+        onError((context, phase, error) -> action.accept(context));
+        whenComplete(action);
+        return this;
     }
 
     @Override
@@ -247,5 +265,12 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
         return delegate.component(type, name);
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceOverridingProcessingContext{"
+                + "delegate=" + delegate
+                + '}';
     }
 }
