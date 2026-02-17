@@ -13,6 +13,7 @@ The same events can be opened with different consistency scopes based on the spe
 
 **For more info:** Read the blog entitled, link:https://www.axoniq.io/blog/dcb-in-af-5[“Dynamic Consistency Boundary (DCB) in Axon Framework 5 - Event Sourcing That’s Adaptable”]
 
+[#remove_threadlocal_usage]
 == 2. ThreadLocal usage prevents proper asynchronous and reactive programming
 
 **Problem:** Axon Framework 4.x's reliance on ThreadLocal variables (particularly in `AggregateLifecycle`) creates errors when working with asynchronous code, reactive streams, or modern concurrency patterns.

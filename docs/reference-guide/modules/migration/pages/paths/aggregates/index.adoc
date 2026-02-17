@@ -11,7 +11,7 @@ xref:migration:paths/aggregates/index.adoc#import-and-package-changes[Import and
 General considerations regarding java imports and dependency management.
 
 xref:migration:paths/aggregates/configuration-migration.adoc[Entity configuration]::
-How to register entities and declare modules using the new xref:understanding-architecture-principles.adoc#_the_improved_configuration_architecture_makes_configuring_your_project_easier[configurer api].
+How to register entities and declare modules using the new xref:understanding-architecture-principles.adoc#improved_configuration_architecture[configurer API].
 
 xref:migration:paths/aggregates/index.adoc#static-factory-methods-for-creation[Static factory methods for creation]::
 No more command handling constructors.
@@ -243,7 +243,7 @@ Axon uses the first event's payload to construct the initial instance directly.
 [#eventappender-instead-of-aggregatelifecycle]
 == `EventAppender` instead of `AggregateLifecycle`
 
-The `AggregateLifecycle.apply()` method is replaced by the `EventAppender` interface, which is passed as a parameter to your command handling methods. This makes the dependency on the event publishing mechanism explicit. This decision is documented in more detail in the xref:migration:solved-architecture-choices.adoc#_2_threadlocal_usage_prevents_proper_asynchronous_and_reactive_programming[ThreadLocal usage prevents proper asynchronous and reactive programming] section.
+The `AggregateLifecycle.apply()` method is replaced by the `EventAppender` interface, which is passed as a parameter to your command handling methods. This makes the dependency on the event publishing mechanism explicit. This decision is documented in more detail in the xref:migration:solved-architecture-choices.adoc#remove_threadlocal_usage[ThreadLocal usage prevents proper asynchronous and reactive programming] section.
 
 [source,java]
 ----

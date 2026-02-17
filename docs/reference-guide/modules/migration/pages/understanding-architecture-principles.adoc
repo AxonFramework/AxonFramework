@@ -24,6 +24,7 @@ This change flows through:
 Modern systems increasingly demand non-blocking execution.
 By making async explicit, developers can reason about concurrency clearly and therefore can optimize scheduling effectively.
 
+[#improved_configuration_architecture]
 == The improved configuration architecture makes configuring your project easier
 
 One of the most architecturally significant changes is how Axon Framework approaches configuration.
