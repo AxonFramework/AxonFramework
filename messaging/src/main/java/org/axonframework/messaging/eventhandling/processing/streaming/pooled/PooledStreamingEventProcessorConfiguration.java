@@ -40,6 +40,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -48,6 +49,8 @@ import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -110,8 +113,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
-    private Consumer<Segment> segmentReleasedAction = segment -> {
-    };
+    private final List<SegmentChangeListener> segmentChangeListeners = new ArrayList<>();
     private UnaryOperator<DeadLetterQueueConfiguration> deadLetterQueueCustomization = UnaryOperator.identity();
 
     /**
@@ -494,19 +496,16 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Registers an action to perform when a segment is released. This action is invoked when a segment's claim is
-     * released, either due to shutdown, rebalancing, or explicit release.
-     * <p>
-     * Defaults to a no-op.
+     * Adds a listener invoked when segments are claimed or released.
      *
-     * @param segmentReleasedAction The action to perform when a segment is released.
+     * @param segmentChangeListener The listener to add.
      * @return The current instance, for fluent interfacing.
      */
-    public PooledStreamingEventProcessorConfiguration segmentReleasedAction(
-            @Nonnull Consumer<Segment> segmentReleasedAction
+    public PooledStreamingEventProcessorConfiguration addSegmentChangeListener(
+            @Nonnull SegmentChangeListener segmentChangeListener
     ) {
-        assertNonNull(segmentReleasedAction, "Segment released action may not be null");
-        this.segmentReleasedAction = segmentReleasedAction;
+        assertNonNull(segmentChangeListener, "Segment change listener may not be null");
+        this.segmentChangeListeners.add(segmentChangeListener);
         return this;
     }
 
@@ -709,12 +708,13 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Returns the action to perform when a segment is released.
+     * Returns the configured segment change listener composed from all registered listeners.
      *
-     * @return The segment released action.
+     * @return The composed segment change listener.
      */
-    public Consumer<Segment> segmentReleasedAction() {
-        return segmentReleasedAction;
+    public SegmentChangeListener segmentChangeListener() {
+        return segmentChangeListeners.stream()
+                                     .reduce(SegmentChangeListener.noOp(), SegmentChangeListener::andThen);
     }
 
     /**
@@ -746,7 +746,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         descriptor.describeProperty("coordinatorExtendsClaims", coordinatorExtendsClaims);
         descriptor.describeProperty("eventCriteriaProvider", eventCriteriaProvider);
         descriptor.describeProperty("deadLetterQueue", deadLetterQueue());
-        descriptor.describeProperty("segmentReleasedAction", segmentReleasedAction);
+        descriptor.describeProperty("segmentChangeListeners", segmentChangeListeners);
         descriptor.describeProperty("schedulingProcessingContextProvider", schedulingProcessingContextProvider);
         descriptor.describeProperty("ignoredMessageHandler", ignoredMessageHandler);
     }

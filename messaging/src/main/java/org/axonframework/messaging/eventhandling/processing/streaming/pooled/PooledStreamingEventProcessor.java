@@ -120,8 +120,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param name                    A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s. These components should already be wrapped with
-     *                                any decorations (such as dead-lettering support) at the module level.
+     *                                {@link EventMessage}s. These components should already be wrapped with any
+     *                                decorations (such as dead-lettering support) at the module level.
      * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
      *                                {@code PooledStreamingEventProcessor} instance.
      */
@@ -169,7 +169,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialToken(configuration.initialToken())
                                       .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
-                                      .segmentReleasedAction(configuration.segmentReleasedAction())
+                                      .segmentChangeListener(configuration.segmentChangeListener())
                                       .build();
     }
 
