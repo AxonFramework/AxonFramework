@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.MetricRegistry;
+import io.dropwizard.metrics5.MetricRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.util.StubLifecycleRegistry;
@@ -284,14 +284,14 @@ class MetricsConfigurationEnhancerTest {
                        .keySet()
                        .stream()
                        .findFirst()
-                       .map(metricName -> metricName.split("\\.", 3)[0]);
+                       .map(metricName -> metricName.getKey().split("\\.", 3)[0]);
     }
 
     private static List<String> retrieveUniqueMetricNames(MetricRegistry registry) {
         return registry.getMetrics()
                        .keySet()
                        .stream()
-                       .map(metricName -> metricName.split("\\.", 3)[1])
+                       .map(metricName -> metricName.getKey().split("\\.", 3)[1])
                        .distinct()
                        .toList();
     }

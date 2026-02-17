@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.dropwizard.springboot;
 
-import com.codahale.metrics.MetricRegistry;
+import io.dropwizard.metrics5.MetricRegistry;
 import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

@@ -16,7 +16,8 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.MetricRegistry;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricRegistry;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -63,16 +64,16 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
     private final MetricRegistry registry;
 
     /**
-     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that are
-     * registered with a new {@link MetricRegistry} with default settings.
+     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that
+     * are registered with a new {@link MetricRegistry} with default settings.
      */
     public MetricsConfigurationEnhancer() {
         this(new MetricRegistry());
     }
 
     /**
-     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that are
-     * registered with the given {@code registry}.
+     * Initializes a new {@code MetricsConfigurationEnhancer} constructing {@link MessageMonitor MessageMonitors} that
+     * are registered with the given {@code registry}.
      *
      * @param registry the {@link MetricRegistry} which will record the metrics
      */
@@ -143,9 +144,9 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
         MessageTimerMonitor timerMonitor = MessageTimerMonitor.builder().build();
 
         MetricRegistry eventSinkRegistry = new MetricRegistry();
-        eventSinkRegistry.register("messageCounter", countingMonitor);
-        eventSinkRegistry.register("messageTimer", timerMonitor);
-        registry.register(sinkName, eventSinkRegistry);
+        eventSinkRegistry.register(MetricName.build("messageCounter"), countingMonitor);
+        eventSinkRegistry.register(MetricName.build("messageTimer"), timerMonitor);
+        registry.register(MetricName.build(sinkName), eventSinkRegistry);
 
         return new MultiMessageMonitor<>(countingMonitor, timerMonitor);
     }
@@ -157,11 +158,11 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
         EventProcessorLatencyMonitor latencyMonitor = new EventProcessorLatencyMonitor();
 
         MetricRegistry eventProcessingRegistry = new MetricRegistry();
-        eventProcessingRegistry.register("messageCounter", countingMonitor);
-        eventProcessingRegistry.register("messageTimer", timerMonitor);
-        eventProcessingRegistry.register("capacity", capacityMonitor);
-        eventProcessingRegistry.register("latency", latencyMonitor);
-        registry.register(processorName, eventProcessingRegistry);
+        eventProcessingRegistry.register(MetricName.build("messageCounter"), countingMonitor);
+        eventProcessingRegistry.register(MetricName.build("messageTimer"), timerMonitor);
+        eventProcessingRegistry.register(MetricName.build("capacity"), capacityMonitor);
+        eventProcessingRegistry.register(MetricName.build("latency"), latencyMonitor);
+        registry.register(MetricName.build(processorName), eventProcessingRegistry);
 
         return new MultiMessageMonitor<>(countingMonitor, timerMonitor, capacityMonitor, latencyMonitor);
     }
@@ -172,10 +173,10 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
 
         MetricRegistry handlerRegistry = new MetricRegistry();
-        handlerRegistry.register("messageCounter", countingMonitor);
-        handlerRegistry.register("messageTimer", timerMonitor);
-        handlerRegistry.register("capacity", capacityMonitor);
-        registry.register(name, handlerRegistry);
+        handlerRegistry.register(MetricName.build("messageCounter"), countingMonitor);
+        handlerRegistry.register(MetricName.build("messageTimer"), timerMonitor);
+        handlerRegistry.register(MetricName.build("capacity"), capacityMonitor);
+        registry.register(MetricName.build(name), handlerRegistry);
 
         return new MultiMessageMonitor<>(countingMonitor, timerMonitor, capacityMonitor);
     }
