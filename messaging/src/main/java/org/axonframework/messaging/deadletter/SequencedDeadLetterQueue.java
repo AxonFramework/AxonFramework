@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -32,9 +33,10 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
  * dead letters.
  * <p>
  * The contained sequences are uniquely identifiable through the "sequence identifier." Dead-letters are kept in the
- * form of a {@link DeadLetter}. It is highly recommended to use the {@link #process(Predicate, Function, ProcessingContext) process operation} (or
- * any of its variants) to consume letters from the queue for retrying. This method ensures sequences cannot be
- * concurrently accessed, thus protecting the user against handling messages out of order.
+ * form of a {@link DeadLetter}. It is highly recommended to use the
+ * {@link #process(Predicate, Function, ProcessingContext) process operation} (or any of its variants) to consume
+ * letters from the queue for retrying. This method ensures sequences cannot be concurrently accessed, thus protecting
+ * the user against handling messages out of order.
  * <p>
  * All methods in this interface return {@link CompletableFuture} to support asynchronous implementations. In-memory
  * implementations may simply return completed futures, while persistent implementations (JPA, JDBC, etc.) can leverage
@@ -58,9 +60,10 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      *
      * @param sequenceIdentifier The identifier of the sequence the {@code letter} belongs to.
      * @param letter             The {@link DeadLetter} to enqueue.
-     * @param context            The processing context in which the dead letters are processed.
+     * @param context            the processing context within which to enqueue the given {@code letter}
      * @return A {@link CompletableFuture} that completes when the operation is done. The future completes exceptionally
-     * with a {@link DeadLetterQueueOverflowException} when this queue {@link #isFull(Object, ProcessingContext) is full}.
+     * with a {@link DeadLetterQueueOverflowException} when this queue
+     * {@link #isFull(Object, ProcessingContext) is full}.
      */
     @Nonnull
     CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
@@ -74,12 +77,13 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param sequenceIdentifier The identifier of the sequence to store the result of the {@code letterBuilder} in.
      * @param letterBuilder      The {@link DeadLetter} builder constructing the letter to enqueue. Only invoked if the
      *                           given {@code sequenceIdentifier} is contained.
-     * @param context            The processing context in which the dead letters are processed.
+     * @param context            the processing context within which to enqueue the result of the given
+     *                           {@code letterBuilder} <b>if</b> there is a sequence for the given
+     *                           {@code sequenceIdentifier}
      * @return A {@link CompletableFuture} with {@code true} if there are {@link DeadLetter dead letters} for the given
-     * {@code sequenceIdentifier} and thus the {@code letterBuilder's} outcome is inserted. Otherwise the future
-     * completes with {@code false}. The future completes exceptionally with a
-     * {@link DeadLetterQueueOverflowException} when this queue is {@link #isFull(Object, ProcessingContext)} for the given
-     * {@code sequenceIdentifier}.
+     * {@code sequenceIdentifier} and thus the {@code letterBuilder's} outcome is inserted. Otherwise, the future
+     * completes with {@code false}. The future completes exceptionally with a {@link DeadLetterQueueOverflowException}
+     * when this queue is {@link #isFull(Object, ProcessingContext)} for the given {@code sequenceIdentifier}.
      */
     @Nonnull
     default CompletableFuture<Boolean> enqueueIfPresent(
@@ -102,7 +106,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * exist in this queue.
      *
      * @param letter  The {@link DeadLetter dead letter} to evict from this queue.
-     * @param context The processing context in which the dead letters are processed.
+     * @param context the processing context within which to evict the given {@code letter}
      * @return A {@link CompletableFuture} that completes when the eviction is done.
      */
     @Nonnull
@@ -111,7 +115,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
 
     /**
      * Reenters the given {@code letter}, updating the contents with the {@code letterUpdater}. This method should be
-     * invoked if {@link #process(Predicate, Function, ProcessingContext) processing} decided to keep the letter in the queue.
+     * invoked if {@link #process(Predicate, Function, ProcessingContext) processing} decided to keep the letter in the
+     * queue.
      * <p>
      * This operation adjusts the {@link DeadLetter#lastTouched()}. It may adjust the {@link DeadLetter#cause()} and
      * {@link DeadLetter#diagnostics()}, depending on the given {@code letterUpdater}.
@@ -120,7 +125,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param letterUpdater A {@link UnaryOperator lambda} taking in the given {@code letter} and updating the entry for
      *                      requeueing. This may adjust the {@link DeadLetter#cause()} and
      *                      {@link DeadLetter#diagnostics()}, for example.
-     * @param context       The processing context in which the dead letters are processed.
+     * @param context       the processing context within which to requeue the given {@code letter}
      * @return A {@link CompletableFuture} that completes when the requeue is done. The future completes exceptionally
      * with a {@link NoSuchDeadLetterException} if the given {@code letter} does not exist in the queue.
      */
@@ -134,8 +139,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      *
      * @param sequenceIdentifier The identifier used to validate for contained {@link DeadLetter dead letters}
      *                           instances.
-     * @param context            The {@link ProcessingContext} for the current unit of work, or {@code null} if not
-     *                           available.
+     * @param context            the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with {@code true} if there are {@link DeadLetter dead letters} present for
      * the given {@code sequenceIdentifier}, {@code false} otherwise.
      */
@@ -147,20 +151,19 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * Return all the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
      *
      * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead letters} to return.
-     * @param context            The {@link ProcessingContext} for the current unit of work, or {@code null} if not
-     *                           available.
+     * @param context            the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with all the {@link DeadLetter dead letters} for the given
      * {@code sequenceIdentifier} in insert order.
      */
     @Nonnull
     CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
-                                                                             @Nullable ProcessingContext context);
+                                                                            @Nullable ProcessingContext context);
 
     /**
      * Return all {@link DeadLetter dead letter} sequences held by this queue. The sequences are not necessarily
      * returned in insert order.
      *
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with all {@link DeadLetter dead letter} sequences held by this queue.
      */
     @Nonnull
@@ -173,8 +176,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * reached.
      *
      * @param sequenceIdentifier The identifier of the sequence to validate for.
-     * @param context            The {@link ProcessingContext} for the current unit of work, or {@code null} if not
-     *                           available.
+     * @param context            the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with {@code true} either when the limit of this queue is reached. Contains
      * {@code false} otherwise.
      */
@@ -185,7 +187,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
     /**
      * Returns the number of dead letters contained in this queue.
      *
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with the number of dead letters contained in this queue.
      */
     @Nonnull
@@ -199,8 +201,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * concurrent usage.
      *
      * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
-     * @param context            The {@link ProcessingContext} for the current unit of work, or {@code null} if not
-     *                           available.
+     * @param context            the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with the number of dead letters for the sequence matching the given
      * {@code sequenceIdentifier}.
      */
@@ -211,28 +212,28 @@ public interface SequencedDeadLetterQueue<M extends Message> {
     /**
      * Returns the number of unique sequences contained in this queue.
      * <p>
-     * Note that there's a window of opportunity where the size might exceed the maximum amount of sequences to
-     * account for concurrent usage of this dead letter queue.
+     * Note that there's a window of opportunity where the size might exceed the maximum amount of sequences to account
+     * for concurrent usage of this dead letter queue.
      *
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with the number of unique sequences contained in this queue.
      */
     @Nonnull
     CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context);
 
     /**
-     * Process a single sequence of enqueued {@link DeadLetter dead letters} through the given {@code processingTask} matching
-     * the {@code sequenceFilter}. It will pick the oldest available sequence, determined by the {@link DeadLetter#lastTouched()}
-     * field of the first entry in each sequence.
+     * Process a single sequence of enqueued {@link DeadLetter dead letters} through the given {@code processingTask}
+     * matching the {@code sequenceFilter}. It will pick the oldest available sequence, determined by the
+     * {@link DeadLetter#lastTouched()} field of the first entry in each sequence.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed! Furthermore, only the first dead letter is
      * validated, because it is the blocker for the processing of the rest of the sequence.
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter, ProcessingContext)} or {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)} a dead letter from the selected
-     * sequence. The {@code processingTask} is invoked as long as letters are present in the selected sequence and the
-     * result of processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means
-     * the dead letter should be evicted.
+     * {@link #evict(DeadLetter, ProcessingContext)} or {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)} a
+     * dead letter from the selected sequence. The {@code processingTask} is invoked as long as letters are present in
+     * the selected sequence and the result of processing returns {@code false} for
+     * {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the dead letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence.
      * Doing so ensures enqueued messages are handled in order.
@@ -240,9 +241,10 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param sequenceFilter A {@link Predicate lambda} selecting the sequences within this queue to process with the
      *                       {@code processingTask}.
      * @param processingTask A function processing a {@link DeadLetter dead letter}. Returns a {@link CompletableFuture}
-     *                       with an {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter, ProcessingContext)} or
+     *                       with an {@link EnqueueDecision} used to deduce whether to
+     *                       {@link #evict(DeadLetter, ProcessingContext)} or
      *                       {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)} the dead letter.
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context        the {@link ProcessingContext} in which the dead letters are processed
      * @return A {@link CompletableFuture} with {@code true} if an entire sequence of {@link DeadLetter dead letters}
      * was processed successfully, {@code false} otherwise. This means the {@code processingTask} processed all
      * {@link DeadLetter dead letters} of a sequence and the outcome was to evict each instance.
@@ -254,25 +256,26 @@ public interface SequencedDeadLetterQueue<M extends Message> {
             @Nullable ProcessingContext context);
 
     /**
-     * Process a single sequence of enqueued {@link DeadLetter dead letters} with the given {@code processingTask}. It will pick
-     * the oldest available sequence, determined by the {@link DeadLetter#lastTouched()} field of the first entry in each
-     * sequence.
+     * Process a single sequence of enqueued {@link DeadLetter dead letters} with the given {@code processingTask}. It
+     * will pick the oldest available sequence, determined by the {@link DeadLetter#lastTouched()} field of the first
+     * entry in each sequence.
      * <p>
      * Note that only a <em>single</em> matching sequence is processed!
      * <p>
      * Uses the {@link EnqueueDecision} returned by the {@code processingTask} to decide whether to
-     * {@link #evict(DeadLetter, ProcessingContext)} or {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)} the dead letter. The
-     * {@code processingTask} is invoked as long as letters are present in the selected sequence and the result of
-     * processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The latter means the dead
-     * letter should be evicted.
+     * {@link #evict(DeadLetter, ProcessingContext)} or {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)}
+     * the dead letter. The {@code processingTask} is invoked as long as letters are present in the selected sequence
+     * and the result of processing returns {@code false} for {@link EnqueueDecision#shouldEnqueue()} decision. The
+     * latter means the dead letter should be evicted.
      * <p>
      * This operation protects against concurrent invocations of the {@code processingTask} on the filtered sequence.
      * Doing so ensures enqueued messages are handled in order.
      *
      * @param processingTask A function processing a {@link DeadLetter dead letter}. Returns a {@link CompletableFuture}
-     *                       with an {@link EnqueueDecision} used to deduce whether to {@link #evict(DeadLetter, ProcessingContext)} or
+     *                       with an {@link EnqueueDecision} used to deduce whether to
+     *                       {@link #evict(DeadLetter, ProcessingContext)} or
      *                       {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext)} the dead letter.
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context        the {@link ProcessingContext} in which the dead letters are processed
      * @return A {@link CompletableFuture} with {@code true} if an entire sequence of {@link DeadLetter dead letters}
      * was processed successfully, {@code false} otherwise. This means the {@code processingTask} processed all
      * {@link DeadLetter dead letters} of a sequence and the outcome was to evict each instance.
@@ -280,14 +283,15 @@ public interface SequencedDeadLetterQueue<M extends Message> {
     @Nonnull
     default CompletableFuture<Boolean> process(
             @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
-            @Nullable ProcessingContext context) {
+            @Nullable ProcessingContext context
+    ) {
         return process(letter -> true, processingTask, context);
     }
 
     /**
      * Clears out all {@link DeadLetter dead letters} present in this queue.
      *
-     * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
+     * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} that completes when all dead letters have been cleared.
      */
     @Nonnull
