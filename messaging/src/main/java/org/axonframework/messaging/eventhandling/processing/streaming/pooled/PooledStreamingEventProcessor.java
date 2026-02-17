@@ -120,8 +120,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param name                    A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s. These components should already be wrapped with
-     *                                any decorations (such as dead-lettering support) at the module level.
+     *                                {@link EventMessage}s. These components should already be wrapped with any
+     *                                decorations (such as dead-lettering support) at the module level.
      * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
      *                                {@code PooledStreamingEventProcessor} instance.
      */
@@ -152,25 +152,25 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                 "EventCriteriaProvider function must not return null"
         );
 
-        Coordinator.Builder coordinatorBuilder = Coordinator.builder()
-                                                            .name(name)
-                                                            .eventSource(eventSource)
-                                                            .tokenStore(tokenStore)
-                                                            .unitOfWorkFactory(unitOfWorkFactory)
-                                                            .executorService(configuration.coordinatorExecutor())
-                                                            .workPackageFactory(this::spawnWorker)
-                                                            .onMessageIgnored(configuration.ignoredMessageHandler())
-                                                            .processingStatusUpdater(this::statusUpdater)
-                                                            .tokenClaimInterval(configuration.tokenClaimInterval())
-                                                            .claimExtensionThreshold(configuration.claimExtensionThreshold())
-                                                            .clock(configuration.clock())
-                                                            .maxSegmentProvider(configuration.maxSegmentProvider())
-                                                            .initialSegmentCount(configuration.initialSegmentCount())
-                                                            .initialToken(configuration.initialToken())
-                                                            .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
-                                                            .eventCriteria(eventCriteria);
-        configuration.segmentChangeListeners().forEach(coordinatorBuilder::addSegmentChangeListener);
-        this.coordinator = coordinatorBuilder.build();
+        this.coordinator = Coordinator.builder()
+                                      .name(name)
+                                      .eventSource(eventSource)
+                                      .tokenStore(tokenStore)
+                                      .unitOfWorkFactory(unitOfWorkFactory)
+                                      .executorService(configuration.coordinatorExecutor())
+                                      .workPackageFactory(this::spawnWorker)
+                                      .onMessageIgnored(configuration.ignoredMessageHandler())
+                                      .processingStatusUpdater(this::statusUpdater)
+                                      .tokenClaimInterval(configuration.tokenClaimInterval())
+                                      .claimExtensionThreshold(configuration.claimExtensionThreshold())
+                                      .clock(configuration.clock())
+                                      .maxSegmentProvider(configuration.maxSegmentProvider())
+                                      .initialSegmentCount(configuration.initialSegmentCount())
+                                      .initialToken(configuration.initialToken())
+                                      .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
+                                      .eventCriteria(eventCriteria)
+                                      .segmentChangeListener(configuration.segmentChangeListener())
+                                      .build();
     }
 
     @Override

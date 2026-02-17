@@ -708,12 +708,13 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Returns the configured segment change listeners.
+     * Returns the configured segment change listener composed from all registered listeners.
      *
-     * @return The configured segment change listeners.
+     * @return The composed segment change listener.
      */
-    public List<SegmentChangeListener> segmentChangeListeners() {
-        return segmentChangeListeners;
+    public SegmentChangeListener segmentChangeListener() {
+        return segmentChangeListeners.stream()
+                                     .reduce(SegmentChangeListener.noOp(), SegmentChangeListener::andThen);
     }
 
     /**
