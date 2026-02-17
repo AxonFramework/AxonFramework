@@ -32,8 +32,8 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
  * Adapter that wraps a {@link SyncSequencedDeadLetterQueue} and provides the asynchronous
  * {@link SequencedDeadLetterQueue} interface.
  * <p>
- * This adapter allows synchronous dead letter queue implementations (such as JPA or JDBC-based queues) to be used
- * where the asynchronous {@link SequencedDeadLetterQueue} interface is expected.
+ * This adapter allows synchronous dead letter queue implementations (such as JPA or JDBC-based queues) to be used where
+ * the asynchronous {@link SequencedDeadLetterQueue} interface is expected.
  * <p>
  * All operations are executed synchronously and wrapped in {@link CompletableFuture} instances. Exceptions thrown by
  * the delegate are captured in failed futures.
@@ -136,7 +136,8 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @Nonnull
     @Override
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
-            @Nullable ProcessingContext context) {
+            @Nullable ProcessingContext context
+    ) {
         try {
             Iterable<Iterable<DeadLetter<? extends M>>> result = delegate.deadLetters(context);
             return CompletableFuture.completedFuture(result);
