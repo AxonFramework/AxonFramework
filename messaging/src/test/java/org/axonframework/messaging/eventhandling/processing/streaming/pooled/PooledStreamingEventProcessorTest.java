@@ -1191,7 +1191,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void claimListenerDoesNotBlockProcessingWhenIncomplete() {
+        void claimListenerBlocksProcessingUntilCompleted() {
             // given
             CompletableFuture<Void> claimListenerFuture = new CompletableFuture<>();
             int testTokenClaimInterval = 100;
@@ -1208,12 +1208,16 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
 
             // then
+            await().during(200, TimeUnit.MILLISECONDS)
+                   .atMost(500, TimeUnit.MILLISECONDS)
+                   .untilAsserted(() -> assertThat(defaultEventHandlingComponent.recorded()).doesNotContain(event));
+
+            // when
+            claimListenerFuture.complete(null);
+
+            // then
             await().atMost(2, TimeUnit.SECONDS)
                    .untilAsserted(() -> assertThat(defaultEventHandlingComponent.recorded()).contains(event));
-            assertFalse(claimListenerFuture.isDone());
-
-            // cleanup
-            claimListenerFuture.complete(null);
         }
 
         @Test

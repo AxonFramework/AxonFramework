@@ -725,6 +725,7 @@ class Coordinator {
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
+        private CompletableFuture<Void> claimListenerBarrier = emptyCompletedFuture();
         private MessageStream<? extends EventMessage> eventStream;
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
@@ -830,6 +831,10 @@ class Coordinator {
                 return;
             }
 
+            if (awaitClaimListenerBarrier()) {
+                return;
+            }
+
             if (eventStream == null || unclaimedSegmentValidationThreshold <= clock.instant().toEpochMilli()) {
                 // Claim new segments, construct work packages per new segment, and open stream based on lowest segment
                 unclaimedSegmentValidationThreshold = clock.instant().toEpochMilli() + tokenClaimInterval;
@@ -840,6 +845,7 @@ class Coordinator {
                                      name,
                                      generation);
                         Map<Segment, TrackingToken> newSegments = claimNewSegments();
+                        List<CompletableFuture<Void>> claimListenerInvocations = new ArrayList<>();
 
                         for (Map.Entry<Segment, TrackingToken> entry : newSegments.entrySet()) {
                             Segment segment = entry.getKey();
@@ -849,7 +855,7 @@ class Coordinator {
                             streamStartPosition = streamStartPosition == null || otherUnwrapped == null
                                     ? null : streamStartPosition.lowerBound(otherUnwrapped);
                             workPackages.computeIfAbsent(segment.getSegmentId(),
-                                                         wp -> createWorkPackage(segment, token));
+                                                         wp -> createWorkPackage(segment, token, claimListenerInvocations));
                         }
 
                         if (logger.isInfoEnabled() && !newSegments.isEmpty()) {
@@ -858,6 +864,11 @@ class Coordinator {
                                     name,
                                     generation,
                                     newSegments.size());
+                        }
+
+                        registerClaimListenerBarrier(claimListenerInvocations);
+                        if (awaitClaimListenerBarrier()) {
+                            return;
                         }
                     }
                     ensureOpenStream(streamStartPosition);
@@ -984,21 +995,56 @@ class Coordinator {
             }
         }
 
-        private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
+        private WorkPackage createWorkPackage(
+                Segment segment,
+                TrackingToken token,
+                List<CompletableFuture<Void>> claimListenerInvocations
+        ) {
             WorkPackage workPackage = workPackageFactory.apply(segment, token);
             workPackage.onBatchProcessed(() -> resetRetryExponentialBackoff(segment.getSegmentId()));
+            claimListenerInvocations.add(invokeClaimListener(segment));
+            return workPackage;
+        }
+
+        private void registerClaimListenerBarrier(List<CompletableFuture<Void>> claimListenerInvocations) {
+            if (claimListenerInvocations.isEmpty()) {
+                return;
+            }
+            claimListenerBarrier = CompletableFuture.allOf(
+                    claimListenerInvocations.toArray(CompletableFuture[]::new)
+            );
+            claimListenerBarrier.whenComplete((unused, throwable) -> scheduleImmediateCoordinationTask());
+        }
+
+        private boolean awaitClaimListenerBarrier() {
+            if (claimListenerBarrier.isDone()) {
+                return false;
+            }
+            logger.debug(
+                    "Processor [{}] (Coordination Task [{}]) is waiting for claim listener invocations to complete "
+                            + "before coordinating events.",
+                    name,
+                    generation
+            );
+            processingGate.set(false);
+            scheduleDelayedCoordinationTask(Math.min(claimExtensionThreshold, tokenClaimInterval));
+            return true;
+        }
+
+        private CompletableFuture<Void> invokeClaimListener(Segment segment) {
             try {
-                segmentChangeListener.onSegmentClaimed(segment).whenComplete((unused, throwable) -> {
+                return segmentChangeListener.onSegmentClaimed(segment)
+                                            .handle((unused, throwable) -> {
                     if (throwable != null) {
                         logger.info(
-                                "Processor [{}] (Coordination Task [{}]). "
-                                        + "An exception occurred while invoking claim listeners for [{}].",
+                                "Processor [{}] (Coordination Task [{}]). An exception occurred while invoking claim listeners for [{}].",
                                 name,
                                 generation,
                                 segment,
                                 throwable
                         );
                     }
+                    return null;
                 });
             } catch (Exception e) {
                 logger.info(
@@ -1008,8 +1054,8 @@ class Coordinator {
                         segment,
                         e
                 );
+                return emptyCompletedFuture();
             }
-            return workPackage;
         }
 
         private void resetRetryExponentialBackoff(int segmentId) {
