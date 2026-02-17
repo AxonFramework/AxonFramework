@@ -34,32 +34,30 @@ public interface SegmentChangeListener {
     /**
      * Creates a listener that reacts only to claim events.
      *
-     * @param onClaim The asynchronous claim callback.
-     * @return A listener reacting to claim events.
+     * @param onClaim asynchronous claim callback
+     * @return listener reacting to claim events
      */
     @Nonnull
     static SegmentChangeListener onClaim(@Nonnull Function<Segment, CompletableFuture<Void>> onClaim) {
-        Objects.requireNonNull(onClaim, "Claim listener may not be null");
         return new SimpleSegmentChangeListener(onClaim, segment -> CompletableFuture.completedFuture(null));
     }
 
     /**
      * Creates a listener that reacts only to release events.
      *
-     * @param onRelease The asynchronous release callback.
-     * @return A listener reacting to release events.
+     * @param onRelease asynchronous release callback
+     * @return listener reacting to release events
      */
     @Nonnull
     static SegmentChangeListener onRelease(@Nonnull Function<Segment, CompletableFuture<Void>> onRelease) {
-        Objects.requireNonNull(onRelease, "Release listener may not be null");
         return new SimpleSegmentChangeListener(segment -> CompletableFuture.completedFuture(null), onRelease);
     }
 
     /**
      * Creates a listener that executes synchronously on claim events.
      *
-     * @param onClaim The synchronous claim callback.
-     * @return A listener reacting to claim events.
+     * @param onClaim synchronous claim callback
+     * @return listener reacting to claim events
      */
     @Nonnull
     static SegmentChangeListener runOnClaim(@Nonnull Consumer<Segment> onClaim) {
@@ -73,8 +71,8 @@ public interface SegmentChangeListener {
     /**
      * Creates a listener that executes synchronously on release events.
      *
-     * @param onRelease The synchronous release callback.
-     * @return A listener reacting to release events.
+     * @param onRelease synchronous release callback
+     * @return listener reacting to release events
      */
     @Nonnull
     static SegmentChangeListener runOnRelease(@Nonnull Consumer<Segment> onRelease) {
@@ -86,10 +84,23 @@ public interface SegmentChangeListener {
     }
 
     /**
+     * Returns a no-op listener.
+     *
+     * @return no-op segment change listener
+     */
+    @Nonnull
+    static SegmentChangeListener noOp() {
+        return new SimpleSegmentChangeListener(
+                segment -> CompletableFuture.completedFuture(null),
+                segment -> CompletableFuture.completedFuture(null)
+        );
+    }
+
+    /**
      * Invoked when a segment has been claimed and processing for that segment is started.
      *
-     * @param segment The claimed {@link Segment}.
-     * @return A {@link CompletableFuture} that completes when handling has finished.
+     * @param segment claimed {@link Segment}
+     * @return {@link CompletableFuture} that completes when handling has finished
      */
     @Nonnull
     CompletableFuture<Void> onSegmentClaimed(@Nonnull Segment segment);
@@ -97,8 +108,8 @@ public interface SegmentChangeListener {
     /**
      * Invoked when a segment has been released.
      *
-     * @param segment The released {@link Segment}.
-     * @return A {@link CompletableFuture} that completes when handling has finished.
+     * @param segment released {@link Segment}
+     * @return {@link CompletableFuture} that completes when handling has finished
      */
     @Nonnull
     CompletableFuture<Void> onSegmentReleased(@Nonnull Segment segment);
@@ -106,8 +117,8 @@ public interface SegmentChangeListener {
     /**
      * Compose this listener with {@code next}, invoking this listener first and the next listener second.
      *
-     * @param next The listener to invoke after this listener.
-     * @return A composed listener invoking listeners sequentially for both claim and release events.
+     * @param next listener to invoke after this listener
+     * @return composed listener invoking listeners sequentially for claim and release events
      */
     @Nonnull
     default SegmentChangeListener andThen(@Nonnull SegmentChangeListener next) {

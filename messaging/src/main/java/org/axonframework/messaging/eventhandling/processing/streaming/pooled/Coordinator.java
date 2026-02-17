@@ -114,8 +114,7 @@ class Coordinator {
     private final AtomicLong coordinationTaskGeneration = new AtomicLong(-1);
 
     private int errorWaitBackOff = 500;
-    private static final SegmentChangeListener NO_OP_SEGMENT_CHANGE_LISTENER =
-            new SimpleSegmentChangeListener(segment -> emptyCompletedFuture(), segment -> emptyCompletedFuture());
+    private static final SegmentChangeListener NO_OP_SEGMENT_CHANGE_LISTENER = SegmentChangeListener.noOp();
 
     /**
      * Instantiate a Builder to be able to create a {@code Coordinator}-instance. This builder <b>does not</b> validate
@@ -639,16 +638,16 @@ class Coordinator {
         }
 
         /**
-         * Adds a listener invoked when segments are claimed or released.
+         * Sets the listener invoked when segments are claimed or released.
          *
-         * @param segmentChangeListener The listener to add.
-         * @return The current Builder instance, for fluent interfacing.
+         * @param segmentChangeListener the listener to invoke for segment changes
+         * @return the current Builder instance, for fluent interfacing
          *
          * @since 5.1.0
          */
-        Builder addSegmentChangeListener(SegmentChangeListener segmentChangeListener) {
-            this.segmentChangeListener = this.segmentChangeListener.andThen(
-                    Objects.requireNonNull(segmentChangeListener, "Segment change listener may not be null")
+        Builder segmentChangeListener(SegmentChangeListener segmentChangeListener) {
+            this.segmentChangeListener = Objects.requireNonNull(
+                    segmentChangeListener, "Segment change listener may not be null"
             );
             return this;
         }

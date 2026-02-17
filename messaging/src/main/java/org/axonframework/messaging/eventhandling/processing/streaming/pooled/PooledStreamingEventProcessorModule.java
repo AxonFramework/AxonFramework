@@ -40,6 +40,7 @@ import org.axonframework.messaging.eventhandling.interception.InterceptingEventH
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.common.lifecycle.Phase;
