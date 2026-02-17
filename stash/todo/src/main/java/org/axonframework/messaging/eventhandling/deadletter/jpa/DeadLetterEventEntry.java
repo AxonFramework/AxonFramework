@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,22 +42,13 @@ import static java.util.Objects.requireNonNull;
 public class DeadLetterEventEntry {
 
     @Basic(optional = false)
-    private String eventType;
-
-    @Column(nullable = false)
-    private String eventIdentifier;
-
-    @Column(nullable = false)
     private String type;
 
-    @Basic(optional = false)
-    private String timeStamp;
+    @Column(nullable = false)
+    private String eventIdentifier; // TODO #3517 - rename to just "identifier"? Everything is related to event here
 
     @Basic(optional = false)
-    private String payloadType;
-
-    @Basic
-    private String payloadRevision;
+    private String timeStamp; // TODO #3517 - change it to "timestamp"?
 
     @Basic(optional = false)
     @Lob
@@ -77,7 +67,7 @@ public class DeadLetterEventEntry {
     private String aggregateIdentifier;
 
     @Basic
-    private Long sequenceNumber;
+    private Long sequenceNumber; // TODO #3517 - rename to "aggregateSequenceNumber"?
 
     @Basic
     private String tokenType;
@@ -97,13 +87,10 @@ public class DeadLetterEventEntry {
      * in an aggregate context (stored as context resources), and tracking token is stored when processing from an event
      * stream.
      *
-     * @param eventType           The event type (required).
+     * @param type                The {@link MessageType} of the event as a {@code String}, based on the output of
+     *                            {@link MessageType#toString()} (required).
      * @param eventIdentifier     The identifier of the message (required).
-     * @param type                The {@link Message#type()} as a {@code String}, based on the output of
-     *                            {@link org.axonframework.messaging.core.MessageType#toString()}.
      * @param messageTimestamp    The timestamp of the message (required).
-     * @param payloadType         The payload's type of the message.
-     * @param payloadRevision     The payload's revision of the message.
      * @param payload             The serialized payload of the message.
      * @param metadata            The serialized metadata of the message.
      * @param aggregateType       The aggregate type of the message.
@@ -112,12 +99,9 @@ public class DeadLetterEventEntry {
      * @param tokenType           The type of tracking token the message.
      * @param token               The serialized tracking token.
      */
-    public DeadLetterEventEntry(String eventType,
+    public DeadLetterEventEntry(String type,
                                 String eventIdentifier,
-                                String type,
                                 String messageTimestamp,
-                                String payloadType,
-                                String payloadRevision,
                                 byte[] payload,
                                 byte[] metadata,
                                 String aggregateType,
@@ -125,17 +109,13 @@ public class DeadLetterEventEntry {
                                 Long sequenceNumber,
                                 String tokenType,
                                 byte[] token) {
-        requireNonNull(eventType,
+        requireNonNull(type,
                        "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
         requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
-        requireNonNull(type, "All EventMessage implementations require a type.");
         requireNonNull(messageTimestamp, "All EventMessage implementations require a timestamp.");
-        this.eventType = eventType;
-        this.eventIdentifier = eventIdentifier;
         this.type = type;
+        this.eventIdentifier = eventIdentifier;
         this.timeStamp = messageTimestamp;
-        this.payloadType = payloadType;
-        this.payloadRevision = payloadRevision;
         this.payload = payload;
         this.metadata = metadata;
         this.aggregateType = aggregateType;
@@ -146,15 +126,13 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the event type, which is defined by the {@link DeadLetterJpaConverter} that mapped this entry.
-     * <p>
-     * Used for later matching whether a converter can convert it back to an
-     * {@link EventMessage}.
+     * Returns the original {@link Message#type() type} of the dead-letter, based on the {@link MessageType#toString()}
+     * output.
      *
-     * @return The event type.
+     * @return The event message type.
      */
-    public String getEventType() {
-        return eventType;
+    public String getType() {
+        return type;
     }
 
     /**
@@ -164,17 +142,6 @@ public class DeadLetterEventEntry {
      */
     public String getEventIdentifier() {
         return eventIdentifier;
-    }
-
-    /**
-     * Returns the original {@link Message#type() type} of the dead-letter, based on the {@link MessageType#toString()}
-     * output.
-     *
-     * @return The original {@link Message#type() type} of the dead-letter, based on the {@link MessageType#toString()}
-     * output.
-     */
-    public String getType() {
-        return type;
     }
 
     /**
@@ -193,24 +160,6 @@ public class DeadLetterEventEntry {
      */
     public byte[] getPayload() {
         return payload;
-    }
-
-    /**
-     * Returns the payload type name.
-     *
-     * @return The fully qualified class name of the payload type.
-     */
-    public String getPayloadType() {
-        return payloadType;
-    }
-
-    /**
-     * Returns the payload revision, if any.
-     *
-     * @return The payload revision, or {@code null} if not specified.
-     */
-    public String getPayloadRevision() {
-        return payloadRevision;
     }
 
     /**
@@ -278,12 +227,9 @@ public class DeadLetterEventEntry {
             return false;
         }
         DeadLetterEventEntry that = (DeadLetterEventEntry) o;
-        return Objects.equals(eventType, that.eventType)
+        return Objects.equals(type, that.type)
                 && Objects.equals(eventIdentifier, that.eventIdentifier)
-                && Objects.equals(type, that.type)
                 && Objects.equals(timeStamp, that.timeStamp)
-                && Objects.equals(payloadType, that.payloadType)
-                && Objects.equals(payloadRevision, that.payloadRevision)
                 && Objects.deepEquals(payload, that.payload)
                 && Objects.deepEquals(metadata, that.metadata)
                 && Objects.equals(aggregateType, that.aggregateType)
@@ -295,12 +241,9 @@ public class DeadLetterEventEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventType,
+        return Objects.hash(type,
                             eventIdentifier,
-                            type,
                             timeStamp,
-                            payloadType,
-                            payloadRevision,
                             Arrays.hashCode(payload),
                             Arrays.hashCode(metadata),
                             aggregateType,
@@ -313,12 +256,9 @@ public class DeadLetterEventEntry {
     @Override
     public String toString() {
         return "DeadLetterEventEntry{" +
-                "eventType='" + eventType + '\'' +
+                "type='" + type + '\'' +
                 ", eventIdentifier='" + eventIdentifier + '\'' +
-                ", type='" + type + '\'' +
                 ", timeStamp='" + timeStamp + '\'' +
-                ", payloadType='" + payloadType + '\'' +
-                ", payloadRevision='" + payloadRevision + '\'' +
                 ", payload=" + Arrays.toString(payload) +
                 ", metadata=" + Arrays.toString(metadata) +
                 ", aggregateType='" + aggregateType + '\'' +

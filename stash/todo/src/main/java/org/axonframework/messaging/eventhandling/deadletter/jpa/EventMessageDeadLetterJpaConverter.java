@@ -72,12 +72,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         Long sequenceNumber = context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
 
         return new DeadLetterEventEntry(
-                GenericEventMessage.class.getName(),
-                message.identifier(),
                 message.type().toString(),
+                message.identifier(),
                 message.timestamp().toString(),
-                message.payloadType().getName(),
-                null, // revision not tracked separately in AF5
                 serializedPayload,
                 serializedMetadata,
                 aggregateType,
