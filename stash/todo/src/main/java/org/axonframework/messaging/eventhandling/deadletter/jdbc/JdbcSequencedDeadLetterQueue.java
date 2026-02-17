@@ -28,7 +28,9 @@ import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.FailedPublisher;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
+import org.axonframework.messaging.deadletter.IterablePublisher;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
@@ -43,9 +45,10 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -99,6 +102,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     private final int maxSequenceSize;
     private final int pageSize;
     private final Duration claimDuration;
+    private final Executor streamExecutor;
 
     /**
      * Instantiate a JDBC-based {@link SyncSequencedDeadLetterQueue} through the given {@link Builder builder}.
@@ -124,6 +128,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         this.maxSequenceSize = builder.maxSequenceSize;
         this.pageSize = builder.pageSize;
         this.claimDuration = builder.claimDuration;
+        this.streamExecutor = builder.streamExecutor;
     }
 
     /**
@@ -339,17 +344,19 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public Flow.Publisher<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
+                                                                       @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (!contains(sequenceId, context)) {
-            return Collections.emptyList();
+            return new IterablePublisher<>(Collections.emptyList(), streamExecutor);
         }
 
-        return new PagingJdbcIterable<>(
+        return new PagingJdbcPublisher<>(
+                streamExecutor,
                 transactionManager,
                 this::getConnection,
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
-                        connection, processingGroup, sequenceId, firstResult, maxSequenceSize
+                        connection, processingGroup, sequenceId, firstResult, maxSize
                 ),
                 pageSize,
                 converter::convertToLetter,
@@ -358,31 +365,22 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters(@Nullable ProcessingContext context) {
-        List<String> sequenceIdentifiers = executeQuery(
-                getConnection(),
-                connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
-                listResults(resultSet -> resultSet.getString(1)),
-                e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
-                CLOSE_QUIETLY
-        );
-
-        //noinspection DuplicatedCode
-        return () -> {
-            Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-            return new Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return sequenceIterator.hasNext();
-                }
-
-                @Override
-                public Iterable<DeadLetter<? extends E>> next() {
-                    String next = sequenceIterator.next();
-                    return deadLetterSequence(next, context);
-                }
-            };
-        };
+    public Flow.Publisher<Flow.Publisher<DeadLetter<? extends E>>> deadLetters(@Nullable ProcessingContext context) {
+        try {
+            List<String> sequenceIdentifiers = executeQuery(
+                    getConnection(),
+                    connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
+                    listResults(resultSet -> resultSet.getString(1)),
+                    e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
+                    CLOSE_QUIETLY
+            );
+            List<Flow.Publisher<DeadLetter<? extends E>>> sequencePublishers = sequenceIdentifiers.stream()
+                    .<Flow.Publisher<DeadLetter<? extends E>>>map(id -> deadLetterSequence(id, context))
+                    .toList();
+            return new IterablePublisher<>(sequencePublishers, streamExecutor);
+        } catch (Exception e) {
+            return new FailedPublisher<>(e);
+        }
     }
 
     @Override
@@ -433,34 +431,39 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                            @Nullable ProcessingContext context) {
         logger.debug("Received a request to process matching dead letters.");
 
-        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10);
-        JdbcDeadLetter<E> claimedLetter = null;
-        while (iterator.hasNext() && claimedLetter == null) {
-            JdbcDeadLetter<E> next = iterator.next();
-            if (sequenceFilter.test(next) && claimDeadLetter(next)) {
-                claimedLetter = next;
+        int offset = 0;
+        while (true) {
+            List<? extends JdbcDeadLetter<E>> page = findClaimableSequences(10, offset);
+            if (page.isEmpty()) {
+                logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
+                return false;
             }
+            for (JdbcDeadLetter<E> next : page) {
+                if (sequenceFilter.test(next) && claimDeadLetter(next)) {
+                    return processInitialAndSubsequent(next, processingTask);
+                }
+            }
+            offset += page.size();
         }
-
-        if (claimedLetter != null) {
-            return processInitialAndSubsequent(claimedLetter, processingTask);
-        }
-        logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
-        return false;
     }
 
     @Override
     public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
                            @Nullable ProcessingContext context) {
         logger.debug("Received a request to process any dead letters.");
-        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
-        if (iterator.hasNext()) {
-            JdbcDeadLetter<E> deadLetter = iterator.next();
-            claimDeadLetter(deadLetter);
-            return processInitialAndSubsequent(deadLetter, processingTask);
+        int offset = 0;
+        while (true) {
+            List<? extends JdbcDeadLetter<E>> page = findClaimableSequences(1, offset);
+            if (page.isEmpty()) {
+                logger.debug("Received a request to process dead letters but there are no claimable sequences.");
+                return false;
+            }
+            JdbcDeadLetter<E> deadLetter = page.get(0);
+            if (claimDeadLetter(deadLetter)) {
+                return processInitialAndSubsequent(deadLetter, processingTask);
+            }
+            offset += 1;
         }
-        logger.debug("Received a request to process dead letters but there are no claimable sequences.");
-        return false;
     }
 
     /**
@@ -472,19 +475,21 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      *
      * @param pageSize The size of the paging on the query. Lower is faster, but with many results a larger page is
      *                 better.
+     * @param offset   The offset from where to start.
      * @return A list of first letters of each sequence.
      */
-    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize) {
-        return new PagingJdbcIterable<>(
-                transactionManager,
-                this::getConnection,
-                (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
-                        connection, processingGroup, processingStartedLimit(), firstResult, maxSize
-                ),
-                pageSize,
-                converter::convertToLetter,
-                e -> new JdbcException("Failed to find any claimable sequences for processing", e)
-        ).iterator();
+    private List<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize, int offset) {
+        return transactionManager.fetchInTransaction(
+                () -> executeQuery(
+                        getConnection(),
+                        connection -> statementFactory.claimableSequencesStatement(
+                                connection, processingGroup, processingStartedLimit(), offset, pageSize
+                        ),
+                        listResults(converter::convertToLetter),
+                        e -> new JdbcException("Failed to find any claimable sequences for processing", e),
+                        CLOSE_QUIETLY
+                )
+        );
     }
 
     /**
@@ -662,6 +667,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         private int maxSequenceSize = 1024;
         private int pageSize = 100;
         private Duration claimDuration = Duration.ofSeconds(30);
+        private Executor streamExecutor = Runnable::run;
 
         /**
          * Sets the processing group, which is used for storing and querying which processing group a dead-lettered
@@ -854,6 +860,20 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         public Builder<E> pageSize(int pageSize) {
             assertStrictPositive(pageSize, "The page size  should be larger than 0.");
             this.pageSize = pageSize;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} used by dead-letter publishers to dispatch paging and emission.
+         * <p>
+         * Defaults to caller-thread execution through {@code Runnable::run}.
+         *
+         * @param streamExecutor The executor used for publisher emission.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder<E> streamExecutor(@Nonnull Executor streamExecutor) {
+            assertNonNull(streamExecutor, "The streamExecutor may not be null");
+            this.streamExecutor = streamExecutor;
             return this;
         }
 

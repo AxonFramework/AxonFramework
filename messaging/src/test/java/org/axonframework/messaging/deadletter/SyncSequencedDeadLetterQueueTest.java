@@ -138,7 +138,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(testSubject.contains(testId, null));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetterWithContext(generated, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -243,7 +243,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(testSubject.contains(testId, null));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetterWithContext(firstGenerated, resultLetters.next());
             assertTrue(resultLetters.hasNext());
@@ -267,7 +267,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(testSubject.contains(testId, null));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetterWithContext(generated, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -285,7 +285,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(testSubject.contains(testId, null));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultLetters.hasNext());
             assertLetterWithContext(generated, resultLetters.next());
             assertFalse(resultLetters.hasNext());
@@ -296,14 +296,14 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // given
             Object testId = generateId();
             enqueue(testId, generateInitialLetter());
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).iterator().next();
+            DeadLetter<? extends M> resultLetter = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator().next();
 
             // when
             testSubject.evict(resultLetter, null);
 
             // then
             assertFalse(testSubject.contains(testId, null));
-            assertFalse(testSubject.deadLetters(null).iterator().hasNext());
+            assertTrue(PublisherTestUtils.collectNested(testSubject.deadLetters(null)).isEmpty());
         }
     }
 
@@ -340,7 +340,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             var generated = generateInitialLetter();
             Throwable testCause = generateThrowable();
             enqueue(testId, generated);
-            DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).iterator().next();
+            DeadLetter<? extends M> resultLetter = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator().next();
             DeadLetter<M> expectedLetter = generateRequeuedLetter(generated.letter(), testCause);
 
             // when
@@ -348,7 +348,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(testSubject.contains(testId, null));
-            Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultLetters = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultLetters.hasNext());
             DeadLetter<? extends M> requeuedLetter = resultLetters.next();
             assertLetter(expectedLetter, requeuedLetter);
@@ -380,12 +380,12 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             var generated = generateInitialLetter();
 
             // when / then
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertFalse(resultIterator.hasNext());
 
             enqueue(testId, generated);
 
-            resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
+            resultIterator = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
             assertTrue(resultIterator.hasNext());
             assertLetterWithContext(generated, resultIterator.next());
             assertFalse(resultIterator.hasNext());
@@ -408,7 +408,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
                      });
 
             // when
-            Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).iterator();
+            Iterator<DeadLetter<? extends M>> resultIterator = PublisherTestUtils.collect(testSubject.deadLetterSequence(testId, null)).iterator();
 
             // then
             for (Map.Entry<Integer, DeadLetterWithContext<M>> entry : enqueuedLetters.entrySet()) {
@@ -434,7 +434,8 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             testSubject.enqueueIfPresent(thatTestId, () -> thatSecondGenerated.letter(), toProcessingContext(thatSecondGenerated.context()));
 
             // when
-            Iterator<Iterable<DeadLetter<? extends M>>> resultIterator = testSubject.deadLetters(null).iterator();
+            Iterator<List<DeadLetter<? extends M>>> resultIterator =
+                    PublisherTestUtils.collectNested(testSubject.deadLetters(null)).iterator();
 
             // then
             assertTrue(resultIterator.hasNext());
@@ -581,7 +582,7 @@ public abstract class SyncSequencedDeadLetterQueueTest<M extends Message> {
             // then
             assertTrue(result);
             assertLetterWithContext(generated, resultLetter.get());
-            assertFalse(testSubject.deadLetters(null).iterator().hasNext());
+            assertTrue(PublisherTestUtils.collectNested(testSubject.deadLetters(null)).isEmpty());
         }
 
         @SuppressWarnings("ConstantConditions")

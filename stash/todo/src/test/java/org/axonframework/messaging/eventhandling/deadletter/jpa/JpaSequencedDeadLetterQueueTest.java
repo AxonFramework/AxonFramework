@@ -25,6 +25,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.deadletter.PublisherTestUtils;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterWithContext;
@@ -234,7 +235,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
         // then
         Iterator<DeadLetter<? extends EventMessage>> result =
-                queue.deadLetterSequence(sequenceId, null).join().iterator();
+                PublisherTestUtils.collect(queue.deadLetterSequence(sequenceId, null)).iterator();
         assertThat(result.hasNext()).isTrue();
         JpaDeadLetter<? extends EventMessage> retrieved = (JpaDeadLetter<? extends EventMessage>) result.next();
 

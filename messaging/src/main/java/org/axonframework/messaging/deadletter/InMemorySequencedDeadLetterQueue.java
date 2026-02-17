@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -234,7 +235,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
+    public Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(
             @Nonnull Object sequenceIdentifier,
             @Nullable ProcessingContext context) {
         String identifier = toIdentifier(sequenceIdentifier);
@@ -242,15 +243,19 @@ public class InMemorySequencedDeadLetterQueue<M extends Message> implements Sequ
             Iterable<DeadLetter<? extends M>> result = deadLetters.containsKey(identifier)
                     ? new ArrayList<>(deadLetters.get(identifier))
                     : Collections.emptyList();
-            return CompletableFuture.completedFuture(result);
+            return new IterablePublisher<>(result);
         }
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+    public Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(
             @Nullable ProcessingContext context) {
-        return CompletableFuture.completedFuture(new ArrayList<>(deadLetters.values()));
+        synchronized (deadLetters) {
+            List<Flow.Publisher<DeadLetter<? extends M>>> publishers = new ArrayList<>();
+            deadLetters.values().forEach(sequence -> publishers.add(new IterablePublisher<>(new ArrayList<>(sequence))));
+            return new IterablePublisher<>(publishers);
+        }
     }
 
     @Nonnull

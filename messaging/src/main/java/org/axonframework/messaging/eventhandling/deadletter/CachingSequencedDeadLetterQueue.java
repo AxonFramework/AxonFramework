@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -224,7 +225,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
+    public Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(
             @Nonnull Object sequenceIdentifier,
             @Nullable ProcessingContext context) {
         return delegate.deadLetterSequence(sequenceIdentifier, context);
@@ -232,7 +233,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+    public Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(
             @Nullable ProcessingContext context) {
         return delegate.deadLetters(context);
     }

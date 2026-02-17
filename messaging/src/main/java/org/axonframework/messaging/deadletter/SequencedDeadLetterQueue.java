@@ -20,6 +20,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -38,9 +39,9 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
  * letters from the queue for retrying. This method ensures sequences cannot be concurrently accessed, thus protecting
  * the user against handling messages out of order.
  * <p>
- * All methods in this interface return {@link CompletableFuture} to support asynchronous implementations. In-memory
- * implementations may simply return completed futures, while persistent implementations (JPA, JDBC, etc.) can leverage
- * the async nature for non-blocking I/O.
+ * Command and metadata operations in this interface return {@link CompletableFuture} to support asynchronous
+ * implementations. Retrieval operations return {@link Flow.Publisher} to support backpressure-aware consumption of dead
+ * letters and dead-letter sequences.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Steven van Beelen
@@ -152,22 +153,22 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      *
      * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead letters} to return.
      * @param context            the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
-     * @return A {@link CompletableFuture} with all the {@link DeadLetter dead letters} for the given
+     * @return A {@link Flow.Publisher} with all the {@link DeadLetter dead letters} for the given
      * {@code sequenceIdentifier} in insert order.
      */
     @Nonnull
-    CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
-                                                                            @Nullable ProcessingContext context);
+    Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
+                                                                @Nullable ProcessingContext context);
 
     /**
      * Return all {@link DeadLetter dead letter} sequences held by this queue. The sequences are not necessarily
      * returned in insert order.
      *
      * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
-     * @return A {@link CompletableFuture} with all {@link DeadLetter dead letter} sequences held by this queue.
+     * @return A {@link Flow.Publisher} with all {@link DeadLetter dead letter} sequences held by this queue.
      */
     @Nonnull
-    CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(@Nullable ProcessingContext context);
+    Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context);
 
     /**
      * Validates whether this queue is full for the given {@code sequenceIdentifier}.

@@ -20,6 +20,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -35,8 +36,9 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
  * This adapter allows synchronous dead letter queue implementations (such as JPA or JDBC-based queues) to be used where
  * the asynchronous {@link SequencedDeadLetterQueue} interface is expected.
  * <p>
- * All operations are executed synchronously and wrapped in {@link CompletableFuture} instances. Exceptions thrown by
- * the delegate are captured in failed futures.
+ * Command and metadata operations are executed synchronously and wrapped in {@link CompletableFuture} instances.
+ * Retrieval operations delegate directly to publisher-based methods. Exceptions thrown during setup are captured
+ * through failed futures or failed publishers.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
@@ -122,27 +124,25 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
+    public Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(
             @Nonnull Object sequenceIdentifier,
             @Nullable ProcessingContext context) {
         try {
-            Iterable<DeadLetter<? extends M>> result = delegate.deadLetterSequence(sequenceIdentifier, context);
-            return CompletableFuture.completedFuture(result);
+            return delegate.deadLetterSequence(sequenceIdentifier, context);
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return new FailedPublisher<>(e);
         }
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+    public Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(
             @Nullable ProcessingContext context
     ) {
         try {
-            Iterable<Iterable<DeadLetter<? extends M>>> result = delegate.deadLetters(context);
-            return CompletableFuture.completedFuture(result);
+            return delegate.deadLetters(context);
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            return new FailedPublisher<>(e);
         }
     }
 

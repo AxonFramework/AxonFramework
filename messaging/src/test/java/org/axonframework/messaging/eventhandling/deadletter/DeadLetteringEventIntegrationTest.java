@@ -33,6 +33,7 @@ import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.deadletter.PublisherTestUtils;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSource;
@@ -285,7 +286,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertFalse(deadLetterQueue.contains("success", null).join());
 
             Iterator<DeadLetter<? extends EventMessage>> sequence =
-                    deadLetterQueue.deadLetterSequence("failure", null).join().iterator();
+                    PublisherTestUtils.collect(deadLetterQueue.deadLetterSequence("failure", null)).iterator();
             assertTrue(sequence.hasNext());
             assertEquals(failedEvent.payload(), sequence.next().message().payload());
             assertFalse(sequence.hasNext());
@@ -328,7 +329,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertTrue(deadLetterQueue.contains(aggregateId, null).join());
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 Iterator<DeadLetter<? extends EventMessage>> sequence =
-                        deadLetterQueue.deadLetterSequence(aggregateId, null).join().iterator();
+                        PublisherTestUtils.collect(deadLetterQueue.deadLetterSequence(aggregateId, null)).iterator();
                 assertTrue(sequence.hasNext());
                 assertEquals(firstDeadLetter, sequence.next().message().payload());
                 assertTrue(sequence.hasNext());
@@ -650,7 +651,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                    .atMost(Duration.ofSeconds(1))
                    .until(() -> deadLetterQueue.amountOfSequences(null).join() == 1);
 
-            DeadLetter<?> deadLetter = deadLetterQueue.deadLetters(null).join().iterator().next().iterator().next();
+            DeadLetter<?> deadLetter = PublisherTestUtils.collectNested(deadLetterQueue.deadLetters(null))
+                                                         .getFirst()
+                                                         .getFirst();
             assertTrue(deadLetter.cause().isPresent());
             String causeType = deadLetter.cause().get().type();
             assertEquals(ReferenceException.class.getName(), causeType);
@@ -675,7 +678,9 @@ public abstract class DeadLetteringEventIntegrationTest {
                    .atMost(Duration.ofSeconds(1))
                    .until(() -> deadLetterQueue.amountOfSequences(null).join() == 1);
 
-            DeadLetter<?> deadLetter = deadLetterQueue.deadLetters(null).join().iterator().next().iterator().next();
+            DeadLetter<?> deadLetter = PublisherTestUtils.collectNested(deadLetterQueue.deadLetters(null))
+                                                         .getFirst()
+                                                         .getFirst();
             Optional<Cause> optionalCause = deadLetter.cause();
             assertTrue(optionalCause.isPresent());
             String resultMessage = optionalCause.get().message();

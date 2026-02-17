@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.concurrent.Flow;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -138,21 +139,22 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param sequenceIdentifier The identifier of the sequence of {@link DeadLetter dead letters} to return.
      * @param context            The {@link ProcessingContext} for the current unit of work, or {@code null} if not
      *                           available.
-     * @return All the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
+     * @return A {@link Flow.Publisher} with all the {@link DeadLetter dead letters} for the given
+     * {@code sequenceIdentifier} in insert order.
      */
     @Nonnull
-    Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
-                                                         @Nullable ProcessingContext context);
+    Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
+                                                                @Nullable ProcessingContext context);
 
     /**
      * Return all {@link DeadLetter dead letter} sequences held by this queue. The sequences are not necessarily
      * returned in insert order.
      *
      * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
-     * @return All {@link DeadLetter dead letter} sequences held by this queue.
+     * @return A {@link Flow.Publisher} with all {@link DeadLetter dead letter} sequences held by this queue.
      */
     @Nonnull
-    Iterable<Iterable<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context);
+    Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context);
 
     /**
      * Validates whether this queue is full for the given {@code sequenceIdentifier}.

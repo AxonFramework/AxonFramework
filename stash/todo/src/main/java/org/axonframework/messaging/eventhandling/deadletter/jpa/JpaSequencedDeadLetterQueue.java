@@ -31,6 +31,7 @@ import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.FailedPublisher;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -46,9 +47,12 @@ import java.lang.invoke.MethodHandles;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -97,6 +101,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     private final EventConverter eventConverter;
     private final Converter genericConverter;
     private final Duration claimDuration;
+    private final Executor streamExecutor;
 
     /**
      * Instantiate a JPA {@link SequencedDeadLetterQueue} based on the given {@link Builder builder}.
@@ -114,6 +119,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         this.converter = builder.converter;
         this.claimDuration = builder.claimDuration;
         this.queryPageSize = builder.queryPageSize;
+        this.streamExecutor = builder.streamExecutor;
     }
 
     /**
@@ -258,68 +264,56 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
-    public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
+    public Flow.Publisher<DeadLetter<? extends M>> deadLetterSequence(
             @Nonnull Object sequenceIdentifier,
             @Nullable ProcessingContext context
     ) {
-        return FutureUtils.runFailing(() -> {
+        try {
             String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
-            return CompletableFuture.completedFuture(deadLetterSequenceIterable(stringSequenceIdentifier, context));
-        });
-    }
-
-    private Iterable<DeadLetter<? extends M>> deadLetterSequenceIterable(String stringSequenceIdentifier,
-                                                                          @Nullable ProcessingContext context) {
-        return new PagingJpaQueryIterable<>(
-                queryPageSize,
-                entityManagerExecutor(context),
-                em -> em.createQuery(
-                                "select dl from DeadLetterEntry dl "
-                                        + "where dl.processingGroup=:processingGroup "
-                                        + "and dl.sequenceIdentifier=:identifier "
-                                        + "order by dl.sequenceIndex",
-                                DeadLetterEntry.class
-                        )
-                        .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                        .setParameter("identifier", stringSequenceIdentifier),
-                this::toLetter
-        );
+            return new PagingJpaQueryPublisher<>(
+                    queryPageSize,
+                    streamExecutor,
+                    entityManagerExecutor(context),
+                    em -> em.createQuery(
+                                    "select dl from DeadLetterEntry dl "
+                                            + "where dl.processingGroup=:processingGroup "
+                                            + "and dl.sequenceIdentifier=:identifier "
+                                            + "order by dl.sequenceIndex",
+                                    DeadLetterEntry.class
+                            )
+                            .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
+                            .setParameter("identifier", stringSequenceIdentifier),
+                    this::toLetter
+            );
+        } catch (Exception e) {
+            return new FailedPublisher<>(e);
+        }
     }
 
     @Override
-    @NonNull
-    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
+    public Flow.Publisher<Flow.Publisher<DeadLetter<? extends M>>> deadLetters(
             @Nullable ProcessingContext context
     ) {
-        return FutureUtils.runFailing(() -> entityManagerExecutor(context)
-                .apply(em ->
-                               em.createQuery(
-                                         "select dl.sequenceIdentifier from DeadLetterEntry dl "
-                                                 + "where dl.processingGroup=:processingGroup "
-                                                 + "and dl.sequenceIndex = (select min(dl2.sequenceIndex) from DeadLetterEntry dl2 "
-                                                 + "where dl2.processingGroup=dl.processingGroup "
-                                                 + "and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
-                                                 + "order by dl.lastTouched asc ",
-                                         String.class
-                                 )
-                                 .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                                 .getResultList()
-                )
-                .thenApply(sequenceIdentifiers -> (Iterable<Iterable<DeadLetter<? extends M>>>) () -> {
-                    Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-                    return new Iterator<>() {
-                        @Override
-                        public boolean hasNext() {
-                            return sequenceIterator.hasNext();
-                        }
-
-                        @Override
-                        public Iterable<DeadLetter<? extends M>> next() {
-                            return deadLetterSequenceIterable(sequenceIterator.next(), context);
-                        }
-                    };
-                }));
+        try {
+            return new PagingJpaQueryPublisher<>(
+                    queryPageSize,
+                    streamExecutor,
+                    entityManagerExecutor(context),
+                    em -> em.createQuery(
+                                    "select dl.sequenceIdentifier from DeadLetterEntry dl "
+                                            + "where dl.processingGroup=:processingGroup "
+                                            + "and dl.sequenceIndex = (select min(dl2.sequenceIndex) from DeadLetterEntry dl2 "
+                                            + "where dl2.processingGroup=dl.processingGroup "
+                                            + "and dl2.sequenceIdentifier=dl.sequenceIdentifier) "
+                                            + "order by dl.lastTouched asc ",
+                                    String.class
+                            )
+                            .setParameter(PROCESSING_GROUP_PARAM, processingGroup),
+                    id -> deadLetterSequence(id, context)
+            );
+        } catch (Exception e) {
+            return new FailedPublisher<>(e);
+        }
     }
 
     /**
@@ -363,8 +357,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
             @Nullable ProcessingContext context
     ) {
         return FutureUtils.runFailing(() -> {
-            Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(10, context);
-            return claimFirstMatchingLetter(iterator, sequenceFilter, context).thenCompose(claimedLetter -> {
+            return claimFirstMatchingLetter(10, 0, sequenceFilter, context).thenCompose(claimedLetter -> {
                 if (claimedLetter == null) {
                     logger.info("No claimable and/or matching dead letters found to process.");
                     return CompletableFuture.completedFuture(false);
@@ -375,7 +368,24 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     private CompletableFuture<JpaDeadLetter<M>> claimFirstMatchingLetter(
+            int pageSize,
+            int offset,
+            Predicate<DeadLetter<? extends M>> sequenceFilter,
+            @Nullable ProcessingContext context
+    ) {
+        return findFirstLetterOfEachAvailableSequence(pageSize, offset, context)
+                .thenCompose(page -> {
+                    if (page.isEmpty()) {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    return claimFirstMatchingLetter(page.iterator(), pageSize, offset + pageSize, sequenceFilter, context);
+                });
+    }
+
+    private CompletableFuture<JpaDeadLetter<M>> claimFirstMatchingLetter(
             Iterator<JpaDeadLetter<M>> iterator,
+            int pageSize,
+            int nextOffset,
             Predicate<DeadLetter<? extends M>> sequenceFilter,
             @Nullable ProcessingContext context
     ) {
@@ -387,9 +397,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
             return claimDeadLetter(next, context)
                     .thenCompose(claimed -> claimed
                             ? CompletableFuture.completedFuture(next)
-                            : claimFirstMatchingLetter(iterator, sequenceFilter, context));
+                            : claimFirstMatchingLetter(iterator, pageSize, nextOffset, sequenceFilter, context));
         }
-        return CompletableFuture.completedFuture(null);
+        return claimFirstMatchingLetter(pageSize, nextOffset, sequenceFilter, context);
     }
 
     /**
@@ -447,16 +457,16 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * lowest index.
      * <p>
      * This fetches only letters which are available, having a {@code processingStarted} of null or longer ago than the
-     * configured {@code claimDuration}. The messages are lazily reconstructed by the {@link PagingJpaQueryIterable}.
+     * configured {@code claimDuration}. The messages are converted into {@link JpaDeadLetter} instances.
      *
      * @param pageSize The size of the paging on the query. Lower is faster, but with many results a larger page is
      *                 better.
      * @return A list of first letters of each sequence.
      */
-    private Iterator<JpaDeadLetter<M>> findFirstLetterOfEachAvailableSequence(int pageSize, ProcessingContext context) {
-        return new PagingJpaQueryIterable<>(
-                pageSize,
-                entityManagerExecutor(context),
+    private CompletableFuture<List<JpaDeadLetter<M>>> findFirstLetterOfEachAvailableSequence(int pageSize,
+                                                                                               int offset,
+                                                                                               ProcessingContext context) {
+        return entityManagerExecutor(context).apply(
                 em -> em.createQuery(
                                 "select dl from DeadLetterEntry dl "
                                         + "where dl.processingGroup=:processingGroup "
@@ -466,9 +476,14 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                                 DeadLetterEntry.class
                         )
                         .setParameter(PROCESSING_GROUP_PARAM, processingGroup)
-                        .setParameter("processingStartedLimit", getProcessingStartedLimit()),
-                this::toLetter)
-                .iterator();
+                        .setParameter("processingStartedLimit", getProcessingStartedLimit())
+                        .setFirstResult(offset)
+                        .setMaxResults(pageSize)
+                        .getResultList()
+                        .stream()
+                        .map(this::toLetter)
+                        .toList()
+        );
     }
 
     /**
@@ -654,6 +669,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         private Converter genericConverter;
         private DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
         private Duration claimDuration = Duration.ofSeconds(30);
+        private Executor streamExecutor = Runnable::run;
 
         /**
          * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
@@ -784,6 +800,20 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         public Builder<T> queryPageSize(int queryPageSize) {
             assertStrictPositive(queryPageSize, "The query page size must be at least 1.");
             this.queryPageSize = queryPageSize;
+            return this;
+        }
+
+        /**
+         * Sets the {@link Executor} used by dead-letter sequence publishers to dispatch page fetching and emission.
+         * <p>
+         * Defaults to caller-thread execution through {@code Runnable::run}.
+         *
+         * @param streamExecutor The executor to use for stream emission.
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder<T> streamExecutor(Executor streamExecutor) {
+            assertNonNull(streamExecutor, "The streamExecutor may not be null");
+            this.streamExecutor = streamExecutor;
             return this;
         }
 
