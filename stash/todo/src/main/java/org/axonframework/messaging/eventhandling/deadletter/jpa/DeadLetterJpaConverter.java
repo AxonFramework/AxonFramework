@@ -42,7 +42,7 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * {@link DeadLetterEventEntry}.
      * <p>
      * The context is used to extract tracking token and domain info (aggregate identifier, type, sequence number) if
-     * present, as these are stored as context resources in AF5 rather than message subtypes.
+     * present.
      *
      * @param message          The message to convert.
      * @param context          The context containing resources such as tracking token and domain info.
