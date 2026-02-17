@@ -10,3 +10,4 @@
 **** xref:migration:paths/aggregates/configuration-migration.adoc[]
 **** xref:migration:paths/aggregates/multi-entity-migration.adoc[]
 **** xref:migration:paths/aggregates/polymorphism-migration.adoc[]
+*** xref:migration:paths/event-store.adoc[]

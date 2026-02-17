@@ -10,12 +10,10 @@ Whether you are performing a straightforward version bump or a deep architectura
 * Import and Package Changes
 * Module Restructuring
 2. **Specific Migration Paths**
-* xref:migration:paths/aggregates/index.adoc[Aggregate Migration]
 * xref:migration:paths/messages.adoc[Message Migration (@Event, @Command, @Query)]
+* xref:migration:paths/aggregates/index.adoc[Aggregate Migration]
+* xref:migration:paths/event-store.adoc[Event Store migration]
 * _Event Processor configuration in Axon Framework 5 (Coming soon)_
-* xref:migration:paths/messages.adoc[Message changes (@Event, @Command, @Query)]
-* _Aggregate to Entity (Coming soon)_
-* _Event Processor configuration in AF5 (Coming soon)_
 * _Test fixtures (Coming soon)_
 * _Serializer to Converter configuration changes (Coming soon)_
 * _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
