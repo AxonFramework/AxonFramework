@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 class PooledStreamingEventProcessorConfigurationTest {
 
@@ -40,11 +41,10 @@ class PooledStreamingEventProcessorConfigurationTest {
         ));
 
         // when
-        testSubject.segmentChangeListeners()
-                   .forEach(listener -> joinAndUnwrap(listener.onSegmentReleased(Segment.ROOT_SEGMENT)));
+        joinAndUnwrap(testSubject.segmentChangeListener().onSegmentReleased(Segment.ROOT_SEGMENT));
 
         // then
-        assertEquals(2, releaseInvocations.get());
+        assertThat(releaseInvocations).hasValue(2);
     }
 
 }

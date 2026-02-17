@@ -1191,6 +1191,71 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
+        void claimListenerDoesNotBlockProcessingWhenIncomplete() {
+            // given
+            CompletableFuture<Void> claimListenerFuture = new CompletableFuture<>();
+            int testTokenClaimInterval = 100;
+            EventMessage event = EventTestUtils.asEventMessage(1);
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(1)
+                          .tokenClaimInterval(testTokenClaimInterval)
+                          .addSegmentChangeListener(SegmentChangeListener.onClaim(segment -> claimListenerFuture))
+            );
+            stubMessageSource.publishMessage(event);
+
+            // when
+            startEventProcessor();
+
+            // then
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(defaultEventHandlingComponent.recorded()).contains(event));
+            assertFalse(claimListenerFuture.isDone());
+
+            // cleanup
+            claimListenerFuture.complete(null);
+        }
+
+        @Test
+        void segmentChangeListenerExceptionsDoNotBreakClaimAndReleaseFlow() {
+            // given
+            int testSegmentId = 0;
+            int testTokenClaimInterval = 100;
+            SegmentChangeListener listener = SegmentChangeListener
+                    .runOnClaim(segment -> {
+                        throw new MockException("claim-listener-failure");
+                    })
+                    .andThen(SegmentChangeListener.runOnRelease(segment -> {
+                        throw new MockException("release-listener-failure");
+                    }));
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(1)
+                          .tokenClaimInterval(testTokenClaimInterval)
+                          .addSegmentChangeListener(listener)
+            );
+
+            // when
+            startEventProcessor();
+
+            // then
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertNotNull(testSubject.processingStatus().get(testSegmentId)));
+            assertFalse(testSubject.isError());
+
+            // when
+            FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId, 200, TimeUnit.MILLISECONDS));
+
+            // then
+            await().atMost(testTokenClaimInterval + 400, TimeUnit.MILLISECONDS)
+                   .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertNotNull(testSubject.processingStatus().get(testSegmentId)));
+            assertFalse(testSubject.isError());
+        }
+
+        @Test
         void splitSegment() {
             // given
             int testSegmentId = 0;

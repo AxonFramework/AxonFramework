@@ -152,25 +152,25 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                 "EventCriteriaProvider function must not return null"
         );
 
-        Coordinator.Builder coordinatorBuilder = Coordinator.builder()
-                                                            .name(name)
-                                                            .eventSource(eventSource)
-                                                            .tokenStore(tokenStore)
-                                                            .unitOfWorkFactory(unitOfWorkFactory)
-                                                            .executorService(configuration.coordinatorExecutor())
-                                                            .workPackageFactory(this::spawnWorker)
-                                                            .onMessageIgnored(configuration.ignoredMessageHandler())
-                                                            .processingStatusUpdater(this::statusUpdater)
-                                                            .tokenClaimInterval(configuration.tokenClaimInterval())
-                                                            .claimExtensionThreshold(configuration.claimExtensionThreshold())
-                                                            .clock(configuration.clock())
-                                                            .maxSegmentProvider(configuration.maxSegmentProvider())
-                                                            .initialSegmentCount(configuration.initialSegmentCount())
-                                                            .initialToken(configuration.initialToken())
-                                                            .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
-                                                            .eventCriteria(eventCriteria);
-        configuration.segmentChangeListeners().forEach(coordinatorBuilder::addSegmentChangeListener);
-        this.coordinator = coordinatorBuilder.build();
+        this.coordinator = Coordinator.builder()
+                                      .name(name)
+                                      .eventSource(eventSource)
+                                      .tokenStore(tokenStore)
+                                      .unitOfWorkFactory(unitOfWorkFactory)
+                                      .executorService(configuration.coordinatorExecutor())
+                                      .workPackageFactory(this::spawnWorker)
+                                      .onMessageIgnored(configuration.ignoredMessageHandler())
+                                      .processingStatusUpdater(this::statusUpdater)
+                                      .tokenClaimInterval(configuration.tokenClaimInterval())
+                                      .claimExtensionThreshold(configuration.claimExtensionThreshold())
+                                      .clock(configuration.clock())
+                                      .maxSegmentProvider(configuration.maxSegmentProvider())
+                                      .initialSegmentCount(configuration.initialSegmentCount())
+                                      .initialToken(configuration.initialToken())
+                                      .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
+                                      .eventCriteria(eventCriteria)
+                                      .segmentChangeListener(configuration.segmentChangeListener())
+                                      .build();
     }
 
     @Override
