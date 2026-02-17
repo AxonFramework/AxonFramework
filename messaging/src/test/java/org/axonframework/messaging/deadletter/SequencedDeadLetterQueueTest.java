@@ -907,7 +907,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // when
             boolean result = testSubject.process(
-                    letter -> letter.message().payload().equals(testLetter.message().payload()),
+                    letterMatches(testLetter),
                     testTask,
                     null
             ).join();
@@ -1081,11 +1081,28 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
      * @param actual   The actual format of the {@link DeadLetter}.
      */
     protected void assertLetter(DeadLetter<? extends M> expected, DeadLetter<? extends M> actual) {
-        assertEquals(expected.message(), actual.message());
+        assertMessage(expected.message(), actual.message());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
         assertEquals(expected.lastTouched(), actual.lastTouched());
         assertEquals(expected.diagnostics(), actual.diagnostics());
+    }
+
+    /**
+     * Assert whether the {@code expected} {@link Message} matches the {@code actual} {@code Message}.
+     * <p>
+     * By default this compares identifier, type, metadata, and payload directly.
+     * Subclasses may override this to handle implementations where the payload requires deserialization before
+     * comparison (e.g. when payloads are stored as raw bytes).
+     *
+     * @param expected The expected message.
+     * @param actual   The actual message.
+     */
+    protected void assertMessage(M expected, M actual) {
+        assertEquals(expected.identifier(), actual.identifier());
+        assertEquals(expected.type(), actual.type());
+        assertEquals(expected.metadata(), actual.metadata());
+        assertEquals(expected.payload(), actual.payload());
     }
 
     /**

@@ -57,7 +57,6 @@ class EventMessageDeadLetterJpaConverterTest {
     private final EventConverter eventConverter = new DelegatingEventConverter(jacksonConverter);
     private final Converter genericConverter = jacksonConverter;
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
-    private final MessageType type = new MessageType("event");
     private final Metadata metadata = Metadata.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
     @Test
@@ -142,9 +141,12 @@ class EventMessageDeadLetterJpaConverterTest {
     private void assertCorrectlyRestored(EventMessage expected, EventMessage actual) {
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.timestamp(), actual.timestamp());
-        assertEquals(expected.payload(), actual.payload());
-        assertEquals(expected.payloadType(), actual.payloadType());
+        assertEquals(expected.type(), actual.type());
         assertEquals(expected.metadata(), actual.metadata());
+
+        // Payload is stored as raw bytes; deserialize to compare with the original
+        Object deserializedPayload = eventConverter.convertPayload(actual, expected.payloadType());
+        assertEquals(expected.payload(), deserializedPayload);
 
         // In AF5, all restored messages are GenericEventMessage
         assertTrue(actual instanceof GenericEventMessage);
@@ -185,9 +187,9 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void assertCorrectlyMapped(EventMessage eventMessage, Context context, DeadLetterEventEntry entry) {
-        assertEquals(eventMessage.identifier(), entry.getEventIdentifier());
-        assertEquals(eventMessage.timestamp().toString(), entry.getTimeStamp());
-        assertEquals(eventMessage.payload().getClass().getName(), entry.getPayloadType());
+        assertEquals(eventMessage.identifier(), entry.getIdentifier());
+        assertEquals(eventMessage.timestamp().toString(), entry.getTimestamp());
+        assertEquals(eventMessage.type().toString(), entry.getType());
 
         // Check tracking token storage from context
         if (context.containsResource(TrackingToken.RESOURCE_KEY)) {
@@ -212,9 +214,9 @@ class EventMessageDeadLetterJpaConverterTest {
             assertNull(entry.getAggregateIdentifier());
         }
         if (context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
-            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY), entry.getSequenceNumber());
+            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY), entry.getAggregateSequenceNumber());
         } else {
-            assertNull(entry.getSequenceNumber());
+            assertNull(entry.getAggregateSequenceNumber());
         }
     }
 

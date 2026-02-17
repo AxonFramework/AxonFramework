@@ -32,8 +32,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Represents an {@link EventMessage} when stored into the database. It contains all properties known in the framework
- * implementations. Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources.
+ * implementations. Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier,
+ * type, sequence number) are stored as {@link Context} resources.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -45,10 +45,10 @@ public class DeadLetterEventEntry {
     private String type;
 
     @Column(nullable = false)
-    private String eventIdentifier; // TODO #3517 - rename to just "identifier"? Everything is related to event here
+    private String identifier;
 
     @Basic(optional = false)
-    private String timeStamp; // TODO #3517 - change it to "timestamp"?
+    private String timestamp;
 
     @Basic(optional = false)
     @Lob
@@ -67,7 +67,7 @@ public class DeadLetterEventEntry {
     private String aggregateIdentifier;
 
     @Basic
-    private Long sequenceNumber; // TODO #3517 - rename to "aggregateSequenceNumber"?
+    private Long aggregateSequenceNumber;
 
     @Basic
     private String tokenType;
@@ -87,40 +87,40 @@ public class DeadLetterEventEntry {
      * in an aggregate context (stored as context resources), and tracking token is stored when processing from an event
      * stream.
      *
-     * @param type                The {@link MessageType} of the event as a {@code String}, based on the output of
-     *                            {@link MessageType#toString()} (required).
-     * @param eventIdentifier     The identifier of the message (required).
-     * @param messageTimestamp    The timestamp of the message (required).
-     * @param payload             The serialized payload of the message.
-     * @param metadata            The serialized metadata of the message.
-     * @param aggregateType       The aggregate type of the message.
-     * @param aggregateIdentifier The aggregate identifier of the message.
-     * @param sequenceNumber      The aggregate sequence number of the message.
-     * @param tokenType           The type of tracking token the message.
-     * @param token               The serialized tracking token.
+     * @param type                    The {@link MessageType} of the event as a {@code String}, based on the output of
+     *                                {@link MessageType#toString()} (required).
+     * @param identifier              The identifier of the message (required).
+     * @param messageTimestamp        The timestamp of the message (required).
+     * @param payload                 The serialized payload of the message.
+     * @param metadata                The serialized metadata of the message.
+     * @param aggregateType           The aggregate type of the message.
+     * @param aggregateIdentifier     The aggregate identifier of the message.
+     * @param aggregateSequenceNumber The aggregate sequence number of the message.
+     * @param tokenType               The type of tracking token the message.
+     * @param token                   The serialized tracking token.
      */
     public DeadLetterEventEntry(String type,
-                                String eventIdentifier,
+                                String identifier,
                                 String messageTimestamp,
                                 byte[] payload,
                                 byte[] metadata,
                                 String aggregateType,
                                 String aggregateIdentifier,
-                                Long sequenceNumber,
+                                Long aggregateSequenceNumber,
                                 String tokenType,
                                 byte[] token) {
         requireNonNull(type,
                        "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
-        requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
+        requireNonNull(identifier, "All EventMessage implementations require a message identifier.");
         requireNonNull(messageTimestamp, "All EventMessage implementations require a timestamp.");
         this.type = type;
-        this.eventIdentifier = eventIdentifier;
-        this.timeStamp = messageTimestamp;
+        this.identifier = identifier;
+        this.timestamp = messageTimestamp;
         this.payload = payload;
         this.metadata = metadata;
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
-        this.sequenceNumber = sequenceNumber;
+        this.aggregateSequenceNumber = aggregateSequenceNumber;
         this.tokenType = tokenType;
         this.token = token;
     }
@@ -140,8 +140,8 @@ public class DeadLetterEventEntry {
      *
      * @return The event identifier.
      */
-    public String getEventIdentifier() {
-        return eventIdentifier;
+    public String getIdentifier() {
+        return identifier;
     }
 
     /**
@@ -149,8 +149,8 @@ public class DeadLetterEventEntry {
      *
      * @return The event timestamp.
      */
-    public String getTimeStamp() {
-        return timeStamp;
+    public String getTimestamp() {
+        return timestamp;
     }
 
     /**
@@ -196,8 +196,8 @@ public class DeadLetterEventEntry {
      *
      * @return The aggregate sequence number, or {@code null} if not available.
      */
-    public Long getSequenceNumber() {
-        return sequenceNumber;
+    public Long getAggregateSequenceNumber() {
+        return aggregateSequenceNumber;
     }
 
     /**
@@ -228,13 +228,13 @@ public class DeadLetterEventEntry {
         }
         DeadLetterEventEntry that = (DeadLetterEventEntry) o;
         return Objects.equals(type, that.type)
-                && Objects.equals(eventIdentifier, that.eventIdentifier)
-                && Objects.equals(timeStamp, that.timeStamp)
+                && Objects.equals(identifier, that.identifier)
+                && Objects.equals(timestamp, that.timestamp)
                 && Objects.deepEquals(payload, that.payload)
                 && Objects.deepEquals(metadata, that.metadata)
                 && Objects.equals(aggregateType, that.aggregateType)
                 && Objects.equals(aggregateIdentifier, that.aggregateIdentifier)
-                && Objects.equals(sequenceNumber, that.sequenceNumber)
+                && Objects.equals(aggregateSequenceNumber, that.aggregateSequenceNumber)
                 && Objects.equals(tokenType, that.tokenType)
                 && Objects.deepEquals(token, that.token);
     }
@@ -242,13 +242,13 @@ public class DeadLetterEventEntry {
     @Override
     public int hashCode() {
         return Objects.hash(type,
-                            eventIdentifier,
-                            timeStamp,
+                            identifier,
+                            timestamp,
                             Arrays.hashCode(payload),
                             Arrays.hashCode(metadata),
                             aggregateType,
                             aggregateIdentifier,
-                            sequenceNumber,
+                            aggregateSequenceNumber,
                             tokenType,
                             Arrays.hashCode(token));
     }
@@ -257,13 +257,13 @@ public class DeadLetterEventEntry {
     public String toString() {
         return "DeadLetterEventEntry{" +
                 "type='" + type + '\'' +
-                ", eventIdentifier='" + eventIdentifier + '\'' +
-                ", timeStamp='" + timeStamp + '\'' +
+                ", eventIdentifier='" + identifier + '\'' +
+                ", timeStamp='" + timestamp + '\'' +
                 ", payload=" + Arrays.toString(payload) +
                 ", metadata=" + Arrays.toString(metadata) +
                 ", aggregateType='" + aggregateType + '\'' +
                 ", aggregateIdentifier='" + aggregateIdentifier + '\'' +
-                ", sequenceNumber=" + sequenceNumber +
+                ", sequenceNumber=" + aggregateSequenceNumber +
                 ", tokenType='" + tokenType + '\'' +
                 ", token=" + Arrays.toString(token) +
                 '}';

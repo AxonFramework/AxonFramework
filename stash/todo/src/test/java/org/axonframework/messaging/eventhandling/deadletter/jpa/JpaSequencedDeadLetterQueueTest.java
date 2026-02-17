@@ -57,6 +57,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dlq");
     private final EntityManager entityManager = emf.createEntityManager();
+    private final JacksonConverter jacksonConverter = new JacksonConverter();
+    private final DelegatingEventConverter eventConverter = new DelegatingEventConverter(jacksonConverter);
     private EntityTransaction transaction;
 
     @BeforeEach
@@ -142,17 +144,14 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    protected void assertLetter(DeadLetter<? extends EventMessage> expected,
-                                DeadLetter<? extends EventMessage> actual) {
+    protected void assertMessage(EventMessage expected, EventMessage actual) {
+        assertEquals(expected.identifier(), actual.identifier());
+        assertEquals(expected.type(), actual.type());
+        assertEquals(expected.metadata(), actual.metadata());
 
-        assertEquals(expected.message().payload(), actual.message().payload());
-        assertEquals(expected.message().payloadType(), actual.message().payloadType());
-        assertEquals(expected.message().metadata(), actual.message().metadata());
-        assertEquals(expected.message().identifier(), actual.message().identifier());
-        assertEquals(expected.cause(), actual.cause());
-        assertEquals(expected.enqueuedAt(), actual.enqueuedAt());
-        assertEquals(expected.lastTouched(), actual.lastTouched());
-        assertEquals(expected.diagnostics(), actual.diagnostics());
+        // Payload is stored as raw bytes; deserialize to compare with the original
+        Object deserializedPayload = eventConverter.convertPayload(actual, expected.payloadType());
+        assertEquals(expected.payload(), deserializedPayload);
     }
 
     @Override
@@ -165,7 +164,6 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Override
     public SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
-        JacksonConverter jacksonConverter = new JacksonConverter();
         return JpaSequencedDeadLetterQueue
                 .builder()
                 // TODO #3517 - why it doesn't work with: .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
@@ -173,7 +171,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
-                .eventConverter(new DelegatingEventConverter(jacksonConverter))
+                .eventConverter(eventConverter)
                 .genericConverter(jacksonConverter)
                 .build();
     }

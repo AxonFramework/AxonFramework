@@ -97,11 +97,11 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
         // Create GenericEventMessage with raw payload bytes
         EventMessage message = new GenericEventMessage(
-                entry.getEventIdentifier(),
+                entry.getIdentifier(),
                 MessageType.fromString(entry.getType()),
                 entry.getPayload(),
                 metadata,
-                Instant.parse(entry.getTimeStamp())
+                Instant.parse(entry.getTimestamp())
         );
 
         // Build context with restored resources
@@ -120,8 +120,8 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         if (entry.getAggregateType() != null) {
             context = context.withResource(LegacyResources.AGGREGATE_TYPE_KEY, entry.getAggregateType());
         }
-        if (entry.getSequenceNumber() != null) {
-            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, entry.getSequenceNumber());
+        if (entry.getAggregateSequenceNumber() != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, entry.getAggregateSequenceNumber());
         }
 
         return new SimpleEntry<>(message, context);
