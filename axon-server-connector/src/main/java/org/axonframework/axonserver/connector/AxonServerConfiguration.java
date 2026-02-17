@@ -146,11 +146,13 @@ public class AxonServerConfiguration {
     /**
      * The number of threads executing queries. Defaults to {@code 10} threads.
      */
-    private int queryThreads = 10;
+    private Integer queryThreads;
 
     /**
      * The number of threads handling query responses. Defaults to {@code 5} threads.
+     * @deprecated Responses are sent in a non-blocking fashion and don't need a dedicated thread pool anymore
      */
+    @Deprecated(forRemoval = true)
     private int queryResponseThreads = 5;
 
     /**
@@ -309,10 +311,22 @@ public class AxonServerConfiguration {
         return enabled;
     }
 
+    /**
+     * Indicates whether queries should be shortcut to local handlers when available, bypassing remote dispatch.
+     *
+     * @return {@code true} if queries are executed locally when a handler is available, {@code false} to always
+     * dispatch remotely
+     */
     public boolean isShortcutQueriesToLocalHandlers() {
         return shortcutQueriesToLocalHandlers;
     }
 
+    /**
+     * Sets whether queries should be shortcut to local handlers when available, bypassing remote dispatch.
+     *
+     * @param shortcutQueriesToLocalHandlers {@code true} to execute queries locally when a handler is available,
+     *                                       {@code false} to always dispatch remotely
+     */
     public void setShortcutQueriesToLocalHandlers(boolean shortcutQueriesToLocalHandlers) {
         this.shortcutQueriesToLocalHandlers = shortcutQueriesToLocalHandlers;
     }
@@ -690,7 +704,7 @@ public class AxonServerConfiguration {
      *
      * @return The number of threads executing queries.
      */
-    public int getQueryThreads() {
+    public Integer getQueryThreads() {
         return queryThreads;
     }
 
@@ -707,7 +721,9 @@ public class AxonServerConfiguration {
      * The number of threads executing query responses. Defaults to {@code 5} threads.
      *
      * @return The number of threads executing query responses.
+     * @deprecated Responses are sent in a non-blocking fashion and don't need a dedicated thread pool anymore
      */
+    @Deprecated(forRemoval = true)
     public int getQueryResponseThreads() {
         return queryResponseThreads;
     }
@@ -716,7 +732,9 @@ public class AxonServerConfiguration {
      * Sets the number of threads executing query responses. Defaults to {@code 5} threads.
      *
      * @param queryResponseThreads The number of threads executing query responses.
+     * @deprecated Responses are sent in a non-blocking fashion and don't need a dedicated thread pool anymore
      */
+    @Deprecated(forRemoval = true)
     public void setQueryResponseThreads(int queryResponseThreads) {
         this.queryResponseThreads = queryResponseThreads;
     }

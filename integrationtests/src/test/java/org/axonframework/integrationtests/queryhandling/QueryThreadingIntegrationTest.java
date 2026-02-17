@@ -49,7 +49,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -109,20 +108,7 @@ class QueryThreadingIntegrationTest {
         // The application having a query that depends on another one
         QueryBus localQueryBus = QueryBusTestUtils.aQueryBus();
         connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
-        DistributedQueryBusConfiguration queryBusConfig = new DistributedQueryBusConfiguration(5,
-                                                                                               (configuration1, queue) -> new ThreadPoolExecutor(
-                                                                                                       5,
-                                                                                                       5,
-                                                                                                       10,
-                                                                                                       TimeUnit.SECONDS,
-                                                                                                       queue),
-                                                                                               5,
-                                                                                               (configuration1, queue) -> new ThreadPoolExecutor(
-                                                                                                       5,
-                                                                                                       5,
-                                                                                                       10,
-                                                                                                       TimeUnit.SECONDS,
-                                                                                                       queue));
+        DistributedQueryBusConfiguration queryBusConfig = new DistributedQueryBusConfiguration().queryThreads(5);
         queryBus1 = new DistributedQueryBus(localQueryBus,
                                             new PayloadConvertingQueryBusConnector(connector,
                                                                                    messageConverter,
