@@ -93,17 +93,16 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     public MessageStream.Entry<EventMessage> convert(@Nonnull DeadLetterEventEntry entry,
                                                      @Nonnull EventConverter eventConverter,
                                                      @Nonnull Converter genericConverter) {
-        // Deserialize payload and metadata
-        Object payload = eventConverter.convert(entry.getPayload(), ClassUtils.loadClass(entry.getPayloadType()));
+        // Deserialize metadata; payload stays as raw bytes for the event handler to convert on demand
         @SuppressWarnings("unchecked")
         Map<String, String> metadataMap = eventConverter.convert(entry.getMetadata(), Map.class);
         Metadata metadata = Metadata.from(metadataMap);
 
-        // Create GenericEventMessage
+        // Create GenericEventMessage with raw payload bytes
         EventMessage message = new GenericEventMessage(
                 entry.getEventIdentifier(),
                 MessageType.fromString(entry.getType()),
-                payload,
+                entry.getPayload(),
                 metadata,
                 Instant.parse(entry.getTimeStamp())
         );
