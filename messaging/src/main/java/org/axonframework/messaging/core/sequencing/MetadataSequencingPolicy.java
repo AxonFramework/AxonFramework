@@ -31,15 +31,16 @@ import static org.axonframework.common.BuilderUtils.assertNonBlank;
  * {@link Metadata}, based on a given {@code metadataKey}. In the absence of the given {@code metadataKey} on the
  * {@link Metadata}, the {@link Optional#empty()} is returned.
  *
+ * @param <M> the type of message to sequence
  * @author Lucas Campos
  * @since 4.6.0
  */
-public class MetadataSequencingPolicy implements SequencingPolicy {
+public class MetadataSequencingPolicy<M extends Message> implements SequencingPolicy<M> {
 
     private final String metadataKey;
 
     /**
-     * Instantiate a {@link MetadataSequencingPolicy}.
+     * Instantiate a {@code MetadataSequencingPolicy}.
      * <p>
      * Will assert that the {@code metadataKey} is not {@code null} and will throw an {@link AxonConfigurationException}
      * if this is the case.
@@ -51,7 +52,7 @@ public class MetadataSequencingPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         return Optional.ofNullable(message.metadata().get(metadataKey));
     }
 }

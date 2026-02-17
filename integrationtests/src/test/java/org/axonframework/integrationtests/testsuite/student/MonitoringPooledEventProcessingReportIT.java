@@ -117,7 +117,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                         components -> {
                                                             SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create(
                                                                     "test",
-                                                                    SequentialPolicy.INSTANCE
+                                                                    SequentialPolicy.instance()
                                                             );
                                                             handlingComponent.subscribe(
                                                                     new QualifiedName(KnownEvent.class),

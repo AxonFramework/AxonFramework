@@ -21,6 +21,7 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -124,8 +125,8 @@ public class HierarchicalSpringContextTest {
 
         // Adding NoOpSequencingPolicy ensures we don't get a CommandSequencingInterceptor leading to an InterceptingCommandBus
         @Bean
-        SequencingPolicy commandSequencingPolicy() {
-            return NoOpSequencingPolicy.INSTANCE;
+        SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
+            return NoOpSequencingPolicy.instance();
         }
     }
 

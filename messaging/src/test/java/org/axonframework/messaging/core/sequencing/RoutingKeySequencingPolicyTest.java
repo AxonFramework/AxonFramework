@@ -16,14 +16,10 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -40,11 +36,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RoutingKeySequencingPolicyTest {
 
-    private RoutingKeySequencingPolicy testSubject;
+    private RoutingKeySequencingPolicy<CommandMessage> testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = RoutingKeySequencingPolicy.INSTANCE;
+        testSubject = RoutingKeySequencingPolicy.instance();
     }
 
     @Test
@@ -84,21 +80,6 @@ class RoutingKeySequencingPolicyTest {
         Optional<Object> acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload, exRoutingKey),
                                                                               new StubProcessingContext());
         assertTrue(acIdentifier1.isEmpty());
-    }
-
-
-    @Test
-    void wrongMessageTypeYieldsAxonConfigurationException() {
-        final Message message = new GenericEventMessage(new MessageType("event"), "payload");
-        final ProcessingContext context = new StubProcessingContext();
-
-        final AxonConfigurationException acExc = assertThrows(AxonConfigurationException.class,
-                                                              () -> testSubject.getSequenceIdentifierFor(
-                                                                      message,
-                                                                      context));
-        assertEquals(
-                "RoutingKeySequencingPolicy is only applicable for sequencing CommandMessages, but handled [org.axonframework.messaging.eventhandling.GenericEventMessage]",
-                acExc.getMessage());
     }
 
     private static CommandMessage asCommandMessage(String payload, String routingKey) {

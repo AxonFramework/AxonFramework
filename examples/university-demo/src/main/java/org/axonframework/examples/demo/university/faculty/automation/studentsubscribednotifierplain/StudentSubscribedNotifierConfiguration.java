@@ -3,6 +3,7 @@ package org.axonframework.examples.demo.university.faculty.automation.studentsub
 import org.axonframework.examples.demo.university.faculty.events.StudentSubscribedToCourse;
 import org.axonframework.examples.demo.university.shared.ids.StudentId;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
@@ -17,7 +18,7 @@ public class StudentSubscribedNotifierConfiguration {
                 .eventHandlingComponents(
                         c -> c.declarative(cfg -> SimpleEventHandlingComponent.create(
                                 "SimpleEventHandlingComponent",
-                                new PropertySequencingPolicy<StudentSubscribedToCourse, StudentId>(
+                                new PropertySequencingPolicy<StudentSubscribedToCourse, StudentId, EventMessage>(
                                         StudentSubscribedToCourse.class,
                                         "studentId"
                                 )

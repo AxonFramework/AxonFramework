@@ -166,7 +166,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           ))
                                           .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                                         MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
+                                                                                        c -> NoOpSequencingPolicy.instance()))
                                           .registerCommandBus(c -> expected)
                                           .build();
 
@@ -327,7 +327,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           ))
                                           .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                                         MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
+                                                                                        c -> NoOpSequencingPolicy.instance()))
                                           .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);

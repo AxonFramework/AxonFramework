@@ -17,12 +17,8 @@
 package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
@@ -40,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SequentialPerAggregatePolicyTest {
 
-    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.instance();
+    private final SequentialPerAggregatePolicy<EventMessage> testSubject = SequentialPerAggregatePolicy.instance();
 
     @Test
     void sameAggregateIdentifierProducesSameSequentialIdentifier() {
@@ -86,20 +82,6 @@ class SequentialPerAggregatePolicyTest {
 
         // then
         assertNull(sequenceIdentifier);
-    }
-
-    @Test
-    void wrongMessageTypeYieldsAxonConfigurationException() {
-        final Message message = new GenericCommandMessage(new MessageType("command"), "payload");
-        final ProcessingContext context = new StubProcessingContext();
-
-        final AxonConfigurationException acExc = assertThrows(AxonConfigurationException.class,
-                                                              () -> testSubject.getSequenceIdentifierFor(
-                                                                      message,
-                                                                      context));
-        assertEquals(
-                "SequentialPerAggregatePolicy is only applicable for sequencing EventMessages, but handled [org.axonframework.messaging.commandhandling.GenericCommandMessage]",
-                acExc.getMessage());
     }
 
     @Nonnull

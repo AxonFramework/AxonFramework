@@ -17,6 +17,7 @@
 package org.axonframework.messaging.core.sequencing;
 
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
@@ -34,7 +35,7 @@ class SequentialPolicyTest {
     @Test
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
-        SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
+        SequentialPolicy<EventMessage> testSubject = SequentialPolicy.instance();
         Object id1 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
         Object id2 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),

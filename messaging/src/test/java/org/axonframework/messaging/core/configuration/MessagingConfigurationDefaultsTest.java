@@ -165,7 +165,7 @@ class MessagingConfigurationDefaultsTest {
                                  });
             cr.registerComponent(SequencingPolicy.class,
                                  MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                 c -> NoOpSequencingPolicy.INSTANCE);
+                                 c -> NoOpSequencingPolicy.instance());
         });
         Configuration resultConfig = configurer.build();
 
@@ -199,7 +199,7 @@ class MessagingConfigurationDefaultsTest {
                                  config -> new DefaultCorrelationDataProviderRegistry());
             cr.registerComponent(SequencingPolicy.class,
                                  MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                 c -> NoOpSequencingPolicy.INSTANCE);
+                                 c -> NoOpSequencingPolicy.instance());
         });
         Configuration resultConfig = configurer.build();
 
@@ -243,7 +243,7 @@ class MessagingConfigurationDefaultsTest {
                   )
                   .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                 MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                                c -> NoOpSequencingPolicy.INSTANCE));
+                                                                c -> NoOpSequencingPolicy.instance()));
         Configuration resultConfig = configurer.build();
 
         // Generic interception are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
@@ -278,7 +278,7 @@ class MessagingConfigurationDefaultsTest {
                                            c -> new DefaultMessageMonitorRegistry())
         ).componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                        MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                       c -> NoOpSequencingPolicy.INSTANCE));
+                                                       c -> NoOpSequencingPolicy.instance()));
         Configuration resultConfig = configurer.build();
 
         DispatchInterceptorRegistry dispatchInterceptorRegistry =
@@ -311,7 +311,7 @@ class MessagingConfigurationDefaultsTest {
                                            c -> new DefaultCorrelationDataProviderRegistry())
                         .registerComponent(SequencingPolicy.class,
                                            MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                           c -> NoOpSequencingPolicy.INSTANCE)
+                                           c -> NoOpSequencingPolicy.instance())
         );
 
         CommandBus configuredCommandBus = configurer.build()
@@ -338,7 +338,7 @@ class MessagingConfigurationDefaultsTest {
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         configurer.componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                 MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                                c -> NoOpSequencingPolicy.INSTANCE));
+                                                                c -> NoOpSequencingPolicy.instance()));
         Configuration resultConfig = configurer.build();
 
         HandlerInterceptorRegistry handlerInterceptorRegistry =

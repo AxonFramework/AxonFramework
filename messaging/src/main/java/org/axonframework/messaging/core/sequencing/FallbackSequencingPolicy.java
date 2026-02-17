@@ -30,14 +30,15 @@ import java.util.Optional;
  * This allows for composing sequencing strategies where certain policies might fail with exceptions for unsupported
  * message types, falling back to more generic approaches when exceptions occur.
  *
- * @param <E> The type of exception to catch and handle.
+ * @param <E> the type of exception to catch and handle
+ * @param <M> the type of message to sequence
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class FallbackSequencingPolicy<E extends Exception> implements SequencingPolicy {
+public class FallbackSequencingPolicy<E extends Exception, M extends Message> implements SequencingPolicy<M> {
 
-    private final SequencingPolicy delegate;
-    private final SequencingPolicy fallback;
+    private final SequencingPolicy<? super M> delegate;
+    private final SequencingPolicy<? super M> fallback;
     private final Class<E> exceptionType;
 
     /**
@@ -50,8 +51,8 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
      * @param exceptionType The type of exception to catch from the delegate policy, not {@code null}.
      * @throws NullPointerException When any of the parameters is {@code null}.
      */
-    public FallbackSequencingPolicy(@Nonnull SequencingPolicy delegate,
-                                    @Nonnull SequencingPolicy fallback,
+    public FallbackSequencingPolicy(@Nonnull SequencingPolicy<? super M> delegate,
+                                    @Nonnull SequencingPolicy<? super M> fallback,
                                     @Nonnull Class<E> exceptionType) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null.");
         this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
@@ -59,7 +60,7 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {
             return delegate.getSequenceIdentifierFor(message, context);
         } catch (Exception e) {

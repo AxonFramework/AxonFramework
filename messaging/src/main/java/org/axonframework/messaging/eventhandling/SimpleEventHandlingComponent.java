@@ -47,21 +47,21 @@ public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
         EventHandlerRegistry<SimpleEventHandlingComponent> {
 
-    private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
+    private static final SequencingPolicy<? super EventMessage> DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy<>(
             SequentialPerAggregatePolicy.instance(),
-            SequentialPolicy.INSTANCE
+            SequentialPolicy.instance()
     );
 
     private final String name;
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
 
     /**
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
      * subcomponents.
      * <p>
-     * Uses a default sequencing policy that will first try for the {@link SequentialPerAggregatePolicy}, falling
-     * back to the {@link SequentialPolicy} when the former returns no sequence value.
+     * Uses a default sequencing policy that will first try for the {@link SequentialPerAggregatePolicy}, falling back
+     * to the {@link SequentialPolicy} when the former returns no sequence value.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
@@ -81,12 +81,12 @@ public class SimpleEventHandlingComponent implements
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
     public static SimpleEventHandlingComponent create(@Nonnull String name,
-                                                      @Nonnull SequencingPolicy sequencingPolicy) {
+                                                      @Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
         return new SimpleEventHandlingComponent(name, sequencingPolicy);
     }
 
     private SimpleEventHandlingComponent(@Nonnull String name,
-                                         @Nonnull SequencingPolicy sequencingPolicy) {
+                                         @Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }

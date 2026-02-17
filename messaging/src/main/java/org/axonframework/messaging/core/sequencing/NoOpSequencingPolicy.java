@@ -23,25 +23,37 @@ import org.jspecify.annotations.NonNull;
 import java.util.Optional;
 
 /**
- * {@link SequencingPolicy} that imposes no sequencing at all on the processing of commands. Infrastructure components
+ * {@link SequencingPolicy} that imposes no sequencing at all on the processing of messages. Infrastructure components
  * may decide upon this sequencing policy being present bypassing sequencing infrastructure at all.
  *
+ * @param <M> the type of message to sequence
  * @author Jakob Hatzl
  * @since 5.0.3
  */
-public class NoOpSequencingPolicy implements SequencingPolicy {
+public class NoOpSequencingPolicy<M extends Message> implements SequencingPolicy<M> {
 
     /**
      * Singleton instance of the {@link NoOpSequencingPolicy}
      */
-    public static final NoOpSequencingPolicy INSTANCE = new NoOpSequencingPolicy();
+    private static final NoOpSequencingPolicy<? extends Message> INSTANCE = new NoOpSequencingPolicy<>();
+
+    /**
+     * Get a singleton instance of the {@code NoOpSequencingPolicy}.
+     *
+     * @param <T> the type of message to sequence
+     * @return the {@code NoOpSequencingPolicy} singleton instance
+     */
+    public static <T extends Message> NoOpSequencingPolicy<T> instance() {
+        //noinspection unchecked
+        return (NoOpSequencingPolicy<T>) INSTANCE;
+    }
 
     private NoOpSequencingPolicy() {
         // empty private singleton constructor
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull Message message,
+    public Optional<Object> getSequenceIdentifierFor(@NonNull M message,
                                                      @NonNull ProcessingContext context) {
         return Optional.empty();
     }

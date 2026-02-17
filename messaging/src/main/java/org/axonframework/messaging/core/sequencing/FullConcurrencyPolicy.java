@@ -25,22 +25,34 @@ import java.util.Optional;
 /**
  * SequencingPolicy that does not enforce any sequencing requirements on message processing.
  *
+ * @param <M> the type of message to sequence
  * @author Allard Buijze
  * @author Henrique Sena
  * @since 0.3
  */
-public class FullConcurrencyPolicy implements SequencingPolicy {
+public class FullConcurrencyPolicy<M extends Message> implements SequencingPolicy<M> {
 
     /**
      * Singleton instance of the {@code FullConcurrencyPolicy}.
      */
-    public static final FullConcurrencyPolicy INSTANCE = new FullConcurrencyPolicy();
+    private static final FullConcurrencyPolicy<? extends Message> INSTANCE = new FullConcurrencyPolicy<>();
+
+    /**
+     * Get a singleton instance of the {@code FullConcurrencyPolicy}.
+     *
+     * @param <T> the type of message to sequence
+     * @return the {@code FullConcurrencyPolicy} singleton instance
+     */
+    public static <T extends Message> FullConcurrencyPolicy<T> instance() {
+        //noinspection unchecked
+        return (FullConcurrencyPolicy<T>) INSTANCE;
+    }
 
     private FullConcurrencyPolicy() {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         return Optional.of(message.identifier());
     }
 }

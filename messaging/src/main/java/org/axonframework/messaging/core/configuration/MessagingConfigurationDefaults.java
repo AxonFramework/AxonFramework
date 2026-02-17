@@ -224,8 +224,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultCorrelationDataProviderRegistry().registerProvider(c -> new MessageOriginProvider());
     }
 
-    private static SequencingPolicy defaultCommandSequencingPolicy(Configuration config) {
-        return RoutingKeySequencingPolicy.INSTANCE;
+    private static SequencingPolicy<? super CommandMessage> defaultCommandSequencingPolicy(Configuration config) {
+        return RoutingKeySequencingPolicy.instance();
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {

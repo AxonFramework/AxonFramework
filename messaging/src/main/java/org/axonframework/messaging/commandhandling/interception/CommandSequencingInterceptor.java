@@ -53,7 +53,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
 
     private static final Logger logger = LoggerFactory.getLogger(CommandSequencingInterceptor.class);
 
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super CommandMessage> sequencingPolicy;
     private final ConcurrentMap<Object, CompletableFuture<Void>> inProgress;
 
     /**
@@ -63,7 +63,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
      * @param sequencingPolicy the {@link SequencingPolicy} to apply for retrieving the sequence identifier from the
      *                         {@link CommandMessage}.
      */
-    public CommandSequencingInterceptor(@Nonnull SequencingPolicy sequencingPolicy) {
+    public CommandSequencingInterceptor(@Nonnull SequencingPolicy<? super CommandMessage> sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "The sequencingPolicy must not be null");
         this.sequencingPolicy = sequencingPolicy;
         this.inProgress = new ConcurrentHashMap<>();

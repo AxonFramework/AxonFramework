@@ -155,7 +155,7 @@ class StateBasedEntityModuleTest {
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                               MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                              c -> NoOpSequencingPolicy.INSTANCE))
+                                                              c -> NoOpSequencingPolicy.instance()))
                 .componentRegistry(cr -> cr.registerModule(stateBasedModuleWithModel()))
                 .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> commandBus))
                 .start();

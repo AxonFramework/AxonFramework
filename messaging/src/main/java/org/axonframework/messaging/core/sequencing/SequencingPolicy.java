@@ -48,21 +48,22 @@ import java.util.Optional;
  * fallback pattern (similar to {@code FallbackSequencingPolicy}, but not exception based).</li>
  * </ul>
  *
+ * @param <M> the type of message to sequence
  * @author Allard Buijze
  * @since 0.3
  */
 @FunctionalInterface
-public interface SequencingPolicy {
+public interface SequencingPolicy<M extends Message> {
 
     /**
      * Returns the sequence identifier for the given {@code message}. When two messages have the same identifier (as
      * defined by their equals method), they will be executed sequentially. A {@code Optional#empty()} value indicates
      * that there are no sequencing requirements for the handling of this message.
      * <p>
-     * The {@code Optional#empty()} should <b>only</b> be returned when the policy cannot determine a sequence identifier for
-     * the given message. This typically happens when the policy is not applicable for the specific message type. When
-     * {@code Optional#empty()} is returned, it is up to the component using this policy to provide a default behavior,
-     * use another policy, throw an exception or react in any other way - as appropriate.
+     * The {@code Optional#empty()} should <b>only</b> be returned when the policy cannot determine a sequence
+     * identifier for the given message. This typically happens when the policy is not applicable for the specific
+     * message type. When {@code Optional#empty()} is returned, it is up to the component using this policy to provide a
+     * default behavior, use another policy, throw an exception or react in any other way - as appropriate.
      *
      * @param message the message for which to get the sequencing identifier.
      * @param context the processing context in which the message is being handled. There might be limitations to the
@@ -73,5 +74,5 @@ public interface SequencingPolicy {
      * @return a sequence identifier for the given message, or {@code Optional#empty()} if this policy cannot determine
      * a sequence identifier for the given message.
      */
-    Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context);
+    Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context);
 }

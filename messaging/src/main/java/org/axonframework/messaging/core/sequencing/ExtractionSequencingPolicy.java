@@ -31,13 +31,14 @@ import java.util.function.Function;
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the message payload based on a
  * given property extractor.
  *
- * @param <T> The type of the supported payload.
- * @param <K> The type of the extracted property.
+ * @param <T> the type of the supported payload
+ * @param <K> the type of the extracted property
+ * @param <M> the type of message to sequence
  * @author Mateusz Nowak
  * @author Nils Christian Ehmke
  * @since 5.0.0
  */
-public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
+public class ExtractionSequencingPolicy<T, K, M extends Message> implements SequencingPolicy<M> {
 
     private final Class<T> payloadClass;
     private final Function<T, K> identifierExtractor;
@@ -60,7 +61,7 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(
-            @Nonnull final Message message,
+            @Nonnull final M message,
             @Nonnull ProcessingContext context
     ) {
         Objects.requireNonNull(message, "Message may not be null");

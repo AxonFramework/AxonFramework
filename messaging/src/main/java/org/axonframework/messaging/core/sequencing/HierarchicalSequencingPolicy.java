@@ -31,13 +31,14 @@ import java.util.Optional;
  * This allows for composing sequencing strategies where certain message types might be handled by specialized policies,
  * falling back to more generic approaches when specialized sequencing fails.
  *
+ * @param <M> the type of message to sequence
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class HierarchicalSequencingPolicy implements SequencingPolicy {
+public class HierarchicalSequencingPolicy<M extends Message> implements SequencingPolicy<M> {
 
-    private final SequencingPolicy primary;
-    private final SequencingPolicy secondary;
+    private final SequencingPolicy<? super M> primary;
+    private final SequencingPolicy<? super M> secondary;
 
     /**
      * Initializes a new instance with the given primary {@code delegate} and {@code fallback} policies.
@@ -46,13 +47,13 @@ public class HierarchicalSequencingPolicy implements SequencingPolicy {
      * @param secondary The fallback policy to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
-    public HierarchicalSequencingPolicy(@Nonnull SequencingPolicy primary, @Nonnull SequencingPolicy secondary) {
+    public HierarchicalSequencingPolicy(@Nonnull SequencingPolicy<? super M> primary, @Nonnull SequencingPolicy<? super M> secondary) {
         this.primary = Objects.requireNonNull(primary, "Primary may not be null.");
         this.secondary = Objects.requireNonNull(secondary, "Secondary may not be null.");
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         return primary.getSequenceIdentifierFor(message, context)
                       .or(() -> secondary.getSequenceIdentifierFor(message, context));
     }
