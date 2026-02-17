@@ -59,7 +59,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Abstract class providing a generic test suite every {@link SequencedDeadLetterQueue} implementation should comply
  * with.
  * <p>
- * All tests are adapted for the AF5 async API that returns {@link CompletableFuture}.
+ * Note that this test suite does not use an actual {@link ProcessingContext} instance. Instead, it relies on {@code null} or
+ * {@link StubProcessingContext} to satisfy the API contract without involving real lifecycle management. Integration
+ * tests are expected to validate the {@link SequencedDeadLetterQueue} with an actual {@link ProcessingContext},
+ * typically within a started Event Processor.
  *
  * @param <M> The {@link DeadLetter} implementation enqueued by this test class.
  * @author Steven van Beelen
