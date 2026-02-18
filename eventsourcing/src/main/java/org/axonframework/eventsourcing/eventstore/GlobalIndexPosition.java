@@ -47,7 +47,8 @@ public final class GlobalIndexPosition implements Position {
 
     private final long index;
 
-    GlobalIndexPosition(long index) {
+    // TODO #4198 make this package private again
+    public GlobalIndexPosition(long index) {
         this.index = index;
     }
 

@@ -16,15 +16,24 @@
 
 package org.axonframework.eventsourcing;
 
-import  jakarta.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
+import org.axonframework.eventsourcing.eventstore.MarkerExposingEventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.Position;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.eventsourcing.snapshot.api.Snapshot;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 import org.axonframework.messaging.core.Context.ResourceKey;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -62,6 +71,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     private final EntityEvolver<E> entityEvolver;
     private final EventSourcedEntityFactory<ID, E> entityFactory;
 
+    private Snapshotter<ID, E> snapshotter;
+
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
@@ -75,19 +86,22 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * @param criteriaResolver Converts the given identifier to an {@link EventCriteria} used to load a matching event
      *                         stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
+     * @param snapshotter      The optional snapshotter consulted for creating and retrieving snapshots.
      */
     public EventSourcingRepository(@Nonnull Class<ID> idType,
                                    @Nonnull Class<E> entityType,
                                    @Nonnull EventStore eventStore,
                                    @Nonnull EventSourcedEntityFactory<ID, E> entityFactory,
                                    @Nonnull CriteriaResolver<ID> criteriaResolver,
-                                   @Nonnull EntityEvolver<E> entityEvolver) {
+                                   @Nonnull EntityEvolver<E> entityEvolver,
+                                   @Nullable Snapshotter<ID, E> snapshotter) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
         this.entityFactory = requireNonNull(entityFactory, "The entity factory must not be null.");
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver must not be null.");
         this.entityEvolver = requireNonNull(entityEvolver, "The entity evolver must not be null.");
+        this.snapshotter = snapshotter;
     }
 
     @Override
@@ -154,19 +168,59 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         return entity;
     }
 
-    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext context) {
-        return eventStore
-                .transaction(context)
-                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
-                .reduce(new EventSourcedEntity<>(identifier),
-                        (entity, entry) -> {
-                            entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message(), context));
-                            entity.evolve(entry.message(), entityEvolver, context);
-                            return entity;
-                        });
+    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext pc) {
+        if (snapshotter == null) {
+            return sourceAndEvolve(new EventSourcedEntity<>(identifier), Position.START, pc);
+        }
+
+        return snapshotter.start(identifier)  // TODO #4203 when snapshot loading fails (or evolve fails using snapshot as base) fallback to sourcing fully
+            .thenCompose(snapshotterContext -> {
+                Snapshot snapshot = snapshotterContext.snapshot();
+                @SuppressWarnings("unchecked")
+                EventSourcedEntity<ID, E> initialEntity = new EventSourcedEntity<>(identifier, snapshot == null ? null : (E)snapshot.entity());
+
+                return sourceAndEvolve(initialEntity, snapshot == null ? Position.START : snapshot.position(), pc)
+                    .thenApply(entity -> {
+                        if (entity.consistencyMarker != null && initialEntity.evolutionCount > 0) {
+                            Position position = entity.consistencyMarker.position();
+
+                            // TODO #4198 hack: position is off by one :/
+                            Position correctedPosition = switch(position) {
+                                case GlobalIndexPosition gip -> new GlobalIndexPosition(GlobalIndexPosition.toIndex(position) + 1);
+                                case AggregateSequenceNumberPosition asnp -> new AggregateSequenceNumberPosition(AggregateSequenceNumberPosition.toSequenceNumber(position) + 1);
+                                default -> throw new IllegalStateException("should always be a concrete position (not start position): " + position);
+                            };
+
+                            snapshotterContext.entityEvolved(entity.entity(), correctedPosition, initialEntity.evolutionCount);
+                        }
+
+                        return entity;
+                    });
+            });
     }
 
-    @Override
+    private CompletableFuture<EventSourcedEntity<ID, E>> sourceAndEvolve(EventSourcedEntity<ID, E> initialEntity, Position position, ProcessingContext pc) {
+        EventStoreTransaction transaction = eventStore.transaction(pc);
+        SourcingCondition sourcingCondition = SourcingCondition.conditionFor(position, criteriaResolver.resolve(initialEntity.identifier, pc));
+        AtomicReference<ConsistencyMarker> consistencyMarkerRef = new AtomicReference<>();
+
+        // TODO #4199 remove this once consistency marker can be contained via the new mechanism
+        MessageStream<? extends EventMessage> source = switch(transaction) {
+            case MarkerExposingEventStoreTransaction tx -> tx.source(sourcingCondition, consistencyMarkerRef);
+            default -> transaction.source(sourcingCondition);
+        };
+
+        return source
+            .onComplete(() -> initialEntity.updateConsistencyMarker(consistencyMarkerRef.get()))
+            .reduce(initialEntity, (entity, entry) -> {
+                entity.ensureInitialState(() -> entityFactory.create(entity.identifier, entry.message(), pc));
+                entity.evolve(entry.message(), entityEvolver, pc);
+
+                return entity;
+            });
+    }
+
+    @Override  // TODO why does this method exist?
     public ManagedEntity<ID, E> persist(@Nonnull ID identifier,
                                         @Nonnull E entity,
                                         @Nonnull ProcessingContext processingContext) {
@@ -215,6 +269,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         descriptor.describeProperty("entityFactory", entityFactory);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("entityEvolver", entityEvolver);
+        descriptor.describeProperty("snapshotter", snapshotter);
     }
 
     /**
@@ -228,6 +283,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         private final ID identifier;
         private final AtomicReference<M> currentState;
         private boolean initialized;
+        private ConsistencyMarker consistencyMarker;
+        private int evolutionCount;
 
         private EventSourcedEntity(ID identifier) {
             this(identifier, null);
@@ -243,6 +300,10 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             return entity instanceof EventSourcingRepository.EventSourcedEntity<ID, T> eventSourcedEntity
                     ? eventSourcedEntity
                     : new EventSourcedEntity<>(entity.identifier(), entity.entity());
+        }
+
+        void updateConsistencyMarker(ConsistencyMarker consistencyMarker) {
+            this.consistencyMarker = consistencyMarker;
         }
 
         @Override
@@ -282,6 +343,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         private M evolve(EventMessage event,
                          EntityEvolver<M> evolver,
                          ProcessingContext processingContext) {
+            evolutionCount++;
             this.initialized = true;
             return currentState.updateAndGet(current -> evolver.evolve(current, event, processingContext));
         }
