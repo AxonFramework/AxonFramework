@@ -355,6 +355,34 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         });
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Optimized override that retrieves available sequences one at a time (page size of 1) instead of in batches. Since
+     * no {@code sequenceFilter} is applied, every available sequence is a valid candidate, so there is no need to
+     * prefetch multiple sequences. This avoids unnecessary deserialization of dead letter entries that will never be
+     * evaluated.
+     *
+     * @see #process(Predicate, Function, ProcessingContext)
+     */
+    @Override
+    @NonNull
+    public CompletableFuture<Boolean> process(
+            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            @Nullable ProcessingContext context
+    ) {
+        return FutureUtils.runFailing(() -> {
+            Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(1, context);
+            return claimFirstAvailableLetter(iterator, context).thenCompose(claimedLetter -> {
+                if (claimedLetter == null) {
+                    logger.info("No claimable dead letters found to process.");
+                    return CompletableFuture.completedFuture(false);
+                }
+                return processLetterAndFollowing(claimedLetter, processingTask, context);
+            });
+        });
+    }
+
     @Override
     @NonNull
     public CompletableFuture<Boolean> process(
@@ -372,6 +400,20 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 return processLetterAndFollowing(claimedLetter, processingTask, context);
             });
         });
+    }
+
+    private CompletableFuture<JpaDeadLetter<M>> claimFirstAvailableLetter(
+            Iterator<JpaDeadLetter<M>> iterator,
+            @Nullable ProcessingContext context
+    ) {
+        while (iterator.hasNext()) {
+            JpaDeadLetter<M> next = iterator.next();
+            return claimDeadLetter(next, context)
+                    .thenCompose(claimed -> claimed
+                            ? CompletableFuture.completedFuture(next)
+                            : claimFirstAvailableLetter(iterator, context));
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     private CompletableFuture<JpaDeadLetter<M>> claimFirstMatchingLetter(
