@@ -19,6 +19,7 @@ package org.axonframework.messaging.core.sequencing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
@@ -40,7 +41,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {
-        final SequencingPolicy sequencingPolicy =
+        final SequencingPolicy<Message> sequencingPolicy =
                 new ExtractionSequencingPolicy<>(
                         TestEvent.class,
                         TestEvent::id
@@ -54,7 +55,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id"
         );
@@ -65,7 +66,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void withoutFallbackShouldThrowException() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id"
         );
@@ -78,7 +79,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void withFallbackShouldNotThrowException() {
-        final SequencingPolicy sequencingPolicy = new FallbackSequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new FallbackSequencingPolicy<>(
                 new PropertySequencingPolicy<>(
                         TestEvent.class,
                         "id"

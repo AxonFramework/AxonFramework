@@ -36,11 +36,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RoutingKeySequencingPolicyTest {
 
-    private RoutingKeySequencingPolicy<CommandMessage> testSubject;
+    private RoutingKeySequencingPolicy testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = RoutingKeySequencingPolicy.instance();
+        testSubject = RoutingKeySequencingPolicy.INSTANCE;
     }
 
     @Test

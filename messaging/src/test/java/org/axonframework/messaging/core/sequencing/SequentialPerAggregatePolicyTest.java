@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SequentialPerAggregatePolicyTest {
 
-    private final SequentialPerAggregatePolicy<EventMessage> testSubject = SequentialPerAggregatePolicy.instance();
+    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.INSTANCE;
 
     @Test
     void sameAggregateIdentifierProducesSameSequentialIdentifier() {

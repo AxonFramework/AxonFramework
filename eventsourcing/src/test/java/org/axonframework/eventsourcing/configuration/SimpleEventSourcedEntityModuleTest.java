@@ -184,7 +184,7 @@ class SimpleEventSourcedEntityModuleTest {
                                )
                                .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                              MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
-                                                                             c -> NoOpSequencingPolicy.instance()))
+                                                                             c -> NoOpSequencingPolicy.INSTANCE))
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();

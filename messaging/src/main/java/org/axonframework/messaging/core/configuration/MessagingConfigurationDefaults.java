@@ -225,7 +225,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static SequencingPolicy<? super CommandMessage> defaultCommandSequencingPolicy(Configuration config) {
-        return RoutingKeySequencingPolicy.instance();
+        return RoutingKeySequencingPolicy.INSTANCE;
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {

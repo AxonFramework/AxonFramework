@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core.sequencing;
 
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -40,19 +41,19 @@ final class HierarchicalSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenPrimaryIsNull() {
             // given
-            SequencingPolicy secondary = (event, context) -> Optional.of("secondary");
+            SequencingPolicy<Message> secondary = (event, context) -> Optional.of("secondary");
 
             // when / then
-            assertThrows(NullPointerException.class, () -> new HierarchicalSequencingPolicy(null, secondary));
+            assertThrows(NullPointerException.class, () -> new HierarchicalSequencingPolicy<>(null, secondary));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenSecondaryIsNull() {
             // given
-            SequencingPolicy primary = (event, context) -> Optional.of("primary");
+            SequencingPolicy<Message> primary = (event, context) -> Optional.of("primary");
 
             // when / then
-            assertThrows(NullPointerException.class, () -> new HierarchicalSequencingPolicy(primary, null));
+            assertThrows(NullPointerException.class, () -> new HierarchicalSequencingPolicy<>(primary, null));
         }
     }
 
@@ -63,9 +64,9 @@ final class HierarchicalSequencingPolicyTest {
         void shouldUsePrimaryWhenPrimarySucceeds() {
             // given
             var expectedIdentifier = "primary-result";
-            SequencingPolicy primary = (event, context) -> Optional.of(expectedIdentifier);
-            SequencingPolicy secondary = (event, context) -> Optional.of("secondary-result");
-            HierarchicalSequencingPolicy policy = new HierarchicalSequencingPolicy(primary, secondary);
+            SequencingPolicy<Message> primary = (event, context) -> Optional.of(expectedIdentifier);
+            SequencingPolicy<Message> secondary = (event, context) -> Optional.of("secondary-result");
+            HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
             var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
@@ -78,9 +79,9 @@ final class HierarchicalSequencingPolicyTest {
         void shouldUseSecondaryWhenPrimaryReturnsEmpty() {
             // given
             var expectedIdentifier = "secondary-result";
-            SequencingPolicy primary = (event, context) -> Optional.empty();
-            SequencingPolicy secondary = (event, context) -> Optional.of(expectedIdentifier);
-            HierarchicalSequencingPolicy policy = new HierarchicalSequencingPolicy(primary, secondary);
+            SequencingPolicy<Message> primary = (event, context) -> Optional.empty();
+            SequencingPolicy<Message> secondary = (event, context) -> Optional.of(expectedIdentifier);
+            HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
             var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
@@ -92,9 +93,9 @@ final class HierarchicalSequencingPolicyTest {
         @Test
         void shouldReturnEmptyWhenBothReturnEmpty() {
             // given
-            SequencingPolicy primary = (event, context) -> Optional.empty();
-            SequencingPolicy secondary = (event, context) -> Optional.empty();
-            HierarchicalSequencingPolicy policy = new HierarchicalSequencingPolicy(primary, secondary);
+            SequencingPolicy<Message> primary = (event, context) -> Optional.empty();
+            SequencingPolicy<Message> secondary = (event, context) -> Optional.empty();
+            HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
             var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());

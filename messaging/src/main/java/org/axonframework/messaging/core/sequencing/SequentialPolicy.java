@@ -26,27 +26,15 @@ import java.util.Optional;
 /**
  * SequencingPolicy that requires sequential handling of all messages delivered to a message handler.
  *
- * @param <M> the type of message to sequence
  * @author Allard Buijze
  * @since 0.3
  */
-public class SequentialPolicy<M extends Message> implements SequencingPolicy<M> {
+public class SequentialPolicy implements SequencingPolicy<Message> {
 
     /**
      * Singleton instance of the {@code SequentialPolicy}.
      */
-    private static final SequentialPolicy<? extends Message> INSTANCE = new SequentialPolicy<>();
-
-    /**
-     * Get a singleton instance of the {@code SequentialPolicy}.
-     *
-     * @param <T> the type of message to sequence
-     * @return the {@code SequentialPolicy} singleton instance.
-     */
-    public static <T extends Message> SequentialPolicy<T> instance() {
-        //noinspection unchecked
-        return (SequentialPolicy<T>) INSTANCE;
-    }
+    public static final SequentialPolicy INSTANCE = new SequentialPolicy();
 
     /**
      * Object used to represent the full sequential policy.
@@ -58,7 +46,7 @@ public class SequentialPolicy<M extends Message> implements SequencingPolicy<M> 
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

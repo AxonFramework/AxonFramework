@@ -18,7 +18,6 @@ package org.axonframework.messaging.core.sequencing;
 
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
@@ -36,7 +35,7 @@ class FullConcurrencyPolicyTest {
 
     @Test
     void sequencingIdentifier() {
-        FullConcurrencyPolicy<EventMessage> testSubject = FullConcurrencyPolicy.instance();
+        FullConcurrencyPolicy testSubject = FullConcurrencyPolicy.INSTANCE;
         ProcessingContext processingContext = new StubProcessingContext();
         assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                         processingContext)).isPresent();

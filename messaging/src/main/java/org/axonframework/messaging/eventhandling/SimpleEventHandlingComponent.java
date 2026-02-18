@@ -23,12 +23,12 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
 import org.axonframework.messaging.core.sequencing.HierarchicalSequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,8 +48,8 @@ public class SimpleEventHandlingComponent implements
         EventHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy<? super EventMessage> DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy<>(
-            SequentialPerAggregatePolicy.instance(),
-            SequentialPolicy.instance()
+            SequentialPerAggregatePolicy.INSTANCE,
+            SequentialPolicy.INSTANCE
     );
 
     private final String name;

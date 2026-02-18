@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jspecify.annotations.NonNull;
@@ -33,34 +32,22 @@ import java.util.function.Predicate;
  * <p>
  * This policy only applies for command messages.
  *
- * @param <M> the type of message to sequence
  * @author Jakob Hatzl
  * @since 5.0.3
  */
-public class RoutingKeySequencingPolicy<M extends CommandMessage> implements SequencingPolicy<M> {
+public class RoutingKeySequencingPolicy implements SequencingPolicy<CommandMessage> {
 
     /**
      * Singleton instance of the {@link RoutingKeySequencingPolicy}
      */
-    private static final RoutingKeySequencingPolicy<? extends CommandMessage> INSTANCE = new RoutingKeySequencingPolicy<>();
-
-    /**
-     * Get a singleton instance of the {@code RoutingKeySequencingPolicy}.
-     *
-     * @param <T> the type of message to sequence
-     * @return the {@code RoutingKeySequencingPolicy} singleton instance.
-     */
-    public static <T extends CommandMessage> RoutingKeySequencingPolicy<T> instance() {
-        //noinspection unchecked
-        return (RoutingKeySequencingPolicy<T>) INSTANCE;
-    }
+    public static final RoutingKeySequencingPolicy INSTANCE = new RoutingKeySequencingPolicy();
 
     private RoutingKeySequencingPolicy() {
         // empty private singleton constructor
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull M message,
+    public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage message,
                                                      @NonNull ProcessingContext context) {
         return message.routingKey()
                       .filter(Predicate.not(String::isEmpty))

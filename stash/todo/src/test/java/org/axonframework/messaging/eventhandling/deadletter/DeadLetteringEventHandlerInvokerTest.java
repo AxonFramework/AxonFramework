@@ -77,7 +77,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @BeforeEach
     void setUp() {
         handler = mock(EventMessageHandler.class);
-        sequencingPolicy = spy(SequentialPerAggregatePolicy.instance());
+        sequencingPolicy = spy(SequentialPerAggregatePolicy.INSTANCE);
         //noinspection unchecked
         queue = mock(SequencedDeadLetterQueue.class);
         //noinspection unchecked

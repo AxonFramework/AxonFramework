@@ -20,9 +20,9 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;
@@ -117,7 +117,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                         components -> {
                                                             SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create(
                                                                     "test",
-                                                                    SequentialPolicy.instance()
+                                                                    SequentialPolicy.INSTANCE
                                                             );
                                                             handlingComponent.subscribe(
                                                                     new QualifiedName(KnownEvent.class),

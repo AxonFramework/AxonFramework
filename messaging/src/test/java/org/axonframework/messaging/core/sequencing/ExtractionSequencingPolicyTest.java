@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
@@ -45,7 +46,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldExtractSequenceIdentifierFromMatchingPayloadType() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
@@ -60,7 +61,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldExtractComplexSequenceIdentifier() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> event.id() + "-" + event.version()
         );
@@ -75,7 +76,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldReturnNullWhenExtractorReturnsNull() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> null
         );
@@ -90,7 +91,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldReturnEmptyWhenExtractorReturnsNull() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 event -> null
         );
@@ -107,7 +108,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldConvertPayloadWhenNotDirectlyAssignable() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
@@ -124,7 +125,7 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldThrowConversionExceptionWhenPayloadCannotBeConverted() {
         // given
-        SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
@@ -140,11 +141,11 @@ final class ExtractionSequencingPolicyTest {
     @Test
     void shouldWorkWithFallbackPolicyForConversionErrors() {
         // given
-        SequencingPolicy expressionPolicy = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> expressionPolicy = new ExtractionSequencingPolicy<>(
                 TestPayload.class,
                 TestPayload::id
         );
-        SequencingPolicy fallbackPolicy = new FallbackSequencingPolicy<>(
+        SequencingPolicy<Message> fallbackPolicy = new FallbackSequencingPolicy<>(
                 expressionPolicy,
                 (event, context) -> Optional.of("fallback-result"),
                 ConversionException.class
@@ -165,7 +166,7 @@ final class ExtractionSequencingPolicyTest {
         EventConverter exConverter = mock();
         EventMessage exMessage = mock();
         ProcessingContext exContext = mock();
-        SequencingPolicy testSubject = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> testSubject = new ExtractionSequencingPolicy<>(
                 exPayloadType,
                 TestPayload::id
         );
@@ -193,7 +194,7 @@ final class ExtractionSequencingPolicyTest {
         MessageConverter exConverter = mock();
         CommandMessage exMessage = mock();
         ProcessingContext exContext = mock();
-        SequencingPolicy testSubject = new ExtractionSequencingPolicy<>(
+        SequencingPolicy<Message> testSubject = new ExtractionSequencingPolicy<>(
                 exPayloadType,
                 TestPayload::id
         );
@@ -244,7 +245,7 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenEventMessageIsNull() {
             // given
-            SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+            SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestPayload.class,
                     TestPayload::id
             );
@@ -258,7 +259,7 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenProcessingContextIsNull() {
             // given
-            SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
+            SequencingPolicy<Message> sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestPayload.class,
                     TestPayload::id
             );

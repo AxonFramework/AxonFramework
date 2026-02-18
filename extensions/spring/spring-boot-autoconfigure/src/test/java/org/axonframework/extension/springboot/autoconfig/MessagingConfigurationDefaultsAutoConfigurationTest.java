@@ -21,9 +21,9 @@ import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -217,15 +217,15 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         }
 
         @Bean
-        public SequencingPolicy commandSequencingPolicy() {
+        public SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
             return new CustomSequencingPolicy();
         }
     }
 
-    private static final class CustomSequencingPolicy implements SequencingPolicy {
+    private static final class CustomSequencingPolicy implements SequencingPolicy<CommandMessage> {
 
         @Override
-        public Optional<Object> getSequenceIdentifierFor(@NonNull Message message, @NonNull ProcessingContext context) {
+        public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
             return Optional.empty();
         }
     }

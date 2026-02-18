@@ -25,14 +25,14 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
-import org.axonframework.messaging.core.sequencing.SequencingPolicy;
-import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,7 +126,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment, @Nonnull ProcessingContext context) {
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment,
+                                                     @Nonnull ProcessingContext context) {
         return segmentMatcher.matches(segment, message, context);
     }
 
@@ -220,7 +221,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
-        private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.instance();
+        private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.INSTANCE;
         private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**

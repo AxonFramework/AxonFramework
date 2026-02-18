@@ -19,7 +19,6 @@ package org.axonframework.messaging.core.sequencing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
-import org.axonframework.messaging.core.Message;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -29,11 +28,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @param <T> the type of the supported payload
  * @param <K> the type of the extracted property
- * @param <M> the type of message to sequence
  * @author Nils Christian Ehmke
  * @since 4.5.2
  */
-public class PropertySequencingPolicy<T, K, M extends Message> extends ExtractionSequencingPolicy<T, K, M> {
+public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T, K> {
 
     /**
      * Creates a new instance of the {@code PropertySequencingPolicy}, which extracts the sequence identifier from the

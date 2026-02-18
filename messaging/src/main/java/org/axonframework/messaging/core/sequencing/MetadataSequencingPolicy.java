@@ -31,11 +31,10 @@ import static org.axonframework.common.BuilderUtils.assertNonBlank;
  * {@link Metadata}, based on a given {@code metadataKey}. In the absence of the given {@code metadataKey} on the
  * {@link Metadata}, the {@link Optional#empty()} is returned.
  *
- * @param <M> the type of message to sequence
  * @author Lucas Campos
  * @since 4.6.0
  */
-public class MetadataSequencingPolicy<M extends Message> implements SequencingPolicy<M> {
+public class MetadataSequencingPolicy implements SequencingPolicy<Message> {
 
     private final String metadataKey;
 
@@ -52,7 +51,7 @@ public class MetadataSequencingPolicy<M extends Message> implements SequencingPo
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return Optional.ofNullable(message.metadata().get(metadataKey));
     }
 }

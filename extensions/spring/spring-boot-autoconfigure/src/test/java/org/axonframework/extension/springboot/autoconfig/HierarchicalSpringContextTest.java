@@ -126,7 +126,7 @@ public class HierarchicalSpringContextTest {
         // Adding NoOpSequencingPolicy ensures we don't get a CommandSequencingInterceptor leading to an InterceptingCommandBus
         @Bean
         SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
-            return NoOpSequencingPolicy.instance();
+            return NoOpSequencingPolicy.INSTANCE;
         }
     }
 

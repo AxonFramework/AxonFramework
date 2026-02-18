@@ -18,7 +18,7 @@ public class StudentSubscribedNotifierConfiguration {
                 .eventHandlingComponents(
                         c -> c.declarative(cfg -> SimpleEventHandlingComponent.create(
                                 "SimpleEventHandlingComponent",
-                                new PropertySequencingPolicy<StudentSubscribedToCourse, StudentId, EventMessage>(
+                                new PropertySequencingPolicy<StudentSubscribedToCourse, StudentId>(
                                         StudentSubscribedToCourse.class,
                                         "studentId"
                                 )

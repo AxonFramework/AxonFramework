@@ -33,12 +33,11 @@ import java.util.function.Function;
  *
  * @param <T> the type of the supported payload
  * @param <K> the type of the extracted property
- * @param <M> the type of message to sequence
  * @author Mateusz Nowak
  * @author Nils Christian Ehmke
  * @since 5.0.0
  */
-public class ExtractionSequencingPolicy<T, K, M extends Message> implements SequencingPolicy<M> {
+public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy<Message> {
 
     private final Class<T> payloadClass;
     private final Function<T, K> identifierExtractor;
@@ -61,13 +60,14 @@ public class ExtractionSequencingPolicy<T, K, M extends Message> implements Sequ
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(
-            @Nonnull final M message,
+            @Nonnull final Message message,
             @Nonnull ProcessingContext context
     ) {
         Objects.requireNonNull(message, "Message may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
 
-        var converter = message instanceof EventMessage ? context.component(EventConverter.class) : context.component(MessageConverter.class);
+        var converter = message instanceof EventMessage ? context.component(EventConverter.class) : context.component(
+                MessageConverter.class);
         var convertedPayload = message.payloadAs(payloadClass, converter);
         return Optional.ofNullable(identifierExtractor.apply(convertedPayload));
     }
