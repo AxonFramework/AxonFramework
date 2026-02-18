@@ -42,17 +42,19 @@ import java.util.function.UnaryOperator;
  * {@link #contains(Object, ProcessingContext)} lookups. This is particularly important for high-throughput event
  * processing where checking if an event's sequence is already dead-lettered should be as fast as possible.
  * <p>
- * Each {@link Segment} gets its own independent {@link SequenceIdentifierCache}, keyed by the segment obtained from the
+ * Each {@link Segment} gets its own independent {@link SequenceIdentifierCache}, obtained from the
  * {@link ProcessingContext}. When a segment is released, only that segment's cache is removed via
  * {@link #invalidateCache(ProcessingContext)}, leaving other segments' caches intact.
  * <p>
  * If no segment is available in the {@link ProcessingContext} (or the context is {@code null}), operations delegate
  * directly to the underlying queue without caching.
  * <p>
- * <b>Thread-safety note:</b> Different segments can operate concurrently without interference, as each segment has its
- * own cache entry in a {@link ConcurrentHashMap}. Within a single segment, operations on a given sequence identifier
- * are already serialized by the upstream
+ * <b>Thread-safety note:</b> This class is not thread-safe when performing operations for the same sequence identifier
+ * concurrently. It is designed for internal use by {@link DeadLetteringEventHandlingComponent}, where operations on a
+ * given sequence identifier are already serialized by the upstream
  * {@link org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent}.
+ * Different segments can operate concurrently without interference. External synchronization must be provided if this
+ * class is used in other contexts where concurrent access to the same sequence identifier is possible.
  *
  * @param <M> The type of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
@@ -109,8 +111,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * Gets or lazily initializes the cache for the given segment.
      * <p>
      * The initialization checks if the delegate queue is empty. This check is performed asynchronously and the returned
-     * future completes when the cache is ready. Uses {@link ConcurrentHashMap#computeIfAbsent} to handle race
-     * conditions — only the first initializer wins.
+     * future completes when the cache is ready.
      *
      * @param segment the segment to get or initialize the cache for
      * @param context the processing context in which the dead letters are processed
@@ -123,6 +124,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
             return CompletableFuture.completedFuture(existing);
         }
         return delegate.amountOfSequences(context)
+                       // computeIfAbsent handles race conditions — only the first initializer wins
                        .thenApply(count -> segmentCaches.computeIfAbsent(segment, k -> {
                            boolean startedEmpty = count == 0L;
                            if (logger.isDebugEnabled()) {
@@ -286,11 +288,8 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * {@inheritDoc}
      * <p>
-     * Clears all per-segment caches and the delegate queue. The caches are cleared first (synchronously) to ensure that
-     * any concurrent {@link #contains(Object, ProcessingContext)} calls during the delegate clear operation will query
-     * the delegate directly, avoiding stale cache hits.
-     * <p>
-     * This method is intended to be called during event processor reset when processing has been stopped.
+     * Clears all per-segment caches and the delegate queue. This method is intended to be called during event processor
+     * reset when processing has been stopped.
      */
     @Nonnull
     @Override
@@ -309,13 +308,13 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * <p>
      * Call this method when processing ownership changes (e.g., segment release) to ensure cache consistency. When
      * ownership changes, another processor instance may have modified the queue, making cached information potentially
-     * stale. The entire cache for that segment is removed (not just cleared) so that the {@code startedEmpty} flag is
-     * re-evaluated when the segment is next claimed.
+     * stale.
      *
      * @param context the processing context containing the {@link Segment} to invalidate the cache for, may be
      *                {@code null}
      */
     public void invalidateCache(@Nullable ProcessingContext context) {
+        // We remove (not clear) the cache so that startedEmpty is re-evaluated when the segment is re-claimed.
         extractSegment(context).ifPresent(segment -> {
             SequenceIdentifierCache removed = segmentCaches.remove(segment);
             if (removed != null && logger.isDebugEnabled()) {
