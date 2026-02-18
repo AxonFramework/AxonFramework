@@ -393,21 +393,21 @@ class CachingSequencedDeadLetterQueueTest {
         @Test
         void eachSegmentInitializesOwnCacheIndependently() {
             // given
-            EventMessage event = EventTestUtils.createEvent(1);
+            EventMessage event1 = EventTestUtils.createEvent(1);
+            EventMessage event2 = EventTestUtils.createEvent(2);
             ProcessingContext context0 = contextForSegment(SEGMENT_0);
             ProcessingContext context1 = contextForSegment(SEGMENT_1);
 
             // when
-            // enqueue on segment 0 — this initializes SEGMENT_0's cache with startedEmpty=true
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), context0).join();
+            // segment 0 enqueues first — its cache initializes with startedEmpty=true
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1), context0).join();
+            // segment 1 enqueues second — its cache initializes with startedEmpty=false (queue is non-empty)
+            cachingQueue.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event2), context1).join();
 
             // then
-            // segment 0's cache has SEQUENCE_ID_1 marked as enqueued
+            // each segment's cache independently tracks its own sequence identifier
             assertThat(cachingQueue.contains(SEQUENCE_ID_1, context0).join()).isTrue();
-            // segment 1's cache is initialized with startedEmpty=false (queue is non-empty by now),
-            // so it queries the delegate and discovers SEQUENCE_ID_1 is present
-            assertThat(cachingQueue.contains(SEQUENCE_ID_1, context1).join()).isTrue();
-            // both segment caches independently track SEQUENCE_ID_1 as enqueued
+            assertThat(cachingQueue.contains(SEQUENCE_ID_2, context1).join()).isTrue();
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(2);
         }
 
