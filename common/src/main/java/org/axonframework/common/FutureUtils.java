@@ -36,6 +36,15 @@ import java.util.function.Supplier;
  */
 public final class FutureUtils {
 
+    /**
+     * Default safety-net timeout for {@link #joinAndUnwrap(CompletableFuture)}. Thirty seconds is long enough that no
+     * legitimate synchronous operation (in-memory, local DB, or UoW execution) should ever hit it, yet short enough to
+     * surface truly hung threads (connection pool exhaustion, deadlocks, network partitions) before they cascade into
+     * larger outages. Callers that expect longer waits should use {@link #joinAndUnwrap(CompletableFuture, Duration)}
+     * with an explicit timeout.
+     */
+    private static final Duration DEFAULT_JOIN_TIMEOUT = Duration.ofSeconds(30);
+
     private FutureUtils() {
         // Utility class
     }
@@ -120,23 +129,20 @@ public final class FutureUtils {
      * Joins a {@link CompletableFuture} and unwraps any {@link CompletionException} to throw the actual cause,
      * preserving the exact exception type without wrapping checked exceptions.
      * <p>
-     * This method uses the "sneaky throw" technique to re-throw checked exceptions without declaring them, which
-     * preserves the original exception type completely. Use this when you need precise exception type preservation and
-     * are certain about the exception handling contract.
+     * Applies a default safety-net timeout of 30 seconds. If the future does not complete within that window, a
+     * {@link TimeoutException} is thrown. Callers that expect longer completion times should use
+     * {@link #joinAndUnwrap(CompletableFuture, Duration)} with an explicit timeout.
      *
      * @param future The {@link CompletableFuture} to join.
      * @param <T>    The type of the future's result.
      * @return The result of the future.
-     * @throws Throwable the unwrapped cause if the future completed exceptionally (exact type preserved).
+     * @throws TimeoutException if the future does not complete within the default timeout.
+     * @throws Throwable        the unwrapped cause if the future completed exceptionally (exact type preserved).
      */
+    @SuppressWarnings("JavadocDeclaration")
     @Nullable
     public static <T> T joinAndUnwrap(@Nonnull CompletableFuture<T> future) {
-        try {
-            return future.join();
-        } catch (CompletionException e) {
-            sneakyThrow(e.getCause());
-            return null; // unreachable, but needed for compilation
-        }
+        return joinAndUnwrap(future, DEFAULT_JOIN_TIMEOUT);
     }
 
     /**
@@ -154,6 +160,7 @@ public final class FutureUtils {
      * @throws TimeoutException if the future does not complete within the given {@code timeout}.
      * @throws Throwable        the unwrapped cause if the future completed exceptionally (exact type preserved).
      */
+    @SuppressWarnings("JavadocDeclaration")
     @Nullable
     public static <T> T joinAndUnwrap(@Nonnull CompletableFuture<T> future, @Nonnull Duration timeout) {
         try {
