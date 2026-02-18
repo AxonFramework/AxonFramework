@@ -170,16 +170,22 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
             return CompletableFuture.completedFuture(false);
         }
         return getOrInitializeCache(segment, context)
-                .thenCompose(cache -> delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context)
-                                              .whenComplete((result, error) -> {
-                                                  if (error == null) {
-                                                      if (Boolean.TRUE.equals(result)) {
-                                                          cache.markEnqueued(sequenceIdentifier);
-                                                      } else {
-                                                          cache.markNotEnqueued(sequenceIdentifier);
-                                                      }
-                                                  }
-                                              }));
+                .thenCompose(cache -> {
+                    // Re-check after initialization — cache may now know the answer
+                    if (!cache.mightBePresent(sequenceIdentifier)) {
+                        return CompletableFuture.completedFuture(false);
+                    }
+                    return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context)
+                                   .whenComplete((result, error) -> {
+                                       if (error == null) {
+                                           if (Boolean.TRUE.equals(result)) {
+                                               cache.markEnqueued(sequenceIdentifier);
+                                           } else {
+                                               cache.markNotEnqueued(sequenceIdentifier);
+                                           }
+                                       }
+                                   });
+                });
     }
 
     @Nonnull
