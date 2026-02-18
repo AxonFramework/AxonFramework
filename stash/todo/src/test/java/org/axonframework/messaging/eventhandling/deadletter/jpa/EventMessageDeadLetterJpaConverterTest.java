@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for {@link EventMessageDeadLetterJpaConverter}.
  * <p>
  * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources. This test verifies that the converter correctly handles these
- * resources.
+ * number) are stored and restored as {@link Context} resources. This test verifies that the converter correctly handles
+ * these resources.
  */
 class EventMessageDeadLetterJpaConverterTest {
 
@@ -214,7 +214,8 @@ class EventMessageDeadLetterJpaConverterTest {
             assertNull(entry.getAggregateIdentifier());
         }
         if (context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
-            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY), entry.getAggregateSequenceNumber());
+            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
+                         entry.getAggregateSequenceNumber());
         } else {
             assertNull(entry.getAggregateSequenceNumber());
         }

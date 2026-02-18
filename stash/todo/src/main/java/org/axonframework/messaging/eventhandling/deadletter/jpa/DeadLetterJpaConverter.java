@@ -28,8 +28,8 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
  * Converter that can convert an {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
  * <p>
  * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources. This converter handles storing these resources as separate
- * columns in the database and restoring them when converting back.
+ * number) are stored and restored as {@link Context} resources. This converter handles storing these resources as
+ * separate columns in the database and restoring them when converting back.
  *
  * @param <M> The type of the event message this converter will convert.
  * @author Mitchell Herrijgers
@@ -51,7 +51,8 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @return The created {@link DeadLetterEventEntry}.
      */
     @Nonnull
-    DeadLetterEventEntry convert(@Nonnull M message, @Nullable Context context, @Nonnull EventConverter eventConverter, @Nonnull Converter genericConverter);
+    DeadLetterEventEntry convert(@Nonnull M message, @Nullable Context context, @Nonnull EventConverter eventConverter,
+                                 @Nonnull Converter genericConverter);
 
     /**
      * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
@@ -66,5 +67,6 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
     @Nonnull
-    MessageStream.Entry<M> convert(@Nonnull DeadLetterEventEntry entry, @Nonnull EventConverter eventConverter, @Nonnull Converter genericConverter);
+    MessageStream.Entry<M> convert(@Nonnull DeadLetterEventEntry entry, @Nonnull EventConverter eventConverter,
+                                   @Nonnull Converter genericConverter);
 }
