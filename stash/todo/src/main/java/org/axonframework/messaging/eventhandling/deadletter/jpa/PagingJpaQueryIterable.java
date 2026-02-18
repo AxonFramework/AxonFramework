@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.deadletter.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.tx.TransactionalExecutor;
 
 import java.util.ArrayDeque;
@@ -42,7 +43,8 @@ import java.util.function.Function;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class PagingJpaQueryIterable<T, R> implements Iterable<R> {
+@Internal
+class PagingJpaQueryIterable<T, R> implements Iterable<R> {
 
     private final int pageSize;
     private final TransactionalExecutor<EntityManager> executor;
