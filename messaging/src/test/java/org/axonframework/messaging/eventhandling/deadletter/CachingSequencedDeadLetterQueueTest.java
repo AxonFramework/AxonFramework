@@ -30,6 +30,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests for {@link CachingSequencedDeadLetterQueue}.
@@ -56,7 +63,7 @@ class CachingSequencedDeadLetterQueueTest {
 
         @BeforeEach
         void setUp() {
-            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
+            delegate = spy(InMemorySequencedDeadLetterQueue.defaultQueue());
             cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
         }
 
@@ -74,18 +81,20 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void containsReturnsFalseWithoutDelegateCallForUnknownSequence() {
+        void subsequentContainsReturnsFalseFromCacheWhenQueueStartedEmpty() {
             // given
-            // empty queue, unknown sequence is not present
+            // first call initializes cache with startedEmpty=true and queries delegate
             ProcessingContext context = contextForSegment(SEGMENT_0);
+            cachingQueue.contains(SEQUENCE_ID_1, context).join();
+            clearInvocations(delegate);
 
             // when
-            Boolean firstResult = cachingQueue.contains(SEQUENCE_ID_1, context).join();
-            Boolean secondResult = cachingQueue.contains(SEQUENCE_ID_1, context).join();
+            // second call uses the cache: startedEmpty=true means unknown identifiers are definitely absent
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_1, context).join();
 
             // then
-            assertThat(firstResult).isFalse();
-            assertThat(secondResult).isFalse();
+            assertThat(result).isFalse();
+            verify(delegate, never()).contains(any(), any());
         }
 
         @Test
@@ -118,7 +127,8 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(result).isFalse();
-            assertThat(delegate.size(null).join()).isZero();
+            // cache was initialized with startedEmpty=true, so delegate.enqueueIfPresent was never called
+            verify(delegate, never()).enqueueIfPresent(any(), any(), any());
         }
 
         @Test
@@ -201,7 +211,7 @@ class CachingSequencedDeadLetterQueueTest {
 
         @BeforeEach
         void setUp() {
-            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
+            delegate = spy(InMemorySequencedDeadLetterQueue.defaultQueue());
             // Pre-populate delegate before creating caching queue
             EventMessage event = EventTestUtils.createEvent(1);
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
@@ -226,17 +236,21 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void containsUpdatesNonEnqueuedCache() {
+        void subsequentContainsForNonEnqueuedIdentifierUsesCacheInsteadOfDelegate() {
             // given
-            // Unknown sequence in non-empty queue
+            // first call queries delegate, caches SEQUENCE_ID_2 as non-enqueued
             ProcessingContext context = contextForSegment(SEGMENT_0);
+            cachingQueue.contains(SEQUENCE_ID_2, context).join();
+            clearInvocations(delegate);
 
             // when
-            cachingQueue.contains(SEQUENCE_ID_2, context).join();
-            cachingQueue.contains(SEQUENCE_ID_2, context).join();
+            // second call uses the non-enqueued cache — delegate is not called
+            Boolean result = cachingQueue.contains(SEQUENCE_ID_2, context).join();
 
             // then
+            assertThat(result).isFalse();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
+            verify(delegate, never()).contains(any(), any());
         }
 
         @Test
@@ -269,12 +283,13 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void enqueueIfPresentUsesCache() {
+        void enqueueIfPresentSkipsDelegateWhenCacheKnowsIdentifierIsAbsent() {
             // given
             ProcessingContext context = contextForSegment(SEGMENT_0);
             cachingQueue.contains(SEQUENCE_ID_2, context).join();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
             EventMessage event = EventTestUtils.createEvent(2);
+            clearInvocations(delegate);
 
             // when
             var result = cachingQueue.enqueueIfPresent(
@@ -284,8 +299,8 @@ class CachingSequencedDeadLetterQueueTest {
             ).join();
 
             // then
-            // Cache knows SEQUENCE_ID_2 is not present, so returns false without calling delegate
             assertThat(result).isFalse();
+            verify(delegate, never()).enqueueIfPresent(any(), any(), any());
         }
 
         @Test
@@ -376,23 +391,23 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void cachesAreIndependentPerSegment() {
+        void eachSegmentInitializesOwnCacheIndependently() {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
-            DeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_1, event);
             ProcessingContext context0 = contextForSegment(SEGMENT_0);
             ProcessingContext context1 = contextForSegment(SEGMENT_1);
 
             // when
-            // enqueue on segment 0
-            cachingQueue.enqueue(SEQUENCE_ID_1, letter, context0).join();
+            // enqueue on segment 0 — this initializes SEGMENT_0's cache with startedEmpty=true
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), context0).join();
 
             // then
-            // segment 0 knows about it
+            // segment 0's cache has SEQUENCE_ID_1 marked as enqueued
             assertThat(cachingQueue.contains(SEQUENCE_ID_1, context0).join()).isTrue();
-            // segment 1 doesn't know — its cache starts empty, so unknown sequences are assumed absent
+            // segment 1's cache is initialized with startedEmpty=false (queue is non-empty by now),
+            // so it queries the delegate and discovers SEQUENCE_ID_1 is present
             assertThat(cachingQueue.contains(SEQUENCE_ID_1, context1).join()).isTrue();
-            // total enqueued count is 2 (one per segment cache)
+            // both segment caches independently track SEQUENCE_ID_1 as enqueued
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(2);
         }
 
@@ -456,7 +471,7 @@ class CachingSequencedDeadLetterQueueTest {
 
         @BeforeEach
         void setUp() {
-            delegate = InMemorySequencedDeadLetterQueue.defaultQueue();
+            delegate = spy(InMemorySequencedDeadLetterQueue.defaultQueue());
             cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
         }
 
@@ -465,14 +480,15 @@ class CachingSequencedDeadLetterQueueTest {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
+            clearInvocations(delegate);
 
             // when
             Boolean result = cachingQueue.contains(SEQUENCE_ID_1, null).join();
 
             // then
             assertThat(result).isTrue();
-            // no cache was populated since no segment was available
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            verify(delegate).contains(eq(SEQUENCE_ID_1), any());
         }
 
         @Test
@@ -480,16 +496,16 @@ class CachingSequencedDeadLetterQueueTest {
             // given
             EventMessage event = EventTestUtils.createEvent(1);
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
-            // context without segment resource
             ProcessingContext contextWithoutSegment = new StubProcessingContext();
+            clearInvocations(delegate);
 
             // when
             Boolean result = cachingQueue.contains(SEQUENCE_ID_1, contextWithoutSegment).join();
 
             // then
             assertThat(result).isTrue();
-            // no cache was populated since no segment was in the context
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            verify(delegate).contains(eq(SEQUENCE_ID_1), any());
         }
 
         @Test
@@ -502,9 +518,8 @@ class CachingSequencedDeadLetterQueueTest {
             cachingQueue.enqueue(SEQUENCE_ID_1, letter, null).join();
 
             // then
-            assertThat(delegate.contains(SEQUENCE_ID_1, null).join()).isTrue();
-            // no cache was populated
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            verify(delegate).enqueue(eq(SEQUENCE_ID_1), eq(letter), any());
         }
 
         @Test
@@ -513,6 +528,7 @@ class CachingSequencedDeadLetterQueueTest {
             EventMessage event1 = EventTestUtils.createEvent(1);
             EventMessage event2 = EventTestUtils.createEvent(2);
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1), null).join();
+            clearInvocations(delegate);
 
             // when
             var result = cachingQueue.enqueueIfPresent(
@@ -523,8 +539,8 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(result).isTrue();
-            // no cache was populated
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            verify(delegate).enqueueIfPresent(eq(SEQUENCE_ID_1), any(), any());
         }
 
         @Test
@@ -539,7 +555,6 @@ class CachingSequencedDeadLetterQueueTest {
             cachingQueue.invalidateCache(null);
 
             // then
-            // cache is untouched
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
 
@@ -555,7 +570,6 @@ class CachingSequencedDeadLetterQueueTest {
             cachingQueue.invalidateCache(new StubProcessingContext());
 
             // then
-            // cache is untouched
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
     }
