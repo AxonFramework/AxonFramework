@@ -23,12 +23,12 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
-import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.extension.springboot.util.GrpcServerStub;
 import org.axonframework.extension.springboot.util.TcpUtils;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +36,9 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -104,13 +107,16 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void distributedQueryBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
-        testContext.withPropertyValues("axon.server.query-threads=42").run(context -> {
+        testContext.withPropertyValues("axon.axonserver.query-threads=42").run(context -> {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
             assertThat(context).hasSingleBean(DistributedQueryBusConfiguration.class);
 
-            int numberOfThreads = context.getBean(DistributedQueryBusConfiguration.class).queryThreads();
             int queryThreads = context.getBean(AxonServerConfiguration.class).getQueryThreads();
-            assertThat(numberOfThreads).isEqualTo(queryThreads);
+            assertThat(queryThreads).isEqualTo(42);
+            ExecutorService executorService = context.getBean(DistributedQueryBusConfiguration.class)
+                                                     .queryExecutorService();
+            assertThat(executorService).isInstanceOf(ThreadPoolExecutor.class)
+                                       .hasFieldOrPropertyWithValue("corePoolSize", queryThreads);
         });
     }
 

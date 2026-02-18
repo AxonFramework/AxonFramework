@@ -205,14 +205,14 @@ you are guaranteed to have up-to-date data when handling a query, as well as the
 
 When using the `DistributedQueryBus`, with for example the `AxonServerQueryBusConnector`, this secondary query will use a second thread to process in. If both queries block the thread, this could potentially lead to a deadlock.
 
-Example: You have configured the `AxonServerQueryBusConnector` to have 1 thread, and you have query A and B in the same application.
+Example: You have configured the distributed query bus to have 1 thread, and you have query A and B in the same application.
 Query A calls query B. Because query A is waiting on a response of query B, and query B is waiting for a thread to free up, this has now caused a deadlock.
 
 You can take different routes to remedy this:
 
 1. Not chaining queries in this way, and instead duplicating the data locally based on the events.
 2. Returning a `CompletableFuture` from your query handlers, and using `thenCompose` to chain the queries. This will free up the thread to process other queries.
-3. Configure your distributed query bus to have more threads available. This will reduce the chance of a deadlock, but it will not prevent it.
+3. Configure your distributed query bus to have more threads available using `DistributedQueryBusConfiguration.queryThreads()` (see xref:infrastructure.adoc#DistributedQueryBus[DistributedQueryBus configuration]). This will reduce the chance of a deadlock, but it will not prevent it.
 
 === Remote query handler
 
