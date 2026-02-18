@@ -47,7 +47,7 @@ public interface EntityModule<ID, E> extends Module {
      * @return The name of the entity.
      */
     default String entityName() {
-        return String.format("%s#%s", entityType().getSimpleName(), idType().getSimpleName());
+        return String.format("%s#%s", entityType().getName(), idType().getName());
     }
 
     /**
