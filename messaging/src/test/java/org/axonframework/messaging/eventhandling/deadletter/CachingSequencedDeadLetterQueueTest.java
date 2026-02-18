@@ -187,21 +187,20 @@ class CachingSequencedDeadLetterQueueTest {
         @Test
         void containsWithLazyInitReturnsCorrectResultWhenDelegateModifiedBeforeFirstUse() {
             // given
-            // With lazy initialization, the cache checks delegate state on first use.
-            // If delegate is modified before first cache use, the cache will see that state.
+            // Bypass caching queue and add directly to delegate BEFORE first cache use
             EventMessage event = EventTestUtils.createEvent(1);
             ProcessingContext context = contextForSegment(SEGMENT_0);
-            // Bypass caching queue and add directly to delegate BEFORE first cache use
             delegate.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), null).join();
+            clearInvocations(delegate);
 
             // when
-            // First cache use initializes by checking amountOfSequences(), which is now 1.
-            // Cache sees queue as non-empty, so it queries delegate for the sequence.
+            // First cache use initializes with startedEmpty=false (queue has 1 sequence),
+            // so it must query the delegate for the unknown identifier
             Boolean result = cachingQueue.contains(SEQUENCE_ID_1, context).join();
 
             // then
-            // With lazy init, cache discovers the entry that was added directly to delegate
             assertThat(result).isTrue();
+            verify(delegate).contains(eq(SEQUENCE_ID_1), any());
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
     }
@@ -255,20 +254,6 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void containsReturnsTrueForExistingSequence() {
-            // given
-            // SEQUENCE_ID_1 was pre-populated
-            ProcessingContext context = contextForSegment(SEGMENT_0);
-
-            // when
-            Boolean result = cachingQueue.contains(SEQUENCE_ID_1, context).join();
-
-            // then
-            assertThat(result).isTrue();
-            assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
-        }
-
-        @Test
         void invalidateCacheClearsNonEnqueuedCache() {
             // given
             ProcessingContext context = contextForSegment(SEGMENT_0);
@@ -307,12 +292,12 @@ class CachingSequencedDeadLetterQueueTest {
         @Test
         void containsUpdatesCacheWhenDelegateQueried() {
             // given
-            // When the queue started non-empty, cache must query delegate for unknown identifiers
+            // Add directly to delegate — cache doesn't know about this yet
             EventMessage event = EventTestUtils.createEvent(2);
             ProcessingContext context = contextForSegment(SEGMENT_0);
-            // Add directly to delegate - cache doesn't know about this yet
             delegate.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event), null).join();
             assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            clearInvocations(delegate);
 
             // when
             // Cache queries delegate and discovers SEQUENCE_ID_2 is present
@@ -320,6 +305,7 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(result).isTrue();
+            verify(delegate).contains(eq(SEQUENCE_ID_2), any());
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
         }
     }
