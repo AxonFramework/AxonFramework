@@ -288,8 +288,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * {@inheritDoc}
      * <p>
-     * Clears all per-segment caches and the delegate queue. This method is intended to be called during event processor
-     * reset when processing has been stopped.
+     * Clears all per-segment caches and the delegate queue.
      */
     @Nonnull
     @Override
