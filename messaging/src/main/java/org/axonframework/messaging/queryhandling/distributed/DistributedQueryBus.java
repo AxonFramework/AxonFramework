@@ -38,10 +38,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -63,12 +63,12 @@ public class DistributedQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int QUERY_AND_RESPONSE_QUEUE_CAPACITY = 1000;
-
     private final QueryBus localSegment;
     private final QueryBusConnector connector;
     private final ExecutorService queryingExecutor;
     private final Map<QueryMessage, QueryBusConnector.UpdateCallback> updateRegistry = new ConcurrentHashMap<>();
+    private final boolean localQueryShortcut;
+    private final Set<QualifiedName> subscriptions = ConcurrentHashMap.newKeySet();
 
     /**
      * Constructs a {@code DistributedQueryBus} using the given {@code localSegment} for
@@ -85,15 +85,8 @@ public class DistributedQueryBus implements QueryBus {
                                @Nonnull DistributedQueryBusConfiguration configuration) {
         this.localSegment = localSegment;
         this.connector = connector;
-        this.queryingExecutor =
-                configuration.queryExecutorServiceFactory()
-                             .createExecutorService(configuration,
-                                                    new PriorityBlockingQueue<>(QUERY_AND_RESPONSE_QUEUE_CAPACITY));
-//        TODO - Decide what to do with response handling executors
-//        this.responseHandlingExecutor =
-//                configuration.queryResponseExecutorServiceFactory()
-//                             .createExecutorService(configuration,
-//                                                    new PriorityBlockingQueue<>(QUERY_AND_RESPONSE_QUEUE_CAPACITY));
+        this.localQueryShortcut = configuration.preferLocalQueryHandler();
+        this.queryingExecutor = configuration.queryExecutorService();
         connector.onIncomingQuery(new DistributedHandler());
 
         // TODO - Add configuration for local segment shortcut on queries
@@ -102,6 +95,7 @@ public class DistributedQueryBus implements QueryBus {
     @Override
     public QueryBus subscribe(@Nonnull QualifiedName queryName,
                               @Nonnull QueryHandler queryHandler) {
+        subscriptions.add(queryName);
         localSegment.subscribe(queryName, queryHandler);
         FutureUtils.joinAndUnwrap(connector.subscribe(queryName));
         return this;
@@ -111,6 +105,9 @@ public class DistributedQueryBus implements QueryBus {
     @Override
     public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
+        if (localQueryShortcut && subscriptions.contains(query.type().qualifiedName()) ) {
+            return localSegment.query(query, context);
+        }
         return connector.query(query, context);
     }
 

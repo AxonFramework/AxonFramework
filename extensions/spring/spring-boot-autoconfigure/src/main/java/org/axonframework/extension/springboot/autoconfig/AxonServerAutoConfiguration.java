@@ -23,13 +23,13 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TopologyChangeListener;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.extension.springboot.service.connection.AxonServerConnectionDetails;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -99,7 +99,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * <p>
      * This enhancer will set the {@link AxonServerConfiguration#getComponentName() component name} to the
      * {@link ApplicationContext#getId()}. Furthermore, it will set the
-     * {@link DistributedCommandBusConfiguration#numberOfThreads(int)} to align with the
+     * {@link DistributedCommandBusConfiguration#commandThreads(int)} to align with the
      * {@link AxonServerConfiguration#getCommandThreads()} property.
      * <p>
      * This enhancer is only constructed when {@code axon.axonserver.enabled} is set to {@code true}.
@@ -134,11 +134,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                            (config, name, distributedQueryBusConfig) -> {
                                                AxonServerConfiguration serverConfig =
                                                        config.getComponent(AxonServerConfiguration.class);
-                                               int queryThreads = serverConfig.getQueryThreads();
-                                               int queryResponseThreads = serverConfig.getQueryResponseThreads();
-                                               return distributedQueryBusConfig
-                                                       .queryThreads(queryThreads)
-                                                       .queryResponseThreads(queryResponseThreads);
+                                               Integer queryThreads = serverConfig.getQueryThreads();
+                                               if (queryThreads != null && queryThreads > 0) {
+                                                   return distributedQueryBusConfig
+                                                           .queryThreads(queryThreads);
+                                               }
+                                               return distributedQueryBusConfig;
                                            }
                                    );
     }

@@ -37,6 +37,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -1146,6 +1147,47 @@ class PooledStreamingEventProcessorTest {
             // then - Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
             await().atMost((testTokenClaimInterval * 2) + 200, TimeUnit.MILLISECONDS)
                    .untilAsserted(() -> assertNotNull(testSubject.processingStatus().get(testSegmentId)));
+        }
+
+        @Test
+        void segmentChangeListenerIsInvokedOnClaimAndRelease() {
+            // given
+            int testSegmentId = 0;
+            int testTokenClaimInterval = 100;
+            List<Integer> claimedSegments = new CopyOnWriteArrayList<>();
+            List<Integer> releasedSegments = new CopyOnWriteArrayList<>();
+
+            SegmentChangeListener listener = SegmentChangeListener
+                    .runOnClaim(segment -> claimedSegments.add(segment.getSegmentId()))
+                    .andThen(SegmentChangeListener.runOnRelease(segment -> releasedSegments.add(segment.getSegmentId())));
+
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(1)
+                          .tokenClaimInterval(testTokenClaimInterval)
+                          .addSegmentChangeListener(listener)
+            );
+
+            // when
+            startEventProcessor();
+
+            // then
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(claimedSegments).contains(testSegmentId));
+
+            // when
+            FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId, 200, TimeUnit.MILLISECONDS));
+
+            // then
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(releasedSegments).contains(testSegmentId));
+
+            // We assert the same segment id was observed at least twice:
+            // first claim at startup, then a re-claim after the release duration elapsed.
+            await().atMost(2, TimeUnit.SECONDS)
+                   .untilAsserted(() -> assertThat(claimedSegments.stream()
+                                                                  .filter(id -> id == testSegmentId)
+                                                                  .count()).isGreaterThanOrEqualTo(2));
         }
 
         @Test

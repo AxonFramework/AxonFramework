@@ -24,6 +24,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.TrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -100,7 +101,7 @@ class Coordinator {
     private final int initialSegmentCount;
     private final Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken;
     private final boolean coordinatorExtendsClaims;
-    private final Consumer<Segment> segmentReleasedAction;
+    private final SegmentChangeListener segmentChangeListener;
     private final EventCriteria eventCriteria;
 
     private final Map<Integer, WorkPackage> workPackages = new ConcurrentHashMap<>();
@@ -140,7 +141,7 @@ class Coordinator {
         this.initialToken = builder.initialToken;
         this.runState = new AtomicReference<>(RunState.initial(builder.shutdownAction));
         this.coordinatorExtendsClaims = builder.coordinatorExtendsClaims;
-        this.segmentReleasedAction = builder.segmentReleasedAction;
+        this.segmentChangeListener = builder.segmentChangeListener;
         this.eventCriteria = builder.eventCriteria;
     }
 
@@ -431,8 +432,7 @@ class Coordinator {
         private Runnable shutdownAction = () -> {
         };
         private boolean coordinatorExtendsClaims = false;
-        private Consumer<Segment> segmentReleasedAction = segment -> {
-        };
+        private SegmentChangeListener segmentChangeListener = SegmentChangeListener.noOp();
         private EventCriteria eventCriteria = EventCriteria.havingAnyTag();
 
         /**
@@ -636,14 +636,17 @@ class Coordinator {
         }
 
         /**
-         * Registers an action to perform when a segment is released. Will override any previously registered actions.
-         * Defaults to a no-op.
+         * Sets the listener invoked when segments are claimed or released.
          *
-         * @param segmentReleasedAction the action to perform when a segment is released
+         * @param segmentChangeListener the listener to invoke for segment changes
          * @return the current Builder instance, for fluent interfacing
+         *
+         * @since 5.1.0
          */
-        Builder segmentReleasedAction(Consumer<Segment> segmentReleasedAction) {
-            this.segmentReleasedAction = segmentReleasedAction;
+        Builder segmentChangeListener(SegmentChangeListener segmentChangeListener) {
+            this.segmentChangeListener = Objects.requireNonNull(
+                    segmentChangeListener, "Segment change listener may not be null"
+            );
             return this;
         }
 
@@ -984,6 +987,17 @@ class Coordinator {
         private WorkPackage createWorkPackage(Segment segment, TrackingToken token) {
             WorkPackage workPackage = workPackageFactory.apply(segment, token);
             workPackage.onBatchProcessed(() -> resetRetryExponentialBackoff(segment.getSegmentId()));
+            try {
+                joinAndUnwrap(segmentChangeListener.onSegmentClaimed(segment));
+            } catch (Exception e) {
+                logger.info(
+                        "Processor [{}] (Coordination Task [{}]). An exception occurred while invoking claim listeners for [{}].",
+                        name,
+                        generation,
+                        segment,
+                        e
+                );
+            }
             return workPackage;
         }
 
@@ -1350,7 +1364,7 @@ class Coordinator {
                        })
                        .thenRun(() -> joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
                                context -> tokenStore.releaseClaim(name, segmentId, context)
-                                                    .thenRun(() -> segmentReleasedAction.accept(work.segment()))
+                                                    .thenCompose(unused -> segmentChangeListener.onSegmentReleased(work.segment()))
                        )))
                        .exceptionally(throwable -> {
                            logger.info(

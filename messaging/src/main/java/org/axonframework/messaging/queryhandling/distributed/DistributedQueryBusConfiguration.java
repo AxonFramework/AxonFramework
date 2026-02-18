@@ -21,91 +21,89 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.util.ExecutorServiceFactory;
 
 import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Configuration for the {@link DistributedQueryBus}.
  * <p>
  * Can be used to modify non-critical settings of the bus, such as the query and query response thread pools.
  *
- * @param queryThreads                        The number of threads used by the {@link DistributedQueryBus} for
- *                                            querying.
- * @param queryExecutorServiceFactory         The {@link ExecutorServiceFactory} constructing the priority-aware
- *                                            {@link ExecutorService} for querying in the {@link DistributedQueryBus}.
- * @param queryResponseThreads                The number of threads used by the {@link DistributedQueryBus} for handling
- *                                            query responses.
- * @param queryResponseExecutorServiceFactory The {@link ExecutorServiceFactory} constructing the priority-aware
- *                                            {@link ExecutorService} for handling query responses in the
- *                                            {@link DistributedQueryBus}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record DistributedQueryBusConfiguration(
-        int queryThreads,
-        @Nonnull ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory,
-        int queryResponseThreads,
-        @Nonnull ExecutorServiceFactory<DistributedQueryBusConfiguration> queryResponseExecutorServiceFactory
-) {
+public final class DistributedQueryBusConfiguration {
 
     private static final int DEFAULT_QUERY_THREADS = 10;
-    private static final int DEFAULT_RESPONSE_THREADS = 5;
-    private static final ExecutorServiceFactory<DistributedQueryBusConfiguration> DEFAULT_QUERY_EXECUTOR_SERVICE_FACTORY =
-            (configuration, queryProcessQueue) -> new ThreadPoolExecutor(
-                    configuration.queryThreads(),
-                    configuration.queryThreads(),
+    private static final int DEFAULT_QUERY_QUEUE_CAPACITY = 1000;
+    private static final Function<Integer, ExecutorServiceFactory<DistributedQueryBusConfiguration>> DEFAULT_QUERY_EXECUTOR_SERVICE_FACTORY =
+            (threads) -> (config, queue) -> new ThreadPoolExecutor(
+                    threads,
+                    threads,
                     0L,
                     TimeUnit.MILLISECONDS,
-                    queryProcessQueue,
+                    queue,
                     new AxonThreadFactory("QueryProcessor")
             );
-    private static final ExecutorServiceFactory<DistributedQueryBusConfiguration> DEFAULT_RESPONSE_EXECUTOR_SERVICE_FACTORY =
-            (configuration, queryProcessQueue) -> new ThreadPoolExecutor(
-                    configuration.queryThreads(),
-                    configuration.queryThreads(),
-                    0L,
-                    TimeUnit.MILLISECONDS,
-                    queryProcessQueue,
-                    new AxonThreadFactory("QueryResponseProcessor")
-            );
+    @Nonnull private final ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory;
+    private final Supplier<BlockingQueue<Runnable>> queue;
+    private final boolean preferLocalQueryHandler;
 
-
-    /**
-     * Compact constructor validating that the given {@code queryThreads} and {@code queryResponseThreads} are strictly
-     * positive.
-     */
-    public DistributedQueryBusConfiguration {
-        assertStrictPositive(queryThreads, "Number of query threads must be greater than 0.");
-        assertStrictPositive(queryResponseThreads, "Number of query response handling threads must be greater than 0.");
+    private DistributedQueryBusConfiguration(
+            @Nonnull ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory,
+            @Nonnull Supplier<BlockingQueue<Runnable>> queue,
+            boolean preferLocalQueryHandler) {
+        this.queryExecutorServiceFactory = queryExecutorServiceFactory;
+        this.queue = queue;
+        this.preferLocalQueryHandler = preferLocalQueryHandler;
     }
 
     /**
-     * A default instance of the {@link DistributedQueryBusConfiguration}, setting the {@link #queryThreads()} to 10,
-     * the {@link #queryResponseThreads()} to 5, and the {@link #queryExecutorServiceFactory()} and
-     * {@link #queryResponseExecutorServiceFactory()} to priority-aware
-     * {@link ExecutorServiceFactory ExecutorServiceFactories} using the configured number of threads.
+     * Constructs a default {@code DistributedQueryBusConfiguration} with the following settings:
+     * <ul>
+     *     <li>Query threads: 10</li>
+     *     <li>Query queue capacity: 1000</li>
+     *     <li>Prefer local query handler: {@code true}</li>
+     * </ul>
      */
-    public static final DistributedQueryBusConfiguration DEFAULT = new DistributedQueryBusConfiguration(
-            DEFAULT_QUERY_THREADS, DEFAULT_QUERY_EXECUTOR_SERVICE_FACTORY,
-            DEFAULT_RESPONSE_THREADS, DEFAULT_RESPONSE_EXECUTOR_SERVICE_FACTORY
-    );
+    public DistributedQueryBusConfiguration() {
+        this(DEFAULT_QUERY_EXECUTOR_SERVICE_FACTORY.apply(DEFAULT_QUERY_THREADS),
+             () -> new PriorityBlockingQueue<>(DEFAULT_QUERY_QUEUE_CAPACITY),
+             true);
+    }
 
     /**
-     * Sets the number of threads to use for querying in the distributed query bus.
+     * Registers an Executor Service that uses a thread pool with the given amount of {@code queryThreads}.
      * <p>
-     * Defaults to 10.
+     * Defaults to a pool with 10 threads.
      *
-     * @param queryThreads The number of threads to use for the distributed query bus.
-     * @return The configuration itself, for fluent API usage.
+     * @param queryThreads the number of threads to use for the distributed query bus
+     * @return the configuration itself, for fluent API usage
      */
     public DistributedQueryBusConfiguration queryThreads(int queryThreads) {
-        return new DistributedQueryBusConfiguration(queryThreads,
-                                                    queryExecutorServiceFactory,
-                                                    queryResponseThreads,
-                                                    queryResponseExecutorServiceFactory);
+        return new DistributedQueryBusConfiguration(DEFAULT_QUERY_EXECUTOR_SERVICE_FACTORY.apply(queryThreads),
+                                                    queue,
+                                                    preferLocalQueryHandler);
+    }
+
+
+    /**
+     * Sets the capacity of the priority queue used for query processing tasks.
+     * <p>
+     * Defaults to 1000.
+     *
+     * @param queryQueueCapacity the capacity of the query processing queue
+     * @return the configuration itself, for fluent API usage
+     */
+    public DistributedQueryBusConfiguration queryQueueCapacity(int queryQueueCapacity) {
+        return new DistributedQueryBusConfiguration(queryExecutorServiceFactory,
+                                                    () -> new PriorityBlockingQueue<>(queryQueueCapacity),
+                                                    preferLocalQueryHandler);
     }
 
     /**
@@ -113,45 +111,52 @@ public record DistributedQueryBusConfiguration(
      * <p>
      * Defaults to a fixed thread pool with 10 threads using the priority queue.
      *
-     * @param executorService The {@link ExecutorService} to use for querying in the distributed query bus.
-     * @return The configuration itself, for fluent API usage.
+     * @param executorService the {@link ExecutorService} to use for querying in the distributed query bus
+     * @return the configuration itself, for fluent API usage
      */
     public DistributedQueryBusConfiguration queryExecutorService(@Nonnull ExecutorService executorService) {
         Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
-        return new DistributedQueryBusConfiguration(queryThreads,
-                                                    (config, queue) -> executorService,
-                                                    queryResponseThreads,
-                                                    queryResponseExecutorServiceFactory);
+        return new DistributedQueryBusConfiguration((config, queue) -> executorService,
+                                                    queue,
+                                                    preferLocalQueryHandler);
     }
 
     /**
-     * Sets the number of threads to use for handling query responses in the distributed query bus.
+     * Configures whether the distributed query bus should use local query handlers directly when available, bypassing
+     * remote dispatch.
      * <p>
-     * Defaults to 5.
+     * When enabled, queries for which a local handler is registered will be executed locally without going through
+     * the {@link QueryBusConnector}, improving performance by avoiding network overhead. Only when no local handler
+     * is available will the query be dispatched remotely. This is safe when query handlers are deterministic and
+     * consistent across all nodes.
+     * <p>
+     * Defaults to {@code true}.
      *
-     * @param queryResponseThreads The number of threads to use for the distributed query bus.
-     * @return The configuration itself, for fluent API usage.
+     * @param preferLocalQueryHandler {@code true} to use local handlers directly when available, {@code false} to
+     *                                always dispatch through the connector
+     * @return the updated instance of {@code DistributedQueryBusConfiguration}, allowing for fluent API usage
      */
-    public DistributedQueryBusConfiguration queryResponseThreads(int queryResponseThreads) {
-        return new DistributedQueryBusConfiguration(queryThreads,
-                                                    queryExecutorServiceFactory,
-                                                    queryResponseThreads,
-                                                    queryResponseExecutorServiceFactory);
+    public DistributedQueryBusConfiguration preferLocalQueryHandler(boolean preferLocalQueryHandler) {
+        return new DistributedQueryBusConfiguration(queryExecutorServiceFactory, queue, preferLocalQueryHandler);
     }
 
     /**
-     * Sets the {@link ExecutorService} to use for handling query responses in the distributed query bus.
-     * <p>
-     * Defaults to a fixed thread pool with 5 threads using the priority queue.
+     * Indicates whether local query handlers are used directly when available, bypassing remote dispatch.
      *
-     * @param executorService The {@link ExecutorService} to use for handling queries in the distributed query bus.
-     * @return The configuration itself, for fluent API usage.
+     * @return {@code true} if local handlers are used directly when available, {@code false} if all queries are
+     * dispatched through the connector
      */
-    public DistributedQueryBusConfiguration queryResponseExecutorService(@Nonnull ExecutorService executorService) {
-        Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
-        return new DistributedQueryBusConfiguration(queryThreads,
-                                                    queryExecutorServiceFactory,
-                                                    queryResponseThreads,
-                                                    (config, queue) -> executorService);
+    public boolean preferLocalQueryHandler() {
+        return preferLocalQueryHandler;
+    }
+
+    /**
+     * Creates and returns the {@link ExecutorService} for query processing using the configured
+     * {@link ExecutorServiceFactory} and queue.
+     *
+     * @return the {@link ExecutorService} for query processing
+     */
+    public ExecutorService queryExecutorService() {
+        return queryExecutorServiceFactory.createExecutorService(this, queue.get());
     }
 }
