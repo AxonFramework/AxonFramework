@@ -21,6 +21,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.tx.TransactionalExecutor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
@@ -87,6 +88,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
 
     private static final String PROCESSING_GROUP_PARAM = "processingGroup";
     private static final String SEQUENCE_ID_PARAM = "sequenceIdentifier";
+    private static final TypeReference<Map<String, String>> DIAGNOSTICS_MAP_TYPE_REF = new TypeReference<>() {
+    };
 
     private final String processingGroup;
     private final TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider;
@@ -333,13 +336,13 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @param entry The entry to convert.
      * @return The {@link DeadLetter} result.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") // Safe: M extends EventMessage, and the converter deserializes the actual runtime type
     private JpaDeadLetter<M> toLetter(DeadLetterEntry entry) {
-        @SuppressWarnings("unchecked")
-        Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(), Map.class);
+        Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(),
+                                                                      DIAGNOSTICS_MAP_TYPE_REF.getType());
         Metadata deserializedDiagnostics = Metadata.from(diagnosticsMap);
         MessageStream.Entry<M> messageEntry =
-                ((DeadLetterJpaConverter<M>) converter).convert(entry.getMessage(), eventConverter, genericConverter);
+                (MessageStream.Entry<M>) converter.convert(entry.getMessage(), eventConverter, genericConverter);
         return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry.message(), messageEntry);
     }
 
