@@ -231,6 +231,7 @@ class CachingSequencedDeadLetterQueueTest {
             // then
             // Must query delegate since cache doesn't know about SEQUENCE_ID_2
             assertThat(result).isFalse();
+            verify(delegate).contains(eq(SEQUENCE_ID_2), any());
             // Cache should now remember it's not present
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
         }
