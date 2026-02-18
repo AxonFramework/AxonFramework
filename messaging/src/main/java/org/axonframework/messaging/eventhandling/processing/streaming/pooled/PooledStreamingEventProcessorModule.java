@@ -130,13 +130,12 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                             if (dlqEnabled) {
                                 configuration.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
                                     var uow = configuration.unitOfWorkFactory().create();
-                                    return uow.<Void>executeWithResult(context -> {
-                                        context.withResource(Segment.RESOURCE_KEY, segment);
+                                    return uow.executeWithResult(context -> {
                                         // Invalidate cache for ALL event handling component DLQs
                                         for (int idx = 0; idx < eventHandlingComponentBuilders.size(); idx++) {
                                             var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
                                                                        processorComponentCachingDlqName(idx));
-                                            dlq.invalidateCache(context);
+                                            dlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
                                         }
                                         return FutureUtils.emptyCompletedFuture();
                                     });
