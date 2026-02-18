@@ -83,8 +83,9 @@ class AnnotatedEventSourcedEntityModule<I, E>
                         .messagingModel((c, b) -> this.buildMetaModel(c))
                         .entityFactory(entityFactory(annotationAttributes, concreteTypes))
                         .criteriaResolver(criteriaResolver(annotationAttributes))
-                        .entityIdResolver(entityIdResolver(annotationAttributes)))
-        );
+                        .entityIdResolver(entityIdResolver(annotationAttributes))
+                        .build()
+        ));
     }
 
     private AnnotatedEntityMetamodel<E> buildMetaModel(Configuration c) {
@@ -142,7 +143,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
      * @return set of classes that are either explicitly configured via <code>concreteTypes</code> or derived from sealed superType.
      */
     private Set<Class<? extends E>> getConcreteEntityTypes(Map<String, Object> attributes) {
-        //noinspection unchecked
+        @SuppressWarnings("unchecked")
         Class<? extends E>[] concreteTypes = (Class<? extends E>[]) attributes.get("concreteTypes");
 
         var sealedSubtypes = collectSealedHierarchyIfSealed(entityType);

@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.jspecify.annotations.Nullable;
 
@@ -81,6 +81,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
         this.eventQueueKey = ResourceKey.withLabel("eventQueue");
         this.appendPositionKey = ResourceKey.withLabel("appendPosition");
+    }
+
+    @Override
+    public MessageStream<? extends EventMessage> source(SourcingCondition condition) {
+        return source(condition, null);
     }
 
     @Override

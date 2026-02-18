@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.annotation.Internal;
 
 /**
  * An immutable implementation of {@link Position} which represents positions
@@ -46,7 +47,13 @@ public final class GlobalIndexPosition implements Position {
 
     private final long index;
 
-    GlobalIndexPosition(long index) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param index an index
+     */
+    @Internal
+    public GlobalIndexPosition(long index) {
         this.index = index;
     }
 

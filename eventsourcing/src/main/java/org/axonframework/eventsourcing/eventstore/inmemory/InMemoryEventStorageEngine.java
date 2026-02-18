@@ -321,7 +321,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public void setCallback(Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.isEmpty() || hasNextAvailable()) {
+            if (isCompleted() || hasNextAvailable()) {
                 callback.run();
             }
         }

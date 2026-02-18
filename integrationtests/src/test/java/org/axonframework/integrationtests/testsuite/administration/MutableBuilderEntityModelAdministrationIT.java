@@ -206,7 +206,8 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
-                .entityIdResolver(PersonIdentifierEntityIdResolver::new);
+                .entityIdResolver(PersonIdentifierEntityIdResolver::new)
+                .build();
         return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
     }
 }
