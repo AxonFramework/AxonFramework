@@ -40,6 +40,7 @@ import org.axonframework.messaging.eventhandling.interception.InterceptingEventH
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -127,13 +128,18 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                             );
                             var dlqEnabled = configuration.deadLetterQueue().isEnabled();
                             if (dlqEnabled) {
-                                configuration.addSegmentChangeListener(SegmentChangeListener.runOnRelease(segment -> {
-                                    // Invalidate cache for ALL event handling component DLQs
-                                    for (int idx = 0; idx < eventHandlingComponentBuilders.size(); idx++) {
-                                        var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
-                                                                   processorComponentCachingDlqName(idx));
-                                        dlq.invalidateCache();
-                                    }
+                                configuration.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
+                                    var uow = configuration.unitOfWorkFactory().create();
+                                    return uow.<Void>executeWithResult(context -> {
+                                        context.withResource(Segment.RESOURCE_KEY, segment);
+                                        // Invalidate cache for ALL event handling component DLQs
+                                        for (int idx = 0; idx < eventHandlingComponentBuilders.size(); idx++) {
+                                            var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
+                                                                       processorComponentCachingDlqName(idx));
+                                            dlq.invalidateCache(context);
+                                        }
+                                        return FutureUtils.emptyCompletedFuture();
+                                    });
                                 }));
                             }
                             return configuration;

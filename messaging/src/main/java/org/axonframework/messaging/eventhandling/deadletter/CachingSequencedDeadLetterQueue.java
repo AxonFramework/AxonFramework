@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
@@ -23,37 +24,35 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * A decorator for {@link SequencedDeadLetterQueue} that adds caching of sequence identifiers to optimize
+ * A decorator for {@link SequencedDeadLetterQueue} that adds per-segment caching of sequence identifiers to optimize
  * {@link #contains(Object, ProcessingContext)} lookups. This is particularly important for high-throughput event
  * processing where checking if an event's sequence is already dead-lettered should be as fast as possible.
  * <p>
- * The caching mechanism uses a {@link SequenceIdentifierCache} to track which sequence identifiers are known to be
- * enqueued or not enqueued. When {@link #contains(Object, ProcessingContext)} is called, the cache is checked first to
- * potentially avoid a roundtrip to the underlying queue.
+ * Each {@link Segment} gets its own independent {@link SequenceIdentifierCache}, keyed by the segment obtained from the
+ * {@link ProcessingContext}. When a segment is released, only that segment's cache is removed via
+ * {@link #invalidateCache(ProcessingContext)}, leaving other segments' caches intact.
  * <p>
- * The cache should be cleared when a segment is released to ensure consistency. Use {@link #invalidateCache()} to clear
- * the cache when segment ownership changes.
+ * If no segment is available in the {@link ProcessingContext} (or the context is {@code null}), operations delegate
+ * directly to the underlying queue without caching.
  * <p>
- * <b>Thread-safety note:</b> This class is not thread-safe when performing operations for the same sequence identifier
- * concurrently. It is designed for internal use by {@link DeadLetteringEventHandlingComponent}, where operations on a
- * given sequence identifier are already serialized by the upstream
+ * <b>Thread-safety note:</b> Different segments can operate concurrently without interference, as each segment has its
+ * own cache entry in a {@link ConcurrentHashMap}. Within a single segment, operations on a given sequence identifier
+ * are already serialized by the upstream
  * {@link org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent}.
- * External synchronization must be provided if this class is used in other contexts where concurrent access to the same
- * sequence identifier is possible.
  *
  * @param <M> The type of {@link Message} contained in the {@link DeadLetter dead letters} within this queue.
  * @author Mateusz Nowak
@@ -68,13 +67,13 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
 
     private final SequencedDeadLetterQueue<M> delegate;
     private final int cacheMaxSize;
-    private final AtomicReference<SequenceIdentifierCache> cacheRef = new AtomicReference<>();
+    private final ConcurrentHashMap<Segment, SequenceIdentifierCache> segmentCaches = new ConcurrentHashMap<>();
 
     /**
      * Constructs a caching decorator with the given delegate and default cache settings.
      * <p>
-     * The cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the cache
-     * operates in an optimized mode where unknown identifiers are assumed to not be present.
+     * Each segment's cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the
+     * cache operates in an optimized mode where unknown identifiers are assumed to not be present.
      *
      * @param delegate the underlying {@link SequencedDeadLetterQueue} to delegate to
      */
@@ -85,8 +84,8 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * Constructs a caching decorator with the given delegate and cache max size.
      * <p>
-     * The cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the cache
-     * operates in an optimized mode where unknown identifiers are assumed to not be present.
+     * Each segment's cache is lazily initialized on first use by checking if the delegate queue is empty. If empty, the
+     * cache operates in an optimized mode where unknown identifiers are assumed to not be present.
      *
      * @param delegate     the underlying {@link SequencedDeadLetterQueue} to delegate to
      * @param cacheMaxSize the maximum size of the non-enqueued identifiers cache
@@ -97,45 +96,42 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     }
 
     /**
-     * Gets the cache, initializing it lazily if necessary.
-     * <p>
-     * The initialization checks if the delegate queue is empty. This check is performed asynchronously and the returned
-     * future completes when the cache is ready.
+     * Extracts the {@link Segment} from the given {@link ProcessingContext}, if available.
      *
-     * @param context The processing context in which the dead letters are processed.
-     * @return a future that completes with the initialized cache
+     * @param context the processing context, may be {@code null}
+     * @return an {@link Optional} containing the segment if present in the context, or empty otherwise
      */
-    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache(@Nullable ProcessingContext context) {
-        SequenceIdentifierCache existingCache = cacheRef.get();
-        if (existingCache != null) {
-            return CompletableFuture.completedFuture(existingCache);
-        }
-
-        return delegate.amountOfSequences(context)
-                       .thenApply(count -> {
-                           boolean startedEmpty = count == 0L;
-                           SequenceIdentifierCache newCache = new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
-                           // Use compareAndSet to handle race conditions - only first initializer wins
-                           if (cacheRef.compareAndSet(null, newCache)) {
-                               if (logger.isDebugEnabled()) {
-                                   logger.debug("Lazily initialized caching dead letter queue. "
-                                                        + "Delegate started empty: [{}], cache max size: [{}].",
-                                                startedEmpty, cacheMaxSize);
-                               }
-                               return newCache;
-                           }
-                           // Another thread won the race, use their cache
-                           return cacheRef.get();
-                       });
+    private static Optional<Segment> extractSegment(@Nullable ProcessingContext context) {
+        return context != null ? Segment.fromContext(context) : Optional.empty();
     }
 
     /**
-     * Gets the cache if already initialized, or null if not yet initialized.
+     * Gets or lazily initializes the cache for the given segment.
+     * <p>
+     * The initialization checks if the delegate queue is empty. This check is performed asynchronously and the returned
+     * future completes when the cache is ready. Uses {@link ConcurrentHashMap#computeIfAbsent} to handle race
+     * conditions — only the first initializer wins.
      *
-     * @return the cache if initialized, null otherwise
+     * @param segment the segment to get or initialize the cache for
+     * @param context the processing context in which the dead letters are processed
+     * @return a future that completes with the initialized cache for the given segment
      */
-    private SequenceIdentifierCache getInitializedCacheOrNull() {
-        return cacheRef.get();
+    private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache(
+            @Nonnull Segment segment, @Nullable ProcessingContext context) {
+        SequenceIdentifierCache existing = segmentCaches.get(segment);
+        if (existing != null) {
+            return CompletableFuture.completedFuture(existing);
+        }
+        return delegate.amountOfSequences(context)
+                       .thenApply(count -> segmentCaches.computeIfAbsent(segment, k -> {
+                           boolean startedEmpty = count == 0L;
+                           if (logger.isDebugEnabled()) {
+                               logger.debug("Lazily initialized caching dead letter queue for segment [{}]. "
+                                                    + "Delegate started empty: [{}], cache max size: [{}].",
+                                            segment, startedEmpty, cacheMaxSize);
+                           }
+                           return new SequenceIdentifierCache(startedEmpty, cacheMaxSize);
+                       }));
     }
 
     @Nonnull
@@ -143,8 +139,12 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
                                            @Nonnull DeadLetter<? extends M> letter,
                                            @Nullable ProcessingContext context) {
-        // Initialize cache before enqueue to ensure we track this sequence
-        return getOrInitializeCache(context)
+        Optional<Segment> segmentOpt = extractSegment(context);
+        if (segmentOpt.isEmpty()) {
+            return delegate.enqueue(sequenceIdentifier, letter, context);
+        }
+        Segment segment = segmentOpt.get();
+        return getOrInitializeCache(segment, context)
                 .thenCompose(cache -> delegate.enqueue(sequenceIdentifier, letter, context)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
@@ -158,23 +158,26 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
                                                        @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
                                                        @Nullable ProcessingContext context) {
-        SequenceIdentifierCache cache = getInitializedCacheOrNull();
-        if (cache != null && !cache.mightBePresent(sequenceIdentifier)) {
+        Optional<Segment> segmentOpt = extractSegment(context);
+        if (segmentOpt.isEmpty()) {
+            return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context);
+        }
+        Segment segment = segmentOpt.get();
+        SequenceIdentifierCache existingCache = segmentCaches.get(segment);
+        if (existingCache != null && !existingCache.mightBePresent(sequenceIdentifier)) {
             return CompletableFuture.completedFuture(false);
         }
-        return delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context)
-                       .whenComplete((result, error) -> {
-                           if (error == null) {
-                               SequenceIdentifierCache c = getInitializedCacheOrNull();
-                               if (c != null) {
-                                   if (Boolean.TRUE.equals(result)) {
-                                       c.markEnqueued(sequenceIdentifier);
-                                   } else {
-                                       c.markNotEnqueued(sequenceIdentifier);
-                                   }
-                               }
-                           }
-                       });
+        return getOrInitializeCache(segment, context)
+                .thenCompose(cache -> delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context)
+                                              .whenComplete((result, error) -> {
+                                                  if (error == null) {
+                                                      if (Boolean.TRUE.equals(result)) {
+                                                          cache.markEnqueued(sequenceIdentifier);
+                                                      } else {
+                                                          cache.markNotEnqueued(sequenceIdentifier);
+                                                      }
+                                                  }
+                                              }));
     }
 
     @Nonnull
@@ -199,17 +202,23 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     @Override
     public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
+        Optional<Segment> segmentOpt = extractSegment(context);
+        if (segmentOpt.isEmpty()) {
+            return delegate.contains(sequenceIdentifier, context);
+        }
+        Segment segment = segmentOpt.get();
         // Check cache first - if initialized and we know it's not present, return false immediately
-        SequenceIdentifierCache existingCache = getInitializedCacheOrNull();
+        SequenceIdentifierCache existingCache = segmentCaches.get(segment);
         if (existingCache != null && !existingCache.mightBePresent(sequenceIdentifier)) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Cache indicates sequenceIdentifier [{}] is not present.", sequenceIdentifier);
+                logger.trace("Cache for segment [{}] indicates sequenceIdentifier [{}] is not present.",
+                             segment, sequenceIdentifier);
             }
             return CompletableFuture.completedFuture(false);
         }
 
         // Cache not initialized or says it might be present - initialize cache and verify with delegate
-        return getOrInitializeCache(context)
+        return getOrInitializeCache(segment, context)
                 .thenCompose(cache -> delegate.contains(sequenceIdentifier, context)
                                               .whenComplete((result, error) -> {
                                                   if (error == null) {
@@ -277,59 +286,59 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
     /**
      * {@inheritDoc}
      * <p>
-     * Clears both the local cache and the delegate queue. The cache is cleared first (synchronously) to ensure that any
-     * concurrent {@link #contains(Object)} calls during the delegate clear operation will query the delegate directly,
-     * avoiding stale cache hits. The cache will self-correct on subsequent operations if any inconsistency occurs.
+     * Clears all per-segment caches and the delegate queue. The caches are cleared first (synchronously) to ensure that
+     * any concurrent {@link #contains(Object, ProcessingContext)} calls during the delegate clear operation will query
+     * the delegate directly, avoiding stale cache hits.
      * <p>
-     * This method is intended to be called during event processor reset when processing has been stopped. This cache
-     * instance should not be shared across multiple event processors to avoid interference during clear operations.
+     * This method is intended to be called during event processor reset when processing has been stopped.
      */
     @Nonnull
     @Override
     public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
-        // Clear cache first to avoid stale cache hits during delegate clear.
+        // Clear all segment caches to avoid stale cache hits during delegate clear.
         // Any concurrent contains() calls will go to the delegate directly.
-        SequenceIdentifierCache cache = getInitializedCacheOrNull();
-        if (cache != null) {
-            cache.clear();
-        }
+        segmentCaches.clear();
         return delegate.clear(context);
     }
 
     /**
-     * Invalidates the sequence identifier cache.
+     * Invalidates the sequence identifier cache for the segment found in the given {@link ProcessingContext}.
+     * <p>
+     * The segment is extracted from the context internally. If no segment is present in the context, this method is a
+     * no-op.
      * <p>
      * Call this method when processing ownership changes (e.g., segment release) to ensure cache consistency. When
      * ownership changes, another processor instance may have modified the queue, making cached information potentially
-     * stale.
+     * stale. The entire cache for that segment is removed (not just cleared) so that the {@code startedEmpty} flag is
+     * re-evaluated when the segment is next claimed.
+     *
+     * @param context the processing context containing the {@link Segment} to invalidate the cache for, may be
+     *                {@code null}
      */
-    public void invalidateCache() {
-        SequenceIdentifierCache cache = getInitializedCacheOrNull();
-        if (cache != null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Segment released. Clearing sequence identifier cache.");
+    public void invalidateCache(@Nullable ProcessingContext context) {
+        extractSegment(context).ifPresent(segment -> {
+            SequenceIdentifierCache removed = segmentCaches.remove(segment);
+            if (removed != null && logger.isDebugEnabled()) {
+                logger.debug("Segment [{}] released. Removed sequence identifier cache.", segment);
             }
-            cache.clear();
-        }
+        });
     }
 
     /**
-     * Returns the current size of identifiers cached as enqueued.
+     * Returns the total size of identifiers cached as enqueued, aggregated across all segments.
      *
-     * @return the count of enqueued identifiers in the cache, or 0 if cache is not yet initialized
+     * @return the total count of enqueued identifiers across all segment caches
      */
     public int cacheEnqueuedSize() {
-        SequenceIdentifierCache cache = getInitializedCacheOrNull();
-        return cache != null ? cache.enqueuedSize() : 0;
+        return segmentCaches.values().stream().mapToInt(SequenceIdentifierCache::enqueuedSize).sum();
     }
 
     /**
-     * Returns the current size of identifiers cached as not enqueued.
+     * Returns the total size of identifiers cached as not enqueued, aggregated across all segments.
      *
-     * @return the count of non-enqueued identifiers in the cache, or 0 if cache is not yet initialized
+     * @return the total count of non-enqueued identifiers across all segment caches
      */
     public int cacheNonEnqueuedSize() {
-        SequenceIdentifierCache cache = getInitializedCacheOrNull();
-        return cache != null ? cache.nonEnqueuedSize() : 0;
+        return segmentCaches.values().stream().mapToInt(SequenceIdentifierCache::nonEnqueuedSize).sum();
     }
 }
