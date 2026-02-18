@@ -19,9 +19,12 @@ package org.axonframework.common;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -131,6 +134,37 @@ public final class FutureUtils {
         try {
             return future.join();
         } catch (CompletionException e) {
+            sneakyThrow(e.getCause());
+            return null; // unreachable, but needed for compilation
+        }
+    }
+
+    /**
+     * Joins a {@link CompletableFuture} and unwraps any {@link CompletionException} to throw the actual cause,
+     * preserving the exact exception type without wrapping checked exceptions. If the future does not complete within
+     * the given {@code timeout}, a {@link TimeoutException} is thrown.
+     * <p>
+     * This method uses {@link CompletableFuture#orTimeout(long, TimeUnit)} to enforce the deadline. On futures that are
+     * already complete (the common case), the timeout is a no-op.
+     *
+     * @param future  The {@link CompletableFuture} to join.
+     * @param timeout The maximum time to wait for the future to complete.
+     * @param <T>     The type of the future's result.
+     * @return The result of the future, or {@code null} if the future completed with a {@code null} value.
+     * @throws TimeoutException if the future does not complete within the given {@code timeout}.
+     * @throws Throwable        the unwrapped cause if the future completed exceptionally (exact type preserved).
+     */
+    @Nullable
+    public static <T> T joinAndUnwrap(@Nonnull CompletableFuture<T> future, @Nonnull Duration timeout) {
+        try {
+            return future.orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                         .join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof TimeoutException) {
+                sneakyThrow(new TimeoutException(
+                        "Future did not complete within " + timeout
+                ));
+            }
             sneakyThrow(e.getCause());
             return null; // unreachable, but needed for compilation
         }

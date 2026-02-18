@@ -24,13 +24,17 @@ import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;
 import org.junit.jupiter.api.*;
 
+import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PagingJpaQueryIterableTest {
@@ -96,5 +100,36 @@ class PagingJpaQueryIterableTest {
                 TestJpaEntry::getId);
         Iterator<String> iterator = iterable.iterator();
         assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+    @Nested
+    class TimeoutBehavior {
+
+        @Test
+        void throwsTimeoutExceptionWhenQueryHangs() {
+            // given
+            TransactionalExecutor<EntityManager> hangingExecutor = new TransactionalExecutor<>() {
+                @Override
+                public <R> CompletableFuture<R> apply(
+                        org.axonframework.common.function.ThrowingFunction<EntityManager, R, Exception> function
+                ) {
+                    return new CompletableFuture<>(); // never completes
+                }
+            };
+
+            PagingJpaQueryIterable<TestJpaEntry, String> iterable = new PagingJpaQueryIterable<>(
+                    10,
+                    Duration.ofMillis(50),
+                    hangingExecutor,
+                    em -> em.createQuery("select t from TestJpaEntry t", TestJpaEntry.class),
+                    TestJpaEntry::getId
+            );
+            Iterator<String> iterator = iterable.iterator();
+
+            // when / then
+            assertThatThrownBy(iterator::hasNext)
+                    .isInstanceOf(TimeoutException.class)
+                    .hasMessageContaining("Future did not complete within");
+        }
     }
 }

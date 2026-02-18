@@ -22,6 +22,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.tx.TransactionalExecutor;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
@@ -46,7 +47,10 @@ import java.util.function.Function;
 @Internal
 class PagingJpaQueryIterable<T, R> implements Iterable<R> {
 
+    private static final Duration DEFAULT_QUERY_TIMEOUT = Duration.ofSeconds(30);
+
     private final int pageSize;
+    private final Duration queryTimeout;
     private final TransactionalExecutor<EntityManager> executor;
     private final Function<EntityManager, TypedQuery<T>> queryFunction;
     private final Function<T, R> lazyMappingFunction;
@@ -54,6 +58,8 @@ class PagingJpaQueryIterable<T, R> implements Iterable<R> {
     /**
      * Constructs a new {@link Iterable} using the provided {@code queryFunction} to construct queries when a new page
      * needs to be fetched. Items are lazily mapped by the provided {@code lazyMappingFunction} when iterating.
+     * <p>
+     * Uses a default query timeout of 30 seconds per page fetch.
      *
      * @param pageSize            The size of the pages.
      * @param executor            The {@link TransactionalExecutor} to use when fetching items.
@@ -66,7 +72,28 @@ class PagingJpaQueryIterable<T, R> implements Iterable<R> {
                                   Function<EntityManager, TypedQuery<T>> queryFunction,
                                   Function<T, R> lazyMappingFunction
     ) {
+        this(pageSize, DEFAULT_QUERY_TIMEOUT, executor, queryFunction, lazyMappingFunction);
+    }
+
+    /**
+     * Constructs a new {@link Iterable} using the provided {@code queryFunction} to construct queries when a new page
+     * needs to be fetched. Items are lazily mapped by the provided {@code lazyMappingFunction} when iterating.
+     *
+     * @param pageSize            The size of the pages.
+     * @param queryTimeout        The maximum time to wait for each page query to complete.
+     * @param executor            The {@link TransactionalExecutor} to use when fetching items.
+     * @param queryFunction       A function that, given an {@link EntityManager}, produces a {@link TypedQuery}. Will
+     *                            be invoked for each page.
+     * @param lazyMappingFunction The mapping function to map items to the desired representation.
+     */
+    public PagingJpaQueryIterable(int pageSize,
+                                  Duration queryTimeout,
+                                  TransactionalExecutor<EntityManager> executor,
+                                  Function<EntityManager, TypedQuery<T>> queryFunction,
+                                  Function<T, R> lazyMappingFunction
+    ) {
         this.pageSize = pageSize;
+        this.queryTimeout = queryTimeout;
         this.executor = executor;
         this.queryFunction = queryFunction;
         this.lazyMappingFunction = lazyMappingFunction;
@@ -105,7 +132,8 @@ class PagingJpaQueryIterable<T, R> implements Iterable<R> {
                                                        .setMaxResults(pageSize)
                                                        .setFirstResult(page * pageSize)
                                                        .getResultList()
-                                                       .forEach(queue::offerLast))
+                                                       .forEach(queue::offerLast)),
+                    queryTimeout
             );
             page++;
         }
