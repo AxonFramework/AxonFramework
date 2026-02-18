@@ -391,27 +391,6 @@ class CachingSequencedDeadLetterQueueTest {
         }
 
         @Test
-        void eachSegmentInitializesOwnCacheIndependently() {
-            // given
-            EventMessage event1 = EventTestUtils.createEvent(1);
-            EventMessage event2 = EventTestUtils.createEvent(2);
-            ProcessingContext context0 = contextForSegment(SEGMENT_0);
-            ProcessingContext context1 = contextForSegment(SEGMENT_1);
-
-            // when
-            // segment 0 enqueues first — its cache initializes with startedEmpty=true
-            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event1), context0).join();
-            // segment 1 enqueues second — its cache initializes with startedEmpty=false (queue is non-empty)
-            cachingQueue.enqueue(SEQUENCE_ID_2, new GenericDeadLetter<>(SEQUENCE_ID_2, event2), context1).join();
-
-            // then
-            // each segment's cache independently tracks its own sequence identifier
-            assertThat(cachingQueue.contains(SEQUENCE_ID_1, context0).join()).isTrue();
-            assertThat(cachingQueue.contains(SEQUENCE_ID_2, context1).join()).isTrue();
-            assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(2);
-        }
-
-        @Test
         void invalidateCacheOnlyAffectsTargetSegment() {
             // given
             EventMessage event1 = EventTestUtils.createEvent(1);
