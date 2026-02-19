@@ -30,7 +30,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Jan Galinski
- * @since 5.0.3
+ * @since 5.1.0
  */
 public abstract class AbstractMessageStream<M extends Message> implements MessageStream<M> {
 
