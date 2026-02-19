@@ -17,11 +17,11 @@
 package org.axonframework.messaging.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.core.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -158,13 +158,14 @@ class LegacyEventHandlingComponentTest {
         void shouldReturnSequenceIdentifierFromSimpleEventHandlerInvoker() {
             //given
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy<EventMessage> sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
             Object expectedSequenceId = "test-sequence-id";
             ProcessingContext processingContext = processingContextWith(event);
 
-            when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
+            when(simpleInvoker.getSequencingPolicy()).thenAnswer(i -> sequencingPolicy);
+            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(
+                    expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
@@ -180,11 +181,11 @@ class LegacyEventHandlingComponentTest {
         void shouldReturnEventIdentifierFromSimpleEventHandlerInvokerWhenPolicyReturnsEmpty() {
             //given
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy<EventMessage> sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
             ProcessingContext processingContext = processingContextWith(event);
 
-            when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
+            when(simpleInvoker.getSequencingPolicy()).thenAnswer(i -> sequencingPolicy);
             when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.empty());
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
@@ -202,14 +203,15 @@ class LegacyEventHandlingComponentTest {
             //given
             MultiEventHandlerInvoker multiInvoker = mock(MultiEventHandlerInvoker.class);
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
-            SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
+            SequencingPolicy<EventMessage> sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
             Object expectedSequenceId = "multi-sequence-id";
             ProcessingContext processingContext = processingContextWith(event);
 
             when(multiInvoker.delegates()).thenReturn(List.of(simpleInvoker));
-            when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
+            when(simpleInvoker.getSequencingPolicy()).thenAnswer(i -> sequencingPolicy);
+            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(
+                    expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 

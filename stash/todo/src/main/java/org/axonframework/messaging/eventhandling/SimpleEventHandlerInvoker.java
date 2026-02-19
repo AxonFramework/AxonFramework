@@ -55,7 +55,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final SegmentMatcher segmentMatcher;
 
     /**
@@ -197,7 +197,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
      */
-    public SequencingPolicy getSequencingPolicy() {
+    public SequencingPolicy<? super EventMessage> getSequencingPolicy() {
         return sequencingPolicy;
     }
 
@@ -221,7 +221,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
-        private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.INSTANCE;
+        private SequencingPolicy<? super EventMessage> sequencingPolicy = SequentialPerAggregatePolicy.INSTANCE;
         private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**
@@ -314,7 +314,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy) {
+        public B sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
             assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked

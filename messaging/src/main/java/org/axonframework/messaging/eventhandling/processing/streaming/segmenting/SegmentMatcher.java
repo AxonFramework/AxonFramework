@@ -18,9 +18,9 @@ package org.axonframework.messaging.eventhandling.processing.streaming.segmentin
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Objects;
 
@@ -37,7 +37,7 @@ import java.util.Objects;
 @Internal
 public class SegmentMatcher {
 
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
 
     /**
      * Initialize a SegmentMatcher with the given {@code sequencingPolicy}. This policy is used to extract the sequence
@@ -45,7 +45,7 @@ public class SegmentMatcher {
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(@Nonnull SequencingPolicy sequencingPolicy) {
+    public SegmentMatcher(@Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.sequencingPolicy = sequencingPolicy;
     }

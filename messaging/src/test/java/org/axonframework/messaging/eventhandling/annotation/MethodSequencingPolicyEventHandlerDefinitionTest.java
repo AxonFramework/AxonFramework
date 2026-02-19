@@ -19,7 +19,6 @@ package org.axonframework.messaging.eventhandling.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotatedMessageHandlingMemberDefinition;
@@ -32,6 +31,7 @@ import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -70,7 +70,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertNotSame(handler, wrappedHandler);
-            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             assertEquals(SequentialPolicy.class, policy.getClass());
         }
 
@@ -82,7 +82,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertNotSame(handler, wrappedHandler);
-            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             assertEquals(MetadataSequencingPolicy.class, policy.getClass());
         }
 
@@ -94,7 +94,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertNotSame(handler, wrappedHandler);
-            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             assertEquals(PropertySequencingPolicy.class, policy.getClass());
         }
 
@@ -130,7 +130,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             MessageHandlingMember<ClassLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertNotSame(handler, wrappedHandler);
-            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             assertEquals(SequentialPolicy.class, policy.getClass());
         }
     }
@@ -159,7 +159,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             MessageHandlingMember<MethodOverridesClassTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertNotSame(handler, wrappedHandler);
-            SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             // Should be MetadataSequencingPolicy from method, not SequentialPolicy from class
             assertEquals(MetadataSequencingPolicy.class, policy.getClass());
         }
@@ -169,7 +169,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
-    private SequencingPolicy getSequencingPolicy(MessageHandlingMember<?> wrappedHandler) {
+    private SequencingPolicy<? super EventMessage> getSequencingPolicy(MessageHandlingMember<?> wrappedHandler) {
         var handler = (MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember<?>) wrappedHandler;
         return handler.sequencingPolicy();
     }
@@ -252,7 +252,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
     }
 
     // Test policy with Class parameter in wrong position (should fail)
-    static class InvalidClassPositionPolicy implements SequencingPolicy {
+    static class InvalidClassPositionPolicy implements SequencingPolicy<EventMessage> {
 
         @SuppressWarnings("unused")
         public InvalidClassPositionPolicy(String parameter, Class<?> payloadClass) {
@@ -260,7 +260,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
 
         @Override
-        public java.util.Optional<Object> sequenceIdentifierFor(@Nonnull Message event,
+        public java.util.Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage event,
                                                                 @Nonnull ProcessingContext context) {
             return java.util.Optional.of("test");
         }

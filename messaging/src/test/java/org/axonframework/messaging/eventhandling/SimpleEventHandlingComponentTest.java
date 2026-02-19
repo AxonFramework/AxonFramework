@@ -20,9 +20,9 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -47,7 +47,7 @@ class SimpleEventHandlingComponentTest {
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
             // given
             var expectedIdentifier = "sequenceId";
-            SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
+            SequencingPolicy<EventMessage> sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
             var component = SimpleEventHandlingComponent.create("test", sequencingPolicy);
