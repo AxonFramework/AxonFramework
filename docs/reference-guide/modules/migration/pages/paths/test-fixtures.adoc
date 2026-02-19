@@ -1,0 +1,744 @@
+= Test Fixture Migration
+:navtitle: Test Fixtures
+
+Axon Framework 5 introduces a significant change to the `axon-test` module.
+The `AggregateTestFixture` and `SagaTestFixture` from Axon Framework 4 have been replaced by a single, unified `AxonTestFixture`.
+
+This guide covers the migration path for users transitioning their test suites from Axon Framework 4 to Axon Framework 5.
+If you are curious about more details on the `AxonTestFixture`, be sure to read the new xref:testing:index.adoc[testing chapter].
+
+[NOTE]
+====
+The `SagaTestFixture` does not have an Axon Framework 5 replacement yet.
+Once available, process testing will also go through the `AxonTestFixture`.
+
+Note that simple sagas can already be written and tested in Axon Framework 5, as an automation.
+Check out our xref:axon-framework-5-getting-started::implement-stateful-event-handler.adoc[getting started] for an example on how to do this.
+====
+
+== Why the change?
+
+The previous test fixtures had several limitations:
+
+1. **Configuration duplication**: It was easy to miss parts of the application configuration when setting up test fixtures.
+Users had to manually register components like parameter resolvers, handler definitions, and resources—separately from their production configuration.
+
+2. **Limited scope**: Testing was restricted to aggregates and sagas.
+Event handling components (projectors/projections) had no testing support, for example.
+
+3. **No integration testing**: The old fixtures couldn't validate whether aggregate processing flowed through upcasters, triggered snapshots, or interacted with other infrastructure components.
+
+The new `AxonTestFixture` resolves these concerns by basing the fixture on the `ApplicationConfigurer`.
+This means your tests use the **same configuration** as your production code, eliminating configuration drift between test and production environments.
+Furthermore, it opens the door for (Spring Boot) integration tests, where the `ApplicationConfigurer` is configured to use parts of or the entire setup of your application.
+
+[#test_fixture_setup]
+== Test Fixture setup
+
+The fundamental shift in Axon Framework 5 is that the test fixture is built from your application's `ApplicationConfigurer` rather than manually registering individual components.
+This means that the `AxonTestFixture` has **no** plain registration methods like the `FixtureConfiguration` had. Instead, you will use the same registration flow as you would for your application as the fixture expects an `ApplicationConfigurer`.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> testFixture;
+
+    @BeforeEach
+    void setUp() {
+        // The MyCommandHandlingInterceptor configuration is duplicated for the fixture:
+        testFixture = new AggregateTestFixture<>(GiftCard.class)
+                .registerCommandHandlerInterceptor(new MyCommandHandlingInterceptor());
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private AxonTestFixture testFixture;
+
+    @BeforeEach
+    void setUp() {
+        // Reuse of the ApplicationConfigurer, ensuring components are configured once:
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+
+        testFixture = AxonTestFixture.with(configurer);
+    }
+}
+
+class AxonConfig {
+
+    // Static construction is an example for ApplicationConfigurer reuse in tests, but not mandatory
+    public static ApplicationConfigurer appConfigurer() {
+        return EventSourcingConfigurer.create()
+                                      .registerEntity(giftCardModule())
+                                      .messaging(AxonConfig::messagingCustomization);
+    }
+
+    private static EventSourcedEntityModule<String, GiftCard> giftCardModule() {
+        return EventSourcedEntityModule.autodetected(String.class, GiftCard.class);
+    }
+
+    private static MessagingConfigurer messagingCustomization(MessagingConfigurer configurer) {
+        return configurer.registerCommandHandlerInterceptor(
+                c -> new MyCommandHandlingInterceptor()
+        );
+    }
+}
+----
+====
+
+By building the fixture from the `ApplicationConfigurer`, any configuration you add to your production setup (custom parameter resolvers, handler enhancers, upcasters, etc.) is automatically available in your tests.
+Whereas Axon Framework 4 duplicated registration methods on the `AggregateTestFixture` to approach what the actual application did.
+In practice, this resulted in test fixtures not representing the actual setup, because crucial components were either missed or not available for configuration on the `AggregateTestFixture`.
+
+[NOTE]
+====
+Due to using the `ApplicationConfigurer`, by default, the fixture will attempt to connect to Axon Server if the connector is on the classpath.
+For unit tests, you typically want to disable this. to that end, you can use the customization parameter provided on the `AxonTestFixture#with` method:
+
+[source,java]
+----
+AxonTestFixture fixture = AxonTestFixture.with(
+        configurer,
+        customization -> customization.disableAxonServer()
+);
+----
+
+For more customization options, such as field filtering for event validation, check out the xref:testing:basic-testing.adoc#fixture_customization[Fixture customization] section.
+====
+
+=== Fixture setup with Spring
+
+When using Spring Boot, you can inject the `ApplicationConfigurer` directly into your test class!
+Axon Framework ensures that a `ApplicationConfigurer` is constructed based on your application, and that it is exposed to the application context.
+This allows the test fixture to reuse the same configuration:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class GiftCardTest {
+
+    @Autowired
+    private ApplicationConfigurer configurer;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = AxonTestFixture.with(
+                configurer,
+                customization -> customization.disableAxonServer()
+        );
+    }
+}
+----
+
+== Given-When-Then structure
+
+The `AxonTestFixture` maintains the familiar given-when-then style of the `AggregateTestFixture`, but with a more fluent API.
+The following sections show how to migrate the <<given,given>>, <<when,when>>, and then phases from Axon Framework 4 to 5.
+
+[#given]
+=== Given phase
+
+The given phase sets up prior state before testing.
+This can be done through events, or commands.
+The example below shows what this looked like in Axon Framework 4 and how it maps to Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+import java.util.List;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AggregateTestFixture<>(GiftCard.class);
+    }
+
+    @Test
+    void givenSingleEvent() {
+        fixture.given(new CardIssuedEvent("card-1", 100));
+               // when...
+    }
+
+    @Test
+    void givenMultipleEvents() {
+        fixture.given(new CardIssuedEvent("card-1", 100),
+                      new CardRedeemedEvent("card-1", 20));
+               // when...
+    }
+
+    @Test
+    void givenEventsAsList() {
+        fixture.given(List.of(new CardIssuedEvent("card-1", 100),
+                              new CardRedeemedEvent("card-1", 20)));
+               // when...
+    }
+
+    @Test
+    void givenCommands() {
+        fixture.givenCommands(new IssueCardCommand("card-1", 100));
+               // when...
+    }
+
+    @Test
+    void givenNoPriorActivity() {
+        fixture.givenNoPriorActivity();
+               // when...
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import java.util.List;
+
+class GiftCardTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void givenSingleEvent() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100));
+               // when...
+    }
+
+    @Test
+    void givenMultipleEvents() {
+        fixture.given()
+               .events(new CardIssuedEvent("card-1", 100),
+                       new CardRedeemedEvent("card-1", 20));
+               // when...
+    }
+
+    @Test
+    void givenEventsAsList() {
+        fixture.given()
+               .events(List.of(new CardIssuedEvent("card-1", 100),
+                               new CardRedeemedEvent("card-1", 20)));
+               // when...
+    }
+
+    @Test
+    void givenCommands() {
+        fixture.given()
+               .command(new IssueCardCommand("card-1", 100));
+               // when...
+    }
+
+    @Test
+    void givenNoPriorActivity() {
+        fixture.given()
+               .noPriorActivity();
+               // when...
+    }
+}
+----
+====
+
+[NOTE]
+====
+The following Axon Framework 4 given methods are not supported in the `AxonTestFixture`:
+
+* `givenState(Supplier<T>)` - Direct state injection is no yet supported; use events to build up state.
+* `givenCurrentTime(Instant)` - Time manipulation is not yet available, as scheduled events and deadlines are not yet supported.
+* `andGiven(...)` / `andGivenCommands(...)` - Use the fluent API to chain events and commands instead.
+====
+
+[#when]
+=== When phase
+
+The when phase specifies the trigger what to validate when something happens.
+In Axon Framework 4, when was always triggered by some action, like a command.
+The example below shows what this looked like in Axon Framework 4 and how it maps to Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.messaging.MetaData;
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AggregateTestFixture<>(GiftCard.class);
+    }
+
+    @Test
+    void whenCommand() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30));
+               // then...
+    }
+
+    @Test
+    void whenCommandWithMetadata() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30),
+                     MetaData.with("userId", "user-123"));
+               // then...
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.test.AxonTestFixture;
+import org.axonframework.test.aggregate.AggregateTestConfigurer;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void whenCommand() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30));
+               // then...
+    }
+
+    @Test
+    void whenCommandWithMetadata() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30),
+                        Metadata.with("userId", "user-123"));
+               // then...
+    }
+}
+----
+====
+
+[NOTE]
+====
+The following Axon Framework 4 when methods are not yet supported in the `AxonTestFixture`:
+
+* `whenTimeElapses(Duration)` / `whenTimeAdvancesTo(Instant)` - Time manipulation is not yet available, as deadline are not yet supported.
+* `whenInvoking()` - Not yet supported, as `AxonTestFixture` is not entity-specific, whereas this operation is.
+* `whenConstructing()` - Not yet supported, as `AxonTestFixture` is not entity-specific, whereas this operation is.
+
+====
+
+[#then]
+=== Then phase
+
+The then phase validates the outcome of the <<when,when-phase>>.
+This includes verifying published events, exceptions thrown, or command return values.
+The example below shows what this looked like in Axon Framework 4 and how it maps to Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AggregateTestFixture<>(GiftCard.class);
+    }
+
+    @Test
+    void expectEvents() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30))
+               .expectEvents(new CardRedeemedEvent("card-1", 30));
+    }
+
+    @Test
+    void expectNoEvents() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 0))
+               .expectNoEvents();
+    }
+
+    @Test
+    void expectException() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 200))
+               .expectException(IllegalStateException.class);
+    }
+
+    @Test
+    void expectSuccessfulHandlerExecution() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30))
+               .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void expectResultMessagePayload() {
+        fixture.givenNoPriorActivity()
+               .when(new CardIssuedEvent("card-1", 100))
+               .expectResultMessagePayload("card-1");
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void expectEvents() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30))
+               .then()
+               .events(new CardRedeemedEvent("card-1", 30));
+    }
+
+    @Test
+    void expectNoEvents() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 0))
+               .then()
+               .noEvents();
+    }
+
+    @Test
+    void expectException() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 200))
+               .then()
+               .exception(IllegalStateException.class);
+    }
+
+    @Test
+    void expectSuccessfulHandlerExecution() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30))
+               .then()
+               .success();
+    }
+
+    @Test
+    void expectResultMessagePayload() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new IssueCardCommand("card-1", 100))
+               .then()
+               .resultMessagePayload("card-1");
+    }
+}
+----
+====
+
+[NOTE]
+====
+The following Axon Framework 4 then methods are not yet supported in the `AxonTestFixture`:
+
+* `expectState(Consumer<T>)` - Not available as state-stored entities are not yet available.
+* `expectMarkedDeleted()` - Deletion validation is not yet available.
+* `expectScheduledDeadline()` / `expectNoScheduledDeadline()` - Deadline validation is not yet available, as deadlines are not yet supported.
+* `expectTriggeredDeadlines()` - Deadline validation is not yet available, as deadlines are not yet supported.
+====
+
+[#chaining]
+=== Chaining
+
+Both Axon Framework 4 and 5 support chaining multiple phases together in a single test.
+The code blocks below show an example use of method chaining in Axon Framework 4 and Axon Framework 5.
+Note all possible permutations are shown, but can be deduced based on this example:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AggregateTestFixture<>(GiftCard.class);
+    }
+
+    @Test
+    void completeTestFlow() {
+        fixture.given(new CardIssuedEvent("card-1", 100),
+                      new CardRedeemedEvent("card-1", 20))
+               .andGivenCommands(new ReimburseCardCommand("card-1", 10))
+               .when(new RedeemCardCommand("card-1", 30))
+               .expectSuccessfulHandlerExecution()
+               .expectEvents(new CardRedeemedEvent("card-1", 30))
+               .expectResultMessagePayload(null);
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+
+class GiftCardTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void completeTestFlow() {
+        fixture.given()
+               .events(new CardIssuedEvent("card-1", 100),
+                       new CardRedeemedEvent("card-1", 20))
+               .command(new ReimburseCardCommand("card-1", 10))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30))
+               .then()
+               .success()
+               .events(new CardRedeemedEvent("card-1", 30))
+               .resultMessagePayload(null);
+    }
+}
+----
+====
+
+== Matchers
+
+Axon Framework 4 provided Hamcrest-based matchers for validation in the <<then,then phase?>>.
+Methods like `expectEventsMatching()` and `expectResultMessageMatching()` allowed complex assertions using matchers such as `exactSequenceOf()`, `payloadsMatching()`, and `messageWithPayload()` provided by the framework.
+
+Axon Framework 5 replaces this approach with `Consumer` and `Predicate`-based methods, like `eventsSatisfy()` and `eventsMatch()`.
+This design allows you to choose your own assertion or matching library—whether that's AssertJ, Hamcrest, Truth, or plain JUnit assertions.
+The example below shows how matcher-based validation in Axon Framework 4 maps to the new approach in Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.*;
+
+import static org.axonframework.test.matchers.EqualsMatcher.equalTo;
+import static org.axonframework.test.matchers.Matchers.*;
+
+class GiftCardTest {
+
+    private FixtureConfiguration<GiftCard> fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AggregateTestFixture<>(GiftCard.class);
+    }
+
+    @Test
+    void expectEventsMatching() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30))
+               .expectEventsMatching(exactSequenceOf(
+                       messageWithPayload(equalTo(new CardRedeemedEvent("card-1", 30)))
+               ));
+    }
+
+    @Test
+    void expectEventsMatchingPayloads() {
+        fixture.given(new CardIssuedEvent("card-1", 100))
+               .when(new RedeemCardCommand("card-1", 30))
+               .expectEventsMatching(payloadsMatching(
+                       exactSequenceOf(equalTo(new CardRedeemedEvent("card-1", 30)))
+               ));
+    }
+
+    @Test
+    void expectResultMessageMatching() {
+        fixture.givenNoPriorActivity()
+               .when(new IssueCardCommand("card-1", 100))
+               .expectResultMessageMatching(messageWithPayload(equalTo("card-1")));
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+
+import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class GiftCardTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        ApplicationConfigurer configurer = AxonConfig.appConfigurer();
+        fixture = AxonTestFixture.with(configurer);
+    }
+
+    @Test
+    void eventsSatisfy() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30))
+               .then()
+               .eventsSatisfy(events -> {
+                   assertEquals(1, events.size());
+                   assertEquals(
+                           new CardRedeemedEvent("card-1", 30),
+                           events.getFirst().payload()
+                   );
+               });
+    }
+
+    @Test
+    void eventsMatch() {
+        fixture.given()
+               .event(new CardIssuedEvent("card-1", 100))
+               .when()
+               .command(new RedeemCardCommand("card-1", 30))
+               .then()
+               .eventsMatch(events -> events.size() == 1 && Objects.equals(
+                       events.getFirst().payload(), new CardRedeemedEvent("card-1", 30)
+               ));
+    }
+
+    @Test
+    void resultMessageSatisfies() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new IssueCardCommand("card-1", 100))
+               .then()
+               .resultMessageSatisfies(
+                       result -> assertEquals("card-1", result.payload())
+               );
+    }
+}
+----
+====
+
+[TIP]
+.Pick your own assert tool
+====
+The `*Satisfy` methods accept a `Consumer` and will fail the test if an assertion inside throws an exception.
+The `*Match` methods accept a `Predicate` and will fail the test if the predicate returns `false`.
+
+This approach gives you full flexibility to use any assertion library you prefer, such as:
+
+* JUnit 5 assertions (`assertEquals`, `assertTrue`, etc.)
+* AssertJ (`assertThat(events).hasSize(1)`)
+* Hamcrest (`assertThat(events, hasSize(1))`)
+* Google Truth (`assertThat(events).hasSize(1)`)
+====
