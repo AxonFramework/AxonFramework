@@ -152,7 +152,7 @@ class CachingSequencedDeadLetterQueueTest {
             // then
             assertThat(result).isTrue();
             assertThat(delegate.sequenceSize(SEQUENCE_ID_0, null).join()).isEqualTo(2);
-            verify(delegate).enqueueIfPresent(SEQUENCE_ID_0, any(), eq(context));
+            verify(delegate).enqueueIfPresent(eq(SEQUENCE_ID_0), any(), eq(context));
         }
 
         @Test
@@ -235,6 +235,23 @@ class CachingSequencedDeadLetterQueueTest {
             assertThat(result).isFalse();
             assertThat(cachingQueue.cacheNonEnqueuedSize()).isEqualTo(1);
             verify(delegate, never()).contains(any(), any());
+        }
+
+        @Test
+        void invalidateCacheClearsEnqueuedCache() {
+            // given
+            EventMessage event = EventTestUtils.createEvent(2);
+            ProcessingContext context = contextForSegment(SEGMENT_0);
+            cachingQueue.enqueue(SEQUENCE_ID_1, new GenericDeadLetter<>(SEQUENCE_ID_1, event), context).join();
+            assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
+            long delegateSizeBefore = delegate.size(null).join();
+
+            // when
+            cachingQueue.invalidateCache(contextForSegment(SEGMENT_0));
+
+            // then
+            assertThat(cachingQueue.cacheEnqueuedSize()).isZero();
+            assertThat(delegate.size(null).join()).isEqualTo(delegateSizeBefore);
         }
 
         @Test
