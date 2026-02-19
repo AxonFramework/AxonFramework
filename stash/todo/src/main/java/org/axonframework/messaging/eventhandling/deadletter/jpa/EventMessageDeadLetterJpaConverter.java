@@ -16,119 +16,104 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ClassUtils;
+import org.axonframework.common.TypeReference;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.conversion.SerializedMessage;
-import org.axonframework.conversion.SerializedObject;
-import org.axonframework.conversion.SerializedType;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
-import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.Map;
 
 /**
- * Converter responsible for converting to and from known {@link EventMessage} implementations that should be supported
- * by a {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} capable of storing
- * {@code EventMessages}.
+ * Converter responsible for converting to and from {@link EventMessage} implementations for storage in a
+ * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
  * <p>
- * It rebuilds the original message implementation by checking which properties were extracted when it was originally
- * mapped. For example, if the aggregate type and token are present, it will construct a
- * {@link GenericTrackedDomainEventMessage}.
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored as {@link Context} resources. This converter extracts these resources from the context during
+ * serialization and restores them to the context when deserializing.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
-    @Override
-    public DeadLetterEventEntry convert(EventMessage message,
-                                        Serializer eventSerializer,
-                                        Serializer genericSerializer) {
-        GenericEventMessage eventMessage = (GenericEventMessage) message;
-        Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
-                TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
-        Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
-                DomainEventMessage.class::isInstance).map(DomainEventMessage.class::cast);
+    private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
+    };
 
-        // Serialize the payload with message.serializePayload to make the deserialization lazy and thus
-        // make us able to store deserialization errors as well.
-        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.payload(), byte[].class);
-        // For compatibility, we use the serializer directly for the metadata
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metadata(), byte[].class);
-        Optional<SerializedObject<byte[]>> serializedToken =
-                trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
+    @Override
+    public @Nonnull DeadLetterEventEntry convert(@Nonnull EventMessage message,
+                                                 @Nullable Context context,
+                                                 @Nonnull EventConverter eventConverter,
+                                                 @Nonnull Converter genericConverter) {
+        Context effectiveContext = context != null ? context : Context.empty();
+        TrackingToken token = effectiveContext.getResource(TrackingToken.RESOURCE_KEY);
 
         return new DeadLetterEventEntry(
-                message.getClass().getName(),
-                message.identifier(),
                 message.type().toString(),
+                message.identifier(),
                 message.timestamp().toString(),
-                serializedPayload.getType().getName(),
-                serializedPayload.getType().getRevision(),
-                serializedPayload.getData(),
-                serializedMetadata.getData(),
-                domainEventMessage.map(DomainEventMessage::getType).orElse(null),
-                domainEventMessage.map(DomainEventMessage::getAggregateIdentifier).orElse(null),
-                domainEventMessage.map(DomainEventMessage::getSequenceNumber).orElse(null),
-                serializedToken.map(SerializedObject::getType).map(SerializedType::getName).orElse(null),
-                serializedToken.map(SerializedObject::getData).orElse(null)
+                eventConverter.convert(message.payload(), byte[].class),
+                eventConverter.convert(message.metadata(), byte[].class),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
+                token != null ? token.getClass().getName() : null,
+                token != null ? genericConverter.convert(token, byte[].class) : null
         );
     }
 
+    @Nonnull
     @Override
-    public EventMessage convert(DeadLetterEventEntry entry,
-                                   Serializer eventSerializer,
-                                   Serializer genericSerializer) {
-        SerializedMessage serializedMessage = new SerializedMessage(entry.getEventIdentifier(),
-                                                                         entry.getPayload(),
-                                                                         entry.getMetadata(),
-                                                                         eventSerializer);
-        Supplier<Instant> timestampSupplier = () -> Instant.parse(entry.getTimeStamp());
-        if (entry.getTrackingToken() != null) {
-            TrackingToken trackingToken = genericSerializer.deserialize(entry.getTrackingToken());
-            if (entry.getAggregateIdentifier() != null) {
-                return new GenericTrackedDomainEventMessage(trackingToken,
-                                                              entry.getAggregateType(),
-                                                              entry.getAggregateIdentifier(),
-                                                              entry.getSequenceNumber(),
-                                                              serializedMessage,
-                                                              timestampSupplier);
-            } else {
-                return new GenericTrackedEventMessage(trackingToken, serializedMessage, timestampSupplier);
+    public MessageStream.Entry<EventMessage> convert(@Nonnull DeadLetterEventEntry entry,
+                                                     @Nonnull EventConverter eventConverter,
+                                                     @Nonnull Converter genericConverter) {
+        return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
+                                 restoreContext(entry, genericConverter));
+    }
+
+    private EventMessage deserializeMessage(DeadLetterEventEntry entry, EventConverter eventConverter) {
+        Map<String, String> metadataMap = eventConverter.convert(entry.getMetadata(), METADATA_MAP_TYPE_REF.getType());
+
+        return new GenericEventMessage(
+                entry.getIdentifier(),
+                MessageType.fromString(entry.getType()),
+                entry.getPayload(),
+                Metadata.from(metadataMap),
+                Instant.parse(entry.getTimestamp())
+        );
+    }
+
+    private Context restoreContext(DeadLetterEventEntry entry, Converter genericConverter) {
+        Context context = Context.empty();
+        if (entry.getToken() != null && entry.getTokenType() != null) {
+            TrackingToken token = genericConverter.convert(entry.getToken(),
+                                                           ClassUtils.loadClass(entry.getTokenType()));
+            if (token != null) {
+                context = context.withResource(TrackingToken.RESOURCE_KEY, token);
             }
         }
         if (entry.getAggregateIdentifier() != null) {
-            return new GenericDomainEventMessage(entry.getAggregateType(),
-                                                   entry.getAggregateIdentifier(),
-                                                   entry.getSequenceNumber(),
-                                                   serializedMessage.identifier(),
-                                                   MessageType.fromString(entry.getType()),
-                                                   serializedMessage.payload(),
-                                                   serializedMessage.metadata(),
-                                                   timestampSupplier.get());
-        } else {
-            return new GenericEventMessage(serializedMessage, timestampSupplier);
+            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                                           entry.getAggregateIdentifier());
         }
-    }
-
-    @Override
-    public boolean canConvert(DeadLetterEventEntry message) {
-        return message.getEventType().equals(GenericTrackedDomainEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericDomainEventMessage.class.getName()) ||
-                message.getEventType().equals(GenericTrackedEventMessage.class.getName());
-    }
-
-    @Override
-    public boolean canConvert(EventMessage message) {
-        return message instanceof GenericEventMessage;
+        if (entry.getAggregateType() != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_TYPE_KEY, entry.getAggregateType());
+        }
+        if (entry.getAggregateSequenceNumber() != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                           entry.getAggregateSequenceNumber());
+        }
+        return context;
     }
 }

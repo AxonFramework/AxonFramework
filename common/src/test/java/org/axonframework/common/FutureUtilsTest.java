@@ -17,10 +17,13 @@
 package org.axonframework.common;
 
 
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +52,77 @@ class FutureUtilsTest {
             assertThatThrownBy(() -> FutureUtils.joinAndUnwrap(result))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("value must be true");
+        }
+    }
+
+    @Nested
+    class JoinAndUnwrapWithTimeout {
+
+        @Test
+        void completedFutureReturnsImmediately() {
+            // given
+            CompletableFuture<String> future = CompletableFuture.completedFuture("result");
+
+            // when
+            String result = FutureUtils.joinAndUnwrap(future, Duration.ofSeconds(1));
+
+            // then
+            assertThat(result).isEqualTo("result");
+        }
+
+        @Test
+        void failedFutureThrowsCauseDirectly() {
+            // given
+            CompletableFuture<String> future = CompletableFuture.failedFuture(
+                    new IllegalStateException("test failure")
+            );
+
+            // when / then
+            assertThatThrownBy(() -> FutureUtils.joinAndUnwrap(future, Duration.ofSeconds(1)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("test failure");
+        }
+
+        @Test
+        void incompleteFutureThrowsTimeoutException() {
+            // given
+            CompletableFuture<String> future = new CompletableFuture<>();
+
+            // when / then
+            assertThatThrownBy(() -> FutureUtils.joinAndUnwrap(future, Duration.ofMillis(50)))
+                    .isInstanceOf(TimeoutException.class)
+                    .hasMessageContaining("Future did not complete within");
+        }
+
+        @Test
+        void futureCompletingBeforeTimeoutReturnsNormally() {
+            // given
+            CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return "async result";
+            });
+
+            // when
+            String result = FutureUtils.joinAndUnwrap(future, Duration.ofSeconds(5));
+
+            // then
+            assertThat(result).isEqualTo("async result");
+        }
+
+        @Test
+        void nullResultCompletedFutureReturnsNull() {
+            // given
+            CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
+
+            // when
+            Void result = FutureUtils.joinAndUnwrap(future, Duration.ofSeconds(1));
+
+            // then
+            assertThat(result).isNull();
         }
     }
 }

@@ -16,11 +16,20 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 /**
- * Converter that can convert a {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
+ * Converter that can convert an {@link EventMessage} to a {@link DeadLetterEventEntry} and vice versa.
+ * <p>
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored and restored as {@link Context} resources. This converter handles storing these resources as
+ * separate columns in the database and restoring them when converting back.
  *
  * @param <M> The type of the event message this converter will convert.
  * @author Mitchell Herrijgers
@@ -29,38 +38,42 @@ import org.axonframework.conversion.Serializer;
 public interface DeadLetterJpaConverter<M extends EventMessage> {
 
     /**
-     * Converts an {@link EventMessage} implementation to a {@link DeadLetterEventEntry}.
+     * Converts an {@link EventMessage} implementation and its associated {@link Context} to a
+     * {@link DeadLetterEventEntry}.
+     * <p>
+     * The context is used to extract tracking token and domain info (aggregate identifier, type, sequence number) if
+     * present. When the context is {@code null}, no resources are extracted and corresponding fields in the resulting
+     * {@link DeadLetterEventEntry} will be {@code null}.
+     * <p>
+     * In most cases a non-{@code null} {@link Context} is expected, as the
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is typically invoked through Axon's
+     * event handling logic, which always provides a context. A {@code null} context is only expected when the
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is invoked directly by user code
+     * outside of the framework's processing pipeline.
      *
-     * @param message    The message to convert.
-     * @param eventSerializer The {@link Serializer} for conversion of payload and metadata.
-     * @param genericSerializer The {@link Serializer} for conversion of the token, if present.
-     * @return The created {@link DeadLetterEventEntry}
+     * @param message          The message to convert.
+     * @param context          The context containing resources such as tracking token and domain info.
+     * @param eventConverter   The {@link EventConverter} for conversion of payload and metadata.
+     * @param genericConverter The {@link Converter} for conversion of the tracking token, if present.
+     * @return The created {@link DeadLetterEventEntry}.
      */
-    DeadLetterEventEntry convert(M message, Serializer eventSerializer, Serializer genericSerializer);
+    @Nonnull
+    DeadLetterEventEntry convert(@Nonnull M message, @Nullable Context context, @Nonnull EventConverter eventConverter,
+                                 @Nonnull Converter genericConverter);
 
     /**
-     * Converts a {@link DeadLetterEventEntry} to a {@link EventMessage} implementation.
+     * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
+     * implementation and a {@link Context} with restored resources.
+     * <p>
+     * The returned entry's context contains the restored tracking token and domain info (aggregate identifier, type,
+     * sequence number) if they were stored when the dead letter was enqueued.
      *
-     * @param entry      The database entry to convert to a {@link EventMessage}
-     * @param eventSerializer The {@link Serializer} for deserialization of payload and metadata.
-     * @param genericSerializer The {@link Serializer} for deserialization of the token, if present.
-     * @return The created {@link DeadLetterEventEntry}
+     * @param entry            The database entry to convert.
+     * @param eventConverter   The {@link EventConverter} for deserialization of payload and metadata.
+     * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
+     * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
-    M convert(DeadLetterEventEntry entry, Serializer eventSerializer, Serializer genericSerializer);
-
-    /**
-     * Check whether this converter supports the given {@link DeadLetterEventEntry}.
-     *
-     * @param message The message to check support for.
-     * @return Whether the provided message is supported by this converter.
-     */
-    boolean canConvert(DeadLetterEventEntry message);
-
-    /**
-     * Check whether this converter supports the given {@link EventMessage}.
-     *
-     * @param message The message to check support for.
-     * @return Whether the provided message is supported by this converter.
-     */
-    boolean canConvert(M message);
+    @Nonnull
+    MessageStream.Entry<M> convert(@Nonnull DeadLetterEventEntry entry, @Nonnull EventConverter eventConverter,
+                                   @Nonnull Converter genericConverter);
 }

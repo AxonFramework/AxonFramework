@@ -146,7 +146,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         Map<Integer, GenericDeadLetter<EventMessage>> insertedLetters = new HashMap<>();
 
         Iterator<DeadLetter<? extends EventMessage>> resultIterator =
-                jdbcDeadLetterQueue.deadLetterSequence(aggregateId)
+                jdbcDeadLetterQueue.deadLetterSequence(aggregateId, null)
                                    .iterator();
         assertFalse(resultIterator.hasNext());
 
@@ -160,7 +160,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                      insertedLetters.put(i, letter);
                  });
 
-        resultIterator = jdbcDeadLetterQueue.deadLetterSequence(aggregateId).iterator();
+        resultIterator = jdbcDeadLetterQueue.deadLetterSequence(aggregateId, null).iterator();
         for (Map.Entry<Integer, GenericDeadLetter<EventMessage>> entry : insertedLetters.entrySet()) {
             Integer sequenceIndex = entry.getKey();
             Supplier<String> assertMessageSupplier = () -> "Failed asserting event [" + sequenceIndex + "]";

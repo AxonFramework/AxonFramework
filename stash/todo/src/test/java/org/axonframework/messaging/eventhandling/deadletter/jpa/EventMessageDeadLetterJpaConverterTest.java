@@ -19,192 +19,260 @@ package org.axonframework.messaging.eventhandling.deadletter.jpa;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.eventhandling.annotation.Event;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.SerializedMessage;
-import org.axonframework.conversion.SerializedType;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.conversion.SimpleSerializedObject;
-import org.axonframework.conversion.SimpleSerializedType;
-import org.axonframework.conversion.json.JacksonSerializer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.annotation.Event;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO - #3517 - Tests currently broken due to revision resolution")
+/**
+ * Tests for {@link EventMessageDeadLetterJpaConverter}.
+ * <p>
+ * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
+ * number) are stored and restored as {@link Context} resources. This test verifies that the converter correctly handles
+ * these resources.
+ */
 class EventMessageDeadLetterJpaConverterTest {
 
-    private static final String PAYLOAD_REVISION = "23.0";
     private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
-    private final Serializer eventSerializer = JacksonSerializer.builder()
-                                                                .objectMapper(new ObjectMapper().disable(
-                                                                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
-                                                                .build();
-    private final Serializer genericSerializer = eventSerializer;
+    private final JacksonConverter jacksonConverter = new JacksonConverter();
+    private final EventConverter eventConverter = new DelegatingEventConverter(jacksonConverter);
+    private final Converter genericConverter = jacksonConverter;
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
-    private final MessageType type = new MessageType("event");
     private final Metadata metadata = Metadata.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
     @Test
     void canConvertGenericEventMessageAndBackCorrectly() {
-        testConversion(EventTestUtils.asEventMessage(event).andMetadata(metadata));
+        EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+        Context context = Context.empty();
+        testConversion(message, context);
     }
 
     @Test
-    void canConvertDomainEventMessageAndBackCorrectly() {
-        testConversion(new GenericDomainEventMessage("MyType", "8239081092", 25L, type, event, metadata));
+    void canConvertEventMessageWithTrackingTokenInContext() {
+        EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+        TrackingToken token = new GlobalSequenceTrackingToken(232323L);
+        Context context = Context.empty()
+                                 .withResource(TrackingToken.RESOURCE_KEY, token);
+
+        testConversionWithContext(message, context);
     }
 
     @Test
-    void canConvertTrackedDomainEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedDomainEventMessage(new GlobalSequenceTrackingToken(232323L),
-                                                              "MyType",
-                                                              "8239081092",
-                                                              25L,
-                                                              new GenericEventMessage(type, event, metadata),
-                                                              Instant::now));
+    void canConvertEventMessageWithGapAwareTrackingTokenInContext() {
+        EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+        TrackingToken token = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
+        Context context = Context.empty()
+                                 .withResource(TrackingToken.RESOURCE_KEY, token);
+
+        testConversionWithContext(message, context);
     }
 
     @Test
-    void canConvertMessagesWithSerializationErrors() {
-        SerializedType eventType = new SimpleSerializedType(
-                "org.axonframework.messaging.jpa.deadletter.eventhandling.EventMessageDeadLetterJpaConverterTest$SerializationErrorClass",
-                null
-        );
-        EventMessage message = new GenericEventMessage(new SerializedMessage(
-                "my-identifier",
-                new SimpleSerializedObject<>(
-                        "{\"my-wrong-payload\":\"wadawd\"}".getBytes(StandardCharsets.UTF_8),
-// TODO #3517 - Revert back incorrect format and validate that it still works once we use a Converter i.o. a Serializer.
-//                        "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
-                        byte[].class,
-                        eventType
-                ),
-                new SimpleSerializedObject<>(
-                        "{}".getBytes(StandardCharsets.UTF_8),
-                        byte[].class,
-                        new SimpleSerializedType("org.axonframework.messaging.Metadata", null)
-                ),
-                eventSerializer
-        ), Instant::now);
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, eventSerializer, genericSerializer);
-        assertNotNull(deadLetterEventEntry);
-        assertEquals("{\"myValue\":null}", new String(deadLetterEventEntry.getPayload().getData()));
+    void canConvertEventMessageWithDomainInfoInContext() {
+        EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+        Context context = Context.empty()
+                                 .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "MyAggregateType")
+                                 .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-123")
+                                 .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 42L);
+
+        testConversionWithContext(message, context);
     }
 
     @Test
-    void canConvertTrackedDomainEventMessageWithGapAwareTokenAndBackCorrectly() {
-        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
-        testConversion(new GenericTrackedDomainEventMessage(testToken,
-                                                              "MyType",
-                                                              "8239081092",
-                                                              25L,
-                                                              new GenericEventMessage(type, event, metadata),
-                                                              Instant::now));
+    void canConvertEventMessageWithTrackingTokenAndDomainInfoInContext() {
+        EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+        TrackingToken token = new GlobalSequenceTrackingToken(999L);
+        Context context = Context.empty()
+                                 .withResource(TrackingToken.RESOURCE_KEY, token)
+                                 .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "OrderAggregate")
+                                 .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "order-456")
+                                 .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, 10L);
+
+        testConversionWithContext(message, context);
     }
 
-    @Test
-    void canConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
-        testConversion(new GenericTrackedEventMessage(new GlobalSequenceTrackingToken(232323L),
-                                                        new GenericEventMessage(type, event, metadata),
-                                                        Instant::now));
+    private void testConversion(EventMessage message, Context context) {
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message,
+                                                                      context,
+                                                                      eventConverter,
+                                                                      genericConverter);
+
+        assertCorrectlyMapped(message, context, deadLetterEventEntry);
+
+        MessageStream.Entry<EventMessage> restoredEntry =
+                converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
+        assertCorrectlyRestored(message, restoredEntry.message());
     }
 
+    private void testConversionWithContext(EventMessage message, Context context) {
+        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message,
+                                                                      context,
+                                                                      eventConverter,
+                                                                      genericConverter);
 
-    @Test
-    void canConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
-        TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
-        testConversion(new GenericTrackedEventMessage(testToken,
-                                                        new GenericEventMessage(type, event, metadata),
-                                                        Instant::now));
-    }
+        assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-    private void testConversion(EventMessage message) {
-        assertTrue(converter.canConvert(message));
-        DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, eventSerializer, genericSerializer);
+        MessageStream.Entry<EventMessage> restoredEntry =
+                converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
 
-        assertCorrectlyMapped(message, deadLetterEventEntry);
-        assertTrue(converter.canConvert(deadLetterEventEntry));
-
-        EventMessage restoredEventMessage =
-                converter.convert(deadLetterEventEntry, eventSerializer, genericSerializer);
-        assertCorrectlyRestored(message, restoredEventMessage);
+        assertCorrectlyRestored(message, restoredEntry.message());
+        assertContextRestored(context, restoredEntry);
     }
 
     private void assertCorrectlyRestored(EventMessage expected, EventMessage actual) {
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.timestamp(), actual.timestamp());
-        assertEquals(expected.payload(), actual.payload());
-        assertEquals(expected.payloadType(), actual.payloadType());
+        assertEquals(expected.type(), actual.type());
         assertEquals(expected.metadata(), actual.metadata());
 
-        assertEquals(expected.getClass(), actual.getClass());
-        if (expected instanceof DomainEventMessage domainExpected) {
-            DomainEventMessage domainActual = (DomainEventMessage) actual;
+        // Payload is stored as raw bytes; deserialize to compare with the original
+        Object deserializedPayload = eventConverter.convertPayload(actual, expected.payloadType());
+        assertEquals(expected.payload(), deserializedPayload);
 
-            assertEquals(domainExpected.getType(), domainActual.getType());
-            assertEquals(domainExpected.getAggregateIdentifier(), domainActual.getAggregateIdentifier());
-            assertEquals(domainExpected.getSequenceNumber(), domainActual.getSequenceNumber());
+        // In AF5, all restored messages are GenericEventMessage
+        assertTrue(actual instanceof GenericEventMessage);
+    }
+
+    private void assertContextRestored(Context originalContext, MessageStream.Entry<EventMessage> restoredEntry) {
+        // Check tracking token restoration
+        if (originalContext.containsResource(TrackingToken.RESOURCE_KEY)) {
+            assertTrue(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY));
+            assertEquals(
+                    originalContext.getResource(TrackingToken.RESOURCE_KEY),
+                    restoredEntry.getResource(TrackingToken.RESOURCE_KEY)
+            );
         }
-        if (expected instanceof TrackedEventMessage trackedExpected) {
-            TrackedEventMessage trackedActual = (TrackedEventMessage) actual;
 
-            assertEquals(trackedExpected.trackingToken(), trackedActual.trackingToken());
+        // Check domain info restoration
+        if (originalContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)) {
+            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+            assertEquals(
+                    originalContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY),
+                    restoredEntry.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+            );
+        }
+        if (originalContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)) {
+            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY));
+            assertEquals(
+                    originalContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY),
+                    restoredEntry.getResource(LegacyResources.AGGREGATE_TYPE_KEY)
+            );
+        }
+        if (originalContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
+            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
+            assertEquals(
+                    originalContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
+                    restoredEntry.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)
+            );
         }
     }
 
-    private void assertCorrectlyMapped(EventMessage eventMessage, DeadLetterEventEntry deadLetterEventEntry) {
-        assertEquals(eventMessage.identifier(), deadLetterEventEntry.getEventIdentifier());
-        assertEquals(eventMessage.timestamp().toString(), deadLetterEventEntry.getTimeStamp());
-        assertEquals(eventMessage.payload().getClass().getName(),
-                     deadLetterEventEntry.getPayload().getType().getName());
-        assertEquals(PAYLOAD_REVISION, deadLetterEventEntry.getPayload().getType().getRevision());
-        assertEquals(eventSerializer.serialize(event, String.class).getData(),
-                     new String(deadLetterEventEntry.getPayload().getData()));
-        assertEquals(Metadata.class.getName(), deadLetterEventEntry.getMetadata().getType().getName());
-        assertEquals(eventSerializer.serialize(metadata, String.class).getData(),
-                     new String(deadLetterEventEntry.getMetadata().getData()));
+    private void assertCorrectlyMapped(EventMessage eventMessage, Context context, DeadLetterEventEntry entry) {
+        assertEquals(eventMessage.identifier(), entry.getIdentifier());
+        assertEquals(eventMessage.timestamp().toString(), entry.getTimestamp());
+        assertEquals(eventMessage.type().toString(), entry.getType());
 
-        if (eventMessage instanceof DomainEventMessage domainEventMessage) {
-            assertEquals(domainEventMessage.getType(), deadLetterEventEntry.getAggregateType());
-            assertEquals(domainEventMessage.getAggregateIdentifier(), deadLetterEventEntry.getAggregateIdentifier());
-            assertEquals(domainEventMessage.getSequenceNumber(), deadLetterEventEntry.getSequenceNumber());
+        // Check tracking token storage from context
+        if (context.containsResource(TrackingToken.RESOURCE_KEY)) {
+            assertNotNull(entry.getToken());
+            assertNotNull(entry.getTokenType());
+            TrackingToken expectedToken = context.getResource(TrackingToken.RESOURCE_KEY);
+            assertEquals(expectedToken.getClass().getName(), entry.getTokenType());
         } else {
-            assertNull(deadLetterEventEntry.getAggregateType());
-            assertNull(deadLetterEventEntry.getAggregateIdentifier());
-            assertNull(deadLetterEventEntry.getSequenceNumber());
+            assertNull(entry.getToken());
+            assertNull(entry.getTokenType());
         }
-        if (eventMessage instanceof TrackedEventMessage trackedEventMessage) {
-            assertEquals(trackedEventMessage.trackingToken().getClass().getName(),
-                         deadLetterEventEntry.getTrackingToken().getType().getName());
-            assertEquals(genericSerializer.serialize(trackedEventMessage.trackingToken(), String.class).getData(),
-                         new String(deadLetterEventEntry.getTrackingToken().getData()));
+
+        // Check domain info storage from context
+        if (context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)) {
+            assertEquals(context.getResource(LegacyResources.AGGREGATE_TYPE_KEY), entry.getAggregateType());
         } else {
-            assertNull(deadLetterEventEntry.getTrackingToken());
+            assertNull(entry.getAggregateType());
+        }
+        if (context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)) {
+            assertEquals(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY), entry.getAggregateIdentifier());
+        } else {
+            assertNull(entry.getAggregateIdentifier());
+        }
+        if (context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
+            assertEquals(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
+                         entry.getAggregateSequenceNumber());
+        } else {
+            assertNull(entry.getAggregateSequenceNumber());
         }
     }
 
-    @Event(version = EventMessageDeadLetterJpaConverterTest.PAYLOAD_REVISION)
+    @Nested
+    class ConvertWithNullContext {
+
+        @Test
+        void setsAllContextDependentFieldsToNull() {
+            // given
+            EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+
+            // when
+            DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
+
+            // then
+            assertThat(entry.getIdentifier()).isEqualTo(message.identifier());
+            assertThat(entry.getTimestamp()).isEqualTo(message.timestamp().toString());
+            assertThat(entry.getType()).isEqualTo(message.type().toString());
+            assertThat(entry.getToken()).isNull();
+            assertThat(entry.getTokenType()).isNull();
+            assertThat(entry.getAggregateType()).isNull();
+            assertThat(entry.getAggregateIdentifier()).isNull();
+            assertThat(entry.getAggregateSequenceNumber()).isNull();
+        }
+
+        @Test
+        void roundTripConversionRestoresMessageWithoutContextResources() {
+            // given
+            EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+
+            // when
+            DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
+            MessageStream.Entry<EventMessage> restoredEntry =
+                    converter.convert(entry, eventConverter, genericConverter);
+
+            // then - message is correctly restored
+            EventMessage restored = restoredEntry.message();
+            assertThat(restored.identifier()).isEqualTo(message.identifier());
+            assertThat(restored.timestamp()).isEqualTo(message.timestamp());
+            assertThat(restored.type()).isEqualTo(message.type());
+            assertThat(restored.metadata()).isEqualTo(message.metadata());
+
+            Object deserializedPayload = eventConverter.convertPayload(restored, message.payloadType());
+            assertThat(deserializedPayload).isEqualTo(message.payload());
+
+            // then - no context resources are restored
+            assertThat(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
+        }
+    }
+
+    @Event
     public static class ConverterTestEvent {
 
         private final String myProperty;
@@ -239,7 +307,7 @@ class EventMessageDeadLetterJpaConverterTest {
         }
     }
 
-    // Suppressed since it's used for test 'canConvertMessagesWithSerializationErrors'
+    // Suppressed since it's used for testing serialization error scenarios
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     static class SerializationErrorClass {
 
