@@ -57,7 +57,7 @@ class CommandSequencingInterceptorTest {
     private static final CommandMessage TEST_MESSAGE_2 = new GenericCommandMessage(new MessageType("message"),
                                                                                    "payload");
     @Mock
-    private SequencingPolicy sequencingPolicy;
+    private SequencingPolicy<CommandMessage> sequencingPolicy;
     @Mock
     private MessageHandlerInterceptorChain<CommandMessage> interceptorChain1;
     @Mock

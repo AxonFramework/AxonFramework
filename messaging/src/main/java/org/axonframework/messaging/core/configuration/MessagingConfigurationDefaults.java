@@ -329,7 +329,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                     .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
         }
 
-        SequencingPolicy commandSequencingPolicy = config.getComponent(SequencingPolicy.class,
+        //noinspection unchecked
+        SequencingPolicy<? super CommandMessage> commandSequencingPolicy = config.getComponent(SequencingPolicy.class,
                                                                        COMMAND_SEQUENCING_POLICY);
         if (!(commandSequencingPolicy instanceof NoOpSequencingPolicy)) {
             handlerInterceptorRegistry = handlerInterceptorRegistry
