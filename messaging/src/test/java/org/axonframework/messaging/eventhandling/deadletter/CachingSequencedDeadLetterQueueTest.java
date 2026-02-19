@@ -16,9 +16,15 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -538,6 +544,118 @@ class CachingSequencedDeadLetterQueueTest {
 
             // then
             assertThat(cachingQueue.cacheEnqueuedSize()).isEqualTo(1);
+        }
+    }
+
+    @Nested
+    class WhenDelegatingDirectly {
+
+        private ProcessingContext context;
+
+        @BeforeEach
+        void setUp() {
+            delegate = spy(InMemorySequencedDeadLetterQueue.defaultQueue());
+            cachingQueue = new CachingSequencedDeadLetterQueue<>(delegate);
+            context = contextForSegment(SEGMENT_0);
+        }
+
+        @Test
+        void evictDelegatesWithExactArguments() {
+            // given
+            EventMessage event = EventTestUtils.createEvent(1);
+            GenericDeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_0, event);
+            delegate.enqueue(SEQUENCE_ID_0, letter, null).join();
+            clearInvocations(delegate);
+
+            // when
+            cachingQueue.evict(letter, context).join();
+
+            // then
+            verify(delegate).evict(letter, context);
+        }
+
+        @Test
+        void requeueDelegatesWithExactArguments() {
+            // given
+            EventMessage event = EventTestUtils.createEvent(1);
+            GenericDeadLetter<EventMessage> letter = new GenericDeadLetter<>(SEQUENCE_ID_0, event);
+            delegate.enqueue(SEQUENCE_ID_0, letter, null).join();
+            UnaryOperator<DeadLetter<? extends EventMessage>> updater = UnaryOperator.identity();
+            clearInvocations(delegate);
+
+            // when
+            cachingQueue.requeue(letter, updater, context).join();
+
+            // then
+            verify(delegate).requeue(letter, updater, context);
+        }
+
+        @Test
+        void deadLetterSequenceDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.deadLetterSequence(SEQUENCE_ID_0, context).join();
+
+            // then
+            verify(delegate).deadLetterSequence(SEQUENCE_ID_0, context);
+        }
+
+        @Test
+        void deadLettersDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.deadLetters(context).join();
+
+            // then
+            verify(delegate).deadLetters(context);
+        }
+
+        @Test
+        void isFullDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.isFull(SEQUENCE_ID_0, context).join();
+
+            // then
+            verify(delegate).isFull(SEQUENCE_ID_0, context);
+        }
+
+        @Test
+        void sizeDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.size(context).join();
+
+            // then
+            verify(delegate).size(context);
+        }
+
+        @Test
+        void sequenceSizeDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.sequenceSize(SEQUENCE_ID_0, context).join();
+
+            // then
+            verify(delegate).sequenceSize(SEQUENCE_ID_0, context);
+        }
+
+        @Test
+        void amountOfSequencesDelegatesWithExactArguments() {
+            // given / when
+            cachingQueue.amountOfSequences(context).join();
+
+            // then
+            verify(delegate).amountOfSequences(context);
+        }
+
+        @Test
+        void processDelegatesWithExactArguments() {
+            // given
+            Predicate<DeadLetter<? extends EventMessage>> sequenceFilter = letter -> true;
+            Function<DeadLetter<? extends EventMessage>, CompletableFuture<EnqueueDecision<EventMessage>>> processingTask =
+                    letter -> CompletableFuture.completedFuture(null);
+
+            // when
+            cachingQueue.process(sequenceFilter, processingTask, context).join();
+
+            // then
+            verify(delegate).process(sequenceFilter, processingTask, context);
         }
     }
 }
