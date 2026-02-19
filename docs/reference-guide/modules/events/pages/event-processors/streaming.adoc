@@ -871,7 +871,7 @@ Thus, if the `SequencingPolicy` returns a _different_ value for two events, they
 Note that if the policy returns an `Optional#empty` as the sequence identifier, the event may be processed in parallel with _any_ other events.
 
 By default, a `HierarchicalSequencingPolicy` is configured, which first tries for the `SequentialPerAggregatePolicy`.
-If that fails, because the events don't contain events, it falls back to the `SequentialPolicy`.
+If that fails, because the events don't contain aggregate information, it falls back to the `SequentialPolicy`.
 This policy handles events in the order they've been published within a **single** segment, thus eliminating any possibility for parallel processing.
 
 As correctly sequencing your events is important for any application, we **highly** recommend you check out the <<sequential_processing,sequential processing>> section to understand how to configure a policy that fits with your application.
@@ -888,7 +888,7 @@ For the policies Axon provides out of the box and how to configure them, we reco
 Conceptually, the `SequencingPolicy` decides whether an event belongs to a given <<parallel_processing,segment>>.
 From there, Axon guarantees that Events that are part of the same segment are processed sequentially.
 
-The framework provides several policies you can use out of the box:
+The framework provides several policies you can use out of the box for sequencing your events:
 
 * `PropertySequencingPolicy`: When configuring this policy, the user is required to provide a property name or property extractor function.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events.
@@ -1046,13 +1046,13 @@ public class AxonConfig {
 
 If the available policies do not suffice, you can define your own.
 To that end, we should implement the `SequencingPolicy` interface.
-This interface defines a single method, `getSequenceIdentifierFor(EventMessage, ProcessingContext)`, that returns an `Optional` of the sequence identifier for the given event and context:
+This interface defines a single method, `sequenceIdentifierFor(EventMessage, ProcessingContext)`, that returns an `Optional` of the sequence identifier for the given event and context:
 
 [source,java]
 ----
 public interface SequencingPolicy {
 
-    Optional<Object> getSequenceIdentifierFor(EventMessage event, ProcessingContext context);
+    Optional<Object> sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 }
 ----
 

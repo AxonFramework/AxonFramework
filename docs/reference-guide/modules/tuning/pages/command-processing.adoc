@@ -29,21 +29,21 @@ This means your application benefits from command sequencing immediately upon us
 
 Command sequencing is implemented through the `CommandSequencingInterceptor`, a handler interceptor that manages execution order:
 
-1. **Sequence identification**: When a command arrives, the interceptor consults the configured `CommandSequencingPolicy` to extract a sequence identifier
+1. **Sequence identification**: When a command arrives, the interceptor consults the configured `SequencingPolicy` to extract a sequence identifier
 2. **Lock management**: The interceptor maintains a lock for each unique sequence identifier
 3. **Sequential execution**: Commands with the same sequence identifier wait for the previous command to complete before proceeding
 
 Because sequencing happens at the handler interceptor level (after routing), it has no impact on command dispatch or routing logic. The sequencing is completely transparent to your command handlers - no code changes are required.
 
-=== The `CommandSequencingPolicy` interface
+=== The `SequencingPolicy` interface
 
-The `CommandSequencingPolicy` interface determines which commands should be sequenced together:
+The `SequencingPolicy` interface determines which commands should be sequenced together:
 
 [source,java]
 ----
-public interface CommandSequencingPolicy {
+public interface SequencingPolicy {
 
-    Optional<Object> getSequenceIdentifierFor(CommandMessage command,
+    Optional<Object> sequenceIdentifierFor(CommandMessage command,
                                               ProcessingContext context);
 }
 ----
@@ -54,7 +54,7 @@ Axon Framework provides the following implementations:
 
 * **`NoOpSequencingPolicy`**: Disables all command sequencing. Use this policy when you want to opt-out from command sequencing.
 
-You can implement the `CommandSequencingPolicy` interface to create custom sequencing logic based on command metadata, payload properties, or any other criteria to set up your own sequencing logic.
+You can implement the `SequencingPolicy` interface to create custom sequencing logic based on command metadata, payload properties, or any other criteria to set up your own sequencing logic.
 
 === Configuration
 
@@ -67,7 +67,7 @@ You can implement custom sequencing logic by implementing the `SequencingPolicy`
 public class TenantBasedSequencingPolicy implements SequencingPolicy {
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(CommandMessage command,
+    public Optional<Object> sequenceIdentifierFor(CommandMessage command,
                                                      ProcessingContext context) {
         // Sequence commands by tenant ID from metadata
         return Optional.ofNullable(command.metadata().get("tenantId"));
@@ -101,7 +101,7 @@ Spring Boot auto configuration::
 public class AxonConfig {
 
     @Bean
-    public CommandSequencingPolicy commandSequencingPolicy() {
+    public SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
         return new TenantBasedSequencingPolicy();
     }
 }
@@ -113,25 +113,25 @@ You can also implement selective sequencing. For example, to skip certain comman
 
 [source,java]
 ----
-public class SelectiveSequencingPolicy implements CommandSequencingPolicy {
+public class SelectiveSequencingPolicy implements SequencingPolicy<CommandMessage> {
 
-    private final CommandSequencingPolicy defaultPolicy;
+    private final SequencingPolicy<? super CommandMessage> defaultPolicy;
     private final List<String> skipTypes;
 
-    public SelectiveSequencingPolicy(CommandSequencingPolicy defaultPolicy, List<String> skipTypes) {
+    public SelectiveSequencingPolicy(SequencingPolicy<? super CommandMessage> defaultPolicy, List<String> skipTypes) {
         this.defaultPolicy = defaultPolicy;
         this.skipTypes = skipTypes;
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(CommandMessage command,
+    public Optional<Object> sequenceIdentifierFor(CommandMessage command,
                                                      ProcessingContext context) {
         // Skip sequencing for read-only commands
         if (skipTypes.contains(command.payloadType().getSimpleName())) {
             return Optional.empty();
         }
         // Use default policy for other commands
-        return defaultPolicy.getSequenceIdentifierFor(command, context);
+        return defaultPolicy.sequenceIdentifierFor(command, context);
     }
 }
 ----
@@ -164,7 +164,7 @@ Spring Boot auto configuration::
 public class AxonConfig {
 
     @Bean
-    public CommandSequencingPolicy commandSequencingPolicy() {
+    public SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
         return NoOpSequencingPolicy.INSTANCE;
     }
 }
