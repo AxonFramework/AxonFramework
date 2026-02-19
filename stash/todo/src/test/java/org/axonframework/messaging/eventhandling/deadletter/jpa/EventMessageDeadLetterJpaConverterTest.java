@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -218,6 +219,56 @@ class EventMessageDeadLetterJpaConverterTest {
                          entry.getAggregateSequenceNumber());
         } else {
             assertNull(entry.getAggregateSequenceNumber());
+        }
+    }
+
+    @Nested
+    class ConvertWithNullContext {
+
+        @Test
+        void setsAllContextDependentFieldsToNull() {
+            // given
+            EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+
+            // when
+            DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
+
+            // then
+            assertThat(entry.getIdentifier()).isEqualTo(message.identifier());
+            assertThat(entry.getTimestamp()).isEqualTo(message.timestamp().toString());
+            assertThat(entry.getType()).isEqualTo(message.type().toString());
+            assertThat(entry.getToken()).isNull();
+            assertThat(entry.getTokenType()).isNull();
+            assertThat(entry.getAggregateType()).isNull();
+            assertThat(entry.getAggregateIdentifier()).isNull();
+            assertThat(entry.getAggregateSequenceNumber()).isNull();
+        }
+
+        @Test
+        void roundTripConversionRestoresMessageWithoutContextResources() {
+            // given
+            EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+
+            // when
+            DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
+            MessageStream.Entry<EventMessage> restoredEntry =
+                    converter.convert(entry, eventConverter, genericConverter);
+
+            // then - message is correctly restored
+            EventMessage restored = restoredEntry.message();
+            assertThat(restored.identifier()).isEqualTo(message.identifier());
+            assertThat(restored.timestamp()).isEqualTo(message.timestamp());
+            assertThat(restored.type()).isEqualTo(message.type());
+            assertThat(restored.metadata()).isEqualTo(message.metadata());
+
+            Object deserializedPayload = eventConverter.convertPayload(restored, message.payloadType());
+            assertThat(deserializedPayload).isEqualTo(message.payload());
+
+            // then - no context resources are restored
+            assertThat(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
         }
     }
 
