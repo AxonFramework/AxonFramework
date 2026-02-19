@@ -85,7 +85,7 @@ final class FallbackSequencingPolicyTest {
                     new FallbackSequencingPolicy<>(delegate, fallback, RuntimeException.class);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue(expectedIdentifier);
@@ -103,7 +103,7 @@ final class FallbackSequencingPolicyTest {
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue(expectedIdentifier);
@@ -123,7 +123,7 @@ final class FallbackSequencingPolicyTest {
 
             // when / then
             assertThrows(RuntimeException.class,
-                         () -> policy.getSequenceIdentifierFor(exMessage, exContext));
+                         () -> policy.sequenceIdentifierFor(exMessage, exContext));
         }
 
         @Test
@@ -138,7 +138,7 @@ final class FallbackSequencingPolicyTest {
                     new FallbackSequencingPolicy<>(delegate, fallback, RuntimeException.class);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue(expectedIdentifier);
@@ -155,7 +155,7 @@ final class FallbackSequencingPolicyTest {
                     new FallbackSequencingPolicy<>(delegate, fallback, IllegalArgumentException.class);
 
             // when / then
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
             assertThat(result).hasValue("delegate-result");
         }
     }
@@ -172,8 +172,8 @@ final class FallbackSequencingPolicyTest {
             FallbackSequencingPolicy<ConversionException, EventMessage> policy = getConversionExceptionFallbackSequencingPolicy();
 
             // when
-            var resultForCorrectType = policy.getSequenceIdentifierFor(eventWithCorrectType, aProcessingContext());
-            var resultForWrongType = policy.getSequenceIdentifierFor(eventWithWrongType, aProcessingContext());
+            var resultForCorrectType = policy.sequenceIdentifierFor(eventWithCorrectType, aProcessingContext());
+            var resultForWrongType = policy.sequenceIdentifierFor(eventWithWrongType, aProcessingContext());
 
             // then
             assertThat(resultForCorrectType).hasValue("test-id");
@@ -211,7 +211,7 @@ final class FallbackSequencingPolicyTest {
                     new FallbackSequencingPolicy<>(firstPolicy, secondFallback, IllegalArgumentException.class);
 
             // when
-            var result = firstFallback.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = firstFallback.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue("final-result");

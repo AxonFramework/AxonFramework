@@ -41,8 +41,8 @@ public class NoOpSequencingPolicy implements SequencingPolicy<Message> {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull Message message,
-                                                     @NonNull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(@NonNull Message message,
+                                                  @NonNull ProcessingContext context) {
         return Optional.empty();
     }
 }

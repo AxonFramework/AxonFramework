@@ -40,14 +40,14 @@ class MetadataSequencingPolicyTest {
 
         EventMessage testEvent = EventTestUtils.asEventMessage("42").withMetadata(Map.of("metadataKey", "metadataValue"));
 
-        assertThat(metadataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
+        assertThat(metadataPolicy.sequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
     }
 
     @Test
     void shouldReturnEmptyIfMetaDataDoesNotContainsTheKey() {
         final MetadataSequencingPolicy metadataPolicy = new MetadataSequencingPolicy("metadataKey");
 
-        assertThat(metadataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isEmpty();
+        assertThat(metadataPolicy.sequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isEmpty();
     }
 
     @Test

@@ -161,7 +161,7 @@ public class SimpleEventHandlingComponent implements
         List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
         if (handlers == null || handlers.isEmpty()) {
-            return sequencingPolicy.getSequenceIdentifierFor(event, context).get();
+            return sequencingPolicy.sequenceIdentifierFor(event, context).get();
         }
 
         return handlers.stream()
@@ -169,7 +169,7 @@ public class SimpleEventHandlingComponent implements
                        .map(EventHandlingComponent.class::cast)
                        .findFirst()
                        .map(component -> component.sequenceIdentifierFor(event, context))
-                       .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
+                       .orElse(sequencingPolicy.sequenceIdentifierFor(event, context).get());
     }
 
     @Override

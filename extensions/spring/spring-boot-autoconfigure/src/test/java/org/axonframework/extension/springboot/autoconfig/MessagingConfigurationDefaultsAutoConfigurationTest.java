@@ -225,7 +225,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     private static final class CustomSequencingPolicy implements SequencingPolicy<CommandMessage> {
 
         @Override
-        public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
+        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
             return Optional.empty();
         }
     }

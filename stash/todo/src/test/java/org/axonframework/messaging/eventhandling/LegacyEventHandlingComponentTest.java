@@ -164,7 +164,7 @@ class LegacyEventHandlingComponentTest {
             ProcessingContext processingContext = processingContextWith(event);
 
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
+            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
@@ -173,7 +173,7 @@ class LegacyEventHandlingComponentTest {
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
-            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
+            verify(sequencingPolicy).sequenceIdentifierFor(event, processingContext);
         }
 
         @Test
@@ -185,7 +185,7 @@ class LegacyEventHandlingComponentTest {
             ProcessingContext processingContext = processingContextWith(event);
 
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.empty());
+            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.empty());
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
@@ -194,7 +194,7 @@ class LegacyEventHandlingComponentTest {
 
             //then
             assertThat(result).isEqualTo(event.identifier());
-            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
+            verify(sequencingPolicy).sequenceIdentifierFor(event, processingContext);
         }
 
         @Test
@@ -209,7 +209,7 @@ class LegacyEventHandlingComponentTest {
 
             when(multiInvoker.delegates()).thenReturn(List.of(simpleInvoker));
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
+            when(sequencingPolicy.sequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
@@ -218,7 +218,7 @@ class LegacyEventHandlingComponentTest {
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
-            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
+            verify(sequencingPolicy).sequenceIdentifierFor(event, processingContext);
         }
 
         @Test

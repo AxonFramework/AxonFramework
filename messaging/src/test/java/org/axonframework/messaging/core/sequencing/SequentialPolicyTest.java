@@ -35,11 +35,11 @@ class SequentialPolicyTest {
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
-        Object id1 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id1 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id2 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id3 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
 
         assertEquals(id1, id2);

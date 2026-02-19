@@ -47,7 +47,7 @@ final class PropertySequencingPolicyTest {
                         TestEvent::id
                 );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
                 aProcessingContext())
         ).hasValue("42");
@@ -60,7 +60,7 @@ final class PropertySequencingPolicyTest {
                 "id"
         );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(anEvent(new TestEvent("42")), aProcessingContext())
+        assertThat(sequencingPolicy.sequenceIdentifierFor(anEvent(new TestEvent("42")), aProcessingContext())
         ).hasValue("42");
     }
 
@@ -74,7 +74,7 @@ final class PropertySequencingPolicyTest {
         StubProcessingContext exContext = aProcessingContext();
 
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(exMessage, exContext));
+                     () -> sequencingPolicy.sequenceIdentifierFor(exMessage, exContext));
     }
 
     @Test
@@ -88,7 +88,7 @@ final class PropertySequencingPolicyTest {
                 ConversionException.class
         );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent("42"),
                 aProcessingContext())
         ).hasValue("A");

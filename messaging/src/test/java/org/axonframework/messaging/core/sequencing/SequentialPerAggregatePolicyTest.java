@@ -45,8 +45,8 @@ class SequentialPerAggregatePolicyTest {
         EventWithProcessingContext event = eventWithProcessingContext(aggregateIdentifier);
 
         // when
-        Object id1 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id1 = testSubject.sequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id2 = testSubject.sequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
 
         // then
         assertEquals(id1, id2);
@@ -61,8 +61,8 @@ class SequentialPerAggregatePolicyTest {
         EventWithProcessingContext event2 = eventWithProcessingContext(aggregateIdentifier2);
 
         // when
-        Object id1 = testSubject.getSequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
+        Object id1 = testSubject.sequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
+        Object id2 = testSubject.sequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
 
         // then
         assertNotEquals(id1, id2);
@@ -75,7 +75,7 @@ class SequentialPerAggregatePolicyTest {
         EventMessage event = new GenericEventMessage(new MessageType("event"), "bla");
 
         // when
-        Object sequenceIdentifier = testSubject.getSequenceIdentifierFor(
+        Object sequenceIdentifier = testSubject.sequenceIdentifierFor(
                 event,
                 processingContextWithoutAggregateIdentifierResource
         ).orElse(null);

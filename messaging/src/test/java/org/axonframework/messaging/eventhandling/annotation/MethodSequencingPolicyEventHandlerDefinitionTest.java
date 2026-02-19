@@ -260,8 +260,8 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
 
         @Override
-        public java.util.Optional<Object> getSequenceIdentifierFor(@Nonnull Message event,
-                                                                   @Nonnull ProcessingContext context) {
+        public java.util.Optional<Object> sequenceIdentifierFor(@Nonnull Message event,
+                                                                @Nonnull ProcessingContext context) {
             return java.util.Optional.of("test");
         }
     }

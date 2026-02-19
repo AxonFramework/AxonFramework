@@ -41,7 +41,7 @@ public class FullConcurrencyPolicy implements SequencingPolicy<Message> {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return Optional.of(message.identifier());
     }
 }

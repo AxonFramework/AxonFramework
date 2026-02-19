@@ -69,7 +69,7 @@ final class HierarchicalSequencingPolicyTest {
             HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue(expectedIdentifier);
@@ -84,7 +84,7 @@ final class HierarchicalSequencingPolicyTest {
             HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).hasValue(expectedIdentifier);
@@ -98,7 +98,7 @@ final class HierarchicalSequencingPolicyTest {
             HierarchicalSequencingPolicy<Message> policy = new HierarchicalSequencingPolicy<>(primary, secondary);
 
             // when
-            var result = policy.getSequenceIdentifierFor(anEvent("test"), aProcessingContext());
+            var result = policy.sequenceIdentifierFor(anEvent("test"), aProcessingContext());
 
             // then
             assertThat(result).isEmpty();

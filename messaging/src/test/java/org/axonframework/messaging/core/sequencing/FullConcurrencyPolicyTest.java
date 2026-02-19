@@ -37,11 +37,11 @@ class FullConcurrencyPolicyTest {
     void sequencingIdentifier() {
         FullConcurrencyPolicy testSubject = FullConcurrencyPolicy.INSTANCE;
         ProcessingContext processingContext = new StubProcessingContext();
-        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        assertThat(testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                         processingContext)).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        assertThat(testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                         processingContext)).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        assertThat(testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                         processingContext)).isPresent();
     }
 }

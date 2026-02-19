@@ -52,7 +52,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when / then
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestPayload("42", 1)),
                 aProcessingContext())
         ).hasValue("42");
@@ -67,7 +67,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when / then
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestPayload("agg-123", 5)),
                 aProcessingContext())
         ).hasValue("agg-123-5");
@@ -82,7 +82,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when / then
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestPayload("42", 1)),
                 aProcessingContext())
         ).isNotPresent();
@@ -97,7 +97,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when
-        var result = sequencingPolicy.getSequenceIdentifierFor(
+        var result = sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestPayload("42", 1)),
                 aProcessingContext());
 
@@ -114,7 +114,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when / then
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent("""
                                 {"id":"converted-42","version":"1"}
                                 """),
@@ -134,8 +134,8 @@ final class ExtractionSequencingPolicyTest {
 
         // when / then
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(exEvent,
-                                                                     exContext));
+                     () -> sequencingPolicy.sequenceIdentifierFor(exEvent,
+                                                                  exContext));
     }
 
     @Test
@@ -152,7 +152,7 @@ final class ExtractionSequencingPolicyTest {
         );
 
         // when / then
-        assertThat(fallbackPolicy.getSequenceIdentifierFor(
+        assertThat(fallbackPolicy.sequenceIdentifierFor(
                 anEvent("unconvertible-string"),
                 aProcessingContext())
         ).hasValue("fallback-result");
@@ -177,7 +177,7 @@ final class ExtractionSequencingPolicyTest {
                 .thenReturn(exPayload);
 
         // test
-        assertThat(testSubject.getSequenceIdentifierFor(exMessage, exContext))
+        assertThat(testSubject.sequenceIdentifierFor(exMessage, exContext))
                 .hasValue("converted-42");
 
         // verify
@@ -205,7 +205,7 @@ final class ExtractionSequencingPolicyTest {
                 .thenReturn(exPayload);
 
         // test
-        assertThat(testSubject.getSequenceIdentifierFor(exMessage, exContext))
+        assertThat(testSubject.sequenceIdentifierFor(exMessage, exContext))
                 .hasValue("converted-42");
 
         // verify
@@ -253,7 +253,7 @@ final class ExtractionSequencingPolicyTest {
 
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    sequencingPolicy.getSequenceIdentifierFor(null, exContext));
+                    sequencingPolicy.sequenceIdentifierFor(null, exContext));
         }
 
         @Test
@@ -267,7 +267,7 @@ final class ExtractionSequencingPolicyTest {
 
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    sequencingPolicy.getSequenceIdentifierFor(exMessage, null));
+                    sequencingPolicy.sequenceIdentifierFor(exMessage, null));
         }
     }
 

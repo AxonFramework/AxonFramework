@@ -76,6 +76,6 @@ public class SegmentMatcher {
      */
     public Object sequenceIdentifier(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         Objects.requireNonNull(event, "EventMessage may not be null");
-        return sequencingPolicy.getSequenceIdentifierFor(event, context).orElseGet(event::identifier);
+        return sequencingPolicy.sequenceIdentifierFor(event, context).orElseGet(event::identifier);
     }
 }

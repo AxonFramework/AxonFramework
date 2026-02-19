@@ -87,7 +87,7 @@ class CommandSequencingInterceptorTest {
         Object exSequenceIdentifier = "sequenceIdentifier";
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
-        when(sequencingPolicy.getSequenceIdentifierFor(any(), any()))
+        when(sequencingPolicy.sequenceIdentifierFor(any(), any()))
                 .thenReturn(Optional.of(exSequenceIdentifier));
         when(interceptorChain1.proceed(any(), any()))
                 .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd1Result));
@@ -106,7 +106,7 @@ class CommandSequencingInterceptorTest {
         assertEquals(exCmd1Result, cmd1ResultStream.next().orElseThrow().message());
         // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
+                .sequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
                 .doFinally(ctx1CompletionCapture.capture());
         verify(interceptorChain1)
@@ -134,7 +134,7 @@ class CommandSequencingInterceptorTest {
         assertEquals(exCmd2Result, cmd2ResultStream.next().orElseThrow().message());
         // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
+                .sequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)
                 .doFinally(ctx2CompletionCapture.capture());
         verify(interceptorChain2)
@@ -155,9 +155,9 @@ class CommandSequencingInterceptorTest {
         Object exSequenceIdentifier2 = "sequenceIdentifier2";
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
-        when(sequencingPolicy.getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1))
+        when(sequencingPolicy.sequenceIdentifierFor(TEST_MESSAGE_1, ctx1))
                 .thenReturn(Optional.of(exSequenceIdentifier1));
-        when(sequencingPolicy.getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2))
+        when(sequencingPolicy.sequenceIdentifierFor(TEST_MESSAGE_2, ctx2))
                 .thenReturn(Optional.of(exSequenceIdentifier2));
         when(interceptorChain1.proceed(any(), any()))
                 .thenAnswer((Answer<MessageStream<? extends Message>>) invocation -> MessageStream.just(exCmd1Result));
@@ -176,7 +176,7 @@ class CommandSequencingInterceptorTest {
         assertEquals(exCmd1Result, cmd1ResultStream.next().orElseThrow().message());
         // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
+                .sequenceIdentifierFor(TEST_MESSAGE_1, ctx1);
         verify(ctx1)
                 .doFinally(ctx1CompletionCapture.capture());
         verify(interceptorChain1)
@@ -194,7 +194,7 @@ class CommandSequencingInterceptorTest {
         assertEquals(exCmd2Result, cmd2ResultStream.next().orElseThrow().message());
         // verify sequencing policy is called and capture the context completion callback
         verify(sequencingPolicy)
-                .getSequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
+                .sequenceIdentifierFor(TEST_MESSAGE_2, ctx2);
         verify(ctx2)
                 .doFinally(ctx2CompletionCapture.capture());
         verify(interceptorChain2)
@@ -215,12 +215,12 @@ class CommandSequencingInterceptorTest {
         ProcessingContext testContext = new StubProcessingContext();
         MessageHandlerInterceptorChain<CommandMessage> handlerInterceptorChain = mock();
 
-        when(sequencingPolicy.getSequenceIdentifierFor(any(), any()))
+        when(sequencingPolicy.sequenceIdentifierFor(any(), any()))
                 .thenReturn(Optional.empty());
 
         testSubject.interceptOnHandle(TEST_MESSAGE_1, testContext, handlerInterceptorChain);
 
-        verify(sequencingPolicy).getSequenceIdentifierFor(TEST_MESSAGE_1, testContext);
+        verify(sequencingPolicy).sequenceIdentifierFor(TEST_MESSAGE_1, testContext);
         verify(handlerInterceptorChain)
                 .proceed(TEST_MESSAGE_1, testContext);
         verifyNoMoreInteractions(handlerInterceptorChain, sequencingPolicy);

@@ -60,12 +60,12 @@ public class FallbackSequencingPolicy<E extends Exception, M extends Message> im
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {
-            return delegate.getSequenceIdentifierFor(message, context);
+            return delegate.sequenceIdentifierFor(message, context);
         } catch (Exception e) {
             if (exceptionType.isInstance(e)) {
-                return fallback.getSequenceIdentifierFor(message, context);
+                return fallback.sequenceIdentifierFor(message, context);
             }
             throw e;
         }

@@ -72,7 +72,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
     @Override
     public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message, @NonNull ProcessingContext context,
                                                        @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
-        Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(message, context).orElse(null);
+        Object sequenceIdentifier = sequencingPolicy.sequenceIdentifierFor(message, context).orElse(null);
         if (sequenceIdentifier != null) {
             // await turn to sequence command execution
             logger.debug("Sequencing command execution for [{}] in {}", sequenceIdentifier, context);

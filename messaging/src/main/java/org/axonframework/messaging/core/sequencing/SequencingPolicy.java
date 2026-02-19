@@ -74,5 +74,5 @@ public interface SequencingPolicy<M extends Message> {
      * @return a sequence identifier for the given message, or {@code Optional#empty()} if this policy cannot determine
      * a sequence identifier for the given message.
      */
-    Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context);
+    Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context);
 }

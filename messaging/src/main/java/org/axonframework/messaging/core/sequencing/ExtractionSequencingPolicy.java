@@ -59,7 +59,7 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy<Messag
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(
+    public Optional<Object> sequenceIdentifierFor(
             @Nonnull final Message message,
             @Nonnull ProcessingContext context
     ) {

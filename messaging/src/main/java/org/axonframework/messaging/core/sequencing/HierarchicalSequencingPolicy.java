@@ -53,8 +53,8 @@ public class HierarchicalSequencingPolicy<M extends Message> implements Sequenci
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
-        return primary.getSequenceIdentifierFor(message, context)
-                      .or(() -> secondary.getSequenceIdentifierFor(message, context));
+    public Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+        return primary.sequenceIdentifierFor(message, context)
+                      .or(() -> secondary.sequenceIdentifierFor(message, context));
     }
 }

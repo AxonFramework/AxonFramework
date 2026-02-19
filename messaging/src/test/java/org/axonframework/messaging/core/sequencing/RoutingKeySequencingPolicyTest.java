@@ -49,9 +49,9 @@ class RoutingKeySequencingPolicyTest {
         final String exPayload2 = "payload2";
         final String exRoutingKey = "exRoutingKey";
 
-        Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey),
+        Object acIdentifier1 = testSubject.sequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey),
                                                                     new StubProcessingContext()).orElseThrow();
-        Object acIdentifier2 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload2, exRoutingKey),
+        Object acIdentifier2 = testSubject.sequenceIdentifierFor(asCommandMessage(exPayload2, exRoutingKey),
                                                                     new StubProcessingContext()).orElseThrow();
         assertEquals(exRoutingKey, acIdentifier1);
         assertEquals(exRoutingKey, acIdentifier2);
@@ -64,9 +64,9 @@ class RoutingKeySequencingPolicyTest {
         final String exRoutingKey1 = "exRoutingKey1";
         final String exRoutingKey2 = "exRoutingKey2";
 
-        Object acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey1),
+        Object acIdentifier1 = testSubject.sequenceIdentifierFor(asCommandMessage(exPayload1, exRoutingKey1),
                                                                     new StubProcessingContext()).orElseThrow();
-        Object acIdentifier2 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload2, exRoutingKey2),
+        Object acIdentifier2 = testSubject.sequenceIdentifierFor(asCommandMessage(exPayload2, exRoutingKey2),
                                                                     new StubProcessingContext()).orElseThrow();
         assertEquals(exRoutingKey1, acIdentifier1);
         assertEquals(exRoutingKey2, acIdentifier2);
@@ -77,7 +77,7 @@ class RoutingKeySequencingPolicyTest {
     void handlesNullAndEmptyAsMissingRoutingKey(String exRoutingKey) {
         final String exPayload = "payload1";
 
-        Optional<Object> acIdentifier1 = testSubject.getSequenceIdentifierFor(asCommandMessage(exPayload, exRoutingKey),
+        Optional<Object> acIdentifier1 = testSubject.sequenceIdentifierFor(asCommandMessage(exPayload, exRoutingKey),
                                                                               new StubProcessingContext());
         assertTrue(acIdentifier1.isEmpty());
     }

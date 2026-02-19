@@ -47,8 +47,8 @@ public class RoutingKeySequencingPolicy implements SequencingPolicy<CommandMessa
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage message,
-                                                     @NonNull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message,
+                                                  @NonNull ProcessingContext context) {
         return message.routingKey()
                       .filter(Predicate.not(String::isEmpty))
                       .map(Object.class::cast);
