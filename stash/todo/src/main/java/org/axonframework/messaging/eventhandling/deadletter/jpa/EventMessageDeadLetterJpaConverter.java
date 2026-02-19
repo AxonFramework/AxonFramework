@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.deadletter.jpa;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
@@ -39,49 +40,36 @@ import java.util.Map;
  * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}.
  * <p>
  * Tracking tokens and aggregate data (only if legacy Aggregate approach is used: aggregate identifier, type, sequence
- * number) are stored as {@link Context} resources. This converter extracts these resources from the context during serialization and
- * restores them to the context when deserializing.
+ * number) are stored as {@link Context} resources. This converter extracts these resources from the context during
+ * serialization and restores them to the context when deserializing.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
 public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
+    private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
+    };
+
     @Override
     public @Nonnull DeadLetterEventEntry convert(@Nonnull EventMessage message,
                                                  @Nullable Context context,
                                                  @Nonnull EventConverter eventConverter,
                                                  @Nonnull Converter genericConverter) {
-        // Serialize payload and metadata
-        byte[] serializedPayload = eventConverter.convert(message.payload(), byte[].class);
-        byte[] serializedMetadata = eventConverter.convert(message.metadata(), byte[].class);
-
-        // Extract tracking token from context (if present)
-        // TODO: Maybe context should be Nonnull? Decide later.
-        TrackingToken token = context.getResource(TrackingToken.RESOURCE_KEY);
-        byte[] serializedToken = null;
-        String tokenTypeName = null;
-        if (token != null) {
-            serializedToken = genericConverter.convert(token, byte[].class);
-            tokenTypeName = token.getClass().getName();
-        }
-
-        // Extract domain info from context (if present)
-        String aggregateIdentifier = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
-        String aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
-        Long sequenceNumber = context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
+        Context effectiveContext = context != null ? context : Context.empty();
+        TrackingToken token = effectiveContext.getResource(TrackingToken.RESOURCE_KEY);
 
         return new DeadLetterEventEntry(
                 message.type().toString(),
                 message.identifier(),
                 message.timestamp().toString(),
-                serializedPayload,
-                serializedMetadata,
-                aggregateType,
-                aggregateIdentifier,
-                sequenceNumber,
-                tokenTypeName,
-                serializedToken
+                eventConverter.convert(message.payload(), byte[].class),
+                eventConverter.convert(message.metadata(), byte[].class),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY),
+                effectiveContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
+                token != null ? token.getClass().getName() : null,
+                token != null ? genericConverter.convert(token, byte[].class) : null
         );
     }
 
@@ -90,40 +78,42 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     public MessageStream.Entry<EventMessage> convert(@Nonnull DeadLetterEventEntry entry,
                                                      @Nonnull EventConverter eventConverter,
                                                      @Nonnull Converter genericConverter) {
-        // Deserialize metadata; payload stays as raw bytes for the event handler to convert on demand
-        @SuppressWarnings("unchecked")
-        Map<String, String> metadataMap = eventConverter.convert(entry.getMetadata(), Map.class);
-        Metadata metadata = Metadata.from(metadataMap);
+        return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
+                                 restoreContext(entry, genericConverter));
+    }
 
-        // Create GenericEventMessage with raw payload bytes
-        EventMessage message = new GenericEventMessage(
+    private EventMessage deserializeMessage(DeadLetterEventEntry entry, EventConverter eventConverter) {
+        Map<String, String> metadataMap = eventConverter.convert(entry.getMetadata(), METADATA_MAP_TYPE_REF.getType());
+
+        return new GenericEventMessage(
                 entry.getIdentifier(),
                 MessageType.fromString(entry.getType()),
                 entry.getPayload(),
-                metadata,
+                Metadata.from(metadataMap),
                 Instant.parse(entry.getTimestamp())
         );
+    }
 
-        // Build context with restored resources
+    private Context restoreContext(DeadLetterEventEntry entry, Converter genericConverter) {
         Context context = Context.empty();
-
-        // Restore tracking token (if stored)
         if (entry.getToken() != null && entry.getTokenType() != null) {
-            TrackingToken token = genericConverter.convert(entry.getToken(), ClassUtils.loadClass(entry.getTokenType()));
-            context = context.withResource(TrackingToken.RESOURCE_KEY, token);
+            TrackingToken token = genericConverter.convert(entry.getToken(),
+                                                           ClassUtils.loadClass(entry.getTokenType()));
+            if (token != null) {
+                context = context.withResource(TrackingToken.RESOURCE_KEY, token);
+            }
         }
-
-        // Restore domain info (if stored)
         if (entry.getAggregateIdentifier() != null) {
-            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, entry.getAggregateIdentifier());
+            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                                           entry.getAggregateIdentifier());
         }
         if (entry.getAggregateType() != null) {
             context = context.withResource(LegacyResources.AGGREGATE_TYPE_KEY, entry.getAggregateType());
         }
         if (entry.getAggregateSequenceNumber() != null) {
-            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, entry.getAggregateSequenceNumber());
+            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                           entry.getAggregateSequenceNumber());
         }
-
-        return new SimpleEntry<>(message, context);
+        return context;
     }
 }

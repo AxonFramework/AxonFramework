@@ -42,7 +42,14 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * {@link DeadLetterEventEntry}.
      * <p>
      * The context is used to extract tracking token and domain info (aggregate identifier, type, sequence number) if
-     * present.
+     * present. When the context is {@code null}, no resources are extracted and corresponding fields in the resulting
+     * {@link DeadLetterEventEntry} will be {@code null}.
+     * <p>
+     * In most cases a non-{@code null} {@link Context} is expected, as the
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is typically invoked through Axon's
+     * event handling logic, which always provides a context. A {@code null} context is only expected when the
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is invoked directly by user code
+     * outside of the framework's processing pipeline.
      *
      * @param message          The message to convert.
      * @param context          The context containing resources such as tracking token and domain info.
