@@ -16,11 +16,11 @@
 
 package org.axonframework.test.extension;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -66,41 +66,43 @@ public @interface ProvidedAxonTestFixture {
     Class<? extends AxonTestFixtureProvider> value() default AxonTestFixtureProvider.class;
 }
 
-final class ProvidedAxonTestFixtureUtils {
+@Internal final class ProvidedAxonTestFixtureUtils {
 
     static Optional<AxonTestFixtureProvider> findProvider(Object testInstance, Class<?> testClass,
-                                                         AnnotatedElement element) {
+                                                          AnnotatedElement element) {
         Optional<ProvidedAxonTestFixture> annotation = findAnnotation(element);
         if (annotation.isEmpty()) {
-            Optional<AxonTestFixtureProvider> onFields = findOnFields(testInstance, testClass);
-            Optional<AxonTestFixtureProvider> onMethods = findOnMethods(testInstance, testClass);
-            if (onFields.isPresent() && onMethods.isPresent()) {
-                throw new FixtureExecutionException(
-                        "Ambiguous @ProvidedAxonTestFixture configuration. Found both a field and a method provider."
-                );
-            }
-            return onFields.or(() -> onMethods);
+            return getAxonTestFixtureProvider(testInstance, testClass);
+        }
+        var clazz = annotation.get().value();
+        if (clazz == null) {
+            throw new FixtureExecutionException("The value of @ProvidedAxonTestFixture on the test method cannot be null. Please provide a valid AxonTestFixtureProvider implementation.");
         }
 
         return annotation.flatMap(ann -> {
             if (ann.value() != AxonTestFixtureProvider.class) {
                 validateValueUsage(element);
-                return instantiate(ann.value());
+                return Optional.of(instantiate(ann.value()));
             }
-            Optional<AxonTestFixtureProvider> onFields = findOnFields(testInstance, testClass);
-            Optional<AxonTestFixtureProvider> onMethods = findOnMethods(testInstance, testClass);
-            if (onFields.isPresent() && onMethods.isPresent()) {
-                throw new FixtureExecutionException(
-                        "Ambiguous @ProvidedAxonTestFixture configuration. Found both a field and a method provider."
-                );
-            }
-            return onFields.or(() -> onMethods);
+            return getAxonTestFixtureProvider(testInstance, testClass);
         });
     }
 
+    @Nonnull
+    private static Optional<AxonTestFixtureProvider> getAxonTestFixtureProvider(Object testInstance,
+                                                                                Class<?> testClass) {
+        Optional<AxonTestFixtureProvider> onFields = findOnFields(testInstance, testClass);
+        Optional<AxonTestFixtureProvider> onMethods = findOnMethods(testInstance, testClass);
+        if (onFields.isPresent() && onMethods.isPresent()) {
+            throw new FixtureExecutionException(
+                    "Ambiguous @ProvidedAxonTestFixture configuration. Found both a field and a method provider."
+            );
+        }
+        return onFields.or(() -> onMethods);
+    }
+
     private static void validateValueUsage(AnnotatedElement element) {
-        if (element instanceof Field) {
-            Field field = (Field) element;
+        if (element instanceof Field field) {
             if (AxonTestFixtureProvider.class.isAssignableFrom(field.getType())) {
                 throw new FixtureExecutionException(
                         "When using @ProvidedAxonTestFixture on a field of type AxonTestFixtureProvider, " +
@@ -108,8 +110,7 @@ final class ProvidedAxonTestFixtureUtils {
                 );
             }
         }
-        if (element instanceof Method) {
-            Method method = (Method) element;
+        if (element instanceof Method method) {
             if (AxonTestFixtureProvider.class.isAssignableFrom(method.getReturnType())
                     && method.getParameterCount() == 0) {
                 throw new FixtureExecutionException(
@@ -128,28 +129,32 @@ final class ProvidedAxonTestFixtureUtils {
         if (ann != null) {
             return Optional.of(ann);
         }
-        if (element instanceof Method) {
-            return findAnnotation(((Method) element).getDeclaringClass());
-        }
-        if (element instanceof Field) {
-            return findAnnotation(((Field) element).getDeclaringClass());
-        }
-        if (element instanceof Class) {
-            Class<?> clazz = (Class<?>) element;
-            // Check interfaces first if any
-            for (Class<?> iface : clazz.getInterfaces()) {
-                Optional<ProvidedAxonTestFixture> found = findAnnotation(iface);
+        switch (element) {
+            case Method method -> {
+                return findAnnotation(method.getDeclaringClass());
+            }
+            case Field field -> {
+                return findAnnotation(field.getDeclaringClass());
+            }
+            case Class<?> clazz -> {
+                // Check interfaces first if any
+                for (Class<?> iface : clazz.getInterfaces()) {
+                    Optional<ProvidedAxonTestFixture> found = findAnnotation(iface);
+                    if (found.isPresent()) {
+                        return found;
+                    }
+                }
+                // Check superclass
+                Optional<ProvidedAxonTestFixture> found = findAnnotation(clazz.getSuperclass());
                 if (found.isPresent()) {
                     return found;
                 }
+                // Check enclosing class (for nested classes)
+                return findAnnotation(clazz.getEnclosingClass());
+                // Check enclosing class (for nested classes)
             }
-            // Check superclass
-            Optional<ProvidedAxonTestFixture> found = findAnnotation(clazz.getSuperclass());
-            if (found.isPresent()) {
-                return found;
+            default -> {
             }
-            // Check enclosing class (for nested classes)
-            return findAnnotation(clazz.getEnclosingClass());
         }
         return Optional.empty();
     }
@@ -164,9 +169,10 @@ final class ProvidedAxonTestFixtureUtils {
             }
         }
         if (annotatedFields.size() > 1) {
-            throw new FixtureExecutionException("Ambiguous @ProvidedAxonTestFixture configuration. Found multiple fields: " + annotatedFields);
+            throw new FixtureExecutionException(
+                    "Ambiguous @ProvidedAxonTestFixture configuration. Found multiple fields: " + annotatedFields);
         }
-        return annotatedFields.isEmpty() ? Optional.empty() : getFieldValue(annotatedFields.get(0), testInstance);
+        return annotatedFields.isEmpty() ? Optional.empty() : getFieldValue(annotatedFields.getFirst(), testInstance);
     }
 
     private static Optional<AxonTestFixtureProvider> findOnMethods(Object testInstance, Class<?> testClass) {
@@ -180,9 +186,10 @@ final class ProvidedAxonTestFixtureUtils {
             }
         }
         if (annotatedMethods.size() > 1) {
-            throw new FixtureExecutionException("Ambiguous @ProvidedAxonTestFixture configuration. Found multiple methods: " + annotatedMethods);
+            throw new FixtureExecutionException(
+                    "Ambiguous @ProvidedAxonTestFixture configuration. Found multiple methods: " + annotatedMethods);
         }
-        return annotatedMethods.isEmpty() ? Optional.empty() : invokeMethod(annotatedMethods.get(0), testInstance);
+        return annotatedMethods.isEmpty() ? Optional.empty() : invokeMethod(annotatedMethods.getFirst(), testInstance);
     }
 
     private static List<Field> getAllFields(Class<?> clazz) {
@@ -192,14 +199,16 @@ final class ProvidedAxonTestFixtureUtils {
             fields.addAll(Arrays.asList(current.getDeclaredFields()));
             current = current.getSuperclass();
         }
-        if (clazz.getEnclosingClass() != null) {
-            List<Field> outerFields = getAllFields(clazz.getEnclosingClass());
-            for (Field outerField : outerFields) {
-                if (!fields.contains(outerField)) {
-                    fields.add(outerField);
-                }
-            }
-        }
+        Optional.ofNullable(clazz).map(Class::getEnclosingClass)
+                .ifPresent(enclosingClass -> {
+                    List<Field> outerFields = getAllFields(enclosingClass);
+                    for (Field outerField : outerFields) {
+                        if (!fields.contains(outerField)) {
+                            fields.add(outerField);
+                        }
+                    }
+                });
+
         return fields;
     }
 
@@ -210,21 +219,31 @@ final class ProvidedAxonTestFixtureUtils {
             methods.addAll(Arrays.asList(current.getDeclaredMethods()));
             current = current.getSuperclass();
         }
-        if (clazz.getEnclosingClass() != null) {
-            List<Method> outerMethods = getAllMethods(clazz.getEnclosingClass());
-            for (Method outerMethod : outerMethods) {
-                if (!methods.contains(outerMethod)) {
-                    methods.add(outerMethod);
-                }
-            }
-        }
+        Optional.ofNullable(clazz).map(Class::getEnclosingClass)
+                .ifPresent(enclosingClass -> {
+                    List<Method> outerMethods = getAllMethods(enclosingClass);
+                    for (Method outerMethod : outerMethods) {
+                        if (!methods.contains(outerMethod)) {
+                            methods.add(outerMethod);
+                        }
+                    }
+                });
+
         return methods;
     }
 
     private static Optional<AxonTestFixtureProvider> getFieldValue(Field field, Object instance) {
         try {
             field.setAccessible(true);
-            Object target = Modifier.isStatic(field.getModifiers()) ? null : findTarget(field.getDeclaringClass(), instance);
+            boolean isStatic = Modifier.isStatic(field.getModifiers());
+
+            // lifecycle cannot be managed on a static field.
+            if (isStatic) {
+                throw new FixtureExecutionException("Static field providers are not supported. Found: " + field);
+            }
+
+            Object target = findTarget(field.getDeclaringClass(), instance);
+
             if (target == null && !Modifier.isStatic(field.getModifiers())) {
                 return Optional.empty();
             }
@@ -238,7 +257,8 @@ final class ProvidedAxonTestFixtureUtils {
     private static Optional<AxonTestFixtureProvider> invokeMethod(Method method, Object instance) {
         try {
             method.setAccessible(true);
-            Object target = Modifier.isStatic(method.getModifiers()) ? null : findTarget(method.getDeclaringClass(), instance);
+            Object target = Modifier.isStatic(method.getModifiers()) ? null : findTarget(method.getDeclaringClass(),
+                                                                                         instance);
             if (target == null && !Modifier.isStatic(method.getModifiers())) {
                 return Optional.empty();
             }
@@ -279,11 +299,14 @@ final class ProvidedAxonTestFixtureUtils {
         return null;
     }
 
-    private static Optional<AxonTestFixtureProvider> instantiate(Class<? extends AxonTestFixtureProvider> clazz) {
+    private static AxonTestFixtureProvider instantiate(@Nonnull Class<? extends AxonTestFixtureProvider> clazz) {
         try {
-            return Optional.of(clazz.getDeclaredConstructor().newInstance());
+            // default constructor is required for instantiation, so we can directly call getDeclaredConstructor without checking its presence
+            var constructor = clazz.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
         } catch (Exception e) {
-            return Optional.empty();
+            throw new FixtureExecutionException(e.getMessage(), e);
         }
     }
 

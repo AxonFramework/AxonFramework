@@ -23,6 +23,12 @@ import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.*;
 
+/**
+ * JUnit 5 extension to manage the lifecycle of an {@link AxonTestFixture} instance provided by a test class.
+ *
+ * @author Jan Galinski
+ * @since 5.0.3
+ */
 public class AxonTestFixtureExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
     private static final Namespace NAMESPACE = Namespace.create(AxonTestFixtureExtension.class);

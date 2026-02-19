@@ -1,32 +1,23 @@
 package org.axonframework.examples.demo.university.faculty.write.createcourse;
 
-import org.axonframework.examples.demo.university.faculty.FacultyAxonTestFixture;
+import org.axonframework.examples.demo.university.faculty.FacultyAxonTestFixture.CreateCourseConfigurationFixture;
 import org.axonframework.examples.demo.university.faculty.Ids;
 import org.axonframework.examples.demo.university.faculty.events.CourseCreated;
 import org.axonframework.examples.demo.university.shared.ids.CourseId;
+import org.axonframework.test.extension.AxonTestFixtureExtension;
+import org.axonframework.test.extension.ProvidedAxonTestFixture;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(AxonTestFixtureExtension.class)
+@ProvidedAxonTestFixture(CreateCourseConfigurationFixture.class)
 class CreateCourseAxonFixtureTest {
 
-    private AxonTestFixture fixture;
-
-    @BeforeEach
-    void beforeEach() {
-        fixture = FacultyAxonTestFixture.slice(CreateCourseConfiguration::configure);
-    }
-
-    @AfterEach
-    void afterEach() {
-        fixture.stop();
-    }
-
     @Test
-    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
+    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess(final AxonTestFixture fixture) {
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
@@ -40,7 +31,7 @@ class CreateCourseAxonFixtureTest {
     }
 
     @Test
-    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents(final AxonTestFixture fixture) {
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
@@ -55,7 +46,7 @@ class CreateCourseAxonFixtureTest {
     }
 
     @Test
-    void givenCourseWithSameName_WhenCreateCourse_ThenFail() {
+    void givenCourseWithSameName_WhenCreateCourse_ThenFail(final AxonTestFixture fixture) {
         var existingCourseId = CourseId.random();
         var newCourseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
