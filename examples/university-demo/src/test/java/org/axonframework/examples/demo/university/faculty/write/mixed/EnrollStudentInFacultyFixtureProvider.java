@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.extension;
+package org.axonframework.examples.demo.university.faculty.write.mixed;
 
+import org.axonframework.examples.demo.university.faculty.FacultyAxonTestFixture;
+import org.axonframework.examples.demo.university.faculty.write.enrollstudent.EnrollStudentInFacultyConfiguration;
+import org.axonframework.test.extension.AxonTestFixtureProvider;
 import org.axonframework.test.fixture.AxonTestFixture;
 
-import java.util.function.Supplier;
+class EnrollStudentInFacultyFixtureProvider implements AxonTestFixtureProvider {
 
-/**
- * Functional interface to supply an {@link AxonTestFixture} instance.
- *
- * @author Jan Galinski
- * @since 5.0.3
- */
-@FunctionalInterface
-public interface AxonTestFixtureProvider extends Supplier<AxonTestFixture> {
-
+    @Override
+    public AxonTestFixture get() {
+        return FacultyAxonTestFixture.slice(EnrollStudentInFacultyConfiguration::configure);
+    }
 }
