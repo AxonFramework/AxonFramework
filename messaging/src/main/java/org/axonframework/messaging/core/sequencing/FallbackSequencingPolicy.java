@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Implementation of {@link SequencingPolicy} that provides exception-based fallback behavior. When the delegate
- * policy throws a specified exception type, this implementation will catch it and delegate to a fallback policy.
+ * Implementation of {@link SequencingPolicy} that provides exception-based fallback behavior. When the delegate policy
+ * throws a specified exception type, this implementation will catch it and delegate to a fallback policy.
  * <p>
  * This allows for composing sequencing strategies where certain policies might fail with exceptions for unsupported
- * event types, falling back to more generic approaches when exceptions occur.
+ * message types, falling back to more generic approaches when exceptions occur.
  *
- * @param <E> The type of exception to catch and handle.
+ * @param <E> the type of exception to catch and handle
+ * @param <M> the type of message to sequence
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class FallbackSequencingPolicy<E extends Exception> implements SequencingPolicy {
+public class FallbackSequencingPolicy<E extends Exception, M extends Message> implements SequencingPolicy<M> {
 
-    private final SequencingPolicy delegate;
-    private final SequencingPolicy fallback;
+    private final SequencingPolicy<? super M> delegate;
+    private final SequencingPolicy<? super M> fallback;
     private final Class<E> exceptionType;
 
     /**
@@ -50,21 +51,21 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
      * @param exceptionType The type of exception to catch from the delegate policy, not {@code null}.
      * @throws NullPointerException When any of the parameters is {@code null}.
      */
-    public FallbackSequencingPolicy(@Nonnull SequencingPolicy delegate,
-                                    @Nonnull SequencingPolicy fallback,
+    public FallbackSequencingPolicy(@Nonnull SequencingPolicy<? super M> delegate,
+                                    @Nonnull SequencingPolicy<? super M> fallback,
                                     @Nonnull Class<E> exceptionType) {
-        this.delegate =  Objects.requireNonNull(delegate, "Delegate may not be null.");
+        this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null.");
         this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
-        this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");;
+        this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
         try {
-            return delegate.getSequenceIdentifierFor(event, context);
+            return delegate.sequenceIdentifierFor(message, context);
         } catch (Exception e) {
             if (exceptionType.isInstance(e)) {
-                return fallback.getSequenceIdentifierFor(event, context);
+                return fallback.sequenceIdentifierFor(message, context);
             }
             throw e;
         }

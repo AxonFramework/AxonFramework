@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.annotation;
+package org.axonframework.messaging.core.annotation;
 
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
-import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -27,10 +26,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to specify a sequencing policy for event handling methods or classes.
+ * Annotation to specify a sequencing policy for method handling methods or classes.
  * <p>
- * The sequencing policy determines how events are processed in relation to each other,
- * controlling whether events should be processed sequentially or in parallel.
+ * The sequencing policy determines how messages are processed in relation to each other,
+ * controlling whether messages should be processed sequentially or in parallel.
+ * <p>
+ * Currently this annotation is only supported on event handling methods and components.
  * <p>
  * This annotation can be applied either directly to event handler methods or to the declaring class.
  * When applied to a class, all event handler methods in that class will inherit the sequencing policy.
@@ -115,7 +116,7 @@ public @interface SequencingPolicy {
     /**
      * The sequencing policy implementation class to use.
      * <p>
-     * The specified class must implement {@link org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy}
+     * The specified class must implement {@link org.axonframework.messaging.core.sequencing.SequencingPolicy}
      * and follow the constructor parameter requirements described in the class documentation.
      * <p>
      * The framework will attempt to instantiate this class using either:
@@ -129,7 +130,7 @@ public @interface SequencingPolicy {
      *
      * @return The sequencing policy class to instantiate.
      */
-    Class<? extends org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy> type() default SequentialPolicy.class;
+    Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> type() default SequentialPolicy.class;
 
     /**
      * String parameters to pass to the sequencing policy constructor.

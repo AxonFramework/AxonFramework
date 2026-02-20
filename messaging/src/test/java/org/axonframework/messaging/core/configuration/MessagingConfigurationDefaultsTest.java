@@ -35,9 +35,6 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.CommandSequencingInterceptor;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.RoutingKeyCommandSequencingPolicy;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -54,6 +51,9 @@ import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorR
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.RoutingKeySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -110,8 +110,9 @@ class MessagingConfigurationDefaultsTest {
         assertThat(messageConverter).isEqualTo(eventConverterDelegate);
         assertThat(resultConfig.getComponent(CorrelationDataProviderRegistry.class))
                 .isInstanceOf(DefaultCorrelationDataProviderRegistry.class);
-        assertThat(resultConfig.getComponent(CommandSequencingPolicy.class))
-                .isInstanceOf(RoutingKeyCommandSequencingPolicy.class);
+        assertThat(resultConfig.getComponent(SequencingPolicy.class,
+                                             MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY))
+                .isInstanceOf(RoutingKeySequencingPolicy.class);
         assertThat(resultConfig.getComponent(DispatchInterceptorRegistry.class))
                 .isInstanceOf(DefaultDispatchInterceptorRegistry.class);
         assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
@@ -162,7 +163,9 @@ class MessagingConfigurationDefaultsTest {
                                              new DefaultCorrelationDataProviderRegistry();
                                      return providerRegistry.registerProvider(c -> mock());
                                  });
-            cr.registerComponent(CommandSequencingPolicy.class, c -> NoOpCommandSequencingPolicy.INSTANCE);
+            cr.registerComponent(SequencingPolicy.class,
+                                 MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                 c -> NoOpSequencingPolicy.INSTANCE);
         });
         Configuration resultConfig = configurer.build();
 
@@ -194,7 +197,9 @@ class MessagingConfigurationDefaultsTest {
         configurer.componentRegistry(cr -> {
             cr.registerComponent(CorrelationDataProviderRegistry.class,
                                  config -> new DefaultCorrelationDataProviderRegistry());
-            cr.registerComponent(CommandSequencingPolicy.class, c -> NoOpCommandSequencingPolicy.INSTANCE);
+            cr.registerComponent(SequencingPolicy.class,
+                                 MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                 c -> NoOpSequencingPolicy.INSTANCE);
         });
         Configuration resultConfig = configurer.build();
 
@@ -223,8 +228,8 @@ class MessagingConfigurationDefaultsTest {
     void registersMonitorInterceptorInInterceptorRegistriesWhenSingleMessageMonitorIsPresent() {
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
 
-        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
-        // and NoOpCommandSequencingPolicy to remove the CommandSequencingInterceptor
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // Registers NoOpSequencingPolicy to remove the CommandSequencingInterceptor.
         configurer.componentRegistry(
                           cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                      c -> new DefaultCorrelationDataProviderRegistry())
@@ -236,8 +241,9 @@ class MessagingConfigurationDefaultsTest {
                                                          return monitorRegistry.registerMonitor(c -> mock());
                                                      })
                   )
-                  .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                c -> NoOpCommandSequencingPolicy.INSTANCE));
+                  .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                c -> NoOpSequencingPolicy.INSTANCE));
         Configuration resultConfig = configurer.build();
 
         // Generic interception are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
@@ -263,15 +269,16 @@ class MessagingConfigurationDefaultsTest {
     void doesNotRegisterMonitorInterceptorInInterceptorRegistriesWhenTheAreNoMessageMonitors() {
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
-        // and NoOpCommandSequencingPolicy to remove the CommandSequencingInterceptor
+        // Registers NoOpSequencingPolicy to remove the CommandSequencingInterceptor.
         configurer.componentRegistry(
                 cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                            c -> new DefaultCorrelationDataProviderRegistry())
         ).componentRegistry(
                 cr -> cr.registerComponent(MessageMonitorRegistry.class,
                                            c -> new DefaultMessageMonitorRegistry())
-        ).componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                       c -> NoOpCommandSequencingPolicy.INSTANCE));
+        ).componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                       MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                       c -> NoOpSequencingPolicy.INSTANCE));
         Configuration resultConfig = configurer.build();
 
         DispatchInterceptorRegistry dispatchInterceptorRegistry =
@@ -297,12 +304,14 @@ class MessagingConfigurationDefaultsTest {
         TestCommandBus testCommandBus = new TestCommandBus();
 
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
-        // and NoOpCommandSequencingPolicy to remove the CommandSequencingInterceptor
+        // Registers NoOpSequencingPolicy to remove the CommandSequencingInterceptor.
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication()).componentRegistry(
                 cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
                         .registerComponent(CorrelationDataProviderRegistry.class,
                                            c -> new DefaultCorrelationDataProviderRegistry())
-                        .registerComponent(CommandSequencingPolicy.class, c -> NoOpCommandSequencingPolicy.INSTANCE)
+                        .registerComponent(SequencingPolicy.class,
+                                           MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                           c -> NoOpSequencingPolicy.INSTANCE)
         );
 
         CommandBus configuredCommandBus = configurer.build()
@@ -327,8 +336,9 @@ class MessagingConfigurationDefaultsTest {
     @Test
     void doesntRegisterCommandSequencingInterceptorInHandlerInterceptorRegistryWithNoOpSequencingPolicy() {
         ApplicationConfigurer configurer = MessagingConfigurer.enhance(new DefaultAxonApplication());
-        configurer.componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                c -> NoOpCommandSequencingPolicy.INSTANCE));
+        configurer.componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                c -> NoOpSequencingPolicy.INSTANCE));
         Configuration resultConfig = configurer.build();
 
         HandlerInterceptorRegistry handlerInterceptorRegistry =

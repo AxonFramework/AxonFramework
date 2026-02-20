@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
-import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -35,11 +35,11 @@ class SequentialPolicyTest {
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
-        Object id1 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id1 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id2 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+        Object id3 = testSubject.sequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
                                                           new StubProcessingContext()).orElse(null);
 
         assertEquals(id1, id2);

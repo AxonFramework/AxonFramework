@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SequentialPerAggregatePolicyTest {
 
-    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.instance();
+    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.INSTANCE;
 
     @Test
     void sameAggregateIdentifierProducesSameSequentialIdentifier() {
@@ -45,8 +45,8 @@ class SequentialPerAggregatePolicyTest {
         EventWithProcessingContext event = eventWithProcessingContext(aggregateIdentifier);
 
         // when
-        Object id1 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id1 = testSubject.sequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id2 = testSubject.sequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
 
         // then
         assertEquals(id1, id2);
@@ -61,8 +61,8 @@ class SequentialPerAggregatePolicyTest {
         EventWithProcessingContext event2 = eventWithProcessingContext(aggregateIdentifier2);
 
         // when
-        Object id1 = testSubject.getSequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
+        Object id1 = testSubject.sequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
+        Object id2 = testSubject.sequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
 
         // then
         assertNotEquals(id1, id2);
@@ -75,7 +75,7 @@ class SequentialPerAggregatePolicyTest {
         EventMessage event = new GenericEventMessage(new MessageType("event"), "bla");
 
         // when
-        Object sequenceIdentifier = testSubject.getSequenceIdentifierFor(
+        Object sequenceIdentifier = testSubject.sequenceIdentifierFor(
                 event,
                 processingContextWithoutAggregateIdentifierResource
         ).orElse(null);
@@ -95,5 +95,4 @@ class SequentialPerAggregatePolicyTest {
     private record EventWithProcessingContext(EventMessage event, StubProcessingContext processingContext) {
 
     }
-
 }

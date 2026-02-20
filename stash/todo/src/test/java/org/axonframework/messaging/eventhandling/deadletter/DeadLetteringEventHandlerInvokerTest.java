@@ -17,26 +17,26 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventMessageHandler;
-import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -67,7 +67,7 @@ class DeadLetteringEventHandlerInvokerTest {
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
 
     private EventMessageHandler handler;
-    private SequencingPolicy sequencingPolicy;
+    private SequencingPolicy<EventMessage> sequencingPolicy;
     private SequencedDeadLetterQueue<EventMessage> queue;
     private EnqueuePolicy<EventMessage> enqueuePolicy;
     private TransactionManager transactionManager;
@@ -77,7 +77,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @BeforeEach
     void setUp() {
         handler = mock(EventMessageHandler.class);
-        sequencingPolicy = spy(SequentialPerAggregatePolicy.instance());
+        sequencingPolicy = spy(SequentialPerAggregatePolicy.INSTANCE);
         //noinspection unchecked
         queue = mock(SequencedDeadLetterQueue.class);
         //noinspection unchecked
@@ -128,7 +128,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -152,7 +152,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -171,7 +171,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -259,7 +259,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         testSubject.handle(TEST_EVENT, new StubProcessingContext(), testSegment);
 
-        verify(sequencingPolicy).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verifyNoInteractions(handler);
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
@@ -280,7 +280,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -316,7 +316,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
         testSubject.handle(nextMessage(TEST_EVENT), context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -340,7 +340,7 @@ class DeadLetteringEventHandlerInvokerTest {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -364,7 +364,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).sequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler, never()).handleSync(TEST_EVENT, context);
         verify(queue, never()).enqueue(TEST_SEQUENCE_ID, TEST_DEAD_LETTER);
         verifyNoInteractions(transactionManager);

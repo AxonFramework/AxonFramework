@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -40,13 +41,13 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {
-        final SequencingPolicy sequencingPolicy =
+        final SequencingPolicy<Message> sequencingPolicy =
                 new ExtractionSequencingPolicy<>(
                         TestEvent.class,
                         TestEvent::id
                 );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
                 aProcessingContext())
         ).hasValue("42");
@@ -54,29 +55,31 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id"
         );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(anEvent(new TestEvent("42")), aProcessingContext())
+        assertThat(sequencingPolicy.sequenceIdentifierFor(anEvent(new TestEvent("42")), aProcessingContext())
         ).hasValue("42");
     }
 
     @Test
     void withoutFallbackShouldThrowException() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id"
         );
+        EventMessage exMessage = anEvent("42");
+        StubProcessingContext exContext = aProcessingContext();
 
         assertThrows(ConversionException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
+                     () -> sequencingPolicy.sequenceIdentifierFor(exMessage, exContext));
     }
 
     @Test
     void withFallbackShouldNotThrowException() {
-        final SequencingPolicy sequencingPolicy = new FallbackSequencingPolicy<>(
+        final SequencingPolicy<Message> sequencingPolicy = new FallbackSequencingPolicy<>(
                 new PropertySequencingPolicy<>(
                         TestEvent.class,
                         "id"
@@ -85,7 +88,7 @@ final class PropertySequencingPolicyTest {
                 ConversionException.class
         );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+        assertThat(sequencingPolicy.sequenceIdentifierFor(
                 anEvent("42"),
                 aProcessingContext())
         ).hasValue("A");

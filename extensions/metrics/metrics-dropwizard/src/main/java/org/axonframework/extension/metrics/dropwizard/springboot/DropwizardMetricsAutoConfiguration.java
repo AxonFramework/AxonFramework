@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.dropwizard.springboot;
 
-import com.codahale.metrics.MetricRegistry;
+import io.dropwizard.metrics5.MetricRegistry;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(name = {
         "org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration",
-        "com.codahale.metrics.MetricRegistry"
+        "io.dropwizard.metrics5.MetricRegistry"
 })
 @EnableConfigurationProperties(MetricsProperties.class)
 public class DropwizardMetricsAutoConfiguration {

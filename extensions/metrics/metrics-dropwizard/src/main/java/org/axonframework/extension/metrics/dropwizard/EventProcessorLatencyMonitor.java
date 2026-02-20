@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricSet;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
@@ -35,10 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A {@link MessageMonitor} implementation dedicated to {@link EventMessage EventMessages}.
  * <p>
- * This monitor defines the latency between the {@link EventMessage#timestamp()} and the {@link Clock#instant()}.
- * Doing so, it depicts the latency from when an event was published compared to when an
- * {@link EventProcessor} processes the event to clarify how far behind an
- * {@code EventProcessor} is.
+ * This monitor defines the latency between the {@link EventMessage#timestamp()} and the {@link Clock#instant()}. Doing
+ * so, it depicts the latency from when an event was published compared to when an {@link EventProcessor} processes the
+ * event to clarify how far behind an {@code EventProcessor} is.
  * <p>
  * Do note that a replay (as triggered through {@link StreamingEventProcessor#resetTokens()}, for example) will cause
  * this metric to bump up due to the processor handling old events.
@@ -78,9 +78,9 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("latency", (Gauge<Long>) processTime::get); // NOSONAR
+    public Map<MetricName, Metric> getMetrics() {
+        Map<MetricName, Metric> metrics = new HashMap<>();
+        metrics.put(MetricName.build("latency"), (Gauge<Long>) processTime::get); // NOSONAR
         return metrics;
     }
 }
