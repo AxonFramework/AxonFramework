@@ -36,7 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("TODO #3496")
+@Disabled("TODO #3520")
 class PersistentStreamAutoConfigurationTest {
 
     public static final Class<SequentialPerAggregatePolicy> DEFAULT_SEQUENCING_POLICY_CLASS =

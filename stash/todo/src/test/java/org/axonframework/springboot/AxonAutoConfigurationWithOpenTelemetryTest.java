@@ -31,7 +31,7 @@ import org.springframework.jmx.support.RegistrationPolicy;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3496")
+@Disabled("TODO #3594")
 class AxonAutoConfigurationWithOpenTelemetryTest {
 
     @Test

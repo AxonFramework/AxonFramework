@@ -32,7 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@Disabled("TODO #3496")
+@Disabled("TODO #3104 & #3065")
 class JobRunrAutoConfigurationTest {
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,12 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * Test suite implementation validating the {@link SpringAxonApplication}.
@@ -62,5 +66,14 @@ class SpringAxonApplicationTest extends ApplicationConfigurerTestSuite<SpringAxo
     @Override
     public boolean doesOwnLifecycleManagement() {
         return false;
+    }
+
+    @Test
+    void getOptionalComponentShouldNeverThrowsExceptions() {
+        AxonConfiguration config = testSubject.build();
+
+        assertThatNoException().isThrownBy(
+                () -> config.getOptionalComponent(TestComponent.class)
+        );
     }
 }

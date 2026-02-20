@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,15 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
-import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.extension.springboot.util.GrpcServerStub;
 import org.axonframework.extension.springboot.util.TcpUtils;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -69,12 +72,13 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void disablingAxonServerDisabledAllAxonServerComponents() {
-        testContext.withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0").run(context -> {
-            assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
-            assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
-            assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
-            assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
-        });
+        testContext.withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0").run(
+                context -> {
+                    assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
+                    assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
+                    assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
+                    assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
+                });
     }
 
     @Test
@@ -112,6 +116,25 @@ class AxonServerAutoConfigurationTest {
             int queryThreads = context.getBean(AxonServerConfiguration.class).getQueryThreads();
             assertThat(numberOfThreads).isEqualTo(queryThreads);
         });
+    }
+
+    @Test
+    void tagPropertiesAreCapturedInTagConfiguration() {
+        testContext.withUserConfiguration(TestContext.class)
+                   .withPropertyValues(
+                           "axon.tags.region=Eu",
+                           "axon.tags.country=It",
+                           "axon.tags.city=Rome"
+                   )
+                   .run(context -> {
+                       TagsConfiguration tagsConfiguration = context.getBean(TagsConfiguration.class);
+                       assertThat(tagsConfiguration).isNotNull();
+                       Map<String, String> tags = tagsConfiguration.getTags();
+                       assertThat(tags.size()).isEqualTo(3);
+                       assertThat(tags).containsEntry("region", "Eu");
+                       assertThat(tags).containsEntry("country", "It");
+                       assertThat(tags).containsEntry("city", "Rome");
+                   });
     }
 
     @Test

@@ -68,7 +68,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 
-@Disabled("TODO #3496")
+@Disabled("TODO #3594")
 class AxonAutoConfigurationWithTracingTest {
 
     @Test

@@ -26,7 +26,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3496")
 class SecurityAutoConfigurationTest {
 
     @Test
@@ -48,9 +47,7 @@ class SecurityAutoConfigurationTest {
         new ApplicationContextRunner()
                 .withClassLoader(new FilteredClassLoader("org.springframework.security.access.annotation.Secured"))
                 .withUserConfiguration(Context.class)
-                .run(context -> {
-                    assertFalse(context.containsBean("securedMessageHandlerDefinition"));
-                });
+                .run(context -> assertFalse(context.containsBean("securedMessageHandlerDefinition")));
     }
 
     @EnableAutoConfiguration
@@ -58,5 +55,4 @@ class SecurityAutoConfigurationTest {
     public static class Context {
 
     }
-
 }
