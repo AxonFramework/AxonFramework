@@ -26,7 +26,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.extension.springboot.autoconfig.JpaTransactionAutoConfiguration;
 import org.axonframework.extension.springboot.eventsourcing.eventstore.jpa.AggregateBasedJpaStorageEngineBackedEventStoreIT.TestConfig;
