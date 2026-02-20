@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.property.Property;
@@ -23,11 +23,11 @@ import org.axonframework.common.property.PropertyAccessStrategy;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
- * on a given property.
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the message payload based on a
+ * given property.
  *
- * @param <T> The type of the supported event payloads.
- * @param <K> The type of the extracted property.
+ * @param <T> the type of the supported payload
+ * @param <K> the type of the extracted property
  * @author Nils Christian Ehmke
  * @since 4.5.2
  */
@@ -35,10 +35,10 @@ public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T
 
     /**
      * Creates a new instance of the {@code PropertySequencingPolicy}, which extracts the sequence identifier from the
-     * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
+     * message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
      *
-     * @param payloadClass   The class of the supported event payloads.
-     * @param propertyName   The name of the property to be extracted as sequence identifier.
+     * @param payloadClass The class of the supported payload.
+     * @param propertyName The name of the property to be extracted as sequence identifier.
      */
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,

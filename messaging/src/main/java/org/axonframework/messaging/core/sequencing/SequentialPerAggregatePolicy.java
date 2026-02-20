@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -27,26 +27,23 @@ import java.util.Optional;
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
  * aggregates may be processed in different threads.
+ * <p>
+ * This policy only applies for event messages.
  *
  * @author Allard Buijze
  * @since 0.3.0
  */
-public class SequentialPerAggregatePolicy implements SequencingPolicy {
-
-    private static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
+public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
 
     /**
-     * Return a singleton instance of the {@code SequentialPerAggregatePolicy}.
-     *
-     * @return A singleton {@code SequentialPerAggregatePolicy}.
+     * Singleton instance of the {@code SequentialPerAggregatePolicy}.
      */
-    public static SequentialPerAggregatePolicy instance() {
-        return INSTANCE;
-    }
+    public static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        Objects.requireNonNull(event, "EventMessage may not be null.");
+    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage message,
+                                                  @Nonnull ProcessingContext context) {
+        Objects.requireNonNull(message, "Message may not be null.");
         Objects.requireNonNull(context, "ProcessingContext may not be null.");
         return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
     }

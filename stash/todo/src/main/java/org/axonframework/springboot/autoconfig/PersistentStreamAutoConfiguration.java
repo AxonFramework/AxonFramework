@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.processing.subscribing.Subscrib
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.extension.springboot.util.ConditionalOnQualifiedBean;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

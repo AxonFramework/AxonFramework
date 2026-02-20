@@ -16,21 +16,22 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
-import org.axonframework.modelling.repository.SimpleRepository;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
-import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.repository.Repository;
+import org.axonframework.modelling.repository.SimpleRepository;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -146,14 +147,15 @@ class StateBasedEntityModuleTest {
     void doesRegisterCommandHandlingComponentWithModel() {
         CommandBus commandBus = mock(CommandBus.class);
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
-        // and the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor
+        // Registers the NoOpSequencingPolicy, thus removing the CommandSequencingInterceptor.
         // This ensures we keep the SimpleCommandBus, from which we can capture the handling component subscribe method.
         ModellingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
-                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                              c -> NoOpCommandSequencingPolicy.INSTANCE))
+                .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                              MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                              c -> NoOpSequencingPolicy.INSTANCE))
                 .componentRegistry(cr -> cr.registerModule(stateBasedModuleWithModel()))
                 .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> commandBus))
                 .start();

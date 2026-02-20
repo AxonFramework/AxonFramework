@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Lucas Campos
  */
-public class MetadataSequencingPolicyTest {
+class MetadataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
@@ -40,14 +40,14 @@ public class MetadataSequencingPolicyTest {
 
         EventMessage testEvent = EventTestUtils.asEventMessage("42").withMetadata(Map.of("metadataKey", "metadataValue"));
 
-        assertThat(metadataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
+        assertThat(metadataPolicy.sequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
     }
 
     @Test
     void shouldReturnEmptyIfMetaDataDoesNotContainsTheKey() {
         final MetadataSequencingPolicy metadataPolicy = new MetadataSequencingPolicy("metadataKey");
 
-        assertThat(metadataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isEmpty();
+        assertThat(metadataPolicy.sequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isEmpty();
     }
 
     @Test

@@ -25,14 +25,14 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.annotation.AnnotationEventHandlerAdapter;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +55,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
 
     private final List<EventMessageHandler> eventHandlingComponents;
     private final ListenerInvocationErrorHandler listenerInvocationErrorHandler;
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final SegmentMatcher segmentMatcher;
 
     /**
@@ -126,7 +126,8 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment, @Nonnull ProcessingContext context) {
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment,
+                                                     @Nonnull ProcessingContext context) {
         return segmentMatcher.matches(segment, message, context);
     }
 
@@ -196,7 +197,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @return the {@link SequencingPolicy} as configured for this {@link EventHandlerInvoker}
      */
-    public SequencingPolicy getSequencingPolicy() {
+    public SequencingPolicy<? super EventMessage> getSequencingPolicy() {
         return sequencingPolicy;
     }
 
@@ -220,7 +221,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
-        private SequencingPolicy sequencingPolicy = SequentialPerAggregatePolicy.instance();
+        private SequencingPolicy<? super EventMessage> sequencingPolicy = SequentialPerAggregatePolicy.INSTANCE;
         private MessageTypeResolver messageTypeResolver = new AnnotationMessageTypeResolver();
 
         /**
@@ -313,7 +314,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B sequencingPolicy(@Nonnull SequencingPolicy sequencingPolicy) {
+        public B sequencingPolicy(@Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
             assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked

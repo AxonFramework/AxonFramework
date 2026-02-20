@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.commandhandling.sequencing;
+package org.axonframework.messaging.core.sequencing;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -24,30 +24,32 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * {@link CommandSequencingPolicy} that requires sequential processing of commands targeting the same
+ * {@link RoutingKeySequencingPolicy} that requires sequential processing of commands targeting the same
  * {@link CommandMessage#routingKey() routing key}.
  * <p>
  * For a {@code null} or {@code empty} routing key of a {@link CommandMessage} the policy returns
  * {@link Optional#empty()}.
+ * <p>
+ * This policy only applies for command messages.
  *
  * @author Jakob Hatzl
  * @since 5.0.3
  */
-public class RoutingKeyCommandSequencingPolicy implements CommandSequencingPolicy {
+public class RoutingKeySequencingPolicy implements SequencingPolicy<CommandMessage> {
 
     /**
-     * Singleton instance of the {@link RoutingKeyCommandSequencingPolicy}
+     * Singleton instance of the {@link RoutingKeySequencingPolicy}
      */
-    public static final RoutingKeyCommandSequencingPolicy INSTANCE = new RoutingKeyCommandSequencingPolicy();
+    public static final RoutingKeySequencingPolicy INSTANCE = new RoutingKeySequencingPolicy();
 
-    private RoutingKeyCommandSequencingPolicy() {
+    private RoutingKeySequencingPolicy() {
         // empty private singleton constructor
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull CommandMessage command,
-                                                     @NonNull ProcessingContext context) {
-        return command.routingKey()
+    public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message,
+                                                  @NonNull ProcessingContext context) {
+        return message.routingKey()
                       .filter(Predicate.not(String::isEmpty))
                       .map(Object.class::cast);
     }
