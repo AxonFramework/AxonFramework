@@ -2,7 +2,7 @@
 :navtitle: Event Store
 
 Axon Framework 5 introduces significant changes to how events are stored and retrieved.
-All to accommodate the xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundary] **and** the previous aggregate-based solution.
+All to accommodate the xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundary] **as well as** the aggregate-based solution.
 This guide covers the migration path for users transitioning from Axon Framework 4's event storage solutions to Axon Framework 5.
 
 The key changes include:
@@ -62,7 +62,7 @@ For older Axon Server versions, use `AggregateBasedAxonServerEventStorageEngine`
 
 Just as with Axon Framework 4, the default storage solution is Axon Server.
 In Axon Framework 5, this default results in the `AxonServerEventStorageEngine`.
-In Axon Framework 4, this role was taking by the `AxonServerEventStore`.
+In Axon Framework 4, this role was taken by the `AxonServerEventStore`.
 The `AxonServerEventStorageEngine` fully supports DCB with event tagging and criteria-based querying.
 
 However, this version also expects that the Axon Server instances have migrated the events and indices to the DCB solution.
@@ -183,7 +183,7 @@ public class AxonConfig {
 [#jpa-migration]
 == JPA event storage migration
 
-Axon Framework's JPA event storage solution remains on the aggregate-based approach instead of supporting DCB.
+Axon Framework's JPA event store functionality solely supports the aggregate-based approach; so not DCB.
 To clarify this distinction, the `JpaEventStorageEngine` is renamed to the `AggregateBasedJpaEventStorageEngine`.
 
 Before we take a look at the <<configuring_jpa_storage_engine,configuration>>, we should cover the <<jpa_schema_changes,schema changes>> imposed on the JPA-based event storage solution:
@@ -238,27 +238,33 @@ The following columns have been renamed:
 
 Some field constraints have changed:
 
-[cols="1,2"]
+[cols="1,2,3"]
 |===
-| Field | Change
+| Field | Change | Why
 
 | `identifier` (was `eventIdentifier`)
 | No longer required to be unique
+| Uniqueness is a constraint validation of entities alone and as such not mandatory for the identifier of the event
 
 | `version` (was `payloadRevision`)
 | No longer optional! Axon Framework 5 defaults to 0.0.1 when nothing's given
+| Enforced to ensure non-null versioning inside Axon Framework; foreseen to be used to support version-range registration of event handlers
 
 | `aggregateSequenceNumber` (was `sequenceNumber`)
 | Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
 
 | `aggregateIdentifier`
 | Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
 
 | `payload`
 | Max column length restriction (10,000) removed
+| We decided it incorrect to decide on payload size. This should be a user choice.
 
 | `metadata`
 | Max column length restriction (10,000) removed
+| We decided it incorrect to decide on metadata size. This should be a user choice.
 |===
 
 **Global index sequence generator changes**
@@ -282,7 +288,7 @@ This is done intentional to minimize gaps that would slow down event streaming t
 When migrating from Axon Framework 4's `JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`, you have two options:
 
 1. **Create a new table**: Let Axon Framework create the new `aggregate_event_entry` table and migrate data manually from the `domain_event_entry` to the new `aggregate_event_entry`.
-2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema.
+2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema. This includes renaming the table, columns, adjusting constraints, and migrating the sequence used for the `globalIndex`.
 
 Below is an example SQL migration script for option two.It is advised to adjust the given SQL for your database dialect, as well as to align it with any other table customizations made:
 
@@ -325,20 +331,20 @@ ALTER TABLE aggregate_event_entry ALTER COLUMN metadata TYPE BYTEA;
 
 -- Migrate the global index sequence generator
 -- IMPORTANT: Do NOT create a new sequence starting from 1, as this will mess up event ordering!
--- Instead, rename the existing sequence and adjust its settings.
 -- The old sequence name depends on your Hibernate/database configuration.
 -- Common names: 'hibernate_sequence', 'domain_event_entry_seq', or 'domain_event_entry_globalindex_seq'
 
--- PostgreSQL example:
-ALTER SEQUENCE hibernate_sequence RENAME TO aggregate_event_global_index_sequence;
-ALTER SEQUENCE aggregate_event_global_index_sequence INCREMENT BY 1;
+-- PostgreSQL example - create a new sequence starting from the current position of the old sequence:
+CREATE SEQUENCE aggregate_event_global_index_sequence
+    START WITH (SELECT last_value + 1 FROM hibernate_sequence)
+    INCREMENT BY 1;
 
--- If renaming is not possible, create a new sequence starting from the current max globalIndex + 1:
--- CREATE SEQUENCE aggregate_event_global_index_sequence
---     START WITH (SELECT COALESCE(MAX(globalIndex), 0) + 1 FROM aggregate_event_entry)
---     INCREMENT BY 1;
+-- Alternatively, if you are 100% certain that 'hibernate_sequence' is NOT used by any other tables
+-- in your database, you can rename and adjust it directly instead:
+-- ALTER SEQUENCE hibernate_sequence RENAME TO aggregate_event_global_index_sequence;
+-- ALTER SEQUENCE aggregate_event_global_index_sequence INCREMENT BY 1;
 
--- MySQL example (uses AUTO_INCREMENT, no sequence rename needed, but verify the column is configured correctly):
+-- MySQL example (uses AUTO_INCREMENT, no sequence migration needed, but verify the column is configured correctly):
 -- ALTER TABLE aggregate_event_entry MODIFY COLUMN globalIndex BIGINT AUTO_INCREMENT;
 ----
 
@@ -359,8 +365,8 @@ Now, we can configure the `AggregateBasedJpaEventStorageEngine` in the applicati
 Configuration API::
 +
 --
-Firstly, be sure to adjust the persistence context replace the `DomainEventEntry` entity registration with the `AggregateEventEntry`.
-The, with the `EventSourcingConfigurer`, we can register the `AggregateBasedJpaEventStorageEngine`:
+Firstly, be sure to adjust the persistence context. Replace the `DomainEventEntry` entity registration with the `AggregateEventEntry`.
+Once done, we can register the `AggregateBasedJpaEventStorageEngine` with the `EventSourcingConfigurer`:
 
 [source,java]
 ----
@@ -466,6 +472,6 @@ As such, unlike the `AggregateBasedJpaEventStorageEngine`, the `PostgresqlEventS
 
 [NOTE]
 ====
-The `PostgresqlEventStorageEngine` is scheduled for release in 2026 Q1.
+The `PostgresqlEventStorageEngine` is scheduled for release in Q1 2026.
 This section will be updated with detailed migration instructions, schema changes, and configuration examples once the extension is available.
 ====
