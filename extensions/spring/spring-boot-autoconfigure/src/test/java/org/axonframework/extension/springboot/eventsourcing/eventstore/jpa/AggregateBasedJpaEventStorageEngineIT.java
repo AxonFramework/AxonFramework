@@ -32,7 +32,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTrans
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;

@@ -30,7 +30,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngineConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.springboot.JpaEventStorageEngineConfigurationProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
