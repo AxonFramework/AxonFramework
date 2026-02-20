@@ -17,11 +17,12 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.util.List;
@@ -46,7 +47,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DefaultEventStoreTransaction implements EventStoreTransaction {
+public class DefaultEventStoreTransaction implements EventStoreTransaction, MarkerExposingEventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
@@ -85,6 +86,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+        return source(condition, null);
+    }
+
+    @Override  // TODO #4199 remove the cmRef parameter
+    public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition, @Nullable AtomicReference<ConsistencyMarker> cmRef) {
         var appendCondition = processingContext.updateResource(
                 appendConditionKey,
                 ac -> ac == null
@@ -104,7 +110,12 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                          }
                      })
                      .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                     .onComplete(() -> updateAppendPosition(markerReference));
+                     .onComplete(() -> {
+                         if (cmRef != null) {
+                             cmRef.set(markerReference.get());
+                         }
+                         updateAppendPosition(markerReference);
+                     });
     }
 
     /**

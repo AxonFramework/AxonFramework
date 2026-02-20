@@ -46,7 +46,8 @@ public final class AggregateSequenceNumberPosition implements Position {
 
     private final long sequenceNumber;
 
-    AggregateSequenceNumberPosition(long sequenceNumber) {
+    // TODO #4198 make this package private again
+    public AggregateSequenceNumberPosition(long sequenceNumber) {
         if (sequenceNumber < 0) {
             throw new IllegalArgumentException("sequenceNumber cannot be negative");
         }

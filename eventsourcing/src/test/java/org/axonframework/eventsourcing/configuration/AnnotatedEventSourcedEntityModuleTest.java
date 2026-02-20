@@ -85,7 +85,7 @@ class AnnotatedEventSourcedEntityModuleTest {
 
     @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
-        String expectedEntityName = "Course#CourseId";
+        String expectedEntityName = Course.class.getName() + "#" + CourseId.class.getName();
 
         EventSourcedEntityModule<CourseId, Course> testSubject =
                 EventSourcedEntityModule.autodetected(CourseId.class, Course.class);

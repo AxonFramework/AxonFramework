@@ -76,7 +76,8 @@ class EventSourcingRepositoryTest {
                 eventStore,
                 (id, event, context) -> factory.create(id, event, context),
                 (identifier, ctx) -> TEST_CRITERIA,
-                (entity, event, context) -> entity + "-" + event.payload()
+                (entity, event, context) -> entity + "-" + event.payload(),
+                null  // TODO extend test
         );
     }
 

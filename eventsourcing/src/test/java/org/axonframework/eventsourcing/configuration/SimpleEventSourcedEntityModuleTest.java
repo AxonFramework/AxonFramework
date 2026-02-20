@@ -16,17 +16,19 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -51,10 +53,12 @@ class SimpleEventSourcedEntityModuleTest {
     private CriteriaResolver<CourseId> testCriteriaResolver;
     private EntityMetamodel<Course> testEntityModel;
     private EntityIdResolver<CourseId> testEntityIdResolver;
-    private AtomicBoolean constructedEntityModel;
-    private AtomicBoolean constructedEntityFactory;
-    private AtomicBoolean constructedCriteriaResolver;
-    private AtomicBoolean constructedEntityIdResolver;
+    private Snapshotter<CourseId, Course> testSnapshotter;
+    private AtomicBoolean constructedEntityModel = new AtomicBoolean(false);
+    private AtomicBoolean constructedEntityFactory = new AtomicBoolean(false);
+    private AtomicBoolean constructedCriteriaResolver = new AtomicBoolean(false);
+    private AtomicBoolean constructedEntityIdResolver = new AtomicBoolean(false);
+    private AtomicBoolean constructedSnapshotter = new AtomicBoolean(false);
 
     private EventSourcedEntityModule<CourseId, Course> testSubject;
 
@@ -71,10 +75,7 @@ class SimpleEventSourcedEntityModuleTest {
                                          .creationalCommandHandler(new QualifiedName("creational"),
                                                                    (command, context) -> MessageStream.empty().cast())
                                          .build();
-        constructedEntityFactory = new AtomicBoolean(false);
-        constructedCriteriaResolver = new AtomicBoolean(false);
-        constructedEntityModel = new AtomicBoolean(false);
-        constructedEntityIdResolver = new AtomicBoolean(false);
+        testSnapshotter = identifier -> null;
 
         testSubject = EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                               .messagingModel((c, b) -> {
@@ -92,7 +93,12 @@ class SimpleEventSourcedEntityModuleTest {
                                               .entityIdResolver(c -> {
                                                   constructedEntityIdResolver.set(true);
                                                   return testEntityIdResolver;
-                                              });
+                                              })
+                                              .snapshotter(c -> {
+                                                  constructedSnapshotter.set(true);
+                                                  return testSnapshotter;
+                                              })
+                                              .build();
     }
 
     @Test
@@ -124,7 +130,6 @@ class SimpleEventSourcedEntityModuleTest {
                                                    .entityFactory(null));
     }
 
-
     @Test
     void criteriaResolverThrowsNullPointerExceptionForNullCriteriaResolver() {
         //noinspection DataFlowIssue
@@ -147,8 +152,19 @@ class SimpleEventSourcedEntityModuleTest {
     }
 
     @Test
+    void snapshotterThrowsNullPointerExceptionForNullSnapshotter() {
+        assertThrows(NullPointerException.class,
+            () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
+                                          .messagingModel((c, b) -> testEntityModel)
+                                          .entityFactory(c -> testEntityFactory)
+                                          .criteriaResolver(c -> testCriteriaResolver)
+                                          .snapshotter(null)
+        );
+    }
+
+    @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
-        String expectedEntityName = "Course#CourseId";
+        String expectedEntityName = Course.class.getName() + "#" + CourseId.class.getName();
 
         assertEquals(expectedEntityName, testSubject.entityName());
     }
@@ -166,6 +182,7 @@ class SimpleEventSourcedEntityModuleTest {
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEntityModel.get());
         assertTrue(constructedEntityIdResolver.get());
+        assertTrue(constructedSnapshotter.get());
     }
 
     @Test
