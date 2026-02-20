@@ -29,7 +29,7 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class IteratorMessageStream<M extends Message> implements MessageStream<M> {
+class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
     private final Iterator<? extends Entry<M>> source;
     private Entry<M> peeked = null;
@@ -45,6 +45,9 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public Optional<Entry<M>> next() {
+        if (error().isPresent()) {
+            return Optional.empty();
+        }
         if (peeked != null) {
             Entry<M> result = peeked;
             peeked = null;
@@ -53,12 +56,16 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
         if (source.hasNext()) {
             return Optional.of(source.next());
         } else {
+            complete();
             return Optional.empty();
         }
     }
 
     @Override
     public Optional<Entry<M>> peek() {
+        if (error().isPresent()) {
+            return Optional.empty();
+        }
         if (peeked != null) {
             return Optional.of(peeked);
         }
@@ -70,27 +77,21 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        callback.run();
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return Optional.empty();
-    }
-
-    @Override
     public boolean isCompleted() {
-        return peeked == null && !source.hasNext();
+        return super.isCompleted();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return peeked != null || source.hasNext();
+        boolean hasNext = error().isEmpty() && (peeked != null || source.hasNext());
+        if (!hasNext && error().isEmpty()) {
+            complete();
+        }
+        return hasNext;
     }
 
     @Override
     public void close() {
+        //complete();
     }
-
 }

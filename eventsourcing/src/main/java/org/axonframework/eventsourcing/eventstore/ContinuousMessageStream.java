@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,12 +29,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link MessageStream} implementation that continuously fetches event messages
- * from a configurable data source. This stream has no defined end and will
- * continue retrieving new batches of data as they become available.
+ * A {@link MessageStream} implementation that continuously fetches event messages from a configurable data source. This
+ * stream has no defined end and will continue retrieving new batches of data as they become available.
  * <p>
- * The stream relies on externally provided functional strategies to control its
- * behavior:
+ * The stream relies on externally provided functional strategies to control its behavior:
  * <ul>
  *     <li>A {@code fetcher} to obtain the next batch of elements based on the last item fetched.</li>
  *     <li>A {@code converter} to transform fetched elements into {@link Entry} instances.</li>
@@ -47,6 +45,7 @@ import java.util.function.Function;
  */
 @Internal
 public final class ContinuousMessageStream<E> implements MessageStream<EventMessage> {
+
     private final Function<E, List<E>> fetcher;
     private final BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker;
     private final Function<E, Entry<EventMessage>> converter;
@@ -63,16 +62,17 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     /**
      * Creates a new {@code ContinuousMessageStream} instance configured with the given strategies.
      *
-     * @param fetcher          a function that, given the last fetched element (or {@code null} for the first call),
-     *                         retrieves the next batch of elements; must not return {@code null}
-     * @param converter        a function converting each fetched element into an {@link Entry} containing an {@link EventMessage}
-     * @param callbackTracker  a function that, given this stream and a callback {@link Runnable}, registers
-     *                         a listener and returns a {@link Registration} allowing it to be canceled
+     * @param fetcher         a function that, given the last fetched element (or {@code null} for the first call),
+     *                        retrieves the next batch of elements; must not return {@code null}
+     * @param converter       a function converting each fetched element into an {@link Entry} containing an
+     *                        {@link EventMessage}
+     * @param callbackTracker a function that, given this stream and a callback {@link Runnable}, registers a listener
+     *                        and returns a {@link Registration} allowing it to be canceled
      */
     public ContinuousMessageStream(
-        @Nonnull Function<E, List<E>> fetcher,
-        @Nonnull Function<E, Entry<EventMessage>> converter,
-        @Nonnull BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
+            @Nonnull Function<E, List<E>> fetcher,
+            @Nonnull Function<E, Entry<EventMessage>> converter,
+            @Nonnull BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
     ) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetcher");
         this.converter = Objects.requireNonNull(converter, "converter");
@@ -80,15 +80,14 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     }
 
     @Override
-    public synchronized void setCallback(Runnable callback) {
+    public synchronized void setCallback(@Nonnull Runnable callback) {
         if (!closed) {
             this.callback = callback;
 
             if (callback == null) {
                 callbackRegistration.cancel();
                 callbackRegistration = null;
-            }
-            else if (callbackRegistration == null) {
+            } else if (callbackRegistration == null) {
                 this.callbackRegistration = callbackTracker.apply(this, this::invokeCallback);
             }
 
@@ -100,8 +99,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     public synchronized Optional<Entry<EventMessage>> next() {
         try {
             return peek();
-        }
-        finally {
+        } finally {
             nextEntry = null;
         }
     }
@@ -164,8 +162,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
             if (callback != null) {
                 callback.run();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             error = e;
             close();
         }
@@ -179,8 +176,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
             if (!data.isEmpty()) {
                 this.lastItem = data.getLast();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             error = e;
             close();
         }

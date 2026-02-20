@@ -16,7 +16,10 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.common.Assert;
 import org.junit.jupiter.api.*;
+import org.junit.platform.commons.util.*;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -57,5 +60,18 @@ class IteratorMessageStreamTest extends MessageStreamTest<Message> {
     protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
+    }
+
+    @Test
+    void name() {
+        MessageStream<Message> x = MessageStream.fromItems(createRandomMessage());
+        x.onComplete(() -> {
+            System.out.println("completed");
+        });
+x.onNext(it -> System.out.println("invoked " + it));
+
+        org.assertj.core.api.Assertions.assertThat(x.hasNextAvailable()).isTrue();
+        x.next();
+
     }
 }
