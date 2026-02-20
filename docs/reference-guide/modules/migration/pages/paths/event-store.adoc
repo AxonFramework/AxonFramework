@@ -288,7 +288,7 @@ This is done intentional to minimize gaps that would slow down event streaming t
 When migrating from Axon Framework 4's `JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`, you have two options:
 
 1. **Create a new table**: Let Axon Framework create the new `aggregate_event_entry` table and migrate data manually from the `domain_event_entry` to the new `aggregate_event_entry`.
-2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema.
+2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema. This includes renaming the table, columns, adjusting constraints, and migrating the sequence used for the `globalIndex`.
 
 Below is an example SQL migration script for option two.It is advised to adjust the given SQL for your database dialect, as well as to align it with any other table customizations made:
 
@@ -331,20 +331,20 @@ ALTER TABLE aggregate_event_entry ALTER COLUMN metadata TYPE BYTEA;
 
 -- Migrate the global index sequence generator
 -- IMPORTANT: Do NOT create a new sequence starting from 1, as this will mess up event ordering!
--- Instead, rename the existing sequence and adjust its settings.
 -- The old sequence name depends on your Hibernate/database configuration.
 -- Common names: 'hibernate_sequence', 'domain_event_entry_seq', or 'domain_event_entry_globalindex_seq'
 
--- PostgreSQL example:
-ALTER SEQUENCE hibernate_sequence RENAME TO aggregate_event_global_index_sequence;
-ALTER SEQUENCE aggregate_event_global_index_sequence INCREMENT BY 1;
+-- PostgreSQL example - create a new sequence starting from the current position of the old sequence:
+CREATE SEQUENCE aggregate_event_global_index_sequence
+    START WITH (SELECT last_value + 1 FROM hibernate_sequence)
+    INCREMENT BY 1;
 
--- If renaming is not possible, create a new sequence starting from the current max globalIndex + 1:
--- CREATE SEQUENCE aggregate_event_global_index_sequence
---     START WITH (SELECT COALESCE(MAX(globalIndex), 0) + 1 FROM aggregate_event_entry)
---     INCREMENT BY 1;
+-- Alternatively, if you are 100% certain that 'hibernate_sequence' is NOT used by any other tables
+-- in your database, you can rename and adjust it directly instead:
+-- ALTER SEQUENCE hibernate_sequence RENAME TO aggregate_event_global_index_sequence;
+-- ALTER SEQUENCE aggregate_event_global_index_sequence INCREMENT BY 1;
 
--- MySQL example (uses AUTO_INCREMENT, no sequence rename needed, but verify the column is configured correctly):
+-- MySQL example (uses AUTO_INCREMENT, no sequence migration needed, but verify the column is configured correctly):
 -- ALTER TABLE aggregate_event_entry MODIFY COLUMN globalIndex BIGINT AUTO_INCREMENT;
 ----
 
