@@ -78,7 +78,7 @@ class AxonTestConfiguration {
      * @param environment    the Spring environment used to resolve the {@code axon.axonserver.enabled} property
      * @return a ready-to-use {@link AxonTestFixture}
      */
-    @Bean
+    @Bean(destroyMethod = "stop")
     AxonTestFixture axonTestFixture(
             AxonConfiguration configuration,
             ObjectProvider<AxonTestFixture.Customization> customization,
