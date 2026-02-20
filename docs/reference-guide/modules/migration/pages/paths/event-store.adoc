@@ -2,7 +2,7 @@
 :navtitle: Event Store
 
 Axon Framework 5 introduces significant changes to how events are stored and retrieved.
-All to accommodate the xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundary] **and** the previous aggregate-based solution.
+All to accommodate the xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundary] **as well as** the aggregate-based solution.
 This guide covers the migration path for users transitioning from Axon Framework 4's event storage solutions to Axon Framework 5.
 
 The key changes include:
@@ -183,7 +183,7 @@ public class AxonConfig {
 [#jpa-migration]
 == JPA event storage migration
 
-Axon Framework's JPA event storage solution remains on the aggregate-based approach instead of supporting DCB.
+Axon Framework's JPA event store functionality solely supports the aggregate-based approach; so not DCB.
 To clarify this distinction, the `JpaEventStorageEngine` is renamed to the `AggregateBasedJpaEventStorageEngine`.
 
 Before we take a look at the <<configuring_jpa_storage_engine,configuration>>, we should cover the <<jpa_schema_changes,schema changes>> imposed on the JPA-based event storage solution:
@@ -238,27 +238,33 @@ The following columns have been renamed:
 
 Some field constraints have changed:
 
-[cols="1,2"]
+[cols="1,2,3"]
 |===
-| Field | Change
+| Field | Change | Why
 
 | `identifier` (was `eventIdentifier`)
 | No longer required to be unique
+| Uniqueness is a constraint validation of entities alone and as such not mandatory for the identifier of the event
 
 | `version` (was `payloadRevision`)
 | No longer optional! Axon Framework 5 defaults to 0.0.1 when nothing's given
+| Enforced to ensure non-null versioning inside Axon Framework; foreseen to be used to support version-range registration of event handlers
 
 | `aggregateSequenceNumber` (was `sequenceNumber`)
 | Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
 
 | `aggregateIdentifier`
 | Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
 
 | `payload`
 | Max column length restriction (10,000) removed
+| We decided it incorrect to decide on payload size. This should be a user choice.
 
 | `metadata`
 | Max column length restriction (10,000) removed
+| We decided it incorrect to decide on metadata size. This should be a user choice.
 |===
 
 **Global index sequence generator changes**
