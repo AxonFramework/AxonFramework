@@ -194,7 +194,7 @@ public class DeadLetterEntry {
     }
 
     /**
-     * Timestamp indicating when the processing of this dead letter has started. Used for claiminig messages and
+     * Timestamp indicating when the processing of this dead letter has started. Used for claiming messages and
      * preventing multiple processes or thread from handling items concurrently within the same sequence.
      *
      * @return Timestamp of start processing.

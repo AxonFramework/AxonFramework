@@ -23,7 +23,7 @@ import jakarta.persistence.Persistence;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerExecutor;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -273,7 +273,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     @Test
     void canNotSetProcessingGroupToNull() {
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue.builder();
-        assertThrows(AxonConfigurationException.class, () -> builder.processingGroup(""));
+        assertThrows(AxonConfigurationException.class, () -> builder.processingGroup(null));
     }
 
     @Test
@@ -292,7 +292,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         JacksonConverter jacksonConverter = new JacksonConverter();
         JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
-                .processingGroup("my_processing_Group")
+                .processingGroup("my_processing_group")
                 .eventConverter(new DelegatingEventConverter(jacksonConverter))
                 .genericConverter(jacksonConverter);
 

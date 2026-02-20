@@ -60,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * JPA-backed implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
- * {@link EventMessage Eventmessages} durably as a {@link DeadLetterEntry}.
+ * {@link EventMessage EventMessages} durably as a {@link DeadLetterEntry}.
  * <p>
  * Keeps the insertion order intact by saving an incremented index within each unique sequence, backed by the
  * {@link DeadLetterEntry#getSequenceIndex()} property. Each sequence is uniquely identified by the sequence identifier,
@@ -253,7 +253,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
 
     @Override
     @NonNull
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+                                               @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
             return sequenceSize(stringSequenceIdentifier, context).thenApply(result -> result > 0);
@@ -273,7 +274,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     private Iterable<DeadLetter<? extends M>> deadLetterSequenceIterable(String stringSequenceIdentifier,
-                                                                          @Nullable ProcessingContext context) {
+                                                                         @Nullable ProcessingContext context) {
         return new PagingJpaQueryIterable<>(
                 queryPageSize,
                 entityManagerExecutor(context),
@@ -336,7 +337,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @param entry The entry to convert.
      * @return The {@link DeadLetter} result.
      */
-    @SuppressWarnings("unchecked") // Safe: M extends EventMessage, and the converter deserializes the actual runtime type
+    @SuppressWarnings("unchecked")
+    // Safe: M extends EventMessage, and the converter deserializes the actual runtime type
     private JpaDeadLetter<M> toLetter(DeadLetterEntry entry) {
         Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(),
                                                                       DIAGNOSTICS_MAP_TYPE_REF.getType());
@@ -524,7 +526,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @return The next letter to process.
      */
     private CompletableFuture<DeadLetterEntry> findNextDeadLetter(JpaDeadLetter<M> oldLetter,
-                                                                   @Nullable ProcessingContext context) {
+                                                                  @Nullable ProcessingContext context) {
         return entityManagerExecutor(context).apply(em -> {
             try {
                 return em.createQuery(
@@ -701,8 +703,8 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         private Duration claimDuration = Duration.ofSeconds(30);
 
         /**
-         * Sets the processing group, which is used for storing and querying which event processor the deadlettered item
-         * belonged to.
+         * Sets the processing group, which is used for storing and querying which event processor the dead-lettered
+         * item belonged to.
          *
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.
          * @return the current Builder instance, for fluent interfacing
@@ -716,15 +718,15 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         /**
          * Sets the maximum number of unique sequences this {@link SequencedDeadLetterQueue} may contain.
          * <p>
-         * The given {@code maxSequences} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequences} is required to be a strictly positive number (greater than 0). It defaults to
+         * {@code 1024}.
          *
          * @param maxSequences The maximum amount of unique sequences for the queue under construction.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<T> maxSequences(int maxSequences) {
             assertStrictPositive(maxSequences,
-                                 "The maximum number of sequences should be larger or equal to 0");
+                                 "The maximum number of sequences should be greater than 0");
             this.maxSequences = maxSequences;
             return this;
         }
@@ -733,15 +735,15 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
          * Sets the maximum amount of {@link DeadLetter letters} per unique sequences this
          * {@link SequencedDeadLetterQueue} can store.
          * <p>
-         * The given {@code maxSequenceSize} is required to be a positive number, higher or equal to {@code 128}. It
-         * defaults to {@code 1024}.
+         * The given {@code maxSequenceSize} is required to be a strictly positive number (greater than 0). It defaults
+         * to {@code 1024}.
          *
          * @param maxSequenceSize The maximum amount of {@link DeadLetter letters} per unique  sequence.
          * @return The current Builder, for fluent interfacing.
          */
         public Builder<T> maxSequenceSize(int maxSequenceSize) {
             assertStrictPositive(maxSequenceSize,
-                                 "The maximum number of entries in a sequence should be larger or equal to 128");
+                                 "The maximum number of entries in a sequence should be greater than 0");
             this.maxSequenceSize = maxSequenceSize;
             return this;
         }
