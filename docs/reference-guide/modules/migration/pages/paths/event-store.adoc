@@ -290,7 +290,7 @@ When migrating from Axon Framework 4's `JpaEventStorageEngine` to the `Aggregate
 1. **Create a new table**: Let Axon Framework create the new `aggregate_event_entry` table and migrate data manually from the `domain_event_entry` to the new `aggregate_event_entry`.
 2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema. This includes renaming the table, columns, adjusting constraints, and migrating the sequence used for the `globalIndex`.
 
-Below is an example SQL migration script for option two.It is advised to adjust the given SQL for your database dialect, as well as to align it with any other table customizations made:
+Below is an example SQL migration script for option two. It is advised to adjust the given SQL for your database dialect, as well as to align it with any other table customizations made:
 
 [source,sql]
 ----
