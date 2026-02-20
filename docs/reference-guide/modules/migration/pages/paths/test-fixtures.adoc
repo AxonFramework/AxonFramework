@@ -107,8 +107,11 @@ class AxonConfig {
 ----
 ====
 
-By building the fixture from the `ApplicationConfigurer`, any configuration you add to your production setup (custom parameter resolvers, handler enhancers, upcasters, etc.) is automatically available in your tests.
-Whereas Axon Framework 4 duplicated registration methods on the `AggregateTestFixture` to approach what the actual application did.
+By building the fixture from the `ApplicationConfigurer`, any configuration you add to that configurer (custom parameter resolvers, handler enhancers, upcasters, etc.) is available in your tests.
+Note that there is no magic here: this only applies if you **explicitly** reuse your production `ApplicationConfigurer` in your tests.
+In the example above, the static `AxonConfig.appConfigurer()` method suggests your `ApplicationConfigurer` is statically constructed for your production code. However, you can very well maintain a test-specific `ApplicationConfigurer` if you like. The responsibility on this lies with the user and whichever preference they have.
+
+In contrast to using the `ApplicationConfigurer`, Axon Framework 4 enforced duplication of the registration methods on the `AggregateTestFixture` to __approach__ what the actual application did.
 In practice, this resulted in test fixtures not representing the actual setup, because crucial components were either missed or not available for configuration on the `AggregateTestFixture`.
 
 [NOTE]
@@ -298,8 +301,7 @@ The following Axon Framework 4 given methods are not supported in the `AxonTestF
 [#when]
 === When phase
 
-The when phase specifies the trigger what to validate when something happens.
-In Axon Framework 4, when was always triggered by some action, like a command.
+The when phase specifies the action that should trigger the behaviour you want to validate.
 The example below shows what this looked like in Axon Framework 4 and how it maps to Axon Framework 5:
 
 [tabs]
