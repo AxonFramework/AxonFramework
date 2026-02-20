@@ -62,7 +62,7 @@ For older Axon Server versions, use `AggregateBasedAxonServerEventStorageEngine`
 
 Just as with Axon Framework 4, the default storage solution is Axon Server.
 In Axon Framework 5, this default results in the `AxonServerEventStorageEngine`.
-In Axon Framework 4, this role was taking by the `AxonServerEventStore`.
+In Axon Framework 4, this role was taken by the `AxonServerEventStore`.
 The `AxonServerEventStorageEngine` fully supports DCB with event tagging and criteria-based querying.
 
 However, this version also expects that the Axon Server instances have migrated the events and indices to the DCB solution.
@@ -365,8 +365,8 @@ Now, we can configure the `AggregateBasedJpaEventStorageEngine` in the applicati
 Configuration API::
 +
 --
-Firstly, be sure to adjust the persistence context replace the `DomainEventEntry` entity registration with the `AggregateEventEntry`.
-The, with the `EventSourcingConfigurer`, we can register the `AggregateBasedJpaEventStorageEngine`:
+Firstly, be sure to adjust the persistence context. Replace the `DomainEventEntry` entity registration with the `AggregateEventEntry`.
+Once done, we can register the `AggregateBasedJpaEventStorageEngine` with the `EventSourcingConfigurer`:
 
 [source,java]
 ----
@@ -472,6 +472,6 @@ As such, unlike the `AggregateBasedJpaEventStorageEngine`, the `PostgresqlEventS
 
 [NOTE]
 ====
-The `PostgresqlEventStorageEngine` is scheduled for release in 2026 Q1.
+The `PostgresqlEventStorageEngine` is scheduled for release in Q1 2026.
 This section will be updated with detailed migration instructions, schema changes, and configuration examples once the extension is available.
 ====
