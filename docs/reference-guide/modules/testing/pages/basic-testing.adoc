@@ -50,6 +50,7 @@ class AccountTest {
 
 IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources.
 
+[#fixture_customization]
 === Fixture with customization
 
 You can customize the fixture using the `AxonTestFixture#with(ApplicationConfigurer, UnaryOperator<Customization>)` method:
