@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jdbc;
+package org.axonframework.messaging.core.unitofwork.transaction.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;

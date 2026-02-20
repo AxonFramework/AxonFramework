@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jpa;
+package org.axonframework.messaging.core.unitofwork.transaction.jpa;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
