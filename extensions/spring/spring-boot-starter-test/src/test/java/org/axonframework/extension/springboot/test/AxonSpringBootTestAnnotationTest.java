@@ -26,6 +26,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 
+import java.lang.reflect.Field;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -82,6 +84,24 @@ class AxonSpringBootTestAnnotationTest {
                .then()
                .success()
                .resultMessagePayload(new Pong());
+    }
+
+    /**
+     * Verifies that when {@code axon.axonserver.enabled=false} is set and no explicit
+     * {@link AxonTestFixture.Customization} bean is present, {@link AxonTestConfiguration} derives the default
+     * customization from the property, resulting in Axon Server being disabled in the fixture.
+     * <p>
+     * Uses reflection to access the private {@code customization} field because
+     * {@link AxonTestFixture} does not expose a public accessor for it.
+     */
+    @Test
+    void defaultCustomizationDisablesAxonServerWhenPropertyIsFalse() throws Exception {
+        Field customizationField = AxonTestFixture.class.getDeclaredField("customization");
+        customizationField.setAccessible(true);
+        var customization = (AxonTestFixture.Customization) customizationField.get(fixture);
+
+        assertFalse(customization.axonServerEnabled(),
+                    "Axon Server should be disabled in the default Customization when axon.axonserver.enabled=false");
     }
 
 }
