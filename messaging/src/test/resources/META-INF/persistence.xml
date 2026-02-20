@@ -30,6 +30,18 @@
         </properties>
     </persistence-unit>
 
+    <persistence-unit name="tokenstore_migration" transaction-type="RESOURCE_LOCAL">
+        <class>org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.TokenEntry</class>
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:mem:axontest"/>
+            <property name="hsqldb.log_size" value="0"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+        </properties>
+    </persistence-unit>
+
     <persistence-unit name="dlq" transaction-type="RESOURCE_LOCAL">
         <class>org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEntry</class>
         <class>org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEventEntry</class>

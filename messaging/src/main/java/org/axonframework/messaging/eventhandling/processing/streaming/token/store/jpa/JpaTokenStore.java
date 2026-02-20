@@ -29,6 +29,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.SegmentMaskMigration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToInitializeTokenException;
@@ -38,7 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -55,6 +58,7 @@ import static org.axonframework.messaging.eventhandling.processing.streaming.tok
  * entities.
  *
  * @author Rene de Waele
+ * @author John Hendrikx
  * @since 3.0.0
  */
 public class JpaTokenStore implements TokenStore {
@@ -63,6 +67,7 @@ public class JpaTokenStore implements TokenStore {
 
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final Segment CONFIG_SEGMENT = new Segment(0, 0);
+    private static final int CONFIG_CURRENT_VERSION = 2;
 
     private static final String OWNER_PARAM = "owner";
     private static final String PROCESSOR_NAME_PARAM = "processorName";
@@ -73,6 +78,9 @@ public class JpaTokenStore implements TokenStore {
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final LockModeType loadingLockMode;
+
+    private boolean storeUsable;  // synchronized access only
+    private ConfigToken configToken;  // synchronized access only
 
     /**
      * Instantiate a {JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
@@ -107,6 +115,8 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             if (joinAndUnwrap(fetchSegments(processorName, context)).size() > 0) {
@@ -134,6 +144,8 @@ public class JpaTokenStore implements TokenStore {
                                               int segment,
                                               @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -181,6 +193,8 @@ public class JpaTokenStore implements TokenStore {
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -207,6 +221,8 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             TokenEntry entry = new TokenEntry(processorName, segment, token, converter);
@@ -230,6 +246,8 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             int updates = entityManager.createQuery(
@@ -257,6 +275,8 @@ public class JpaTokenStore implements TokenStore {
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
@@ -274,6 +294,8 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
@@ -291,6 +313,8 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
@@ -322,6 +346,8 @@ public class JpaTokenStore implements TokenStore {
                                                    int segmentId,
                                                    @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -346,6 +372,8 @@ public class JpaTokenStore implements TokenStore {
     public CompletableFuture<List<Segment>> fetchSegments(@Nonnull String processorName,
                                                           @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -370,6 +398,8 @@ public class JpaTokenStore implements TokenStore {
     public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
                                                                    @Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -404,7 +434,7 @@ public class JpaTokenStore implements TokenStore {
      * @throws UnableToClaimTokenException If there is a token for given {@code processorName} and {@code segment}, but
      *                                     it is claimed by another process.
      */
-    protected TokenEntry loadToken(String processorName, int segment, EntityManager entityManager) {
+    private TokenEntry loadToken(String processorName, int segment, EntityManager entityManager) {
         TokenEntry token = entityManager.find(TokenEntry.class,
                                               new TokenEntry.PK(processorName, segment),
                                               loadingLockMode);
@@ -440,7 +470,7 @@ public class JpaTokenStore implements TokenStore {
      * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the token
      *                                     or if the segment has been split or merged concurrently.
      */
-    protected TokenEntry loadToken(String processorName, Segment segment, EntityManager entityManager) {
+    private TokenEntry loadToken(String processorName, Segment segment, EntityManager entityManager) {
         TokenEntry token = loadToken(processorName, segment.getSegmentId(), entityManager);
         try {
             validateSegment(processorName, segment, entityManager);
@@ -499,6 +529,8 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         try {
+            ensureStoreUsable();
+
             return completedFuture(getConfig().get("id"));
         } catch (Exception e) {
             return CompletableFuture.failedFuture(new UnableToRetrieveIdentifierException(
@@ -508,20 +540,92 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    private ConfigToken getConfig() {
-        EntityManager em = entityManagerProvider.getEntityManager();
-        TokenEntry token = em.find(TokenEntry.class,
-                                   new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT.getSegmentId()),
-                                   LockModeType.NONE);
-        if (token == null) {
-            token = new TokenEntry(CONFIG_TOKEN_ID,
-                                   CONFIG_SEGMENT,
-                                   new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())),
-                                   converter);
-            em.persist(token);
-            em.flush();
+    /**
+     * Ensures the store is ready for use. This loads configuration, and executes migrations
+     * if needed. Does nothing if store is already up to date.
+     */
+    private synchronized void ensureStoreUsable() {
+        if (!storeUsable) {
+            EntityManager em = entityManagerProvider.getEntityManager();
+            TokenEntry token = em.find(
+                TokenEntry.class,
+                new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT.getSegmentId()),
+                LockModeType.PESSIMISTIC_WRITE
+            );
+
+            boolean storeModified = false;
+
+            if (token == null) {  // must be a new empty store, or very old store
+                token = new TokenEntry(
+                    CONFIG_TOKEN_ID,
+                    CONFIG_SEGMENT,
+                    new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())),
+                    converter
+                );
+
+                em.persist(token);
+                em.flush();
+
+                storeModified = true;
+            }
+
+            ConfigToken configToken = (ConfigToken) token.getToken(converter);
+            int storeVersion = Integer.parseInt(configToken.getConfig().getOrDefault("version", "1"));
+
+            if (storeVersion < CONFIG_CURRENT_VERSION) {
+                runMigrations(em, storeVersion);
+
+                // All migrations done, update token:
+                Map<String, String> newMap = new HashMap<>(configToken.getConfig());
+
+                newMap.put("version", Integer.toString(CONFIG_CURRENT_VERSION));
+
+                configToken = new ConfigToken(Collections.unmodifiableMap(newMap));
+
+                em.merge(new TokenEntry(CONFIG_TOKEN_ID, CONFIG_SEGMENT, configToken, converter));
+                em.flush();
+
+                storeModified = true;
+            }
+
+            /*
+             * The Transaction that may be running is not controlled by the token store, and may
+             * commit or rollback elsewhere. If the guard field "storeUsable" is set to true too
+             * quickly, and the TX rolled back, then a situation may exist where the token store
+             * is not migrated but is usable according to this method.
+             *
+             * To ensure the store always migrates before use, the version check is repeated until
+             * no actual migration occurred (ie. no changes were needed). Only then the
+             * storeUsable flag is set. Until that time, configToken may contain a temporary token
+             * which will become permanent once sure the migration was really run AND committed.
+             *
+             * It would be preferable to run this entire process in its own transaction, if
+             * this option becomes available in the future, or to be able to install an after
+             * commit hook in JPA.
+             */
+
+            this.configToken = configToken;
+
+            if (!storeModified) {
+                storeUsable = true;  // no need to check version again, store is usable for sure now
+            }
         }
-        return (ConfigToken) token.getToken(converter);
+    }
+
+    private void runMigrations(EntityManager em, int initialVersion) {
+        if (initialVersion == 1) {
+            Map<String, List<TokenEntry>> allTokenEntries = em.createQuery("FROM TokenEntry te WHERE te.processorName != :processorName", TokenEntry.class)
+                .setParameter(PROCESSOR_NAME_PARAM, CONFIG_TOKEN_ID)
+                .getResultStream()
+                .collect(Collectors.groupingBy(TokenEntry::getProcessorName));
+
+            SegmentMaskMigration.migrateMasks(allTokenEntries, converter)
+                .forEach(em::merge);  // Update migrated entries in place
+        }
+    }
+
+    private synchronized ConfigToken getConfig() {
+        return configToken;
     }
 
     /**
