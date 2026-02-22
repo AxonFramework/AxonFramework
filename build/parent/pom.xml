@@ -55,7 +55,7 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.0.2</hikari.version>
         <hsqldb.version>2.7.2</hsqldb.version>
-        <hibernate-core.version>7.2.4.Final</hibernate-core.version>
+        <hibernate-core.version>7.2.5.Final</hibernate-core.version>
         <mysql-connector-java.version>9.6.0</mysql-connector-java.version>
         <postgresql.version>42.7.10</postgresql.version>
         <ojdbc.version>23.26.1.0.0</ojdbc.version>
@@ -79,7 +79,7 @@
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <equalsverifier.version>4.3.1</equalsverifier.version>
+        <equalsverifier.version>4.4</equalsverifier.version>
         <!-- Reactive -->
         <projectreactor.version>3.8.3</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
@@ -94,7 +94,7 @@
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.16</spring.version>
-        <spring.boot.version>3.5.10</spring.boot.version>
+        <spring.boot.version>3.5.11</spring.boot.version>
         <spring-data.version>2025.0.7</spring-data.version>
         <spring-security.version>6.5.8</spring-security.version>
         <!-- Testing -->
