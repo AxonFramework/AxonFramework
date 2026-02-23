@@ -57,6 +57,12 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Caching -->
         <dependency>
             <groupId>javax.cache</groupId>

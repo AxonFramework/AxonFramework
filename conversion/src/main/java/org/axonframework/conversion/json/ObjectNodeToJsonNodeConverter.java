@@ -23,8 +23,9 @@ import jakarta.annotation.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
 /**
- * A {@link ContentTypeConverter} implementation that converts an {@link ObjectNode} object into a {@link JsonNode}.
- * Intended to simplify JSON-typed event upcasters, which generally deal with an {@code ObjectNode} as the event.
+ * A {@link ContentTypeConverter} implementation for Jackson 2 that converts an {@link ObjectNode} object
+ * into a {@link JsonNode}. Intended to simplify JSON-typed event upcasters, which generally deal with an
+ * {@code ObjectNode} as the event.
  * <p>
  * Will succeed converting at all times as an {@code ObjectNode} is a {@code JsonNode} by definition.
  *

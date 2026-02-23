@@ -73,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTestSuite {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     protected static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
     protected static final String TEST_UPDATE_PAYLOAD = "some-update";
     protected static final String FOUND = "found";
@@ -266,7 +267,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                                      .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .expectErrorMatches(assertQueryExecutionException(toBeThrown))
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @SuppressWarnings("ConstantValue")
@@ -496,7 +497,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // then
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                     .expectErrorMatches(assertQueryExecutionException(toBeThrown))
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @Nonnull

@@ -2,6 +2,7 @@
 target/
 # ...but keep the wrapper jar
 !.mvn/wrapper/maven-wrapper.jar
+pom.xml.versionsBackup
 
 axon.ipr
 axon.iws
