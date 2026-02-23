@@ -73,12 +73,6 @@
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>org.dom4j</groupId>-->
-<!--            <artifactId>dom4j</artifactId>-->
-<!--            <optional>true</optional>-->
-<!--        </dependency>-->
         <!-- Test -->
         <dependency>
             <groupId>org.axonframework</groupId>
