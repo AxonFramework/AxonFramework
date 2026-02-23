@@ -18,7 +18,7 @@ package org.axonframework.messaging.core.sequencing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.conversion.MessageConverter;

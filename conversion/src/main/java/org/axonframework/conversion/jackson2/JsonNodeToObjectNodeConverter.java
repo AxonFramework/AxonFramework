@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
 
 /**
- * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} into an {@link ObjectNode}.
+ * A {@link ContentTypeConverter} implementation for Jackson 2 that converts a {@link JsonNode} into an
+ * {@link ObjectNode}.
  * <p>
  * Intended to simplify JSON-typed event upcasters, which generally deal with an {@code ObjectNode} as the event.
  * <p>

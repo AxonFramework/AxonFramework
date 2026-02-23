@@ -22,7 +22,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.util.StubLifecycleRegistry;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;

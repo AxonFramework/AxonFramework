@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
-import org.axonframework.messaging.eventhandling.annotation.Timestamp;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.core.annotation.SourceId;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
+import org.axonframework.messaging.eventhandling.annotation.Timestamp;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;

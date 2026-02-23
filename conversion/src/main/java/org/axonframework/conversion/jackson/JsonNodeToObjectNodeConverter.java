@@ -14,45 +14,53 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.jackson3;
+package org.axonframework.conversion.jackson;
 
-import org.axonframework.serialization.ContentTypeConverter;
-import org.axonframework.serialization.SerializationException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeType;
 import tools.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.ContentTypeConverter;
 
 /**
- * A {@link ContentTypeConverter} implementation for Jackson 3 that converts a {@link JsonNode} object
- * into an {@link ObjectNode}. Intended to simplify JSON-typed event upcasters, which generally deal
- * with an {@code ObjectNode} as the event.
+ * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} into an {@link ObjectNode}.
+ * <p>
+ * Intended to simplify JSON-typed event upcasters, which generally deal with an {@code ObjectNode} as the event.
  * <p>
  * Will succeed if the {@code JsonNode} has a node type of {@link JsonNodeType#OBJECT}.
  *
  * @author Steven van Beelen
- * @author John Hendrikx
- * @since 4.13.0
+ * @since 4.6.0
  */
 public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonNode, ObjectNode> {
 
     @Override
+    @Nonnull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
+    @Nonnull
     public Class<ObjectNode> targetType() {
         return ObjectNode.class;
     }
 
     @Override
-    public ObjectNode convert(JsonNode original) {
-        JsonNodeType originalNodeType = original.getNodeType();
+    @Nullable
+    public ObjectNode convert(@Nullable JsonNode input) {
+        if (input == null) {
+            return null;
+        }
+
+        JsonNodeType originalNodeType = input.getNodeType();
         if (JsonNodeType.OBJECT.equals(originalNodeType)) {
-            return ((ObjectNode) original);
+            return ((ObjectNode) input);
         } else {
-            throw new SerializationException(
-                    "Cannot convert from JsonNode to ObjectNode because the node type is [" + originalNodeType + "]"
+            throw new ConversionException(
+                    "Cannot convert from JsonNode to ObjectNode because the node type is [" + originalNodeType + "]."
             );
         }
     }

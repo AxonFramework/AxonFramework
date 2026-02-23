@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.jackson3;
+package org.axonframework.conversion.jackson;
 
-import org.axonframework.serialization.CannotConvertBetweenTypesException;
-import org.axonframework.serialization.ContentTypeConverter;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.ContentTypeConverter;
+
+import java.util.Objects;
 
 /**
- * ContentTypeConverter implementation for Jackson 3 that converts byte[] containing UTF8 encoded
- * JSON string to a Jackson JsonNode.
+ * A {@link ContentTypeConverter} implementation for Jackson 3 that converts {@code byte[]} containing UTF8 encoded
+ * JSON string to a {@link JsonNode}.
  *
  * @author Allard Buijze
- * @author John Hendrikx
- * @since 4.13.0
+ * @since 2.2.0
  */
 public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[], JsonNode> {
 
@@ -39,26 +42,33 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */
-    public ByteArrayToJsonNodeConverter(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public ByteArrayToJsonNodeConverter(@Nonnull ObjectMapper objectMapper) {
+        this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
+    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
+    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
-    public JsonNode convert(byte[] original) {
+    @Nullable
+    public JsonNode convert(@Nullable byte[] input) {
+        if (input == null) {
+            return null;
+        }
+
         try {
-            return objectMapper.readTree(original);
+            return objectMapper.readTree(input);
         } catch (JacksonException e) {
-            throw new CannotConvertBetweenTypesException("An error occurred while converting a JsonNode to byte[]", e);
+            throw new ConversionException("An error occurred while converting a JsonNode to byte[].", e);
         }
     }
 }

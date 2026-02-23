@@ -16,11 +16,10 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
@@ -34,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.ObjectMapper;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;

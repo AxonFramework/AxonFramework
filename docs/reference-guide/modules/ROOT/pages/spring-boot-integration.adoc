@@ -3,6 +3,33 @@
 Axon Framework provides extensive support for Spring Boot through its Spring Boot Starter extension.
 While Axon can be configured programmatically without Spring, the Spring Boot integration provides the easiest way to get started through automatic configuration.
 
+The following table shows which Spring Boot versions are supported by each Axon Framework version:
+
+[cols="2,1,1,1", options="header"]
+|===
+|Axon Framework Version |Spring Boot 2 |Spring Boot 3 |Spring Boot 4
+
+|4.0 - 4.6
+|✓
+|
+|
+
+|4.7 - 4.12
+|✓
+|✓
+|
+
+|4.13
+|✓
+|✓
+|✓
+
+|5.0+
+|
+|✓
+|✓
+|===
+
 == Getting started
 
 To enable Spring Boot auto-configuration, add the Axon Spring Boot Starter dependency to your project:

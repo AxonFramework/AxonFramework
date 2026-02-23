@@ -21,7 +21,7 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;

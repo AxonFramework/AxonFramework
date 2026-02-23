@@ -14,61 +14,60 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson2;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**
- * A {@link ContentTypeConverter} implementation for Jackson 2 that converts {@code byte[]} containing UTF8 encoded
- * JSON string to a {@link JsonNode}.
+ * A {@link ContentTypeConverter} implementation for Jackson 2 that converts a {@link JsonNode} object into a
+ * {@code byte[]}.
+ * <p>
+ * The {@code byte[]} will contain the UTF8 encoded JSON string.
  *
  * @author Allard Buijze
  * @since 2.2.0
  */
-public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[], JsonNode> {
+public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNode, byte[]> {
 
     private final ObjectMapper objectMapper;
 
     /**
-     * Initialize the Converter, using given {@code objectMapper} to parse the binary contents
+     * Initialize the {@code JsonNodeToByteArrayConverter} using the given {@code objectMapper} to convert the
+     * {@link JsonNode} into {@code byte[]}.
      *
-     * @param objectMapper the Jackson ObjectMapper to parse the byte array with
+     * @param objectMapper The object mapper to serialize the {@link JsonNode} into {@code byte[].
      */
-    public ByteArrayToJsonNodeConverter(@Nonnull ObjectMapper objectMapper) {
+    public JsonNodeToByteArrayConverter(@Nonnull ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
     @Nonnull
-    public Class<byte[]> expectedSourceType() {
-        return byte[].class;
-    }
-
-    @Override
-    @Nonnull
-    public Class<JsonNode> targetType() {
+    public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
-    @Nullable
-    public JsonNode convert(@Nullable byte[] input) {
-        if (input == null) {
-            return null;
-        }
+    @Nonnull
+    public Class<byte[]> targetType() {
+        return byte[].class;
+    }
 
+    @Override
+    @Nullable
+    public byte[] convert(@Nullable JsonNode input) {
         try {
-            return objectMapper.readTree(input);
-        } catch (IOException e) {
-            throw new ConversionException("An error occurred while converting a JsonNode to byte[].", e);
+            return objectMapper.writeValueAsBytes(input);
+        } catch (JsonProcessingException e) {
+            throw new ConversionException("An error occurred while converting a JsonNode to byte[]", e);
         }
     }
 }

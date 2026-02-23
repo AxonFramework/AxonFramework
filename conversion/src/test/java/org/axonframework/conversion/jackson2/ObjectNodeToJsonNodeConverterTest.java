@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,47 +14,37 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.json.JsonNodeToObjectNodeConverter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link JsonNodeToObjectNodeConverter}.
+ * Test class validating the {@link ObjectNodeToJsonNodeConverter}.
  *
  * @author Steven van Beelen
  */
-class JsonNodeToObjectNodeConverterTest {
+class ObjectNodeToJsonNodeConverterTest {
 
-    private final JsonNodeToObjectNodeConverter testSubject = new JsonNodeToObjectNodeConverter();
+    private final ObjectNodeToJsonNodeConverter testSubject = new ObjectNodeToJsonNodeConverter();
 
     @Test
     void validateSourceAndTargetType() {
-        assertEquals(JsonNode.class, testSubject.expectedSourceType());
-        assertEquals(ObjectNode.class, testSubject.targetType());
+        assertEquals(ObjectNode.class, testSubject.expectedSourceType());
+        assertEquals(JsonNode.class, testSubject.targetType());
     }
 
     @Test
     void convert() {
-        JsonNode expectedJsonNode = new ObjectNode(JsonNodeFactory.instance);
+        ObjectNode expectedJsonNode = new ObjectNode(JsonNodeFactory.instance);
 
-        ObjectNode result = testSubject.convert(expectedJsonNode);
+        JsonNode result = testSubject.convert(expectedJsonNode);
 
         assertEquals(expectedJsonNode, result);
-    }
-
-    @Test
-    void convertThrowsException() {
-        JsonNode testJsonNode = new TextNode("some-text");
-
-        assertThrows(ConversionException.class, () -> testSubject.convert(testJsonNode));
     }
 
     @Test

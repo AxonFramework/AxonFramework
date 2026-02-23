@@ -14,37 +14,41 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.jackson3;
+package org.axonframework.conversion.jackson2;
 
-import org.axonframework.serialization.ContentTypeConverter;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.conversion.ContentTypeConverter;
 
 /**
- * A {@link ContentTypeConverter} implementation for Jackson 3 that converts an {@link ObjectNode} object
- * into a {@link JsonNode}. Intended to simplify JSON-typed event upcasters, which generally deal with an
- * {@code ObjectNode} as the event.
+ * A {@link ContentTypeConverter} implementation for Jackson 2 that converts an {@link ObjectNode} object into a
+ * {@link JsonNode}. Intended to simplify JSON-typed event upcasters, which generally deal with an {@code ObjectNode} as
+ * the event.
  * <p>
  * Will succeed converting at all times as an {@code ObjectNode} is a {@code JsonNode} by definition.
  *
  * @author Steven van Beelen
- * @author John Hendrikx
- * @since 4.13.0
+ * @since 4.6.0
  */
 public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<ObjectNode, JsonNode> {
 
     @Override
+    @Nonnull
     public Class<ObjectNode> expectedSourceType() {
         return ObjectNode.class;
     }
 
     @Override
+    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
-    public JsonNode convert(ObjectNode original) {
-        return original;
+    @Nullable
+    public JsonNode convert(@Nullable ObjectNode input) {
+        return input;
     }
 }

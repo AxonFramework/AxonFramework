@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -27,22 +28,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
- * {@link org.axonframework.conversion.jackson.JacksonConverter}.
+ * {@link org.axonframework.conversion.jackson2.Jackson2Converter}.
  *
  * @author Steven van Beelen
- * @since 3.4.0
+ * @since 5.0.3
  */
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
-@ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
+@ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
-public class ObjectMapperAutoConfiguration {
+public class Jackson2MapperAutoConfiguration {
 
     /**
      * Returns the default Axon Framework {@link ObjectMapper}, if required.
@@ -54,11 +53,11 @@ public class ObjectMapperAutoConfiguration {
      *
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
-    @Bean("defaultAxonObjectMapper")
+    @Bean("defaultAxonJackson2Mapper")
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
-    public ObjectMapper defaultAxonObjectMapper() {
-        return JsonMapper.builder().findAndAddModules().build();
+    public ObjectMapper defaultAxonJackson2Mapper() {
+        return new ObjectMapper().findAndRegisterModules();
     }
 
     /**
@@ -78,25 +77,25 @@ public class ObjectMapperAutoConfiguration {
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "default", matchIfMissing = true)
+        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2", matchIfMissing = true)
         static class GeneralDefaultCondition {
 
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson", matchIfMissing = true)
+        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2", matchIfMissing = true)
         static class GeneralJacksonCondition {
 
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "jackson")
+        @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "jackson2")
         static class MessagesJacksonCondition {
 
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.events", havingValue = "jackson")
+        @ConditionalOnProperty(name = "axon.converter.events", havingValue = "jackson2")
         static class EventsJacksonCondition {
 
         }

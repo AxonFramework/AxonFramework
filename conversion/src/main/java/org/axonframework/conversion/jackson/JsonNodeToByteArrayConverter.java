@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.conversion.ConversionException;
@@ -65,7 +65,7 @@ public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNo
     public byte[] convert(@Nullable JsonNode input) {
         try {
             return objectMapper.writeValueAsBytes(input);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new ConversionException("An error occurred while converting a JsonNode to byte[]", e);
         }
     }
