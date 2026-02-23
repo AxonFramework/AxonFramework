@@ -90,7 +90,7 @@
         <jackson.version>3.0.1</jackson.version>
         <jackson2.version>2.20.1</jackson2.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version>
+        <db-scheduler.version>16.7.1</db-scheduler.version>
         <jobrunr.version>8.2.4</jobrunr.version>
         <quartz.version>2.5.1</quartz.version>
         <!-- Spring -->
