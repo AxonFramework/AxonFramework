@@ -30,6 +30,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -56,7 +57,13 @@ public class JacksonConverter implements Converter {
      * {@link JsonMapper.Builder#findAndAddModules() finds and registers known modules}.
      */
     public JacksonConverter() {
-        this(JsonMapper.builder().findAndAddModules().build());
+        // TODO #4218 - Remove custom PolymorphicTypeValidator that's required for ReplayToken#context
+        this(JsonMapper.builder()
+                       .findAndAddModules()
+                       .polymorphicTypeValidator(BasicPolymorphicTypeValidator.builder()
+                                                                              .allowIfBaseType(Object.class)
+                                                                              .build())
+                       .build());
     }
 
     /**
