@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,10 @@ import javax.sql.DataSource;
  * @author Simon Zambrovski
  * @since 3.0.3
  */
-@AutoConfiguration(afterName = {"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"})
+@AutoConfiguration(afterName = {
+        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
+})
 @ConditionalOnClass(EntityManagerFactory.class)
 @ConditionalOnBean(EntityManagerFactory.class)
 @EnableConfigurationProperties(TokenStoreProperties.class)
