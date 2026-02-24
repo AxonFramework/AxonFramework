@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,54 +14,55 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.conversion.json.ByteArrayToJsonNodeConverter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ByteArrayToJsonNodeConverter}.
+ * Test class validating the {@link JsonNodeToByteArrayConverter}.
  *
  * @author Allard Buijze
  */
-class ByteArrayToJsonNodeConverterTest {
+class JsonNodeToByteArrayConverterTest {
 
-    private ByteArrayToJsonNodeConverter testSubject;
     private ObjectMapper objectMapper;
+
+    private JsonNodeToByteArrayConverter testSubject;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        testSubject = new ByteArrayToJsonNodeConverter(objectMapper);
+
+        testSubject = new JsonNodeToByteArrayConverter(objectMapper);
     }
 
     @Test
     void throwsNullPointerExceptionWhenConstructingWithNullObjectMapper() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new ByteArrayToJsonNodeConverter(null));
+        assertThrows(NullPointerException.class, () -> new JsonNodeToByteArrayConverter(null));
     }
 
     @Test
     void validateSourceAndTargetType() {
-        assertEquals(byte[].class, testSubject.expectedSourceType());
-        assertEquals(JsonNode.class, testSubject.targetType());
+        assertEquals(JsonNode.class, testSubject.expectedSourceType());
+        assertEquals(byte[].class, testSubject.targetType());
     }
 
     @Test
-    void convert() throws Exception {
+    void convertNodeToBytes() throws Exception {
         final String content = "{\"someKey\":\"someValue\",\"someOther\":true}";
-        JsonNode expected = objectMapper.readTree(content);
-        assertEquals(expected, testSubject.convert(content.getBytes(IOUtils.UTF8)));
+        JsonNode node = objectMapper.readTree(content);
+        assertArrayEquals(content.getBytes(IOUtils.UTF8), testSubject.convert(node));
     }
 
     @Test
     void convertIsNullSafe() {
         assertDoesNotThrow(() -> testSubject.convert(null));
-        assertNull(testSubject.convert(null));
+        assertNotNull(testSubject.convert(null));
     }
 }

@@ -33,7 +33,7 @@ This means your tests use the **same configuration** as your production code, el
 Furthermore, it opens the door for (Spring Boot) integration tests, where the `ApplicationConfigurer` is configured to use parts of or the entire setup of your application.
 
 [#test_fixture_setup]
-== Test Fixture setup
+== Test fixture setup
 
 The fundamental shift in Axon Framework 5 is that the test fixture is built from your application's `ApplicationConfigurer` rather than manually registering individual components.
 This means that the `AxonTestFixture` has **no** plain registration methods like the `FixtureConfiguration` had. Instead, you will use the same registration flow as you would for your application as the fixture expects an `ApplicationConfigurer`.
@@ -109,7 +109,7 @@ class AxonConfig {
 
 By building the fixture from the `ApplicationConfigurer`, any configuration you add to that configurer (custom parameter resolvers, handler enhancers, upcasters, etc.) is available in your tests.
 Note that there is no magic here: this only applies if you **explicitly** reuse your production `ApplicationConfigurer` in your tests.
-In the example above, the static `AxonConfig.appConfigurer()` method suggests your `ApplicationConfigurer` is statically constructed for your production code. However, you can very well maintain a test-specific `ApplicationConfigurer` if you like. The responsibility on this lies with the user and whichever preference they have.
+In the example above, the static `AxonConfig.appConfigurer()` method suggests your `ApplicationConfigurer` is statically constructed for your production code. However, you can also maintain a test-specific `ApplicationConfigurer` if you like. The responsibility on this lies with the user and whichever preference they have.
 
 In contrast to using the `ApplicationConfigurer`, Axon Framework 4 enforced duplication of the registration methods on the `AggregateTestFixture` to __approach__ what the actual application did.
 In practice, this resulted in test fixtures not representing the actual setup, because crucial components were either missed or not available for configuration on the `AggregateTestFixture`.
@@ -162,7 +162,7 @@ class GiftCardTest {
 }
 ----
 
-== Given-When-Then structure
+== Given-when-then structure
 
 The `AxonTestFixture` maintains the familiar given-when-then style of the `AggregateTestFixture`, but with a more fluent API.
 The following sections show how to migrate the <<given,given>>, <<when,when>>, and then phases from Axon Framework 4 to 5.

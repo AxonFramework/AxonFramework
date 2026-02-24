@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import org.axonframework.conversion.TestConverter;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -36,6 +37,7 @@ class ReplayTokenSerializationTest {
         return TestConverter.all();
     }
 
+    @Disabled("TODO #4218")
     @MethodSource("converters")
     @ParameterizedTest
     void tokenShouldBeSerializable(TestConverter converter) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson2;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,17 +34,17 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
- * A {@link Converter} implementation that uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to convert
- * objects into and from a JSON format.
+ * A {@link Converter} implementation for Jackson 2 that uses Jackson's {@link ObjectMapper} to convert objects into and
+ * from a JSON format.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
  * @author Steven van Beelen
  * @since 2.2.0
  */
-public class JacksonConverter implements Converter {
+public class Jackson2Converter implements Converter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JacksonConverter.class);
+    private static final Logger logger = LoggerFactory.getLogger(Jackson2Converter.class);
 
     private final ObjectMapper objectMapper;
     private final ChainingContentTypeConverter converter;
@@ -53,7 +53,7 @@ public class JacksonConverter implements Converter {
      * Constructs a {@code JacksonConverter} with a default {@link ObjectMapper} that
      * {@link ObjectMapper#findAndRegisterModules() finds and registers known modules}.
      */
-    public JacksonConverter() {
+    public Jackson2Converter() {
         this(new ObjectMapper().findAndRegisterModules());
     }
 
@@ -62,7 +62,7 @@ public class JacksonConverter implements Converter {
      *
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
-    public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
+    public Jackson2Converter(@Nonnull ObjectMapper objectMapper) {
         this(objectMapper, new ChainingContentTypeConverter());
     }
 
@@ -77,8 +77,8 @@ public class JacksonConverter implements Converter {
      * @param converter    The converter used for simpler conversions.
      */
     @Internal
-    public JacksonConverter(@Nonnull ObjectMapper objectMapper,
-                            @Nonnull ChainingContentTypeConverter converter) {
+    public Jackson2Converter(@Nonnull ObjectMapper objectMapper,
+                             @Nonnull ChainingContentTypeConverter converter) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.converter = Objects.requireNonNull(converter, "The ChainingContentTypeConverter may not be null.");
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));

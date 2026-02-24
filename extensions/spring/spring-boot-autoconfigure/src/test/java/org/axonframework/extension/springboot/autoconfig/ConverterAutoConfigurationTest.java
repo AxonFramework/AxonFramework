@@ -16,15 +16,14 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.conversion.jackson2.Jackson2Converter;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
@@ -35,6 +34,8 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 import java.lang.reflect.Field;
 
@@ -212,6 +213,75 @@ class ConverterAutoConfigurationTest {
         });
     }
 
+    @Test
+    void defaultAxonJackson2MapperIsUsedForExpectedConverters() {
+        // Jackson is used for all Converters.
+        testContext.withPropertyValues(
+                "axon.axonserver.enabled=false",
+                "axon.converter.general=jackson2",
+                "axon.converter.messages=jackson2",
+                "axon.converter.events=jackson2"
+        ).run(context -> {
+            Field objectMapperField = Jackson2Converter.class.getDeclaredField("objectMapper");
+
+            Converter generalConverter = context.getBean(Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
+
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+                    context.getBean("defaultAxonJackson2Mapper", com.fasterxml.jackson.databind.ObjectMapper.class);
+
+            Object resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
+            Object resultMessageMapper = ReflectionUtils.getFieldValue(objectMapperField, messageConverter);
+            Object resultEventMapper = ReflectionUtils.getFieldValue(objectMapperField, eventConverter);
+
+            assertThat(generalConverter).isInstanceOf(Jackson2Converter.class);
+            assertThat(messageConverter).isInstanceOf(Jackson2Converter.class);
+            assertThat(eventConverter).isInstanceOf(Jackson2Converter.class);
+
+            assertThat(objectMapper).isEqualTo(resultGeneralMapper);
+            assertThat(objectMapper).isEqualTo(resultMessageMapper);
+            assertThat(objectMapper).isEqualTo(resultEventMapper);
+            assertThat(resultGeneralMapper).isEqualTo(resultMessageMapper);
+            assertThat(resultMessageMapper).isEqualTo(resultEventMapper);
+        });
+    }
+
+    @Test
+    void customJackson2ObjectMapperIsUsedForExpectedConverters() {
+        // Jackson is used for general and events. CBOR for messages.
+        testContext.withUserConfiguration(CustomJackson2MapperContext.class).withPropertyValues(
+                "axon.axonserver.enabled=false",
+                "axon.converter.general=jackson2",
+                "axon.converter.messages=cbor",
+                "axon.converter.events=jackson2"
+        ).run(context -> {
+            Field mapper2Field = Jackson2Converter.class.getDeclaredField("objectMapper");
+            Field mapperField = JacksonConverter.class.getDeclaredField("objectMapper");
+
+            Converter generalConverter = context.getBean(Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+                    context.getBean("testObjectMapper", com.fasterxml.jackson.databind.ObjectMapper.class);
+
+            com.fasterxml.jackson.databind.ObjectMapper resultGeneralMapper =
+                    ReflectionUtils.getFieldValue(mapper2Field, generalConverter);
+            ObjectMapper resultMessageMapper =
+                    ReflectionUtils.getFieldValue(mapperField, messageConverter);
+            com.fasterxml.jackson.databind.ObjectMapper resultEventMapper =
+                    ReflectionUtils.getFieldValue(mapper2Field, eventConverter);
+
+            assertInstanceOf(Jackson2Converter.class, generalConverter);
+            assertInstanceOf(JacksonConverter.class, messageConverter);
+            assertInstanceOf(Jackson2Converter.class, eventConverter);
+            assertThat(objectMapper).isEqualTo(resultGeneralMapper);
+            assertThat(objectMapper).isNotEqualTo(resultMessageMapper);
+            assertThat(objectMapper).isEqualTo(resultEventMapper);
+            assertThat(resultGeneralMapper).isEqualTo(resultEventMapper);
+        });
+    }
+
     private static Converter getWrappedMessageConverter(MessageConverter messageConverter) {
         assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
         return ((DelegatingMessageConverter) messageConverter).delegate();
@@ -229,7 +299,10 @@ class ConverterAutoConfigurationTest {
                 "axon.converter.general=cbor",
                 "axon.converter.messages=avro",
                 "axon.converter.events=avro"
-        ).run(context -> assertThat(context).doesNotHaveBean("defaultAxonObjectMapper"));
+        ).run(context -> {
+            assertThat(context).doesNotHaveBean("defaultAxonObjectMapper");
+            assertThat(context).doesNotHaveBean("defaultAxonJackson2Mapper");
+        });
     }
 
     @Configuration
@@ -289,6 +362,22 @@ class ConverterAutoConfigurationTest {
         @Bean("testCborMapper")
         public CBORMapper cborMapper() {
             return new CBORMapper();
+        }
+    }
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {
+            JmxAutoConfiguration.class,
+            WebClientAutoConfiguration.class,
+            DataSourceAutoConfiguration.class,
+            JacksonAutoConfiguration.class,
+            HttpMessageConvertersAutoConfiguration.class,
+    })
+    public static class CustomJackson2MapperContext {
+
+        @Bean("testObjectMapper")
+        public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+            return new com.fasterxml.jackson.databind.ObjectMapper();
         }
     }
 
