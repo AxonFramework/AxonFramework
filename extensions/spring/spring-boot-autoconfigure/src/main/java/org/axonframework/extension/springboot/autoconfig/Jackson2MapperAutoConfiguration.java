@@ -65,9 +65,9 @@ public class Jackson2MapperAutoConfiguration {
      * <ul>
      *     <li>The {@code general} converter property is not set. This means Axon defaults to Jackson</li>
      *     <li>The {@code general} converter property is set to {@code default}. This means Jackson will be used</li>
-     *     <li>The {@code general} converter property is set to {@code jackson}</li>
-     *     <li>The {@code messages} converter property is set to {@code jackson}</li>
-     *     <li>The {@code events} converter property is set to {@code jackson}</li>
+     *     <li>The {@code general} converter property is set to {@code jackson2}</li>
+     *     <li>The {@code messages} converter property is set to {@code jackson2}</li>
+     *     <li>The {@code events} converter property is set to {@code jackson2}</li>
      * </ul>
      */
     private static class JacksonConfiguredCondition extends AnyNestedCondition {
