@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
@@ -46,16 +48,21 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     private final Cause cause;
     private final Metadata diagnostics;
     private final M message;
+    private final Context context;
 
     /**
      * Constructs a new {@link JpaDeadLetter} from a {@link DeadLetterEntry}, deserialized diagnostics and a
-     * reconstructed message.
+     * reconstructed message entry containing both the message and its associated context.
+     * <p>
+     * The context contains restored resources such as tracking token and domain info (aggregate identifier, type,
+     * sequence number) that were stored when the dead letter was enqueued.
      *
      * @param entry       The {@link DeadLetterEntry} to construct this letter from.
      * @param diagnostics The deserialized diagnostics {@link Metadata}.
-     * @param message     The reconstructed {@link EventMessage}.
+     * @param message     The message that was enqueued.
+     * @param context     The context containing restored resources such as tracking token and aggregate data.
      */
-    public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, M message) {
+    public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, M message, Context context) {
         this.id = entry.getDeadLetterId();
         this.index = entry.getSequenceIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
@@ -68,6 +75,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         }
         this.diagnostics = diagnostics;
         this.message = message;
+        this.context = context;
     }
 
     /**
@@ -82,6 +90,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      *                           in the same {@code sequenceIdentifier} queued.
      * @param diagnostics        The diagnostics provided during enqueueing.
      * @param message            The message that was enqueued.
+     * @param context            The context containing restored resources such as tracking token and domain info.
      */
     JpaDeadLetter(String id,
                   Long index,
@@ -90,7 +99,8 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                   Instant lastTouched,
                   Cause cause,
                   Metadata diagnostics,
-                  M message) {
+                  M message,
+                  Context context) {
         this.id = id;
         this.index = index;
         this.sequenceIdentifier = sequenceIdentifier;
@@ -99,6 +109,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         this.cause = cause;
         this.diagnostics = diagnostics;
         this.message = message;
+        this.context = context;
     }
 
     @Override
@@ -155,6 +166,16 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         return sequenceIdentifier;
     }
 
+    /**
+     * Returns the context associated with this dead letter, containing restored resources such as tracking token and
+     * domain info (aggregate identifier, type, sequence number).
+     *
+     * @return The context with restored resources, or an empty context if no resources were stored.
+     */
+    public Context context() {
+        return context != null ? context : Context.empty();
+    }
+
     @Override
     public DeadLetter<M> markTouched() {
         return new JpaDeadLetter<>(id,
@@ -164,7 +185,8 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                                    GenericDeadLetter.clock.instant(),
                                    cause,
                                    diagnostics,
-                                   message);
+                                   message,
+                                   context);
     }
 
     @Override
@@ -176,12 +198,21 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                                    GenericDeadLetter.clock.instant(),
                                    requeueCause != null ? ThrowableCause.asCause(requeueCause) : cause,
                                    diagnostics,
-                                   message);
+                                   message,
+                                   context);
     }
 
     @Override
     public DeadLetter<M> withDiagnostics(Metadata diagnostics) {
-        return new JpaDeadLetter<>(id, index, sequenceIdentifier, enqueuedAt, GenericDeadLetter.clock.instant(), cause, diagnostics, message);
+        return new JpaDeadLetter<>(id,
+                                   index,
+                                   sequenceIdentifier,
+                                   enqueuedAt,
+                                   GenericDeadLetter.clock.instant(),
+                                   cause,
+                                   diagnostics,
+                                   message,
+                                   context);
     }
 
     @Override
@@ -195,6 +226,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                 ", cause=" + cause +
                 ", diagnostics=" + diagnostics +
                 ", message=" + message +
+                ", context=" + context +
                 '}';
     }
 
@@ -230,7 +262,10 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         if (!Objects.equals(diagnostics, that.diagnostics)) {
             return false;
         }
-        return Objects.equals(message, that.message);
+        if (!Objects.equals(message, that.message)) {
+            return false;
+        }
+        return Objects.equals(context, that.context);
     }
 
     @Override
@@ -243,6 +278,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
         result = 31 * result + (cause != null ? cause.hashCode() : 0);
         result = 31 * result + (diagnostics != null ? diagnostics.hashCode() : 0);
         result = 31 * result + (message != null ? message.hashCode() : 0);
+        result = 31 * result + (context != null ? context.hashCode() : 0);
         return result;
     }
 }

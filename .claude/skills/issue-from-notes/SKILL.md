@@ -1,11 +1,12 @@
 ---
 name: issue-from-notes
 description: >
-  Convert meeting notes, transcriptions, or informal descriptions into properly formatted GitHub issue
-  bodies following the project's issue templates. Use when the user says "create issue from notes",
-  "write up an issue", "turn these notes into an issue", "file a bug from meeting notes",
-  "create enhancement from discussion", provides meeting notes or transcription and asks for an issue,
-  or any variation of converting unstructured text into a structured GitHub issue.
+  Create well-structured GitHub issues from any source: meeting notes, transcriptions, conversation
+  context, informal descriptions, or direct requests. Use when the user says "create a github issue",
+  "create issue from notes", "write up an issue", "turn these notes into an issue", "file a bug",
+  "file a bug from meeting notes", "create enhancement from discussion", "make an issue for",
+  "open an issue about", "create a follow-up issue", or any variation of creating a structured
+  GitHub issue — whether the input comes from notes, conversation context, or a direct description.
 ---
 
 # Issue From Notes

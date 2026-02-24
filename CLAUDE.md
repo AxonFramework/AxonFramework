@@ -65,6 +65,7 @@ Maven wrapper is used (`./mvnw`). Key commands:
 
 ## Test Guidelines
 - When writing tests avoid Mock whenever possible, try to use simplest implementation. Or use some recording implementations if needed. Ask me if it's available or you need to create your own, if you cannot find. Always ask me before doing into Mocking or custom implementation if you don't find existing one.
+- **Mockito Spy is justified** when behavior-based assertions alone cannot validate the interaction — e.g., verifying a decorator **prevents** calls to the delegate (`verify(delegate, never())`), or verifying the delegate receives **correct arguments** (`verify(delegate).method(eq(expected))`). Wrap a real implementation with `spy()` and use `verify`/`clearInvocations` as needed. Outside of these cases, prefer state-based assertions.
 - **While testing do not focus on implementation details like implemented interfaces, always test the behaviour by API usage.**
 - **Test Utilities**: Located in `messaging/src/test/java/org/axonframework/utils/`
 - **Additional Rules**:

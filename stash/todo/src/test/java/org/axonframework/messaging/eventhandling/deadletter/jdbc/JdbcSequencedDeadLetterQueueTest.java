@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.DeadLetterWithContext;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueueTest;
@@ -139,17 +140,24 @@ class JdbcSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<
     }
 
     @Override
-    public DeadLetter<EventMessage> generateInitialLetter() {
-        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
+    public DeadLetterWithContext<EventMessage> generateInitialLetter() {
+        return new DeadLetterWithContext<>(
+                new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable()),
+                null
+        );
     }
 
     @Override
-    protected DeadLetter<EventMessage> generateFollowUpLetter() {
-        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
+    protected DeadLetterWithContext<EventMessage> generateFollowUpLetter() {
+        return new DeadLetterWithContext<>(
+                new GenericDeadLetter<>("sequenceIdentifier", generateEvent()),
+                null
+        );
     }
 
     @Override
-    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetter<EventMessage> deadLetter) {
+    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetterWithContext<EventMessage> letterWithContext) {
+        DeadLetter<EventMessage> deadLetter = letterWithContext.letter();
         if (deadLetter instanceof JdbcDeadLetter) {
             return deadLetter;
         }
@@ -202,8 +210,8 @@ class JdbcSequencedDeadLetterQueueTest extends SyncSequencedDeadLetterQueueTest<
 
     @Test
     void invokingEvictWithNonJdbcDeadLetterThrowsWrongDeadLetterTypeException() {
-        DeadLetter<EventMessage> testLetter = generateInitialLetter();
-        assertThrows(WrongDeadLetterTypeException.class, () -> jdbcDeadLetterQueue.evict(testLetter));
+        DeadLetter<EventMessage> testLetter = generateInitialLetter().letter();
+        assertThrows(WrongDeadLetterTypeException.class, () -> jdbcDeadLetterQueue.evict(testLetter, null));
     }
 
     @SuppressWarnings("DataFlowIssue")
