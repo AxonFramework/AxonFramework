@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlingMember;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -35,11 +36,11 @@ import java.util.Optional;
 import static java.util.Collections.singletonMap;
 
 /**
- * An implementation of the {@link HandlerEnhancerDefinition} that is used for
- * {@link AllowReplay} annotated message handling methods.
+ * An implementation of the {@link HandlerEnhancerDefinition} that is used for {@link AllowReplay} annotated
+ * {@link EventHandlingMember event handling methods} .
  *
  * @author Allard Buijze
- * @since 3.2
+ * @since 3.2.0
  */
 public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefinition {
 
@@ -56,19 +57,28 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
                                                                   .orElse(DEFAULT_SETTING))
                                          .orElse(DEFAULT_SETTING).get("allowReplay")
                 );
-        if (!isReplayAllowed) {
-            return new ReplayBlockingMessageHandlingMember<>(original);
+        if (!isReplayAllowed && original instanceof EventHandlingMember<T> eventHandlingMember) {
+            return new ReplayBlockingMessageHandlingMember<>(eventHandlingMember);
         }
         return original;
     }
 
-    private static class ReplayBlockingMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
+    private static class ReplayBlockingMessageHandlingMember<T>
+            extends WrappedMessageHandlingMember<T>
+            implements EventHandlingMember<T> {
 
+        private final EventHandlingMember<T> delegate;
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         public static final Optional<Boolean> NO_REPLAY = Optional.of(Boolean.FALSE);
 
-        public ReplayBlockingMessageHandlingMember(MessageHandlingMember<T> original) {
+        public ReplayBlockingMessageHandlingMember(EventHandlingMember<T> original) {
             super(original);
+            this.delegate = original;
+        }
+
+        @Override
+        public String eventName() {
+            return delegate.eventName();
         }
 
         @Override
