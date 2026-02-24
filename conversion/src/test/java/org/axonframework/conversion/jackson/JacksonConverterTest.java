@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.conversion.json;
+package org.axonframework.conversion.jackson;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ConverterTestSuite;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.provider.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
  */
 class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().findAndAddModules().build();
     private static final TypeReference<List<SomeInput>> SOME_INPUT_LIST_TYPE_REF = new TypeReference<>() {
     };
     private static final TypeReference<Map<String, SomeOtherInput>> SOME_OTHER_INPUT_MAP_TYPE_REF = new TypeReference<>() {
@@ -69,7 +69,7 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
         byte[] jsonCompliantBytes;
         try {
             jsonCompliantBytes = OBJECT_MAPPER.writeValueAsBytes("Lorem Ipsum");
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             fail("Could not write given variable to a JSON compliant byte array.");
             throw new RuntimeException(e);
         }
@@ -87,11 +87,11 @@ class JacksonConverterTest extends ConverterTestSuite<JacksonConverter> {
     }
 
     @Test
-    void convertThrowsConversionExceptionOnIOExceptionFromObjectMapper() throws IOException {
+    void convertThrowsConversionExceptionOnIOExceptionFromObjectMapper() {
         ObjectMapper mockedObjectMapper = mock(ObjectMapper.class);
         when(mockedObjectMapper.constructType(SomeInput.class))
                 .thenReturn(OBJECT_MAPPER.constructType(SomeInput.class));
-        when(mockedObjectMapper.readValue((byte[]) any(), (JavaType) any())).thenThrow(new IOException());
+        when(mockedObjectMapper.readValue((byte[]) any(), (JavaType) any())).thenThrow(mock(JacksonException.class));
 
         JacksonConverter failingTestSubject = new JacksonConverter(mockedObjectMapper);
 

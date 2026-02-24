@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.conversion.ContentTypeConverter;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.avro.AvroConverter;
 import org.axonframework.conversion.avro.AvroConverterConfiguration;
 import org.axonframework.conversion.avro.AvroConverterStrategy;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.conversion.jackson2.Jackson2Converter;
 import org.axonframework.extension.springboot.ConverterProperties;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -44,6 +43,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 import java.util.Map;
 
@@ -179,6 +180,21 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                                          .findFirst()
                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
                 return new JacksonConverter(cborMapper, new ChainingContentTypeConverter(classLoader));
+            case JACKSON2:
+                Map<String, com.fasterxml.jackson.databind.ObjectMapper> jackson2MapperBeans =
+                        beansOfTypeIncludingAncestors(
+                                applicationContext, com.fasterxml.jackson.databind.ObjectMapper.class
+                        );
+                com.fasterxml.jackson.databind.ObjectMapper jackson2Mapper =
+                        jackson2MapperBeans.containsKey("defaultAxonJackson2Mapper")
+                                ? jackson2MapperBeans.get("defaultAxonJackson2Mapper")
+                                : jackson2MapperBeans.values()
+                                                     .stream()
+                                                     .findFirst()
+                                                     .orElseThrow(() -> new NoSuchBeanDefinitionException(
+                                                             com.fasterxml.jackson.databind.ObjectMapper.class
+                                                     ));
+                return new Jackson2Converter(jackson2Mapper, new ChainingContentTypeConverter(classLoader));
             case JACKSON:
             case DEFAULT:
             default:
@@ -199,8 +215,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      * specified {@link Converter Converters}.
      *
      * @param applicationContext The application context used to validate for the existence of other required properties
-     *                           to construct the specified
-     *                           {@link Converter Converters}.
+     *                           to construct the specified {@link Converter Converters}.
      */
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
