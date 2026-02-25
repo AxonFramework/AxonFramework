@@ -19,7 +19,7 @@ public void configure(EventSourcingConfigurer configurer) {
 }
 ----
 
-One notable change in this configuration is that the identifier type of the entity must be explicitly provided. 
+One notable change in this configuration is that the identifier type of the entity must be explicitly provided.
 This requirement stems from the `EventSourcedEntityModule`, which uses the identifier type to set up the necessary components for event sourcing and command handling.
 
 Because the identifier type is now part of the configuration, the `@AggregateIdentifier` annotation on the field within your aggregate/entity is no longer required on the id property of your entity.
