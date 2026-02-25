@@ -58,6 +58,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * Thread-safe {@link EventStorageEngine} implementation storing events in memory.
@@ -258,7 +259,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(() -> latestToken());
+                           .orElseGet(this::latestToken);
     }
 
     @Override
@@ -279,8 +280,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             this.position = new AtomicLong(start);
             this.end = end;
             this.condition = condition;
-            this.callback = new AtomicReference<>(() -> {
-            });
+            this.callback = new AtomicReference<>(NO_OP_CALLBACK);
         }
 
         @Override
