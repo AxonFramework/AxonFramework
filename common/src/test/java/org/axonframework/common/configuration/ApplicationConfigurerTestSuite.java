@@ -617,7 +617,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        @Disabled("not supported yet by DefaultComponentRegistry")
+        @Disabled("TODO #4224 - not supported yet by DefaultComponentRegistry")
         void getUnnamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
             // given
             StringTestComponent exInstance = new StringTestComponent("state-abc");
@@ -648,7 +648,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        @Disabled("not supported yet by DefaultComponentRegistry")
+        @Disabled("TODO #4224 - not supported yet by DefaultComponentRegistry")
         void getNamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
             // given
             StringTestComponent exInstance = new StringTestComponent("state-abc");
