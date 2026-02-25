@@ -86,6 +86,36 @@ public void configure(MessagingConfigurer configurer) {
 For Spring users, the configuration of event processors has moved towards the **Event Processor Specification** (implemented via `EventProcessorSettings`).
 This replaces the previous way of configuring processors through the `EventProcessingConfigurer` bean or complex property structures.
 
+[source,java]
+----
+// AF4
+@Configuration
+public class AxonConfig {
+    @Autowired
+    public void configure(EventProcessingConfigurer configurer) {
+        configurer.registerPooledStreamingEventProcessor("my-processor")
+                  .assignHandlerTypesMatching("my-processor", 
+                                            type -> type.getPackageName().startsWith("com.my.projectors"));
+    }
+}
+
+// AF5
+@Configuration
+public class AxonConfig {
+    @Bean
+    public EventProcessorDefinition myProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("my-processor")
+                .assigningHandlers(descriptor -> 
+                    descriptor.beanType().getPackageName().startsWith("com.my.projectors"))
+                .customized(config -> config
+                    .initialSegmentCount(8)
+                    .batchSize(100));
+    }
+}
+----
+
+With **Spring Boot** you can also configure event processors using properties, which will be automatically converted to the appropriate `EventProcessorSettings` by Spring Boot's configuration binding.
+
 [source,yaml]
 ----
 # AF5 Spring Boot properties example
@@ -97,7 +127,8 @@ axon:
         thread-count: 8
 ----
 
-In code, you can customize these settings by providing `EventProcessorSettings` beans or using the `EventProcessorSettings.MapWrapper`.
+In your code, you can customize these settings by providing `EventProcessorSettings` beans or using the `EventProcessorSettings.MapWrapper`.
+
 
 == QueryUpdateEmitter as a Parameter
 
