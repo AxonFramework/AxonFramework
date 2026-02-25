@@ -31,12 +31,13 @@ public class MyProjector {
 
 // AF5 - Declarative registration (Non-Spring)
 public void configure(MessagingConfigurer configurer) {
-    configurer.eventProcessing()
-              .registerPooledStreaming("my-processor",
-                  processingModule -> processingModule.eventHandlingComponents(
-                      components -> components.autodetected(new MyProjector())
-                  )
-              );
+    configurer.eventProcessing(
+        eventProcessing -> eventProcessing.pooledStreaming(
+            pooledStreaming -> pooledStreaming.defaultProcessor("my-processor",
+                components -> components.autodetected(cfg -> new MyProjector())
+            )
+        )
+    );
 }
 ----
 
@@ -58,8 +59,15 @@ public void configure(Configurer configurer) {
 
 // AF5
 public void configure(MessagingConfigurer configurer) {
-    configurer.eventProcessing()
-              .registerPooledStreaming("my-processor", module -> module.notCustomized());
+    configurer.eventProcessing(
+        eventProcessing -> eventProcessing.pooledStreaming(
+            pooledStreaming -> pooledStreaming.processor(
+                "my-processor",
+                module -> module.eventHandlingComponents(components -> components) // No components added in this simple example
+                                .notCustomized()
+            )
+        )
+    );
 }
 ----
 
