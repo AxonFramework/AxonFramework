@@ -59,40 +59,10 @@ class IgnoredEntriesMessageStream<M extends Message>
     public Optional<Entry<Message>> peek() {
         return Optional.empty();
     }
-//
-//    @Override
-//    public Empty<Message> first() {
-//        return empty.first();
-//    }
-//
-//    @Override
-//    public <RM extends Message> Empty<RM> map(@NonNull Function<Entry<Message>, Entry<RM>> mapper) {
-//        return empty.map(mapper);
-//    }
-//
-//    @Override
-//    public <RM extends Message> Empty<RM> mapMessage(@NonNull Function<Message, RM> mapper) {
-//        return empty.mapMessage(mapper);
-//    }
-//
+
     @Override
     public Empty<Message> onNext(@NonNull Consumer<Entry<Message>> onNext) {
         return empty.onNext(onNext);
     }
-//
-//    @Override
-//    public MessageStream<Message> concatWith(@NonNull MessageStream<Message> other) {
-//        return empty.concatWith(other);
-//    }
-//
-//    @Override
-//    public Empty<Message> onComplete(@NonNull Runnable completeHandler) {
-//        return empty.onComplete(completeHandler);
-//    }
-//
-//    @Override
-//    public <T extends Message> Empty<T> cast() {
-//        return empty.cast();
-//    }
-    // TODO: error propagation, when callback on
+
 }
