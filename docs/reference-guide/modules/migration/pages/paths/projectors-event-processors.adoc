@@ -158,7 +158,7 @@ axon:
 In your code, you can customize these settings by providing `EventProcessorSettings` beans or using the `EventProcessorSettings.MapWrapper`.
 
 
-== QueryUpdateEmitter as a parameter
+== `QueryUpdateEmitter` as a parameter
 
 In Axon Framework 4, the `QueryUpdateEmitter` was often injected as a class-level field in projectors.
 In Axon Framework 5, the use of `QueryUpdateEmitter` is enforced as a parameter of message handlers (specifically query handlers and event handlers that emit updates).
