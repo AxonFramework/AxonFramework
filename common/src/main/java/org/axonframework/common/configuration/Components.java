@@ -18,7 +18,6 @@ package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -26,7 +25,6 @@ import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,27 +65,24 @@ public class Components implements DescribableComponent {
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> getByRawType(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
-                           List<Component<C>> matches = getComponentsRawAssignableTo(identifier.typeAsClass(),
-                                                                                     identifier.name());
+                           List<Component<C>> matches = getComponentsAssignableTo(identifier);
                            return Optional.ofNullable(matches.isEmpty() ? null : matches.getFirst());
                        });
     }
 
     @SuppressWarnings("unchecked")
-    private <C> List<Component<C>> getComponentsRawAssignableTo(Class<C> type, String name) {
+    private <C> List<Component<C>> getComponentsAssignableTo(Identifier<C> identifier) {
         List<Component<C>> matches = components.entrySet().stream()
-                                               .filter(e ->
-                                                               type.isAssignableFrom(e.getKey().type().getTypeAsClass())
-                                                                       && Objects.equals(name, e.getKey().name()))
+                                               .filter(entry -> identifier.matches(entry.getKey()))
                                                .map(Map.Entry::getValue)
                                                .map(component -> (Component<C>) component)
                                                .toList();
 
         if (matches.size() > 1) {
-            throw new AmbiguousComponentMatchException(new Identifier<>(type, name));
+            throw new AmbiguousComponentMatchException(identifier);
         }
         return matches;
     }
@@ -111,24 +106,22 @@ public class Components implements DescribableComponent {
     public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
-                           List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier.type(),
-                                                                                         identifier.name());
+                           List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier);
                            return Optional.ofNullable(matches.isEmpty() ? null : matches.getFirst());
                        });
     }
 
     @SuppressWarnings("unchecked")
-    private <C> List<Component<C>> getComponentsTypeRefAssignableTo(TypeReference<C> typeReference, String name) {
+    private <C> List<Component<C>> getComponentsTypeRefAssignableTo(Identifier<C> identifier) {
         List<Component<C>> matches = components.entrySet().stream()
                                                .filter(e ->
-                                                               typeReference.isAssignableFrom(e.getKey().type())
-                                                                       && Objects.equals(name, e.getKey().name()))
+                                                               identifier.matchesByTypeRef(e.getKey()))
                                                .map(Map.Entry::getValue)
                                                .map(component -> (Component<C>) component)
                                                .toList();
 
         if (matches.size() > 1) {
-            throw new AmbiguousComponentMatchException(new Identifier<>(typeReference, name));
+            throw new AmbiguousComponentMatchException(identifier);
         }
         return matches;
     }
@@ -184,8 +177,7 @@ public class Components implements DescribableComponent {
                 ? components.containsKey(identifier)
                 : components.keySet()
                             .stream()
-                            .anyMatch(componentId -> identifier.typeAsClass()
-                                                               .isAssignableFrom(componentId.typeAsClass()));
+                            .anyMatch(identifier::matchesType);
     }
 
     /**

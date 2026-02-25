@@ -53,41 +53,41 @@ class ComponentsTest {
     }
 
     @Test
-    void getByRawTypeThrowsNullPointerExceptionForNullIdentifier() {
+    void getThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getByRawType(null));
+        assertThrows(NullPointerException.class, () -> testSubject.get(null));
     }
 
     @Test
-    void getByRawTypeReturnsEmpty() {
-        assertTrue(testSubject.getByRawType(IDENTIFIER).isEmpty());
+    void getReturnsEmpty() {
+        assertTrue(testSubject.get(IDENTIFIER).isEmpty());
     }
 
     @Test
-    void getByRawTypeReturnsPutComponent() {
+    void getReturnsPutComponent() {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
         testSubject.put(testComponent);
 
-        Optional<Component<String>> result = testSubject.getByRawType(IDENTIFIER);
+        Optional<Component<String>> result = testSubject.get(IDENTIFIER);
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
     }
 
     @Test
-    void getByRawTypeReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
+    void getReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         Identifier<Object> testId = new Identifier<>(Object.class, "id");
 
         testSubject.put(testComponent);
 
-        Optional<Component<Object>> result = testSubject.getByRawType(testId);
+        Optional<Component<Object>> result = testSubject.get(testId);
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
     }
 
     @Test
-    void getByRawTypeThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
+    void getThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
         Component<String> stringTestComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         Component<Integer> integerTestComponent =
                 new InstantiatedComponentDefinition<>(new Identifier<>(Integer.class, "id"), 42);
@@ -96,7 +96,7 @@ class ComponentsTest {
         testSubject.put(stringTestComponent);
         testSubject.put(integerTestComponent);
 
-        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.getByRawType(testId));
+        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.get(testId));
     }
 
     @Test
@@ -197,7 +197,7 @@ class ComponentsTest {
 
 
         assertFalse(invoked.get());
-        Optional<Component<String>> optionalResult = testSubject.getByRawType(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
         assertEquals(testComponent, optionalResult.get());
     }
@@ -213,7 +213,7 @@ class ComponentsTest {
         });
 
         assertTrue(invoked.get());
-        Optional<Component<String>> optionalResult = testSubject.getByRawType(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
         assertEquals(testComponent, optionalResult.get());
     }
@@ -227,8 +227,8 @@ class ComponentsTest {
         testSubject.replace(IDENTIFIER, c -> replacement);
 
         assertTrue(testSubject.contains(IDENTIFIER));
-        assertTrue(testSubject.getByRawType(IDENTIFIER).isPresent());
-        assertSame(replacement, testSubject.getByRawType(IDENTIFIER).get());
+        assertTrue(testSubject.get(IDENTIFIER).isPresent());
+        assertSame(replacement, testSubject.get(IDENTIFIER).get());
     }
 
     @Test
@@ -287,7 +287,7 @@ class ComponentsTest {
 
         assertTrue(invoked.get());
         assertTrue(result);
-        Optional<String> resultComponent = testSubject.getByRawType(IDENTIFIER).map(c -> c.resolve(mock()));
+        Optional<String> resultComponent = testSubject.get(IDENTIFIER).map(c -> c.resolve(mock()));
         assertTrue(resultComponent.isPresent());
         assertEquals("replacement", resultComponent.get());
     }

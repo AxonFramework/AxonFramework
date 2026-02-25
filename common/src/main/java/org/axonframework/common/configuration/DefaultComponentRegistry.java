@@ -404,7 +404,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
-            return components.getByRawType(new Identifier<>(type, name))
+            return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
                              .or(() -> {
                                  Optional<Component<C>> factoryComponent = fromFactory(type, name);
@@ -505,7 +505,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                       .filter(identifier -> type.isAssignableFrom(identifier.typeAsClass()))
                       .map(identifier -> (Identifier<C>) identifier)
                       .forEach(identifier -> {
-                          components.getByRawType(identifier)
+                          components.get(identifier)
                                     .ifPresent(component -> result.put(identifier.name(), component.resolve(this)));
                       });
             // 2. Collect from all module configurations (recursively)
