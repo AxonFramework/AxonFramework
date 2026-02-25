@@ -21,6 +21,8 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
+
 /**
  * Test class validating the {@link CompletionCallbackMessageStream} through the {@link MessageStreamTest} suite.
  *
@@ -29,12 +31,9 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message> {
 
-    private static final Runnable NO_OP_COMPLETION_CALLBACK = () -> {
-    };
-
     @Override
     protected MessageStream<Message> completedTestSubject(List<Message> messages) {
-        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
+        return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_CALLBACK);
     }
 
     @Override
@@ -54,7 +53,7 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message> {
                                                         RuntimeException failure) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                                   .concatWith(MessageStream.failed(failure)),
-                                                     NO_OP_COMPLETION_CALLBACK);
+                                                     NO_OP_CALLBACK);
     }
 
     @Override
