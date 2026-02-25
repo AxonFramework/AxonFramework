@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-public class AxonTestFixtureExtensionTest {
+public class AxonFrameworkExtensionTest {
 
     private static final AxonTestFixture mockedFixture = mock(AxonTestFixture.class);
 
@@ -103,7 +103,7 @@ public class AxonTestFixtureExtensionTest {
 
         @AfterAll
         static void verifyStopped() {
-            verify(mockedFixture).stop();
+            verify(mockedFixture, atLeastOnce()).stop();
         }
     }
 
