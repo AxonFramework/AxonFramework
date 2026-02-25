@@ -29,8 +29,6 @@ import org.axonframework.messaging.commandhandling.configuration.CommandHandling
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -45,6 +43,8 @@ import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegis
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -158,14 +158,15 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         CommandBus expected = aCommandBus();
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
-        // Setting NoOpCommandSequencingPolicy ensures CommandSequencingInterceptor is not built.
+        // Setting NoOpSequencingPolicy ensures CommandSequencingInterceptor is not built.
         // This otherwise leads to the InterceptingCommandBus
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
-                                          .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                                        c -> NoOpCommandSequencingPolicy.INSTANCE))
+                                          .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                                        MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
                                           .registerCommandBus(c -> expected)
                                           .build();
 
@@ -324,8 +325,9 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
-                                          .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                                                        c -> NoOpCommandSequencingPolicy.INSTANCE))
+                                          .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                                        MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
                                           .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);

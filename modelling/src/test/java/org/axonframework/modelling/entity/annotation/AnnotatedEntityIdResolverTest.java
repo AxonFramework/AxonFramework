@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotation.TargetEntityId;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -33,7 +33,6 @@ import org.mockito.junit.jupiter.*;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
-
 
 @ExtendWith(MockitoExtension.class)
 class AnnotatedEntityIdResolverTest {
@@ -78,7 +77,7 @@ class AnnotatedEntityIdResolverTest {
                .getExpectedRepresentation(qualifiedName);
 
         assertThatThrownBy(() -> resolver.resolve(serializedMessage, new StubProcessingContext()))
-            .isInstanceOf(EntityIdResolutionException.class);
+                .isInstanceOf(EntityIdResolutionException.class);
     }
 
     @Test

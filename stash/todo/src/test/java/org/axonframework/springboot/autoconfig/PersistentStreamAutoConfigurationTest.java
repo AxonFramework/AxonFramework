@@ -19,7 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.springboot.util.GrpcServerStub;
 import org.axonframework.springboot.util.TcpUtils;
 import org.junit.jupiter.api.*;
@@ -36,7 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("TODO #3496")
+@Disabled("TODO #3520")
 class PersistentStreamAutoConfigurationTest {
 
     public static final Class<SequentialPerAggregatePolicy> DEFAULT_SEQUENCING_POLICY_CLASS =

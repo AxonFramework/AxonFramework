@@ -59,7 +59,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Milan Savic
  */
-@Disabled("TODO #3496")
+@Disabled("TODO #4182")
 public class JdbcAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;

@@ -434,7 +434,7 @@ See xref:messaging-concepts:message-intercepting.adoc[Message intercepting] for 
 
 [NOTE]
 ====
-**Command sequencing**: Axon Framework 5.0.3+ automatically sequences commands targeting the same entities to prevent optimistic locking failures. This is implemented as a handler interceptor using the configured `CommandSequencingPolicy`. See xref:tuning:command-processing.adoc#command-sequencing[Command sequencing] for configuration options.
+**Command sequencing**: Axon Framework 5.0.3+ automatically sequences commands targeting the same entities to prevent optimistic locking failures. This is implemented as a handler interceptor using the configured `SequencingPolicy`. See xref:tuning:command-processing.adoc#command-sequencing[Command sequencing] for configuration options.
 ====
 
 == Configuration builder pattern

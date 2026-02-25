@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
+import org.axonframework.common.util.MockException;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -36,9 +38,7 @@ import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

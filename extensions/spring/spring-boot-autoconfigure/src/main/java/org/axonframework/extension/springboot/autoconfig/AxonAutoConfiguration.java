@@ -17,27 +17,34 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
+import org.axonframework.extension.spring.config.annotation.HandlerDefinitionFactoryBean;
+import org.axonframework.extension.spring.config.annotation.SpringParameterResolverFactoryBean;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+
+import java.util.List;
 
 /**
- * Autoconfiguration class that defines the {@link AxonConfiguration} and
- * {@link ComponentRegistry} implementations that supports beans to be accessed as
- * components.
+ * Autoconfiguration class that defines the {@link AxonConfiguration} and {@link ComponentRegistry} implementations that
+ * supports beans to be accessed as components.
  * <p>
- * Lifecycle handlers from the {@link LifecycleRegistry} are managed by the Spring
- * Application context to allow "weaving" of these lifecycles with the Spring lifecycles.
+ * Lifecycle handlers from the {@link LifecycleRegistry} are managed by the Spring Application context to allow
+ * "weaving" of these lifecycles with the Spring lifecycles.
  * <p>
  * This autoconfiguration will construct the beans such that they allow for a hierarchical Spring Application Context.
  *
@@ -53,8 +60,7 @@ public class AxonAutoConfiguration {
      * not have one already.
      * <p>
      * By only checking the {@link SearchStrategy#CURRENT current} context, we ensure that every context for a
-     * hierarchical Spring Application Context receives a {@link ComponentRegistry}
-     * instance.
+     * hierarchical Spring Application Context receives a {@link ComponentRegistry} instance.
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
@@ -67,8 +73,7 @@ public class AxonAutoConfiguration {
      * Bean creation method registering a {@link SpringLifecycleRegistry} when there is none <b>anywhere</b>.
      * <p>
      * By checking {@link SearchStrategy#ALL everywhere}, we ensure that there only is a single
-     * {@link LifecycleRegistry} at all times. Even when a hierarchical Spring
-     * Application Context is in place.
+     * {@link LifecycleRegistry} at all times. Even when a hierarchical Spring Application Context is in place.
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.ALL)
@@ -80,8 +85,7 @@ public class AxonAutoConfiguration {
      * Bean creation method registering a {@link SpringAxonApplication} when there is none <b>anywhere</b>.
      * <p>
      * By checking {@link SearchStrategy#ALL everywhere}, we ensure that there only is a single main
-     * {@link ApplicationConfigurer} at all times. Even when a hierarchical Spring
-     * Application Context is in place.
+     * {@link ApplicationConfigurer} at all times. Even when a hierarchical Spring Application Context is in place.
      */
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.ALL)
@@ -119,5 +123,50 @@ public class AxonAutoConfiguration {
     @ConditionalOnBean(value = AxonConfiguration.class, search = SearchStrategy.ALL)
     Configuration axonConfiguration(SpringComponentRegistry springComponentRegistry) {
         return springComponentRegistry.configuration();
+    }
+
+    /**
+     * Bean creation method registering the {@link SpringParameterResolverFactoryBean}.
+     * <p>
+     * This {@link ParameterResolverFactory} {@link org.springframework.beans.factory.FactoryBean} will make it so all
+     * annotated handling components will use the
+     * {@link org.axonframework.extension.spring.config.annotation.SpringBeanDependencyResolverFactory},
+     * {@link org.axonframework.extension.spring.config.annotation.SpringBeanParameterResolverFactory}, and the given
+     * {@code parameterResolverFactories} to derive parameters to inject in
+     * {@link org.axonframework.messaging.core.annotation.MessageHandler} annotated methods.
+     *
+     * @param parameterResolverFactories the list of {@code ParameterResolverFactories} to pass along to the
+     *                                   {@link SpringParameterResolverFactoryBean}
+     * @return a {@link ParameterResolverFactory} {@link org.springframework.beans.factory.FactoryBean}
+     */
+    @Primary
+    @Bean
+    SpringParameterResolverFactoryBean parameterResolverFactory(
+            List<ParameterResolverFactory> parameterResolverFactories
+    ) {
+        SpringParameterResolverFactoryBean springParameterResolverFactoryBean = new SpringParameterResolverFactoryBean();
+        springParameterResolverFactoryBean.setAdditionalFactories(parameterResolverFactories);
+        return springParameterResolverFactoryBean;
+    }
+
+    /**
+     * Bean creation method registering the {@link HandlerDefinitionFactoryBean}.
+     * <p>
+     * This {@link HandlerDefinition} {@link org.springframework.beans.factory.FactoryBean} will make it so all
+     * annotated handling components will use the given {@code handlerDefinitions}, {@code handlerEnhancerDefinitions},
+     * and Axon's default enhancer definitions to derive the required enhancements for
+     * {@link org.axonframework.messaging.core.annotation.MessageHandler} annotated methods.
+     *
+     * @param handlerDefinitions         the list of {@code HandlerDefinitions} to pass along to the
+     *                                   {@link HandlerDefinitionFactoryBean}
+     * @param handlerEnhancerDefinitions the list of {@code HandlerEnhancerDefinitions} to pass along to the
+     *                                   {@link HandlerDefinitionFactoryBean}
+     * @return a {@link HandlerDefinition} {@link org.springframework.beans.factory.FactoryBean}
+     */
+    @Primary
+    @Bean
+    HandlerDefinitionFactoryBean handlerDefinition(List<HandlerDefinition> handlerDefinitions,
+                                                   List<HandlerEnhancerDefinition> handlerEnhancerDefinitions) {
+        return new HandlerDefinitionFactoryBean(handlerDefinitions, handlerEnhancerDefinitions);
     }
 }

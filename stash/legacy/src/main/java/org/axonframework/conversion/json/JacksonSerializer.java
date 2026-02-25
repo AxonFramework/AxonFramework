@@ -18,7 +18,6 @@ package org.axonframework.conversion.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -29,7 +28,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.core.Metadata;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.SerializationException;
@@ -39,6 +37,11 @@ import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.SimpleSerializedObject;
 import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.UnknownSerializedType;
+import org.axonframework.conversion.jackson2.ByteArrayToJsonNodeConverter;
+import org.axonframework.conversion.jackson2.JsonNodeToByteArrayConverter;
+import org.axonframework.conversion.jackson2.JsonNodeToObjectNodeConverter;
+import org.axonframework.conversion.jackson2.ObjectNodeToJsonNodeConverter;
+import org.axonframework.messaging.core.Metadata;
 
 import java.io.IOException;
 import java.lang.reflect.Type;

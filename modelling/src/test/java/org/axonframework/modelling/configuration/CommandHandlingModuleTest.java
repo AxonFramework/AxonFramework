@@ -19,18 +19,19 @@ package org.axonframework.modelling.configuration;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.common.util.StubLifecycleRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
-import org.axonframework.messaging.commandhandling.sequencing.NoOpCommandSequencingPolicy;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.*;
 
@@ -77,14 +78,15 @@ class CommandHandlingModuleTest {
                                       .entityIdResolver(config -> (message, context) -> "1");
 
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
-        // and the NoOpCommandSequencingPolicy, thus removing the CommandSequencingInterceptor
+        // Registers NoOpSequencingPolicy, thus removing the CommandSequencingInterceptor
         // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         AxonConfiguration configuration = ModellingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
-                .componentRegistry(cr -> cr.registerComponent(CommandSequencingPolicy.class,
-                                                              c -> NoOpCommandSequencingPolicy.INSTANCE))
+                .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                              MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                              c -> NoOpSequencingPolicy.INSTANCE))
                 .componentRegistry(cr -> cr.registerModule(entityModule))
                 .componentRegistry(cr -> cr.registerModule(
                         setupPhase.commandHandlers()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -29,10 +27,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
- * {@link JacksonConverter}.
+ * {@link org.axonframework.conversion.jackson.JacksonConverter}.
  *
  * @author Steven van Beelen
  * @since 3.4.0
@@ -40,7 +41,7 @@ import org.springframework.context.annotation.Conditional;
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
-@ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
+@ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
 
@@ -49,8 +50,8 @@ public class ObjectMapperAutoConfiguration {
      * <p>
      * This {@code ObjectMapper} bean is only created when there is no other {@code ObjectMapper} bean present
      * <b>and</b> whenever the user specified either the
-     * {@link ConverterProperties.ConverterType#DEFAULT} or
-     * {@link ConverterProperties.ConverterType#JACKSON} {@code ConverterType}.
+     * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
+     * {@code ConverterType}.
      *
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
@@ -58,7 +59,15 @@ public class ObjectMapperAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper() {
-        return new ObjectMapper().findAndRegisterModules();
+        // TODO #4218 - Remove custom PolymorphicTypeValidator that's required for ReplayToken#context
+        BasicPolymorphicTypeValidator polymorphicTypeValidator =
+                BasicPolymorphicTypeValidator.builder()
+                                             .allowIfBaseType(Object.class)
+                                             .build();
+        return JsonMapper.builder()
+                         .findAndAddModules()
+                         .polymorphicTypeValidator(polymorphicTypeValidator)
+                         .build();
     }
 
     /**

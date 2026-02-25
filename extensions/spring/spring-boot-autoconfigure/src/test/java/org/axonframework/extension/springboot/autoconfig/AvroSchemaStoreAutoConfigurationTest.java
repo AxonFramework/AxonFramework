@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,16 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.extension.springboot.fixture.avro.test1.ComplexObject;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.avro.AvroConverter;
 import org.axonframework.conversion.avro.AvroUtil;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.extension.spring.conversion.avro.AvroSchemaScan;
 import org.axonframework.extension.spring.conversion.avro.ClasspathAvroSchemaLoader;
+import org.axonframework.extension.springboot.fixture.avro.test1.ComplexObject;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

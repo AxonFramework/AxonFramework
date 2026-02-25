@@ -20,8 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
@@ -64,8 +66,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
     }
 
     /**
-     * Extracting {@link org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy} from the
-     * {@link SequencingPolicy} annotation.
+     * Extracting {@link org.axonframework.messaging.core.sequencing.SequencingPolicy} from the {@link SequencingPolicy}
+     * annotation.
      *
      * @param <T> The type of the declaring class of the event handling method.
      */
@@ -75,7 +77,7 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             implements EventHandlingMember<T> {
 
         private final EventHandlingMember<T> delegate;
-        private final org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy sequencingPolicy;
+        private final org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> sequencingPolicy;
 
         /**
          * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original} handler
@@ -101,11 +103,11 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
          *
          * @return The sequencing policy
          */
-        public org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy sequencingPolicy() {
+        public org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> sequencingPolicy() {
             return sequencingPolicy;
         }
 
-        private org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy createSequencingPolicy(
+        private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createSequencingPolicy(
                 SequencingPolicy annotation,
                 MessageHandlingMember<T> original
         ) {
@@ -124,8 +126,9 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             }
         }
 
-        private org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy createNoArgPolicy(
-                Class<? extends org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy> policyType,
+        @SuppressWarnings("rawtypes,unchecked")
+        private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createNoArgPolicy(
+                Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
                 MessageHandlingMember<T> original
         ) throws Exception {
             try {
@@ -140,20 +143,22 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             }
         }
 
-        private org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy createParameterizedPolicy(
-                Class<? extends org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy> policyType,
+        @SuppressWarnings("rawtypes,unchecked")
+        private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createParameterizedPolicy(
+                Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
                 String[] parameters,
                 MessageHandlingMember<T> original
         ) throws Exception {
             var matchingConstructor = findMatchingConstructor(policyType, parameters.length, original);
             var parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters, original);
             matchingConstructor.setAccessible(true);
-            return (org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy) matchingConstructor.newInstance(
+            return (org.axonframework.messaging.core.sequencing.SequencingPolicy) matchingConstructor.newInstance(
                     parsedParameters);
         }
 
+        @SuppressWarnings("rawtypes")
         private Constructor<?> findMatchingConstructor(
-                Class<? extends org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy> policyType,
+                Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
                 int parameterCount,
                 MessageHandlingMember<T> original
         ) {

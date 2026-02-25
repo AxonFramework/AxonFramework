@@ -59,7 +59,7 @@ import static org.awaitility.Awaitility.await;
         WebClientAutoConfiguration.class
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-@Disabled("TODO #3496")
+@Disabled("TODO #3097")
 class SagaCustomizeIntegrationTest {
 
     @Autowired

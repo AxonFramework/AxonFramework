@@ -19,11 +19,11 @@ package org.axonframework.messaging.commandhandling.interception;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.sequencing.CommandSequencingPolicy;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
@@ -37,10 +37,10 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A {@link MessageHandlerInterceptor} implementation to sequence command execution.
  * <p>
- * Commands are sequenced based on a {@link CommandSequencingPolicy} that specifies how to determine the sequence
- * identifier from the {@link CommandMessage} that is being intercepted. Commands with the same sequence identifier will
- * be executed sequentially, meaning that a command will wait for the previous command with the same identifier to
- * complete before starting execution. Commands with different sequence identifiers can be executed concurrently.
+ * Commands are sequenced based on a {@link SequencingPolicy} that specifies how to determine the sequence identifier
+ * from the {@link CommandMessage} that is being intercepted. Commands with the same sequence identifier will be
+ * executed sequentially, meaning that a command will wait for the previous command with the same identifier to complete
+ * before starting execution. Commands with different sequence identifiers can be executed concurrently.
  * <p>
  * Commands for which the policy returns {@code Optional.empty()} as sequence identifier will proceed without any
  * sequencing constraints.
@@ -53,17 +53,17 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
 
     private static final Logger logger = LoggerFactory.getLogger(CommandSequencingInterceptor.class);
 
-    private final CommandSequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super CommandMessage> sequencingPolicy;
     private final ConcurrentMap<Object, CompletableFuture<Void>> inProgress;
 
     /**
      * Construct a {@code CommandSequencingInterceptor} that sequences command execution based on the supplied
-     * {@link CommandSequencingPolicy}.
+     * {@link SequencingPolicy}.
      *
-     * @param sequencingPolicy the {@link CommandSequencingPolicy} to apply for retrieving the sequence identifier from
-     *                         the {@link CommandMessage}.
+     * @param sequencingPolicy the {@link SequencingPolicy} to apply for retrieving the sequence identifier from the
+     *                         {@link CommandMessage}.
      */
-    public CommandSequencingInterceptor(@Nonnull CommandSequencingPolicy sequencingPolicy) {
+    public CommandSequencingInterceptor(@Nonnull SequencingPolicy<? super CommandMessage> sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "The sequencingPolicy must not be null");
         this.sequencingPolicy = sequencingPolicy;
         this.inProgress = new ConcurrentHashMap<>();
@@ -72,7 +72,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
     @Override
     public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message, @NonNull ProcessingContext context,
                                                        @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
-        Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(message, context).orElse(null);
+        Object sequenceIdentifier = sequencingPolicy.sequenceIdentifierFor(message, context).orElse(null);
         if (sequenceIdentifier != null) {
             // await turn to sequence command execution
             logger.debug("Sequencing command execution for [{}] in {}", sequenceIdentifier, context);
