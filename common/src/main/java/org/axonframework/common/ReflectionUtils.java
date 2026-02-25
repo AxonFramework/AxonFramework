@@ -622,7 +622,7 @@ public final class ReflectionUtils {
      * Collects all {@link Member Members} of type {@link Field} and {@link Method} which match the given filter for a
      * given type in one single list. If the given type is a record, the record-style getters are deduplicated.
      *
-     * @param type The type which fields and methods are collected.
+     * @param type   The type which fields and methods are collected.
      * @param filter A filter that only keeps matching members.
      * @return List of all found fields and messages.
      */
@@ -638,6 +638,26 @@ public final class ReflectionUtils {
         return Stream.concat(fields, methods.stream())
                      .filter(filter)
                      .toList();
+    }
+
+    /**
+     * Returns an {@link Iterable} of all enclosing classes of the given class.
+     * <p>
+     * The iterator returns enclosing classes from the immediate enclosing class outward to the outermost enclosing
+     * class. If the given class has no enclosing class, an empty iterable is returned.
+     *
+     * @param clazz the class to return enclosing classes for
+     * @return an {@code Iterable} providing access to all enclosing classes, from innermost to outermost
+     */
+    @Nonnull
+    public static Iterable<Class<?>> enclosingClassesOf(@Nonnull Class<?> clazz) {
+        List<Class<?>> enclosingClasses = new LinkedList<>();
+        Class<?> currentEnclosing = clazz.getEnclosingClass();
+        while (currentEnclosing != null) {
+            enclosingClasses.add(currentEnclosing);
+            currentEnclosing = currentEnclosing.getEnclosingClass();
+        }
+        return Collections.unmodifiableList(enclosingClasses);
     }
 
     /**
