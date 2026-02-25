@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
+
 /**
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
  * {@code MessageStream} returned by the given {@code onError} {@link Function}.
@@ -35,8 +37,7 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
 
     private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
-    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-    });
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
      * Construct an {@link MessageStream stream} that will proceed on the resulting {@code MessageStream} from the given
