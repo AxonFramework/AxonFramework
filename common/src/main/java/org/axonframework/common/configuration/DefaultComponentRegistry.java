@@ -19,8 +19,8 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component.Identifier;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -480,18 +480,18 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
         @Nonnull
         @Override
+        @SuppressWarnings("unchecked")
         public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
             Map<String, C> result = new LinkedHashMap<>();
 
             // 1. Collect from current configuration's components
-            for (Identifier<?> identifier : components.identifiers()) {
-                if (type.isAssignableFrom(identifier.typeAsClass())) {
-                    @SuppressWarnings("unchecked")
-                    Optional<Component<C>> component = (Optional<Component<C>>) components.get((Identifier<C>) identifier);
-                    component.ifPresent(c -> result.put(identifier.name(), c.resolve(this)));
-                }
-            }
-
+            components.identifiers().stream()
+                      .filter(identifier -> type.isAssignableFrom(identifier.typeAsClass()))
+                      .map(identifier -> (Identifier<C>) identifier)
+                      .forEach(identifier -> {
+                          components.get(identifier)
+                                    .ifPresent(component -> result.put(identifier.name(), component.resolve(this)));
+                      });
             // 2. Collect from all module configurations (recursively)
             for (Configuration moduleConfig : getModuleConfigurations()) {
                 Map<String, C> moduleComponents = moduleConfig.getComponents(type);

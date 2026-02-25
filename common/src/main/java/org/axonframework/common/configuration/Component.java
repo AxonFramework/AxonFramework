@@ -23,7 +23,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.nonEmpty;
@@ -136,31 +135,6 @@ public interface Component<C> extends DescribableComponent {
             if (name != null) {
                 nonEmpty(name, "The given name is unsupported because it is empty.");
             }
-        }
-
-        /**
-         * Validate whether the given {@code other Identifier} matches with {@code this Identifier}, by matching the
-         * {@link #name() names} and checking if the {@link #type()}  is {@link Class#isAssignableFrom(Class)} to give
-         * {@code other} type.
-         *
-         * @param other The other identifier to compare with this identifier.
-         * @return {@code true} if the {@link #type()} is assignable from the {@code other} type <b>and</b> the
-         * {@link #name()} is identical, {@code false} otherwise.
-         */
-        public boolean matches(@Nonnull Identifier<?> other) {
-            return matchesType(other) && Objects.equals(other.name(), name);
-        }
-
-        /**
-         * Validate whether the given {@code other Identifier} type matches with {@code this Identifier} type, by
-         * checking if the {@link #type()}  is {@link Class#isAssignableFrom(Class)} to give {@code other} type.
-         *
-         * @param other The other identifier to compare with this identifier.
-         * @return {@code true} if the {@link #type()} is assignable from the {@code other} type, {@code false}
-         * otherwise.
-         */
-        public boolean matchesType(@Nonnull Identifier<?> other) {
-            return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
         }
 
         /**

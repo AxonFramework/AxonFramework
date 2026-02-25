@@ -52,18 +52,18 @@ class ComponentsTest {
     }
 
     @Test
-    void getThrowsNullPointerExceptionForNullIdentifier() {
+    void getByRawTypeThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.get(null));
     }
 
     @Test
-    void getReturnsEmpty() {
+    void getByRawTypeReturnsEmpty() {
         assertTrue(testSubject.get(IDENTIFIER).isEmpty());
     }
 
     @Test
-    void getReturnsPutComponent() {
+    void getByRawTypeReturnsPutComponent() {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
         testSubject.put(testComponent);
@@ -74,7 +74,7 @@ class ComponentsTest {
     }
 
     @Test
-    void getReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
+    void getByRawTypeReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
         Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         Identifier<Object> testId = new Identifier<>(Object.class, "id");
 
@@ -86,7 +86,7 @@ class ComponentsTest {
     }
 
     @Test
-    void getThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
+    void getByRawTypeThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
         Component<String> stringTestComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         Component<Integer> integerTestComponent =
                 new InstantiatedComponentDefinition<>(new Identifier<>(Integer.class, "id"), 42);
