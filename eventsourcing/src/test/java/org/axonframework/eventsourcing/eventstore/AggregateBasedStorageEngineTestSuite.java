@@ -581,8 +581,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         ConsistencyMarker marker1 = tx1.join();
         ConsistencyMarker marker2 = tx2.join();
 
-        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(0);
-        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(0);
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(1);
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(1);
     }
 
     @Test
