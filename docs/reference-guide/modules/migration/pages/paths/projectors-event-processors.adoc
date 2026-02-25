@@ -20,8 +20,6 @@ The `PooledStreamingEventProcessor` is a more robust and performant implementati
 
 For more information on how to configure and use the `PooledStreamingEventProcessor`, refer to the xref:events:event-processors/streaming.adoc[Streaming Event Processor] section in the regular documentation.
 
-
-
 == Removal of `@ProcessingGroup`
 
 The `@ProcessingGroup` annotation has been removed in Axon Framework 5.
@@ -86,33 +84,63 @@ public void configure(MessagingConfigurer configurer) {
 For Spring users, the configuration of event processors has moved towards the **Event Processor Specification** (implemented via `EventProcessorSettings`).
 This replaces the previous way of configuring processors through the `EventProcessingConfigurer` bean or complex property structures.
 
+[tabs]
+====
+Axon Framework 4::
++
 [source,java]
 ----
-// AF4
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 @Configuration
 public class AxonConfig {
-    @Autowired
-    public void configure(EventProcessingConfigurer configurer) {
-        configurer.registerPooledStreamingEventProcessor("my-processor")
-                  .assignHandlerTypesMatching("my-processor", 
-                                            type -> type.getPackageName().startsWith("com.my.projectors"));
+
+    @Bean
+    public ConfigurerModule configure() {
+        return configurer -> {
+            EventProcessingConfigurer processingConfigurer = configurer.eventProcessing();
+            processingConfigurer.registerPooledStreamingEventProcessor(
+                                        "my-processor",
+                                        org.axonframework.config.Configuration::eventStore,
+                                        (config, builder) -> builder.initialSegmentCount(8)
+                                                                    .batchSize(100)
+                                )
+                                .assignHandlerTypesMatching(
+                                        "my-processor",
+                                        type -> type.getPackageName().startsWith("com.my.projectors")
+                                );
+        };
     }
 }
+----
 
-// AF5
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 @Configuration
 public class AxonConfig {
+
     @Bean
     public EventProcessorDefinition myProcessorDefinition() {
         return EventProcessorDefinition.pooledStreaming("my-processor")
-                .assigningHandlers(descriptor -> 
-                    descriptor.beanType().getPackageName().startsWith("com.my.projectors"))
-                .customized(config -> config
-                    .initialSegmentCount(8)
-                    .batchSize(100));
+                                       .assigningHandlers(
+                                               descriptor -> descriptor.beanType().getPackageName()
+                                                                       .startsWith("com.my.projectors")
+                                       )
+                                       .customized(config -> config.initialSegmentCount(8)
+                                                                   .batchSize(100));
     }
 }
 ----
+====
 
 With **Spring Boot** you can also configure event processors using properties, which will be automatically converted to the appropriate `EventProcessorSettings` by Spring Boot's configuration binding.
 
