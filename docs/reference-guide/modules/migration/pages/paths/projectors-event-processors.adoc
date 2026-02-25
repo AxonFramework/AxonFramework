@@ -12,7 +12,17 @@ In particular, for message handlers this applies to:
 Event Handler annotation:: Moved from `org.axonframework.eventhandling.EventHandler` to `org.axonframework.messaging.eventhandling.annotation.EventHandler`
 Query Handler annotation:: Moved from `org.axonframework.queryhandling.QueryHandler` to `org.axonframework.messaging.queryhandling.annotation.QueryHandler`
 
-== Removal of @ProcessingGroup
+== Removal of `TrackingEventProcessor`
+
+The `TrackingEventProcessor` has been removed in Axon Framework 5.
+Use the `PooledStreamingEventProcessor` as a direct replacement.
+The `PooledStreamingEventProcessor` is a more robust and performant implementation of the streaming processor concept.
+
+For more information on how to configure and use the `PooledStreamingEventProcessor`, refer to the xref:events:event-processors/streaming.adoc[Streaming Event Processor] section in the regular documentation.
+
+
+
+== Removal of `@ProcessingGroup`
 
 The `@ProcessingGroup` annotation has been removed in Axon Framework 5.
 Previously, this annotation was used to group event handling components into a single event processor.
