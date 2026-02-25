@@ -34,7 +34,6 @@ import java.util.function.BiFunction;
  */
 class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
     private final Runnable completeHandler;
     private final AtomicBoolean invoked = new AtomicBoolean(false);
 
@@ -49,14 +48,13 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     CompletionCallbackMessageStream(@Nonnull MessageStream<M> delegate,
                                     @Nonnull Runnable completeHandler) {
         super(delegate);
-        this.delegate = delegate;
         this.completeHandler = completeHandler;
         delegate.setCallback(this::invokeCompletionHandlerIfCompleted);
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        Optional<Entry<M>> next = delegate.next();
+        Optional<Entry<M>> next = delegate().next();
         if (next.isEmpty()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -65,7 +63,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
 
     @Override
     public Optional<Entry<M>> peek() {
-        Optional<Entry<M>> peek = delegate.peek();
+        Optional<Entry<M>> peek = delegate().peek();
         if (peek.isEmpty()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -73,14 +71,14 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     private void invokeCompletionHandlerIfCompleted() {
-        if (delegate.isCompleted() && delegate.error().isEmpty() && !invoked.getAndSet(true)) {
+        if (delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
         }
     }
 
     @Override
     public void setCallback(@Nonnull Runnable callback) {
-        delegate.setCallback(() -> {
+        delegate().setCallback(() -> {
             callback.run();
             invokeCompletionHandlerIfCompleted();
         });
@@ -89,12 +87,12 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     @Override
     public Optional<Throwable> error() {
         invokeCompletionHandlerIfCompleted();
-        return delegate.error();
+        return delegate().error();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        boolean b = delegate.hasNextAvailable();
+        boolean b = delegate().hasNextAvailable();
         if (!b && delegate().isCompleted()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -104,17 +102,17 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
                                            @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
-        return delegate.reduce(identity, accumulator)
-                       .whenComplete((result, exception) -> {
-                           if (exception == null) {
-                               completeHandler.run();
-                           }
-                       });
+        return delegate().reduce(identity, accumulator)
+                         .whenComplete((result, exception) -> {
+                             if (exception == null) {
+                                 completeHandler.run();
+                             }
+                         });
     }
 
     /**
-     * A {@link CompletionCallbackMessageStream} implementation completing on only the first
-     * {@link MessageStream.Entry} of this stream.
+     * A {@link CompletionCallbackMessageStream} implementation completing on only the first {@link MessageStream.Entry}
+     * of this stream.
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
@@ -135,8 +133,8 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     /**
-     * A {@link CompletionCallbackMessageStream} implementation completing on no
-     * {@link MessageStream.Entry} of this stream.
+     * A {@link CompletionCallbackMessageStream} implementation completing on no {@link MessageStream.Entry} of this
+     * stream.
      *
      * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
      */

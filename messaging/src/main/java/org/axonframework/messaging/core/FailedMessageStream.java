@@ -31,9 +31,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
-
-    private final Throwable error;
+class FailedMessageStream<M extends Message> extends AbstractMessageStream<M> implements MessageStream.Empty<M> {
 
     /**
      * Constructs a {@link MessageStream stream} that will complete exceptionally with the given {@code error}.
@@ -41,28 +39,18 @@ class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
      * @param error The {@link Throwable} that caused this {@link MessageStream stream} to complete exceptionally.
      */
     FailedMessageStream(@Nonnull Throwable error) {
-        this.error = error;
+        completeExceptionally(error);
     }
 
     @Override
     public CompletableFuture<Entry<M>> asCompletableFuture() {
-        return CompletableFuture.failedFuture(error);
+        //noinspection OptionalGetWithoutIsPresent
+        return CompletableFuture.failedFuture(error().get());
     }
 
     @Override
     public Optional<Entry<M>> next() {
         return Optional.empty();
-    }
-
-    @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        // the stream is failed, so we can call the callback right away that there is relevant state to read
-        callback.run();
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return Optional.of(error);
     }
 
     @Override
@@ -88,7 +76,8 @@ class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity,
                                            @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
-        return CompletableFuture.failedFuture(error);
+        //noinspection OptionalGetWithoutIsPresent
+        return CompletableFuture.failedFuture(error().get());
     }
 
     @Override

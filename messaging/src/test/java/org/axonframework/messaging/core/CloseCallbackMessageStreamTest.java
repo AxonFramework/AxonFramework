@@ -59,21 +59,23 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
     protected Message createRandomMessage() {
-            return new GenericMessage(new MessageType("message"),
-                                      "test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage(new MessageType("message"),
+                                  "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void closeHandlerIsInvokedAfterConsumingTheLastMessage() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(createRandomMessage(),
-                                                                                                      createRandomMessage()),
+        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(
+                createRandomMessage(),
+                createRandomMessage()),
                                                                               () -> invoked.set(true));
 
         assertFalse(invoked.get());
         assertTrue(testSubject.next().isPresent());
         assertFalse(invoked.get());
         assertTrue(testSubject.next().isPresent());
+        assertFalse(testSubject.next().isPresent());
         assertTrue(invoked.get());
         assertTrue(testSubject.isCompleted());
     }
@@ -81,15 +83,18 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
     @Test
     void closeHandlerIsInvokedAfterConsumingTheLastMessageFromAFailedStream() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(createRandomMessage(),
-                                                                                                      createRandomMessage())
-                                                                                      .concatWith(MessageStream.failed(new MockException())),
+        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(
+                                                                                                   createRandomMessage(),
+                                                                                                   createRandomMessage())
+                                                                                           .concatWith(MessageStream.failed(
+                                                                                                   new MockException())),
                                                                               () -> invoked.set(true));
 
         assertFalse(invoked.get());
         assertTrue(testSubject.next().isPresent());
         assertFalse(invoked.get());
         assertTrue(testSubject.next().isPresent());
+        assertFalse(testSubject.next().isPresent());
         assertTrue(invoked.get());
         assertTrue(testSubject.isCompleted());
     }
@@ -97,8 +102,9 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
     @Test
     void closeHandlerIsInvokedAfterCallingClose() {
         AtomicInteger invoked = new AtomicInteger(0);
-        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(createRandomMessage(),
-                                                                                                      createRandomMessage()),
+        MessageStream<Message> testSubject = new CloseCallbackMessageStream<>(MessageStream.fromItems(
+                createRandomMessage(),
+                createRandomMessage()),
                                                                               invoked::incrementAndGet);
 
         assertEquals(0, invoked.get());
@@ -114,6 +120,7 @@ class CloseCallbackMessageStreamTest extends MessageStreamTest<Message> {
 
         // reading until completion should not invoke the close handler again
         assertTrue(testSubject.next().isPresent());
+        assertFalse(testSubject.next().isPresent());
         assertEquals(1, invoked.get());
         assertTrue(testSubject.isCompleted());
     }

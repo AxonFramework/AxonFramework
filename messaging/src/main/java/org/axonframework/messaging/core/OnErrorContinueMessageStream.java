@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
+
 /**
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
  * {@code MessageStream} returned by the given {@code onError} {@link Function}.
@@ -31,13 +33,11 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M> {
+class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
     private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
-    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-    });
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
      * Construct an {@link MessageStream stream} that will proceed on the resulting {@code MessageStream} from the given
@@ -50,7 +50,7 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
      */
     OnErrorContinueMessageStream(@Nonnull MessageStream<M> delegate,
                                  @Nonnull Function<Throwable, MessageStream<M>> onError) {
-        this.delegate = delegate;
+        super(delegate);
         this.onError = onError;
     }
 
@@ -71,15 +71,15 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     }
 
     private MessageStream<M> resolveCurrentDelegate() {
-        if (!delegate.isCompleted() || delegate.error().isEmpty()) {
-            return delegate;
+        if (!delegate().isCompleted() || delegate().error().isEmpty()) {
+            return delegate();
         } else if (onErrorStream.get() != null) {
             return onErrorStream.get();
         } else {
             synchronized (this) {
                 MessageStream<M> newMessageStream = onErrorStream.updateAndGet((c) -> {
                     if (c == null) {
-                        return onError.apply(delegate.error().orElse(null));
+                        return onError.apply(delegate().error().orElse(null));
                     }
                     return c;
                 });
@@ -108,5 +108,4 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     public void close() {
         resolveCurrentDelegate().close();
     }
-
 }

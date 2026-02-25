@@ -31,40 +31,17 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream implements MessageStream.Empty<Message> {
-
-    private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
-
-    private EmptyMessageStream() {
-        // Private no-arg constructor to enforce use of INSTANCE constant.
-    }
-
-    /**
-     * Return a singular instance of the {@code EmptyMessageStream} to be used throughout.
-     *
-     * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
-     */
-    public static Empty<Message> instance() {
-        return INSTANCE;
-    }
+class EmptyMessageStream extends AbstractMessageStream<Message> implements MessageStream.Empty<Message> {
 
     @Override
     public CompletableFuture<Entry<Message>> asCompletableFuture() {
-        return FutureUtils.emptyCompletedFuture();
+        return (error().isPresent())
+                ? CompletableFuture.failedFuture(error().get())
+                : FutureUtils.emptyCompletedFuture();
     }
 
     @Override
     public Optional<Entry<Message>> next() {
-        return Optional.empty();
-    }
-
-    @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        callback.run();
-    }
-
-    @Override
-    public Optional<Throwable> error() {
         return Optional.empty();
     }
 
@@ -85,7 +62,9 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message>, R> accumulator) {
-        return CompletableFuture.completedFuture(identity);
+        return (error().isPresent())
+                ? CompletableFuture.failedFuture(error().get())
+                : CompletableFuture.completedFuture(identity);
     }
 
     @Override
@@ -95,6 +74,9 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
 
     @Override
     public Empty<Message> onComplete(@Nonnull Runnable completeHandler) {
+        if (error().isPresent()) {
+            return MessageStream.failed(error().get());
+        }
         try {
             completeHandler.run();
             return this;

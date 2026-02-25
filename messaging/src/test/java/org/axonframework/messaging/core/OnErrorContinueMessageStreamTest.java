@@ -61,4 +61,10 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message> {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
+
+    @Disabled("OnErrorContinueMessageStream is supposed to continue without error.")
+    @Override
+    void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asFlux() {
+
+    }
 }

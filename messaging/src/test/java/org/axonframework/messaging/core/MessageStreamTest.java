@@ -17,8 +17,8 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.common.FutureUtils;
-import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 import reactor.test.StepVerifier.Step;
@@ -184,11 +184,13 @@ public abstract class MessageStreamTest<M extends Message> {
     }
 
     @Test
-    @Disabled("Doesn't work for all streams, but probably should")  // TODO #3853 - Setting a callback on a MessageStream which throws an error during callback should result in the stream completing with that error
     void shouldCloseStreamWithErrorIfCallbackFails() {
-        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
+        M msg = createRandomMessage();
+        MessageStream<M> testSubject = completedTestSubject(List.of(msg));
 
-        testSubject.setCallback(() -> { throw new RuntimeException("Callback failed"); });
+        testSubject.setCallback(() -> {
+            throw new RuntimeException("Callback failed");
+        });
 
         StepVerifier.create(FluxUtils.of(testSubject))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Callback failed"))
