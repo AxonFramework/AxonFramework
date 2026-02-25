@@ -27,7 +27,8 @@ import org.junit.jupiter.api.extension.*;
 
 import java.lang.reflect.Parameter;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class AxonTestFixtureExtensionTest {
@@ -49,7 +50,7 @@ public class AxonTestFixtureExtensionTest {
 
         @ProvidedAxonTestFixture
         AxonTestFixtureProvider fixtureProvider = () -> AxonTestFixture.with(CourseEntity.configurer(),
-                                                                            Customization::disableAxonServer);
+                                                                             Customization::disableAxonServer);
 
         @Test
         void creatingNewCourseIssuesEvent(@Nonnull AxonTestFixture fixture) {
@@ -62,9 +63,8 @@ public class AxonTestFixtureExtensionTest {
     class DomainTestWithExtensionButWithoutProviderField {
 
         @Test
-        @Disabled
-        void shouldBeIgnored() {
-            fail("This test should not be executed");
+        void shouldRunAlthoughNoProviderIsConfigured() {
+            assertThat(1 + 1).isEqualTo(2);
         }
     }
 
@@ -73,7 +73,7 @@ public class AxonTestFixtureExtensionTest {
         AxonFrameworkExtension extension = new AxonFrameworkExtension();
         ParameterContext parameterContext = mock(ParameterContext.class);
         Parameter parameter = ParameterFailingTest.class.getDeclaredMethod("shouldFail", AxonTestFixture.class)
-                                                       .getParameters()[0];
+                                                        .getParameters()[0];
         when(parameterContext.getParameter()).thenReturn(parameter);
         ExtensionContext extensionContext = mock(ExtensionContext.class);
         ExtensionContext.Store store = mock(ExtensionContext.Store.class);
