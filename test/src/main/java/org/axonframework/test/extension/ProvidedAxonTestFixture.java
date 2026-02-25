@@ -203,8 +203,7 @@ public @interface ProvidedAxonTestFixture {
 
     private static AxonTestFixtureProvider instantiate(@Nonnull Class<? extends AxonTestFixtureProvider> clazz) {
         try {
-            var constructor = clazz.getDeclaredConstructor();
-            ReflectionUtils.ensureAccessible(constructor);
+            var constructor = ReflectionUtils.ensureAccessible(clazz.getDeclaredConstructor());
             return constructor.newInstance();
         } catch (Exception e) {
             throw new FixtureExecutionException(e.getMessage(), e);
