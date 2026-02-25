@@ -4,7 +4,7 @@ import org.axonframework.examples.demo.university.faculty.FacultyAxonTestFixture
 import org.axonframework.examples.demo.university.faculty.Ids;
 import org.axonframework.examples.demo.university.faculty.events.CourseCreated;
 import org.axonframework.examples.demo.university.shared.ids.CourseId;
-import org.axonframework.test.extension.AxonTestFixtureExtension;
+import org.axonframework.test.extension.AxonFrameworkExtension;
 import org.axonframework.test.extension.ProvidedAxonTestFixture;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(AxonTestFixtureExtension.class)
+@ExtendWith(AxonFrameworkExtension.class)
 @ProvidedAxonTestFixture(CreateCourseConfigurationFixture.class)
 class CreateCourseAxonFixtureTest {
 

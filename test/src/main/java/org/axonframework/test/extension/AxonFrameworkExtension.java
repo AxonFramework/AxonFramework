@@ -18,7 +18,6 @@ package org.axonframework.test.extension;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.*;
@@ -29,9 +28,9 @@ import org.junit.jupiter.api.extension.ExtensionContext.*;
  * @author Jan Galinski
  * @since 5.0.3
  */
-public class AxonTestFixtureExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
+public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
-    private static final Namespace NAMESPACE = Namespace.create(AxonTestFixtureExtension.class);
+    private static final Namespace NAMESPACE = Namespace.create(AxonFrameworkExtension.class);
     private static final String FIXTURE_KEY = "axonTestFixture";
 
     @Override

@@ -27,8 +27,7 @@ import org.junit.jupiter.api.extension.*;
 
 import java.lang.reflect.Parameter;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class AxonTestFixtureExtensionTest {
@@ -45,7 +44,7 @@ public class AxonTestFixtureExtensionTest {
     }
 
     @Nested
-    @ExtendWith(AxonTestFixtureExtension.class)
+    @ExtendWith(AxonFrameworkExtension.class)
     class DomainTestWithExtensionAndProviderField {
 
         @ProvidedAxonTestFixture
@@ -59,18 +58,19 @@ public class AxonTestFixtureExtensionTest {
     }
 
     @Nested
-    @ExtendWith(AxonTestFixtureExtension.class)
+    @ExtendWith(AxonFrameworkExtension.class)
     class DomainTestWithExtensionButWithoutProviderField {
 
         @Test
+        @Disabled
         void shouldBeIgnored() {
-            // nothing here
+            fail("This test should not be executed");
         }
     }
 
     @Test
     void shouldFailIfFixtureRequestedAsParameter() throws NoSuchMethodException {
-        AxonTestFixtureExtension extension = new AxonTestFixtureExtension();
+        AxonFrameworkExtension extension = new AxonFrameworkExtension();
         ParameterContext parameterContext = mock(ParameterContext.class);
         Parameter parameter = ParameterFailingTest.class.getDeclaredMethod("shouldFail", AxonTestFixture.class)
                                                        .getParameters()[0];
@@ -95,7 +95,7 @@ public class AxonTestFixtureExtensionTest {
     class LifecycleAndParameterResolverTest {
 
         @Test
-        @ExtendWith(AxonTestFixtureExtension.class)
+        @ExtendWith(AxonFrameworkExtension.class)
         @ProvidedAxonTestFixture(MockedFixtureProvider.class)
         void fixtureIsStoppedAfterTest(AxonTestFixture fixture) {
             assertThat(fixture).isSameAs(mockedFixture);

@@ -22,7 +22,7 @@ import org.axonframework.examples.demo.university.faculty.write.enrollstudent.En
 import org.axonframework.examples.demo.university.faculty.write.renamecourse.RenameCourse;
 import org.axonframework.examples.demo.university.shared.ids.CourseId;
 import org.axonframework.examples.demo.university.shared.ids.StudentId;
-import org.axonframework.test.extension.AxonTestFixtureExtension;
+import org.axonframework.test.extension.AxonFrameworkExtension;
 import org.axonframework.test.extension.ProvidedAxonTestFixture;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.extension.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(AxonTestFixtureExtension.class)
+@ExtendWith(AxonFrameworkExtension.class)
 @ProvidedAxonTestFixture(RenameCourseFixtureProvider.class) // default, used by rename course
 class MultiSliceExtensionTest {
 

@@ -20,7 +20,7 @@ package org.axonframework.examples.university.write.createcourse;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.examples.university.event.CourseCreated;
 import org.axonframework.examples.university.shared.CourseId;
-import org.axonframework.test.extension.AxonTestFixtureExtension;
+import org.axonframework.test.extension.AxonFrameworkExtension;
 import org.axonframework.test.extension.AxonTestFixtureProvider;
 import org.axonframework.test.extension.ProvidedAxonTestFixture;
 import org.axonframework.test.fixture.AxonTestFixture;
@@ -28,7 +28,7 @@ import org.axonframework.test.fixture.AxonTestFixture.Customization;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 
-@ExtendWith(AxonTestFixtureExtension.class)
+@ExtendWith(AxonFrameworkExtension.class)
 class CourseCreationTest {
 
     @ProvidedAxonTestFixture
