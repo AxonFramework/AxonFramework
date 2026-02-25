@@ -19,7 +19,6 @@ package org.axonframework.messaging.core.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
@@ -30,7 +29,6 @@ import org.axonframework.messaging.core.QualifiedName;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -114,47 +112,6 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
         ));
     }
 
-    /**
-     * This operation follows an ordering to search for the presence of a specific attribute on the given
-     * {@code payloadType}.
-     * <p>
-     * It takes the following ordering:
-     * <ol>
-     *     <li>The type</li>
-     *     <li>The enclosing types</li>
-     *     <li>The package</li>
-     *     <li>The module</li>
-     * </ol>
-     *
-     * @param payloadType the payload type to search on for the {@link AnnotationSpecification#namespaceAnnotation()}
-     * @return the namespace attributes, if any.
-     */
-    @Nonnull
-    private Map<String, Object> namespaceAttributesFor(@Nonnull Class<?> payloadType) {
-        // Look for class level annotation
-        Map<String, Object> namespaceAttributes = attributesFor(payloadType, specification.namespaceAnnotation());
-
-        // Look for enclosing class level annotation
-        if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
-            Iterator<Class<?>> enclosingClasses = ReflectionUtils.enclosingClassesOf(payloadType).iterator();
-            while (doesNotContainNamespaceAttribute(namespaceAttributes) && enclosingClasses.hasNext()) {
-                namespaceAttributes = attributesFor(enclosingClasses.next(), specification.namespaceAnnotation());
-            }
-        }
-
-        // Look for package level annotation
-        if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
-            namespaceAttributes = attributesFor(payloadType.getPackage(), specification.namespaceAnnotation());
-        }
-
-        // Look for module level annotation
-        if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
-            namespaceAttributes = attributesFor(payloadType.getModule(), specification.namespaceAnnotation());
-        }
-
-        return namespaceAttributes;
-    }
-
     @Nonnull
     private Map<String, Object> attributesFor(@Nonnull AnnotatedElement annotatedElement,
                                               @Nonnull Class<? extends Annotation> annotation) {
@@ -162,8 +119,13 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
                               .orElse(Collections.emptyMap());
     }
 
-    private boolean doesNotContainNamespaceAttribute(Map<String, Object> namespaceAttributes) {
-        return StringUtils.emptyOrNull((String) namespaceAttributes.get(specification.namespaceAttribute()));
+    @Nonnull
+    private Map<String, Object> namespaceAttributesFor(@Nonnull Class<?> payloadType) {
+        return AnnotationUtils.findAnnotationAttributesOnType(
+                payloadType,
+                specification.namespaceAnnotation(),
+                attrs -> !StringUtils.emptyOrNull((String) attrs.get(specification.namespaceAttribute()))
+        ).orElse(Collections.emptyMap());
     }
 
     /**
