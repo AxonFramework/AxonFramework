@@ -48,7 +48,7 @@ class AccountTest {
 }
 ----
 
-IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources. You can use the xref:junit_extension[`AxonFrameworkExtension`] with junit to automate this process.
+IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources. You can use the xref:junit_extension[`AxonFrameworkExtension`] with JUnit to automate this process.
 
 [#fixture_customization]
 === Fixture with customization
@@ -1423,7 +1423,7 @@ Like being able to reuse the previous test's state, validating a sequence of ope
 [#junit_extension]
 == JUnit `AxonFrameworkExtension`
 
-If you use junit for testing, you can simplify the lifecycle management of the `AxonTestFixture` by using the `AxonFrameworkExtension`.
+If you use JUnit for testing, you can simplify the lifecycle management of the `AxonTestFixture` by using the `AxonFrameworkExtension`.
 This extension automatically creates and stops the fixture for you, so you do not have to worry about that in your tests.
 
 To use the extension, simply annotate your test class with `@ExtendWith(AxonFrameworkExtension.class)` and declare a `AxonTestFixture` field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.
