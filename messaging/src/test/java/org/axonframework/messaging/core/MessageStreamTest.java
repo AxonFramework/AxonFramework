@@ -17,8 +17,8 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.common.FutureUtils;
-import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 import reactor.test.StepVerifier.Step;
@@ -193,7 +193,6 @@ public abstract class MessageStreamTest<M extends Message> {
         });
 
         StepVerifier.create(FluxUtils.of(testSubject))
-                    //.expectNextMatches(it -> it.message().equals(msg))
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Callback failed"))
                     .verify();
     }
