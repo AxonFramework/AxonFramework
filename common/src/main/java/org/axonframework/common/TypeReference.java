@@ -101,10 +101,9 @@ public abstract class TypeReference<E> {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof TypeReference<?> that)) {
             return false;
         }
-        TypeReference<?> that = (TypeReference<?>) o;
         return Objects.equals(type, that.type);
     }
 
