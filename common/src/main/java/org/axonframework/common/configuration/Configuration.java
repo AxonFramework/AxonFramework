@@ -145,8 +145,6 @@ public interface Configuration extends DescribableComponent {
      * <p>
      * Implementations should make sure the type reference matches exactly (including generic parameters).
      * <p>
-     * Implementations should make sure the type reference matches exactly (including generic parameters).
-     * <p>
      * <b>Important:</b> This method only returns components that are already registered or have been instantiated.
      * Components that could be created on-demand by a {@link ComponentFactory} but have not yet been accessed will not
      * be included in the results. If you need to access a specific component that might be factory-created, use
@@ -164,8 +162,6 @@ public interface Configuration extends DescribableComponent {
     /**
      * Returns the component declared under the given {@code typeReference} and {@code name} within an
      * {@code Optional}.
-     * <p>
-     * Implementations should make sure the type reference matches exactly (including generic parameters).
      * <p>
      * Implementations should make sure the type reference matches exactly (including generic parameters).
      * <p>
