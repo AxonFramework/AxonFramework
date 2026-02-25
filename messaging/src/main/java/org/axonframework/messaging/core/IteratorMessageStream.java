@@ -87,6 +87,5 @@ class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> 
 
     @Override
     public void close() {
-        //complete();
     }
 }

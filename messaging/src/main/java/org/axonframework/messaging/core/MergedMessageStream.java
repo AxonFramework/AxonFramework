@@ -102,6 +102,14 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
         return secondPeek;
     }
 
+    private Runnable delegatingCallback() {
+        return () -> {
+            if (hasNextAvailable() || isCompleted() || error().isPresent()) {
+                invokeCallbackIfNeeded();
+            }
+        };
+    }
+
     @Override
     public void setCallback(@Nonnull Runnable callback) {
         callbackRef.set(callback);
