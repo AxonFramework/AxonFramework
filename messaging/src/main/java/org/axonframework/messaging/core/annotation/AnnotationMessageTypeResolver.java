@@ -28,6 +28,7 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -97,13 +98,13 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
 
     @Override
     public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
-        Map<String, Object> nameAttributes = attributesForType(payloadType, specification.nameAnnotation());
-        Map<String, Object> versionAttributes = attributesForType(payloadType, specification.versionAnnotation());
+        Map<String, Object> nameAttributes = attributesFor(payloadType, specification.nameAnnotation());
+        Map<String, Object> versionAttributes = attributesFor(payloadType, specification.versionAnnotation());
         if (nameAttributes.isEmpty() || versionAttributes.isEmpty()) {
             return fallback != null ? fallback.resolve(payloadType) : Optional.empty();
         }
 
-        Map<String, Object> namespaceAttributes = namespaceAttributesForTypeOrEnclosingClass(payloadType);
+        Map<String, Object> namespaceAttributes = namespaceAttributesFor(payloadType);
         return Optional.of(new MessageType(
                 ObjectUtils.getNonEmptyOrDefault((String) namespaceAttributes.get(specification.namespaceAttribute()),
                                                  payloadType.getPackageName()),
@@ -113,23 +114,47 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
         ));
     }
 
+    /**
+     * This operation follows an ordering to search for the presence of a specific attribute on the given
+     * {@code payloadType}.
+     * <p>
+     * It takes the following ordering:
+     * <ol>
+     *     <li>The type</li>
+     *     <li>The enclosing types</li>
+     *     <li>The package</li>
+     *     <li>The module</li>
+     * </ol>
+     *
+     * @param payloadType the payload type to search on for the {@link AnnotationSpecification#namespaceAnnotation()}
+     * @return the namespace attributes, if any.
+     */
     @Nonnull
-    private Map<String, Object> attributesForType(@Nonnull Class<?> payloadType,
-                                                  @Nonnull Class<? extends Annotation> annotation) {
-        return AnnotationUtils.findAnnotationAttributes(payloadType, annotation)
-                              .orElse(Collections.emptyMap());
-    }
+    private Map<String, Object> namespaceAttributesFor(@Nonnull Class<?> payloadType) {
+        // Look for class level annotation
+        Map<String, Object> namespaceAttributes = attributesFor(payloadType, specification.namespaceAnnotation());
 
-    @Nonnull
-    private Map<String, Object> namespaceAttributesForTypeOrEnclosingClass(@Nonnull Class<?> payloadType) {
-        Map<String, Object> namespaceAttributes = attributesForType(payloadType, specification.namespaceAnnotation());
+        // Look for enclosing class level annotation
         if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
             Iterator<Class<?>> enclosingClasses = ReflectionUtils.enclosingClassesOf(payloadType).iterator();
             while (doesNotContainNamespaceAttribute(namespaceAttributes) && enclosingClasses.hasNext()) {
-                namespaceAttributes = attributesForType(enclosingClasses.next(), specification.namespaceAnnotation());
+                namespaceAttributes = attributesFor(enclosingClasses.next(), specification.namespaceAnnotation());
             }
         }
+
+        // Look for package level annotation
+        if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
+            namespaceAttributes = attributesFor(payloadType.getPackage(), specification.namespaceAnnotation());
+        }
+
         return namespaceAttributes;
+    }
+
+    @Nonnull
+    private Map<String, Object> attributesFor(@Nonnull AnnotatedElement annotatedElement,
+                                              @Nonnull Class<? extends Annotation> annotation) {
+        return AnnotationUtils.findAnnotationAttributes(annotatedElement, annotation)
+                              .orElse(Collections.emptyMap());
     }
 
     private boolean doesNotContainNamespaceAttribute(Map<String, Object> namespaceAttributes) {
