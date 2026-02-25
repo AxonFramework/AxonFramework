@@ -72,6 +72,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> next() {
+        if (error.get() != null) {
+            return Optional.empty();
+        }
         Optional<Entry<M>> firstPeek = first.peek();
         Optional<Entry<M>> secondPeek = second.peek();
         if (firstPeek.isEmpty() && !second.isCompleted()) {
@@ -85,6 +88,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> peek() {
+        if (error.get() != null) {
+            return Optional.empty();
+        }
         Optional<Entry<M>> firstPeek = first.peek();
         Optional<Entry<M>> secondPeek = second.peek();
         if (firstPeek.isEmpty() && !second.isCompleted()) {
@@ -94,14 +100,6 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
             return firstPeek;
         }
         return secondPeek;
-    }
-
-    private Runnable delegatingCallback() {
-        return () -> {
-            if (hasNextAvailable() || isCompleted() || error().isPresent()) {
-                invokeCallbackIfNeeded();
-            }
-        };
     }
 
     @Override
@@ -138,12 +136,12 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public boolean isCompleted() {
-        return !hasNextAvailable() &&  first.isCompleted() && second.isCompleted();
+        return error.get() != null || (!hasNextAvailable() && first.isCompleted() && second.isCompleted());
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return first.hasNextAvailable() || second.hasNextAvailable();
+        return error.get() == null && (first.hasNextAvailable() || second.hasNextAvailable());
     }
 
     @Override
