@@ -17,6 +17,7 @@
 package org.axonframework.messaging.core;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
