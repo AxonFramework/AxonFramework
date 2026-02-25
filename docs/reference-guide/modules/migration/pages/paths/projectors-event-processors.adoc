@@ -7,6 +7,11 @@ This path covers the migration of event processors and projection-related compon
 
 The annotations for handling events and queries have moved to new packages to align with the more explicit message-centric model of Axon Framework 5. For a detailed list of all import changes, refer to the xref:migration:paths/index.adoc#import-and-package-changes[Base import and package Changes] section.
 
+In particular, for message handlers this applies to:
+
+Event Handler annotation:: Moved from `org.axonframework.eventhandling.EventHandler` to `org.axonframework.messaging.eventhandling.annotation.EventHandler`
+Query Handler annotation:: Moved from `org.axonframework.queryhandling.QueryHandler` to `org.axonframework.messaging.queryhandling.annotation.QueryHandler`
+
 == Removal of @ProcessingGroup
 
 The `@ProcessingGroup` annotation has been removed in Axon Framework 5.
@@ -27,7 +32,7 @@ public class MyProjector {
 // AF5 - Declarative registration (Non-Spring)
 public void configure(MessagingConfigurer configurer) {
     configurer.eventProcessing()
-              .registerPooledStreaming("my-processor", 
+              .registerPooledStreaming("my-processor",
                   processingModule -> processingModule.eventHandlingComponents(
                       components -> components.autodetected(new MyProjector())
                   )
