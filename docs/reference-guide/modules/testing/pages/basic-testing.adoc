@@ -48,7 +48,7 @@ class AccountTest {
 }
 ----
 
-IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources. You can use the xref:junit_extension[`AxonTestFixtureExtension`] with junit to automate this process.
+IMPORTANT: Always call `fixture.stop()` in your `@AfterEach` method to properly release resources. You can use the xref:junit_extension[`AxonFrameworkExtension`] with junit to automate this process.
 
 [#fixture_customization]
 === Fixture with customization
@@ -1720,16 +1720,16 @@ class AccountQueryHandlerTest {
 ----
 
 [#junit_extension]
-== JUnit `AxonTestFixtureExtension`
+== JUnit `AxonFrameworkExtension`
 
 If you use junit for testing, you can simplify the lifecycle management of the `AxonTestFixture` by using the `AxonFrameworkExtension`.
 This extension automatically creates and stops the fixture for you, so you do not have to worry about that in your tests.
 
-To use the extension, simply annotate your test class with `@ExtendWith(AxonTestFixtureExtension.class)` and declare a `AxonTestFixture` field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.
+To use the extension, simply annotate your test class with `@ExtendWith(AxonFrameworkExtension.class)` and declare a `AxonTestFixture` field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.
 
 [source,java]
 ----
-@ExtendWith(AxonTestFixtureExtension.class) <1>
+@ExtendWith(AxonFrameworkExtension.class) <1>
 class AccountEntityTest {
 
     @ProvideAxonTestFixture <2>
@@ -1746,7 +1746,7 @@ class AccountEntityTest {
 }
 ----
 
-<1> The `@ExtendWith(AxonTestFixtureExtension.class)` annotation tells JUnit to use the `AxonFrameworkExtension` for this test.
+<1> The `@ExtendWith(AxonFrameworkExtension.class)` annotation tells JUnit to use the `AxonFrameworkExtension` for this test.
 <2> The `@ProvideAxonTestFixture` annotation indicates that the `provider` field can create a new instance of an  `AxonTestFixture` for every test run.
 <3> Use parameter injection to get the `AxonTestFixture` instance in your test method. The extension will automatically create and inject the fixture for you, so you can focus on writing your tests without worrying about fixture lifecycle management.
 
@@ -1759,7 +1759,7 @@ By using the `@ProvideAxonTestFixture` directly on a test method, you can overri
 
 [source,java]
 ----
-@ExtendWith(AxonTestFixtureExtension.class)
+@ExtendWith(AxonFrameworkExtension.class)
 @ProvideAxonTestFixture(GlobalFixtureProvider.class) <1>
 class AccountEntityTest {
 
