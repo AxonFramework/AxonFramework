@@ -3,7 +3,7 @@
 
 This path covers the migration of event processors and projection-related components (projectors) from Axon Framework 4.x to Axon Framework 5.
 
-== Message Handler Annotation Changes
+== Message handler annotation changes
 
 The annotations for handling events and queries have moved to new packages to align with the more explicit message-centric model of Axon Framework 5. For a detailed list of all import changes, refer to the xref:migration:paths/index.adoc#import-and-package-changes[Base import and package Changes] section.
 
@@ -49,11 +49,11 @@ public void configure(MessagingConfigurer configurer) {
 }
 ----
 
-== Event Processing Configuration
+== Event processor configuration
 
 The way event processors are configured has changed significantly to provide a more modular and explicit API.
 
-=== Non-Spring Users
+=== Non-Spring users
 
 For non-Spring users, the old `EventProcessingConfigurer` (and `EventProcessingModule`) has been replaced by a new flow accessed through the `MessagingConfigurer#eventProcessing` method.
 
@@ -79,7 +79,7 @@ public void configure(MessagingConfigurer configurer) {
 }
 ----
 
-=== Spring Users
+=== Spring users
 
 For Spring users, the configuration of event processors has moved towards the **Event Processor Specification** (implemented via `EventProcessorSettings`).
 This replaces the previous way of configuring processors through the `EventProcessingConfigurer` bean or complex property structures.
@@ -158,7 +158,7 @@ axon:
 In your code, you can customize these settings by providing `EventProcessorSettings` beans or using the `EventProcessorSettings.MapWrapper`.
 
 
-== QueryUpdateEmitter as a Parameter
+== QueryUpdateEmitter as a parameter
 
 In Axon Framework 4, the `QueryUpdateEmitter` was often injected as a class-level field in projectors.
 In Axon Framework 5, the use of `QueryUpdateEmitter` is enforced as a parameter of message handlers (specifically query handlers and event handlers that emit updates).
