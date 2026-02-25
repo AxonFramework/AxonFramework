@@ -32,6 +32,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  * @author Jan Galinski
  * @since 5.1.0
  */
+@Internal
 public abstract class AbstractMessageStream<M extends Message> implements MessageStream<M> {
 
     private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
