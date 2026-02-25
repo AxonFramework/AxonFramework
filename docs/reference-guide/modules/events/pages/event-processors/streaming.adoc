@@ -1674,8 +1674,11 @@ Configuration API::
 public class AxonConfig {
     // omitting other configuration methods...
     public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.registerPooledStreamingEventProcessor(
-                "example-processor", config -> buildMultiStreamableEventSource(/*...*/)
+        processingConfigurer.pooledStreaming(
+                pooledStreaming -> pooledStreaming.defaultProcessor(
+                        "example-processor",
+                        components -> components.autodetected(config -> buildMultiStreamableEventSource(/*...*/))
+                )
         );
     }
 }
