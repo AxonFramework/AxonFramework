@@ -147,6 +147,11 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
             namespaceAttributes = attributesFor(payloadType.getPackage(), specification.namespaceAnnotation());
         }
 
+        // Look for module level annotation
+        if (doesNotContainNamespaceAttribute(namespaceAttributes)) {
+            namespaceAttributes = attributesFor(payloadType.getModule(), specification.namespaceAnnotation());
+        }
+
         return namespaceAttributes;
     }
 
