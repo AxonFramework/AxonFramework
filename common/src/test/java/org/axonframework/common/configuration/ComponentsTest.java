@@ -16,6 +16,7 @@
 
 package org.axonframework.common.configuration;
 
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.util.MockException;
@@ -54,12 +55,12 @@ class ComponentsTest {
     @Test
     void getByRawTypeThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.get(null));
+        assertThrows(NullPointerException.class, () -> testSubject.getByRawType(null));
     }
 
     @Test
     void getByRawTypeReturnsEmpty() {
-        assertTrue(testSubject.get(IDENTIFIER).isEmpty());
+        assertTrue(testSubject.getByRawType(IDENTIFIER).isEmpty());
     }
 
     @Test
@@ -68,7 +69,7 @@ class ComponentsTest {
 
         testSubject.put(testComponent);
 
-        Optional<Component<String>> result = testSubject.get(IDENTIFIER);
+        Optional<Component<String>> result = testSubject.getByRawType(IDENTIFIER);
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
     }
@@ -80,7 +81,7 @@ class ComponentsTest {
 
         testSubject.put(testComponent);
 
-        Optional<Component<Object>> result = testSubject.get(testId);
+        Optional<Component<Object>> result = testSubject.getByRawType(testId);
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
     }
@@ -95,7 +96,92 @@ class ComponentsTest {
         testSubject.put(stringTestComponent);
         testSubject.put(integerTestComponent);
 
-        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.get(testId));
+        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.getByRawType(testId));
+    }
+
+    @Test
+    void getByTypeReferenceThrowsNullPointerExceptionForNullIdentifier() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> testSubject.getByTypeReference(null));
+    }
+
+    @Test
+    void getByTypeReferenceReturnsEmpty() {
+        assertTrue(testSubject.getByTypeReference(IDENTIFIER).isEmpty());
+    }
+
+    @Test
+    void getByTypeReferenceReturnsPutComponent() {
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+
+        testSubject.put(testComponent);
+
+        Optional<Component<String>> result = testSubject.getByTypeReference(IDENTIFIER);
+        assertTrue(result.isPresent());
+        assertEquals(testComponent, result.get());
+    }
+
+    @Test
+    void getByTypeReferenceReturnsPutComponentWhenComponentTypeIsAssignableToGivenIdType() {
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Identifier<Object> testId = new Identifier<>(Object.class, "id");
+
+        testSubject.put(testComponent);
+
+        Optional<Component<Object>> result = testSubject.getByTypeReference(testId);
+        assertTrue(result.isPresent());
+        assertEquals(testComponent, result.get());
+    }
+
+    @Test
+    void getByTypeReferenceThrowsAmbiguousComponentMatchExceptionWhenMultipleComponentsAreAssignableToGivenIdType() {
+        Component<String> stringTestComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Component<Integer> integerTestComponent =
+                new InstantiatedComponentDefinition<>(new Identifier<>(Integer.class, "id"), 42);
+        Identifier<Object> testId = new Identifier<>(Object.class, "id");
+
+        testSubject.put(stringTestComponent);
+        testSubject.put(integerTestComponent);
+
+        assertThrows(AmbiguousComponentMatchException.class, () -> testSubject.getByTypeReference(testId));
+    }
+
+    @Test
+    void getByTypeReferenceReturnsPutComponentWhenGenericTypeMatchesExactly() {
+        Identifier<List<String>> listStringId = new Identifier<>(new TypeReference<List<String>>() {}, "id");
+        Component<List<String>> testComponent =
+                new InstantiatedComponentDefinition<>(listStringId, List.of("some-state"));
+
+        testSubject.put(testComponent);
+
+        Optional<Component<List<String>>> result = testSubject.getByTypeReference(listStringId);
+        assertTrue(result.isPresent());
+        assertEquals(testComponent, result.get());
+    }
+
+    @Test
+    void getByTypeReferenceReturnsEmptyWhenGenericTypeParametersDoNotMatch() {
+        Identifier<List<String>> listStringId = new Identifier<>(new TypeReference<List<String>>() {}, "id");
+        Component<List<String>> testComponent =
+                new InstantiatedComponentDefinition<>(listStringId, List.of("some-state"));
+        Identifier<List<Integer>> listIntegerId = new Identifier<>(new TypeReference<List<Integer>>() {}, "id");
+
+        testSubject.put(testComponent);
+
+        assertTrue(testSubject.getByTypeReference(listIntegerId).isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    void getByTypeReferenceReturnsEmptyWhenStoredComponentHasParameterizedTypeButIdentifierHasRawType() {
+        Identifier<List<String>> listStringId = new Identifier<>(new TypeReference<List<String>>() {}, "id");
+        Component<List<String>> testComponent =
+                new InstantiatedComponentDefinition<>(listStringId, List.of("some-state"));
+        Identifier<List> rawListId = new Identifier<>(List.class, "id");
+
+        testSubject.put(testComponent);
+
+        assertTrue(testSubject.getByTypeReference(rawListId).isEmpty());
     }
 
     @Test
@@ -111,7 +197,7 @@ class ComponentsTest {
 
 
         assertFalse(invoked.get());
-        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.getByRawType(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
         assertEquals(testComponent, optionalResult.get());
     }
@@ -127,7 +213,7 @@ class ComponentsTest {
         });
 
         assertTrue(invoked.get());
-        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.getByRawType(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
         assertEquals(testComponent, optionalResult.get());
     }
@@ -141,8 +227,8 @@ class ComponentsTest {
         testSubject.replace(IDENTIFIER, c -> replacement);
 
         assertTrue(testSubject.contains(IDENTIFIER));
-        assertTrue(testSubject.get(IDENTIFIER).isPresent());
-        assertSame(replacement, testSubject.get(IDENTIFIER).get());
+        assertTrue(testSubject.getByRawType(IDENTIFIER).isPresent());
+        assertSame(replacement, testSubject.getByRawType(IDENTIFIER).get());
     }
 
     @Test
@@ -201,7 +287,7 @@ class ComponentsTest {
 
         assertTrue(invoked.get());
         assertTrue(result);
-        Optional<String> resultComponent = testSubject.get(IDENTIFIER).map(c -> c.resolve(mock()));
+        Optional<String> resultComponent = testSubject.getByRawType(IDENTIFIER).map(c -> c.resolve(mock()));
         assertTrue(resultComponent.isPresent());
         assertEquals("replacement", resultComponent.get());
     }

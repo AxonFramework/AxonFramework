@@ -20,8 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.lifecycle.LifecycleHandlerInvocationException;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -244,6 +246,28 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
             return config.getOptionalComponent(type, name);
+        }
+
+        @Override
+        public @NonNull <C> C getComponent(@NonNull TypeReference<C> typeReference) {
+            return config.getComponent(typeReference);
+        }
+
+        @Override
+        public @NonNull <C> C getComponent(@NonNull TypeReference<C> typeReference,
+                                           @Nullable String name) {
+            return config.getComponent(typeReference, name);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference) {
+            return config.getOptionalComponent(typeReference);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference,
+                                                    @Nullable String name) {
+            return config.getOptionalComponent(typeReference, name);
         }
 
         @Nonnull

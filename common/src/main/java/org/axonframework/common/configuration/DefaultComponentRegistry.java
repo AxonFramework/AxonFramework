@@ -19,6 +19,7 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -403,7 +404,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
-            return components.get(new Identifier<>(type, name))
+            return components.getByRawType(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
                              .or(() -> {
                                  Optional<Component<C>> factoryComponent = fromFactory(type, name);
@@ -414,6 +415,14 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                                  return Optional.empty();
                              })
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference,
+                                                    @Nullable String name) {
+            return components.getByTypeReference(new Identifier<>(typeReference, name))
+                             .map(c -> c.resolve(this))
+                             .or(() -> Optional.ofNullable(fromParent(typeReference, name, () -> null)));
         }
 
         @Nonnull
@@ -460,6 +469,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                     : defaultSupplier.get();
         }
 
+        private <C> C fromParent(TypeReference<C> typeReference, String name, Supplier<C> defaultSupplier) {
+            return parent != null
+                    ? parent.getOptionalComponent(typeReference, name).orElseGet(defaultSupplier)
+                    : defaultSupplier.get();
+        }
+
+
         @Override
         public List<Configuration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations.values());
@@ -489,7 +505,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                       .filter(identifier -> type.isAssignableFrom(identifier.typeAsClass()))
                       .map(identifier -> (Identifier<C>) identifier)
                       .forEach(identifier -> {
-                          components.get(identifier)
+                          components.getByRawType(identifier)
                                     .ifPresent(component -> result.put(identifier.name(), component.resolve(this)));
                       });
             // 2. Collect from all module configurations (recursively)

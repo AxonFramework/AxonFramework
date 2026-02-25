@@ -18,6 +18,7 @@ package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -66,7 +67,7 @@ public class Components implements DescribableComponent {
      */
     @Nonnull
     @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> getByRawType(@Nonnull Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
                            List<Component<C>> matches = getComponentsRawAssignableTo(identifier.typeAsClass(),
@@ -87,6 +88,47 @@ public class Components implements DescribableComponent {
 
         if (matches.size() > 1) {
             throw new AmbiguousComponentMatchException(new Identifier<>(type, name));
+        }
+        return matches;
+    }
+
+    /**
+     * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     * <p>
+     * When no exact match is found with the given {@code typeReference} and {@code name}, the given
+     * {@code typeReference}
+     * {@link org.axonframework.common.TypeReference#isAssignableFrom is checked for assignability} against the type
+     * references of the stored {@link Identifier#type() types}.
+     *
+     * @param identifier the {@link Identifier} to retrieve a {@link Component} for
+     * @param <C>        the type of the component to retrieve
+     * @return an {@link Optional} on the {@link Component} registered under the given {@code identifier}
+     * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
+     *                                          given {@code identifier}.
+     */
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
+        return Optional.ofNullable((Component<C>) components.get(identifier))
+                       .or(() -> {
+                           List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier.type(),
+                                                                                         identifier.name());
+                           return Optional.ofNullable(matches.isEmpty() ? null : matches.getFirst());
+                       });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C> List<Component<C>> getComponentsTypeRefAssignableTo(TypeReference<C> typeReference, String name) {
+        List<Component<C>> matches = components.entrySet().stream()
+                                               .filter(e ->
+                                                               typeReference.isAssignableFrom(e.getKey().type())
+                                                                       && Objects.equals(name, e.getKey().name()))
+                                               .map(Map.Entry::getValue)
+                                               .map(component -> (Component<C>) component)
+                                               .toList();
+
+        if (matches.size() > 1) {
+            throw new AmbiguousComponentMatchException(new Identifier<>(typeReference, name));
         }
         return matches;
     }

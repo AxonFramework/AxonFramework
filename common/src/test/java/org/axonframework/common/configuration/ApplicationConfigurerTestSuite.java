@@ -17,6 +17,7 @@
 package org.axonframework.common.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.lifecycle.LifecycleHandlerInvocationException;
 import org.junit.jupiter.api.*;
@@ -159,6 +160,26 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
     protected static class SpecificTestComponent extends TestComponent {
 
         protected SpecificTestComponent(String state) {
+            super(state);
+        }
+    }
+
+    protected static class GenericTestComponent<T> {
+
+        private final T state;
+
+        protected GenericTestComponent(T state) {
+            this.state = state;
+        }
+
+        public T getState() {
+            return state;
+        }
+    }
+
+    protected static class StringTestComponent extends GenericTestComponent<String> {
+
+        protected StringTestComponent(String state) {
             super(state);
         }
     }
@@ -539,6 +560,166 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then
             assertThrows(UnsupportedOperationException.class, () -> result.put("new", TEST_COMPONENT));
+        }
+
+        @Test
+        void getUnnamedComponentsByTypeRefReturnsMatchingGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<String>>() {
+                                       })
+                                       .withInstance(exInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance, config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+            }));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+            assertFalse(config.<GenericTestComponent<Double>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+        }
+
+        @Test
+        void getNamedComponentsByTypeRefReturnsMatchingGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            String exComponentName = "stringComponent";
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<String>>() {
+                                       }, exComponentName)
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<Integer>>() {
+                                       }, "integerComponent")
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance, config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+            }, exComponentName));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, "otherStringComponent"));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, exComponentName).isPresent());
+            assertFalse(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, "otherStringComponent").isPresent());
+        }
+
+        @Test
+        @Disabled("not supported yet by DefaultComponentRegistry")
+        void getUnnamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<StringTestComponent>() {
+                                       })
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<Integer>>() {
+                                       })
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<Double>>getComponent(new TypeReference<>() {
+                         }));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+        }
+
+        @Test
+        @Disabled("not supported yet by DefaultComponentRegistry")
+        void getNamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            String exComponentName = "stringComponent";
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<StringTestComponent>() {
+                                       }, exComponentName)
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<Integer>>() {
+                                       }, "integerComponent")
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }));
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, exComponentName));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, "otherStringComponent"));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, exComponentName).isPresent());
+            assertFalse(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, "otherStringComponent").isPresent());
+        }
+
+        @Test
+        void getComponentsByTypeRefDoesNotReturnDifferentGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<String>>() {
+                                       })
+                                       .withInstance(exInstance);
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+            assertThrows(
+                    ComponentNotFoundException.class,
+                    () -> config.getComponent(new TypeReference<GenericTestComponent<Double>>() {
+                    }));
+        }
+
+        @Test
+        void getComponentsByTypeRefDoesNotReturnDifferentGenericSubtype() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<StringTestComponent>() {
+                                       })
+                                       .withInstance(exInstance);
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+            assertThrows(
+                    ComponentNotFoundException.class,
+                    () -> config.getComponent(new TypeReference<GenericTestComponent<Double>>() {
+                    }));
         }
     }
 
