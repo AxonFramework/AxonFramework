@@ -32,7 +32,6 @@ import java.util.function.Consumer;
  */
 class OnNextMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
     private final Consumer<Entry<M>> onNext;
 
     /**
@@ -46,20 +45,19 @@ class OnNextMessageStream<M extends Message> extends DelegatingMessageStream<M, 
      */
     OnNextMessageStream(@Nonnull MessageStream<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {
         super(delegate);
-        this.delegate = delegate;
         this.onNext = onNext;
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        Optional<Entry<M>> next = delegate.next();
+        Optional<Entry<M>> next = delegate().next();
         next.ifPresent(onNext);
         return next;
     }
 
     @Override
     public Optional<Entry<M>> peek() {
-        return delegate.peek();
+        return delegate().peek();
     }
 
     /**
