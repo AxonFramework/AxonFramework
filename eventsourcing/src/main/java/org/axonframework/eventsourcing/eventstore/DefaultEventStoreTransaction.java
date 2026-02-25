@@ -46,7 +46,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DefaultEventStoreTransaction implements EventStoreTransaction, MarkerExposingEventStoreTransaction {
+public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
@@ -88,8 +88,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction, Mark
         return source(condition, null);
     }
 
-    @Override  // TODO #4199 remove the cmRef parameter
-    public MessageStream<? extends EventMessage> source(SourcingCondition condition, @Nullable AtomicReference<ConsistencyMarker> cmRef) {
+    @Override
+    public MessageStream<? extends EventMessage> source(
+        SourcingCondition condition,
+        @Nullable Consumer<Position> resumePositionCallback
+    ) {
         var appendCondition = processingContext.updateResource(
                 appendConditionKey,
                 ac -> ac == null
@@ -110,10 +113,13 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction, Mark
                      })
                      .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
                      .onComplete(() -> {
-                         if (cmRef != null) {
-                             cmRef.set(markerReference.get());
+                         ConsistencyMarker marker = markerReference.get();
+
+                         updateAppendPosition(marker);
+
+                         if (resumePositionCallback != null) {
+                             resumePositionCallback.accept(marker.position());
                          }
-                         updateAppendPosition(markerReference);
                      });
     }
 
@@ -122,16 +128,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction, Mark
      * multiple times, the lowest consistency marker that we received from those streams (usually the first), is the
      * safest one to use.
      */
-    private void updateAppendPosition(AtomicReference<ConsistencyMarker> markerReference) {
+    private void updateAppendPosition(ConsistencyMarker marker) {
         processingContext.updateResource(
                 appendPositionKey,
                 current -> {
                     if (current == null || current == ConsistencyMarker.ORIGIN) {
                         // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
-                        return markerReference.get();
+                        return marker;
                     }
                     // We received a stream of events, while we already sourced before. The lowest of the two is the safest to use.
-                    return current.lowerBound(markerReference.get());
+                    return current.lowerBound(marker);
                 });
     }
 
