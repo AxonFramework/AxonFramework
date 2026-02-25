@@ -19,6 +19,7 @@ package org.axonframework.common.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
@@ -38,6 +39,7 @@ import static org.axonframework.common.Assert.nonEmpty;
  * @author Steven van Beelen
  * @since 3.0.0
  */
+@Internal
 public interface Component<C> extends DescribableComponent {
 
     /**
