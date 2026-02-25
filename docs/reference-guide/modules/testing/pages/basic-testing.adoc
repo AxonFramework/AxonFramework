@@ -1420,6 +1420,75 @@ class AccountTest {
 This structure provides a number of benefits you can utilize.
 Like being able to reuse the previous test's state, validating a sequence of operations, or to verify your workflows are up to par.
 
+[#junit_extension]
+== JUnit `AxonFrameworkExtension`
+
+If you use junit for testing, you can simplify the lifecycle management of the `AxonTestFixture` by using the `AxonFrameworkExtension`.
+This extension automatically creates and stops the fixture for you, so you do not have to worry about that in your tests.
+
+To use the extension, simply annotate your test class with `@ExtendWith(AxonFrameworkExtension.class)` and declare a `AxonTestFixture` field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.
+
+[source,java]
+----
+@ExtendWith(AxonFrameworkExtension.class) <1>
+class AccountEntityTest {
+
+    @ProvideAxonTestFixture <2>
+    private AxonTestFixtureProvider provider = () -> AxonTestFixture.with(
+            EventSourcingConfigurer.create().registerEntity(
+                EventSourcedEntityModule.autodetected(
+                        String.class, Account.class)));
+
+
+    @Test
+    void accountLifecycleReactsAsExpected(AxonTestFixture fixture) { <3>
+        //....
+    }
+}
+----
+
+<1> The `@ExtendWith(AxonFrameworkExtension.class)` annotation tells JUnit to use the `AxonFrameworkExtension` for this test.
+<2> The `@ProvideAxonTestFixture` annotation indicates that the `provider` field can create a new instance of an  `AxonTestFixture` for every test run.
+<3> Use parameter injection to get the `AxonTestFixture` instance in your test method. The extension will automatically create and inject the fixture for you, so you can focus on writing your tests without worrying about fixture lifecycle management.
+
+
+IMPORTANT: `@ProvidedAxonTestFixture` cannot be applied on static fields, as this breaks the lifecycle contract of getting a new instance of the fixture on every test run. You can however use `@ProvideAxonTestFixture` on static and non-static methods if you want.
+
+
+Alternatively, you can also parameterize `@ProvideAxonTestFixture` with a class value implementing the `@AxonTestFixtureProvider` interface. By doing so, you can reuse the same provider across multiple test classes, or even share it across your entire test suite by using a common base class.
+By using the `@ProvideAxonTestFixture` directly on a test method, you can override the default configured on class level.
+
+[source,java]
+----
+@ExtendWith(AxonFrameworkExtension.class)
+@ProvideAxonTestFixture(GlobalFixtureProvider.class) <1>
+class AccountEntityTest {
+
+    @Test <2>
+    void testUsingGlobalProvider(AxonTestFixture fixture) {
+        // This test will use the GlobalFixtureProvider to create the fixture instance
+    }
+
+    @Test
+    @ProvideAxonTestFixture(SpecificFixtureProvider.class) <3>
+    void testUsingSpecificProvider(AxonTestFixture fixture) {
+        // This test will use the SpecificFixtureProvider to create the fixture instance
+    }
+}
+
+class GlobalFixtureProvider implements AxonTestFixtureProvider {
+    @Override
+    public AxonTestFixture createFixture() {
+        return AxonTestFixture.with(...);
+    }
+}
+
+----
+
+<1> The `@ProvideAxonTestFixture(MyFixtureProvider.class)` annotation tells the extension to use the `MyFixtureProvider` class to create new instances of the `AxonTestFixture` for every test run. This allows you to centralize your fixture configuration in one place and reuse it across multiple test classes.
+<2> This test method will use the `GlobalFixtureProvider` to create the fixture instance, as it is the default provider configured at the class level.
+<3> This test method will use the `SpecificFixtureProvider` to create the fixture instance.
+
 == Example test scenarios
 
 Besides the specific examples spread throughout the explanation of the different <<test_phases,phases>>, there are coarse grained examples that you can benefit from.
@@ -1718,72 +1787,3 @@ class AccountQueryHandlerTest {
     }
 }
 ----
-
-[#junit_extension]
-== JUnit `AxonFrameworkExtension`
-
-If you use junit for testing, you can simplify the lifecycle management of the `AxonTestFixture` by using the `AxonFrameworkExtension`.
-This extension automatically creates and stops the fixture for you, so you do not have to worry about that in your tests.
-
-To use the extension, simply annotate your test class with `@ExtendWith(AxonFrameworkExtension.class)` and declare a `AxonTestFixture` field in your test class. The extension will automatically inject the fixture into your test class and manage its lifecycle.
-
-[source,java]
-----
-@ExtendWith(AxonFrameworkExtension.class) <1>
-class AccountEntityTest {
-
-    @ProvideAxonTestFixture <2>
-    private AxonTestFixtureProvider provider = () -> AxonTestFixture.with(
-            EventSourcingConfigurer.create().registerEntity(
-                EventSourcedEntityModule.autodetected(
-                        String.class, Account.class)));
-
-
-    @Test
-    void accountLifecycleReactsAsExpected(AxonTestFixture fixture) { <3>
-        //....
-    }
-}
-----
-
-<1> The `@ExtendWith(AxonFrameworkExtension.class)` annotation tells JUnit to use the `AxonFrameworkExtension` for this test.
-<2> The `@ProvideAxonTestFixture` annotation indicates that the `provider` field can create a new instance of an  `AxonTestFixture` for every test run.
-<3> Use parameter injection to get the `AxonTestFixture` instance in your test method. The extension will automatically create and inject the fixture for you, so you can focus on writing your tests without worrying about fixture lifecycle management.
-
-
-IMPORTANT: `@ProvidedAxonTestFixture` cannot be applied on static fields, as this breaks the lifecycle contract of getting a new instance of the fixture on every test run. You can however use `@ProvideAxonTestFixture` on static and non-static methods if you want.
-
-
-Alternatively, you can also parameterize `@ProvideAxonTestFixture` with a class value implementing the `@AxonTestFixtureProvider` interface. By doing so, you can reuse the same provider across multiple test classes, or even share it across your entire test suite by using a common base class.
-By using the `@ProvideAxonTestFixture` directly on a test method, you can override the default configured on class level.
-
-[source,java]
-----
-@ExtendWith(AxonFrameworkExtension.class)
-@ProvideAxonTestFixture(GlobalFixtureProvider.class) <1>
-class AccountEntityTest {
-
-    @Test <2>
-    void testUsingGlobalProvider(AxonTestFixture fixture) {
-        // This test will use the GlobalFixtureProvider to create the fixture instance
-    }
-
-    @Test
-    @ProvideAxonTestFixture(SpecificFixtureProvider.class) <3>
-    void testUsingSpecificProvider(AxonTestFixture fixture) {
-        // This test will use the SpecificFixtureProvider to create the fixture instance
-    }
-}
-
-class GlobalFixtureProvider implements AxonTestFixtureProvider {
-    @Override
-    public AxonTestFixture createFixture() {
-        return AxonTestFixture.with(...);
-    }
-}
-
-----
-
-<1> The `@ProvideAxonTestFixture(MyFixtureProvider.class)` annotation tells the extension to use the `MyFixtureProvider` class to create new instances of the `AxonTestFixture` for every test run. This allows you to centralize your fixture configuration in one place and reuse it across multiple test classes.
-<2> This test method will use the `GlobalFixtureProvider` to create the fixture instance, as it is the default provider configured at the class level.
-<3> This test method will use the `SpecificFixtureProvider` to create the fixture instance.
