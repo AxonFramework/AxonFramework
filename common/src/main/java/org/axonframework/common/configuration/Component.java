@@ -23,6 +23,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.nonEmpty;
@@ -135,6 +136,63 @@ public interface Component<C> extends DescribableComponent {
             if (name != null) {
                 nonEmpty(name, "The given name is unsupported because it is empty.");
             }
+        }
+
+        /**
+         * Validate whether the given {@code other} identifier matches with {@code this} identifier, by matching the
+         * {@link #name() names} and the {@link #typeAsClass() raw types}. Types are considered matching if the raw type
+         * of this is {@link Class#isAssignableFrom(Class) assignable from} the raw type of the {@code other}
+         * identifier.
+         *
+         * @param other the other identifier to compare with this identifier
+         * @return {@code true} if the {@link #typeAsClass() raw type} is
+         * {@link Class#isAssignableFrom(Class) assignable from} the {@code other} type <b>and</b> the {@link #name()}
+         * is identical, {@code false} otherwise
+         */
+        public boolean matches(@Nonnull Identifier<?> other) {
+            return matchesType(other) && Objects.equals(other.name(), name);
+        }
+
+        /**
+         * Validate whether the {@link #typeAsClass() raw types} of the given {@code other} identifier and {@code this}
+         * identifier match. Types are considered matching if the raw type of this is
+         * {@link Class#isAssignableFrom(Class) assignable from} the raw type of the {@code other} identifier.
+         *
+         * @param other the other identifier to compare with this identifier
+         * @return {@code true} if the {@link #typeAsClass() raw type} is
+         * {@link Class#isAssignableFrom(Class) assignable from} the {@code other} type, {@code false} otherwise.
+         */
+        public boolean matchesType(@Nonnull Identifier<?> other) {
+            return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
+        }
+
+        /**
+         * Validate whether the given {@code other} identifier matches with {@code this} identifier, by matching the
+         * {@link #name() names} and the {@link #type() type references}. Types are considered matching if the type
+         * reference of this is {@link TypeReference#isAssignableFrom(TypeReference) assignable from} the type reference
+         * of the {@code other} identifier.
+         *
+         * @param other the other identifier to compare with this identifier
+         * @return {@code true} if the {@link #type()} is
+         * {@link TypeReference#isAssignableFrom(TypeReference) assignable from} the {@code other} type <b>and</b> the
+         * {@link #name()} is identical, {@code false} otherwise
+         */
+        public boolean matchesByTypeRef(Identifier<?> other) {
+            return matchesTypeByTypeRef(other) && Objects.equals(other.name(), name);
+        }
+
+        /**
+         * Validate whether the {@link #typeAsClass() raw types} of the given {@code other} identifier and {@code this}
+         * identifier match. Types are considered matching if the raw type of this is
+         * {@link Class#isAssignableFrom(Class) assignable from} the raw type of the {@code other} identifier.
+         *
+         * @param other the other identifier to compare with this identifier
+         * @return {@code true} if the {@link #type()} is
+         * {@link TypeReference#isAssignableFrom(TypeReference) assignable from} the {@code other} type, {@code false}
+         * otherwise.
+         */
+        public boolean matchesTypeByTypeRef(@Nonnull Identifier<?> other) {
+            return type.isAssignableFrom(other.type());
         }
 
         /**
