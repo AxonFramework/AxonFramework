@@ -226,27 +226,20 @@ As such, by using `expect(consumer<Configuration>)`, you are able to verify if y
 
 [source,java]
 ----
-import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.extension.springboot.test.AxonSpringBootTest;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@AxonSpringBootTest(properties = "axon.axonserver.enabled=false")
 class AccountSpringTest {
 
     @TestConfiguration
     static class TestConfig {
-
-        @Bean
-        public MessagesRecordingConfigurationEnhancer recordingEnhancer() {
-            return new MessagesRecordingConfigurationEnhancer();
-        }
 
         @Bean
         public MyService myService() {
@@ -255,14 +248,7 @@ class AccountSpringTest {
     }
 
     @Autowired
-    private AxonConfiguration configuration;
-
     private AxonTestFixture fixture;
-
-    @BeforeEach
-    void setUp() {
-        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
-    }
 
     @Test
     void testWithSpringConfigurationAndMockedBean() {
@@ -277,11 +263,6 @@ class AccountSpringTest {
                    MyService myService = config.getComponent(MyService.class);
                    verify(myService).invoked();
                });
-    }
-
-    @AfterEach
-    void tearDown() {
-        fixture.stop();
     }
 }
 ----
@@ -411,20 +392,16 @@ Thus, if we add the `@ServiceConnection` to the `AxonServerContainer` field, our
 
 [source,java]
 ----
-import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.extension.springboot.test.AxonSpringBootTest;
 import org.axonframework.test.fixture.AxonTestFixture;
-import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Bean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@AxonSpringBootTest
 @Testcontainers
 class AccountAxonServerAndSpringBootTest {
 
@@ -432,24 +409,8 @@ class AccountAxonServerAndSpringBootTest {
     @ServiceConnection
     static AxonServerContainer axonServer = new AxonServerContainer();
 
-    @TestConfiguration
-    static class TestConfig {
-
-        @Bean
-        public MessagesRecordingConfigurationEnhancer recordingConfigurationEnhancer() {
-            return new MessagesRecordingConfigurationEnhancer();
-        }
-    }
-
     @Autowired
-    private AxonConfiguration configuration;
-
     private AxonTestFixture fixture;
-
-    @BeforeEach
-    void setUp() {
-        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
-    }
 
     @Test
     void testWithAxonServer() {
@@ -460,11 +421,6 @@ class AccountAxonServerAndSpringBootTest {
                .then()
                .success()
                .events(new AccountCreatedEvent("account-1", 500.00));
-    }
-
-    @AfterEach
-    void tearDown() {
-        fixture.stop();
     }
 }
 ----
