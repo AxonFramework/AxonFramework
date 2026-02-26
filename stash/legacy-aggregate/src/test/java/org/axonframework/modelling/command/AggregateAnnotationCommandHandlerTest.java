@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
@@ -1217,7 +1217,7 @@ class AggregateAnnotationCommandHandlerTest {
         @Nullable
         @SuppressWarnings("rawtypes")
         @Override
-        public ParameterResolver createInstance(@Nonnull Executable member, @Nonnull Parameter[] params, int index) {
+        public ParameterResolver createInstance(@NonNull Executable member, @NonNull Parameter[] params, int index) {
             if (String.class.equals(params[index].getType())) {
                 return new FixedValueParameterResolver<>("It works");
             }

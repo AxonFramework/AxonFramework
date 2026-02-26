@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
@@ -66,7 +66,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public String resolveTarget(@Nonnull CommandMessage command) {
+    public String resolveTarget(@NonNull CommandMessage command) {
         Object aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);

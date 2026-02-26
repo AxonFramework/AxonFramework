@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 
 /**
@@ -37,6 +37,6 @@ public interface CreationPolicyAggregateFactory<A> {
      * @param identifier the identifier extracted from the command message
      * @return an identifier initialized aggregate root instance ready to handle commands
      */
-    @Nonnull
+    @NonNull
     A create(@Nullable Object identifier);
 }
