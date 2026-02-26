@@ -16,7 +16,7 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -77,7 +77,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param classLoader The class loader used to load the {@link ContentTypeConverter ContentTypeConverters}.
      */
-    public ChainingContentTypeConverter(@Nonnull ClassLoader classLoader) {
+    public ChainingContentTypeConverter(@NonNull ClassLoader classLoader) {
         //noinspection rawtypes
         ServiceLoader<ContentTypeConverter> converterLoader =
                 ServiceLoader.load(ContentTypeConverter.class, classLoader);
@@ -87,7 +87,7 @@ public class ChainingContentTypeConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
+    public boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType) {
         if (sourceType.equals(targetType)) {
             return true;
         }
@@ -106,7 +106,7 @@ public class ChainingContentTypeConverter implements Converter {
 
     @Override
     @Nullable
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
         if (input == null) {
             return null;
         }
@@ -169,7 +169,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param converter The converter to register with this {@code ChainingConverter}.
      */
-    public void registerConverter(@Nonnull ContentTypeConverter<?, ?> converter) {
+    public void registerConverter(@NonNull ContentTypeConverter<?, ?> converter) {
         converters.addFirst(converter);
     }
 
@@ -191,7 +191,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param converterType The type of converter to register.
      */
-    public void registerConverter(@Nonnull Class<? extends ContentTypeConverter<?, ?>> converterType) {
+    public void registerConverter(@NonNull Class<? extends ContentTypeConverter<?, ?>> converterType) {
         try {
             ContentTypeConverter<?, ?> converter = converterType.getConstructor().newInstance();
             converter.targetType();
@@ -214,7 +214,7 @@ public class ChainingContentTypeConverter implements Converter {
      * @param additionalConverters The additional {@link ContentTypeConverter converters} to register with this
      *                             {@code ChainingConverter}.
      */
-    public void setAdditionalConverters(@Nonnull List<ContentTypeConverter<?, ?>> additionalConverters) {
+    public void setAdditionalConverters(@NonNull List<ContentTypeConverter<?, ?>> additionalConverters) {
         additionalConverters.forEach(this::registerConverter);
     }
 
@@ -225,13 +225,13 @@ public class ChainingContentTypeConverter implements Converter {
      * @return Unmodified list of all {@link ContentTypeConverter ContentTypeConverters} registered with this
      * {@code ChainingConverter}.
      */
-    @Nonnull
+    @NonNull
     public List<ContentTypeConverter<?, ?>> getContentTypeConverters() {
         return Collections.unmodifiableList(this.converters);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("content-type-converters", converters);
     }
 }

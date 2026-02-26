@@ -16,7 +16,7 @@
 
 package org.axonframework.conversion.converter;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
@@ -34,13 +34,13 @@ import java.io.InputStream;
 public class ByteArrayToInputStreamConverter implements ContentTypeConverter<byte[], InputStream> {
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<InputStream> targetType() {
         return InputStream.class;
     }
