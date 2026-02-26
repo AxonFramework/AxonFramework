@@ -45,7 +45,7 @@ Using the `XmlMapper` as stated above provides a valid solution for `XML` as ser
 
 If you have used the `XStreamSerializer` in for serialization of your events, you should expect to have to reprocess your event store with the new converter, as the format will likely be different.
 
-xref:paths/index.adoc#missing-a-migration-path[Contact the AxonIQ support team] for assistance with this migration step.
+xref:paths/index.adoc#missing-a-migration-path[Contact the Axon Framework team] for assistance with this migration step.
 ====
 
 == Message and event converter types
