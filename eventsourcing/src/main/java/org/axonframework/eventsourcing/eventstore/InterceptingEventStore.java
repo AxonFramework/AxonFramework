@@ -196,8 +196,11 @@ public class InterceptingEventStore implements EventStore {
         }
 
         @Override
-        public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
-            return delegate.source(condition);
+        public MessageStream<? extends EventMessage> source(
+            @Nonnull SourcingCondition condition,
+            @Nullable Consumer<Position> resumePositionCallback
+        ) {
+            return delegate.source(condition, resumePositionCallback);
         }
 
         @Override
