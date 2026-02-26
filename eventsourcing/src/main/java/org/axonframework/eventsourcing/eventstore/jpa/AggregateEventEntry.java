@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
@@ -94,12 +94,12 @@ public class AggregateEventEntry {
      * @param aggregateSequenceNumber The sequence number of the {@link EventMessage} in the aggregate. May be
      *                                {@code null} if the event does not originate from an aggregate.
      */
-    public AggregateEventEntry(@Nonnull String identifier,
-                               @Nonnull String type,
-                               @Nonnull String version,
-                               @Nonnull byte[] payload,
-                               @Nonnull byte[] metadata,
-                               @Nonnull Object timestamp,
+    public AggregateEventEntry(@NonNull String identifier,
+                               @NonNull String type,
+                               @NonNull String version,
+                               byte @NonNull [] payload,
+                               byte @NonNull [] metadata,
+                               @NonNull Object timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
                                @Nullable Long aggregateSequenceNumber) {
@@ -135,12 +135,12 @@ public class AggregateEventEntry {
      *                                {@code null} if the event does not originate from an aggregate.
      */
     public AggregateEventEntry(long globalIndex,
-                               @Nonnull String identifier,
-                               @Nonnull String type,
-                               @Nonnull String version,
-                               @Nonnull byte[] payload,
-                               @Nonnull byte[] metadata,
-                               @Nonnull String timestamp,
+                               @NonNull String identifier,
+                               @NonNull String type,
+                               @NonNull String version,
+                               byte @NonNull [] payload,
+                               byte @NonNull [] metadata,
+                                @NonNull String timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
                                @Nullable Long aggregateSequenceNumber) {
@@ -177,8 +177,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#identifier() identifier} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String identifier() {
+        public @NonNull String identifier() {
         return identifier;
     }
 
@@ -187,8 +186,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link MessageType#name() type} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String type() {
+        public @NonNull String type() {
         return type;
     }
 
@@ -197,8 +195,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link MessageType#version() version} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String version() {
+        public @NonNull String version() {
         return version;
     }
 
@@ -207,8 +204,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#payload() payload} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public byte[] payload() {
+    public byte @NonNull [] payload() {
         return payload;
     }
 
@@ -217,8 +213,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#metadata() metadata} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public byte[] metadata() {
+    public byte @NonNull [] metadata() {
         return metadata;
     }
 
@@ -227,8 +222,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#timestamp() timestamp} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public Instant timestamp() {
+        public @NonNull Instant timestamp() {
         return DateTimeUtils.parseInstant(timestamp);
     }
 
@@ -237,8 +231,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#timestamp() timestamp} of the stored {@link EventMessage} as a {@code String}.
      */
-    @Nonnull
-    public String timestampAsString() {
+        public @NonNull String timestampAsString() {
         return timestamp;
     }
 

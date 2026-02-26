@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
@@ -88,8 +88,8 @@ public class InterceptingEventStore implements EventStore {
      * @param interceptors The interceptors to invoke before appending and publishing an event.
      */
     @Internal
-    public InterceptingEventStore(@Nonnull EventStore delegate,
-                                  @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
+    public InterceptingEventStore(@NonNull EventStore delegate,
+                                  @NonNull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegateTransactionKey = Context.ResourceKey.withLabel("delegateTransaction");
         this.interceptingTransactionKey = Context.ResourceKey.withLabel("interceptingTransaction");
 
@@ -101,7 +101,7 @@ public class InterceptingEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(@NonNull ProcessingContext processingContext) {
         // Set the delegate transaction to ensure the InterceptingAppender can reach the correct EventStoreTransaction.
         EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(processingContext);
         // Set the intercepting transaction to ensure subsequent transaction operation receive the same intercepting transaction.
@@ -132,7 +132,7 @@ public class InterceptingEventStore implements EventStore {
      *                be added to this context.
      * @return The {@code EventStoreTransaction} from the delegate {@link EventStore}.
      */
-    private EventStoreTransaction getAndSetDelegateTransaction(@Nonnull ProcessingContext context) {
+    private EventStoreTransaction getAndSetDelegateTransaction(@NonNull ProcessingContext context) {
         EventStoreTransaction delegateTransaction;
         if (context.containsResource(delegateTransactionKey)) {
             delegateTransaction = context.getResource(delegateTransactionKey);
@@ -145,12 +145,12 @@ public class InterceptingEventStore implements EventStore {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @NonNull List<EventMessage> events) {
         return delegateBus.publish(context, events);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         return delegate.open(condition, context);
     }
@@ -166,12 +166,12 @@ public class InterceptingEventStore implements EventStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return delegate.tokenAt(at, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
         descriptor.describeProperty("delegateBus", delegateBus);
@@ -179,7 +179,7 @@ public class InterceptingEventStore implements EventStore {
 
     @Override
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         return delegate.subscribe(eventsBatchConsumer);
     }
@@ -189,24 +189,24 @@ public class InterceptingEventStore implements EventStore {
         private final ProcessingContext context;
         private final EventStoreTransaction delegate;
 
-        private InterceptingEventStoreTransaction(@Nonnull ProcessingContext context,
-                                                  @Nonnull EventStoreTransaction delegate) {
+        private InterceptingEventStoreTransaction(@NonNull ProcessingContext context,
+                                                  @NonNull EventStoreTransaction delegate) {
             this.delegate = delegate;
             this.context = context;
         }
 
         @Override
-        public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+        public MessageStream<? extends EventMessage> source(@NonNull SourcingCondition condition) {
             return delegate.source(condition);
         }
 
         @Override
-        public void appendEvent(@Nonnull EventMessage eventMessage) {
+        public void appendEvent(@NonNull EventMessage eventMessage) {
             interceptingAppender.interceptAndAppend(eventMessage, context);
         }
 
         @Override
-        public void onAppend(@Nonnull Consumer<EventMessage> callback) {
+        public void onAppend(@NonNull Consumer<EventMessage> callback) {
             delegate.onAppend(callback);
         }
 
@@ -228,7 +228,7 @@ public class InterceptingEventStore implements EventStore {
             });
         }
 
-        private void interceptAndAppend(@Nonnull EventMessage event,
+        private void interceptAndAppend(@NonNull EventMessage event,
                                         @Nullable ProcessingContext context) {
             interceptorChain.proceed(event, context)
                             .ignoreEntries()

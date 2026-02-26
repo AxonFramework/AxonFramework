@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.EventCoordinator;
@@ -61,8 +61,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public record AggregateBasedJpaEventStorageEngineConfiguration(
         @Nullable PersistenceExceptionResolver persistenceExceptionResolver,
-        @Nonnull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
-        @Nonnull EventCoordinator eventCoordinator,
+        @NonNull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
+        @NonNull EventCoordinator eventCoordinator,
         int batchSize,
         int gapCleaningThreshold,
         int maxGapOffset,
@@ -141,7 +141,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @return A new configuration instance, for fluent interfacing.
      */
     public AggregateBasedJpaEventStorageEngineConfiguration finalBatchPredicate(
-            @Nonnull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate
+            @NonNull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate
     ) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     finalBatchPredicate,
@@ -162,7 +162,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @return A new configuration instance, for fluent interfacing.
      */
     public AggregateBasedJpaEventStorageEngineConfiguration eventCoordinator(
-            @Nonnull EventCoordinator eventCoordinator) {
+            @NonNull EventCoordinator eventCoordinator) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
                                                                     eventCoordinator,

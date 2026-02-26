@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -63,5 +63,5 @@ public interface TaggedEventMessage<E extends EventMessage> {
      * @return A new {@code TaggedEventMessage} using the given {@code updater} to adjust the {@link #tags()} of the new
      * {@code TaggedEventMessage}.
      */
-    TaggedEventMessage<E> updateTags(@Nonnull Function<Set<Tag>, Set<Tag>> updater);
+    TaggedEventMessage<E> updateTags(@NonNull Function<Set<Tag>, Set<Tag>> updater);
 }
