@@ -23,7 +23,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
 import io.micrometer.core.instrument.dropwizard.DropwizardMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -48,14 +48,14 @@ class GlobalMetricRegistryTest {
     @BeforeEach
     void setUp() {
         DropwizardConfig config = new DropwizardConfig() {
-            @Nonnull
+            @NonNull
             @Override
             public String prefix() {
                 return "dropwizard";
             }
 
             @Override
-            public String get(@Nonnull String key) {
+            public String get(@NonNull String key) {
                 return null;
             }
         };
@@ -64,7 +64,7 @@ class GlobalMetricRegistryTest {
                                                                        dropWizardRegistry,
                                                                        HierarchicalNameMapper.DEFAULT,
                                                                        Clock.SYSTEM) {
-            @Nonnull
+            @NonNull
             @Override
             protected Double nullGaugeValue() {
                 return 0.0;
