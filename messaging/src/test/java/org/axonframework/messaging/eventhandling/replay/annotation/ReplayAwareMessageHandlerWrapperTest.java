@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * wrapper.
  *
  * @author Allard Buijze
- * @since 5.2.0
+ * @since 5.0.3.
  */
 class ReplayAwareMessageHandlerWrapperTest {
 
