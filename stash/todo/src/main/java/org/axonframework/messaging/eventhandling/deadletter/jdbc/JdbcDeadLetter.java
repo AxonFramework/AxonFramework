@@ -33,12 +33,12 @@ import java.util.Optional;
  * should only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(Metadata)} and
  * {@link #markTouched()} functions. These reconstruct a new object with the specified new properties.
  *
- * @param <M> The {@link EventMessage} contained in this {@link DeadLetter}.
+ * @param <E> The {@link EventMessage} contained in this {@link DeadLetter}.
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
+public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
 
     private final String identifier;
     private final long sequenceIndex;
@@ -47,7 +47,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     private final Instant lastTouched;
     private final Cause cause;
     private final Metadata diagnostics;
-    private final M message;
+    private final E message;
     private final Context context;
 
     /**
@@ -71,7 +71,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                           Instant lastTouched,
                           Cause cause,
                           Metadata diagnostics,
-                          M message,
+                          E message,
                           Context context) {
         this.identifier = identifier;
         this.sequenceIndex = index;
@@ -85,7 +85,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public M message() {
+    public E message() {
         return message;
     }
 
@@ -149,7 +149,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> markTouched() {
+    public DeadLetter<E> markTouched() {
         return new JdbcDeadLetter<>(identifier,
                                     sequenceIndex,
                                     sequenceIdentifier,
@@ -162,7 +162,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> withCause(Throwable requeueCause) {
+    public DeadLetter<E> withCause(Throwable requeueCause) {
         return new JdbcDeadLetter<>(identifier,
                                     sequenceIndex,
                                     sequenceIdentifier,
@@ -175,7 +175,7 @@ public class JdbcDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> withDiagnostics(Metadata diagnostics) {
+    public DeadLetter<E> withDiagnostics(Metadata diagnostics) {
         return new JdbcDeadLetter<>(identifier,
                                     sequenceIndex,
                                     sequenceIdentifier,
