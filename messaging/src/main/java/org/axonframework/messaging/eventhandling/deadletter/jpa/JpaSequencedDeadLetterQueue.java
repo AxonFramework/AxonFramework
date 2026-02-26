@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.axonframework.common.AxonConfigurationException;

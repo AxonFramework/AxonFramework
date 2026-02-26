@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.beans.ConstructorProperties;
 import java.util.Objects;
 import java.util.Optional;

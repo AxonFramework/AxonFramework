@@ -25,7 +25,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.util.ConcurrencyUtils.testConcurrent;

@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.axonframework.common.Assert;

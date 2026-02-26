@@ -17,7 +17,7 @@
 package org.axonframework.common.lifecycle;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception indicating a failure occurred during a lifecycle handler method invocation.

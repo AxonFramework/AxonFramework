@@ -17,7 +17,7 @@
 package org.axonframework.messaging.core.unitofwork;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.core.Message;
 

@@ -20,7 +20,7 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;

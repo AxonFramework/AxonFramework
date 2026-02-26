@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.child;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 

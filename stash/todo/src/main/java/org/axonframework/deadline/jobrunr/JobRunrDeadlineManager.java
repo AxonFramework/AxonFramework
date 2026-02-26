@@ -17,7 +17,7 @@
 package org.axonframework.deadline.jobrunr;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.*;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;

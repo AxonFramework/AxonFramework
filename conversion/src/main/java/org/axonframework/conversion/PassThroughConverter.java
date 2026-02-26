@@ -17,7 +17,7 @@
 package org.axonframework.conversion;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.lang.reflect.Type;

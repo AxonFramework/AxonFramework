@@ -17,7 +17,7 @@
 package org.axonframework.messaging.core.interception;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.Message;

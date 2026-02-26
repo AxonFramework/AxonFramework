@@ -17,7 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A functional interface describing how to decorate a component of type {@code C}.

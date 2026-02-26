@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;

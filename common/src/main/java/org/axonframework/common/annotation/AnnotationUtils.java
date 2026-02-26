@@ -17,7 +17,7 @@
 package org.axonframework.common.annotation;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;

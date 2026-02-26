@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.child;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;

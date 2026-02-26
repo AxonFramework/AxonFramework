@@ -23,7 +23,7 @@ import java.lang.reflect.Parameter;
 import java.util.concurrent.CompletableFuture;
 
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.NoScopeDescriptor;
 import org.axonframework.messaging.core.Scope;
 import org.axonframework.messaging.core.ScopeDescriptor;
