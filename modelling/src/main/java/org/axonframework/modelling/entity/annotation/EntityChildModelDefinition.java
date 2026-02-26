@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
@@ -52,10 +52,10 @@ public interface EntityChildModelDefinition {
      * @return An {@link Optional} that resolves to an {@link EntityChildMetamodel} if the field represents a
      * child entity, or an empty optional if no child entity is found.
      */
-    @Nonnull
+    @NonNull
     <C, P> Optional<EntityChildMetamodel<C, P>> createChildDefinition(
-            @Nonnull Class<P> parentClass,
-            @Nonnull AnnotatedEntityMetamodelFactory metamodelFactory,
-            @Nonnull Member member
+            @NonNull Class<P> parentClass,
+            @NonNull AnnotatedEntityMetamodelFactory metamodelFactory,
+            @NonNull Member member
     );
 }
