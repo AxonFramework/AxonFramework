@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.MessageStream;
@@ -116,8 +116,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
         );
     }
 
-    @Nonnull
-    private static EventHandlingComponent studentCoursesProjector() {
+    static @NonNull EventHandlingComponent studentCoursesProjector() {
         SimpleEventHandlingComponent studentCoursesProjector =
                 SimpleEventHandlingComponent.create("studentCoursesProjector", SequentialPolicy.INSTANCE);
         studentCoursesProjector.subscribe(
