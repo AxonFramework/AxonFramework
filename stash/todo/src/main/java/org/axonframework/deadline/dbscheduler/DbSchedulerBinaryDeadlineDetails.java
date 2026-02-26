@@ -30,7 +30,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static java.lang.String.format;
 

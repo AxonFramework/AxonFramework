@@ -17,7 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link Configuration}.

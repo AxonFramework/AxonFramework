@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
 

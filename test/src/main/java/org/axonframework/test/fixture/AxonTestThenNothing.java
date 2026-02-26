@@ -17,7 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.eventhandling.EventMessage;

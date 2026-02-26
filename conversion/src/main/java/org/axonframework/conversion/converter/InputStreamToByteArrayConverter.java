@@ -17,7 +17,7 @@
 package org.axonframework.conversion.converter;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
 

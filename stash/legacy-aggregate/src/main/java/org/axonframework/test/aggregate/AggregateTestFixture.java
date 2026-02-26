@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;

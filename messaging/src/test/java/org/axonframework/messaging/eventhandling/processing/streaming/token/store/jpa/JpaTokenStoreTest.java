@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;

@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface to describe a way to create Aggregate instances based on an identifier when an instance has to be created

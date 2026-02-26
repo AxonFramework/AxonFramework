@@ -17,7 +17,7 @@
 package org.axonframework.conversion.converter;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
 import java.nio.charset.StandardCharsets;

@@ -26,7 +26,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;

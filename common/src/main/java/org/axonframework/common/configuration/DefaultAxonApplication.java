@@ -17,7 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.infra.ComponentDescriptor;

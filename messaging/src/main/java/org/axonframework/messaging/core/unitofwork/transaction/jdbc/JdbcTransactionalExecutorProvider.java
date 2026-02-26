@@ -17,7 +17,7 @@
 package org.axonframework.messaging.core.unitofwork.transaction.jdbc;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
 import org.axonframework.common.jdbc.ConnectionExecutor;

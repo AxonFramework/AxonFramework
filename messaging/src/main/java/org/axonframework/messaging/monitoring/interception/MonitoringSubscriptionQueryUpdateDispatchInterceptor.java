@@ -17,7 +17,7 @@
 package org.axonframework.messaging.monitoring.interception;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;

@@ -17,7 +17,7 @@
 package org.axonframework.deadline;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Scope;
 import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.core.Message;

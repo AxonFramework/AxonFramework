@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.function.Function;

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;

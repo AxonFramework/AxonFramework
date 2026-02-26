@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;

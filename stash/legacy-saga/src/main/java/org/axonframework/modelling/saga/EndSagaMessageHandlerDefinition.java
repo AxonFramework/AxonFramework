@@ -25,7 +25,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link HandlerEnhancerDefinition} inspecting the existence of the {@link EndSaga} annotation on

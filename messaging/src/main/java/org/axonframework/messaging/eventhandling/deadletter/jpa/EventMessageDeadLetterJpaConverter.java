@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;

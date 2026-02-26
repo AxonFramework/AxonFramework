@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.StubLifecycleRegistry;

@@ -17,7 +17,7 @@
 package org.axonframework.common;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.beans.Introspector;
 import java.lang.reflect.AccessibleObject;

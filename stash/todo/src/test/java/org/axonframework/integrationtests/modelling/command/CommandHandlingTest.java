@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.modelling.command;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.eventhandling.DelegatingEventBus;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;

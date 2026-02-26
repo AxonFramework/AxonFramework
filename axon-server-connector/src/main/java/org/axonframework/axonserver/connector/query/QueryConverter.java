@@ -27,7 +27,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;

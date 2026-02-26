@@ -17,7 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.

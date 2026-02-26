@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventstreaming;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;

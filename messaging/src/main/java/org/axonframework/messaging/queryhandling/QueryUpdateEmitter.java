@@ -17,7 +17,7 @@
 package org.axonframework.messaging.queryhandling;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.messaging.core.Context.ResourceKey;

@@ -17,7 +17,7 @@
 package org.axonframework.messaging.commandhandling.interception;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.*;
 import org.axonframework.messaging.core.Message;

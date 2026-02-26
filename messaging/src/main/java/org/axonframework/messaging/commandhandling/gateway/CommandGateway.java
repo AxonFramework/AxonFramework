@@ -17,7 +17,7 @@
 package org.axonframework.messaging.commandhandling.gateway;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.infra.DescribableComponent;

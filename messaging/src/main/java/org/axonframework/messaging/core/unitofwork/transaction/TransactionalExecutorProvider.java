@@ -17,7 +17,7 @@
 package org.axonframework.messaging.core.unitofwork.transaction;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.tx.TransactionalExecutor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
