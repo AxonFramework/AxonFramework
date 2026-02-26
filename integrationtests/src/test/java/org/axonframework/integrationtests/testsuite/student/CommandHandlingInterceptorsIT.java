@@ -370,9 +370,9 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
         }
 
         @Override
-        public MessageStream<?> interceptOnHandle(M message,
-                                                  ProcessingContext context,
-                                                  MessageHandlerInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, value));
             return interceptorChain.proceed(intercepted, context);
