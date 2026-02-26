@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import javax.sql.DataSource;
 
@@ -235,18 +235,18 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               @NonNull List<EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+        public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             // not needed in the test
         }
     }

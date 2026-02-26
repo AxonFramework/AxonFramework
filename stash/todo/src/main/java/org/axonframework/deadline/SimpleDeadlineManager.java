@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.messaging.core.*;
@@ -104,10 +104,10 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime,
-                           @Nonnull String deadlineName,
+    public String schedule(@NonNull Instant triggerDateTime,
+                           @NonNull String deadlineName,
                            Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineMessageId = deadlineMessage.identifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
@@ -128,7 +128,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
@@ -139,7 +139,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(@NonNull String deadlineName) {
         Span span = spanFactory.createCancelAllSpan(deadlineName);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
@@ -149,7 +149,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
         Span span = spanFactory.createCancelAllWithinScopeSpan(deadlineName, scope);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> scheduledTasks.keySet().stream()
@@ -177,8 +177,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
         private final ScopeDescriptor deadlineScope;
         private final String deadlineId;
 
-        private DeadlineId(@Nonnull String deadlineName, @Nonnull ScopeDescriptor deadlineScope,
-                           @Nonnull String deadlineId) {
+        private DeadlineId(@NonNull String deadlineName, @NonNull ScopeDescriptor deadlineScope,
+                           @NonNull String deadlineId) {
             this.deadlineScope = deadlineScope;
             this.deadlineId = deadlineId;
             this.deadlineName = deadlineName;
@@ -254,7 +254,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          *                           {@link Scope} to trigger a deadline in
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder scopeAwareProvider(@Nonnull ScopeAwareProvider scopeAwareProvider) {
+        public Builder scopeAwareProvider(@NonNull ScopeAwareProvider scopeAwareProvider) {
             assertNonNull(scopeAwareProvider, "ScopeAwareProvider may not be null");
             this.scopeAwareProvider = scopeAwareProvider;
             return this;
@@ -268,7 +268,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          *                                 deadlines
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder scheduledExecutorService(@Nonnull ScheduledExecutorService scheduledExecutorService) {
+        public Builder scheduledExecutorService(@NonNull ScheduledExecutorService scheduledExecutorService) {
             assertNonNull(scheduledExecutorService, "ScheduledExecutorService may not be null");
             this.scheduledExecutorService = scheduledExecutorService;
             return this;
@@ -281,7 +281,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          * @param transactionManager a {@link TransactionManager} used to build transactions and ties them to deadline
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
+        public Builder transactionManager(@NonNull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -295,7 +295,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(@NonNull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

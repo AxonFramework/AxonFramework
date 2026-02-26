@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
@@ -55,8 +55,8 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull MessageType type,
-                                     @Nonnull Object payload) {
+                                     @NonNull MessageType type,
+                                     @NonNull Object payload) {
         this(aggregateType, aggregateIdentifier, sequenceNumber, type, payload, Metadata.emptyInstance());
     }
 
@@ -75,9 +75,9 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull MessageType type,
-                                     @Nonnull Object payload,
-                                     @Nonnull Map<String, String> metadata) {
+                                     @NonNull MessageType type,
+                                     @NonNull Object payload,
+                                     @NonNull Map<String, String> metadata) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
@@ -103,11 +103,11 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull String messageIdentifier,
-                                     @Nonnull MessageType type,
-                                     @Nonnull Object payload,
-                                     @Nonnull Map<String, String> metadata,
-                                     @Nonnull Instant timestamp) {
+                                     @NonNull String messageIdentifier,
+                                     @NonNull MessageType type,
+                                     @NonNull Object payload,
+                                     @NonNull Map<String, String> metadata,
+                                     @NonNull Instant timestamp) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
@@ -139,8 +139,8 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull Message delegate,
-                                     @Nonnull Supplier<Instant> timestampSupplier) {
+                                     @NonNull Message delegate,
+                                     @NonNull Supplier<Instant> timestampSupplier) {
         super(delegate, timestampSupplier);
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -172,8 +172,8 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
-                                     @Nonnull Message delegate,
-                                     @Nonnull Instant timestamp) {
+                                     @NonNull Message delegate,
+                                     @NonNull Instant timestamp) {
         super(delegate, timestamp);
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -196,8 +196,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     }
 
     @Override
-    @Nonnull
-    public GenericDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull GenericDomainEventMessage withMetadata(@NonNull Map<String, String> metadata) {
         if (metadata().equals(metadata)) {
             return this;
         }
@@ -209,8 +208,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
     }
 
     @Override
-    @Nonnull
-    public GenericDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull GenericDomainEventMessage andMetadata(@NonNull Map<String, String> metadata) {
         //noinspection ConstantConditions
         if (metadata == null || metadata.isEmpty() || metadata().equals(metadata)) {
             return this;

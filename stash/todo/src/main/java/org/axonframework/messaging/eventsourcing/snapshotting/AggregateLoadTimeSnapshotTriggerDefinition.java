@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
 import java.time.Clock;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Snapshotter trigger mechanism which based on the loading time of an Aggregate decides when to trigger the creation
@@ -58,12 +58,12 @@ public class AggregateLoadTimeSnapshotTriggerDefinition implements SnapshotTrigg
     }
 
     @Override
-    public SnapshotTrigger prepareTrigger(@Nonnull Class<?> aggregateType) {
+    public SnapshotTrigger prepareTrigger(@NonNull Class<?> aggregateType) {
         return new AggregateLoadTimeSnapshotTrigger(snapshotter, aggregateType, loadTimeMillisThreshold);
     }
 
     @Override
-    public SnapshotTrigger reconfigure(@Nonnull Class<?> aggregateType, @Nonnull SnapshotTrigger trigger) {
+    public SnapshotTrigger reconfigure(@NonNull Class<?> aggregateType, @NonNull SnapshotTrigger trigger) {
         if (trigger instanceof AggregateLoadTimeSnapshotTrigger) {
             ((AggregateLoadTimeSnapshotTrigger) trigger).setSnapshotter(snapshotter);
             return trigger;

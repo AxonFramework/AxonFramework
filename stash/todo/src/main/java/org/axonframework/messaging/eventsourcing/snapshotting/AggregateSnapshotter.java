@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
@@ -178,7 +178,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         @Override
-        public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
+        public Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }
@@ -355,7 +355,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 //        }
 //
 //        @Override
-//        public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+//        public Object handle(@NonNull Message message, @NonNull ProcessingContext context) {
 //            throw new UnsupportedOperationException("Aggregate instance is read-only");
 //        }
 //
