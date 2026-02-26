@@ -20,7 +20,7 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Metadata;
 
 /**
@@ -46,7 +46,7 @@ public class MetadataContextSetter implements TextMapSetter<Map<String, String>>
     }
 
     @Override
-    public void set(Map<String, String> metadata, @Nonnull String key, @Nonnull String value) {
+    public void set(Map<String, String> metadata, @NonNull String key, @NonNull String value) {
         if (metadata == null) {
             throw new IllegalArgumentException("The provided metadata may not be null!");
         }
