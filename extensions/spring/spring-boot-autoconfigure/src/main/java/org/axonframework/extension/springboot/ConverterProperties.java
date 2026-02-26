@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -100,8 +100,7 @@ public class ConverterProperties {
      * @return The {@link Converter} type to use for conversion of all kinds of
      * objects
      */
-    @Nonnull
-    public ConverterType getGeneral() {
+        public @NonNull ConverterType getGeneral() {
         return general;
     }
 
@@ -113,7 +112,7 @@ public class ConverterProperties {
      *
      * @param converterType The converter type to use for converting any object.
      */
-    public void setGeneral(@Nonnull ConverterType converterType) {
+    public void setGeneral(@NonNull ConverterType converterType) {
         this.general = converterType;
     }
 
@@ -130,8 +129,7 @@ public class ConverterProperties {
      * @return The type of {@link Converter} to use for
      * {@link Message#payload() Message payloads}.
      */
-    @Nonnull
-    public ConverterType getMessages() {
+        public @NonNull ConverterType getMessages() {
         return messages;
     }
 
@@ -148,7 +146,7 @@ public class ConverterProperties {
      * @param converterType The converter type to use for converting any {@link org.axonframework.messaging.core.Message}
      *                      {@link Message#payload()}.
      */
-    public void setMessages(@Nonnull ConverterType converterType) {
+    public void setMessages(@NonNull ConverterType converterType) {
         this.messages = converterType;
     }
 
@@ -165,8 +163,7 @@ public class ConverterProperties {
      * @return The type of {@link Converter} to use for
      * {@link EventMessage#payload() EventMessage payloads}.
      */
-    @Nonnull
-    public ConverterType getEvents() {
+        public @NonNull ConverterType getEvents() {
         return events;
     }
 
@@ -183,7 +180,7 @@ public class ConverterProperties {
      * @param converterType The converter type to use for converting any
      *                      {@link EventMessage} {@link EventMessage#payload()}.
      */
-    public void setEvents(@Nonnull ConverterType converterType) {
+    public void setEvents(@NonNull ConverterType converterType) {
         this.events = converterType;
     }
 

@@ -18,7 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.conversion.ContentTypeConverter;
@@ -141,8 +141,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         return new DelegatingEventConverter(buildConverter(eventsConverterType));
     }
 
-    @Nonnull
-    private Converter buildConverter(@Nonnull ConverterProperties.ConverterType converterType) {
+        private @NonNull Converter buildConverter(ConverterProperties.@NonNull ConverterType converterType) {
         switch (converterType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans =
@@ -203,7 +202,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      *                           {@link Converter Converters}.
      */
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = requireNonNull(applicationContext, "The ApplicationContext cannot be null.");
     }
 
@@ -215,7 +214,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      *                    {@link ContentTypeConverter ContentTypeConverters}.
      */
     @Override
-    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
+    public void setBeanClassLoader(@NonNull ClassLoader classLoader) {
         this.classLoader = requireNonNull(classLoader, "The ClassLoader cannot be null.");
     }
 }
