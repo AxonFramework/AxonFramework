@@ -17,10 +17,9 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.common.jdbc.SingleConnectionTransactionalExecutor;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
@@ -66,10 +64,8 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
 
-    private DataSource dataSource;
-    // Sentinel connection to keep HSQLDB in-memory database alive across operations
-    private Connection sentinelConnection;
-    private TransactionalExecutor<Connection> executor;
+    private Connection connection;
+    private SingleConnectionTransactionalExecutor executor;
     private DeadLetterStatementFactory<EventMessage> statementFactory;
     private JdbcSequencedDeadLetterQueue<EventMessage> jdbcDeadLetterQueue;
 
@@ -79,12 +75,17 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        dataSource = dataSource();
+        JDBCDataSource dataSource = new JDBCDataSource();
+        dataSource.setUrl("jdbc:hsqldb:mem:dlqintegtest");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
         try {
-            sentinelConnection = dataSource.getConnection();
+            connection = dataSource.getConnection();
         } catch (SQLException e) {
-            throw new IllegalStateException("Unable to open sentinel connection", e);
+            throw new IllegalStateException("Unable to open connection", e);
         }
+        executor = new SingleConnectionTransactionalExecutor(connection);
+
         Converter genericConverter = jacksonConverter;
         statementFactory = DefaultDeadLetterStatementFactory.<EventMessage>builder()
                                                             .eventConverter(eventConverter)
@@ -92,54 +93,26 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                             .schema(schema)
                                                             .build();
 
-        // Use a provider that ignores ProcessingContext and always creates a new DataSource-based executor.
-        // In production, ProcessingContext would carry a ConnectionExecutor resource, but in tests the
-        // event processing pipeline doesn't set up JDBC transaction integration.
-        JdbcTransactionalExecutorProvider baseProvider = new JdbcTransactionalExecutorProvider(dataSource);
         jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.<EventMessage>builder()
                                                           .processingGroup(TEST_PROCESSING_GROUP)
-                                                          .transactionalExecutorProvider(
-                                                                  pc -> baseProvider.getTransactionalExecutor(null)
-                                                          )
+                                                          .transactionalExecutorProvider(pc -> executor)
                                                           .schema(schema)
                                                           .statementFactory(statementFactory)
                                                           .eventConverter(eventConverter)
                                                           .genericConverter(genericConverter)
                                                           .build();
-        executor = baseProvider.getTransactionalExecutor(null);
         return jdbcDeadLetterQueue;
-    }
-
-    private DataSource dataSource() {
-        JDBCDataSource dataSource = new JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:mem:dlqintegtest");
-        dataSource.setUser("sa");
-        dataSource.setPassword("");
-        return dataSource;
     }
 
     @AfterEach
     void tearDown() {
-        closeQuietly(sentinelConnection);
+        closeQuietly(connection);
     }
 
+    @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
     @BeforeEach
-    void setUpJdbc() {
-        // Clear current DLQ
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            //noinspection SqlDialectInspection,SqlNoDataSourceInspection
-            connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable())
-                      .executeUpdate();
-            connection.commit();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Unable to retrieve a Connection to drop the dead-letter queue", e);
-        } finally {
-            closeQuietly(connection);
-        }
-        // Construct new DLQ
+    void setUpJdbc() throws SQLException {
+        connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable()).executeUpdate();
         joinAndUnwrap(jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory(), null));
     }
 
