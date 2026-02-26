@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 
 /**
@@ -38,7 +38,7 @@ import jakarta.annotation.Nullable;
 public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         return original.unwrap(Executable.class)
                        .filter(executable -> AnnotationUtils.isAnnotationPresent(executable, EndSaga.class))
                        .map(e -> (MessageHandlingMember<T>) new EndSageMessageHandlingMember<>(original))
@@ -64,7 +64,7 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target) throws Exception {
+        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable T target) throws Exception {
             try {
                 return super.handleSync(message, context, target);
             } finally {

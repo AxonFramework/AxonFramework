@@ -24,7 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static java.lang.String.format;
 
@@ -48,7 +48,7 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     }
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         Optional<String> keyName = original.attribute("SagaEventHandler.keyName");
         Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
         Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(
