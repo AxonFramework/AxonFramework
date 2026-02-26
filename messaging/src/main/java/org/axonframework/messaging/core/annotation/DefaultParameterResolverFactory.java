@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -42,8 +42,8 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable,
-                                            @Nonnull Parameter[] parameters,
+    public ParameterResolver createInstance(@NonNull Executable executable,
+                                            @NonNull Parameter[] parameters,
                                             int parameterIndex) {
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
@@ -81,9 +81,9 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(
                     Message.fromContext(context)
                            .metadata()
@@ -92,7 +92,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             Message message = Message.fromContext(context);
             if (message == null) {
                 return false;
@@ -113,15 +113,15 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private MetadataParameterResolver() {
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Metadata> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Metadata> resolveParameterValue(@NonNull ProcessingContext context) {
             Message message = Message.fromContext(context);
             return CompletableFuture.completedFuture(message.metadata());
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return Message.fromContext(context) != null;
         }
     }
@@ -134,14 +134,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Message> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Message> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(Message.fromContext(context));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             Message message = Message.fromContext(context);
             if (message == null) {
                 return false;

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -48,8 +48,8 @@ public interface CommandBusConnector extends DescribableComponent {
      * @param processingContext The processing context for the command.
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
-    @Nonnull
-    CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    @NonNull
+    CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                      @Nullable ProcessingContext processingContext);
 
     /**
@@ -61,7 +61,7 @@ public interface CommandBusConnector extends DescribableComponent {
      * @return A {@code CompletableFuture} that completes successfully when this connector subscribed to the given
      * {@code commandName} with the given {@code loadFactor}.
      */
-    CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor);
+    CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor);
 
     /**
      * Unsubscribes from a command with the given {@code commandName}.
@@ -69,7 +69,7 @@ public interface CommandBusConnector extends DescribableComponent {
      * @param commandName The {@link QualifiedName} of the command to unsubscribe from.
      * @return {@code true} if the unsubscription was successful, {@code false} otherwise.
      */
-    boolean unsubscribe(@Nonnull QualifiedName commandName);
+    boolean unsubscribe(@NonNull QualifiedName commandName);
 
     /**
      * Registers a handler that will be called when an incoming command is received. The handler should process the
@@ -77,7 +77,7 @@ public interface CommandBusConnector extends DescribableComponent {
      *
      * @param handler A {@link BiConsumer} that takes a {@link CommandMessage} and a {@link ResultCallback}.
      */
-    void onIncomingCommand(@Nonnull Handler handler);
+    void onIncomingCommand(@NonNull Handler handler);
 
     /**
      * A functional interface representing a handler for incoming command messages. The handler processes the command
@@ -92,7 +92,7 @@ public interface CommandBusConnector extends DescribableComponent {
          * @param commandMessage The command message to handle.
          * @param callback       The callback to invoke with the result of handling the command.
          */
-        void handle(@Nonnull CommandMessage commandMessage, @Nonnull ResultCallback callback);
+        void handle(@NonNull CommandMessage commandMessage, @NonNull ResultCallback callback);
     }
 
     /**
@@ -114,6 +114,6 @@ public interface CommandBusConnector extends DescribableComponent {
          *
          * @param cause The exception that caused the error.
          */
-        void onError(@Nonnull Throwable cause);
+        void onError(@NonNull Throwable cause);
     }
 }

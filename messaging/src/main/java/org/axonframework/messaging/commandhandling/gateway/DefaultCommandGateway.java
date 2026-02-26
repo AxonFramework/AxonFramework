@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -62,10 +62,10 @@ public class DefaultCommandGateway implements CommandGateway {
      * @param priorityCalculator  The {@link CommandPriorityCalculator} determining the priority of commands.
      * @param routingKeyResolver  The {@link RoutingStrategy} determining the routing key for commands.
      */
-    public DefaultCommandGateway(@Nonnull CommandBus commandBus,
-                                 @Nonnull MessageTypeResolver messageTypeResolver,
-                                 @Nonnull CommandPriorityCalculator priorityCalculator,
-                                 @Nonnull RoutingStrategy routingKeyResolver) {
+    public DefaultCommandGateway(@NonNull CommandBus commandBus,
+                                 @NonNull MessageTypeResolver messageTypeResolver,
+                                 @NonNull CommandPriorityCalculator priorityCalculator,
+                                 @NonNull RoutingStrategy routingKeyResolver) {
         this.commandBus = requireNonNull(commandBus, "The commandBus may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
         this.priorityCalculator = requireNonNull(priorityCalculator, "The CommandPriorityCalculator may not be null.");
@@ -73,9 +73,8 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     @Override
-    @Nonnull
-    public CommandResult send(@Nonnull Object command,
-                              @Nonnull Metadata metadata,
+        public @NonNull CommandResult send(@NonNull Object command,
+                              @NonNull Metadata metadata,
                               @Nullable ProcessingContext context) {
         return new FutureCommandResult(commandBus.dispatch(asCommandMessage(command, metadata), context));
     }
@@ -113,7 +112,7 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandBus", commandBus);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
         descriptor.describeProperty("priorityCalculator", priorityCalculator);

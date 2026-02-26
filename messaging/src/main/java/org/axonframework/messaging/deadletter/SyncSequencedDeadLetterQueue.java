@@ -24,7 +24,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -65,8 +65,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param context            The processing context in which the dead letters are processed.
      * @throws DeadLetterQueueOverflowException when this queue {@link #isFull(Object, ProcessingContext) is full}.
      */
-    void enqueue(@Nonnull Object sequenceIdentifier,
-                 @Nonnull DeadLetter<? extends M> letter,
+    void enqueue(@NonNull Object sequenceIdentifier,
+                 @NonNull DeadLetter<? extends M> letter,
                  @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException;
 
     /**
@@ -82,8 +82,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @throws DeadLetterQueueOverflowException when this queue is {@link #isFull(Object, ProcessingContext)} for the given
      *                                          {@code sequenceIdentifier}.
      */
-    default boolean enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                     @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder, // TODO #3517 - BiFunction accepts the context?
+    default boolean enqueueIfPresent(@NonNull Object sequenceIdentifier,
+                                     @NonNull Supplier<DeadLetter<? extends M>> letterBuilder, // TODO #3517 - BiFunction accepts the context?
                                      @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         if (!contains(sequenceIdentifier, context)) {
             return false;
@@ -99,7 +99,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param letter  The {@link DeadLetter dead letter} to evict from this queue.
      * @param context The processing context in which the dead letters are processed.
      */
-    void evict(@Nonnull DeadLetter<? extends M> letter, @Nullable ProcessingContext context);
+    void evict(@NonNull DeadLetter<? extends M> letter, @Nullable ProcessingContext context);
 
     /**
      * Reenters the given {@code letter}, updating the contents with the {@code letterUpdater}. This method should be
@@ -115,8 +115,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param context       The processing context in which the dead letters are processed.
      * @throws NoSuchDeadLetterException if the given {@code letter} does not exist in the queue.
      */
-    void requeue(@Nonnull DeadLetter<? extends M> letter,
-                 @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+    void requeue(@NonNull DeadLetter<? extends M> letter,
+                 @NonNull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                  @Nullable ProcessingContext context
     ) throws NoSuchDeadLetterException;
 
@@ -130,7 +130,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @return {@code true} if there are {@link DeadLetter dead letters} present for the given
      * {@code sequenceIdentifier}, {@code false} otherwise.
      */
-    boolean contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context);
+    boolean contains(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context);
 
     /**
      * Return all the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
@@ -140,8 +140,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      *                           available.
      * @return All the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
      */
-    @Nonnull
-    Iterable<DeadLetter<? extends M>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
+    @NonNull
+    Iterable<DeadLetter<? extends M>> deadLetterSequence(@NonNull Object sequenceIdentifier,
                                                          @Nullable ProcessingContext context);
 
     /**
@@ -151,7 +151,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
      * @return All {@link DeadLetter dead letter} sequences held by this queue.
      */
-    @Nonnull
+    @NonNull
     Iterable<Iterable<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context);
 
     /**
@@ -164,7 +164,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
      * @return {@code true} either when the limit of this queue is reached, {@code false} otherwise.
      */
-    boolean isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context);
+    boolean isFull(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context);
 
     /**
      * Returns the number of dead letters contained in this queue.
@@ -185,7 +185,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param sequenceIdentifier The identifier of the sequence to retrieve the size from.
      * @return The number of dead letters for the sequence matching the given {@code sequenceIdentifier}.
      */
-    long sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context);
+    long sequenceSize(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context);
 
     /**
      * Returns the number of unique sequences contained in this queue.
@@ -225,8 +225,8 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
      * sequence and the outcome was to evict each instance.
      */
-    boolean process(@Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-                    @Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask,
+    boolean process(@NonNull Predicate<DeadLetter<? extends M>> sequenceFilter,
+                    @NonNull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask,
                     @Nullable ProcessingContext context);
 
     /**
@@ -253,7 +253,7 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * {@code false} otherwise. This means the {@code processingTask} processed all {@link DeadLetter dead letters} of a
      * sequence and the outcome was to evict each instance.
      */
-    default boolean process(@Nonnull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask, @Nullable ProcessingContext context) {
+    default boolean process(@NonNull Function<DeadLetter<? extends M>, EnqueueDecision<M>> processingTask, @Nullable ProcessingContext context) {
         return process(letter -> true, processingTask, context);
     }
 

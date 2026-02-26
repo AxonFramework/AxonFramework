@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -83,12 +83,12 @@ public class SimpleQueryBus implements QueryBus {
      *                          {@link UnitOfWork units of work} to dispatch and
      *                          handle queries in.
      */
-    public SimpleQueryBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public SimpleQueryBus(@NonNull UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "The UnitOfWorkFactory must be provided.");
     }
 
     @Override
-    public QueryBus subscribe(@Nonnull QualifiedName queryName, @Nonnull QueryHandler queryHandler) {
+    public QueryBus subscribe(@NonNull QualifiedName queryName, @NonNull QueryHandler queryHandler) {
         logger.debug("Subscribing query handler for name [{}].", queryName);
         QueryHandler existingHandler = subscriptions.putIfAbsent(queryName, queryHandler);
         if (existingHandler != null && existingHandler != queryHandler) {
@@ -97,9 +97,9 @@ public class SimpleQueryBus implements QueryBus {
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Dispatching direct-query for query name [{}].",
                          query.type().name());
@@ -114,9 +114,9 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    @Nonnull
-    private CompletableFuture<MessageStream<QueryResponseMessage>> handle(@Nonnull QueryMessage query,
-                                                                          @Nonnull QueryHandler handler) {
+    @NonNull
+    private CompletableFuture<MessageStream<QueryResponseMessage>> handle(@NonNull QueryMessage query,
+                                                                          @NonNull QueryHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling query [{} {name={}]",
                          query.identifier(), query.type());
@@ -155,9 +155,9 @@ public class SimpleQueryBus implements QueryBus {
                                  .orElse(false);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         MessageStream<SubscriptionQueryUpdateMessage> updates = subscribeToUpdates(query, updateBufferSize);
@@ -167,8 +167,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    @Nonnull
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
+    @NonNull
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@NonNull QueryMessage query,
                                                                             int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
@@ -187,8 +187,7 @@ public class SimpleQueryBus implements QueryBus {
         return updateHandlers.keySet().stream().anyMatch(m -> m.identifier().equals(queryId));
     }
 
-    @Nonnull
-    private QueryHandler handlerFor(@Nonnull QueryMessage query) {
+        private @NonNull QueryHandler handlerFor(@NonNull QueryMessage query) {
         QualifiedName handlerName = query.type().qualifiedName();
         if (!subscriptions.containsKey(handlerName)) {
             throw NoHandlerForQueryException.forBus(query);
@@ -196,10 +195,10 @@ public class SimpleQueryBus implements QueryBus {
         return subscriptions.get(handlerName);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
-                                              @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    public CompletableFuture<Void> emitUpdate(@NonNull Predicate<QueryMessage> filter,
+                                              @NonNull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         return runAfterCommitOrImmediately(context, () -> emitUpdate(filter, updateSupplier));
     }
@@ -232,9 +231,9 @@ public class SimpleQueryBus implements QueryBus {
         });
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(@NonNull Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         return runAfterCommitOrImmediately(context, () -> completeSubscriptions(filter));
     }
@@ -254,11 +253,11 @@ public class SimpleQueryBus implements QueryBus {
                       });
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<QueryMessage> filter,
-            @Nonnull Throwable cause,
+            @NonNull Predicate<QueryMessage> filter,
+            @NonNull Throwable cause,
             @Nullable ProcessingContext context
     ) {
         return runAfterCommitOrImmediately(context, () -> completeSubscriptionsExceptionally(filter, cause));
@@ -271,9 +270,9 @@ public class SimpleQueryBus implements QueryBus {
                       .forEach(entry -> emitError(entry.getValue(), cause, entry.getKey()));
     }
 
-    @Nonnull
+    @NonNull
     private CompletableFuture<Void> runAfterCommitOrImmediately(@Nullable ProcessingContext context,
-                                                                @Nonnull Runnable updateTask) {
+                                                                @NonNull Runnable updateTask) {
         if (context != null) {
             context.computeResourceIfAbsent(
                            UPDATE_TASKS_KEY,
@@ -302,7 +301,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("subscriptions", subscriptions);
         descriptor.describeProperty("updateHandlers", updateHandlers);

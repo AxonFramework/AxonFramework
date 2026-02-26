@@ -18,7 +18,7 @@ package org.axonframework.messaging.monitoring;
 
 import org.axonframework.messaging.core.Message;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A message monitor that returns a NoOp message callback
@@ -45,7 +45,7 @@ public enum NoOpMessageMonitor implements MessageMonitor<Message> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(@NonNull Message message) {
         return NoOpMessageMonitorCallback.INSTANCE;
     }
 

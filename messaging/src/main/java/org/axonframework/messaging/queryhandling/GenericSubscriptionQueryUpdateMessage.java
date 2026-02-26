@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -50,7 +50,7 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param payload The payload of type {@code U} for this {@link SubscriptionQueryUpdateMessage} representing an
      *                incremental update.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
                                                  @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()));
     }
@@ -66,9 +66,9 @@ public class GenericSubscriptionQueryUpdateMessage
      *                           representing an incremental update.
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
                                                      @Nullable P payload,
-                                                     @Nonnull Class<P> declaredUpdateType) {
+                                                     @NonNull Class<P> declaredUpdateType) {
         this(type, payload, declaredUpdateType, Metadata.emptyInstance());
     }
 
@@ -83,10 +83,10 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      * @param metadata           The metadata for this {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
                                                      @Nullable P payload,
-                                                     @Nonnull Class<P> declaredUpdateType,
-                                                     @Nonnull Map<String, String> metadata) {
+                                                     @NonNull Class<P> declaredUpdateType,
+                                                     @NonNull Map<String, String> metadata) {
         super(new GenericMessage(type, payload, declaredUpdateType, metadata));
     }
 
@@ -101,26 +101,23 @@ public class GenericSubscriptionQueryUpdateMessage
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull Message delegate) {
+    public GenericSubscriptionQueryUpdateMessage(@NonNull Message delegate) {
         super(delegate);
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull SubscriptionQueryUpdateMessage withMetadata(@NonNull Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull SubscriptionQueryUpdateMessage andMetadata(@NonNull Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type,
-                                                               @Nonnull Converter converter) {
+        public @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Type type,
+                                                               @NonNull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

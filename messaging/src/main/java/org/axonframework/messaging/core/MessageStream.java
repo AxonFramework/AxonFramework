@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 
 import java.util.List;
@@ -68,7 +68,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code iterable}.
      */
-    static <M extends Message> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable) {
+    static <M extends Message> MessageStream<M> fromIterable(@NonNull Iterable<M> iterable) {
         return fromIterable(iterable, message -> Context.empty());
     }
 
@@ -80,7 +80,7 @@ public interface MessageStream<M extends Message> {
      * @return a MessageStream that contains the given {@code items} and then completes.
      */
     @SafeVarargs
-    static <M extends Message> MessageStream<M> fromItems(@Nonnull M... items) {
+    static <M extends Message> MessageStream<M> fromItems(@NonNull M... items) {
         return fromIterable(List.of(items), message -> Context.empty());
     }
 
@@ -99,8 +99,8 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code iterable} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message> MessageStream<M> fromIterable(@Nonnull Iterable<M> iterable,
-                                                             @Nonnull Function<M, Context> contextSupplier) {
+    static <M extends Message> MessageStream<M> fromIterable(@NonNull Iterable<M> iterable,
+                                                             @NonNull Function<M, Context> contextSupplier) {
         return new IteratorMessageStream<>(StreamSupport.stream(iterable.spliterator(), false)
                                                         .<Entry<M>>map(message -> new SimpleEntry<>(message,
                                                                                                     contextSupplier.apply(
@@ -117,7 +117,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code stream}.
      */
-    static <M extends Message> MessageStream<M> fromStream(@Nonnull Stream<M> stream) {
+    static <M extends Message> MessageStream<M> fromStream(@NonNull Stream<M> stream) {
         return fromStream(stream, message -> Context.empty());
     }
 
@@ -132,8 +132,8 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code stream} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message> MessageStream<M> fromStream(@Nonnull Stream<M> stream,
-                                                           @Nonnull Function<M, Context> contextSupplier) {
+    static <M extends Message> MessageStream<M> fromStream(@NonNull Stream<M> stream,
+                                                           @NonNull Function<M, Context> contextSupplier) {
         return new IteratorMessageStream<>(stream.map(m -> (Entry<M>) new SimpleEntry<>(m, contextSupplier.apply(m)))
                                                  .iterator());
     }
@@ -158,9 +158,9 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} resulting from the given
      * {@code messageSupplier} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <T, M extends Message> MessageStream<M> fromStream(@Nonnull Stream<T> stream,
-                                                              @Nonnull Function<T, M> messageSupplier,
-                                                              @Nonnull Function<T, Context> contextSupplier) {
+    static <T, M extends Message> MessageStream<M> fromStream(@NonNull Stream<T> stream,
+                                                              @NonNull Function<T, M> messageSupplier,
+                                                              @NonNull Function<T, Context> contextSupplier) {
         return new IteratorMessageStream<>(stream.map(item -> new SimpleEntry<>(messageSupplier.apply(item),
                                                                                 contextSupplier.apply(item)))
                                                  .iterator());
@@ -177,7 +177,7 @@ public interface MessageStream<M extends Message> {
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code future}.
      */
-    static <M extends Message> Single<M> fromFuture(@Nonnull CompletableFuture<M> future) {
+    static <M extends Message> Single<M> fromFuture(@NonNull CompletableFuture<M> future) {
         return fromFuture(future, message -> Context.empty());
     }
 
@@ -197,8 +197,8 @@ public interface MessageStream<M extends Message> {
      * @return A stream containing at most one {@link Entry entry} from the given {@code future} with a {@link Context}
      * provided by the {@code contextSupplier}.
      */
-    static <M extends Message> Single<M> fromFuture(@Nonnull CompletableFuture<M> future,
-                                                    @Nonnull Function<M, Context> contextSupplier) {
+    static <M extends Message> Single<M> fromFuture(@NonNull CompletableFuture<M> future,
+                                                    @NonNull Function<M, Context> contextSupplier) {
         return new DelayedMessageStream.Single<>(
                 future.thenApply(message -> MessageStream.just(message, contextSupplier))
         );
@@ -230,7 +230,7 @@ public interface MessageStream<M extends Message> {
      * {@link Context} provided by the {@code contextSupplier}.
      */
     static <M extends Message> Single<M> just(@Nullable M message,
-                                              @Nonnull Function<M, Context> contextSupplier) {
+                                              @NonNull Function<M, Context> contextSupplier) {
         if (message == null) {
             return empty().cast();
         }
@@ -246,7 +246,7 @@ public interface MessageStream<M extends Message> {
      * @param <M>     The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream that is completed exceptionally.
      */
-    static <M extends Message> Empty<M> failed(@Nonnull Throwable failure) {
+    static <M extends Message> Empty<M> failed(@NonNull Throwable failure) {
         return new FailedMessageStream<>(failure);
     }
 
@@ -323,7 +323,7 @@ public interface MessageStream<M extends Message> {
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.
      */
-    void setCallback(@Nonnull Runnable callback);
+    void setCallback(@NonNull Runnable callback);
 
     /**
      * Indicates whether any error has been reported in this stream. Implementations may choose to not return any error
@@ -373,7 +373,7 @@ public interface MessageStream<M extends Message> {
      * @param <RM>   The declared type of {@link Message} contained in the returned {@link Entry entry}.
      * @return A stream with all {@link Entry entries} mapped according to the {@code mapper} function.
      */
-    default <RM extends Message> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    default <RM extends Message> MessageStream<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
         return new MappedMessageStream<>(this, mapper);
     }
 
@@ -389,7 +389,7 @@ public interface MessageStream<M extends Message> {
      * @param <RM>   The declared type of {@link Message} contained in the returned {@link Entry entry}.
      * @return A stream with all {@link Entry entries} mapped according to the {@code mapper} function.
      */
-    default <RM extends Message> MessageStream<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+    default <RM extends Message> MessageStream<RM> mapMessage(@NonNull Function<M, RM> mapper) {
         return map(entry -> entry.map(mapper));
     }
 
@@ -411,7 +411,7 @@ public interface MessageStream<M extends Message> {
      * stream.
      * @throws UnsupportedOperationException if this stream is unbounded
      */
-    default <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    default <R> CompletableFuture<R> reduce(@NonNull R identity, @NonNull BiFunction<R, Entry<M>, R> accumulator) {
         return MessageStreamUtils.reduce(this, identity, accumulator);
     }
 
@@ -425,7 +425,7 @@ public interface MessageStream<M extends Message> {
      * @param onNext The {@link Consumer} to invoke for each {@link Entry entry}.
      * @return A stream that will invoke the given {@code onNext} for each {@link Entry entry}.
      */
-    default MessageStream<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+    default MessageStream<M> onNext(@NonNull Consumer<Entry<M>> onNext) {
         return new OnNextMessageStream<>(this, onNext);
     }
 
@@ -437,7 +437,7 @@ public interface MessageStream<M extends Message> {
      *                {@code this} stream.
      * @return A stream that continues onto another stream when {@code this} stream completes with an error.
      */
-    default MessageStream<M> onErrorContinue(@Nonnull Function<Throwable, MessageStream<M>> onError) {
+    default MessageStream<M> onErrorContinue(@NonNull Function<Throwable, MessageStream<M>> onError) {
         return new OnErrorContinueMessageStream<>(this, onError);
     }
 
@@ -449,7 +449,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream for which the {@link MessageStream.Entry entries} have been filtered by the given
      * {@code filter}.
      */
-    default MessageStream<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+    default MessageStream<M> filter(@NonNull Predicate<Entry<M>> filter) {
         return new FilteringMessageStream<>(this, filter);
     }
 
@@ -463,7 +463,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream concatenating this stream with given {@code other}.
      * @throws UnsupportedOperationException if this stream is unbounded
      */
-    default MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
+    default MessageStream<M> concatWith(@NonNull MessageStream<M> other) {
         return new ConcatenatingMessageStream<>(this, other);
     }
 
@@ -475,7 +475,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream that invokes the {@code completeHandler} upon normal completion.
      * @throws UnsupportedOperationException if this stream is unbounded
      */
-    default MessageStream<M> onComplete(@Nonnull Runnable completeHandler) {
+    default MessageStream<M> onComplete(@NonNull Runnable completeHandler) {
         return new CompletionCallbackMessageStream<>(this, completeHandler);
     }
 
@@ -534,10 +534,10 @@ public interface MessageStream<M extends Message> {
          * @param <RM>   The declared type of {@link Message} resulting from the given {@code mapper}.
          * @return The result of running the current {@link #message()} through the given {@code mapper}.
          */
-        <RM extends Message> Entry<RM> map(@Nonnull Function<M, RM> mapper);
+        <RM extends Message> Entry<RM> map(@NonNull Function<M, RM> mapper);
 
         @Override
-        <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+        <T> Entry<M> withResource(@NonNull ResourceKey<T> key, @NonNull T resource);
     }
 
     /**
@@ -562,27 +562,27 @@ public interface MessageStream<M extends Message> {
         }
 
         @Override
-        default <RM extends Message> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+        default <RM extends Message> Single<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
             return new MappedMessageStream.Single<>(this, mapper);
         }
 
         @Override
-        default <RM extends Message> Single<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+        default <RM extends Message> Single<RM> mapMessage(@NonNull Function<M, RM> mapper) {
             return map(e -> e.map(mapper));
         }
 
         @Override
-        default Single<M> filter(@Nonnull Predicate<Entry<M>> filter) {
+        default Single<M> filter(@NonNull Predicate<Entry<M>> filter) {
             return new FilteringMessageStream.Single<>(this, filter);
         }
 
         @Override
-        default Single<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+        default Single<M> onNext(@NonNull Consumer<Entry<M>> onNext) {
             return new OnNextMessageStream.Single<>(this, onNext);
         }
 
         @Override
-        default Single<M> onComplete(@Nonnull Runnable completeHandler) {
+        default Single<M> onComplete(@NonNull Runnable completeHandler) {
             return new CompletionCallbackMessageStream.Single<>(this, completeHandler);
         }
 
@@ -633,28 +633,28 @@ public interface MessageStream<M extends Message> {
         }
 
         @Override
-        default <RM extends Message> Empty<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+        default <RM extends Message> Empty<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
             return cast();
         }
 
         @Override
-        default <RM extends Message> Empty<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+        default <RM extends Message> Empty<RM> mapMessage(@NonNull Function<M, RM> mapper) {
             return cast();
         }
 
         @Override
-        default Empty<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+        default Empty<M> onNext(@NonNull Consumer<Entry<M>> onNext) {
             // Empty streams can never have their onNext called.
             return this;
         }
 
         @Override
-        default MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
+        default MessageStream<M> concatWith(@NonNull MessageStream<M> other) {
             return other;
         }
 
         @Override
-        default Empty<M> onComplete(@Nonnull Runnable completeHandler) {
+        default Empty<M> onComplete(@NonNull Runnable completeHandler) {
             return new CompletionCallbackMessageStream.Empty<>(this, completeHandler);
         }
 

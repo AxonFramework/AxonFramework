@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.ChainingContentTypeConverter;
@@ -73,7 +73,7 @@ public abstract class MessageTestSuite<M extends Message> {
      *
      * @param result The resulting {@link Message} implementation to validate against.
      */
-    protected void validateDefaultMessage(@Nonnull M result) {
+    protected void validateDefaultMessage(@NonNull M result) {
         // The default validations are done by the tests directly
     }
 
@@ -83,7 +83,7 @@ public abstract class MessageTestSuite<M extends Message> {
      * @param actual The actual {@link Message} implementation.
      * @param result The resulting {@link Message} implementation to validate against.
      */
-    protected void validateMessageSpecifics(@Nonnull M actual, @Nonnull M result) {
+    protected void validateMessageSpecifics(@NonNull M actual, @NonNull M result) {
         // The default validations are done by the tests directly
     }
 

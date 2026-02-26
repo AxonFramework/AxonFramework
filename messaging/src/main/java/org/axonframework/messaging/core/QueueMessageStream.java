@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -24,7 +24,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TransferQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * MessageStream implementation that uses a Queue to make elements available to a consumer.
@@ -57,7 +58,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      *
      * @param queue The queue to use to store {@link Entry entries} in transit from producer to consumer.
      */
-    public QueueMessageStream(@Nonnull BlockingQueue<Entry<M>> queue) {
+    public QueueMessageStream(@NonNull BlockingQueue<Entry<M>> queue) {
         this.queue = queue;
     }
 
@@ -72,7 +73,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      * @param context The context to accompany the message.
      * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
-    public boolean offer(@Nonnull M message, @Nonnull Context context) {
+    public boolean offer(@NonNull M message, @NonNull Context context) {
         if (!isClosed() && queue.offer(new SimpleEntry<>(message, context))) {
             Throwable before = error().orElse(null);
             invokeCallbackSafely();
@@ -98,7 +99,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
     }
 
     @Override
-    public void completeExceptionally(@Nonnull Throwable error) {
+    public void completeExceptionally(@NonNull Throwable error) {
         super.completeExceptionally(error);
     }
 
@@ -110,12 +111,12 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      *
      * @param callback The callback to invoke when {@link Entry entries} are consumed.
      */
-    public void onConsumeCallback(@Nonnull Runnable callback) {
+    public void onConsumeCallback(@NonNull Runnable callback) {
         this.onConsumeCallback.set(callback);
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         Throwable before = error().orElse(null);
         super.setCallback(callback);
         if (error().isPresent() && before == null) {

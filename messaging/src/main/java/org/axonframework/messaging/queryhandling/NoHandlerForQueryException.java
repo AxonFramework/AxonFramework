@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 
 import static java.lang.String.format;
@@ -36,7 +36,7 @@ public class NoHandlerForQueryException extends AxonException {
      * @return A {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage}, specific
      * for {@link QueryBus QueryBuses}.
      */
-    public static NoHandlerForQueryException forBus(@Nonnull QueryMessage query) {
+    public static NoHandlerForQueryException forBus(@NonNull QueryMessage query) {
         return new NoHandlerForQueryException(format(
                 "No matching handler is available to handle query of type [%s]. "
                         + "To find a matching handler, note that the query handler's name should match the query's name.",
@@ -55,7 +55,7 @@ public class NoHandlerForQueryException extends AxonException {
      * @return A {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage}, specific
      * for {@link QueryHandlingComponent QueryHandlingComponents}.
      */
-    public static NoHandlerForQueryException forHandlingComponent(@Nonnull QueryMessage query) {
+    public static NoHandlerForQueryException forHandlingComponent(@NonNull QueryMessage query) {
         return new NoHandlerForQueryException(format(
                 "No matching handler is available to handle query of type [%s]. "
                         + "To find a matching handler, note that the query handler's name should match the query's name, "

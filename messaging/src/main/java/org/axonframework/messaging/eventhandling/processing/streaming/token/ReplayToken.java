@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import jakarta.annotation.Nullable;
 import java.beans.ConstructorProperties;
@@ -164,8 +164,8 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      */
     public static <T> Optional<T> replayContext(
             TrackingToken trackingToken,
-            @Nonnull Class<T> contextClass,
-            @Nonnull Converter converter
+            @NonNull Class<T> contextClass,
+            @NonNull Converter converter
     ) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
                            .map(ReplayToken::context)
@@ -174,8 +174,8 @@ public class ReplayToken implements TrackingToken, WrappedToken {
 
     private static <T> Optional<T> convertContext(
             @Nullable Object context,
-            @Nonnull Class<T> contextClass,
-            @Nonnull Converter converter
+            @NonNull Class<T> contextClass,
+            @NonNull Converter converter
     ) {
         if (context == null) {
             return Optional.empty();
@@ -246,7 +246,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
         return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
     }
 
-    private static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
+    private static boolean isStrictlyAfter(@NonNull TrackingToken newToken, @NonNull TrackingToken tokenAtReset) {
         return !newToken.samePositionAs(WrappedToken.unwrapUpperBound(tokenAtReset))
                 && newToken.covers(WrappedToken.unwrapUpperBound(tokenAtReset))
                 && !tokenAtReset.covers(WrappedToken.unwrapLowerBound(newToken));

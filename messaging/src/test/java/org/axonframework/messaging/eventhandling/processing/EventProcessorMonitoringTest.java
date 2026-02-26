@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -134,7 +134,7 @@ class EventProcessorMonitoringTest {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("Not required for tests.");
         }
     }

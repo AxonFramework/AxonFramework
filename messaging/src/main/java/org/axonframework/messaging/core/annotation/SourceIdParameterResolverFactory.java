@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
+
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -54,9 +54,9 @@ public final class SourceIdParameterResolverFactory
      */
     static class SourceIdParameterResolver implements ParameterResolver<String> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
             var sourceId = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
             if (sourceId != null) {
                 return CompletableFuture.completedFuture(sourceId);
@@ -65,7 +65,7 @@ public final class SourceIdParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
         }
     }

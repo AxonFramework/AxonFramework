@@ -214,17 +214,17 @@ class CombinedTimeoutTests {
 //        }
 //
 //        @Override
-//        public boolean canHandle(@Nonnull Message message) {
+//        public boolean canHandle(@NonNull Message message) {
 //            return true;
 //        }
 //
 //        @Override
-//        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+//        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
 //            return true;
 //        }
 //
 //        @Override
-//        public Object handle(@Nonnull Message message, @Nullable Object target) throws Exception {
+//        public Object handle(@NonNull Message message, @Nullable Object target) throws Exception {
 //            callable.call();
 //            return null;
 //        }

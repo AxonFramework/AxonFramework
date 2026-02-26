@@ -21,7 +21,7 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A RetryScheduler that uses a backoff strategy, doubling the retry delay after each attempt.
@@ -44,8 +44,8 @@ public class ExponentialBackOffRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable failure,
-                             @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(@NonNull Message message, @NonNull Throwable failure,
+                             @NonNull List<Class<? extends Throwable>[]> previousFailures) {
         if (Long.numberOfLeadingZeros(initialWaitTime) <= previousFailures.size()) {
             return Outcome.rescheduleIn(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
@@ -54,7 +54,7 @@ public class ExponentialBackOffRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialWaitTime", initialWaitTime);
     }
 }

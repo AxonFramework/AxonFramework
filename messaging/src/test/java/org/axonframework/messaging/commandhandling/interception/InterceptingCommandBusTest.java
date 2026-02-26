@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.*;
@@ -282,10 +282,10 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+        @NonNull
+        public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+                                                    @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)
@@ -293,10 +293,10 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+        @NonNull
+        public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)

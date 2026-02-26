@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 
@@ -39,12 +39,12 @@ public abstract class DelegatingMessageStream<DM extends Message, RM extends Mes
      *
      * @param delegate The instance to delegate calls to.
      */
-    public DelegatingMessageStream(@Nonnull MessageStream<DM> delegate) {
+    public DelegatingMessageStream(@NonNull MessageStream<DM> delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         delegate.setCallback(callback);
     }
 

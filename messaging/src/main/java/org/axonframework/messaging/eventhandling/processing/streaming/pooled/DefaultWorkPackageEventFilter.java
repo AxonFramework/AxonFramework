@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -57,9 +57,9 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
     private final ErrorHandler errorHandler;
 
     DefaultWorkPackageEventFilter(
-            @Nonnull String eventProcessor,
-            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
-            @Nonnull ErrorHandler errorHandler
+            @NonNull String eventProcessor,
+            @NonNull ProcessorEventHandlingComponents eventHandlingComponents,
+            @NonNull ErrorHandler errorHandler
     ) {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
         this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
@@ -80,9 +80,9 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      */
     @Override
     public boolean canHandle(
-            @Nonnull EventMessage eventMessage,
-            @Nonnull ProcessingContext context,
-            @Nonnull Segment segment
+            @NonNull EventMessage eventMessage,
+            @NonNull ProcessingContext context,
+            @NonNull Segment segment
     ) throws Exception {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();

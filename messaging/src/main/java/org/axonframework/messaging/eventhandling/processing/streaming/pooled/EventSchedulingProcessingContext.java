@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -76,27 +76,27 @@ class EventSchedulingProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@NonNull Phase phase, @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
+    public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(@NonNull ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(@NonNull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
@@ -107,48 +107,48 @@ class EventSchedulingProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key,
-                             @Nonnull T resource) {
+    public <T> T putResource(@NonNull ResourceKey<T> key,
+                             @NonNull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key,
-                                @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(@NonNull ResourceKey<T> key,
+                                @NonNull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                     @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(@NonNull ResourceKey<T> key,
+                                     @NonNull T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                         @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@NonNull ResourceKey<T> key,
+                                         @NonNull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+    public <T> T removeResource(@NonNull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nonnull T expectedResource) {
+    public <T> boolean removeResource(@NonNull ResourceKey<T> key,
+                                      @NonNull T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
         return applicationContext.component(type, name);
     }
 }

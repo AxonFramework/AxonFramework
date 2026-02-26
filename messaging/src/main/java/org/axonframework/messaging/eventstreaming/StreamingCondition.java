@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
@@ -57,8 +57,8 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
      * @return A simple {@code  StreamingCondition} that starts streaming from the given {@code position}, only
      * returning events matching the given {@code criteria}.
      */
-    static StreamingCondition conditionFor(@Nonnull TrackingToken position,
-                                           @Nonnull EventCriteria criteria) {
+    static StreamingCondition conditionFor(@NonNull TrackingToken position,
+                                           @NonNull EventCriteria criteria) {
         return new DefaultStreamingCondition(position, criteria);
     }
 
@@ -82,5 +82,5 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
      * @return A {@code  StreamingCondition} that {@link EventCriteria#or() "or-ed"} the given {@code criteria} with the
      * {@link #criteria()} of {@code this} {@code  StreamingCondition}.
      */
-    StreamingCondition or(@Nonnull EventCriteria criteria);
+    StreamingCondition or(@NonNull EventCriteria criteria);
 }

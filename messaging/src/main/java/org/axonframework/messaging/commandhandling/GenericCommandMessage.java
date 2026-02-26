@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -51,7 +51,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param type    The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload The payload for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
+    public GenericCommandMessage(@NonNull MessageType type,
                                  @Nullable Object payload) {
         this(type, payload, Metadata.emptyInstance());
     }
@@ -63,9 +63,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param payload  The payload for this {@link CommandMessage}.
      * @param metadata The metadata for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
+    public GenericCommandMessage(@NonNull MessageType type,
                                  @Nullable Object payload,
-                                 @Nonnull Map<String, String> metadata) {
+                                 @NonNull Map<String, String> metadata) {
         this(new GenericMessage(type, payload, metadata));
     }
 
@@ -81,9 +81,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
-                                 @Nonnull Object payload,
-                                 @Nonnull Map<String, String> metadata,
+    public GenericCommandMessage(@NonNull MessageType type,
+                                 @NonNull Object payload,
+                                 @NonNull Map<String, String> metadata,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         this(new GenericMessage(type, payload, metadata), routingKey, priority);
@@ -103,7 +103,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
      *                 {@link Message#metadata() metadata} for the {@link CommandMessage} to reconstruct.
      */
-    public GenericCommandMessage(@Nonnull Message delegate) {
+    public GenericCommandMessage(@NonNull Message delegate) {
         this(delegate, null, null);
     }
 
@@ -124,7 +124,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull Message delegate,
+    public GenericCommandMessage(@NonNull Message delegate,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         super(delegate);
@@ -143,20 +143,17 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
     }
 
     @Override
-    @Nonnull
-    public CommandMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull CommandMessage withMetadata(@NonNull Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull CommandMessage andMetadata(@NonNull Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public @NonNull CommandMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

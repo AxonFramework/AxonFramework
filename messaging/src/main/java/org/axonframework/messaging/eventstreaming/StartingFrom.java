@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
@@ -31,7 +31,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 record StartingFrom(@Nullable TrackingToken position) implements StreamingCondition {
 
     @Override
-    public StreamingCondition or(@Nonnull EventCriteria criteria) {
+    public StreamingCondition or(@NonNull EventCriteria criteria) {
         if (position == null) {
             throw new IllegalArgumentException("The position may not be null when adding criteria to it");
         }

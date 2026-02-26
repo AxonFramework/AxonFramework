@@ -16,17 +16,15 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An {@link EventHandlingComponent} implementation that records all events it handles.
@@ -43,14 +41,13 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
      *
      * @param delegate The instance to delegate calls to.
      */
-    public RecordingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public RecordingEventHandlingComponent(@NonNull EventHandlingComponent delegate) {
         super(delegate);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         CompletableFuture<Message> resultFuture = new CompletableFuture<>();
         delegate.handle(event, context).asCompletableFuture()
                 .whenComplete((r, e) -> {

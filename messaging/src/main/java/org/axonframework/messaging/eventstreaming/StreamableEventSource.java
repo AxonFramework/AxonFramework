@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -57,6 +57,6 @@ public interface StreamableEventSource extends TrackingTokenSource {
      * @param context   The current {@link ProcessingContext}, if any.
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
-    MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
+    MessageStream<EventMessage> open(@NonNull StreamingCondition condition, @Nullable ProcessingContext context);
 
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -68,21 +68,21 @@ class DefaultMessageDispatchInterceptorChainTest {
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageDispatchInterceptor<Message> interceptorOne = spy(new MessageDispatchInterceptor<Message>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
+            public MessageStream<?> interceptOnDispatch(@NonNull Message message,
                                                         @Nullable ProcessingContext context,
-                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+                                                        @NonNull MessageDispatchInterceptorChain<Message> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageDispatchInterceptor<Message> interceptorTwo = spy(new MessageDispatchInterceptor<Message>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnDispatch(@Nonnull Message message, @Nullable ProcessingContext context,
-                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+            public MessageStream<?> interceptOnDispatch(@NonNull Message message, @Nullable ProcessingContext context,
+                                                        @NonNull MessageDispatchInterceptorChain<Message> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }

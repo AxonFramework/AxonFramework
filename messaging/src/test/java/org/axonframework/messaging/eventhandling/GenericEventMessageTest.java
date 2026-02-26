@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -53,12 +53,12 @@ class GenericEventMessageTest extends MessageTestSuite<EventMessage> {
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull EventMessage result) {
+    protected void validateDefaultMessage(@NonNull EventMessage result) {
         assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull EventMessage actual, @Nonnull EventMessage result) {
+    protected void validateMessageSpecifics(@NonNull EventMessage actual, @NonNull EventMessage result) {
         assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 

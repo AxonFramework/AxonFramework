@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.tx.TransactionalExecutor;
@@ -38,6 +38,6 @@ public interface TransactionalExecutorProvider<T> {
      * @param processingContext A {@link ProcessingContext}, can be {@code null}.
      * @return A {@link TransactionalExecutor}, never {@code null}.
      */
-    @Nonnull
+    @NonNull
     TransactionalExecutor<T> getTransactionalExecutor(@Nullable ProcessingContext processingContext);
 }

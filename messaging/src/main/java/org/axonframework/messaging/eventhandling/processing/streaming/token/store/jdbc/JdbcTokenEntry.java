@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
@@ -62,7 +62,7 @@ public class JdbcTokenEntry {
      * @param token     The tracking token to store.
      * @param converter The converter to use when storing a serialized token.
      */
-    public JdbcTokenEntry(@Nullable TrackingToken token, @Nonnull Converter converter) {
+    public JdbcTokenEntry(@Nullable TrackingToken token, @NonNull Converter converter) {
         updateToken(token, converter);
     }
 
@@ -80,8 +80,8 @@ public class JdbcTokenEntry {
                           String tokenType,
                           String timestamp,
                           String owner,
-                          @Nonnull String processorName,
-                          @Nonnull Segment segment) {
+                          @NonNull String processorName,
+                          @NonNull Segment segment) {
         this.token = token;
         this.tokenType = tokenType;
         this.timestamp = timestamp;
@@ -103,7 +103,7 @@ public class JdbcTokenEntry {
      * @param converter The converter to deserialize the token with.
      * @return The deserialized token stored in this entry.
      */
-    public TrackingToken getToken(@Nonnull Converter converter) {
+    public TrackingToken getToken(@NonNull Converter converter) {
         if (token == null || tokenType == null) {
             return null;
         }
@@ -236,7 +236,7 @@ public class JdbcTokenEntry {
      * @param token     The token representing the state to update to.
      * @param converter The converter to update token to.
      */
-    public final void updateToken(@Nullable TrackingToken token, @Nonnull Converter converter) {
+    public final void updateToken(@Nullable TrackingToken token, @NonNull Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);

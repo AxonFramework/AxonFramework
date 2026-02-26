@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -47,8 +47,8 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<Object> createInstance(@Nonnull Executable executable,
-                                                    @Nonnull Parameter[] parameters,
+    public ParameterResolver<Object> createInstance(@NonNull Executable executable,
+                                                    @NonNull Parameter[] parameters,
                                                     int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (parameter.isAnnotationPresent(ReplayContext.class)) {
@@ -65,9 +65,9 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
             this.type = type;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
             Optional<TrackingToken> token = TrackingToken.fromContext(context);
             if (token.isPresent()) {
                 Converter converter = context.component(Converter.class);
@@ -79,7 +79,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

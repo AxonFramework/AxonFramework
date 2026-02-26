@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -83,5 +83,5 @@ public interface TrackingTokenSource {
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
      * {@code at} of the {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context);
+    CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context);
 }

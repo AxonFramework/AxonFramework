@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
@@ -48,7 +48,7 @@ import java.util.Optional;
 public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         String messageHandlerInterceptorMessageTypeAttributeKey =
                 MessageHandlerInterceptor.class.getSimpleName() + ".messageType";
         if (original.attribute(messageHandlerInterceptorMessageTypeAttributeKey).isPresent()) {
@@ -90,14 +90,14 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             return ResultParameterResolverFactory.ignoringResultParameters(context,
                                                                            pc -> super.canHandle(message, pc));
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
+        public Object handleSync(@NonNull Message message,
+                                 @NonNull ProcessingContext context,
                                  @Nullable T target)
                 throws Exception {
             try {
@@ -119,8 +119,8 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message,
-                                       @Nonnull ProcessingContext context,
+        public MessageStream<?> handle(@NonNull Message message,
+                                       @NonNull ProcessingContext context,
                                        @Nullable T target) {
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             return InterceptorChainParameterResolverFactory.currentInterceptorChain(context)
@@ -168,7 +168,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
+        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable T target)
                 throws Exception {
             Object result = super.handleSync(message, context, target);
             if (shouldInvokeInterceptorChain) {

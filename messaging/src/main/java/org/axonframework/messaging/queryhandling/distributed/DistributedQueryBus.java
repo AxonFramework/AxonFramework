@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -80,9 +80,9 @@ public class DistributedQueryBus implements QueryBus {
      * @param configuration The {@code DistributedCommandBusConfiguration} containing the
      *                      {@link ExecutorService ExecutorServices} for querying and handling query responses.
      */
-    public DistributedQueryBus(@Nonnull QueryBus localSegment,
-                               @Nonnull QueryBusConnector connector,
-                               @Nonnull DistributedQueryBusConfiguration configuration) {
+    public DistributedQueryBus(@NonNull QueryBus localSegment,
+                               @NonNull QueryBusConnector connector,
+                               @NonNull DistributedQueryBusConfiguration configuration) {
         this.localSegment = localSegment;
         this.connector = connector;
         this.localQueryShortcut = configuration.preferLocalQueryHandler();
@@ -93,17 +93,17 @@ public class DistributedQueryBus implements QueryBus {
     }
 
     @Override
-    public QueryBus subscribe(@Nonnull QualifiedName queryName,
-                              @Nonnull QueryHandler queryHandler) {
+    public QueryBus subscribe(@NonNull QualifiedName queryName,
+                              @NonNull QueryHandler queryHandler) {
         subscriptions.add(queryName);
         localSegment.subscribe(queryName, queryHandler);
         FutureUtils.joinAndUnwrap(connector.subscribe(queryName));
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         if (localQueryShortcut && subscriptions.contains(query.type().qualifiedName()) ) {
             return localSegment.query(query, context);
@@ -111,17 +111,17 @@ public class DistributedQueryBus implements QueryBus {
         return connector.query(query, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return connector.subscriptionQuery(query, context, updateBufferSize);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@NonNull QueryMessage query,
                                                                             int updateBufferSize) {
         // not ideal, but the AxonServer Connector doesn't support just subscribing to update yet
         return subscriptionQuery(query, null, updateBufferSize)
@@ -129,10 +129,10 @@ public class DistributedQueryBus implements QueryBus {
                 .cast();
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
-                                              @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    public CompletableFuture<Void> emitUpdate(@NonNull Predicate<QueryMessage> filter,
+                                              @NonNull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
         updateRegistry.forEach((message, sender) -> {
@@ -143,9 +143,9 @@ public class DistributedQueryBus implements QueryBus {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(@NonNull Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
         updateRegistry.forEach((message, sender) -> {
@@ -156,11 +156,11 @@ public class DistributedQueryBus implements QueryBus {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @Nonnull Predicate<QueryMessage> filter,
-            @Nonnull Throwable cause,
+            @NonNull Predicate<QueryMessage> filter,
+            @NonNull Throwable cause,
             @Nullable ProcessingContext context
     ) {
         List<CompletableFuture<Void>> tasks = new ArrayList<>();
@@ -173,7 +173,7 @@ public class DistributedQueryBus implements QueryBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(localSegment);
         descriptor.describeProperty("connector", connector);
     }
@@ -183,7 +183,7 @@ public class DistributedQueryBus implements QueryBus {
         private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+        public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query) {
             int priority = query.priority().orElse(0);
             if (logger.isDebugEnabled()) {
                 logger.debug("Received query [{}] for processing with priority [{}].",
@@ -204,10 +204,10 @@ public class DistributedQueryBus implements QueryBus {
         }
 
 
-        @Nonnull
+        @NonNull
         @Override
-        public Registration registerUpdateHandler(@Nonnull QueryMessage subscriptionQueryMessage,
-                                                  @Nonnull QueryBusConnector.UpdateCallback updateCallback) {
+        public Registration registerUpdateHandler(@NonNull QueryMessage subscriptionQueryMessage,
+                                                  QueryBusConnector.@NonNull UpdateCallback updateCallback) {
             updateRegistry.put(subscriptionQueryMessage, updateCallback);
             return () -> updateRegistry.remove(subscriptionQueryMessage, updateCallback);
         }

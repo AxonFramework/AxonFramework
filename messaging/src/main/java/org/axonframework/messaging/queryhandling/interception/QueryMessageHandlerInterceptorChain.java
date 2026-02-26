@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
@@ -52,8 +52,8 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interception that are part of this chain.
      * @param queryHandler The query handler to be invoked at the end of the interceptor chain.
      */
-    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> interceptors,
-                                               @Nonnull QueryHandler queryHandler) {
+    public QueryMessageHandlerInterceptorChain(@NonNull List<MessageHandlerInterceptor<? super QueryMessage>> interceptors,
+                                               @NonNull QueryHandler queryHandler) {
         Iterator<MessageHandlerInterceptor<? super QueryMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         QueryHandler handler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
@@ -63,9 +63,9 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
         this.interceptingHandler = handler;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
+    public MessageStream<?> proceed(@NonNull QueryMessage query, @NonNull ProcessingContext context) {
         try {
             return interceptingHandler.handle(query, context);
         } catch (Exception e) {
@@ -78,17 +78,17 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
             QueryHandler next
     ) implements QueryHandler, MessageHandlerInterceptorChain<QueryMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                          @Nonnull ProcessingContext context) {
+        public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
+                                                          @NonNull ProcessingContext context) {
             // noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(query, context, (MessageHandlerInterceptorChain) this);
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
+        public MessageStream<?> proceed(@NonNull QueryMessage query, @NonNull ProcessingContext context) {
             return next.handle(query, context);
         }
     }

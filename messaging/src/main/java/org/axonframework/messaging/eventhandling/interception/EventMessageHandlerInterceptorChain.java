@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -52,8 +52,8 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interceptors that are part of this chain.
      * @param eventHandler The event handler to be invoked at the end of the interceptor chain.
      */
-    public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
-                                               @Nonnull EventHandler eventHandler) {
+    public EventMessageHandlerInterceptorChain(@NonNull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
+                                               @NonNull EventHandler eventHandler) {
         Iterator<MessageHandlerInterceptor<? super EventMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         EventHandler interceptingHandler = Objects.requireNonNull(eventHandler, "The Event Handler may not be null.");
@@ -64,8 +64,8 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> proceed(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    @NonNull
+    public MessageStream<?> proceed(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         try {
             return interceptingHandler.handle(event, context);
         } catch (Exception e) {
@@ -79,16 +79,15 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
     ) implements EventHandler, MessageHandlerInterceptorChain<EventMessage> {
 
         @Override
-        @Nonnull
-        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+                public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             //noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(event, context, (MessageHandlerInterceptorChain) this)
                               .ignoreEntries();
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> proceed(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        @NonNull
+        public MessageStream<?> proceed(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return next.handle(event, context);
         }
     }

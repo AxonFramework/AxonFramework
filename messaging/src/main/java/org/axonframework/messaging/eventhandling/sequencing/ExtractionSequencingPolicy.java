@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -50,8 +50,8 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
      *                            type.
      */
     public ExtractionSequencingPolicy(
-            @Nonnull Class<T> payloadClass,
-            @Nonnull Function<T, K> identifierExtractor
+            @NonNull Class<T> payloadClass,
+            @NonNull Function<T, K> identifierExtractor
     ) {
         this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
         this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
@@ -60,8 +60,8 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(
-            @Nonnull final EventMessage eventMessage,
-            @Nonnull ProcessingContext context
+            @NonNull final EventMessage eventMessage,
+            @NonNull ProcessingContext context
     ) {
         Objects.requireNonNull(eventMessage, "EventMessage may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");

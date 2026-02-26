@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.util.ClasspathResolver;
 import org.axonframework.messaging.core.Message;
@@ -57,7 +57,7 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         return original.<String>attribute(HandlerAttributes.QUERY_NAME)
                        .map(queryName -> (MessageHandlingMember<T>) new MethodQueryHandlingMember<>(
                                original, queryName
@@ -90,8 +90,8 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
+        public Object handleSync(@NonNull Message message,
+                                 @NonNull ProcessingContext context,
                                  @Nullable T target) throws Exception {
             Object result = super.handleSync(message, context, target);
             if (result instanceof Optional) {
@@ -133,7 +133,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             return super.canHandle(message, context) && message instanceof QueryMessage;
         }
 

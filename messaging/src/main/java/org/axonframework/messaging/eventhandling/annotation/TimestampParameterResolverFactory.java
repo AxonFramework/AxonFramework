@@ -16,18 +16,18 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.jspecify.annotations.NonNull;
 
 /**
  * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
@@ -61,9 +61,9 @@ public final class TimestampParameterResolverFactory
      */
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Instant> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Instant> resolveParameterValue(@NonNull ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
                 return CompletableFuture.completedFuture(eventMessage.timestamp());
             }
@@ -71,7 +71,7 @@ public final class TimestampParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

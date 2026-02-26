@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -99,13 +99,13 @@ public class SimpleEventBus implements EventBus {
 
     @Override
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @NonNull List<EventMessage> events) {
         if (context == null) {
             // No processing context, publish immediately
             eventSubscribers.notifySubscribers(events, context);
@@ -116,7 +116,7 @@ public class SimpleEventBus implements EventBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void registerEventPublishingHooks(@Nonnull ProcessingContext context, @Nonnull List<EventMessage> events) {
+    private void registerEventPublishingHooks(@NonNull ProcessingContext context, @NonNull List<EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(
@@ -175,7 +175,7 @@ public class SimpleEventBus implements EventBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventsKey", eventsKey);
         descriptor.describeProperty("eventSubscribers", eventSubscribers);
     }

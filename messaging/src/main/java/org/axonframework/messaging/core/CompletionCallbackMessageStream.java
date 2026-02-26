@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -45,8 +45,8 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
      *                        given {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
-    CompletionCallbackMessageStream(@Nonnull MessageStream<M> delegate,
-                                    @Nonnull Runnable completeHandler) {
+    CompletionCallbackMessageStream(@NonNull MessageStream<M> delegate,
+                                    @NonNull Runnable completeHandler) {
         super(delegate);
         this.completeHandler = completeHandler;
         delegate.setCallback(this::invokeCompletionHandlerIfCompleted);
@@ -77,7 +77,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         delegate().setCallback(() -> {
             callback.run();
             invokeCompletionHandlerIfCompleted();
@@ -100,8 +100,8 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NonNull R identity,
+                                           @NonNull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate().reduce(identity, accumulator)
                          .whenComplete((result, exception) -> {
                              if (exception == null) {
@@ -127,7 +127,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
          *                        given {@code completeHandler}.
          * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
          */
-        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Runnable completeHandler) {
+        Single(MessageStream.@NonNull Single<M> delegate, @NonNull Runnable completeHandler) {
             super(delegate, completeHandler);
         }
     }
@@ -149,7 +149,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
          *                        given {@code completeHandler}.
          * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
          */
-        Empty(@Nonnull MessageStream.Empty<M> delegate, @Nonnull Runnable completeHandler) {
+        Empty(MessageStream.@NonNull Empty<M> delegate, @NonNull Runnable completeHandler) {
             super(delegate, completeHandler);
         }
     }

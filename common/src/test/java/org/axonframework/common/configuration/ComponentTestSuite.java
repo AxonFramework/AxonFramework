@@ -16,20 +16,20 @@
 
 package org.axonframework.common.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.common.TypeReference;
+import org.axonframework.common.configuration.*;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.configuration.Component.Identifier;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-
-import org.axonframework.common.TypeReference;
-import org.axonframework.common.configuration.Component.Identifier;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link Component} and {@link ComponentDefinition} implementations.
@@ -206,9 +206,13 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @Test
     void initializationRegistersStartupAndShutdownHandlers() {
         D testComponent = createComponent(identifier, TEST_COMPONENT);
+        //noinspection unchecked
         registerStartHandler(testComponent, 1, mock());
+        //noinspection unchecked
         registerStartHandler(testComponent, 10, mock());
+        //noinspection unchecked
         registerShutdownHandler(testComponent, 20, mock());
+        //noinspection unchecked
         registerShutdownHandler(testComponent, 42, mock());
 
         testComponent.initLifecycle(configuration, new LifecycleRegistry() {
