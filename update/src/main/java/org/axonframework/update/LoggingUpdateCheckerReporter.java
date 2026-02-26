@@ -16,7 +16,7 @@
 
 package org.axonframework.update;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.update.api.Artifact;
 import org.axonframework.update.api.UpdateCheckRequest;
 import org.axonframework.update.api.UpdateCheckResponse;
@@ -39,7 +39,7 @@ public class LoggingUpdateCheckerReporter implements UpdateCheckerReporter {
     private static Logger logger = LoggerFactory.getLogger(LoggingUpdateCheckerReporter.class);
 
     @Override
-    public void report(@Nonnull UpdateCheckRequest request, @Nonnull UpdateCheckResponse updateCheckResponse) {
+    public void report(@NonNull UpdateCheckRequest request, @NonNull UpdateCheckResponse updateCheckResponse) {
 
         boolean hasUpgrades = !updateCheckResponse.upgrades().isEmpty();
         boolean hasVulnerabilities = !updateCheckResponse.vulnerabilities().isEmpty();
@@ -75,8 +75,7 @@ public class LoggingUpdateCheckerReporter implements UpdateCheckerReporter {
         });
     }
 
-    @Nonnull
-    private static String getCurrentVersionForArtifact(UpdateCheckRequest requestBody, String groupId, String artifactId) {
+    static @NonNull String getCurrentVersionForArtifact(UpdateCheckRequest requestBody, String groupId, String artifactId) {
         return requestBody.libraries().stream()
                           .filter(v -> v.artifactId().equals(artifactId) && v.groupId().equals(groupId))
                           .findFirst()
