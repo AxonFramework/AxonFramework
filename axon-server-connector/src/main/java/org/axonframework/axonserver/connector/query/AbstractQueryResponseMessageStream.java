@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context;
@@ -52,7 +52,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      * @param stream The {@link ResultStream} instance from which query response data will be fetched. Must not be
      *               null.
      */
-    public AbstractQueryResponseMessageStream(@Nonnull ResultStream<T> stream) {
+    public AbstractQueryResponseMessageStream(@NonNull ResultStream<T> stream) {
         this.stream = requireNonNull(stream, "The query result stream cannot be null.");
     }
 
@@ -67,12 +67,12 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         this.callback.set(callback);
         stream.onAvailable(callback);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Optional<Throwable> error() {
         return errorIfPresent();
@@ -113,7 +113,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      *
      * @return An {@link Optional} containing the error if present, or {@link Optional#empty()} if no error is detected.
      */
-    @Nonnull
+    @NonNull
     private Optional<Throwable> errorIfPresent() {
         // Check if we've already processed and stored an error
         if (error.get() != null) {
@@ -139,8 +139,8 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         }
     }
 
-    @Nonnull
-    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(@Nonnull T t) {
+    @NonNull
+    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(@NonNull T t) {
         if (isError(t)) {
             error.set(createAxonException(t));
             close();
@@ -154,11 +154,9 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         ));
     }
 
-    @Nonnull
-    protected abstract QueryResponseMessage buildResponseMessage(@Nonnull T t);
+    abstract @NonNull QueryResponseMessage buildResponseMessage(@NonNull T t);
 
-    @Nonnull
-    protected abstract AxonException createAxonException(@Nonnull T t);
+    abstract @NonNull AxonException createAxonException(@NonNull T t);
 
-    protected abstract boolean isError(@Nonnull T t);
+    protected abstract boolean isError(@NonNull T t);
 }
