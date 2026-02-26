@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.core.QualifiedName;
@@ -35,21 +35,21 @@ import org.axonframework.modelling.entity.child.EntityChildMetamodel;
  */
 public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBuilder<E> {
 
-    @Nonnull
+    @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                @Nonnull EntityCommandHandler<E> messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(@NonNull QualifiedName qualifiedName,
+                                                                @NonNull EntityCommandHandler<E> messageHandler);
 
-    @Nonnull
+    @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
-                                                                  @Nonnull CommandHandler messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(@NonNull QualifiedName qualifiedName,
+                                                                  @NonNull CommandHandler messageHandler);
 
-    @Nonnull
+    @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> addChild(@Nonnull EntityChildMetamodel<?, E> child);
+    PolymorphicEntityMetamodelBuilder<E> addChild(@NonNull EntityChildMetamodel<?, E> child);
 
-    @Nonnull
+    @NonNull
     @Override
     PolymorphicEntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
@@ -60,7 +60,7 @@ public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBui
      * @param metamodel The {@link EntityMetamodel} for the concrete type.
      * @return This builder for further configuration.
      */
-    @Nonnull
+    @NonNull
     PolymorphicEntityMetamodelBuilder<E> addConcreteType(
-            @Nonnull EntityMetamodel<? extends E> metamodel);
+            @NonNull EntityMetamodel<? extends E> metamodel);
 }

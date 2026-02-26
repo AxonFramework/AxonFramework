@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.commandhandling.CommandBus;
@@ -55,8 +55,8 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @param <E>        The type of the state-based entity being built.
      * @return The repository phase of this builder, for a fluent API.
      */
-    static <ID, E> RepositoryPhase<ID, E> declarative(@Nonnull Class<ID> idType,
-                                                      @Nonnull Class<E> entityType) {
+    static <ID, E> RepositoryPhase<ID, E> declarative(@NonNull Class<ID> idType,
+                                                      @NonNull Class<E> entityType) {
         return new SimpleStateBasedEntityModule<>(idType, entityType);
     }
 
@@ -79,7 +79,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @param loader A factory method constructing a {@link SimpleRepositoryEntityLoader}.
          * @return The "persister" phase of this builder, for a fluent API.
          */
-        PersisterPhase<ID, E> loader(@Nonnull ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader);
+        PersisterPhase<ID, E> loader(@NonNull ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader);
 
         /**
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
@@ -87,7 +87,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @param repository A factory method constructing a {@link Repository}.
          * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
-        MessagingMetamodelPhase<ID, E> repository(@Nonnull ComponentBuilder<Repository<ID, E>> repository);
+        MessagingMetamodelPhase<ID, E> repository(@NonNull ComponentBuilder<Repository<ID, E>> repository);
     }
 
     /**
@@ -107,7 +107,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The parent {@link StateBasedEntityModule}, signaling the end of configuring a state-based entity.
          */
         MessagingMetamodelPhase<ID, E> persister(
-                @Nonnull ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
+                @NonNull ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
         );
     }
 
@@ -133,7 +133,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The next phase of this builder, allowing for configuring the entity's ID resolver.
          */
         EntityIdResolverPhase<ID, E> messagingModel(
-                @Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory
+                @NonNull EntityMetamodelConfigurationBuilder<E> metamodelFactory
         );
     }
 
@@ -158,7 +158,7 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The {@link StateBasedEntityModule}, signaling the end of this builder.
          */
         StateBasedEntityModule<ID, E> entityIdResolver(
-                @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
+                @NonNull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
         );
     }
 }

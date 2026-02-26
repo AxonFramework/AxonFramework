@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,5 +40,5 @@ public interface SimpleRepositoryEntityLoader<I, T> {
      * @param context The context in which the entity should be loaded.
      * @return a CompletableFuture that resolves to the loaded entity.
      */
-    CompletableFuture<? extends T> load(@Nonnull I id, @Nonnull ProcessingContext context);
+    CompletableFuture<? extends T> load(@NonNull I id, @NonNull ProcessingContext context);
 }
