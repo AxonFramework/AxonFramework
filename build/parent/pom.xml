@@ -66,6 +66,7 @@
         <jakarta.inject.version>2.0.1.MR</jakarta.inject.version>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
+        <jspecify.version>1.0.0</jspecify.version>
         <!-- Logging -->
         <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -107,6 +108,10 @@
         <archunit.version>1.4.1</archunit.version>
         <!-- Validation -->
         <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
+
+        <!-- Maven plugins -->
+        <checkstyle-maven-plugin.version>3.3.0</checkstyle-maven-plugin.version>
+        <checkstyle.version>13.2.0</checkstyle.version>
     </properties>
 
     <dependencyManagement>
@@ -195,6 +200,11 @@
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${jspecify.version}</version>
             </dependency>
             <!-- Logging -->
             <dependency>
@@ -373,6 +383,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- java -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -475,6 +491,29 @@
                             <jakartaDefaults>true</jakartaDefaults>
                         </rules>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${checkstyle-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <configLocation>build/checkstyle.xml</configLocation>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
