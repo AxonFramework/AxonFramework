@@ -53,6 +53,7 @@ import java.util.function.UnaryOperator;
  */
 @AutoConfiguration(afterName = {
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
         "org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration",
         "org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration"
 })
