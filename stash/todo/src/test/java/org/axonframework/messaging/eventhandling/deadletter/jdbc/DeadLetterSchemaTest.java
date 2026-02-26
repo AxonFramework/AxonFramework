@@ -239,52 +239,6 @@ class DeadLetterSchemaTest {
     }
 
     @Test
-    void buildWithPayloadTypeColumnReturnsConfiguredColumnName() {
-        DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .payloadTypeColumn(TEST_COLUMN_NAME)
-                                                  .build();
-
-        assertEquals(TEST_COLUMN_NAME, result.payloadTypeColumn());
-    }
-
-    @Test
-    void buildWithNullPayloadTypeColumnThrowsAxonConfigurationException() {
-        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.payloadTypeColumn(null));
-    }
-
-    @Test
-    void buildWithEmptyPayloadTypeColumnThrowsAxonConfigurationException() {
-        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.payloadTypeColumn(""));
-    }
-
-    @Test
-    void buildWithPayloadRevisionColumnReturnsConfiguredColumnName() {
-        DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .payloadRevisionColumn(TEST_COLUMN_NAME)
-                                                  .build();
-
-        assertEquals(TEST_COLUMN_NAME, result.payloadRevisionColumn());
-    }
-
-    @Test
-    void buildWithNullPayloadRevisionColumnThrowsAxonConfigurationException() {
-        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.payloadRevisionColumn(null));
-    }
-
-    @Test
-    void buildWithEmptyPayloadRevisionColumnThrowsAxonConfigurationException() {
-        DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
-
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.payloadRevisionColumn(""));
-    }
-
-    @Test
     void buildWithPayloadColumnReturnsConfiguredColumnName() {
         DeadLetterSchema result = DeadLetterSchema.builder()
                                                   .payloadColumn(TEST_COLUMN_NAME)

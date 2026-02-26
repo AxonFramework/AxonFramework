@@ -16,23 +16,25 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jdbc.JdbcException;
+import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
-import org.axonframework.messaging.deadletter.SyncSequencedDeadLetterQueue;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,23 +44,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * A JDBC-based implementation of the {@link SyncSequencedDeadLetterQueue}, used for storing dead letters containing
+ * A JDBC-based implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
  * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory)} operation to build
- * the table and indices required by this {@code SyncSequencedDeadLetterQueue}, providing the desired
+ * the table and indices required by this {@code SequencedDeadLetterQueue}, providing the desired
  * {@link DeadLetterTableFactory}. The {@link java.sql.PreparedStatement statements} used by this queues methods can be
  * optimized by providing a custom {@link DeadLetterStatementFactory}.
  * <p>
@@ -83,15 +84,14 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SyncSequencedDeadLetterQueue<E> {
+public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SequencedDeadLetterQueue<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final boolean CLOSE_QUIETLY = true;
 
     private final String processingGroup;
-    private final ConnectionProvider connectionProvider;
-    private final TransactionManager transactionManager;
+    private final TransactionalExecutorProvider<Connection> transactionalExecutorProvider;
     private final DeadLetterSchema schema;
     private final DeadLetterStatementFactory<E> statementFactory;
     private final DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
@@ -101,22 +101,18 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     private final Duration claimDuration;
 
     /**
-     * Instantiate a JDBC-based {@link SyncSequencedDeadLetterQueue} through the given {@link Builder builder}.
+     * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
      * <p>
-     * Will validate whether the {@link Builder#processingGroup(String) processing group},
-     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider},
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager},
-     * {@link Builder#statementFactory(DeadLetterStatementFactory) DeadLetterStatementFactory} and
-     * {@link Builder#converter(DeadLetterJdbcConverter) DeadLetterJdbcConverter} are set. If for any this is not the
-     * case an {@link AxonConfigurationException} is thrown.
+     * Will validate whether the {@link Builder#processingGroup(String) processing group} and
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider}
+     * are set. If for any this is not the case an {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
      */
     protected JdbcSequencedDeadLetterQueue(Builder<E> builder) {
         builder.validate();
         this.processingGroup = builder.processingGroup;
-        this.connectionProvider = builder.connectionProvider;
-        this.transactionManager = builder.transactionManager;
+        this.transactionalExecutorProvider = builder.transactionalExecutorProvider;
         this.schema = builder.schema;
         this.statementFactory = builder.statementFactory();
         this.converter = builder.converter();
@@ -139,16 +135,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      * </ul>
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
-     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider}, and
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager} are hard requirements and should be
-     * provided.
-     * <p>
-     * The {@link Builder#statementFactory(DeadLetterStatementFactory)} and
-     * {@link Builder#converter(DeadLetterJdbcConverter)} are also hard requirements, but users can choose to either set
-     * both explicitly or rely on the {@link DefaultDeadLetterStatementFactory} and
-     * {@link DefaultDeadLetterJdbcConverter} constructed through the
-     * {@link Builder#genericSerializer(Serializer) generic Serializer} and
-     * {@link Builder#eventSerializer(Serializer) event Serializer}.
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider},
+     * {@link Builder#eventConverter(EventConverter) EventConverter}, and
+     * {@link Builder#genericConverter(Converter) generic Converter} are hard requirements and should be provided.
      *
      * @param <E> The type of {@link EventMessage} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
@@ -165,102 +154,96 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      * @param tableFactory The factory constructing the {@link java.sql.PreparedStatement} to construct a
      *                     {@link DeadLetter} entry table based on the
      *                     {@link Builder#schema(DeadLetterSchema) configured} {@link DeadLetterSchema}.
+     * @param context      The {@link ProcessingContext} in which the schema will be created. May be {@code null};
+     *                     when provided, the connection executor is obtained from the context.
+     * @return A {@link CompletableFuture} that completes when the schema has been created. Completes exceptionally
+     * with a {@link JdbcException} if the table or indices could not be created.
      */
-    public void createSchema(DeadLetterTableFactory tableFactory) {
-        Connection connection = getConnection();
-        try {
+    public CompletableFuture<Void> createSchema(DeadLetterTableFactory tableFactory,
+                                                @Nullable ProcessingContext context) {
+        return connectionExecutor(context).accept(connection -> {
             Statement tableStatement = tableFactory.createTableStatement(connection, schema);
             try {
                 tableStatement.executeBatch();
+            } catch (Exception e) {
+                throw new JdbcException("Failed to create the dead-letter entry table or indices", e);
             } finally {
                 closeQuietly(tableStatement);
             }
-        } catch (SQLException e) {
-            throw new JdbcException("Failed to create the dead-letter entry table or indices", e);
-        } finally {
-            closeQuietly(connection);
-        }
-    }
-
-    private Connection getConnection() {
-        try {
-            return connectionProvider.getConnection();
-        } catch (SQLException e) {
-            throw new JdbcException("Failed to obtain a database connection", e);
-        }
+        });
     }
 
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends E> letter,
-                        @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
-        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (isFull(sequenceId, context)) {
-            throw new DeadLetterQueueOverflowException(
-                    "No room left to enqueue [" + letter.message() + "] for identifier ["
-                            + sequenceId + "] since the queue is full."
-            );
-        }
+    @Nonnull
+    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
+                                           @Nonnull DeadLetter<? extends E> letter,
+                                           @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+            return isFull(sequenceId, context).thenCompose(isFull -> {
+                if (Boolean.TRUE.equals(isFull)) {
+                    return CompletableFuture.failedFuture(new DeadLetterQueueOverflowException(
+                            "No room left to enqueue [" + letter.message() + "] for identifier ["
+                                    + sequenceId + "] since the queue is full."
+                    ));
+                }
 
-        if (logger.isDebugEnabled()) {
-            Optional<Cause> optionalCause = letter.cause();
-            if (optionalCause.isPresent()) {
-                logger.info("Adding dead letter with message id [{}] because [{}].",
+                Optional<Cause> optionalCause = letter.cause();
+                if (optionalCause.isPresent()) {
+                    logger.info("Adding dead letter with message id [{}] because [{}].",
+                                letter.message().identifier(),
+                                optionalCause.get().type());
+                } else {
+                    logger.info(
+                            "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
                             letter.message().identifier(),
-                            optionalCause.get().type());
-            } else {
-                logger.info(
-                        "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                        letter.message().identifier(),
-                        sequenceId);
-            }
-        }
+                            sequenceId);
+                }
 
-        Connection connection = getConnection();
-        try {
-            executeUpdate(connection,
-                          c -> statementFactory.enqueueStatement(
-                                  c, processingGroup, sequenceId, letter, nextIndexForSequence(sequenceId)
-                          ),
-                          e -> new JdbcException("Failed to enqueue dead letter with with message id ["
-                                                         + letter.message().identifier() + "]", e));
-        } finally {
-            closeQuietly(connection);
-        }
+                return connectionExecutor(context).accept(connection -> {
+                    long sequenceIndex = nextIndexForSequence(connection, sequenceId);
+                    executeUpdate(connection,
+                                  c -> statementFactory.enqueueStatement(
+                                          c, processingGroup, sequenceId, letter, sequenceIndex, context
+                                  ),
+                                  e -> new JdbcException("Failed to enqueue dead letter with message id ["
+                                                                 + letter.message().identifier() + "]", e));
+                });
+            });
+        });
     }
 
-    private long nextIndexForSequence(String sequenceId) {
-        long nextIndex = maxIndexForSequence(sequenceId) + 1;
+    private long nextIndexForSequence(Connection connection, String sequenceId) {
+        long maxIndex = executeQuery(connection,
+                                     c -> statementFactory.maxIndexStatement(c, processingGroup, sequenceId),
+                                     resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
+                                     e -> new JdbcException("Failed to uncover the maximum index for sequence ["
+                                                                    + sequenceId + "]", e),
+                                     false);
+        long nextIndex = maxIndex + 1;
         logger.debug("Next index for [{}] is [{}]", sequenceId, nextIndex);
         return nextIndex;
     }
 
-    private long maxIndexForSequence(String sequenceId) {
-        return transactionManager.fetchInTransaction(() -> executeQuery(
-                getConnection(),
-                connection -> statementFactory.maxIndexStatement(connection, processingGroup, sequenceId),
-                resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                e -> new JdbcException("Failed to uncover the maximum index for sequence [" + sequenceId + "]", e)
-        ));
-    }
-
     @Override
-    public void evict(DeadLetter<? extends E> letter, @Nullable ProcessingContext context) {
-        if (!(letter instanceof JdbcDeadLetter)) {
-            throw new WrongDeadLetterTypeException(
-                    String.format("Invoke evict with a JdbcDeadLetter instance. Instead got: [%s]",
-                                  letter.getClass().getName())
-            );
-        }
-        //noinspection unchecked
-        JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
-        String identifier = jdbcLetter.getIdentifier();
-        String sequenceIdentifier = jdbcLetter.getSequenceIdentifier();
-        logger.info("Evicting dead letter with id [{}] for processing group [{}] and sequence [{}]",
-                    identifier, processingGroup, sequenceIdentifier);
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends E> letter,
+                                         @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            if (!(letter instanceof JdbcDeadLetter)) {
+                throw new WrongDeadLetterTypeException(
+                        String.format("Invoke evict with a JdbcDeadLetter instance. Instead got: [%s]",
+                                      letter.getClass().getName())
+                );
+            }
+            JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
+            String identifier = jdbcLetter.getIdentifier();
+            String sequenceIdentifier = jdbcLetter.getSequenceIdentifier();
+            logger.info("Evicting dead letter with id [{}] for processing group [{}] and sequence [{}]",
+                        identifier, processingGroup, sequenceIdentifier);
 
-        transactionManager.executeInTransaction(() -> {
-            Connection connection = getConnection();
-            try {
+            return connectionExecutor(context).accept(connection -> {
                 int deletedRows = executeUpdate(connection,
                                                 c -> statementFactory.evictStatement(c, identifier),
                                                 e -> new JdbcException(
@@ -272,34 +255,30 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                                         + "and sequence [{}] was already evicted",
                                 identifier, processingGroup, sequenceIdentifier);
                 }
-            } finally {
-                closeQuietly(connection);
-            }
+            });
         });
     }
 
     @Override
-    public void requeue(
-            @Nonnull DeadLetter<? extends E> letter,
-            @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
-            @Nullable ProcessingContext context
-    ) throws NoSuchDeadLetterException {
-        if (!(letter instanceof JdbcDeadLetter)) {
-            throw new WrongDeadLetterTypeException(
-                    String.format("Invoke requeue with a JdbcDeadLetter instance. Instead got: [%s]",
-                                  letter.getClass().getName())
-            );
-        }
-        //noinspection unchecked
-        JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
-        String identifier = jdbcLetter.getIdentifier();
-        logger.info("Requeueing dead letter with id [{}] for processing group [{}] and sequence [{}]",
-                    identifier, processingGroup, jdbcLetter.getSequenceIdentifier());
-        DeadLetter<? extends E> updatedLetter = letterUpdater.apply(jdbcLetter).markTouched();
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends E> letter,
+                                           @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
+                                           @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            if (!(letter instanceof JdbcDeadLetter)) {
+                throw new WrongDeadLetterTypeException(
+                        String.format("Invoke requeue with a JdbcDeadLetter instance. Instead got: [%s]",
+                                      letter.getClass().getName())
+                );
+            }
+            JdbcDeadLetter<E> jdbcLetter = (JdbcDeadLetter<E>) letter;
+            String identifier = jdbcLetter.getIdentifier();
+            logger.info("Requeueing dead letter with id [{}] for processing group [{}] and sequence [{}]",
+                        identifier, processingGroup, jdbcLetter.getSequenceIdentifier());
+            DeadLetter<? extends E> updatedLetter = letterUpdater.apply(jdbcLetter).markTouched();
 
-        transactionManager.executeInTransaction(() -> {
-            Connection connection = getConnection();
-            try {
+            return connectionExecutor(context).accept(connection -> {
                 int updatedRows = executeUpdate(
                         connection,
                         c -> statementFactory.requeueStatement(c,
@@ -312,42 +291,50 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                 );
                 if (updatedRows == 0) {
                     throw new NoSuchDeadLetterException("Cannot requeue [" + letter.message().identifier()
-                                                                + "] since there is not matching entry in this queue.");
+                                                                + "] since there is no matching entry in this queue.");
                 } else if (logger.isTraceEnabled()) {
                     logger.trace("Requeued letter [{}] for sequence [{}].",
                                  identifier, jdbcLetter.getSequenceIdentifier());
                 }
-            } finally {
-                closeQuietly(connection);
-            }
+            });
         });
     }
 
     @Override
-    public boolean contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
-        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (logger.isDebugEnabled()) {
+    @Nonnull
+    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+                                               @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
             logger.debug("Validating existence of sequence identifier [{}].", sequenceId);
-        }
-
-        return executeQuery(getConnection(),
-                            connection -> statementFactory.containsStatement(connection, processingGroup, sequenceId),
+            return connectionExecutor(context)
+                    .apply(connection -> executeQuery(
+                            connection,
+                            c -> statementFactory.containsStatement(c, processingGroup, sequenceId),
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
                             e -> new JdbcException("Failed to validate whether there are letters "
                                                            + "present for sequence [" + sequenceId + "]", e),
-                            CLOSE_QUIETLY);
+                            false
+                    ));
+        });
     }
 
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
-        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        if (!contains(sequenceId, context)) {
-            return Collections.emptyList();
-        }
+    @Nonnull
+    public CompletableFuture<Iterable<DeadLetter<? extends E>>> deadLetterSequence(
+            @Nonnull Object sequenceIdentifier,
+            @Nullable ProcessingContext context
+    ) {
+        return FutureUtils.runFailing(() -> {
+            String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+            return CompletableFuture.completedFuture(deadLetterSequenceIterable(sequenceId, context));
+        });
+    }
 
+    private Iterable<DeadLetter<? extends E>> deadLetterSequenceIterable(String sequenceId,
+                                                                          @Nullable ProcessingContext context) {
         return new PagingJdbcIterable<>(
-                transactionManager,
-                this::getConnection,
+                connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
                         connection, processingGroup, sequenceId, firstResult, maxSequenceSize
                 ),
@@ -358,109 +345,221 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public Iterable<Iterable<DeadLetter<? extends E>>> deadLetters(@Nullable ProcessingContext context) {
-        List<String> sequenceIdentifiers = executeQuery(
-                getConnection(),
-                connection -> statementFactory.sequenceIdentifiersStatement(connection, processingGroup),
-                listResults(resultSet -> resultSet.getString(1)),
-                e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
-                CLOSE_QUIETLY
-        );
+    @Nonnull
+    public CompletableFuture<Iterable<Iterable<DeadLetter<? extends E>>>> deadLetters(
+            @Nullable ProcessingContext context
+    ) {
+        return FutureUtils.runFailing(() -> connectionExecutor(context)
+                .apply(connection -> executeQuery(
+                        connection,
+                        c -> statementFactory.sequenceIdentifiersStatement(c, processingGroup),
+                        listResults(resultSet -> resultSet.getString(1)),
+                        e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
+                        false
+                ))
+                .thenApply(sequenceIdentifiers -> (Iterable<Iterable<DeadLetter<? extends E>>>) () -> {
+                    Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
+                    return new Iterator<>() {
+                        @Override
+                        public boolean hasNext() {
+                            return sequenceIterator.hasNext();
+                        }
 
-        //noinspection DuplicatedCode
-        return () -> {
-            Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-            return new Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return sequenceIterator.hasNext();
+                        @Override
+                        public Iterable<DeadLetter<? extends E>> next() {
+                            return deadLetterSequenceIterable(sequenceIterator.next(), context);
+                        }
+                    };
+                }));
+    }
+
+    @Override
+    @Nonnull
+    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+                                             @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+            return sequenceSize(sequenceId, context)
+                    .thenCompose(numberInSequence -> numberInSequence > 0
+                            ? CompletableFuture.completedFuture(numberInSequence >= maxSequenceSize)
+                            : amountOfSequences(context).thenApply(amount -> amount >= maxSequences));
+        });
+    }
+
+    @Override
+    @Nonnull
+    public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> connectionExecutor(context)
+                .apply(connection -> executeQuery(connection,
+                                                  c -> statementFactory.sizeStatement(c, processingGroup),
+                                                  resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
+                                                  e -> new JdbcException("Failed to check the total number of "
+                                                                                 + "dead letters", e),
+                                                  false)));
+    }
+
+    @Override
+    @Nonnull
+    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+                                                @Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> {
+            String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
+            return connectionExecutor(context)
+                    .apply(connection -> executeQuery(
+                            connection,
+                            c -> statementFactory.sequenceSizeStatement(c, processingGroup, sequenceId),
+                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
+                            e -> new JdbcException("Failed to check the number of dead letters in sequence ["
+                                                           + sequenceId + "]", e),
+                            false));
+        });
+    }
+
+    @Override
+    @Nonnull
+    public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> connectionExecutor(context)
+                .apply(connection -> executeQuery(
+                        connection,
+                        c -> statementFactory.amountOfSequencesStatement(c, processingGroup),
+                        resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
+                        e -> new JdbcException(
+                                "Failed to check the number of dead letter sequences in this queue", e),
+                        false)));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Optimized override that retrieves available sequences one at a time (page size of 1) instead of in batches. Since
+     * no {@code sequenceFilter} is applied, every available sequence is a valid candidate, so there is no need to
+     * prefetch multiple sequences. This avoids unnecessary deserialization of dead letter entries that will never be
+     * evaluated.
+     *
+     * @see #process(Predicate, Function, ProcessingContext)
+     */
+    @Override
+    @Nonnull
+    public CompletableFuture<Boolean> process(
+            @Nonnull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
+            @Nullable ProcessingContext context
+    ) {
+        return FutureUtils.runFailing(() -> {
+            logger.debug("Received a request to process any dead letters.");
+            Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1, context);
+            return claimFirstAvailableLetter(iterator, context).thenCompose(claimedLetter -> {
+                if (claimedLetter == null) {
+                    logger.debug("Received a request to process dead letters but there are no claimable sequences.");
+                    return CompletableFuture.completedFuture(false);
                 }
+                return processLetterAndFollowing(claimedLetter, processingTask, context);
+            });
+        });
+    }
 
-                @Override
-                public Iterable<DeadLetter<? extends E>> next() {
-                    String next = sequenceIterator.next();
-                    return deadLetterSequence(next, context);
+    @Override
+    @Nonnull
+    public CompletableFuture<Boolean> process(
+            @Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
+            @Nonnull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
+            @Nullable ProcessingContext context
+    ) {
+        return FutureUtils.runFailing(() -> {
+            logger.debug("Received a request to process matching dead letters.");
+            Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10, context);
+            return claimFirstMatchingLetter(iterator, sequenceFilter, context).thenCompose(claimedLetter -> {
+                if (claimedLetter == null) {
+                    logger.debug("Received a request to process dead letters "
+                                         + "but there are no matching or claimable sequences.");
+                    return CompletableFuture.completedFuture(false);
                 }
-            };
-        };
+                return processLetterAndFollowing(claimedLetter, processingTask, context);
+            });
+        });
     }
 
-    @Override
-    public boolean isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
-        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        long numberInSequence = sequenceSize(sequenceId, context);
-        return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences(context) >= maxSequences;
-    }
-
-    @Override
-    public long size(@Nullable ProcessingContext context) {
-        return executeQuery(getConnection(),
-                            connection -> statementFactory.sizeStatement(connection, processingGroup),
-                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            e -> new JdbcException("Failed to check the total number of dead letters", e),
-                            CLOSE_QUIETLY);
-    }
-
-    @Override
-    public long sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
-        String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
-        return executeQuery(getConnection(),
-                            connection -> statementFactory.sequenceSizeStatement(
-                                    connection, processingGroup, sequenceId
-                            ),
-                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            e -> new JdbcException(
-                                    "Failed to check the number of dead letters in sequence [" + sequenceId + "]", e
-                            ),
-                            CLOSE_QUIETLY
-        );
-    }
-
-    @Override
-    public long amountOfSequences(@Nullable ProcessingContext context) {
-        return executeQuery(getConnection(),
-                            connection -> statementFactory.amountOfSequencesStatement(connection, processingGroup),
-                            resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
-                            e -> new JdbcException(
-                                    "Failed to check the number of dead letter sequences in this queue", e
-                            ),
-                            CLOSE_QUIETLY);
-    }
-
-    @Override
-    public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
-                           @Nullable ProcessingContext context) {
-        logger.debug("Received a request to process matching dead letters.");
-
-        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(10);
-        JdbcDeadLetter<E> claimedLetter = null;
-        while (iterator.hasNext() && claimedLetter == null) {
+    private CompletableFuture<JdbcDeadLetter<E>> claimFirstAvailableLetter(
+            Iterator<? extends JdbcDeadLetter<E>> iterator,
+            @Nullable ProcessingContext context
+    ) {
+        while (iterator.hasNext()) {
             JdbcDeadLetter<E> next = iterator.next();
-            if (sequenceFilter.test(next) && claimDeadLetter(next)) {
-                claimedLetter = next;
-            }
+            return claimDeadLetter(next, context)
+                    .thenCompose(claimed -> claimed
+                            ? CompletableFuture.completedFuture(next)
+                            : claimFirstAvailableLetter(iterator, context));
         }
-
-        if (claimedLetter != null) {
-            return processInitialAndSubsequent(claimedLetter, processingTask);
-        }
-        logger.debug("Received a request to process dead letters but there are no matching or claimable sequences.");
-        return false;
+        return CompletableFuture.completedFuture(null);
     }
 
-    @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
-                           @Nullable ProcessingContext context) {
-        logger.debug("Received a request to process any dead letters.");
-        Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
-        if (iterator.hasNext()) {
-            JdbcDeadLetter<E> deadLetter = iterator.next();
-            claimDeadLetter(deadLetter);
-            return processInitialAndSubsequent(deadLetter, processingTask);
+    private CompletableFuture<JdbcDeadLetter<E>> claimFirstMatchingLetter(
+            Iterator<? extends JdbcDeadLetter<E>> iterator,
+            Predicate<DeadLetter<? extends E>> sequenceFilter,
+            @Nullable ProcessingContext context
+    ) {
+        while (iterator.hasNext()) {
+            JdbcDeadLetter<E> next = iterator.next();
+            if (!sequenceFilter.test(next)) {
+                continue;
+            }
+            return claimDeadLetter(next, context)
+                    .thenCompose(claimed -> claimed
+                            ? CompletableFuture.completedFuture(next)
+                            : claimFirstMatchingLetter(iterator, sequenceFilter, context));
         }
-        logger.debug("Received a request to process dead letters but there are no claimable sequences.");
-        return false;
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * Processes the given {@code firstDeadLetter} using the provided {@code processingTask}. When successful (the
+     * message is evicted) it will automatically process all messages in the same
+     * {@link JdbcDeadLetter#getSequenceIdentifier()}, evicting messages that succeed and stopping when the first one
+     * fails (and is requeued).
+     * <p>
+     * Will claim the next letter in the same sequence before removing the old one to prevent concurrency issues. Note
+     * that we do not use paging on the results here, since messages can be added to the end of the sequence before
+     * processing ends, and deletes would throw the ordering off.
+     *
+     * @param firstDeadLetter The dead letter to start processing.
+     * @param processingTask  The task to use to process the dead letter, providing a decision afterwards.
+     * @param context         The processing context for this operation.
+     * @return Whether processing all letters in this sequence was successful.
+     */
+    private CompletableFuture<Boolean> processLetterAndFollowing(
+            JdbcDeadLetter<E> firstDeadLetter,
+            Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
+            @Nullable ProcessingContext context
+    ) {
+        JdbcDeadLetter<E> deadLetter = firstDeadLetter;
+        logger.info("Processing dead letter with identifier [{}] at index [{}]",
+                    deadLetter.getIdentifier(), deadLetter.getSequenceIndex());
+
+        CompletableFuture<EnqueueDecision<E>> decisionFuture;
+        try {
+            decisionFuture = processingTask.apply(deadLetter);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+
+        return decisionFuture.thenCompose(decision -> {
+            if (!decision.shouldEnqueue()) {
+                return findNext(deadLetter.getSequenceIdentifier(), deadLetter.getSequenceIndex(), context)
+                        .thenCompose(next -> {
+                            if (next == null) {
+                                return evict(deadLetter, context).thenApply(ignored -> true);
+                            }
+                            return claimDeadLetter(next, context)
+                                    .thenCompose(ignored -> evict(deadLetter, context))
+                                    .thenCompose(ignored -> processLetterAndFollowing(next, processingTask, context));
+                        });
+            }
+
+            return requeue(deadLetter,
+                           l -> decision.withDiagnostics(l)
+                                        .withCause(decision.enqueueCause().orElse(null)),
+                           context)
+                    .thenApply(ignored -> false);
+        });
     }
 
     /**
@@ -472,12 +571,13 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      *
      * @param pageSize The size of the paging on the query. Lower is faster, but with many results a larger page is
      *                 better.
-     * @return A list of first letters of each sequence.
+     * @param context  The processing context for this operation.
+     * @return An iterator over the first letters of each claimable sequence.
      */
-    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize) {
+    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize,
+                                                                          @Nullable ProcessingContext context) {
         return new PagingJdbcIterable<>(
-                transactionManager,
-                this::getConnection,
+                connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
                         connection, processingGroup, processingStartedLimit(), firstResult, maxSize
                 ),
@@ -492,31 +592,27 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      * {@link DeadLetterSchema#processingStartedColumn() processing started} property. Will check whether it was claimed
      * successfully and return an appropriate boolean result.
      *
-     * @return Whether the letter was successfully claimed or not.
+     * @return A future completing with whether the letter was successfully claimed or not.
      */
-    private boolean claimDeadLetter(JdbcDeadLetter<E> letter) {
+    private CompletableFuture<Boolean> claimDeadLetter(JdbcDeadLetter<E> letter,
+                                                       @Nullable ProcessingContext context) {
         Instant processingStartedLimit = processingStartedLimit();
-        return transactionManager.fetchInTransaction(() -> {
-            Connection connection = getConnection();
-            try {
-                int updatedRows = executeUpdate(
-                        connection,
-                        c -> statementFactory.claimStatement(
-                                c, letter.getIdentifier(), GenericDeadLetter.clock.instant(), processingStartedLimit
-                        ),
-                        e -> new JdbcException(
-                                "Failed to claim JDBC dead letter [" + letter.getIdentifier() + "] for processing", e
-                        )
-                );
-                if (updatedRows > 0) {
-                    logger.debug("Claimed dead letter with identifier [{}] to process.", letter.getIdentifier());
-                    return true;
-                }
-                logger.debug("Failed to claim dead letter with identifier [{}].", letter.getIdentifier());
-                return false;
-            } finally {
-                closeQuietly(connection);
+        return connectionExecutor(context).apply(connection -> {
+            int updatedRows = executeUpdate(
+                    connection,
+                    c -> statementFactory.claimStatement(
+                            c, letter.getIdentifier(), GenericDeadLetter.clock.instant(), processingStartedLimit
+                    ),
+                    e -> new JdbcException(
+                            "Failed to claim JDBC dead letter [" + letter.getIdentifier() + "] for processing", e
+                    )
+            );
+            if (updatedRows > 0) {
+                logger.debug("Claimed dead letter with identifier [{}] to process.", letter.getIdentifier());
+                return true;
             }
+            logger.debug("Failed to claim dead letter with identifier [{}].", letter.getIdentifier());
+            return false;
         });
     }
 
@@ -533,87 +629,46 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     /**
-     * Processes the given {@code initialLetter} using the provided {@code processingTask}.
-     * <p>
-     * When processing is successful this operation will automatically process all messages in the same
-     * {@link DeadLetterSchema#sequenceIdentifierColumn()}, {@link #evict(DeadLetter, ProcessingContext) evicting} letters that succeed and
-     * stopping when the first one fails (and is {@link #requeue(DeadLetter, UnaryOperator, ProcessingContext) requeued}).
-     * <p>
-     * Will claim the next letter in the same sequence before removing the previous letter to prevent concurrency
-     * issues. Note that we should not use paging on the results here, since letters can be added to the end of the
-     * sequence before processing ends, and deletes would throw the ordering off.
-     *
-     * @param initialLetter  The dead letter to start processing.
-     * @param processingTask The task to use to process the dead letter, providing a decision afterward.
-     * @return Whether processing all letters in this sequence was successful.
-     */
-    private boolean processInitialAndSubsequent(JdbcDeadLetter<E> initialLetter,
-                                                Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask) {
-        JdbcDeadLetter<E> current = initialLetter;
-        while (current != null) {
-            logger.info("Processing dead letter with identifier [{}] at index [{}]",
-                        current.getIdentifier(), current.getSequenceIndex());
-            EnqueueDecision<E> decision = processingTask.apply(current);
-            if (!decision.shouldEnqueue()) {
-                JdbcDeadLetter<E> previous = current;
-                JdbcDeadLetter<E> next = findNext(previous.getSequenceIdentifier(), previous.getSequenceIndex());
-                if (next != null) {
-                    current = next;
-                    claimDeadLetter(current);
-                } else {
-                    current = null;
-                }
-                evict(previous, null); // TODO #3517 - ProcessingContext here
-            } else {
-                requeue(current,
-                        letter -> decision.withDiagnostics(letter)
-                                          .withCause(decision.enqueueCause().orElse(null)),
-                        null); // TODO #3517 - ProcessingContext here
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Finds the next dead letter matching the given {@code sequenceIdentifier} following the provided
      * {@code sequenceIndex}.
      *
      * @param sequenceIdentifier The identifier of the sequence to find the next letter for.
-     * @param sequenceIndex      The index within the sequence to find the following letter for
-     * @return The next letter to process.
+     * @param sequenceIndex      The index within the sequence to find the following letter for.
+     * @param context            The processing context for this operation.
+     * @return A future completing with the next letter to process, or null if there are no more.
      */
-    private JdbcDeadLetter<E> findNext(String sequenceIdentifier, long sequenceIndex) {
-        return transactionManager.fetchInTransaction(() -> executeQuery(
-                getConnection(),
-                connection -> statementFactory.nextLetterInSequenceStatement(
-                        connection, processingGroup, sequenceIdentifier, sequenceIndex
+    private CompletableFuture<JdbcDeadLetter<E>> findNext(String sequenceIdentifier,
+                                                           long sequenceIndex,
+                                                           @Nullable ProcessingContext context) {
+        return connectionExecutor(context).apply(connection -> executeQuery(
+                connection,
+                c -> statementFactory.nextLetterInSequenceStatement(
+                        c, processingGroup, sequenceIdentifier, sequenceIndex
                 ),
                 resultSet -> resultSet.next() ? converter.convertToLetter(resultSet) : null,
                 e -> new JdbcException(
-                        "Failed to find the next dead letter in sequence [" + sequenceIdentifier + "] for processing", e
+                        "Failed to find the next dead letter in sequence [" + sequenceIdentifier
+                                + "] for processing", e
                 ),
-                CLOSE_QUIETLY
+                false
         ));
     }
 
     @Override
-    public void clear(@Nullable ProcessingContext context) {
-        Connection connection = getConnection();
-        try {
-            executeUpdate(connection,
-                          c -> statementFactory.clearStatement(c, processingGroup),
-                          e -> new JdbcException("Failed to clear out all dead letters for "
-                                                         + "processing group [" + processingGroup + "]", e));
-        } finally {
-            closeQuietly(connection);
-        }
+    @Nonnull
+    public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
+        return FutureUtils.runFailing(() -> connectionExecutor(context)
+                .accept(connection -> executeUpdate(
+                        connection,
+                        c -> statementFactory.clearStatement(c, processingGroup),
+                        e -> new JdbcException("Failed to clear out all dead letters for "
+                                                       + "processing group [" + processingGroup + "]", e))));
     }
 
     /**
      * Converts the given {@code sequenceIdentifier} to a {@link String}.
      *
-     * @return The given {@code sequenceIdentifier} to a {@link String}.
+     * @return The given {@code sequenceIdentifier} as a {@link String}.
      */
     private String toStringSequenceIdentifier(Object sequenceIdentifier) {
         return sequenceIdentifier instanceof String
@@ -621,8 +676,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
                 : Integer.toString(sequenceIdentifier.hashCode());
     }
 
+    private TransactionalExecutor<Connection> connectionExecutor(@Nullable ProcessingContext context) {
+        return transactionalExecutorProvider.getTransactionalExecutor(context);
+    }
+
     /**
-     * Builder class to instantiate an {@link JdbcSequencedDeadLetterQueue}.
+     * Builder class to instantiate a {@link JdbcSequencedDeadLetterQueue}.
      * <p>
      * The following defaults are set by the builder:
      * <ul>
@@ -634,16 +693,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
      * </ul>
      * <p>
      * The {@link Builder#processingGroup(String) processing group},
-     * {@link Builder#connectionProvider(ConnectionProvider) ConnectionProvider}, and
-     * {@link Builder#transactionManager(TransactionManager) TransactionManager} are hard requirements and should be
-     * provided.
-     * <p>
-     * The {@link Builder#statementFactory(DeadLetterStatementFactory)} and
-     * {@link Builder#converter(DeadLetterJdbcConverter)} are also hard requirements, but users can choose to either set
-     * both explicitly or rely on the {@link DefaultDeadLetterStatementFactory} and
-     * {@link DefaultDeadLetterJdbcConverter} constructed through the
-     * {@link Builder#genericSerializer(Serializer) generic Serializer} and
-     * {@link Builder#eventSerializer(Serializer) event Serializer}.
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider},
+     * {@link Builder#eventConverter(EventConverter) EventConverter}, and
+     * {@link Builder#genericConverter(Converter) generic Converter} are hard requirements and should be provided.
      *
      * @param <E> The type of {@link EventMessage} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
@@ -651,13 +703,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     public static class Builder<E extends EventMessage> {
 
         private String processingGroup;
-        private ConnectionProvider connectionProvider;
-        private TransactionManager transactionManager;
+        private TransactionalExecutorProvider<Connection> transactionalExecutorProvider;
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private DeadLetterStatementFactory<E> statementFactory;
         private DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter;
-        private Serializer genericSerializer;
-        private Serializer eventSerializer;
+        private EventConverter eventConverter;
+        private Converter genericConverter;
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
         private int pageSize = 100;
@@ -677,27 +728,19 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         }
 
         /**
-         * Sets the {@link ConnectionProvider} which provides access to a JDBC connection.
+         * Sets the {@link TransactionalExecutorProvider} which provides the {@link TransactionalExecutor} used to
+         * execute operations against the underlying database for this {@link JdbcSequencedDeadLetterQueue}
+         * implementation.
          *
-         * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
+         * @param transactionalExecutorProvider A {@link TransactionalExecutorProvider} providing
+         *                                      {@link TransactionalExecutor TransactionalExecutors} used to access the
+         *                                      underlying database.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> connectionProvider(@Nonnull ConnectionProvider connectionProvider) {
-            assertNonNull(connectionProvider, "ConnectionProvider may not be null");
-            this.connectionProvider = connectionProvider;
-            return this;
-        }
-
-        /**
-         * Sets the {@link TransactionManager} used to manage transaction around fetching dead-letter data.
-         *
-         * @param transactionManager A {@link TransactionManager} used to manage transaction around fetching dead-letter
-         *                           data.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder<E> transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "The TransactionManager may not be null");
-            this.transactionManager = transactionManager;
+        public Builder<E> transactionalExecutorProvider(
+                @Nonnull TransactionalExecutorProvider<Connection> transactionalExecutorProvider) {
+            assertNonNull(transactionalExecutorProvider, "TransactionalExecutorProvider may not be null");
+            this.transactionalExecutorProvider = transactionalExecutorProvider;
             return this;
         }
 
@@ -726,9 +769,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * <p>
          * When the {@code statementFactory} is not explicitly configured, this builder defaults to the
          * {@link DefaultDeadLetterStatementFactory}. To construct the {@code DefaultDeadLetterStatementFactory}, the
-         * configured {@link #schema(DeadLetterSchema) schema},
-         * {@link #genericSerializer(Serializer) generic Serializer}, and
-         * {@link #eventSerializer(Serializer) event Serializer} are used.
+         * configured {@link #eventConverter(EventConverter) EventConverter} and
+         * {@link #genericConverter(Converter) generic Converter} are used.
          *
          * @param statementFactory The {@link DeadLetterStatementFactory} used to construct all
          *                         {@link java.sql.PreparedStatement PreparedStatements} executed by this
@@ -748,8 +790,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * <p>
          * When the {@code converter} is not explicitly configured, this builder defaults to the
          * {@link DefaultDeadLetterJdbcConverter}. To construct the {@code DefaultDeadLetterJdbcConverter}, the
-         * configured {@link #genericSerializer(Serializer) generic Serializer}, and
-         * {@link #eventSerializer(Serializer) event Serializer} are used.
+         * configured {@link #eventConverter(EventConverter) EventConverter} and
+         * {@link #genericConverter(Converter) generic Converter} are used.
          *
          * @param converter The {@link DeadLetterJdbcConverter} used to convert a {@link java.sql.ResultSet} into a
          *                  {@link JdbcDeadLetter} implementation.
@@ -762,34 +804,34 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the {@link TrackingToken} (if
-         * present) of the event in the {@link DeadLetter} when storing it to the database.
+         * Sets the {@link EventConverter} to convert the event payload and metadata of the {@link DeadLetter} when
+         * storing it to and retrieving it from the database.
          * <p>
-         * The {@code genericSerializer} will be used to construct the {@link DeadLetterStatementFactory} and/or
+         * The {@code eventConverter} will be used to construct the {@link DeadLetterStatementFactory} and/or
          * {@link DeadLetterJdbcConverter} when either of them are not explicitly configured.
          *
-         * @param genericSerializer The serializer to use.
+         * @param eventConverter The event converter to use for payload and metadata conversion.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> genericSerializer(@Nonnull Serializer genericSerializer) {
-            assertNonNull(genericSerializer, "The generic serializer may not be null");
-            this.genericSerializer = genericSerializer;
+        public Builder<E> eventConverter(@Nonnull EventConverter eventConverter) {
+            assertNonNull(eventConverter, "The EventConverter may not be null");
+            this.eventConverter = eventConverter;
             return this;
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the events, metadata and diagnostics of the {@link DeadLetter}
-         * when storing it to a database.
+         * Sets the {@link Converter} to convert the tracking token and diagnostics of the {@link DeadLetter} when
+         * storing it to and retrieving it from the database.
          * <p>
-         * The {@code eventSerializer} will be used to construct the {@link DeadLetterStatementFactory} and/or
+         * The {@code genericConverter} will be used to construct the {@link DeadLetterStatementFactory} and/or
          * {@link DeadLetterJdbcConverter} when either of them are not explicitly configured.
          *
-         * @param eventSerializer The serializer to use.
+         * @param genericConverter The converter to use for tracking token and diagnostics conversion.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> eventSerializer(@Nonnull Serializer eventSerializer) {
-            assertNonNull(eventSerializer, "The event serializer may not be null");
-            this.eventSerializer = eventSerializer;
+        public Builder<E> genericConverter(@Nonnull Converter genericConverter) {
+            assertNonNull(genericConverter, "The generic Converter may not be null");
+            this.genericConverter = genericConverter;
             return this;
         }
 
@@ -827,8 +869,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
 
         /**
          * Sets the claim duration, which is the time a dead-letter gets locked when processing and waiting for it to
-         * complete. Other invocations of the {@link #process(Predicate, Function)} method will be unable to process a
-         * sequence while the claim is active. The claim duration defaults to 30 seconds.
+         * complete. Other invocations of the {@link #process(Predicate, Function, ProcessingContext)} method will be
+         * unable to process a sequence while the claim is active. The claim duration defaults to 30 seconds.
          * <p>
          * Claims are automatically released once the item is requeued. Thus, the claim time is a backup policy in case
          * of unforeseen trouble such as database connection issues.
@@ -845,14 +887,14 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
         /**
          * Modifies the page size used when retrieving a sequence of dead letters.
          * <p>
-         * Used during the {@link #deadLetterSequence(Object, ProcessingContext)} and {@link #deadLetters(ProcessingContext)} operations. Defaults to a
-         * {@code 100}.
+         * Used during the {@link #deadLetterSequence(Object, ProcessingContext)} and
+         * {@link #deadLetters(ProcessingContext)} operations. Defaults to {@code 100}.
          *
          * @param pageSize The page size used when retrieving a sequence of dead letters.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<E> pageSize(int pageSize) {
-            assertStrictPositive(pageSize, "The page size  should be larger than 0.");
+            assertStrictPositive(pageSize, "The page size should be larger than 0.");
             this.pageSize = pageSize;
             return this;
         }
@@ -871,16 +913,16 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * <p>
          * When not set explicitly through {@link #statementFactory(DeadLetterStatementFactory)} a
          * {@link DefaultDeadLetterStatementFactory} is constructed based on the
-         * {@link #schema(DeadLetterSchema) schema}, {@link #genericSerializer(Serializer) generic Serializer}, and
-         * {@link #eventSerializer(Serializer) event Serializer}.
+         * {@link #schema(DeadLetterSchema) schema}, {@link #eventConverter(EventConverter) EventConverter}, and
+         * {@link #genericConverter(Converter) generic Converter}.
          *
          * @return The {@link DeadLetterStatementFactory} as defined within this builder.
          */
         private DeadLetterStatementFactory<E> statementFactory() {
             return getOrDefault(statementFactory, DefaultDeadLetterStatementFactory.<E>builder()
                                                                                    .schema(schema)
-                                                                                   .genericSerializer(genericSerializer)
-                                                                                   .eventSerializer(eventSerializer)
+                                                                                   .eventConverter(eventConverter)
+                                                                                   .genericConverter(genericConverter)
                                                                                    .build());
         }
 
@@ -889,16 +931,16 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * <p>
          * When not set explicitly through {@link #converter(DeadLetterJdbcConverter)} a
          * {@link DefaultDeadLetterJdbcConverter} is constructed based on the
-         * {@link #genericSerializer(Serializer) generic Serializer}, and
-         * {@link #eventSerializer(Serializer) event Serializer}.
+         * {@link #eventConverter(EventConverter) EventConverter} and
+         * {@link #genericConverter(Converter) generic Converter}.
          *
          * @return The {@link DeadLetterJdbcConverter} as defined within this builder.
          */
         private DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter() {
             return getOrDefault(converter, () -> DefaultDeadLetterJdbcConverter.<E>builder()
                                                                                .schema(schema)
-                                                                               .genericSerializer(genericSerializer)
-                                                                               .eventSerializer(eventSerializer)
+                                                                               .eventConverter(eventConverter)
+                                                                               .genericConverter(genericConverter)
                                                                                .build());
         }
 
@@ -910,26 +952,26 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          */
         protected void validate() {
             assertNonEmpty(processingGroup, "The processing group is a hard requirement and should be non-empty");
-            assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
-            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
+            assertNonNull(transactionalExecutorProvider,
+                          "The TransactionalExecutorProvider is a hard requirement and should be provided");
             if (statementFactory == null) {
                 assertNonNull(
-                        genericSerializer,
-                        "The generic Serializer is a hard requirement when the DeadLetterStatementFactory is not provided"
+                        eventConverter,
+                        "The EventConverter is a hard requirement when the DeadLetterStatementFactory is not provided"
                 );
                 assertNonNull(
-                        eventSerializer,
-                        "The event Serializer is a hard requirement when the DeadLetterStatementFactory is not provided"
+                        genericConverter,
+                        "The generic Converter is a hard requirement when the DeadLetterStatementFactory is not provided"
                 );
             }
             if (converter == null) {
                 assertNonNull(
-                        genericSerializer,
-                        "The generic Serializer is a hard requirement when the DeadLetterJdbcConverter is not provided"
+                        eventConverter,
+                        "The EventConverter is a hard requirement when the DeadLetterJdbcConverter is not provided"
                 );
                 assertNonNull(
-                        eventSerializer,
-                        "The event Serializer is a hard requirement when the DeadLetterJdbcConverter is not provided"
+                        genericConverter,
+                        "The generic Converter is a hard requirement when the DeadLetterJdbcConverter is not provided"
                 );
             }
         }
