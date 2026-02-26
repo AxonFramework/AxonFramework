@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -76,7 +76,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {
             return null;
         }
@@ -147,14 +147,14 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             this.beanName = beanName;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.getBean(beanName));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return true;
         }
     }
