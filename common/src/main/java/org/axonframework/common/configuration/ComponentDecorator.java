@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 
 /**
@@ -55,7 +55,7 @@ public interface ComponentDecorator<C, D> {
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      * @throws ClassCastException When this decorator does not return a subclass of {@code C}.
      */
-    D decorate(@Nonnull Configuration config,
+    D decorate(@NonNull Configuration config,
                @Nullable String name,
-               @Nonnull C delegate);
+               @NonNull C delegate);
 }

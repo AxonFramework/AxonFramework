@@ -16,7 +16,7 @@
 
 package org.axonframework.common.jdbc;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
 import org.axonframework.common.tx.TransactionalExecutor;
@@ -41,12 +41,12 @@ public class ConnectionExecutor implements TransactionalExecutor<Connection> {
      * @param provider A {@link ConnectionProvider}, cannot be {@code null}.
      * @throws NullPointerException If any argument is {@code null}.
      */
-    public ConnectionExecutor(@Nonnull ConnectionProvider provider) {
+    public ConnectionExecutor(@NonNull ConnectionProvider provider) {
         this.provider = Objects.requireNonNull(provider, "provider");
     }
 
     @Override
-    public <R> CompletableFuture<R> apply(@Nonnull ThrowingFunction<Connection, R, Exception> function) {
+    public <R> @NonNull CompletableFuture<R> apply(@NonNull ThrowingFunction<Connection, R, Exception> function) {
         try {
             return CompletableFuture.completedFuture(function.apply(provider.getConnection()));
         }

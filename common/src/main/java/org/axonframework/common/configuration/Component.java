@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.DescribableComponent;
@@ -57,7 +57,7 @@ public interface Component<C> extends DescribableComponent {
      * @param configuration The configuration that declared this component.
      * @return The resolved instance defined in this component.
      */
-    C resolve(@Nonnull Configuration configuration);
+    C resolve(@NonNull Configuration configuration);
 
     /**
      * Indicates whether the component has been {@link #resolve(Configuration) resolved}.
@@ -78,8 +78,8 @@ public interface Component<C> extends DescribableComponent {
      *                          during the component's lifecycle.
      * @param lifecycleRegistry The registry in which to register the lifecycle handlers.
      */
-    void initLifecycle(@Nonnull Configuration configuration,
-                       @Nonnull LifecycleRegistry lifecycleRegistry);
+    void initLifecycle(@NonNull Configuration configuration,
+                       @NonNull LifecycleRegistry lifecycleRegistry);
 
     /**
      * Indicates whether the {@link #initLifecycle(Configuration, LifecycleRegistry)} method has already been invoked
@@ -97,7 +97,7 @@ public interface Component<C> extends DescribableComponent {
      *             throw an {@link IllegalArgumentException} for an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
+    record Identifier<C>(@NonNull TypeReference<C> type, @Nullable String name) {
 
         /**
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code clazz} and {@code name}.
@@ -106,7 +106,7 @@ public interface Component<C> extends DescribableComponent {
          * @param name  The name of the component this object identifies, potentially {@code null} when unimportant.
          *              Will throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
-        public Identifier(@Nonnull Class<C> clazz,
+        public Identifier(@NonNull Class<C> clazz,
                           @Nullable String name) {
             this(TypeReference.fromClass(clazz), name);
         }
@@ -118,7 +118,7 @@ public interface Component<C> extends DescribableComponent {
          * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
          *             throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
-        public Identifier(@Nonnull Type type,
+        public Identifier(@NonNull Type type,
                           @Nullable String name) {
             this(TypeReference.fromType(type), name);
         }
@@ -145,7 +145,7 @@ public interface Component<C> extends DescribableComponent {
          * @return {@code true} if the {@link #type()} is assignable from the {@code other} type <b>and</b> the
          * {@link #name()} is identical, {@code false} otherwise.
          */
-        public boolean matches(@Nonnull Identifier<?> other) {
+        public boolean matches(@NonNull Identifier<?> other) {
             return matchesType(other) && Objects.equals(other.name(), name);
         }
 
@@ -157,7 +157,7 @@ public interface Component<C> extends DescribableComponent {
          * @return {@code true} if the {@link #type()} is assignable from the {@code other} type, {@code false}
          * otherwise.
          */
-        public boolean matchesType(@Nonnull Identifier<?> other) {
+        public boolean matchesType(@NonNull Identifier<?> other) {
             return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
         }
 
@@ -185,6 +185,7 @@ public interface Component<C> extends DescribableComponent {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return type.getTypeAsClass().getName() + ":" + name;
         }

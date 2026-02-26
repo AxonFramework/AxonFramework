@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -60,8 +60,8 @@ public class Components implements DescribableComponent {
      * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}.
      */
-    @Nonnull
-    public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
+    @NonNull
+    public <C> Optional<Component<C>> get(@NonNull Identifier<C> identifier) {
         //noinspection unchecked
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
@@ -92,7 +92,7 @@ public class Components implements DescribableComponent {
      * @return A previous component registered under the given {@code identifier}, if present.
      */
     @Nullable
-    public <C> Component<C> put(@Nonnull Component<C> component) {
+    public <C> Component<C> put(@NonNull Component<C> component) {
         //noinspection unchecked
         return (Component<C>) components.put(component.identifier(), component);
     }
@@ -110,10 +110,10 @@ public class Components implements DescribableComponent {
      * @return The previously {@link #put(Component) put Component} identifier by the given {@code identifier}. When
      * absent, the outcome of the {@code compute} operation is returned
      */
-    @Nonnull
+    @NonNull
     public <C> Component<C> computeIfAbsent(
-            @Nonnull Identifier<C> identifier,
-            @Nonnull Supplier<Component<C>> compute
+            @NonNull Identifier<C> identifier,
+            @NonNull Supplier<Component<C>> compute
     ) {
         //noinspection unchecked
         return (Component<C>) components.computeIfAbsent(identifier, i -> compute.get());
@@ -130,7 +130,7 @@ public class Components implements DescribableComponent {
      * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
      * {@code false} otherwise.
      */
-    public boolean contains(@Nonnull Identifier<?> identifier) {
+    public boolean contains(@NonNull Identifier<?> identifier) {
         return identifier.name() != null
                 ? components.containsKey(identifier)
                 : components.keySet()
@@ -159,8 +159,8 @@ public class Components implements DescribableComponent {
      * @return {@code true} if a component is present and has been replaced, {@code false} if no component was present,
      * or has been removed by the replacement function.
      */
-    public <C> boolean replace(@Nonnull Identifier<C> identifier,
-                               @Nonnull UnaryOperator<Component<C>> replacement) {
+    public <C> boolean replace(@NonNull Identifier<C> identifier,
+                               @NonNull UnaryOperator<Component<C>> replacement) {
         //noinspection unchecked
         Component<?> newValue = components.computeIfPresent(identifier,
                                                             (i, c) -> replacement.apply((Component<C>) c));
@@ -174,13 +174,13 @@ public class Components implements DescribableComponent {
      *
      * @param processor The action to invoke for each component.
      */
-    public void postProcessComponents(@Nonnull Consumer<Component<?>> processor) {
+    public void postProcessComponents(@NonNull Consumer<Component<?>> processor) {
         requireNonNull(processor, "The component post processor must be null.");
         components.values().forEach(processor);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("components", components);
     }
 }

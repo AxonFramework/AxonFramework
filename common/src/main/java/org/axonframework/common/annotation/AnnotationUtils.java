@@ -16,7 +16,7 @@
 
 package org.axonframework.common.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 
@@ -325,8 +325,7 @@ public final class AnnotationUtils {
      * @param annotationType The annotation type to check.
      * @return Predicate that checks whether the given annotation is present.
      */
-    @Nonnull
-    public static Predicate<Member> isAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
+        public @NonNull static Predicate<Member> isAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
         return it -> it instanceof AnnotatedElement && isAnnotationPresent((AnnotatedElement) it, annotationType);
     }
 
@@ -336,8 +335,7 @@ public final class AnnotationUtils {
      * @param annotationType An annotated type to check for.
      * @return The predicate.
      */
-    @Nonnull
-    public static Predicate<Object> isTypeAnnotatedWith(@Nonnull Class<? extends Annotation> annotationType) {
+        public @NonNull static Predicate<Object> isTypeAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
         return instance -> isAnnotationPresent(instance.getClass(), annotationType);
     }
 
@@ -350,10 +348,9 @@ public final class AnnotationUtils {
      * @param value          The value of the attribute.
      * @return The predicate.
      */
-    @Nonnull
-    public static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
-            @Nonnull Class<? extends Annotation> annotationType,
-            @Nonnull String attributeName,
+        public @NonNull static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
+            @NonNull Class<? extends Annotation> annotationType,
+            @NonNull String attributeName,
             @Nullable Object value) {
         return instance -> findAnnotationAttributes(instance.getClass(), annotationType)
                 .filter(attribute -> (value != null)
