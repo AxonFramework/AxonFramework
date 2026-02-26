@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
@@ -103,9 +103,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     @Internal
     public static DefaultComponentRegistry create(
-            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions,
-            @Nonnull Collection<ConfigurationEnhancer> enhancers,
-            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
+            @NonNull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions,
+            @NonNull Collection<ConfigurationEnhancer> enhancers,
+            @NonNull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
         var shouldRegisterForChildRegistry = not(
                 isTypeAnnotatedWithHavingAttributeValue(
@@ -134,7 +134,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
 
     @Override
-    public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
+    public <C> ComponentRegistry registerComponent(@NonNull ComponentDefinition<? extends C> definition) {
         requireNonNull(definition, "The ComponentDefinition must not be null.");
         if (!(definition instanceof ComponentDefinition.ComponentCreator<? extends C> creator)) {
             // The compiler should avoid this from happening.
@@ -158,7 +158,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> definition) {
+    public <C> ComponentRegistry registerDecorator(@NonNull DecoratorDefinition<C, ? extends C> definition) {
         requireNonNull(definition, "The decorator definition must not be null.");
         if (!(definition instanceof DecoratorDefinition.CompletedDecoratorDefinition<C, ? extends C> decoratorRegistration)) {
             // The compiler should avoid this from happening.
@@ -171,9 +171,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public boolean hasComponent(@Nonnull Class<?> type,
+    public boolean hasComponent(@NonNull Class<?> type,
                                 @Nullable String name,
-                                @Nonnull SearchScope searchScope) {
+                                @NonNull SearchScope searchScope) {
         return switch (searchScope) {
             case ALL -> components.contains(new Identifier<>(type, name)) || parentHasComponent(type, name);
             case CURRENT -> components.contains(new Identifier<>(type, name));
@@ -187,7 +187,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
+    public ComponentRegistry registerEnhancer(@NonNull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
         if (previous != null) {
@@ -198,7 +198,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public ComponentRegistry registerModule(@Nonnull Module module) {
+    public ComponentRegistry registerModule(@NonNull Module module) {
         if (logger.isDebugEnabled()) {
             logger.debug("Registering module [{}].", module.name());
         }
@@ -210,7 +210,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public <C> ComponentRegistry registerFactory(@Nonnull ComponentFactory<C> factory) {
+    public <C> ComponentRegistry registerFactory(@NonNull ComponentFactory<C> factory) {
         if (logger.isDebugEnabled()) {
             logger.debug("Registering component factory [{}].", factory.getClass().getSimpleName());
         }
@@ -226,7 +226,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public Configuration build(@Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(@NonNull LifecycleRegistry lifecycleRegistry) {
         return doBuild(null, lifecycleRegistry);
     }
 
@@ -241,13 +241,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public Configuration buildNested(@Nonnull Configuration parent,
-                                     @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration buildNested(@NonNull Configuration parent,
+                                     @NonNull LifecycleRegistry lifecycleRegistry) {
         return doBuild(requireNonNull(parent), requireNonNull(lifecycleRegistry));
     }
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
-                                  @Nonnull LifecycleRegistry lifecycleRegistry) {
+                                  @NonNull LifecycleRegistry lifecycleRegistry) {
         Configuration configuration = initializedConfiguration.get();
         if (configuration != null) {
             return configuration;
@@ -382,13 +382,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
+    public DefaultComponentRegistry setOverridePolicy(@NonNull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
         return this;
     }
 
     @Override
-    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+    public ComponentRegistry disableEnhancer(@NonNull String fullyQualifiedClassName) {
         Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
         try {
             var enhancerClass = Class.forName(fullyQualifiedClassName);
@@ -457,7 +457,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialized", initializedConfiguration.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
@@ -488,9 +488,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             return parent;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+        public <C> Optional<C> getOptionalComponent(@NonNull Class<C> type,
                                                     @Nullable String name) {
             return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
@@ -505,11 +505,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <C> C getComponent(@Nonnull Class<C> type,
+        public <C> C getComponent(@NonNull Class<C> type,
                                   @Nullable String name,
-                                  @Nonnull Supplier<C> defaultImpl) {
+                                  @NonNull Supplier<C> defaultImpl) {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                                                  identifier,
@@ -555,21 +555,21 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", components);
             descriptor.describeProperty("modules", moduleConfigurations.values());
         }
 
 
         @Override
-        public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
+        public Optional<Configuration> getModuleConfiguration(@NonNull String name) {
             Assert.nonEmpty(name, "The name must not be null.");
             return Optional.ofNullable(moduleConfigurations.get(name));
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+        public <C> Map<String, C> getComponents(@NonNull Class<C> type) {
             Map<String, C> result = new LinkedHashMap<>();
 
             // 1. Collect from current configuration's components

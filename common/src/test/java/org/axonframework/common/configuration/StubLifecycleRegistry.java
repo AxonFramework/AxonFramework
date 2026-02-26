@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,19 +39,19 @@ public class StubLifecycleRegistry  implements LifecycleRegistry {
     private Map<Integer, List<LifecycleHandler>> shutdownHandlers = new ConcurrentHashMap<>();
 
     @Override
-    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
         this.phaseTimeout = timeUnit.toMillis(timeout);
         return this;
     }
 
     @Override
-    public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public LifecycleRegistry onStart(int phase, @NonNull LifecycleHandler startHandler) {
         startHandlers.computeIfAbsent(phase, k -> new java.util.ArrayList<>()).add(startHandler);
         return this;
     }
 
     @Override
-    public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public LifecycleRegistry onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
         shutdownHandlers.computeIfAbsent(phase, k -> new java.util.ArrayList<>()).add(shutdownHandler);
         return this;
     }

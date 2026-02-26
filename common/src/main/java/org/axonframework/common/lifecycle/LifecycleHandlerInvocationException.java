@@ -16,7 +16,7 @@
 
 package org.axonframework.common.lifecycle;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 
 /**
@@ -34,7 +34,7 @@ public class LifecycleHandlerInvocationException extends RuntimeException {
      * @param message The message describing the exception.
      * @param cause   The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(@Nonnull String message, @Nullable Throwable cause) {
+    public LifecycleHandlerInvocationException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

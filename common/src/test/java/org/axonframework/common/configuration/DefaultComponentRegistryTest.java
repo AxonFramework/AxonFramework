@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -191,7 +191,7 @@ class DefaultComponentRegistryTest {
         ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
 
@@ -203,14 +203,14 @@ class DefaultComponentRegistryTest {
         //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
         ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
         });
         ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
 
@@ -1331,7 +1331,7 @@ class DefaultComponentRegistryTest {
                 }
 
                 @Override
-                public Optional<Component<ServiceInterface>> construct(String name, Configuration config) {
+                public @NonNull Optional<Component<ServiceInterface>> construct(@NonNull String name, @NonNull Configuration config) {
                     // Factory can create components with names like "factory-1", "factory-2", etc.
                     if (name != null && name.startsWith("factory-")) {
                         return Optional.of(new LazyInitializedComponentDefinition<>(
@@ -1348,7 +1348,7 @@ class DefaultComponentRegistryTest {
                 }
 
                 @Override
-                public void describeTo(org.axonframework.common.infra.ComponentDescriptor descriptor) {
+                public void describeTo(org.axonframework.common.infra.@NonNull ComponentDescriptor descriptor) {
                     descriptor.describeProperty("type", "TestFactory");
                 }
             };
@@ -1507,7 +1507,7 @@ class DefaultComponentRegistryTest {
     ) implements ConfigurationEnhancer {
 
         @Override
-        public void enhance(@Nonnull ComponentRegistry registry) {
+        public void enhance(@NonNull ComponentRegistry registry) {
             invokedEnhancers.add(this);
         }
     }
@@ -1519,7 +1519,7 @@ class DefaultComponentRegistryTest {
          *
          * @param name The name of this module. Must not be {@code null}
          */
-        public TestModule(@Nonnull String name) {
+        public TestModule(@NonNull String name) {
             super(name);
         }
     }

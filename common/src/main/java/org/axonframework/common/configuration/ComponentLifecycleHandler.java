@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -50,5 +50,5 @@ public interface ComponentLifecycleHandler<C> {
      * @param component     The instance of the component.
      * @return A future that completes when the lifecycle operation has terminated.
      */
-    CompletableFuture<?> run(@Nonnull Configuration configuration, @Nonnull C component);
+    CompletableFuture<?> run(@NonNull Configuration configuration, @NonNull C component);
 }

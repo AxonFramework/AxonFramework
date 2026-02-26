@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.Optional;
@@ -45,7 +45,7 @@ public interface ComponentFactory<C> extends DescribableComponent {
      *
      * @return The {@code Class} this factory constructs.
      */
-    @Nonnull
+    @NonNull
     Class<C> forType();
 
     /**
@@ -65,8 +65,8 @@ public interface ComponentFactory<C> extends DescribableComponent {
      *               the necessary components.
      * @return An optional of a {@link Component} containing an implementation of the generic type {@code C}.
      */
-    @Nonnull
-    Optional<Component<C>> construct(@Nonnull String name, @Nonnull Configuration config);
+    @NonNull
+    Optional<Component<C>> construct(@NonNull String name, @NonNull Configuration config);
 
     /**
      * Registers this factory's shutdown process with the given {@code registry}.
@@ -83,5 +83,5 @@ public interface ComponentFactory<C> extends DescribableComponent {
      * @param registry The life cycle registry to
      *                 {@link LifecycleRegistry#onShutdown(Runnable) register shutdown handlers} with.
      */
-    void registerShutdownHandlers(@Nonnull LifecycleRegistry registry);
+    void registerShutdownHandlers(@NonNull LifecycleRegistry registry);
 }

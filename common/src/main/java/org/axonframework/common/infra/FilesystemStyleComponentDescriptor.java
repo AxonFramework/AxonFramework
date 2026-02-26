@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Component;
 
 import java.util.*;
@@ -76,7 +76,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Object object) {
+    public void describeProperty(@NonNull String name, Object object) {
         if (object instanceof DescribableComponent component) {
             describeComponent(name, component);
         } else {
@@ -104,7 +104,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Collection<?> collection) {
+    public void describeProperty(@NonNull String name, Collection<?> collection) {
         if (collection == null) {
             processedComponents.put(name, null);
             return;
@@ -141,7 +141,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Map<?, ?> map) {
+    public void describeProperty(@NonNull String name, Map<?, ?> map) {
         if (map == null) {
             processedComponents.put(name, null);
             return;
@@ -190,17 +190,17 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, String value) {
+    public void describeProperty(@NonNull String name, String value) {
         processedComponents.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Long value) {
+    public void describeProperty(@NonNull String name, Long value) {
         processedComponents.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Boolean value) {
+    public void describeProperty(@NonNull String name, Boolean value) {
         processedComponents.put(name, value);
     }
 
@@ -221,6 +221,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
         private static final String SYMLINK_INDICATOR = " -> ";
 
         @Override
+        @NonNull
         public String toString() {
             return SYMLINK_INDICATOR + targetPath;
         }

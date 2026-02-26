@@ -16,20 +16,20 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.TypeReference;
-import org.axonframework.common.configuration.*;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.configuration.Component.Identifier;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+
+import org.axonframework.common.TypeReference;
+import org.axonframework.common.configuration.Component.Identifier;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link Component} and {@link ComponentDefinition} implementations.
@@ -206,28 +206,24 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @Test
     void initializationRegistersStartupAndShutdownHandlers() {
         D testComponent = createComponent(identifier, TEST_COMPONENT);
-        //noinspection unchecked
         registerStartHandler(testComponent, 1, mock());
-        //noinspection unchecked
         registerStartHandler(testComponent, 10, mock());
-        //noinspection unchecked
         registerShutdownHandler(testComponent, 20, mock());
-        //noinspection unchecked
         registerShutdownHandler(testComponent, 42, mock());
 
         testComponent.initLifecycle(configuration, new LifecycleRegistry() {
             @Override
-            public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+            public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
                 return lifecycleRegistry.registerLifecyclePhaseTimeout(timeout, timeUnit);
             }
 
             @Override
-            public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+            public LifecycleRegistry onStart(int phase, @NonNull LifecycleHandler startHandler) {
                 return lifecycleRegistry.onStart(phase, startHandler);
             }
 
             @Override
-            public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+            public LifecycleRegistry onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
                 return lifecycleRegistry.onShutdown(phase, shutdownHandler);
             }
         });
