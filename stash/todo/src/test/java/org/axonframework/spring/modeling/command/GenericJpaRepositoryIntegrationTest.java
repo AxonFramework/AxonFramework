@@ -18,7 +18,7 @@ package org.axonframework.spring.modeling.command;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -165,7 +165,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         this.capturedEvents.add(event);
         return null;
     }

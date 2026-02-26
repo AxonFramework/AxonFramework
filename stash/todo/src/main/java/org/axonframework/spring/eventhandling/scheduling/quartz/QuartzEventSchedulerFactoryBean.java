@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Spring FactoryBean that creates a QuartzEventScheduler instance using resources found in the Spring Application
@@ -100,7 +100,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

@@ -23,7 +23,7 @@ import org.axonframework.messaging.core.Message;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 
 /**
@@ -91,16 +91,14 @@ public class GenericTrackedDomainEventMessage
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull GenericTrackedDomainEventMessage withMetadata(@NonNull Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().withMetadata(metadata),
                                                       timestamp());
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull GenericTrackedDomainEventMessage andMetadata(@NonNull Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().andMetadata(metadata),
                                                       timestamp());

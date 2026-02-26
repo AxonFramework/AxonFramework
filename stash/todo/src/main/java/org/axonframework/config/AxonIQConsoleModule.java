@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.LifecycleRegistry;
@@ -58,8 +58,8 @@ public class AxonIQConsoleModule implements Module {
     }
 
     @Override
-    public Configuration build(@Nonnull Configuration parent,
-                               @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(@NonNull Configuration parent,
+                               @NonNull LifecycleRegistry lifecycleRegistry) {
         maybeLogConsoleIsAvailable();
         return null;
     }

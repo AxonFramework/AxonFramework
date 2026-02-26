@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.eventhandling.DelegatingEventBus;
@@ -92,13 +92,13 @@ class CommandHandlingTest {
             super(new SimpleEventBus());
         }
 
-        public DomainEventStream readEvents(@Nonnull String identifier) {
+        public DomainEventStream readEvents(@NonNull String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               @NonNull List<EventMessage> events) {
             if (context == null) {
                 storeEvents(events);
             } else {
@@ -107,7 +107,7 @@ class CommandHandlingTest {
             return super.publish(context, events);
         }
 
-        private void storeEvents(@Nonnull List<EventMessage> events) {
+        private void storeEvents(@NonNull List<EventMessage> events) {
             storedEvents.addAll(
                     events.stream()
                           .map(StubEventStore::asDomainEventMessage)
@@ -123,7 +123,7 @@ class CommandHandlingTest {
 
         @Override
         public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
     }
