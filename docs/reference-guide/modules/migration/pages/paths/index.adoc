@@ -15,7 +15,7 @@ Whether you are performing a straightforward version bump or a deep architectura
 * xref:migration:paths/event-store.adoc[Event Store migration]
 * xref:migration:paths/projectors-event-processors.adoc[Event Processor configuration]
 * xref:migration:paths/test-fixtures.adoc[Test Fixture migration]
-* _Serializer to Converter configuration changes (Coming soon)_
+* xref:migration:paths/serializers.adoc[Serializer migration]
 * _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
 * _Message Interceptors in Axon Framework 5 (Coming soon)_
 3. **What is not yet there**
