@@ -339,7 +339,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public @NonNull Iterable<DeadLetter<? extends E>> deadLetterSequence(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (!contains(sequenceId, context)) {
             return Collections.emptyList();

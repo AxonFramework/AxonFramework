@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -49,13 +49,13 @@ public class RecordingEventSink implements EventSink {
      *
      * @param delegate The {@link EventSink} to which events will be published.
      */
-    public RecordingEventSink(@Nonnull EventSink delegate) {
+    public RecordingEventSink(@NonNull EventSink delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @NonNull List<EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }
@@ -82,7 +82,7 @@ public class RecordingEventSink implements EventSink {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("recorded", recorded);
     }

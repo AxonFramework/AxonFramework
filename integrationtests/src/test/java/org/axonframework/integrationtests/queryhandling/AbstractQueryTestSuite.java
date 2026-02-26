@@ -119,9 +119,9 @@ public abstract class AbstractQueryTestSuite {
         }
 
         @Override
-        public MessageStream<?> interceptOnHandle(M message,
-                                                  ProcessingContext context,
-                                                  MessageHandlerInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to handler
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(java.util.Map.of(key, buildValue(message)));
