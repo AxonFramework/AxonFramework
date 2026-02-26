@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
@@ -70,9 +70,9 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
      *                        and returns a {@link Registration} allowing it to be canceled
      */
     public ContinuousMessageStream(
-            @Nonnull Function<E, List<E>> fetcher,
-            @Nonnull Function<E, Entry<EventMessage>> converter,
-            @Nonnull BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
+            @NonNull Function<E, List<E>> fetcher,
+            @NonNull Function<E, Entry<EventMessage>> converter,
+            @NonNull BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
     ) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetcher");
         this.converter = Objects.requireNonNull(converter, "converter");
@@ -80,7 +80,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     }
 
     @Override
-    public synchronized void setCallback(@Nonnull Runnable callback) {
+    public synchronized void setCallback(@NonNull Runnable callback) {
         if (!closed) {
             this.callback = callback;
 

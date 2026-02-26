@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -65,5 +65,5 @@ public interface EventStore extends StreamableEventSource, EventBus, Describable
      * @param processingContext The context for which to retrieve the {@link EventStoreTransaction}.
      * @return The {@link EventStoreTransaction}, existing or newly created, for the given {@code processingContext}.
      */
-    EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext);
+    EventStoreTransaction transaction(@NonNull ProcessingContext processingContext);
 }

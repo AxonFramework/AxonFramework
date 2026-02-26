@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
@@ -71,9 +71,9 @@ public interface EventStorageEngine extends DescribableComponent {
      * @param events    One or more {@link EventMessage events} to append to the underlying storage solution.
      * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    default CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    default CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
                                                                  @Nullable ProcessingContext context,
-                                                                 @Nonnull TaggedEventMessage<?>... events) {
+                                                                 @NonNull TaggedEventMessage<?>... events) {
         return appendEvents(condition, context, asList(events));
     }
 
@@ -95,9 +95,9 @@ public interface EventStorageEngine extends DescribableComponent {
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
      * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
                                                          @Nullable ProcessingContext context,
-                                                         @Nonnull List<TaggedEventMessage<?>> events);
+                                                         @NonNull List<TaggedEventMessage<?>> events);
 
     /**
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -120,7 +120,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> source(@Nonnull SourcingCondition condition);
+    MessageStream<EventMessage> source(@NonNull SourcingCondition condition);
 
     /**
      * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -135,7 +135,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition);
+    MessageStream<EventMessage> stream(@NonNull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the first position of an event stream.
@@ -165,7 +165,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
      * matching this criteria {@code null} is returned
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at);
 
     /**
      * Interface representing the transaction of an appendEvents invocation.

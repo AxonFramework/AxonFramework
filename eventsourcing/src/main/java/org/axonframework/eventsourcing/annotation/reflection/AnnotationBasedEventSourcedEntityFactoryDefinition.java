@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation.reflection;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -44,10 +44,10 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
 
     @Override
     public EventSourcedEntityFactory<Object, Object> createFactory(
-            @Nonnull Class<Object> entityType,
-            @Nonnull Set<Class<? extends Object>> entitySubTypes,
-            @Nonnull Class<Object> idType,
-            @Nonnull Configuration configuration
+            @NonNull Class<Object> entityType,
+            @NonNull Set<Class<? extends Object>> entitySubTypes,
+            @NonNull Class<Object> idType,
+            @NonNull Configuration configuration
     ) {
         return new AnnotationBasedEventSourcedEntityFactory<>(
                 entityType,
