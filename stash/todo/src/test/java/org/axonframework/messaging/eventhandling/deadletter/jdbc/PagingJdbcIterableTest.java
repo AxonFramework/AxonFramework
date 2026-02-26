@@ -18,15 +18,10 @@ package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.eventhandling.deadletter.jdbc.PagingJdbcIterable;
+import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,6 +33,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import javax.sql.DataSource;
 
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,46 +46,36 @@ import static org.junit.jupiter.api.Assertions.*;
 class PagingJdbcIterableTest {
 
     private DataSource dataSource;
-    private TransactionManager transactionManager;
+    // Sentinel connection to keep HSQLDB in-memory database alive across operations
+    private Connection sentinelConnection;
+    private TransactionalExecutor<Connection> executor;
     private PagingJdbcIterable<String> testSubject;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
         dataSource = dataSource();
-        transactionManager = transactionManager(dataSource);
-        transactionManager.executeInTransaction(() -> {
-            Connection connection = null;
-            try {
-                connection = dataSource.getConnection();
-                executeUpdates(
-                        connection,
-                        e -> {
-                            throw new JdbcException("Enable to prepare test_table", e);
-                        },
-                        c -> c.prepareStatement("DROP TABLE IF EXISTS test_table"),
-                        c -> c.prepareStatement(
-                                "CREATE TABLE IF NOT EXISTS test_table ("
-                                        + "identifier VARCHAR(255) NOT NULL,"
-                                        + "idIndex BIGINT NOT NULL"
-                                        + ")"
-                        )
-                );
-            } catch (SQLException e) {
-                throw new IllegalStateException("Enable to retrieve a Connection to prepare the test_table", e);
-            } finally {
-                closeQuietly(connection);
-            }
-        });
+        sentinelConnection = dataSource.getConnection();
+        executor = new JdbcTransactionalExecutorProvider(dataSource).getTransactionalExecutor(null);
+
+        // Use a direct connection for DDL setup to avoid HSQLDB issues with setAutoCommit(false) + DDL
+        try (Connection setupConnection = dataSource.getConnection()) {
+            executeUpdates(
+                    setupConnection,
+                    e -> {
+                        throw new JdbcException("Unable to prepare test_table", e);
+                    },
+                    c -> c.prepareStatement("DROP TABLE IF EXISTS test_table"),
+                    c -> c.prepareStatement(
+                            "CREATE TABLE IF NOT EXISTS test_table ("
+                                    + "identifier VARCHAR(255) NOT NULL,"
+                                    + "idIndex BIGINT NOT NULL"
+                                    + ")"
+                    )
+            );
+        }
 
         testSubject = new PagingJdbcIterable<>(
-                transactionManager,
-                () -> {
-                    try {
-                        return dataSource.getConnection();
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
+                executor,
                 (connection, offset, maxSize) -> {
                     String sql = "SELECT * FROM test_table WHERE idIndex >=? LIMIT ?";
                     PreparedStatement statement = connection.prepareStatement(sql);
@@ -105,29 +91,17 @@ class PagingJdbcIterableTest {
 
     private DataSource dataSource() {
         JDBCDataSource dataSource = new JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:mem:axontest");
+        dataSource.setUrl("jdbc:hsqldb:mem:pagingtest");
         dataSource.setUser("sa");
         dataSource.setPassword("");
         return dataSource;
     }
 
-    private TransactionManager transactionManager(DataSource dataSource) {
-        PlatformTransactionManager platformTransactionManager = new DataSourceTransactionManager(dataSource);
-        return () -> {
-            TransactionStatus transaction =
-                    platformTransactionManager.getTransaction(new DefaultTransactionDefinition());
-            return new Transaction() {
-                @Override
-                public void commit() {
-                    platformTransactionManager.commit(transaction);
-                }
-
-                @Override
-                public void rollback() {
-                    platformTransactionManager.rollback(transaction);
-                }
-            };
-        };
+    @AfterEach
+    void tearDown() {
+        if (sentinelConnection != null) {
+            closeQuietly(sentinelConnection);
+        }
     }
 
     @Test
@@ -157,29 +131,19 @@ class PagingJdbcIterableTest {
     }
 
     private void addEntryAt(String id, long index) {
-        transactionManager.executeInTransaction(() -> {
-            Connection connection = null;
-            try {
-                connection = dataSource.getConnection();
-                executeUpdate(
-                        connection,
-                        c -> {
-                            String sql = "INSERT INTO test_table (identifier, idIndex) VALUES(?,?)";
-                            PreparedStatement statement = c.prepareStatement(sql);
-                            statement.setString(1, id);
-                            statement.setLong(2, index);
-                            return statement;
-                        },
-                        e -> new JdbcException("Enable to insert entry [" + id + "] at index [" + index + "]", e)
-                );
-            } catch (SQLException e) {
-                throw new IllegalStateException(
-                        "Enable to retrieve a Connection to insert entry [" + id + "] at index [" + index + "]", e
-                );
-            } finally {
-                closeQuietly(connection);
-            }
-        });
+        joinAndUnwrap(executor.accept(connection -> {
+            executeUpdate(
+                    connection,
+                    c -> {
+                        String sql = "INSERT INTO test_table (identifier, idIndex) VALUES(?,?)";
+                        PreparedStatement statement = c.prepareStatement(sql);
+                        statement.setString(1, id);
+                        statement.setLong(2, index);
+                        return statement;
+                    },
+                    e -> new JdbcException("Unable to insert entry [" + id + "] at index [" + index + "]", e)
+            );
+        }));
     }
 
     @Test

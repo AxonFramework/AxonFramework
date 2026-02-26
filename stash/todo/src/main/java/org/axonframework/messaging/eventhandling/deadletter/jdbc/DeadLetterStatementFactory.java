@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
@@ -43,7 +45,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used for the
-     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter)} operation.
+     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext)} operation.
      *
      * @param connection         The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup    The processing group for which to enqueue the given {@code letter}.
@@ -51,15 +53,18 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @param letter             The letter to enqueue.
      * @param sequenceIndex      The index of the letter within the sequence, to ensure the processing order is
      *                           maintained.
+     * @param context            The {@link ProcessingContext} containing resources such as tracking token and aggregate
+     *                           data, or {@code null} if not available.
      * @return The {@link PreparedStatement} used to
-     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueue}.
+     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueue}.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement enqueueStatement(@Nonnull Connection connection,
                                        @Nonnull String processingGroup,
                                        @Nonnull String sequenceIdentifier,
                                        @Nonnull DeadLetter<? extends E> letter,
-                                       long sequenceIndex) throws SQLException;
+                                       long sequenceIndex,
+                                       @Nullable ProcessingContext context) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used to retrieve the maximum
