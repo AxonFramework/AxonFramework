@@ -18,6 +18,7 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.SequencingPolicy;
@@ -47,22 +48,39 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        return original instanceof EventHandlingMember<T> eventHandlingMember
-                ? eventHandlingMember.unwrap(Method.class)
-                                     .flatMap(method -> optionalSequencingAwareMember(eventHandlingMember, method))
-                                     .orElse(eventHandlingMember)
-                : original;
-    }
+        // Only wrap event handlers - check the message type to work through any existing wrappers
+        if (!original.canHandleMessageType(EventMessage.class)) {
+            return original;
+        }
 
-    private <T> Optional<MessageHandlingMember<T>> optionalSequencingAwareMember(
-            EventHandlingMember<T> eventHandlingMember,
-            Method method
-    ) {
-        return Optional.ofNullable(method.getAnnotation(SequencingPolicy.class))
-                       .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)))
-                       .map(annotation -> new SequencingPolicyEventMessageHandlingMember<>(
-                               eventHandlingMember, annotation
-                       ));
+        // Check for sequencing policy attributes (set by @HasHandlerAttributes on @SequencingPolicy annotation)
+        @SuppressWarnings("rawtypes")
+        Optional<Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy>> policyType =
+                original.attribute(HandlerAttributes.SEQUENCING_POLICY_TYPE);
+        Optional<String[]> parameters = original.attribute(HandlerAttributes.SEQUENCING_POLICY_PARAMETERS);
+
+        // Fallback to class-level annotation if method-level not found
+        // @HasHandlerAttributes only scans the method, not the declaring class
+        if (policyType.isEmpty()) {
+            Optional<SequencingPolicy> classLevelAnnotation = original.unwrap(Method.class)
+                                                                      .map(Method::getDeclaringClass)
+                                                                      .map(clazz -> clazz.getAnnotation(SequencingPolicy.class));
+
+            if (classLevelAnnotation.isPresent()) {
+                policyType = Optional.of(classLevelAnnotation.get().type());
+                parameters = Optional.of(classLevelAnnotation.get().parameters());
+            }
+        }
+
+        if (policyType.isEmpty()) {
+            return original;
+        }
+
+        return new SequencingPolicyEventMessageHandlingMember<>(
+                original,
+                policyType.get(),
+                parameters.orElse(new String[0])
+        );
     }
 
     /**
@@ -73,29 +91,26 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
      */
     @Internal
     static class SequencingPolicyEventMessageHandlingMember<T>
-            extends WrappedMessageHandlingMember<T>
-            implements EventHandlingMember<T> {
+            extends WrappedMessageHandlingMember<T> {
 
-        private final EventHandlingMember<T> delegate;
         private final org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> sequencingPolicy;
 
         /**
          * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original} handler
-         * and creating a sequencing policy instance from the {@link SequencingPolicy} annotation.
+         * and creating a sequencing policy instance from the policy type and parameters.
          *
-         * @param original         The original message handling member to wrap.
-         * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration.
+         * @param original   The original message handling member to wrap.
+         * @param policyType The sequencing policy class to instantiate.
+         * @param parameters The parameters to pass to the policy constructor.
          */
-        private SequencingPolicyEventMessageHandlingMember(EventHandlingMember<T> original,
-                                                           SequencingPolicy policyAnnotation) {
+        @SuppressWarnings("rawtypes")
+        private SequencingPolicyEventMessageHandlingMember(
+                MessageHandlingMember<T> original,
+                Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
+                String[] parameters
+        ) {
             super(original);
-            this.delegate = original;
-            this.sequencingPolicy = createSequencingPolicy(policyAnnotation, original);
-        }
-
-        @Override
-        public String eventName() {
-            return delegate.eventName();
+            this.sequencingPolicy = createSequencingPolicy(policyType, parameters, original);
         }
 
         /**
@@ -107,13 +122,12 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             return sequencingPolicy;
         }
 
+        @SuppressWarnings("rawtypes")
         private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createSequencingPolicy(
-                SequencingPolicy annotation,
+                Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
+                String[] parameters,
                 MessageHandlingMember<T> original
         ) {
-            var policyType = annotation.type();
-            var parameters = annotation.parameters();
-
             try {
                 return parameters.length == 0
                         ? createNoArgPolicy(policyType, original)
