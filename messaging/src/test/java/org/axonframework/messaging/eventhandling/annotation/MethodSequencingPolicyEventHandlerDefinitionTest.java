@@ -26,6 +26,7 @@ import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFac
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.sequencing.MetadataSequencingPolicy;
 import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
@@ -162,6 +163,43 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
             SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(wrappedHandler);
             // Should be MetadataSequencingPolicy from method, not SequentialPolicy from class
             assertEquals(MetadataSequencingPolicy.class, policy.getClass());
+        }
+    }
+
+    @Nested
+    class WrappedEventHandler {
+
+        @Test
+        void wrapsEventHandlerThatIsAlreadyWrappedByGenericWrapper() {
+            // given - Create an event handler with sequencing policy annotation
+            MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                    MethodLevelPolicyTest.class, "sequentialPolicyMethod", String.class
+            );
+
+            // when - Wrap it with a generic wrapper that doesn't implement EventHandlingMember
+            // This simulates another HandlerEnhancerDefinition wrapping the handler before this one runs
+            MessageHandlingMember<MethodLevelPolicyTest> genericWrapped = new GenericWrapper<>(handler);
+            MessageHandlingMember<MethodLevelPolicyTest> result = testSubject.wrapHandler(genericWrapped);
+
+            // then - Should still wrap and apply sequencing policy despite the generic wrapper
+            // CURRENT BUG: The instanceof check fails when the handler is wrapped, so sequencing policy is not applied
+            // PROPER FIX: Should use canHandleMessageType(EventMessage.class) instead of instanceof
+            //             AND check for HandlerAttributes.SEQUENCING_POLICY attribute instead of unwrapping to Method
+            //             This follows the Axon pattern where annotations are translated to attributes via @HasHandlerAttributes
+            assertNotSame(genericWrapped, result, "Handler should be wrapped with sequencing policy");
+            SequencingPolicy<? super EventMessage> policy = getSequencingPolicy(result);
+            assertEquals(SequentialPolicy.class, policy.getClass(),
+                    "Sequencing policy should be applied even when handler is wrapped");
+        }
+    }
+
+    /**
+     * Generic wrapper that does NOT implement EventHandlingMember - simulates the bug scenario
+     * where another HandlerEnhancerDefinition has already wrapped the handler.
+     */
+    private static class GenericWrapper<T> extends WrappedMessageHandlingMember<T> {
+        GenericWrapper(MessageHandlingMember<T> delegate) {
+            super(delegate);
         }
     }
 

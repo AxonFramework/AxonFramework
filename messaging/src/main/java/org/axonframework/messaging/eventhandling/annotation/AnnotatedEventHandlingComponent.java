@@ -95,12 +95,20 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void initializeHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(handler -> registerHandler((EventHandlingMember<? super T>) handler));
+             .forEach(handler -> {
+                 // Verify handler can handle EventMessage but don't unwrap - preserve wrapper chain
+                 if (!handler.canHandleMessageType(EventMessage.class)) {
+                     throw new IllegalStateException(
+                             "Handler declares EventMessage support but canHandleMessageType returns false"
+                     );
+                 }
+                 registerHandler(handler);
+             });
     }
 
-    private void registerHandler(EventHandlingMember<? super T> handler) {
+    private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
-        QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
+        QualifiedName qualifiedName = handler.unwrap(EventHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
                                              // Filter empty Strings to  fall back to the MessageTypeResolver
                                              .filter(StringUtils::nonEmpty)
@@ -112,7 +120,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private EventHandler constructEventHandlerFor(QualifiedName qualifiedName,
-                                                  EventHandlingMember<? super T> handler) {
+                                                  MessageHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         EventHandler interceptedHandler =
                 (event, context) -> interceptorChain.handle(

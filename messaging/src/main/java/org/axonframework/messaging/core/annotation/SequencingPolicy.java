@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to specify a sequencing policy for method handling methods or classes.
+ * Annotation to specify a sequencing policy for message handling methods or classes.
  * <p>
  * The sequencing policy determines how messages are processed in relation to each other,
  * controlling whether messages should be processed sequentially or in parallel.
@@ -111,6 +111,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
+@HasHandlerAttributes
 public @interface SequencingPolicy {
 
     /**
