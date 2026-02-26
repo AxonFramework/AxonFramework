@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -97,10 +97,10 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @param allowReset        whether to clear the queue on reset. If {@code true},
      *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset
      */
-    public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
-                                               @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
-                                               @Nonnull EnqueuePolicy<EventMessage> enqueuePolicy,
-                                               @Nonnull UnitOfWorkFactory unitOfWorkFactory,
+    public DeadLetteringEventHandlingComponent(@NonNull EventHandlingComponent delegate,
+                                               @NonNull SequencedDeadLetterQueue<EventMessage> queue,
+                                               @NonNull EnqueuePolicy<EventMessage> enqueuePolicy,
+                                               @NonNull UnitOfWorkFactory unitOfWorkFactory,
                                                boolean allowReset) {
         super(delegate);
         this.queue = Objects.requireNonNull(queue, "SequencedDeadLetterQueue may not be null");
@@ -109,10 +109,9 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         this.allowReset = allowReset;
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
@@ -203,9 +202,8 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         return DelayedMessageStream.create(enqueueFuture);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext, @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext, @NonNull ProcessingContext context) {
         if (allowReset) {
             CompletableFuture<MessageStream<Message>> resultFuture = queue.clear(context)
                                                                           .thenApply(v -> delegate.handle(resetContext,
@@ -215,9 +213,9 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         return delegate.handle(resetContext, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Boolean> process(@Nonnull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
+    public CompletableFuture<Boolean> process(@NonNull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy, unitOfWorkFactory
         );

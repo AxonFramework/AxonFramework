@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -95,15 +95,15 @@ public class CorrelationDataInterceptor<M extends Message>
      *                                 {@link #interceptOnHandle(Message, ProcessingContext,
      *                                 MessageHandlerInterceptorChain) intercepted messages}.
      */
-    public CorrelationDataInterceptor(@Nonnull Collection<CorrelationDataProvider> correlationDataProviders) {
+    public CorrelationDataInterceptor(@NonNull Collection<CorrelationDataProvider> correlationDataProviders) {
         this.correlationDataProviders = new ArrayList<>(correlationDataProviders);
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+    @NonNull
+    public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                 @Nullable ProcessingContext context,
-                                                @Nonnull MessageDispatchInterceptorChain<M> chain) {
+                                                @NonNull MessageDispatchInterceptorChain<M> chain) {
         //noinspection unchecked
         return context == null || !context.containsResource(CORRELATION_DATA)
                 ? chain.proceed(message, context)
@@ -111,10 +111,10 @@ public class CorrelationDataInterceptor<M extends Message>
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                              @Nonnull ProcessingContext context,
-                                              @Nonnull MessageHandlerInterceptorChain<M> chain) {
+    @NonNull
+    public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                              @NonNull ProcessingContext context,
+                                              @NonNull MessageHandlerInterceptorChain<M> chain) {
         Map<String, String> correlationData = new ConcurrentHashMap<>();
         correlationDataProviders.forEach(provider -> {
             try {

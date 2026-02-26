@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.tracing.attributes;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
 
@@ -33,7 +33,7 @@ import static java.util.Collections.emptyMap;
 public class AggregateIdentifierSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
+    public @NonNull Map<String, String> provideForMessage(@NonNull Message message) {
 //        if (message instanceof DomainEventMessage) {
 //            DomainEventMessage domainEventMessage = (DomainEventMessage) message;
 //            return singletonMap("axon_aggregate_identifier", domainEventMessage.getAggregateIdentifier());

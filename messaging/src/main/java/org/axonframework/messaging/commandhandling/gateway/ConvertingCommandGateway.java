@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -48,29 +48,28 @@ public class ConvertingCommandGateway implements CommandGateway {
      * @param delegate  The delegate command gateway to wrap within this command gateway.
      * @param converter The converter to use for converting the result of command handling.
      */
-    public ConvertingCommandGateway(@Nonnull CommandGateway delegate,
-                                    @Nonnull MessageConverter converter) {
+    public ConvertingCommandGateway(@NonNull CommandGateway delegate,
+                                    @NonNull MessageConverter converter) {
         this.delegate = requireNonNull(delegate, "The delegate must not be null.");
         this.converter = requireNonNull(converter, "The MessageConverter must not be null.");
     }
 
     @Override
-    @Nonnull
-    public CommandResult send(@Nonnull Object command,
-                              @Nonnull Metadata metadata,
+        public @NonNull CommandResult send(@NonNull Object command,
+                              @NonNull Metadata metadata,
                               @Nullable ProcessingContext context) {
         return new ConvertingCommandResult(converter, delegate.send(command, metadata, context));
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
     }
 
     private record ConvertingCommandResult(
-            @Nonnull MessageConverter commandConverter,
-            @Nonnull CommandResult delegate
+            @NonNull MessageConverter commandConverter,
+            @NonNull CommandResult delegate
     ) implements CommandResult {
 
         ConvertingCommandResult {
@@ -84,7 +83,7 @@ public class ConvertingCommandGateway implements CommandGateway {
         }
 
         @Override
-        public <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
+        public <R> CompletableFuture<R> resultAs(@NonNull Class<R> type) {
             return delegate.getResultMessage()
                            .thenApply(resultMessage -> resultMessage != null
                                    ? resultMessage.payloadAs(type, commandConverter)
@@ -92,8 +91,8 @@ public class ConvertingCommandGateway implements CommandGateway {
         }
 
         @Override
-        public <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
-                                           @Nonnull BiConsumer<R, Message> successHandler) {
+        public <R> CommandResult onSuccess(@NonNull Class<R> resultType,
+                                           @NonNull BiConsumer<R, Message> successHandler) {
             requireNonNull(successHandler, "The success handler must not be null.");
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {

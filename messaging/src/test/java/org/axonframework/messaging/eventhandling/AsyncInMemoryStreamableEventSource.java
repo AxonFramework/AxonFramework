@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
@@ -118,7 +118,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
@@ -141,7 +141,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
@@ -331,7 +331,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public void setCallback(@Nonnull Runnable callback) {
+        public void setCallback(@NonNull Runnable callback) {
             this.callback.set(callback);
             if (streamCallbackSupported && hasNextAvailable()) {
                 callback.run();

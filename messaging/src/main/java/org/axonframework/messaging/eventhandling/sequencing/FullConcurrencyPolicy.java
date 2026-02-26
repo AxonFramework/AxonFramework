@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -40,7 +40,7 @@ public class FullConcurrencyPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         return Optional.of(event.identifier());
     }
 }

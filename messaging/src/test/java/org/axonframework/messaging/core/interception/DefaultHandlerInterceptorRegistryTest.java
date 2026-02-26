@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -210,44 +210,44 @@ class DefaultHandlerInterceptorRegistryTest {
 
     static class GenericMessageHandlerInterceptor implements MessageHandlerInterceptor<Message> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnHandle(@Nonnull Message message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<Message> chain) {
+        public MessageStream<?> interceptOnHandle(@NonNull Message message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<Message> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class CommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnHandle(@Nonnull CommandMessage message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<CommandMessage> chain) {
+        public MessageStream<?> interceptOnHandle(@NonNull CommandMessage message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<CommandMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class EventHandlerInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<EventMessage> chain) {
+        public MessageStream<?> interceptOnHandle(@NonNull EventMessage message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<EventMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class QueryHandlerInterceptor implements MessageHandlerInterceptor<QueryMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnHandle(@Nonnull QueryMessage message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<QueryMessage> chain) {
+        public MessageStream<?> interceptOnHandle(@NonNull QueryMessage message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<QueryMessage> chain) {
             return chain.proceed(message, context);
         }
     }

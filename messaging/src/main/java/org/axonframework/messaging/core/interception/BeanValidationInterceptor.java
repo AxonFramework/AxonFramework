@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -66,25 +66,25 @@ public class BeanValidationInterceptor<M extends Message>
         this.validatorFactory = validatorFactory;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+    public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                 @Nullable ProcessingContext context,
-                                                @Nonnull MessageDispatchInterceptorChain<M> dispatchInterceptorChain) {
+                                                @NonNull MessageDispatchInterceptorChain<M> dispatchInterceptorChain) {
         return interceptOrContinue(message, (m) -> dispatchInterceptorChain.proceed(m, context));
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                              @Nonnull ProcessingContext context,
-                                              @Nonnull MessageHandlerInterceptorChain<M> handlerInterceptorChain) {
+    public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                              @NonNull ProcessingContext context,
+                                              @NonNull MessageHandlerInterceptorChain<M> handlerInterceptorChain) {
         return interceptOrContinue(message, (m) -> handlerInterceptorChain.proceed(m, context));
     }
 
-    @Nonnull
-    private MessageStream<?> interceptOrContinue(@Nonnull M message,
-                                                 @Nonnull Function<M, MessageStream<?>> continuation) {
+    @NonNull
+    private MessageStream<?> interceptOrContinue(@NonNull M message,
+                                                 @NonNull Function<M, MessageStream<?>> continuation) {
         Set<ConstraintViolation<Object>> violations = validate(message);
         if (!violations.isEmpty()) {
             return MessageStream.fromFuture(CompletableFuture.failedFuture(new JSR303ViolationException(violations)));

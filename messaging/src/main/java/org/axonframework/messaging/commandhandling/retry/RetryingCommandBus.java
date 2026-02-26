@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.retry;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -55,21 +55,21 @@ public class RetryingCommandBus implements CommandBus {
      * @param delegate       The delegate {@code CommandBus} that will handle all dispatching and handling logic.
      * @param retryScheduler The retry scheduler to use to reschedule failed commands.
      */
-    public RetryingCommandBus(@Nonnull CommandBus delegate,
-                              @Nonnull RetryScheduler retryScheduler) {
+    public RetryingCommandBus(@NonNull CommandBus delegate,
+                              @NonNull RetryScheduler retryScheduler) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.retryScheduler = requireNonNull(retryScheduler, "the RetryScheduler must not be null.");
     }
 
     @Override
-    public RetryingCommandBus subscribe(@Nonnull QualifiedName name,
-                                        @Nonnull CommandHandler handler) {
+    public RetryingCommandBus subscribe(@NonNull QualifiedName name,
+                                        @NonNull CommandHandler handler) {
         delegate.subscribe(name, handler);
         return this;
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return dispatchToDelegate(command, processingContext)
                 .exceptionallyCompose(e -> performRetry(command, processingContext, unwrap(e)));
@@ -94,7 +94,7 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("retryScheduler", retryScheduler);
     }

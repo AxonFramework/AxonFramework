@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.util.MockException;
@@ -179,10 +179,9 @@ class SimpleCommandBusTest {
     @Test
     void exceptionThrownFromHandlerReturnedInCompletableFuture() {
         var commandHandler = new StubCommandHandler("ok") {
-            @Nonnull
             @Override
-            public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                                     @Nonnull ProcessingContext processingContext) {
+            public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
+                                                                              @NonNull ProcessingContext processingContext) {
                 throw new MockException("Simulating exception");
             }
         };
@@ -267,10 +266,9 @@ class SimpleCommandBusTest {
             this.result = result;
         }
 
-        @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                                 @Nonnull ProcessingContext processingContext) {
+        public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
+                                                                          @NonNull ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {

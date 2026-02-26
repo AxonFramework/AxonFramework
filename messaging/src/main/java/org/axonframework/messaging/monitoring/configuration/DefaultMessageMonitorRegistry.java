@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -71,9 +71,9 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private final List<ComponentDefinition<MessageMonitor<? super QueryMessage>>> queryMonitorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageMonitor<? super SubscriptionQueryUpdateMessage>>> subscriptionQueryUpdateMonitorDefinitions = new ArrayList<>();
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageMonitorRegistry registerMonitor(@Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder) {
+    public MessageMonitorRegistry registerMonitor(@NonNull ComponentBuilder<MessageMonitor<Message>> monitorBuilder) {
         final var genericMonitorDef = new GenericMonitorDefinition(monitorBuilder);
 
         registerCommandMonitor(genericMonitorDef::doResolve);
@@ -84,40 +84,40 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MessageMonitorRegistry registerEventMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder) {
+            @NonNull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder) {
         this.eventMonitorDefinitions.add(ComponentDefinition.ofType(EVENT_MONITOR_TYPE_REF)
                                                             .withBuilder(monitorBuilder)
         );
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MessageMonitorRegistry registerCommandMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder) {
+            @NonNull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder) {
         this.commandMonitorDefinitions.add(ComponentDefinition.ofType(COMMAND_MONITOR_TYPE_REF)
                                                               .withBuilder(monitorBuilder)
         );
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MessageMonitorRegistry registerQueryMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder) {
+            @NonNull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder) {
         this.queryMonitorDefinitions.add(ComponentDefinition.ofType(QUERY_MONITOR_TYPE_REF)
                                                             .withBuilder(monitorBuilder)
         );
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder) {
+            @NonNull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder) {
         this.subscriptionQueryUpdateMonitorDefinitions.add(ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF)
                                                                                .withBuilder(monitorBuilder)
         );
@@ -125,27 +125,27 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     }
 
     @Override
-    public MessageMonitor<? super CommandMessage> commandMonitor(final @Nonnull Configuration config) {
+    public MessageMonitor<? super CommandMessage> commandMonitor(final @NonNull Configuration config) {
         return resolveMonitor(commandMonitorDefinitions, config);
     }
 
     @Override
-    public MessageMonitor<? super EventMessage> eventMonitor(@Nonnull Configuration config) {
+    public MessageMonitor<? super EventMessage> eventMonitor(@NonNull Configuration config) {
         return resolveMonitor(eventMonitorDefinitions, config);
     }
 
     @Override
-    public MessageMonitor<? super QueryMessage> queryMonitor(@Nonnull Configuration config) {
+    public MessageMonitor<? super QueryMessage> queryMonitor(@NonNull Configuration config) {
         return resolveMonitor(queryMonitorDefinitions, config);
     }
 
     @Override
-    public MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@Nonnull Configuration config) {
+    public MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@NonNull Configuration config) {
         return resolveMonitor(subscriptionQueryUpdateMonitorDefinitions, config);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandMonitors", commandMonitorDefinitions);
         descriptor.describeProperty("eventMonitors", eventMonitorDefinitions);
         descriptor.describeProperty("queryMonitors", queryMonitorDefinitions);
@@ -156,7 +156,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private static class GenericMonitorDefinition
             extends LazyInitializedComponentDefinition<MessageMonitor<Message>, MessageMonitor<Message>> {
 
-        GenericMonitorDefinition(@Nonnull ComponentBuilder<MessageMonitor<Message>> builder) {
+        GenericMonitorDefinition(@NonNull ComponentBuilder<MessageMonitor<Message>> builder) {
             super(new Component.Identifier<>(MONITOR_TYPE_REF, null), builder);
         }
     }
@@ -174,8 +174,8 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
      * @throws IllegalArgumentException if a provided {@link ComponentDefinition} is of an unsupported type
      */
     private static <T extends Message> MessageMonitor<? super T> resolveMonitor(
-            @Nonnull List<ComponentDefinition<MessageMonitor<? super T>>> definitions,
-            @Nonnull Configuration config
+            @NonNull List<ComponentDefinition<MessageMonitor<? super T>>> definitions,
+            @NonNull Configuration config
     ) {
         List<MessageMonitor<? super T>> monitors = new ArrayList<>();
         for (ComponentDefinition<MessageMonitor<? super T>> definition : definitions) {

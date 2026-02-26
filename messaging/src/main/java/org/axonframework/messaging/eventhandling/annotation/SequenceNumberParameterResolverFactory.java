@@ -16,16 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
+
+
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
@@ -60,14 +60,14 @@ public final class SequenceNumberParameterResolverFactory extends
      */
     public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Long> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Long> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
         }
     }

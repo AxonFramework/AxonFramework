@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
 
     private final CompletableFuture<? extends MessageStream<M>> delegate;
 
-    private DelayedMessageStream(@Nonnull CompletableFuture<? extends MessageStream<M>> delegate) {
+    private DelayedMessageStream(@NonNull CompletableFuture<? extends MessageStream<M>> delegate) {
         this.delegate = delegate;
     }
 
@@ -56,7 +56,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      * available.
      */
     public static <M extends Message> MessageStream<M> create(
-            @Nonnull CompletableFuture<? extends MessageStream<M>> delegate) {
+            @NonNull CompletableFuture<? extends MessageStream<M>> delegate) {
         CompletableFuture<MessageStream<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
                 .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.empty().cast()));
@@ -87,7 +87,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      * available.
      */
     public static <M extends Message> MessageStream.Single<M> createSingle(
-            @Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
+            @NonNull CompletableFuture<MessageStream.Single<M>> delegate) {
         CompletableFuture<MessageStream.Single<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
                 .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.empty().cast()));
@@ -113,7 +113,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         delegate.whenComplete((r, e) -> {
             if (r != null) {
                 r.setCallback(callback);
@@ -162,7 +162,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NonNull R identity, @NonNull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 
@@ -189,7 +189,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
          * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to
          *                 delegate to when it becomes available.
          */
-        Single(@Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
+        Single(@NonNull CompletableFuture<MessageStream.Single<M>> delegate) {
             super(delegate);
         }
     }
@@ -208,7 +208,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
          * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Empty stream} to
          *                 delegate to when it becomes available.
          */
-        Empty(@Nonnull CompletableFuture<MessageStream.Empty<M>> delegate) {
+        Empty(@NonNull CompletableFuture<MessageStream.Empty<M>> delegate) {
             super(delegate);
         }
     }

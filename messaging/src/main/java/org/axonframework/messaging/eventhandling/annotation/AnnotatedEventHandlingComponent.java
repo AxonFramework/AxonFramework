@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -79,11 +79,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param converter                The converter to use for converting the payload of the event to the type expected
      *                                 by the handling method.
      */
-    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                           @Nonnull HandlerDefinition handlerDefinition,
-                                           @Nonnull MessageTypeResolver messageTypeResolver,
-                                           @Nonnull EventConverter converter) {
+    public AnnotatedEventHandlingComponent(@NonNull T annotatedEventHandler,
+                                           @NonNull ParameterResolverFactory parameterResolverFactory,
+                                           @NonNull HandlerDefinition handlerDefinition,
+                                           @NonNull MessageTypeResolver messageTypeResolver,
+                                           @NonNull EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
                 "AnnotatedEventHandlingComponent[%s]".formatted(annotatedEventHandler.getClass().getName())
@@ -148,10 +148,9 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                       .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }
 
@@ -160,9 +159,9 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return Set.copyOf(handlingComponent.supportedEvents());
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
 
@@ -177,8 +176,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
     }
 
-    @Nonnull
-    private ResetHandler constructResetHandlerFor(
+        private @NonNull ResetHandler constructResetHandlerFor(
             MessageHandlingMember<? super T> handler,
             MessageHandlerInterceptorMemberChain<T> interceptorChain
     ) {
@@ -206,16 +204,15 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .orElse(Boolean.TRUE);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                        @NonNull ProcessingContext context) {
         return handlingComponent.handle(resetContext, context);
     }
     // endregion
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

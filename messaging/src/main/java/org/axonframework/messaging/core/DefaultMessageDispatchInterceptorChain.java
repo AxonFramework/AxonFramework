@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -49,7 +49,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param interceptors The list of dispatch interceptors that are part of this chain.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors
+            @NonNull Collection<MessageDispatchInterceptor<? super M>> interceptors
     ) {
         this(interceptors, (message, processingContext) -> MessageStream.just(message).cast());
     }
@@ -62,8 +62,8 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param terminal     function to be invoked after the chain processing.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors,
-            @Nonnull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
+            @NonNull Collection<MessageDispatchInterceptor<? super M>> interceptors,
+            @NonNull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
         Iterator<MessageDispatchInterceptor<? super M>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
@@ -76,8 +76,8 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+    @NonNull
+    public MessageStream<?> proceed(@NonNull M message, @Nullable ProcessingContext context) {
         return interceptingDispatcher.apply(message, context);
     }
 
@@ -94,9 +94,9 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             this.next = next;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+        public MessageStream<?> proceed(@NonNull M message, @Nullable ProcessingContext context) {
             return next.apply(message, context);
         }
 

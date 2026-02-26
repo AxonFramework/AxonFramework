@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.conversion;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -43,36 +43,36 @@ public class DelegatingMessageConverter implements MessageConverter {
      *
      * @param delegate The converter to delegate all conversion operations to.
      */
-    public DelegatingMessageConverter(@Nonnull Converter delegate) {
+    public DelegatingMessageConverter(@NonNull Converter delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
     }
 
     @Override
-    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
+    public boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType) {
         return delegate.canConvert(targetType, sourceType);
     }
 
     @Nullable
     @Override
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
         return delegate.convert(input, targetType);
     }
 
     @Override
     @Nullable
-    public <M extends Message, T> T convertPayload(@Nonnull M message, @Nonnull Type targetType) {
+    public <M extends Message, T> T convertPayload(@NonNull M message, @NonNull Type targetType) {
         return message.payloadAs(targetType, delegate);
     }
 
     @Override
-    @Nonnull
-    public <M extends Message> M convertMessage(@Nonnull M message, @Nonnull Type targetType) {
+    @NonNull
+    public <M extends Message> M convertMessage(@NonNull M message, @NonNull Type targetType) {
         //noinspection unchecked
         return (M) message.withConvertedPayload(targetType, delegate);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 

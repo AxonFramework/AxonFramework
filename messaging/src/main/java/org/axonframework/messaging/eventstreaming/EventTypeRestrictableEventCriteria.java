@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
@@ -44,7 +44,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types);
+    EventCriteria andBeingOneOfTypes(@NonNull Set<QualifiedName> types);
 
     /**
      * Define that the event must be one of the provided {@code types}. If the {@code types} set is empty, the criteria
@@ -53,7 +53,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOneOfTypes(@Nonnull QualifiedName... types) {
+    default EventCriteria andBeingOneOfTypes(@NonNull QualifiedName... types) {
         return andBeingOneOfTypes(Set.of(types));
     }
 
@@ -66,7 +66,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types        The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOneOfTypes(@Nonnull MessageTypeResolver typeResolver, @Nonnull Class<?>... types) {
+    default EventCriteria andBeingOneOfTypes(@NonNull MessageTypeResolver typeResolver, @NonNull Class<?>... types) {
         return andBeingOneOfTypes(Arrays.stream(types)
                                         .map(typeResolver::resolveOrThrow)
                                         .map(MessageType::qualifiedName)
@@ -80,7 +80,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOneOfTypes(@Nonnull String... types) {
+    default EventCriteria andBeingOneOfTypes(@NonNull String... types) {
         return andBeingOneOfTypes(Arrays.stream(types)
                                         .map(QualifiedName::new)
                                         .collect(Collectors.toSet()));

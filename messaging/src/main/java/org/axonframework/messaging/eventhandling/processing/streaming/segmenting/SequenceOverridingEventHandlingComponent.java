@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -62,15 +62,15 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
-                                                    @Nonnull EventHandlingComponent delegate) {
+    public SequenceOverridingEventHandlingComponent(@NonNull SequencingPolicy sequencingPolicy,
+                                                    @NonNull EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event, context)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
@@ -82,14 +82,13 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(@NonNull QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
@@ -98,15 +97,14 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
         return delegate.supportsReset();
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                        @NonNull ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }

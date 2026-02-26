@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -45,14 +45,13 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
      *
      * @param delegate The instance to delegate calls to.
      */
-    public DelegatingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public DelegatingEventHandlingComponent(@NonNull EventHandlingComponent delegate) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
@@ -62,14 +61,14 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(@NonNull QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event,
-                                        @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@NonNull EventMessage event,
+                                        @NonNull ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
     }
 
@@ -78,15 +77,14 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
         return delegate.supportsReset();
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                        @NonNull ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

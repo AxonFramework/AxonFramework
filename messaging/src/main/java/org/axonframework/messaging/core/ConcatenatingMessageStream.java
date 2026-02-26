@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -46,8 +46,8 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
      * @param second The second {@link MessageStream stream} to start consuming from once the {@code first} stream
      *               completes successfully.
      */
-    ConcatenatingMessageStream(@Nonnull MessageStream<M> first,
-                               @Nonnull MessageStream<M> second) {
+    ConcatenatingMessageStream(@NonNull MessageStream<M> first,
+                               @NonNull MessageStream<M> second) {
         this.first = first;
         this.second = second;
     }
@@ -61,7 +61,7 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         first.setCallback(() -> {
             if (!(first.isCompleted() && first.error().isEmpty()) || second.hasNextAvailable()
                     || second.isCompleted()) {
@@ -100,8 +100,8 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NonNull R identity,
+                                           @NonNull BiFunction<R, Entry<M>, R> accumulator) {
         return first.reduce(identity, accumulator)
                     .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
     }

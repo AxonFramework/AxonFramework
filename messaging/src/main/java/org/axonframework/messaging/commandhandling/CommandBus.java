@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.Message;
@@ -55,6 +55,6 @@ public interface CommandBus extends CommandHandlerRegistry<CommandBus>, Describa
      * @throws NoHandlerForCommandException when no {@link CommandHandler command handler} is registered for the given
      *                                      {@code command}'s name.
      */
-    CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                      @Nullable ProcessingContext processingContext);
 }

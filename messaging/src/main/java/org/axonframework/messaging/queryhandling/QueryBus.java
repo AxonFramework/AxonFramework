@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.MessageStream;
@@ -67,8 +67,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
      *                                    {@link MessageType#qualifiedName() query name}.
      */
-    @Nonnull
-    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
+    @NonNull
+    MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query, @Nullable ProcessingContext context);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
@@ -95,8 +95,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @Nonnull
-    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    @NonNull
+    MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
 
@@ -121,8 +121,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @Nonnull
-    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
+    @NonNull
+    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@NonNull QueryMessage query,
                                                                      int updateBufferSize);
 
     /**
@@ -139,9 +139,9 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                       {@code null}).
      * @return A future completing whenever the updateSupplier has been emitted.
      */
-    @Nonnull
-    CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
-                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    @NonNull
+    CompletableFuture<Void> emitUpdate(@NonNull Predicate<QueryMessage> filter,
+                                       @NonNull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                        @Nullable ProcessingContext context);
 
     /**
@@ -159,8 +159,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed.
      */
-    @Nonnull
-    CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
+    @NonNull
+    CompletableFuture<Void> completeSubscriptions(@NonNull Predicate<QueryMessage> filter,
                                                   @Nullable ProcessingContext context);
 
     /**
@@ -180,8 +180,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed exceptionally.
      */
-    @Nonnull
-    CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<QueryMessage> filter,
-                                                               @Nonnull Throwable cause,
+    @NonNull
+    CompletableFuture<Void> completeSubscriptionsExceptionally(@NonNull Predicate<QueryMessage> filter,
+                                                               @NonNull Throwable cause,
                                                                @Nullable ProcessingContext context);
 }

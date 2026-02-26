@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -46,7 +46,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param type          The {@link MessageType type} for this {@link CommandResultMessage}.
      * @param commandResult The result for this {@link CommandResultMessage}.
      */
-    public GenericCommandResultMessage(@Nonnull MessageType type,
+    public GenericCommandResultMessage(@NonNull MessageType type,
                                        @Nullable Object commandResult) {
         super(type, commandResult);
     }
@@ -61,8 +61,8 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      *                  {@link CommandResultMessage}.
      */
     @Deprecated
-    public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nonnull Throwable exception) {
+    public GenericCommandResultMessage(@NonNull MessageType type,
+                                       @NonNull Throwable exception) {
         super(type, exception);
     }
 
@@ -74,9 +74,9 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param commandResult The result for this {@link CommandResultMessage}.
      * @param metadata      The metadata for this {@link CommandResultMessage}.
      */
-    public GenericCommandResultMessage(@Nonnull MessageType type,
+    public GenericCommandResultMessage(@NonNull MessageType type,
                                        @Nullable Object commandResult,
-                                       @Nonnull Map<String, String> metadata) {
+                                       @NonNull Map<String, String> metadata) {
         super(type, commandResult, metadata);
     }
 
@@ -90,9 +90,9 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param metadata  The metadata for this {@link CommandResultMessage}.
      */
     @Deprecated
-    public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nonnull Throwable exception,
-                                       @Nonnull Map<String, String> metadata) {
+    public GenericCommandResultMessage(@NonNull MessageType type,
+                                       @NonNull Throwable exception,
+                                       @NonNull Map<String, String> metadata) {
         super(type, exception, metadata);
     }
 
@@ -107,26 +107,23 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericCommandResultMessage(@Nonnull Message delegate) {
+    public GenericCommandResultMessage(@NonNull Message delegate) {
         super(delegate);
     }
 
     @Override
-    @Nonnull
-    public CommandResultMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull CommandResultMessage withMetadata(@NonNull Map<String, String> metadata) {
         return new GenericCommandResultMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandResultMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull CommandResultMessage andMetadata(@NonNull Map<String, String> metadata) {
         return new GenericCommandResultMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandResultMessage withConvertedPayload(@Nonnull Type type,
-                                                     @Nonnull Converter converter) {
+        public @NonNull CommandResultMessage withConvertedPayload(@NonNull Type type,
+                                                     @NonNull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

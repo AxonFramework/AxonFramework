@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -53,7 +53,7 @@ public interface EventHandlingComponent extends EventHandler, ResetHandler, Desc
      * @param eventName The name of the event to check for support.
      * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
      */
-    default boolean supports(@Nonnull QualifiedName eventName) {
+    default boolean supports(@NonNull QualifiedName eventName) {
         return supportedEvents().contains(eventName);
     }
 
@@ -69,8 +69,8 @@ public interface EventHandlingComponent extends EventHandler, ResetHandler, Desc
      * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
-    @Nonnull
-    Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context);
+    @NonNull
+    Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context);
 
     /**
      * Indicates whether this component supports reset operations.

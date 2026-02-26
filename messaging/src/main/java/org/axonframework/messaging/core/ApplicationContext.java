@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -51,8 +51,8 @@ public interface ApplicationContext {
      * @return The component registered for the given type.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
-    @Nonnull
-    default <C> C component(@Nonnull Class<C> type) {
+    @NonNull
+    default <C> C component(@NonNull Class<C> type) {
         return component(type, (String) null);
     }
 
@@ -68,6 +68,6 @@ public interface ApplicationContext {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
      *                                    {@code name}.
      */
-    @Nonnull
-    <C> C component(@Nonnull Class<C> type, @Nullable String name);
+    @NonNull
+    <C> C component(@NonNull Class<C> type, @Nullable String name);
 }

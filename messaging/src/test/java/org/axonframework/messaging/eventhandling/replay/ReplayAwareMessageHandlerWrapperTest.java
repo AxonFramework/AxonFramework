@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
@@ -798,7 +798,7 @@ class ReplayAwareMessageHandlerWrapperTest {
         }
     }
 
-    @Nonnull
+    @NonNull
     private <T> AnnotatedEventHandlingComponent<T> createTestSubjectFor(T annotatedHandler,
                                                                         Class<T> annotatedHandlerClass) {
         return new AnnotatedEventHandlingComponent<>(

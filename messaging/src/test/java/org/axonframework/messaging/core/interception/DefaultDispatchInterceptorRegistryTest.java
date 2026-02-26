@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.Configuration;
@@ -274,55 +274,55 @@ class DefaultDispatchInterceptorRegistryTest {
 
     static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
+        public MessageStream<?> interceptOnDispatch(@NonNull Message message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+                                                    @NonNull MessageDispatchInterceptorChain<Message> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class CommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull CommandMessage message,
+        public MessageStream<?> interceptOnDispatch(@NonNull CommandMessage message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<CommandMessage> chain) {
+                                                    @NonNull MessageDispatchInterceptorChain<CommandMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class EventDispatchInterceptor implements MessageDispatchInterceptor<EventMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull EventMessage message,
+        public MessageStream<?> interceptOnDispatch(@NonNull EventMessage message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<EventMessage> chain) {
+                                                    @NonNull MessageDispatchInterceptorChain<EventMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class QueryDispatchInterceptor implements MessageDispatchInterceptor<QueryMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull QueryMessage message,
+        public MessageStream<?> interceptOnDispatch(@NonNull QueryMessage message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<QueryMessage> chain) {
+                                                    @NonNull MessageDispatchInterceptorChain<QueryMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class SubscriptionQueryUpdateDispatchInterceptor implements MessageDispatchInterceptor<SubscriptionQueryUpdateMessage> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull SubscriptionQueryUpdateMessage message,
+        public MessageStream<?> interceptOnDispatch(@NonNull SubscriptionQueryUpdateMessage message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<SubscriptionQueryUpdateMessage> chain) {
+                                                    @NonNull MessageDispatchInterceptorChain<SubscriptionQueryUpdateMessage> chain) {
             return chain.proceed(message, context);
         }
     }

@@ -16,18 +16,18 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import jakarta.annotation.Nonnull;
+import java.util.Map;
+
+
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
-
-import java.util.Map;
+import org.jspecify.annotations.NonNull;
 
 public class ThrowingCorrelationDataProvider implements CorrelationDataProvider {
 
-    @Nonnull
+    @NonNull
     @Override
-    public Map<String, String> correlationDataFor(@Nonnull Message message) {
+    public Map<String, String> correlationDataFor(@NonNull Message message) {
         throw new AxonConfigurationException("correlation is not clear");
     }
 }

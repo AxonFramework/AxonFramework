@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -45,6 +45,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(null, fallback, RuntimeException.class));
         }
@@ -55,6 +56,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy delegate = (event, context) -> Optional.of("delegate");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(delegate, null, RuntimeException.class));
         }
@@ -66,6 +68,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                     () -> new FallbackSequencingPolicy<>(delegate, fallback, null));
         }
@@ -177,7 +180,7 @@ final class FallbackSequencingPolicyTest {
             assertThat(resultForWrongType).hasValue("default-sequence");
         }
 
-        @Nonnull
+        @NonNull
         private FallbackSequencingPolicy<ConversionException> getConversionExceptionFallbackSequencingPolicy() {
             SequencingPolicy propertyBasedPolicy = (event, context) -> {
                 if (event.payload() instanceof TestEvent testEvent) {

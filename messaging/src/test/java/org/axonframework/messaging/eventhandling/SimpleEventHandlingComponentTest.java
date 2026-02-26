@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -136,14 +136,13 @@ class SimpleEventHandlingComponentTest {
 
             AtomicBoolean invoked = new AtomicBoolean();
 
-            public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
+            public SampleDecoration(@NonNull EventHandlingComponent delegate) {
                 super(delegate);
             }
 
-            @Nonnull
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                                @NonNull ProcessingContext context) {
                 invoked.set(true);
                 return super.handle(event, context);
             }

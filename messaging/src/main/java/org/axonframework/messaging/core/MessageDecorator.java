@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.conversion.Converter;
 
@@ -43,19 +43,17 @@ public abstract class MessageDecorator implements Message {
      *
      * @param delegate The {@link Message} delegate.
      */
-    protected MessageDecorator(@Nonnull Message delegate) {
+    protected MessageDecorator(@NonNull Message delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    @Nonnull
-    public String identifier() {
+        public @NonNull String identifier() {
         return delegate.identifier();
     }
 
     @Override
-    @Nonnull
-    public MessageType type() {
+        public @NonNull MessageType type() {
         return delegate.type();
     }
 
@@ -67,25 +65,23 @@ public abstract class MessageDecorator implements Message {
 
     @Override
     @Nullable
-    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+    public <T> T payloadAs(@NonNull Type type, @Nullable Converter converter) {
         return delegate.payloadAs(type, converter);
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<?> payloadType() {
         return delegate.payloadType();
     }
 
     @Override
-    @Nonnull
-    public Metadata metadata() {
+        public @NonNull Metadata metadata() {
         return delegate.metadata();
     }
 
     @Override
-    @Nonnull
-    public Message withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public @NonNull Message withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
         return delegate.withConvertedPayload(type, converter);
     }
 
@@ -94,8 +90,7 @@ public abstract class MessageDecorator implements Message {
      *
      * @return The wrapped {@link Message} delegated by this decorator.
      */
-    @Nonnull
-    protected Message delegate() {
+        protected @NonNull Message delegate() {
         return delegate;
     }
 

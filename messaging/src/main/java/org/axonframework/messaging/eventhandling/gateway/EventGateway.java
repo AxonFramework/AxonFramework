@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -68,7 +68,7 @@ public interface EventGateway {
      * {@link EventSink} used by this gateway.
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                    @Nonnull List<?> events);
+                                    @NonNull List<?> events);
 
     /**
      * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
@@ -82,7 +82,7 @@ public interface EventGateway {
      * {@link EventSink} used by this gateway.
      * @see #publish(ProcessingContext, List)
      */
-    default CompletableFuture<Void> publish(@Nonnull List<?> events) {
+    default CompletableFuture<Void> publish(@NonNull List<?> events) {
         return publish(null, events);
     }
 }

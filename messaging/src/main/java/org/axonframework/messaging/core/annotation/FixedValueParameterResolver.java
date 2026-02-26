@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
 import java.util.concurrent.CompletableFuture;
+
+
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.NonNull;
 
 /**
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely
@@ -39,18 +39,18 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
      *
      * @param value The value to inject as parameter.
      */
-    public FixedValueParameterResolver(@Nonnull T value) {
+    public FixedValueParameterResolver(@NonNull T value) {
         this.value = value;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<T> resolveParameterValue(@NonNull ProcessingContext context) {
         return CompletableFuture.completedFuture(value);
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(@NonNull ProcessingContext context) {
         return true;
     }
 }

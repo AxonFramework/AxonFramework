@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.Set;
@@ -33,7 +33,7 @@ public final class OrEventCriteriaBuilder {
 
     private final EventCriteria orCriteria;
 
-    OrEventCriteriaBuilder(@Nonnull EventCriteria orCriteria) {
+    OrEventCriteriaBuilder(@NonNull EventCriteria orCriteria) {
         this.orCriteria = Objects.requireNonNull(orCriteria, "orCriteria may not be null");
     }
 
@@ -47,7 +47,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull Set<Tag> tags) {
+    public EventTypeRestrictableEventCriteria havingTags(@NonNull Set<Tag> tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 
@@ -61,7 +61,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull Tag... tags) {
+    public EventTypeRestrictableEventCriteria havingTags(@NonNull Tag... tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 
@@ -75,7 +75,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull String... tags) {
+    public EventTypeRestrictableEventCriteria havingTags(@NonNull String... tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 

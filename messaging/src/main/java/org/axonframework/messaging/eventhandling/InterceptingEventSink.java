@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -73,8 +73,8 @@ public class InterceptingEventSink implements EventSink {
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
      * @param interceptors The interceptors to invoke before publishing an event.
      */
-    public InterceptingEventSink(@Nonnull EventSink delegate,
-                                 @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
+    public InterceptingEventSink(@NonNull EventSink delegate,
+                                 @NonNull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventSink may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.interceptingPublisher = new InterceptingPublisher(interceptors, this::publishEvent);
@@ -82,18 +82,18 @@ public class InterceptingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @NonNull List<EventMessage> events) {
         return interceptingPublisher.interceptAndPublish(events, context);
     }
 
-    private MessageStream.Empty<Message> publishEvent(@Nonnull EventMessage event,
+    private MessageStream.Empty<Message> publishEvent(@NonNull EventMessage event,
                                                       @Nullable ProcessingContext context) {
         return MessageStream.fromFuture(delegate.publish(context, event).thenApply(v -> null))
                             .ignoreEntries();
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
     }
@@ -110,7 +110,7 @@ public class InterceptingEventSink implements EventSink {
         }
 
         private CompletableFuture<Void> interceptAndPublish(
-                @Nonnull List<EventMessage> events,
+                @NonNull List<EventMessage> events,
                 @Nullable ProcessingContext context
         ) {
 
