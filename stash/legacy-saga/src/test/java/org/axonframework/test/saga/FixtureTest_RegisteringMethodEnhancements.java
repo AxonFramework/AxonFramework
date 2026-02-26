@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -131,20 +131,20 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Nullable
         @Override
-        public ParameterResolver<AtomicBoolean> createInstance(@Nonnull Executable executable,
-                                                               @Nonnull Parameter[] parameters,
+        public ParameterResolver<AtomicBoolean> createInstance(@NonNull Executable executable,
+                                                               @NonNull Parameter[] parameters,
                                                                int parameterIndex) {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<AtomicBoolean> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<AtomicBoolean> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(assertion);
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             Message message = Message.fromContext(context);
             return message.payloadType().isAssignableFrom(ParameterResolvedEvent.class);
         }
@@ -160,10 +160,10 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public <T> Optional<MessageHandlingMember<T>> createHandler(
-                @Nonnull Class<T> declaringType,
-                @Nonnull Method method,
-                @Nonnull ParameterResolverFactory parameterResolverFactory,
-                @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
+                @NonNull Class<T> declaringType,
+                @NonNull Method method,
+                @NonNull ParameterResolverFactory parameterResolverFactory,
+                @NonNull Function<Object, MessageStream<?>> messageStreamResolver
         ) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
@@ -181,8 +181,8 @@ public class FixtureTest_RegisteringMethodEnhancements {
         }
 
         @Override
-        public @Nonnull
-        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        public @NonNull
+        <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.
