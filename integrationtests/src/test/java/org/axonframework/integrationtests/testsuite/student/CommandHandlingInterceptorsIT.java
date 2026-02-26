@@ -33,6 +33,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -360,9 +361,9 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         @Override
-        public MessageStream<?> interceptOnDispatch(M message,
-                                                    ProcessingContext context,
-                                                    MessageDispatchInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnDispatch(@NonNull M message,
+                                                             ProcessingContext context,
+                                                             @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, value));
             return interceptorChain.proceed(intercepted, context);

@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -96,8 +96,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         }
     }
 
-    @Nonnull
-    private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
+    static @NonNull EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
         SimpleEventHandlingComponent handlingComponent =
                 SimpleEventHandlingComponent.create("studentEnrolledAutomation", SequentialPolicy.INSTANCE);
         handlingComponent.subscribe(

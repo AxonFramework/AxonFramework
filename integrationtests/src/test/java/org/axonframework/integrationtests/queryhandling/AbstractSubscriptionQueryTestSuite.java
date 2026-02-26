@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
 import org.axonframework.conversion.json.JacksonConverter;
@@ -499,7 +499,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                     .verify();
     }
 
-    @Nonnull
+    @NonNull
     private Predicate<Throwable> assertQueryExecutionException(Throwable toBeThrown) {
         return exception -> {
             if (exception instanceof QueryExecutionException qee) {

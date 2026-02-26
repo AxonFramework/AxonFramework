@@ -17,14 +17,14 @@
 package org.axonframework.integrationtests.testsuite.administration.common;
 
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 public record PersonIdentifier(
         PersonType type,
         String key
 ) {
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return key;
