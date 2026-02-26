@@ -11,7 +11,7 @@ This path covers the migration from Serializers to Converters in Axon Framework 
 ====
 The framework internal refactoring of converters will probably only affect your configuration, as it is unlikely you are using a custom serializer that needs to be rewritten.
 
-Special Attention should be given to users of the `XStreamSerializer`, as it has been removed and there is no direct replacement. See the section on its removal below for more details.
+Special attention should be given to users of the `XStreamSerializer`, as it has been removed and there is no direct replacement. See the section on its removal below for more details.
 ====
 
 == Adjustment of `Serializer` to `Converter`
