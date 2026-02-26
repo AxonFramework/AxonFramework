@@ -22,7 +22,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import javax.sql.DataSource;
 
 /**
@@ -47,7 +47,7 @@ public class SpringDataSourceConnectionProvider implements ConnectionProvider {
         this.closeHandler = new SpringConnectionCloseHandler(dataSource);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Connection getConnection() throws SQLException {
         final Connection connection = DataSourceUtils.doGetConnection(dataSource);

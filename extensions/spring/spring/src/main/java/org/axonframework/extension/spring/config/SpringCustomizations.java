@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
@@ -164,7 +164,7 @@ interface SpringCustomizations {
      * @return a component of given type and name, if found or supplied by the supplier.
      */
     @Nullable
-    static <T> T getComponent(@Nonnull Configuration configuration, @Nonnull Class<T> type,
+    static <T> T getComponent(@NonNull Configuration configuration, @NonNull Class<T> type,
                               @Nullable String name,
                               @Nullable Supplier<T> supplier) {
         Supplier<T> safeSupplier = (supplier != null) ? supplier : () -> null;

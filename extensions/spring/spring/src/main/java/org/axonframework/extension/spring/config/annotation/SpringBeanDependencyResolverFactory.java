@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -28,7 +28,6 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.NonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -62,7 +61,7 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
         final Optional<Boolean> ann =
                 AnnotationUtils.findAnnotationAttribute(parameters[parameterIndex], Autowired.class, "required");
 
@@ -96,14 +95,14 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
             this.dependencyDescriptor = dependencyDescriptor;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.resolveDependency(dependencyDescriptor, null));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return true;
         }
     }
