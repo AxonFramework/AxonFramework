@@ -69,7 +69,7 @@ import java.lang.annotation.Target;
  * @author Mateusz Nowak
  * @see AxonTestConfiguration
  * @see org.axonframework.test.fixture.AxonTestFixture
- * @since 5.0.3
+ * @since 5.1.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

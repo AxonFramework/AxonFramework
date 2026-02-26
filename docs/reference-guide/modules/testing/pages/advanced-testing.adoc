@@ -69,31 +69,42 @@ If an autodetected flow is used, as with Spring, be sure to check out the <<test
 [#testing-with-spring-boot]
 == Testing with Spring Boot
 
-If you are using Spring Boot, you will not construct the `ApplicationConfigurer` yourself.
-Axon Framework will take care of that for you.
-However, that does not mean the `ApplicationConfigurer` does not exist in your application.
+If you are using Spring Boot, Axon Framework builds and starts the `AxonConfiguration` for you as part of the application context lifecycle.
+In your tests, you can inject this configuration directly and use it to create an `AxonTestFixture`.
 
-If you adjust your test case to be a Spring Boot test, you can inject the autoconfigured `ApplicationConfigurer` right in your fixture:
+Note that the `MessagesRecordingConfigurationEnhancer` must be registered as a bean so that the fixture can capture dispatched commands and published events.
 
 [source,java]
 ----
-import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 
 @SpringBootTest
 class AccountSpringTest {
 
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public MessagesRecordingConfigurationEnhancer recordingEnhancer() {
+            return new MessagesRecordingConfigurationEnhancer();
+        }
+    }
+
     @Autowired
-    private ApplicationConfigurer configurer;
+    private AxonConfiguration configuration;
 
     private AxonTestFixture fixture;
 
     @BeforeEach
     void setUp() {
-        fixture = AxonTestFixture.with(configurer);
+        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
     }
 
     @Test
@@ -117,6 +128,96 @@ class AccountSpringTest {
 From here, it is rather straightforward to add Testcontainers into the mix, when your (integration) test requires it.
 Be sure to check out the <<testing-with-axon-server-testcontainer,tests with Testcontainers>> section for that.
 
+=== Using @AxonSpringBootTest
+
+The `@AxonSpringBootTest` annotation simplifies Spring Boot testing by eliminating the manual fixture setup shown above.
+It automatically:
+
+- Registers the `MessagesRecordingConfigurationEnhancer` (required for the fixture to capture commands and events).
+- Exposes an `AxonTestFixture` bean that can be injected directly.
+- Manages the fixture lifecycle (no `@BeforeEach` / `@AfterEach` needed).
+
+To use it, add the `axon-spring-boot-starter-test` dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework.extensions.spring</groupId>
+    <artifactId>axon-spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+Then annotate your test class:
+
+[source,java]
+----
+import org.axonframework.extension.springboot.test.AxonSpringBootTest;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@AxonSpringBootTest(properties = "axon.axonserver.enabled=false")
+class AccountSpringBootTest {
+
+    @Autowired
+    private AxonTestFixture fixture;
+
+    @Test
+    void testWithSpringConfiguration() {
+        fixture.given()
+               .event(new AccountCreatedEvent("account-1", 500.00))
+               .when()
+               .command(new WithdrawMoneyCommand("account-1", 100.00))
+               .then()
+               .success()
+               .events(new MoneyWithdrawnEvent("account-1", 100.00));
+    }
+}
+----
+
+The fixture's `Customization` is derived automatically from the Spring environment.
+When `axon.axonserver.enabled` is `false`, the fixture disables Axon Server; when `true` or absent, it remains enabled.
+
+To override the default customization, declare a `Customization` bean in the test:
+
+[source,java]
+----
+import org.axonframework.extension.springboot.test.AxonSpringBootTest;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
+@AxonSpringBootTest
+class AccountCustomizedTest {
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public AxonTestFixture.Customization customization() {
+            return new AxonTestFixture.Customization().disableAxonServer();
+        }
+    }
+
+    @Autowired
+    private AxonTestFixture fixture;
+
+    @Test
+    void testWithCustomization() {
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new CreateAccountCommand("account-1", 500.00))
+               .then()
+               .success()
+               .events(new AccountCreatedEvent("account-1", 500.00));
+    }
+}
+----
+
 === Verifying (mocked) Spring beans
 
 As suggested in the <<integration_testing,integration testing>> section, the xref:basic-testing.adoc#then_expect[then-expect] method provides access to the configuration.
@@ -125,8 +226,9 @@ As such, by using `expect(consumer<Configuration>)`, you are able to verify if y
 
 [source,java]
 ----
-import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -138,23 +240,28 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 class AccountSpringTest {
 
-    @Autowired
-    private ApplicationConfigurer configurer;
-
-    private AxonTestFixture fixture;
-
-    @BeforeEach
-    void setUp() {
-        fixture = AxonTestFixture.with(configurer);
-    }
-
     @TestConfiguration
     static class TestConfig {
+
+        @Bean
+        public MessagesRecordingConfigurationEnhancer recordingEnhancer() {
+            return new MessagesRecordingConfigurationEnhancer();
+        }
 
         @Bean
         public MyService myService() {
             return mock(MyService.class);
         }
+    }
+
+    @Autowired
+    private AxonConfiguration configuration;
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void setUp() {
+        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
     }
 
     @Test
@@ -304,7 +411,7 @@ Thus, if we add the `@ServiceConnection` to the `AxonServerContainer` field, our
 
 [source,java]
 ----
-import org.axonframework.common.configuration.ApplicationConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.server.AxonServerContainer;
@@ -325,11 +432,6 @@ class AccountAxonServerAndSpringBootTest {
     @ServiceConnection
     static AxonServerContainer axonServer = new AxonServerContainer();
 
-    @Autowired
-    private ApplicationConfigurer configurer;
-
-    private AxonTestFixture fixture;
-
     @TestConfiguration
     static class TestConfig {
 
@@ -339,9 +441,14 @@ class AccountAxonServerAndSpringBootTest {
         }
     }
 
+    @Autowired
+    private AxonConfiguration configuration;
+
+    private AxonTestFixture fixture;
+
     @BeforeEach
     void setUp() {
-        fixture = AxonTestFixture.with(configurer);
+        fixture = new AxonTestFixture(configuration, new AxonTestFixture.Customization());
     }
 
     @Test

@@ -42,7 +42,7 @@ import org.springframework.core.env.Environment;
  * {@code axon.axonserver.enabled} property controls whether Axon Server is enabled in the fixture.
  *
  * @author Mateusz Nowak
- * @since 5.0.3
+ * @since 5.1.0
  */
 @TestConfiguration
 class AxonTestConfiguration {
