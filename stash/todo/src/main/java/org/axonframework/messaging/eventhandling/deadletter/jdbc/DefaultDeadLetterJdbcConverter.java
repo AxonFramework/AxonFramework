@@ -51,13 +51,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * convert the {@link EventMessage#payload() event payload} and {@link EventMessage#metadata() Metadata} for the
  * {@code JdbcDeadLetter} to return.
  *
- * @param <M> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
+ * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
  *            converter converts.
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
-        implements DeadLetterJdbcConverter<M, JdbcDeadLetter<M>> {
+public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
+        implements DeadLetterJdbcConverter<E, JdbcDeadLetter<E>> {
 
     private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
     };
@@ -77,7 +77,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
      *
      * @param builder The {@link Builder} used to instantiate a {@link DefaultDeadLetterJdbcConverter} instance.
      */
-    protected DefaultDeadLetterJdbcConverter(Builder<M> builder) {
+    protected DefaultDeadLetterJdbcConverter(Builder<E> builder) {
         builder.validate();
         schema = builder.schema;
         genericConverter = builder.genericConverter;
@@ -91,16 +91,16 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
      * The {@link Builder#genericConverter(Converter) generic Converter} and
      * {@link Builder#eventConverter(EventConverter) EventConverter} are hard requirements and should be provided.
      *
-     * @param <M> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
+     * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
      *            this converter converts.
      * @return A builder that can construct a {@link DefaultDeadLetterJdbcConverter}.
      */
-    public static <M extends EventMessage> Builder<M> builder() {
+    public static <E extends EventMessage> Builder<E> builder() {
         return new Builder<>();
     }
 
     @Override
-    public JdbcDeadLetter<M> convertToLetter(ResultSet resultSet) throws SQLException {
+    public JdbcDeadLetter<E> convertToLetter(ResultSet resultSet) throws SQLException {
         EventMessage eventMessage = deserializeMessage(resultSet);
         Context context = restoreContext(resultSet);
 
@@ -124,7 +124,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
                                     lastTouched,
                                     cause,
                                     diagnostics,
-                                    (M) eventMessage,
+                                    (E) eventMessage,
                                     context);
     }
 
@@ -191,10 +191,10 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
      * The {@link Builder#genericConverter(Converter) generic Converter} and
      * {@link Builder#eventConverter(EventConverter) EventConverter} are hard requirements and should be provided.
      *
-     * @param <M> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
+     * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
      *            this converter converts.
      */
-    protected static class Builder<M extends EventMessage> {
+    protected static class Builder<E extends EventMessage> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Converter genericConverter;
@@ -208,7 +208,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
          *               <b>all</b> {@link PreparedStatement PreparedStatements}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> schema(DeadLetterSchema schema) {
+        public Builder<E> schema(DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
@@ -220,7 +220,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
          * @param genericConverter The converter used to convert {@link TrackingToken TrackingTokens} and diagnostics.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> genericConverter(Converter genericConverter) {
+        public Builder<E> genericConverter(Converter genericConverter) {
             assertNonNull(genericConverter, "The generic Converter may not be null");
             this.genericConverter = genericConverter;
             return this;
@@ -234,7 +234,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
          *                       {@link EventMessage#metadata() Metadata} instances.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<M> eventConverter(EventConverter eventConverter) {
+        public Builder<E> eventConverter(EventConverter eventConverter) {
             assertNonNull(eventConverter, "The EventConverter may not be null");
             this.eventConverter = eventConverter;
             return this;
@@ -245,7 +245,7 @@ public class DefaultDeadLetterJdbcConverter<M extends EventMessage>
          *
          * @return A {@link DefaultDeadLetterJdbcConverter} as specified through this Builder.
          */
-        public DefaultDeadLetterJdbcConverter<M> build() {
+        public DefaultDeadLetterJdbcConverter<E> build() {
             return new DefaultDeadLetterJdbcConverter<>(this);
         }
 
