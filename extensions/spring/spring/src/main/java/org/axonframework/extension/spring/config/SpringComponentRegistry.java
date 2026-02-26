@@ -19,10 +19,12 @@ package org.axonframework.extension.spring.config;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentFactory;
+import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.common.configuration.ComponentOverrideException;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Components;
@@ -42,7 +44,9 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -616,6 +620,55 @@ public class SpringComponentRegistry implements
                 // Spring requires a non-null name, so we divert to the name-less method if name equals null.
                 return getOptionalComponent(type);
             } else {
+                return Optional.empty();
+            }
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull TypeReference<C> typeReference) {
+            return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
+                              .stream()
+                              .findFirst()
+                              .orElseThrow(() -> new ComponentNotFoundException(typeReference, null));
+        }
+
+        @Nonnull
+        @Override
+        @SuppressWarnings("unchecked,DataFlowIssue")
+        public <C> C getComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+            Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
+            try {
+                BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);
+                ResolvableType beanType = beanDefinition.getResolvableType();
+                if (!ResolvableType.forType(typeReference.getType()).isAssignableFrom(beanType)) {
+                    throw new ComponentNotFoundException(typeReference, name);
+                }
+                return (C) beanFactory.getBean(name);
+            } catch (NoSuchBeanDefinitionException e) {
+                throw new ComponentNotFoundException(typeReference, null);
+            }
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference) {
+            return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
+                              .stream()
+                              .findFirst();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked,DataFlowIssue")
+        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+            Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
+            try {
+                BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);
+                ResolvableType beanType = beanDefinition.getResolvableType();
+                if (!ResolvableType.forType(typeReference.getType()).isAssignableFrom(beanType)) {
+                    return Optional.empty();
+                }
+                return Optional.of((C) beanFactory.getBean(name));
+            } catch (NoSuchBeanDefinitionException e) {
                 return Optional.empty();
             }
         }

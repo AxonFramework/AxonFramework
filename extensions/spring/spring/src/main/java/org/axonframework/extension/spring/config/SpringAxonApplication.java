@@ -18,6 +18,7 @@ package org.axonframework.extension.spring.config;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ApplicationConfigurer;
@@ -113,6 +114,29 @@ public class SpringAxonApplication implements ApplicationConfigurer {
             @Override
             public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
                 return componentRegistry.configuration().getOptionalComponent(type, name);
+            }
+
+            @Nonnull
+            @Override
+            public <C> C getComponent(@Nonnull TypeReference<C> typeReference) {
+                return componentRegistry.configuration().getComponent(typeReference);
+            }
+
+            @Nonnull
+            @Override
+            public <C> C getComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+                return componentRegistry.configuration().getComponent(typeReference, name);
+            }
+
+            @Override
+            public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference) {
+                return componentRegistry.configuration().getOptionalComponent(typeReference);
+            }
+
+            @Override
+            public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference,
+                                                        @Nullable String name) {
+                return componentRegistry.configuration().getOptionalComponent(typeReference, name);
             }
 
             @Nonnull
