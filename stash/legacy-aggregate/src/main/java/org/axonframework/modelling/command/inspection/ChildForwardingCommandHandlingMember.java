@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -103,23 +103,23 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public boolean canForward(@Nonnull CommandMessage message, @Nonnull P target) {
+    public boolean canForward(@NonNull CommandMessage message, @NonNull P target) {
         return childEntityResolver.apply(message, target) != null;
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
         return childHandler.canHandle(message, context);
     }
 
     @Override
-    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
+    public Object handleSync(@NonNull Message message,
+                             @NonNull ProcessingContext context,
                              @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
@@ -132,7 +132,7 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) {
+    public MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context, @Nullable P target) {
         try {
             Object result = handleSync(message, context, target);
             return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));

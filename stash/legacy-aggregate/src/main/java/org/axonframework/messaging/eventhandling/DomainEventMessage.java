@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -67,8 +67,8 @@ public interface DomainEventMessage extends EventMessage {
      * @return a copy of this message with the given Metadata
      */
     @Override
-    @Nonnull
-    DomainEventMessage withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    DomainEventMessage withMetadata(@NonNull Map<String, String> metadata);
 
     /**
      * Returns a copy of this DomainEventMessage with its Metadata merged with the given {@code metadata}. The payload,
@@ -80,6 +80,6 @@ public interface DomainEventMessage extends EventMessage {
      * @return a copy of this message with the given Metadata
      */
     @Override
-    @Nonnull
-    DomainEventMessage andMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    DomainEventMessage andMetadata(@NonNull Map<String, String> metadata);
 }

@@ -23,7 +23,7 @@ import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CreationPolicy} annotated methods.
@@ -34,7 +34,7 @@ import jakarta.annotation.Nonnull;
 public class MethodCreationPolicyDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         return original.<AggregateCreationPolicy>attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY)
                        .map(creationPolicy -> (MessageHandlingMember<T>) new MethodCreationPolicyHandlingMember<>(
                                original, creationPolicy
