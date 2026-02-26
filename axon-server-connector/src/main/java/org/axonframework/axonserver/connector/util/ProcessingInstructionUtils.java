@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +43,8 @@ public final class ProcessingInstructionUtils {
      * @param value The {@link MetaDataValue.Builder} to set on the {@link ProcessingInstruction.Builder}.
      * @return A {@link ProcessingInstruction.Builder} initialized with the given {@code key} and {@code value}.
      */
-    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
-                                                                            @Nonnull MetaDataValue.Builder value) {
+    public static ProcessingInstruction.Builder createProcessingInstruction(@NonNull ProcessingKey key,
+                                                                            MetaDataValue.@NonNull Builder value) {
         return ProcessingInstruction.newBuilder().setKey(key).setValue(value);
     }
 
@@ -57,8 +57,8 @@ public final class ProcessingInstructionUtils {
      * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
      * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
      */
-    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
-                                                                            @Nonnull String value) {
+    public static ProcessingInstruction.Builder createProcessingInstruction(@NonNull ProcessingKey key,
+                                                                            @NonNull String value) {
         return ProcessingInstruction.newBuilder()
                                     .setKey(key)
                                     .setValue(MetaDataValue.newBuilder().setTextValue(value));
@@ -73,7 +73,7 @@ public final class ProcessingInstructionUtils {
      * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
      * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
      */
-    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
+    public static ProcessingInstruction.Builder createProcessingInstruction(@NonNull ProcessingKey key,
                                                                             boolean value) {
         return ProcessingInstruction.newBuilder()
                                     .setKey(key)
@@ -89,7 +89,7 @@ public final class ProcessingInstructionUtils {
      * @return A {@link ProcessingInstruction.Builder} initialized with the provided {@code key} and {@code value}.
      * @see ProcessingInstructionUtils#createProcessingInstruction(ProcessingKey, MetaDataValue.Builder)
      */
-    public static ProcessingInstruction.Builder createProcessingInstruction(@Nonnull ProcessingKey key,
+    public static ProcessingInstruction.Builder createProcessingInstruction(@NonNull ProcessingKey key,
                                                                             long value) {
         return ProcessingInstruction.newBuilder()
                                     .setKey(key)
@@ -104,7 +104,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#ROUTING_KEY} from.
      * @return A {@link String} specifying the routing key for a given operation, or {@code null} if not found.
      */
-    public static String routingKey(@Nonnull List<ProcessingInstruction> instructions) {
+    public static String routingKey(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionString(instructions, ProcessingKey.ROUTING_KEY).orElse(null);
     }
 
@@ -124,7 +124,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#PRIORITY} from.
      * @return An {@code int} specifying the priority of a given operation.
      */
-    public static int priority(@Nonnull List<ProcessingInstruction> instructions) {
+    public static int priority(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionNumber(instructions, ProcessingKey.PRIORITY).orElse(0L).intValue();
     }
 
@@ -136,7 +136,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#NR_OF_RESULTS} from.
      * @return A {@code long} specifying the desired 'number of results' for a given operation.
      */
-    public static long numberOfResults(@Nonnull List<ProcessingInstruction> instructions) {
+    public static long numberOfResults(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionNumber(instructions, ProcessingKey.NR_OF_RESULTS).orElse(1L);
     }
 
@@ -148,7 +148,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#SERVER_SUPPORTS_STREAMING} from.
      * @return {@code true} if Axon Server supports streaming, {@code false} otherwise.
      */
-    public static boolean axonServerSupportsQueryStreaming(@Nonnull List<ProcessingInstruction> instructions) {
+    public static boolean axonServerSupportsQueryStreaming(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionBoolean(instructions,
                                                ProcessingKey.SERVER_SUPPORTS_STREAMING).orElse(false);
     }
@@ -161,7 +161,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#CLIENT_SUPPORTS_STREAMING} from.
      * @return {@code true} if Client supports streaming, {@code false} otherwise.
      */
-    public static boolean clientSupportsQueryStreaming(@Nonnull List<ProcessingInstruction> instructions) {
+    public static boolean clientSupportsQueryStreaming(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionBoolean(instructions, ProcessingKey.CLIENT_SUPPORTS_STREAMING).orElse(false);
     }
 
@@ -181,7 +181,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#NR_OF_RESULTS} from.
      * @return a {@code long} specifying the desired 'number of results' for a given operation
      */
-    public static long timeout(@Nonnull List<ProcessingInstruction> instructions) {
+    public static long timeout(@NonNull List<ProcessingInstruction> instructions) {
         return getProcessingInstructionNumber(instructions, ProcessingKey.TIMEOUT).orElse(0L);
     }
 

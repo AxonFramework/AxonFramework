@@ -25,7 +25,7 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -87,16 +87,16 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param connection       The backing connection to Axon Server
      * @param converter The converter to use to serialize payloads to bytes
      */
-    public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull EventConverter converter) {
+    public AggregateBasedAxonServerEventStorageEngine(@NonNull AxonServerConnection connection,
+                                                      @NonNull EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
                                                                 @Nullable ProcessingContext context,
-                                                                @Nonnull List<TaggedEventMessage<?>> events) {
+                                                                @NonNull List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -149,7 +149,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(@NonNull AggregateBasedConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -172,7 +172,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -236,7 +236,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
@@ -285,12 +285,12 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
         return connection.eventChannel().getTokenAt(at.toEpochMilli()).thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("converter", converter);
     }
