@@ -16,6 +16,6 @@
 
 
 @NullMarked
-package org.axonframework.eventsourcing;
+package org.axonframework.eventsourcing.configuration;
 
 import org.jspecify.annotations.NullMarked;

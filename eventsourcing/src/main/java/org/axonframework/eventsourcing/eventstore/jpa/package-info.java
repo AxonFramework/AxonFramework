@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * JPA Implementation of the EventStore. This package contains all classes needed to provide such an implementation
- */
+
+@NullMarked
 package org.axonframework.eventsourcing.eventstore.jpa;
+
+import org.jspecify.annotations.NullMarked;
