@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * Classes in support of testing Axon based applications.
- */
+
+@NullMarked
 package org.axonframework.test;
+
+import org.jspecify.annotations.NullMarked;

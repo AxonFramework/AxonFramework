@@ -16,6 +16,6 @@
 
 
 @NullMarked
-package org.axonframework.test.util;
+package org.axonframework.test.matchers;
 
 import org.jspecify.annotations.NullMarked;

@@ -16,6 +16,6 @@
 
 
 @NullMarked
-package org.axonframework.test.util;
+package org.axonframework.test.server;
 
 import org.jspecify.annotations.NullMarked;
