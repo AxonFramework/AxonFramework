@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config.annotation;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotation.ParameterResolver;

@@ -17,7 +17,6 @@
 package org.axonframework.extension.tracing.opentelemetry;
 
 import io.opentelemetry.context.propagation.TextMapGetter;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 
 import org.jspecify.annotations.NonNull;
@@ -52,8 +51,6 @@ public class MetadataContextGetter implements TextMapGetter<Message> {
     }
 
     @Override
-    @Nonnull
-    // TODO: contract says not null, what is correct?
     public String get(Message message, @NonNull String key) {
         if (message == null) {
             return null;

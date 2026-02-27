@@ -16,17 +16,18 @@
 
 package org.axonframework.common;
 
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.lang.invoke.MethodHandles;
+
+
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.DependencyRules;
 import com.tngtech.archunit.library.freeze.FreezingArchRule;
-import org.junit.jupiter.api.Test;
-
-import java.lang.invoke.MethodHandles;
-
-import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.*;
 
 /**
  * Verifies architectural rules for this module.
@@ -35,28 +36,36 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>Cycles between packages, to keep packages focused on a single purpose
  * and to make it easier to later move packages to new or other modules</li>
  * <li>Hierarchy violations in packages, where more specialized packages
- * refer to more general packages. This rules encourages to keep API
- * and implementation in separate package branches so they may be split into
- * API and implementation modules at a future time.</li>
+ * refer to more general packages. This rules encourages to keep API and implementation in separate package branches so
+ * they may be split into API and implementation modules at a future time.</li>
  *
  * @author John Hendrikx
  */
 @AnalyzeClasses(packages = ArchitectureTest.BASE_PACKAGE_NAME)
 public class ArchitectureTest {
-  static final String BASE_PACKAGE_NAME = "org.axonframework.common";
 
-  @ArchTest
-  private final ArchRule packagesShouldBeFreeOfCycles = FreezingArchRule.freeze(
-      slices().matching("(**)").should().beFreeOfCycles().as("Package Cycles")
-  );
+    static final String BASE_PACKAGE_NAME = "org.axonframework.common";
 
-  @ArchTest
-  private final ArchRule noClassesShouldDependOnUpperPackages = FreezingArchRule.freeze(
-      DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES.as("Package Hierarchy Violations")
-  );
+    /**
+     * Important: This module is not cycle free and cannot be made cycle free without introducing API breaking changes
+     * (class repackaging). So this test "froze" the state of the failing test at the moment it was introduced.
+     * We cannot introduce new cycles, but current ones remain present and are ignored by this test.
+     * The text file `resources/archunit_store/package-cycles.txt` contains the list of failing cycles (the output
+     * of the test). Unfortunately, this file keeps reference to the line number it noticed in the cycle, meaning that
+     * if you do any changes in existing code, you may need to update the line numbers in the file to remain frozen.
+     */
+    @ArchTest
+    private final ArchRule packagesShouldBeFreeOfCycles = FreezingArchRule.freeze(
+            slices().matching("(**)").should().beFreeOfCycles().as("Package Cycles")
+    );
 
-  @Test
-  void shouldMatchPackageName() {
-    assertThat(BASE_PACKAGE_NAME).isEqualTo(MethodHandles.lookup().lookupClass().getPackageName());
-  }
+    @ArchTest
+    private final ArchRule noClassesShouldDependOnUpperPackages = FreezingArchRule.freeze(
+            DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES.as("Package Hierarchy Violations")
+    );
+
+    @Test
+    void shouldMatchPackageName() {
+        assertThat(BASE_PACKAGE_NAME).isEqualTo(MethodHandles.lookup().lookupClass().getPackageName());
+    }
 }

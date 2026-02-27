@@ -24,9 +24,14 @@
     <property name="severity" value="error"/>
 
     <module name="TreeWalker">
+        <!-- Enforce JSpecify as the single nullness annotation system. -->
+        <!-- TODO: Once we are SpringBoot 4 native, we can also make springframework/Nullable illegal. -->
         <module name="IllegalImport">
-            <property name="illegalClasses" value="jakarta.annotation.Nonnull"/>
-            <property name="illegalClasses" value="org.springframework.lang.NonNull"/>
+            <property name="illegalClasses"
+                      value="jakarta.annotation.Nonnull,
+                             jakarta.annotation.Nullable,
+                             org.springframework.lang.NonNull"
+            />
         </module>
     </module>
 </module>
