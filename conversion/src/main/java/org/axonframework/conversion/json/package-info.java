@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * Classes related to message processing in Axon Framework.
- */
+
 @NullMarked
-package org.axonframework.conversion;
+package org.axonframework.conversion.json;
 
 import org.jspecify.annotations.NullMarked;
