@@ -193,6 +193,26 @@ class EntityManagerTransactionManagerTest {
         }
 
         @Test
+        void rollsBackTransactionOnCommitPhaseWhenRollbackOnly(
+                @Captor ArgumentCaptor<Consumer<ProcessingContext>> captor) {
+            // given
+            when(entityTransaction.isActive()).thenReturn(false, true);
+            when(entityTransaction.getRollbackOnly()).thenReturn(true);
+            ProcessingLifecycle processingLifecycle = mock(ProcessingLifecycle.class);
+            StubProcessingContext processingContext = new StubProcessingContext();
+
+            // when
+            testSubject.attachToProcessingLifecycle(processingLifecycle);
+            verify(processingLifecycle).runOnPreInvocation(captor.capture());
+            captor.getValue().accept(processingContext);
+            processingContext.moveToPhase(ProcessingLifecycle.DefaultPhases.COMMIT);
+
+            // then
+            verify(entityTransaction).rollback();
+            verify(entityTransaction, never()).commit();
+        }
+
+        @Test
         void rollsBackTransactionOnError(
                 @Captor ArgumentCaptor<Consumer<ProcessingContext>> preInvocationCaptor,
                 @Captor ArgumentCaptor<ProcessingLifecycle.ErrorHandler> errorHandlerCaptor) {

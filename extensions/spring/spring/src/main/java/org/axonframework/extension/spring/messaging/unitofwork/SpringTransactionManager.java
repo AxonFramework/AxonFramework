@@ -115,12 +115,6 @@ public class SpringTransactionManager implements TransactionManager {
             }
 
             if (connectionProvider != null) {
-                // ConnectionExecutor calls connectionProvider.getConnection() on every apply() invocation.
-                // Correctness relies on the provider being transaction-aware (e.g. SpringDataSourceConnectionProvider),
-                // which returns the connection already bound to the active Spring transaction via DataSourceUtils,
-                // ensuring all invocations within the same processing context share the same physical connection.
-                // A plain DataSourceConnectionProvider would return a different pooled connection each time,
-                // causing each invocation to run outside the managed transaction.
                 pc.putResource(
                     JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
                     CachingSupplier.of(() -> new ConnectionExecutor(connectionProvider))
