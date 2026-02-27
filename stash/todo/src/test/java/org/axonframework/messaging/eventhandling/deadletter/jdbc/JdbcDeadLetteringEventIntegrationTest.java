@@ -36,6 +36,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 
+import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,8 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
- * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and
- * {@code DeadLetteringEventHandlingComponent}.
+ * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and {@code DeadLetteringEventHandlingComponent}.
  *
  * @author Steven van Beelen
  */
@@ -60,7 +60,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
 
-    private JDBCDataSource dataSource;
+    private DataSource dataSource;
     private JdbcTransactionalExecutorProvider executorProvider;
     private DeadLetterStatementFactory<EventMessage> statementFactory;
     private JdbcSequencedDeadLetterQueue<EventMessage> jdbcDeadLetterQueue;
@@ -71,10 +71,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        dataSource = new JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:mem:dlqintegtest");
-        dataSource.setUser("sa");
-        dataSource.setPassword("");
+        dataSource = dataSource();
         executorProvider = new JdbcTransactionalExecutorProvider(dataSource);
 
         Converter genericConverter = jacksonConverter;
@@ -95,28 +92,35 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         return jdbcDeadLetterQueue;
     }
 
+    private static DataSource dataSource() {
+        var dataSource = new JDBCDataSource();
+        dataSource.setUrl("jdbc:hsqldb:mem:" + JdbcDeadLetteringEventIntegrationTest.class.getSimpleName());
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        return dataSource;
+    }
+
     /**
      * Builds a {@link UnitOfWorkFactory} that registers a
      * {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY SUPPLIER_KEY} resource on each
      * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext}, similar to how
-     * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager}
-     * populates this resource in production.
+     * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager} populates this resource
+     * in production.
      * <p>
-     * This allows the {@link JdbcTransactionalExecutorProvider} to extract the
-     * {@link ConnectionExecutor} from the context when the {@link EventProcessor} processes events,
-     * exercising the same code path as production.
+     * This allows the {@link JdbcTransactionalExecutorProvider} to extract the {@link ConnectionExecutor} from the
+     * context when the {@link EventProcessor} processes events, exercising the same code path as production.
      */
     @Override
     protected UnitOfWorkFactory buildUnitOfWorkFactory() {
         return new SimpleUnitOfWorkFactory(
                 EmptyApplicationContext.INSTANCE,
-                config -> config.registerProcessingLifecycleEnhancer(processingLifecycle ->
-                        processingLifecycle.runOnPreInvocation(pc ->
-                                pc.putResource(
-                                        JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
-                                        CachingSupplier.of(() -> new ConnectionExecutor(dataSource::getConnection))
+                config -> config.registerProcessingLifecycleEnhancer(
+                        processingLifecycle ->
+                                processingLifecycle.runOnPreInvocation(pc -> pc.putResource(
+                                                                               JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                                                                               CachingSupplier.of(() -> new ConnectionExecutor(dataSource::getConnection))
+                                                                       )
                                 )
-                        )
                 )
         );
     }
@@ -130,7 +134,10 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     @BeforeEach
     void setUpJdbc() {
         joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
-                connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable()).executeUpdate()
+                                                                                     connection.prepareStatement(
+                                                                                                       "DROP TABLE IF EXISTS "
+                                                                                                               + schema.deadLetterTable())
+                                                                                               .executeUpdate()
         ));
         joinAndUnwrap(jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory(), null));
     }
@@ -175,16 +182,25 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage> letter, int index) {
         joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
-                executeUpdate(
-                        connection,
-                        c -> statementFactory.enqueueStatement(
-                                c, TEST_PROCESSING_GROUP, aggregateId, letter, index, null
-                        ),
-                        e -> new JdbcException(
-                                "Failed to enqueue dead letter with message id [" +
-                                        letter.message().identifier() + "] during testing", e
-                        )
-                )
+                                                                                     executeUpdate(
+                                                                                             connection,
+                                                                                             c -> statementFactory.enqueueStatement(
+                                                                                                     c,
+                                                                                                     TEST_PROCESSING_GROUP,
+                                                                                                     aggregateId,
+                                                                                                     letter,
+                                                                                                     index,
+                                                                                                     null
+                                                                                             ),
+                                                                                             e -> new JdbcException(
+                                                                                                     "Failed to enqueue dead letter with message id ["
+                                                                                                             +
+                                                                                                             letter.message()
+                                                                                                                   .identifier()
+                                                                                                             + "] during testing",
+                                                                                                     e
+                                                                                             )
+                                                                                     )
         ));
     }
 }
