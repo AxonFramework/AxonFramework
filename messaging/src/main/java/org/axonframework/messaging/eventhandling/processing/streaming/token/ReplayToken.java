@@ -17,12 +17,15 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.conversion.Converter;
+
 import java.beans.ConstructorProperties;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -40,8 +43,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     private final TrackingToken tokenAtReset;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken currentToken;
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
-    private final Object context;
+    private final byte[] resetContext;
     private final transient boolean lastMessageWasReplay;
 
     /**
@@ -56,18 +58,19 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     @ConstructorProperties({"tokenAtReset", "currentToken", "resetContext"})
     ReplayToken(@JsonProperty("tokenAtReset") TrackingToken tokenAtReset,
                 @JsonProperty("currentToken") TrackingToken newRedeliveryToken,
-                @JsonProperty("resetContext") Object resetContext) {
+                @JsonProperty("resetContext") byte[] resetContext) {
         this(tokenAtReset, newRedeliveryToken, resetContext, true);
     }
 
-    private ReplayToken(TrackingToken tokenAtReset,
-                        TrackingToken newRedeliveryToken,
-                        Object context,
-                        boolean lastMessageWasReplay
+    private ReplayToken(
+            TrackingToken tokenAtReset,
+            TrackingToken newRedeliveryToken,
+            byte[] resetContext,
+            boolean lastMessageWasReplay
     ) {
         this.tokenAtReset = tokenAtReset;
         this.currentToken = newRedeliveryToken;
-        this.context = context;
+        this.resetContext = resetContext;
         this.lastMessageWasReplay = lastMessageWasReplay;
     }
 
@@ -80,7 +83,8 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param startPosition The position where the token should be reset to and start replaying from
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
-    public static TrackingToken createReplayToken(TrackingToken tokenAtReset, @Nullable TrackingToken startPosition) {
+    public static TrackingToken createReplayToken(@Nullable TrackingToken tokenAtReset,
+                                                  @Nullable TrackingToken startPosition) {
         return createReplayToken(tokenAtReset, startPosition, null);
     }
 
@@ -95,9 +99,9 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @return A token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
     public static TrackingToken createReplayToken(
-            TrackingToken tokenAtReset,
-            TrackingToken startPosition,
-            Object resetContext
+            @Nullable TrackingToken tokenAtReset,
+            @Nullable TrackingToken startPosition,
+            @Nullable byte[] resetContext
     ) {
         if (tokenAtReset == null) {
             return startPosition;
@@ -166,6 +170,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * Return the relative position at which a reset was triggered for this Segment. In case a replay finished or no
      * replay is active, an {@code OptionalLong.empty()} will be returned.
      *
+     * @param trackingToken the token to retrieve the token at reset from
      * @return the relative position at which a reset was triggered for this token
      */
     public static OptionalLong getTokenAtReset(TrackingToken trackingToken) {
@@ -207,7 +212,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
             return new ReplayToken(
                     tokenAtReset,  // we don't do upperBound here because it influences what have been seen
                     newToken,
-                    context,
+                    resetContext,
                     true
             );
         }
@@ -215,10 +220,10 @@ public class ReplayToken implements TrackingToken, WrappedToken {
         if (tokenAtReset instanceof WrappedToken) {
             return new ReplayToken(tokenAtReset.upperBound(newToken),
                                    ((WrappedToken) tokenAtReset).advancedTo(newToken),
-                                   context,
+                                   resetContext,
                                    false);
         }
-        return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, context, false);
+        return new ReplayToken(tokenAtReset.upperBound(newToken), newToken, resetContext, false);
     }
 
     private static boolean isStrictlyAfter(@Nonnull TrackingToken newToken, @Nonnull TrackingToken tokenAtReset) {
@@ -262,9 +267,9 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     @Override
     public TrackingToken lowerBound(TrackingToken other) {
         if (other instanceof ReplayToken) {
-            return new ReplayToken(this, ((ReplayToken) other).currentToken, context);
+            return new ReplayToken(this, ((ReplayToken) other).currentToken, resetContext);
         }
-        return new ReplayToken(this, other, context);
+        return new ReplayToken(this, other, resetContext);
     }
 
     @Override
@@ -316,9 +321,10 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      *
      * @return The context, null if none was provided during reset.
      */
+    @JsonGetter
     @Nullable
-    public Object context() {
-        return context;
+    public byte[] resetContext() {
+        return resetContext;
     }
 
     @Override
@@ -334,12 +340,12 @@ public class ReplayToken implements TrackingToken, WrappedToken {
         ReplayToken that = (ReplayToken) o;
         return Objects.equals(tokenAtReset, that.tokenAtReset) &&
                 Objects.equals(currentToken, that.currentToken) &&
-                Objects.equals(context, that.context);
+                Arrays.equals(resetContext, that.resetContext);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tokenAtReset, currentToken, context);
+        return Objects.hash(tokenAtReset, currentToken, Arrays.hashCode(resetContext));
     }
 
     @Override
@@ -347,7 +353,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
         return "ReplayToken{" +
                 "currentToken=" + currentToken +
                 ", tokenAtReset=" + tokenAtReset +
-                ", context=" + (context != null ? context.toString() : null) +
+                ", context=" + Arrays.toString(resetContext) +
                 '}';
     }
 
