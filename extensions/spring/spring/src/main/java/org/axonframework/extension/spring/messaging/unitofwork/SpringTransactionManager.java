@@ -23,7 +23,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.conversion.CachingSupplier;
-import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.ConnectionTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.EntityManagerTransactionManager;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
@@ -116,7 +116,7 @@ public class SpringTransactionManager implements TransactionManager {
 
             if (connectionProvider != null) {
                 pc.putResource(
-                    JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                    ConnectionTransactionManager.SUPPLIER_KEY,
                     CachingSupplier.of(() -> new ConnectionExecutor(connectionProvider))
                 );
             }

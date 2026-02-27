@@ -57,7 +57,7 @@ class JdbcTransactionalExecutorProviderTest {
     class WhenProcessingContextAvailable {
         @Test
         void shouldGetTransactionalExecutorIfPresent() {
-            processingContext.putResource(JdbcTransactionalExecutorProvider.SUPPLIER_KEY, () -> connectionExecutor);
+            processingContext.putResource(ConnectionTransactionManager.SUPPLIER_KEY, () -> connectionExecutor);
 
             TransactionalExecutor<Connection> executor = provider.getTransactionalExecutor(processingContext);
 

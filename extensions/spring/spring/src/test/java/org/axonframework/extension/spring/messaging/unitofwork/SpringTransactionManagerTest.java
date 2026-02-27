@@ -18,7 +18,7 @@ package org.axonframework.extension.spring.messaging.unitofwork;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.ConnectionTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.EntityManagerTransactionManager;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
@@ -127,7 +127,7 @@ class SpringTransactionManagerTest {
         preInvocationConsumer.accept(processingContext);
 
         assertThat(processingContext.getResource(EntityManagerTransactionManager.SUPPLIER_KEY)).isNotNull();
-        assertThat(processingContext.getResource(JdbcTransactionalExecutorProvider.SUPPLIER_KEY)).isNotNull();
+        assertThat(processingContext.getResource(ConnectionTransactionManager.SUPPLIER_KEY)).isNotNull();
 
         processingContext.moveToPhase(ProcessingLifecycle.DefaultPhases.COMMIT);
 

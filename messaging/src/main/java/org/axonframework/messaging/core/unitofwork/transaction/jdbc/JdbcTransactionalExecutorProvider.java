@@ -22,7 +22,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
 import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;
-import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 
@@ -48,11 +47,6 @@ import javax.sql.DataSource;
 @Internal
 public class JdbcTransactionalExecutorProvider implements TransactionalExecutorProvider<Connection> {
 
-    /**
-     * The resource key for the {@link ConnectionExecutor} supplier.
-     */
-    public static final ResourceKey<Supplier<ConnectionExecutor>> SUPPLIER_KEY = ResourceKey.withLabel(ConnectionExecutor.class.getSimpleName());
-
     private final DataSource dataSource;
 
     /**
@@ -67,7 +61,7 @@ public class JdbcTransactionalExecutorProvider implements TransactionalExecutorP
     @Override
     public TransactionalExecutor<Connection> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
         if (processingContext != null) {
-            Supplier<ConnectionExecutor> executorSupplier = processingContext.getResource(SUPPLIER_KEY);
+            Supplier<ConnectionExecutor> executorSupplier = processingContext.getResource(ConnectionTransactionManager.SUPPLIER_KEY);
 
             if (executorSupplier == null) {
                 throw new IllegalStateException("A connection executor must be present in the processing context.");
