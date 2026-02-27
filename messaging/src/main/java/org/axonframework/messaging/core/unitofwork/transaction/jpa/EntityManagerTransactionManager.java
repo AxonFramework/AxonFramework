@@ -50,7 +50,8 @@ import java.util.function.Supplier;
  * txManager.attachToProcessingLifecycle(processingLifecycle);
  * }</pre>
  *
- * @author Axon Framework Contributors
+ * @author John Hendrikx
+ * @author Mateusz Nowak
  * @since 5.1.0
  */
 public class EntityManagerTransactionManager implements TransactionManager {
