@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -67,13 +67,14 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         @Nonnull
         @Override
         public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
-            Optional<TrackingToken> token = TrackingToken.fromContext(context);
-            if (token.isPresent()) {
-                return CompletableFuture.completedFuture(
-                        ReplayToken.replayContext(token.get(), this.type).orElse(null)
-                );
+            TrackingToken token = TrackingToken.fromContext(context).orElse(null);
+            if (token == null) {
+                return CompletableFuture.completedFuture(null);
             }
-            return CompletableFuture.completedFuture(false);
+
+            return CompletableFuture.completedFuture(
+                    ReplayToken.replayContext(token, type, context.component(Converter.class)).orElse(null)
+            );
         }
 
         @Override

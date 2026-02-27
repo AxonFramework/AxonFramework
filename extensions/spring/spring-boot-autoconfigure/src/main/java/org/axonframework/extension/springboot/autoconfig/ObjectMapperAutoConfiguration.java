@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
@@ -59,15 +58,7 @@ public class ObjectMapperAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper() {
-        // TODO #4218 - Remove custom PolymorphicTypeValidator that's required for ReplayToken#context
-        BasicPolymorphicTypeValidator polymorphicTypeValidator =
-                BasicPolymorphicTypeValidator.builder()
-                                             .allowIfBaseType(Object.class)
-                                             .build();
-        return JsonMapper.builder()
-                         .findAndAddModules()
-                         .polymorphicTypeValidator(polymorphicTypeValidator)
-                         .build();
+        return JsonMapper.builder().findAndAddModules().build();
     }
 
     /**
