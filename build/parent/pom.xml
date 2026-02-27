@@ -496,16 +496,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle-maven-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <configLocation>build/checkstyle.xml</configLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -530,6 +523,18 @@
                     <showDeprecation>true</showDeprecation>
                     <parameters>true</parameters>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <!-- test -->
             <plugin>

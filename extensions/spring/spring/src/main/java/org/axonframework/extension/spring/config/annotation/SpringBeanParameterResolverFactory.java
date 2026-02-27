@@ -17,13 +17,13 @@
 package org.axonframework.extension.spring.config.annotation;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.extension.spring.SpringUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

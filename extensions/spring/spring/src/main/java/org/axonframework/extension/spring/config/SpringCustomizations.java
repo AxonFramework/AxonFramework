@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.configuration.Configuration;

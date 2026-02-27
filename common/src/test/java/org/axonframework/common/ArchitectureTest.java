@@ -16,6 +16,11 @@
 
 package org.axonframework.common;
 
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.lang.invoke.MethodHandles;
+
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -39,6 +44,7 @@ import java.util.regex.Pattern;
 
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.*;
 
 /**
  * Verifies architectural rules for this module.
@@ -59,6 +65,14 @@ public class ArchitectureTest {
     static final Set<Map.Entry<String, String>> IGNORED_CYCLES = parseIgnoredCycles();
 
 
+    /**
+     * Important: This module is not cycle free and cannot be made cycle free without introducing API breaking changes
+     * (class repackaging). So this test "froze" the state of the failing test at the moment it was introduced.
+     * We cannot introduce new cycles, but current ones remain present and are ignored by this test.
+     * The text file `resources/archunit_store/package-cycles.txt` contains the list of failing cycles (the output
+     * of the test), this is why we manually parse the file and only
+     * ignore the dependencies.
+     */
     @ArchTest
     private final ArchRule packagesShouldBeFreeOfCycles = filterIgnoredDependencies(
             slices()

@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
