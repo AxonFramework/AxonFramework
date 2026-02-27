@@ -100,7 +100,7 @@ class EntityManagerTransactionManagerTest {
         }
 
         @Test
-        void startTransaction_commitIsNoOpWhenRollbackOnly() {
+        void startTransaction_commitRollsBackWhenRollbackOnly() {
             // given — transaction is active on commit-guard, but marked rollback-only
             when(entityTransaction.isActive()).thenReturn(false, true);
             when(entityTransaction.getRollbackOnly()).thenReturn(true);
@@ -110,6 +110,7 @@ class EntityManagerTransactionManagerTest {
 
             // then
             verify(entityTransaction, never()).commit();
+            verify(entityTransaction).rollback();
         }
     }
 
@@ -187,6 +188,29 @@ class EntityManagerTransactionManagerTest {
 
             // then
             verify(entityTransaction).commit();
+        }
+
+        @Test
+        void rollsBackTransactionOnError(
+                @Captor ArgumentCaptor<Consumer<ProcessingContext>> preInvocationCaptor,
+                @Captor ArgumentCaptor<ProcessingLifecycle.ErrorHandler> errorHandlerCaptor) {
+            // given — spy needed because StubProcessingContext.onError is a no-op
+            when(entityTransaction.isActive()).thenReturn(false, true);
+            ProcessingLifecycle processingLifecycle = mock(ProcessingLifecycle.class);
+            StubProcessingContext processingContext = spy(new StubProcessingContext());
+
+            // when
+            testSubject.attachToProcessingLifecycle(processingLifecycle);
+            verify(processingLifecycle).runOnPreInvocation(preInvocationCaptor.capture());
+            preInvocationCaptor.getValue().accept(processingContext);
+            verify(processingContext).onError(errorHandlerCaptor.capture());
+            errorHandlerCaptor.getValue()
+                              .handle(processingContext, ProcessingLifecycle.DefaultPhases.INVOCATION,
+                                      new RuntimeException("simulated error"));
+
+            // then
+            verify(entityTransaction).rollback();
+            verify(entityTransaction, never()).commit();
         }
     }
 
