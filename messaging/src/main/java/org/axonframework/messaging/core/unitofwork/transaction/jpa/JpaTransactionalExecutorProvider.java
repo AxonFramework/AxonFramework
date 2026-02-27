@@ -25,7 +25,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;
-import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 
@@ -47,11 +46,6 @@ import java.util.function.Supplier;
 @Internal
 public class JpaTransactionalExecutorProvider implements TransactionalExecutorProvider<EntityManager> {
 
-    /**
-     * The resource key for the {@link EntityManagerExecutor} supplier.
-     */
-    public static final ResourceKey<Supplier<EntityManagerExecutor>> SUPPLIER_KEY = ResourceKey.withLabel(EntityManagerExecutor.class.getSimpleName());
-
     private final EntityManagerFactory entityManagerFactory;
 
     /**
@@ -66,7 +60,7 @@ public class JpaTransactionalExecutorProvider implements TransactionalExecutorPr
     @Override
     public TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
         if (processingContext != null) {
-            Supplier<EntityManagerExecutor> executorSupplier = processingContext.getResource(SUPPLIER_KEY);
+            Supplier<EntityManagerExecutor> executorSupplier = processingContext.getResource(EntityManagerTransactionManager.SUPPLIER_KEY);
 
             if (executorSupplier == null) {
                 throw new IllegalStateException("An entity manager executor must be present in the processing context.");
