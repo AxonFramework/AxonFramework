@@ -16,6 +16,6 @@
 
 
 @NullMarked
-package org.axonframework.messaging.eventhandling;
+package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.jspecify.annotations.NullMarked;
