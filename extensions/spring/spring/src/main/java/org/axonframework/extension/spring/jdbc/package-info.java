@@ -16,6 +16,6 @@
 
 
 @NullMarked
-package org.axonframework.extension.spring.messaging;
+package org.axonframework.extension.spring.jdbc;
 
 import org.jspecify.annotations.NullMarked;
