@@ -149,21 +149,26 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     }
 
     /**
-     * Extracts the context from a {@code message} of the matching {@code contextClass}.
+     * Extracts the {@link ReplayToken#resetContext()} from the given {@code token}, converting it to the given
+     * {@code type} with the given {@code converter}.
      * <p>
-     * Will resolve to an empty {@code Optional} if the provided token is not a {@link ReplayToken}, or the context
-     * isn't an instance of the provided {@code contextClass}, or there is no context at all.
+     * If the {@code token} is not a {@code ReplayToken}, and empty {@link Optional} will be returned.
      *
-     * @param trackingToken The tracking token to extract the context from
-     * @param contextClass  The class the context should match
-     * @param <T>           The type of the context
-     * @return The context, if present in the token
+     * @param token     the token to extract and convert the {@link ReplayToken#resetContext()} from, if it is a
+     *                  {@code ReplayToken}
+     * @param type      the desired type to convert the {@link ReplayToken#resetContext()} with the given
+     *                  {@code converter}
+     * @param converter the {@code Converter} used to convert the {@link ReplayToken#resetContext()} with
+     * @param <T>       the generic defining the desired type to convert the {@link ReplayToken#resetContext()} to
+     * @return an {@code Optional} carrying the converted {@link ReplayToken#resetContext()}. Empty if the given
+     * {@code token} was not of type {@code ReplayToken}
      */
-    public static <T> Optional<T> replayContext(TrackingToken trackingToken, @Nonnull Class<T> contextClass) {
-        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                           .map(ReplayToken::context)
-                           .filter(c -> c.getClass().isAssignableFrom(contextClass))
-                           .map(contextClass::cast);
+    public static <T> Optional<T> replayContext(@Nonnull TrackingToken token,
+                                                @Nonnull Class<T> type,
+                                                @Nonnull Converter converter) {
+        return WrappedToken.unwrap(token, ReplayToken.class)
+                           .map(ReplayToken::resetContext)
+                           .map(rc -> converter.convert(rc, type));
     }
 
     /**
