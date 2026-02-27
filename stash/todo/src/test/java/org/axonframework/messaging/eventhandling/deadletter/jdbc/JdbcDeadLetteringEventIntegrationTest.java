@@ -16,10 +16,14 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.jdbc.SingleConnectionTransactionalExecutor;
+import org.axonframework.common.tx.TransactionalExecutor;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
@@ -32,7 +36,6 @@ import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,7 +45,6 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 import static org.axonframework.common.jdbc.JdbcUtils.executeUpdate;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,8 +60,8 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
 
-    private Connection connection;
-    private SingleConnectionTransactionalExecutor executor;
+    private JDBCDataSource dataSource;
+    private JdbcTransactionalExecutorProvider executorProvider;
     private DeadLetterStatementFactory<EventMessage> statementFactory;
     private JdbcSequencedDeadLetterQueue<EventMessage> jdbcDeadLetterQueue;
 
@@ -69,16 +71,11 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        JDBCDataSource dataSource = new JDBCDataSource();
+        dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:dlqintegtest");
         dataSource.setUser("sa");
         dataSource.setPassword("");
-        try {
-            connection = dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new IllegalStateException("Unable to open connection", e);
-        }
-        executor = new SingleConnectionTransactionalExecutor(connection);
+        executorProvider = testTransactionalExecutorProvider();
 
         Converter genericConverter = jacksonConverter;
         statementFactory = DefaultDeadLetterStatementFactory.<EventMessage>builder()
@@ -89,7 +86,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
         jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.<EventMessage>builder()
                                                           .processingGroup(TEST_PROCESSING_GROUP)
-                                                          .transactionalExecutorProvider(pc -> executor)
+                                                          .transactionalExecutorProvider(executorProvider)
                                                           .schema(schema)
                                                           .statementFactory(statementFactory)
                                                           .eventConverter(eventConverter)
@@ -98,20 +95,40 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         return jdbcDeadLetterQueue;
     }
 
+    /**
+     * Creates a {@link JdbcTransactionalExecutorProvider} that always uses the null-context code path,
+     * which creates a new {@link Connection} from the {@link javax.sql.DataSource} with its own transaction
+     * for each operation.
+     * <p>
+     * This is necessary because the integration test runs a real {@link EventProcessor} whose
+     * {@link ProcessingContext} instances do not carry the
+     * {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY SUPPLIER_KEY} resource. The default
+     * {@link JdbcTransactionalExecutorProvider} would throw when it receives a non-null context
+     * without that resource. Overriding {@code getTransactionalExecutor} to ignore the context
+     * avoids this, while still exercising the production {@link JdbcTransactionalExecutorProvider}
+     * connection and transaction management logic.
+     */
+    private JdbcTransactionalExecutorProvider testTransactionalExecutorProvider() {
+        return new JdbcTransactionalExecutorProvider(dataSource) {
+            @Override
+            @Nonnull
+            public TransactionalExecutor<Connection> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
+                return super.getTransactionalExecutor(null);
+            }
+        };
+    }
+
     @Override
     protected Converter converter() {
         return jacksonConverter;
     }
 
-    @AfterEach
-    void tearDown() {
-        closeQuietly(connection);
-    }
-
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
     @BeforeEach
-    void setUpJdbc() throws SQLException {
-        connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable()).executeUpdate();
+    void setUpJdbc() {
+        joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
+                connection.prepareStatement("DROP TABLE IF EXISTS " + schema.deadLetterTable()).executeUpdate()
+        ));
         joinAndUnwrap(jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory(), null));
     }
 
@@ -154,17 +171,17 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     }
 
     private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage> letter, int index) {
-        joinAndUnwrap(executor.accept(connection -> {
-            executeUpdate(
-                    connection,
-                    c -> statementFactory.enqueueStatement(
-                            c, TEST_PROCESSING_GROUP, aggregateId, letter, index, null
-                    ),
-                    e -> new JdbcException(
-                            "Failed to enqueue dead letter with message id [" +
-                                    letter.message().identifier() + "] during testing", e
-                    )
-            );
-        }));
+        joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
+                executeUpdate(
+                        connection,
+                        c -> statementFactory.enqueueStatement(
+                                c, TEST_PROCESSING_GROUP, aggregateId, letter, index, null
+                        ),
+                        e -> new JdbcException(
+                                "Failed to enqueue dead letter with message id [" +
+                                        letter.message().identifier() + "] during testing", e
+                        )
+                )
+        ));
     }
 }
