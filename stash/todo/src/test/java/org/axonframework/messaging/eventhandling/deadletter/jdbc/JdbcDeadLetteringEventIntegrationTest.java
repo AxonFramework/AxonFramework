@@ -51,15 +51,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and
  * {@code DeadLetteringEventHandlingComponent}.
- * <p>
- * Note: inherited tests from the base class that compare payloads directly are disabled because serialized DLQs
- * (JDBC, JPA) store payloads as raw bytes. The base test assumes deserialized objects (InMemory DLQ pattern). The JPA
- * module does not have this integration test for the same reason.
  *
  * @author Steven van Beelen
  */
-@Disabled("Serialized DLQs store payloads as raw bytes; inherited integration tests expect deserialized objects. "
-        + "JDBC-specific tests are in JdbcSequencedDeadLetterQueueTest.")
 class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     private static final String TEST_PROCESSING_GROUP = "some-processing-group";
@@ -102,6 +96,11 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                           .genericConverter(genericConverter)
                                                           .build();
         return jdbcDeadLetterQueue;
+    }
+
+    @Override
+    protected Converter converter() {
+        return jacksonConverter;
     }
 
     @AfterEach
