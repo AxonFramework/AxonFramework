@@ -19,6 +19,7 @@ package org.axonframework.messaging.core.unitofwork.transaction.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
@@ -29,6 +30,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -211,6 +213,40 @@ class EntityManagerTransactionManagerTest {
             // then
             verify(entityTransaction).rollback();
             verify(entityTransaction, never()).commit();
+        }
+
+        @Test
+        void canUseDifferentEntityManagerForTransactionAndExecutorWork(
+                @Captor ArgumentCaptor<Consumer<ProcessingContext>> captor) {
+            // given
+            EntityManagerProvider entityManagerProvider = mock(EntityManagerProvider.class);
+            EntityManager transactionEntityManager = mock(EntityManager.class);
+            EntityManager executorEntityManager = mock(EntityManager.class);
+            EntityTransaction transaction = mock(EntityTransaction.class);
+            when(entityManagerProvider.getEntityManager()).thenReturn(transactionEntityManager, executorEntityManager);
+            when(transactionEntityManager.getTransaction()).thenReturn(transaction);
+            when(transaction.isActive()).thenReturn(false);
+
+            EntityManagerTransactionManager localTestSubject = new EntityManagerTransactionManager(entityManagerProvider);
+            ProcessingLifecycle processingLifecycle = mock(ProcessingLifecycle.class);
+            StubProcessingContext processingContext = new StubProcessingContext();
+
+            // when
+            localTestSubject.attachToProcessingLifecycle(processingLifecycle);
+            verify(processingLifecycle).runOnPreInvocation(captor.capture());
+            captor.getValue().accept(processingContext);
+
+            Supplier<EntityManagerExecutor> supplier =
+                    processingContext.getResource(JpaTransactionalExecutorProvider.SUPPLIER_KEY);
+            EntityManager usedEntityManager = supplier.get()
+                                                      .apply(entityManager -> entityManager)
+                                                      .orTimeout(1, TimeUnit.SECONDS)
+                                                      .join();
+
+            // then
+            assertThat(usedEntityManager).isSameAs(executorEntityManager);
+            assertThat(usedEntityManager).isNotSameAs(transactionEntityManager);
+            verify(transaction).begin();
         }
     }
 

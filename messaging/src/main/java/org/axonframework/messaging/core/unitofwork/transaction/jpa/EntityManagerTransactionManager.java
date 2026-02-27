@@ -91,8 +91,12 @@ public class EntityManagerTransactionManager implements TransactionManager {
         return new Transaction() {
             @Override
             public void commit() {
-                if (tx.isActive() && !tx.getRollbackOnly()) {
-                    tx.commit();
+                if (tx.isActive()) {
+                    if (tx.getRollbackOnly()) {
+                        tx.rollback();
+                    } else {
+                        tx.commit();
+                    }
                 }
             }
 
