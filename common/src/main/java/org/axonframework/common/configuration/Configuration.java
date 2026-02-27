@@ -44,7 +44,7 @@ public interface Configuration extends DescribableComponent {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
     @NonNull
-    default <C> C getComponent(@NonNull Class<C> type) {
+    default <C> C getComponent(Class<C> type) {
         return getComponent(type, (String) null);
     }
 

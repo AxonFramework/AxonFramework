@@ -95,7 +95,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
     }
 
     @Override
-    public final int compareTo(@NonNull PropertyAccessStrategy o) {
+    public final int compareTo(PropertyAccessStrategy o) {
         if (o == this) {
             return 0;
         }

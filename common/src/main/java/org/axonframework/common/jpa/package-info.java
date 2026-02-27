@@ -15,10 +15,9 @@
  */
 
 /**
- * Contains common utility classes needed in different components of the framework. Components placed
- * here cannot generally be included in one of the other component's packages.
+ * JPA utilities and entity management helpers.
  */
 @NullMarked
-package org.axonframework.common;
+package org.axonframework.common.jpa;
 
 import org.jspecify.annotations.NullMarked;

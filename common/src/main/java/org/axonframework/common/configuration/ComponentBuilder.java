@@ -35,5 +35,5 @@ public interface ComponentBuilder<C> {
      * @param config The configuration from which other components can be retrieved to build the result.
      * @return A component of type {@code C} using the given {@code config} during construction.
      */
-    C build(@NonNull Configuration config);
+    C build(Configuration config);
 }

@@ -45,7 +45,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      *
      * @param name The name of this module. Must not be {@code null}.
      */
-    protected BaseModule(@NonNull String name) {
+    protected BaseModule(String name) {
         this.name = Assert.nonEmpty(name, "The Module name cannot be null or empty.");
     }
 
@@ -55,8 +55,8 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
     }
 
     @Override
-    public Configuration build(@NonNull Configuration parent,
-                               @NonNull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(Configuration parent,
+                               LifecycleRegistry lifecycleRegistry) {
 
         var registry = Optional.of(parent.getComponent(ComponentRegistry.class,
                                                        () ->

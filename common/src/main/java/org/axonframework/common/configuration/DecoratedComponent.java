@@ -54,7 +54,7 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
      * @param startHandlers    A list of handlers to invoke during application startup.
      * @param shutdownHandlers A list of handlers to invoke during application shutdown.
      */
-    DecoratedComponent(@NonNull Component<C> delegate,
+    DecoratedComponent(Component<C> delegate,
                        @NonNull ComponentDecorator<C, D> decorator,
                        @NonNull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
                        @NonNull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {

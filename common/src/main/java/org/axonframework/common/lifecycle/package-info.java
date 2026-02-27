@@ -15,10 +15,9 @@
  */
 
 /**
- * Contains common utility classes needed in different components of the framework. Components placed
- * here cannot generally be included in one of the other component's packages.
+ * Component lifecycle management types.
  */
 @NullMarked
-package org.axonframework.common;
+package org.axonframework.common.lifecycle;
 
 import org.jspecify.annotations.NullMarked;

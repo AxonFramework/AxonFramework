@@ -15,10 +15,9 @@
  */
 
 /**
- * Contains common utility classes needed in different components of the framework. Components placed
- * here cannot generally be included in one of the other component's packages.
+ * Property access and reflection helpers.
  */
 @NullMarked
-package org.axonframework.common;
+package org.axonframework.common.property;
 
 import org.jspecify.annotations.NullMarked;

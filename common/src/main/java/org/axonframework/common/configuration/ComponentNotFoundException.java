@@ -35,7 +35,7 @@ public class ComponentNotFoundException extends RuntimeException {
      * @param type The type of the component that could not be found, typically an interface.
      * @param name The name of the component that could not be found, potentially {@code null} when unimportant.
      */
-    public ComponentNotFoundException(@NonNull Class<?> type, @Nullable String name) {
+    public ComponentNotFoundException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 
