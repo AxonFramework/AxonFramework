@@ -16,13 +16,14 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.JdbcException;
-import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.conversion.CachingSupplier;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
@@ -35,7 +36,6 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 
-import java.sql.Connection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,7 +75,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         dataSource.setUrl("jdbc:hsqldb:mem:dlqintegtest");
         dataSource.setUser("sa");
         dataSource.setPassword("");
-        executorProvider = testTransactionalExecutorProvider();
+        executorProvider = new JdbcTransactionalExecutorProvider(dataSource);
 
         Converter genericConverter = jacksonConverter;
         statementFactory = DefaultDeadLetterStatementFactory.<EventMessage>builder()
@@ -96,26 +96,29 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     }
 
     /**
-     * Creates a {@link JdbcTransactionalExecutorProvider} that always uses the null-context code path,
-     * which creates a new {@link Connection} from the {@link javax.sql.DataSource} with its own transaction
-     * for each operation.
+     * Builds a {@link UnitOfWorkFactory} that registers a
+     * {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY SUPPLIER_KEY} resource on each
+     * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext}, similar to how
+     * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager}
+     * populates this resource in production.
      * <p>
-     * This is necessary because the integration test runs a real {@link EventProcessor} whose
-     * {@link ProcessingContext} instances do not carry the
-     * {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY SUPPLIER_KEY} resource. The default
-     * {@link JdbcTransactionalExecutorProvider} would throw when it receives a non-null context
-     * without that resource. Overriding {@code getTransactionalExecutor} to ignore the context
-     * avoids this, while still exercising the production {@link JdbcTransactionalExecutorProvider}
-     * connection and transaction management logic.
+     * This allows the {@link JdbcTransactionalExecutorProvider} to extract the
+     * {@link ConnectionExecutor} from the context when the {@link EventProcessor} processes events,
+     * exercising the same code path as production.
      */
-    private JdbcTransactionalExecutorProvider testTransactionalExecutorProvider() {
-        return new JdbcTransactionalExecutorProvider(dataSource) {
-            @Override
-            @Nonnull
-            public TransactionalExecutor<Connection> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
-                return super.getTransactionalExecutor(null);
-            }
-        };
+    @Override
+    protected UnitOfWorkFactory buildUnitOfWorkFactory() {
+        return new SimpleUnitOfWorkFactory(
+                EmptyApplicationContext.INSTANCE,
+                config -> config.registerProcessingLifecycleEnhancer(processingLifecycle ->
+                        processingLifecycle.runOnPreInvocation(pc ->
+                                pc.putResource(
+                                        JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                                        CachingSupplier.of(() -> new ConnectionExecutor(dataSource::getConnection))
+                                )
+                        )
+                )
+        );
     }
 
     @Override

@@ -170,6 +170,25 @@ public abstract class DeadLetteringEventIntegrationTest {
         return PassThroughConverter.INSTANCE;
     }
 
+    /**
+     * Builds the {@link UnitOfWorkFactory} used by both the {@link DeadLetteringEventHandlingComponent} and the
+     * {@link StreamingEventProcessor} in this integration test.
+     * <p>
+     * Returns a plain {@link SimpleUnitOfWorkFactory} by default. Subclasses that require resources in the
+     * {@link ProcessingContext} (e.g. a JDBC connection supplier for
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider})
+     * should override this to register the appropriate
+     * {@link UnitOfWorkConfiguration#registerProcessingLifecycleEnhancer processing lifecycle enhancer},
+     * similar to how
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.TransactionManager#attachToProcessingLifecycle}
+     * populates resources in production.
+     *
+     * @return A {@link UnitOfWorkFactory} used during the integration test.
+     */
+    protected UnitOfWorkFactory buildUnitOfWorkFactory() {
+        return new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+    }
+
     @BeforeEach
     void setUp() {
         eventHandler = new ProblematicEventHandler(converter());
@@ -206,7 +225,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandler
         );
 
-        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+        UnitOfWorkFactory unitOfWorkFactory = buildUnitOfWorkFactory();
         deadLetteringComponent = new DeadLetteringEventHandlingComponent(
                 simpleComponent, deadLetterQueue, enqueuePolicy, unitOfWorkFactory, true
         );
@@ -217,7 +236,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         var configuration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(eventSource)
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
+                .unitOfWorkFactory(buildUnitOfWorkFactory())
                 .tokenStore(new InMemoryTokenStore())
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)
