@@ -24,7 +24,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
-import static java.util.Objects.requireNonNull;
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 

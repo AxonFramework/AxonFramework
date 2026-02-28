@@ -15,14 +15,9 @@
  */
 package org.axonframework.messaging.core.timeout;
 
-import org.axonframework.messaging.core.timeout.AxonTaskJanitor;
-import org.axonframework.messaging.core.timeout.TimeoutWrappedMessageHandlingMember;
-import org.axonframework.messaging.core.timeout.UnitOfWorkTimeoutInterceptorBuilder;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
-
-import static org.awaitility.Awaitility.await;
 
 /**
  * The different timeout components, {@link TimeoutWrappedMessageHandlingMember} and

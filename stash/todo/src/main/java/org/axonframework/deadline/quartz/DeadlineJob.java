@@ -21,8 +21,6 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.core.ScopeAware;
-import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.conversion.SerializedObject;
 import org.axonframework.conversion.Serializer;

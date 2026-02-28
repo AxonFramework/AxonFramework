@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.eventhandling.EventMessage;

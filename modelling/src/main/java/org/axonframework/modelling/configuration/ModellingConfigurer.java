@@ -20,11 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.*;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.common.configuration.ComponentDecorator;
-import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 

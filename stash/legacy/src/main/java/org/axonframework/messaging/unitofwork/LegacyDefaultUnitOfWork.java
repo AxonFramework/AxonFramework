@@ -30,8 +30,6 @@ import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContex
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 
-import static org.axonframework.messaging.core.GenericResultMessage.asResultMessage;
-
 /**
  * Implementation of the UnitOfWork that processes a single message.
  *

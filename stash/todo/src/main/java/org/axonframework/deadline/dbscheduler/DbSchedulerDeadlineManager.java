@@ -23,7 +23,6 @@ import com.github.kagkarlsson.scheduler.exceptions.TaskInstanceNotFoundException
 import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskDescriptor;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
-import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -41,7 +40,6 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
-import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
