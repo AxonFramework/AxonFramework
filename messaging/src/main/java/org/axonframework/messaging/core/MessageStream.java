@@ -18,6 +18,7 @@ package org.axonframework.messaging.core;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import reactor.util.context.ContextView;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
 /**
  * Represents a stream of {@link Entry entries} containing {@link Message Messages} of type {@code M} that can be
@@ -664,4 +667,12 @@ public interface MessageStream<M extends Message> {
             return (Empty<T>) this;
         }
     }
+
+// Replace the bare declaration at the bottom of MessageStream with:
+default MessageStream<M> withReactorContext(@Nonnull ContextView reactorCtx) {
+    if (reactorCtx.isEmpty()) {
+        return this;
+    }
+    return new ReactorContextMessageStream<>(this, reactorCtx);
+}
 }
