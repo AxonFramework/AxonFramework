@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentFactory;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
