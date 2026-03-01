@@ -23,10 +23,9 @@ import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.annotation.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import org.axonframework.messaging.core.Metadata;
 
 import java.util.Arrays;
 import java.util.List;
