@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -72,6 +73,16 @@ public class ProcessingContextEventAppender implements EventAppender {
                 .collect(Collectors.toList());
         eventSink.publish(processingContext, eventMessages)
                  .join();
+    }
+
+    @Override
+    public void append(@Nonnull List<?> events, @Nonnull Metadata metadata) {
+        Objects.requireNonNull(events, "Events may not be null");
+        Objects.requireNonNull(metadata, "Metadata may not be null");
+        List<EventMessage> eventMessages = events.stream()
+                .map(e -> EventPublishingUtils.asEventMessage(e, metadata, messageTypeResolver))
+                .toList();
+        eventSink.publish(processingContext, eventMessages).join();
     }
 
     @Override

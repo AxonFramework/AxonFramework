@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,17 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-import org.axonframework.messaging.eventhandling.gateway.ProcessingContextEventAppender;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,5 +89,93 @@ class ProcessingContextEventAppenderTest {
                 messageTypeResolver.resolveOrThrow(payload2).qualifiedName(),
                 publishedEvent2.type().qualifiedName()
         );
+    }
+
+    @Nested
+    class AppendWithMetadata {
+
+        @Test
+        void attachesMetadataToPlainObject() {
+            ProcessingContext context = new StubProcessingContext();
+            EventAppender testSubject = new ProcessingContextEventAppender(context, mockEventSink, messageTypeResolver);
+
+            //noinspection unchecked
+            ArgumentCaptor<List<EventMessage>> captor = ArgumentCaptor.forClass(List.class);
+
+            Metadata metadata = Metadata.from(Map.of("key", "value"));
+            String payload = "My Event";
+            testSubject.append(payload, metadata);
+            verify(mockEventSink).publish(eq(context), captor.capture());
+
+            List<EventMessage> publishedEvents = captor.getValue();
+            assertEquals(1, publishedEvents.size());
+            EventMessage published = publishedEvents.get(0);
+            assertEquals(payload, published.payload());
+            assertEquals("value", published.metadata().get("key"));
+        }
+
+        @Test
+        void mergesMetadataIntoExistingEventMessage() {
+            ProcessingContext context = new StubProcessingContext();
+            EventAppender testSubject = new ProcessingContextEventAppender(context, mockEventSink, messageTypeResolver);
+
+            //noinspection unchecked
+            ArgumentCaptor<List<EventMessage>> captor = ArgumentCaptor.forClass(List.class);
+
+            Metadata existingMetadata = Metadata.from(Map.of("existing", "original", "conflict", "old"));
+            EventMessage existingEvent = new GenericEventMessage(
+                    messageTypeResolver.resolveOrThrow("payload"), "payload", existingMetadata
+            );
+            Metadata newMetadata = Metadata.from(Map.of("new", "added", "conflict", "new"));
+
+            testSubject.append(existingEvent, newMetadata);
+            verify(mockEventSink).publish(eq(context), captor.capture());
+
+            List<EventMessage> publishedEvents = captor.getValue();
+            assertEquals(1, publishedEvents.size());
+            EventMessage published = publishedEvents.get(0);
+            assertEquals("original", published.metadata().get("existing"));
+            assertEquals("added", published.metadata().get("new"));
+            assertEquals("new", published.metadata().get("conflict"));
+        }
+
+        @Test
+        void providedValuesWinOnConflictWithExistingMetadata() {
+            ProcessingContext context = new StubProcessingContext();
+            EventAppender testSubject = new ProcessingContextEventAppender(context, mockEventSink, messageTypeResolver);
+
+            //noinspection unchecked
+            ArgumentCaptor<List<EventMessage>> captor = ArgumentCaptor.forClass(List.class);
+
+            Metadata existingMetadata = Metadata.from(Map.of("key", "original"));
+            EventMessage existingEvent = new GenericEventMessage(
+                    messageTypeResolver.resolveOrThrow("payload"), "payload", existingMetadata
+            );
+
+            testSubject.append(existingEvent, Metadata.from(Map.of("key", "override")));
+            verify(mockEventSink).publish(eq(context), captor.capture());
+
+            assertEquals("override", captor.getValue().get(0).metadata().get("key"));
+        }
+
+        @Test
+        void appliesMetadataToAllEventsInBatch() {
+            ProcessingContext context = new StubProcessingContext();
+            EventAppender testSubject = new ProcessingContextEventAppender(context, mockEventSink, messageTypeResolver);
+
+            //noinspection unchecked
+            ArgumentCaptor<List<EventMessage>> captor = ArgumentCaptor.forClass(List.class);
+
+            Metadata metadata = Metadata.from(Map.of("batch", "true"));
+            String payload1 = "Event 1";
+            Integer payload2 = 42;
+            testSubject.append(List.of(payload1, payload2), metadata);
+            verify(mockEventSink).publish(eq(context), captor.capture());
+
+            List<EventMessage> publishedEvents = captor.getValue();
+            assertEquals(2, publishedEvents.size());
+            assertEquals("true", publishedEvents.get(0).metadata().get("batch"));
+            assertEquals("true", publishedEvents.get(1).metadata().get("batch"));
+        }
     }
 }
