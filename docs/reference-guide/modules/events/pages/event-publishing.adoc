@@ -77,7 +77,7 @@ public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
 ----
 ====
 
-=== Appending events with Metadata
+=== Appending events with metadata
 
 Sometimes you want to attach `Metadata` to an event at the append site.
 The `EventAppender` provides overloads for both a single event and a batch:
