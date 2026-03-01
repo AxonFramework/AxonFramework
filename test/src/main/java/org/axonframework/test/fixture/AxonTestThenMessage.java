@@ -279,7 +279,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public AxonTestPhase.Setup and() {
-        return new AxonTestFixture(configuration, customization);
+        return new AxonTestFixture(configuration, customization, commandBus, eventSink);
     }
 
     @Override

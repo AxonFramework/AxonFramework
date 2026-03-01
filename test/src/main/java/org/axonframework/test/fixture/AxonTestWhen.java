@@ -46,8 +46,10 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
-    private final RecordingCommandBus commandBus;
-    private final RecordingEventSink eventSink;
+    private final CommandBus commandBus;
+    private final EventSink eventSink;
+    private final RecordingCommandBus recordingCommandBus;
+    private final RecordingEventSink recordingEventSink;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -59,9 +61,13 @@ class AxonTestWhen implements AxonTestPhase.When {
      *
      * @param configuration       The configuration which this test fixture phase is based on.
      * @param customization       Collection of customizations made for this test fixture.
-     * @param commandBus          The recording {@link CommandBus}, used to capture
+     * @param commandBus          The outermost {@link CommandBus}, used to dispatch commands through the full
+     *                            decorator chain (including interceptors).
+     * @param eventSink           The outermost {@link EventSink}, used to publish events through the full
+     *                            decorator chain (including interceptors).
+     * @param recordingCommandBus The recording {@link CommandBus}, used to capture
      *                            and validate any commands that have been sent.
-     * @param eventSink           The recording {@link EventSink}, used to capture and
+     * @param recordingEventSink  The recording {@link EventSink}, used to capture and
      *                            validate any events that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
@@ -72,15 +78,19 @@ class AxonTestWhen implements AxonTestPhase.When {
     public AxonTestWhen(
             @Nonnull AxonConfiguration configuration,
             @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
+            @Nonnull CommandBus commandBus,
+            @Nonnull EventSink eventSink,
+            @Nonnull RecordingCommandBus recordingCommandBus,
+            @Nonnull RecordingEventSink recordingEventSink,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
-        this.commandBus = commandBus.reset();
-        this.eventSink = eventSink.reset();
+        this.commandBus = commandBus;
+        this.eventSink = eventSink;
+        this.recordingCommandBus = recordingCommandBus.reset();
+        this.recordingEventSink = recordingEventSink.reset();
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -165,8 +175,8 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenCommand(
                     configuration,
                     customization,
-                    commandBus,
-                    eventSink,
+                    recordingCommandBus,
+                    recordingEventSink,
                     actualResult,
                     actualException
             );
@@ -180,8 +190,8 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenEvent(
                     configuration,
                     customization,
-                    commandBus,
-                    eventSink,
+                    recordingCommandBus,
+                    recordingEventSink,
                     actualException
             );
         }
@@ -199,8 +209,8 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenNothing(
                     configuration,
                     customization,
-                    commandBus,
-                    eventSink,
+                    recordingCommandBus,
+                    recordingEventSink,
                     actualException
             );
         }

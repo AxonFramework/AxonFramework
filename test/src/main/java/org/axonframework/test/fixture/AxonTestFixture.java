@@ -36,6 +36,58 @@ import java.util.function.UnaryOperator;
  * Fixture for testing Axon Framework application. The fixture can be configured to use your whole application
  * configuration or just a portion of that (single module or component). The fixture allows the execution of
  * given-when-then style.
+ * <p>
+ * <b>Decorator chain architecture and the two-reference design</b>
+ * <p>
+ * The fixture maintains two separate references for both the command bus and the event infrastructure:
+ * <ol>
+ *   <li><b>Outermost references</b> ({@code commandBus}, {@code eventSink}) — obtained from the configuration via
+ *       {@code configuration.getComponent(...)}. These sit at the top of the decorator chain and are used by the
+ *       given-phase and when-phase to <em>dispatch</em> commands and <em>publish</em> events. Dispatching through
+ *       the outermost reference ensures that the message traverses all decorators, including dispatch interceptors
+ *       that enrich messages with correlation metadata, tracing headers, etc.</li>
+ *   <li><b>Innermost recording references</b> ({@code recordingCommandBus}, {@code recordingEventSink}) — created
+ *       by {@link MessagesRecordingConfigurationEnhancer} as the innermost decorators
+ *       ({@code DECORATION_ORDER = Integer.MIN_VALUE}). These are used by the then-phase to <em>assert</em> on
+ *       recorded messages. Because they sit at the bottom of the decorator chain, they capture messages
+ *       <em>after</em> all dispatch interceptors have enriched them.</li>
+ * </ol>
+ * <p>
+ * For commands, the decorator chain looks like:
+ * <pre>
+ *   commandBus (outermost, for dispatching)
+ *     → InterceptingCommandBus (applies dispatch interceptors, enriches metadata)
+ *       → recordingCommandBus (innermost, captures post-interceptor commands for assertions)
+ *         → raw CommandBus implementation
+ * </pre>
+ * <p>
+ * For events, the same pattern applies. The concrete type depends on the configuration:
+ * <ul>
+ *   <li>With {@code EventSourcingConfigurer} — an {@code EventStore} is present, so the chain is:
+ *     <pre>
+ *   eventSink (outermost EventStore, for publishing)
+ *     → InterceptingEventStore (applies dispatch interceptors)
+ *       → RecordingEventStore (innermost, captures post-interceptor events for assertions)
+ *         → raw EventStore implementation
+ *     </pre>
+ *   </li>
+ *   <li>With {@code MessagingConfigurer} (no event sourcing) — an {@code EventBus} is present, so the chain is:
+ *     <pre>
+ *   eventSink (outermost EventBus, for publishing)
+ *     → InterceptingEventBus (applies dispatch interceptors)
+ *       → RecordingEventBus (innermost, captures post-interceptor events for assertions)
+ *         → raw EventBus implementation (e.g. SimpleEventBus)
+ *     </pre>
+ *   </li>
+ * </ul>
+ * Both {@code RecordingEventStore} and {@code RecordingEventBus} implement {@link RecordingEventSink}, so they are
+ * held uniformly as {@code recordingEventSink} regardless of the event infrastructure variant.
+ * <p>
+ * <b>Why two references are necessary:</b> If recording were at the outermost position, the recorder would capture
+ * the original, un-enriched message (before dispatch interceptors run). By placing recording at the innermost
+ * position, the recorder sees the fully enriched message — but we can no longer use the same reference for
+ * dispatching, because dispatching through the innermost reference would skip the interceptors. Hence the fixture
+ * keeps both: the outermost for dispatching and the innermost for assertions.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -47,46 +99,75 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     private final AxonConfiguration configuration;
     private final Customization customization;
-    private final RecordingCommandBus commandBus;
-    private final RecordingEventSink eventSink;
+
+    /**
+     * The outermost {@link CommandBus} from the decorator chain, obtained via
+     * {@code configuration.getComponent(CommandBus.class)}. Used by the given-phase and when-phase to dispatch
+     * commands so they traverse the full decorator chain, including all registered
+     * {@link org.axonframework.messaging.core.MessageDispatchInterceptor MessageDispatchInterceptors}.
+     */
+    private final CommandBus commandBus;
+
+    /**
+     * The outermost {@link EventSink} from the decorator chain, obtained via
+     * {@code configuration.getComponent(EventSink.class)}. Used by the given-phase and when-phase to publish events
+     * so they traverse the full decorator chain, including all registered event dispatch interceptors.
+     * <p>
+     * Depending on the configuration, the actual runtime type is either an {@code EventStore} (when using
+     * {@code EventSourcingConfigurer}) or an {@code EventBus} (when using {@code MessagingConfigurer}).
+     */
+    private final EventSink eventSink;
+
+    /**
+     * The innermost {@link RecordingCommandBus} in the decorator chain, created by
+     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Used by the
+     * then-phase to assert on dispatched commands. Because it is the innermost decorator, it captures commands
+     * <em>after</em> all dispatch interceptors have enriched them with metadata.
+     */
+    private final RecordingCommandBus recordingCommandBus;
+
+    /**
+     * The innermost {@link RecordingEventSink} in the decorator chain, created by
+     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Used by the
+     * then-phase to assert on published events. Because it is the innermost decorator, it captures events
+     * <em>after</em> all dispatch interceptors have enriched them with metadata.
+     * <p>
+     * The concrete type is either {@link RecordingEventStore} (when using {@code EventSourcingConfigurer}) or
+     * {@link RecordingEventBus} (when using {@code MessagingConfigurer}), but both implement
+     * {@link RecordingEventSink}.
+     */
+    private final RecordingEventSink recordingEventSink;
+
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
      * Creates a new fixture.
+     * <p>
+     * The outermost {@code commandBus} and {@code eventSink} are resolved from the configuration. These are used
+     * for dispatching commands and publishing events through the full decorator chain. The {@code recordingCommandBus}
+     * and {@code recordingEventSink} are the innermost recording decorators, used for assertions in the then-phase.
      *
-     * @param configuration The fixture will use the configuration to obtain components needed for test execution.
-     * @param customization A function that allows to customize the fixture setup.
+     * @param configuration       The configuration to obtain components from.
+     * @param customization       Collection of customizations for this fixture.
+     * @param recordingCommandBus The innermost recording command bus for assertions.
+     * @param recordingEventSink  The innermost recording event sink for assertions.
+     * @see MessagesRecordingConfigurationEnhancer
      */
     public AxonTestFixture(
             @Nonnull AxonConfiguration configuration,
-            @Nonnull Customization customization
+            @Nonnull Customization customization,
+            @Nonnull RecordingCommandBus recordingCommandBus,
+            @Nonnull RecordingEventSink recordingEventSink
     ) {
         this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
-
-        CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
-        if (!(commandBusComponent instanceof RecordingCommandBus)) {
-            throw new FixtureExecutionException(
-                    "CommandBus is not a RecordingCommandBus. This may happen in Spring environments where the " +
-                            "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                            "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                            "Note: This configuration may be subject to change until the 5.0.0 release."
-            );
-        }
-        this.commandBus = (RecordingCommandBus) commandBusComponent;
-
-        EventSink eventSinkComponent = configuration.getComponent(EventSink.class);
-        if (!(eventSinkComponent instanceof RecordingEventSink)) {
-            throw new FixtureExecutionException(
-                    "EventSink is not a RecordingEventSink. This may happen in Spring environments where the " +
-                            "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                            "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                            "Note: This configuration may be subject to change until the 5.0.0 release."
-            );
-        }
-        this.eventSink = (RecordingEventSink) eventSinkComponent;
-
+        this.commandBus = configuration.getComponent(CommandBus.class);
+        this.eventSink = configuration.getComponent(EventSink.class);
+        this.recordingCommandBus = Objects.requireNonNull(recordingCommandBus,
+                                                          "RecordingCommandBus may not be null.");
+        this.recordingEventSink = Objects.requireNonNull(recordingEventSink,
+                                                         "RecordingEventSink may not be null.");
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
@@ -104,6 +185,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     /**
      * Creates a new fixture.
+     * <p>
+     * Registers a {@link MessagesRecordingConfigurationEnhancer} that places recording decorators at the innermost
+     * position of the decorator chain. After the configuration is started, component resolution is triggered so
+     * that the decorator factories within the enhancer populate the recording instances. The enhancer then provides
+     * direct references to these innermost recording instances via its getter methods.
      *
      * @param configurer    The fixture will use the configuration build from the given configurer to obtain components
      *                      needed for test execution.
@@ -121,10 +207,23 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             configurer = configurer.componentRegistry(cr -> cr.disableEnhancer(
                     "org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer"));
         }
+        var recordingEnhancer = new MessagesRecordingConfigurationEnhancer();
         var configuration =
-                configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
+                configurer.componentRegistry(cr -> cr.registerEnhancer(recordingEnhancer))
                           .start();
-        return new AxonTestFixture(configuration, fixtureConfiguration);
+        // Trigger component resolution so the decorator factories populate the recording instances
+        // held by the enhancer. After this, recordingEnhancer.recordingCommandBus() and
+        // recordingEnhancer.recordingEventSink() return the innermost recording decorators.
+        configuration.getComponent(CommandBus.class);
+        configuration.getComponent(EventSink.class);
+        return new AxonTestFixture(
+                configuration,
+                fixtureConfiguration,
+                Objects.requireNonNull(recordingEnhancer.recordingCommandBus(),
+                                       "RecordingCommandBus was not created by the enhancer."),
+                Objects.requireNonNull(recordingEnhancer.recordingEventSink(),
+                                       "RecordingEventSink was not created by the enhancer.")
+        );
     }
 
     @Override
@@ -134,6 +233,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
+                recordingCommandBus,
+                recordingEventSink,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
@@ -146,6 +247,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
+                recordingCommandBus,
+                recordingEventSink,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
