@@ -18,12 +18,20 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.InstantiatedComponentDefinition;
+import org.axonframework.common.configuration.LifecycleRegistry;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -32,13 +40,34 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * Recording decorators are registered as the <b>innermost</b> decorators ({@code DECORATION_ORDER = Integer.MIN_VALUE})
  * so that they capture messages <em>after</em> dispatch interceptors have enriched them (e.g., with correlation
- * metadata). The recording instances are accessible via {@link #recordingCommandBus()} and
- * {@link #recordingEventSink()} after the configuration has been built.
+ * metadata).
+ * <p>
+ * The recording instances are also exposed as {@link ComponentFactory ComponentFactories} under their exact types, so
+ * they can be resolved from the {@link Configuration} via
+ * {@code configuration.getComponent(RecordingCommandBus.class, RECORDING_COMPONENT_NAME)} and
+ * {@code configuration.getComponent(RecordingEventSink.class, RECORDING_COMPONENT_NAME)}.
+ * <p>
+ * Using {@code ComponentFactory} (rather than regular component registration) is necessary because
+ * {@code RecordingCommandBus implements CommandBus}, and registering it as a regular component would cause
+ * {@code CommandBus} decorators to match it via {@code isAssignableFrom}, leading to a {@code ClassCastException}.
+ * Factory-produced components are created on-demand after the decoration phase, so they are never subject to
+ * type-assignability decorator matching.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
+
+    /**
+     * The component name used to register and resolve the recording instances from the {@link Configuration}.
+     * <p>
+     * Use this constant when resolving recording components:
+     * <pre>{@code
+     * configuration.getComponent(RecordingCommandBus.class, RECORDING_COMPONENT_NAME);
+     * configuration.getComponent(RecordingEventSink.class, RECORDING_COMPONENT_NAME);
+     * }</pre>
+     */
+    public static final String RECORDING_COMPONENT_NAME = "recording";
 
     /**
      * Innermost position — recording sees the message after all other decorators (interceptors) have processed it.
@@ -77,30 +106,84 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
                                            return recording;
                                        });
         }
-    }
 
-    /**
-     * Returns the {@link RecordingCommandBus} instance created by this enhancer. Only available after the configuration
-     * has been built and the {@link CommandBus} component has been resolved.
-     *
-     * @return The recording command bus, or {@code null} if not yet resolved.
-     */
-    RecordingCommandBus recordingCommandBus() {
-        return recordingCommandBus.get();
-    }
-
-    /**
-     * Returns the {@link RecordingEventSink} instance created by this enhancer. Only available after the configuration
-     * has been built and the event sink component has been resolved.
-     *
-     * @return The recording event sink, or {@code null} if not yet resolved.
-     */
-    RecordingEventSink recordingEventSink() {
-        return recordingEventSink.get();
+        // Factories expose recording instances under their exact types.
+        // Factory-produced components are created on-demand (after decoration), so they are
+        // never subject to type-assignability decorator matching.
+        registry.registerFactory(new RecordingCommandBusFactory());
+        registry.registerFactory(new RecordingEventSinkFactory());
     }
 
     @Override
     public int order() {
         return Integer.MAX_VALUE;
+    }
+
+    private class RecordingCommandBusFactory implements ComponentFactory<RecordingCommandBus> {
+
+        @Override
+        @Nonnull
+        public Class<RecordingCommandBus> forType() {
+            return RecordingCommandBus.class;
+        }
+
+        @Override
+        @Nonnull
+        public Optional<Component<RecordingCommandBus>> construct(@Nonnull String name,
+                                                                   @Nonnull Configuration config) {
+            // Trigger CommandBus resolution to ensure the decorator populates the AtomicReference
+            config.getComponent(CommandBus.class);
+            var recording = recordingCommandBus.get();
+            if (recording == null) {
+                return Optional.empty();
+            }
+            return Optional.of(new InstantiatedComponentDefinition<>(
+                    new Component.Identifier<>(forType(), name), recording
+            ));
+        }
+
+        @Override
+        public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+            // Nothing to do here
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("type", forType());
+        }
+    }
+
+    private class RecordingEventSinkFactory implements ComponentFactory<RecordingEventSink> {
+
+        @Override
+        @Nonnull
+        public Class<RecordingEventSink> forType() {
+            return RecordingEventSink.class;
+        }
+
+        @Override
+        @Nonnull
+        public Optional<Component<RecordingEventSink>> construct(@Nonnull String name,
+                                                                  @Nonnull Configuration config) {
+            // Trigger EventSink resolution to ensure the decorator populates the AtomicReference
+            config.getComponent(EventSink.class);
+            var recording = recordingEventSink.get();
+            if (recording == null) {
+                return Optional.empty();
+            }
+            return Optional.of(new InstantiatedComponentDefinition<>(
+                    new Component.Identifier<>(forType(), name), recording
+            ));
+        }
+
+        @Override
+        public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+            // Nothing to do here
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("type", forType());
+        }
     }
 }

@@ -144,30 +144,31 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     /**
      * Creates a new fixture.
      * <p>
-     * The outermost {@code commandBus} and {@code eventSink} are resolved from the configuration. These are used
-     * for dispatching commands and publishing events through the full decorator chain. The {@code recordingCommandBus}
-     * and {@code recordingEventSink} are the innermost recording decorators, used for assertions in the then-phase.
+     * All components are resolved from the given {@code configuration}:
+     * <ul>
+     *   <li>The outermost {@code commandBus} and {@code eventSink} are used for dispatching commands and publishing
+     *       events through the full decorator chain.</li>
+     *   <li>The innermost {@code recordingCommandBus} and {@code recordingEventSink} are resolved via
+     *       {@link MessagesRecordingConfigurationEnhancer#RECORDING_COMPONENT_NAME} and used by the then-phase
+     *       for assertions.</li>
+     * </ul>
      *
-     * @param configuration       The configuration to obtain components from.
-     * @param customization       Collection of customizations for this fixture.
-     * @param recordingCommandBus The innermost recording command bus for assertions.
-     * @param recordingEventSink  The innermost recording event sink for assertions.
+     * @param configuration The configuration to obtain components from.
+     * @param customization Collection of customizations for this fixture.
      * @see MessagesRecordingConfigurationEnhancer
      */
     public AxonTestFixture(
             @Nonnull AxonConfiguration configuration,
-            @Nonnull Customization customization,
-            @Nonnull RecordingCommandBus recordingCommandBus,
-            @Nonnull RecordingEventSink recordingEventSink
+            @Nonnull Customization customization
     ) {
         this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
         this.commandBus = configuration.getComponent(CommandBus.class);
         this.eventSink = configuration.getComponent(EventSink.class);
-        this.recordingCommandBus = Objects.requireNonNull(recordingCommandBus,
-                                                          "RecordingCommandBus may not be null.");
-        this.recordingEventSink = Objects.requireNonNull(recordingEventSink,
-                                                         "RecordingEventSink may not be null.");
+        this.recordingCommandBus = configuration.getComponent(
+                RecordingCommandBus.class, MessagesRecordingConfigurationEnhancer.RECORDING_COMPONENT_NAME);
+        this.recordingEventSink = configuration.getComponent(
+                RecordingEventSink.class, MessagesRecordingConfigurationEnhancer.RECORDING_COMPONENT_NAME);
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
@@ -187,9 +188,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * Creates a new fixture.
      * <p>
      * Registers a {@link MessagesRecordingConfigurationEnhancer} that places recording decorators at the innermost
-     * position of the decorator chain. After the configuration is started, component resolution is triggered so
-     * that the decorator factories within the enhancer populate the recording instances. The enhancer then provides
-     * direct references to these innermost recording instances via its getter methods.
+     * position of the decorator chain and exposes them as {@link org.axonframework.common.configuration.ComponentFactory
+     * ComponentFactories}. The recording instances are resolved lazily from the configuration when the fixture
+     * constructor calls {@code configuration.getComponent(RecordingCommandBus.class, ...)} and
+     * {@code configuration.getComponent(RecordingEventSink.class, ...)}.
      *
      * @param configurer    The fixture will use the configuration build from the given configurer to obtain components
      *                      needed for test execution.
@@ -211,19 +213,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         var configuration =
                 configurer.componentRegistry(cr -> cr.registerEnhancer(recordingEnhancer))
                           .start();
-        // Trigger component resolution so the decorator factories populate the recording instances
-        // held by the enhancer. After this, recordingEnhancer.recordingCommandBus() and
-        // recordingEnhancer.recordingEventSink() return the innermost recording decorators.
-        configuration.getComponent(CommandBus.class);
-        configuration.getComponent(EventSink.class);
-        return new AxonTestFixture(
-                configuration,
-                fixtureConfiguration,
-                Objects.requireNonNull(recordingEnhancer.recordingCommandBus(),
-                                       "RecordingCommandBus was not created by the enhancer."),
-                Objects.requireNonNull(recordingEnhancer.recordingEventSink(),
-                                       "RecordingEventSink was not created by the enhancer.")
-        );
+        return new AxonTestFixture(configuration, fixtureConfiguration);
     }
 
     @Override
