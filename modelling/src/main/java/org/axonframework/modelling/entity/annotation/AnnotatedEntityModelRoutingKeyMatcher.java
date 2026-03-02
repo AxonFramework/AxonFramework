@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.property.Property;
 import org.axonframework.messaging.core.Message;
@@ -61,9 +61,9 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the entity
      *                               routing key.
      */
-    public AnnotatedEntityModelRoutingKeyMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
-                                                 @Nonnull String entityRoutingProperty,
-                                                 @Nonnull String messageRoutingProperty) {
+    public AnnotatedEntityModelRoutingKeyMatcher(@NonNull AnnotatedEntityMetamodel<E> metamodel,
+                                                 @NonNull String entityRoutingProperty,
+                                                 @NonNull String messageRoutingProperty) {
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel may not be null.");
         this.entityRoutingProperty = Objects.requireNonNull(entityRoutingProperty,
                                                             "The entityRoutingProperty may not be null.");
@@ -82,7 +82,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @param message The message to match against.
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull E entity, @Nonnull Message message) {
+    public boolean matches(@NonNull E entity, @NonNull Message message) {
         Class<?> payloadType = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity metamodel, so we cannot match it.

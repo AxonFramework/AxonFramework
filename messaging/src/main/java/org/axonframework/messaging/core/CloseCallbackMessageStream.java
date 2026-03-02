@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +44,7 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
      * @param delegate     The MessageStream to wrap with the close handler invocation logic
      * @param closeHandler The handler to invoke when the stream is closed or completed
      */
-    public CloseCallbackMessageStream(@Nonnull MessageStream<M> delegate, @Nonnull Runnable closeHandler) {
+    public CloseCallbackMessageStream(@NonNull MessageStream<M> delegate, @NonNull Runnable closeHandler) {
         super(delegate);
         this.closeHandler = Objects.requireNonNull(closeHandler, "Close handler may not be null.");
     }
@@ -56,7 +56,7 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
      * @param delegate     The MessageStream to wrap with the close handler invocation logic
      * @param closeHandler The handler to invoke when the stream is closed or completed
      */
-    static <M extends Message> MessageStream.Single<M> single(@Nonnull Single<M> delegate, Runnable closeHandler) {
+    static <M extends Message> MessageStream.Single<M> single(@NonNull Single<M> delegate, Runnable closeHandler) {
         return new CloseCallbackMessageStream<>(delegate, closeHandler).first();
     }
 
@@ -68,7 +68,7 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
      * @param closeHandler The handler to invoke when the stream is closed or completed
      */
 
-    static <M extends Message> MessageStream.Empty<M> empty(@Nonnull Empty<M> delegate, Runnable closeHandler) {
+    static <M extends Message> MessageStream.Empty<M> empty(@NonNull Empty<M> delegate, Runnable closeHandler) {
         return new CloseCallbackMessageStream<>(delegate, closeHandler).ignoreEntries();
     }
 
@@ -92,7 +92,7 @@ public class CloseCallbackMessageStream<M extends Message> extends DelegatingMes
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         super.setCallback(() -> {
             callback.run();
             invokeCloseHandlerIfClosed();

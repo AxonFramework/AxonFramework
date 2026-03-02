@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.scheduling.jobrunr;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -221,19 +221,19 @@ class JobRunrEventSchedulerTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               @NonNull List<EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
         public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
     }

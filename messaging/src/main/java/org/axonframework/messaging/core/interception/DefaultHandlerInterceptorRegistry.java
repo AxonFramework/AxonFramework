@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
@@ -60,10 +60,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     private final List<ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>>> eventInterceptorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
@@ -94,10 +94,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to CommandMessage is safe.
         this.commandInterceptorDefinitions.add(
@@ -109,10 +109,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to EventMessage is safe.
         this.eventInterceptorDefinitions.add(
@@ -124,10 +124,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to QueryMessage is safe.
         this.queryInterceptorDefinitions.add(
@@ -139,26 +139,26 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@NonNull Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@NonNull Configuration config) {
         return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@NonNull Configuration config) {
         return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandHandlerInterceptors", commandInterceptorDefinitions);
         descriptor.describeProperty("eventHandlerInterceptors", eventInterceptorDefinitions);
         descriptor.describeProperty("queryHandlerInterceptors", queryInterceptorDefinitions);

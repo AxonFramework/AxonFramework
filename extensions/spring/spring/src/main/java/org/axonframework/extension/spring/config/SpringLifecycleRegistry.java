@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.LifecycleHandler;
@@ -54,19 +54,19 @@ public class SpringLifecycleRegistry implements BeanFactoryAware, LifecycleRegis
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
-    public void setBeanFactory(@Nonnull BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
     }
 
     @Override
-    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
         logger.warn("Registering lifecycle phase timeout on a Spring-based LifecycleRegistry is not supported. "
                             + "Please use Spring Boot's \"Graceful Shutdown\" support instead.");
         return this;
     }
 
     @Override
-    public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public LifecycleRegistry onStart(int phase, @NonNull LifecycleHandler startHandler) {
         SpringLifecycleStartHandler springStartHandler = new SpringLifecycleStartHandler(
                 phase,
                 () -> startHandler.run(beanFactory.getBean(AxonConfiguration.class))
@@ -76,7 +76,7 @@ public class SpringLifecycleRegistry implements BeanFactoryAware, LifecycleRegis
     }
 
     @Override
-    public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public LifecycleRegistry onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
         SpringLifecycleShutdownHandler springShutdownHandler = new SpringLifecycleShutdownHandler(
                 phase,
                 () -> shutdownHandler.run(beanFactory.getBean(AxonConfiguration.class))
@@ -85,7 +85,7 @@ public class SpringLifecycleRegistry implements BeanFactoryAware, LifecycleRegis
         return this;
     }
 
-    private String getBeanName(@Nonnull String type) {
+    private String getBeanName(@NonNull String type) {
         return "axon-" + type + "-lifecycle-handler-" + uniqueId.getAndIncrement();
     }
 }

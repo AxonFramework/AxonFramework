@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.List;
@@ -54,17 +54,17 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
      * @param startHandlers    A list of handlers to invoke during application startup.
      * @param shutdownHandlers A list of handlers to invoke during application shutdown.
      */
-    DecoratedComponent(@Nonnull Component<C> delegate,
-                       @Nonnull ComponentDecorator<C, D> decorator,
-                       @Nonnull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
-                       @Nonnull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
+    DecoratedComponent(@NonNull Component<C> delegate,
+                       @NonNull ComponentDecorator<C, D> decorator,
+                       @NonNull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
+                       @NonNull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
         super(requireNonNull(delegate, "The delegate cannot be null.").identifier(), startHandlers, shutdownHandlers);
         this.delegate = delegate;
         this.decorator = decorator;
     }
 
     @Override
-    public D doResolve(@Nonnull Configuration configuration) {
+    public D doResolve(@NonNull Configuration configuration) {
         D existingInstance = instanceReference.get();
         if (existingInstance != null) {
             return existingInstance;
@@ -99,13 +99,13 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
     }
 
     @Override
-    public void initLifecycle(@Nonnull Configuration configuration, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public void initLifecycle(@NonNull Configuration configuration, @NonNull LifecycleRegistry lifecycleRegistry) {
         delegate.initLifecycle(configuration, lifecycleRegistry);
         super.initLifecycle(configuration, lifecycleRegistry);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         D instance = instanceReference.get();
         if (instance != null) {

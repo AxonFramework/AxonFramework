@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
@@ -120,11 +120,11 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * type.
      */
     public static <E> AnnotatedEntityMetamodel<E> forConcreteType(
-            @Nonnull Class<E> entityType,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull MessageConverter messageConverter,
-            @Nonnull EventConverter eventConverter
+            @NonNull Class<E> entityType,
+            @NonNull ParameterResolverFactory parameterResolverFactory,
+            @NonNull MessageTypeResolver messageTypeResolver,
+            @NonNull MessageConverter messageConverter,
+            @NonNull EventConverter eventConverter
     ) {
         return new AnnotatedEntityMetamodel<>(entityType,
                                               Set.of(),
@@ -155,11 +155,11 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * MessageConverter, EventConverter)
      */
     public static <E> AnnotatedEntityMetamodel<E> forPolymorphicSealedType(
-            @Nonnull Class<E> entityType,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull MessageConverter messageConverter,
-            @Nonnull EventConverter eventConverter
+            @NonNull Class<E> entityType,
+            @NonNull ParameterResolverFactory parameterResolverFactory,
+            @NonNull MessageTypeResolver messageTypeResolver,
+            @NonNull MessageConverter messageConverter,
+            @NonNull EventConverter eventConverter
     ) {
         Assert.isTrue(entityType.isSealed(), () -> "The entity type [" + entityType + "] is not sealed.");
         return forPolymorphicType(entityType,
@@ -189,12 +189,12 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * type.
      */
     public static <E> AnnotatedEntityMetamodel<E> forPolymorphicType(
-            @Nonnull Class<E> entityType,
-            @Nonnull Set<Class<? extends E>> concreteTypes,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull MessageConverter messageConverter,
-            @Nonnull EventConverter eventConverter
+            @NonNull Class<E> entityType,
+            @NonNull Set<Class<? extends E>> concreteTypes,
+            @NonNull ParameterResolverFactory parameterResolverFactory,
+            @NonNull MessageTypeResolver messageTypeResolver,
+            @NonNull MessageConverter messageConverter,
+            @NonNull EventConverter eventConverter
     ) {
         requireNonNull(concreteTypes, "The concreteTypes may not be null.");
         Assert.isTrue(!concreteTypes.isEmpty(),
@@ -227,13 +227,13 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      *                                 the abstract entity type, as this will lead to problems.
      */
     private AnnotatedEntityMetamodel(
-            @Nonnull Class<E> entityType,
-            @Nonnull Set<Class<? extends E>> concreteTypes,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull MessageConverter messageConverter,
-            @Nonnull EventConverter eventConverter,
-            @Nonnull List<QualifiedName> commandsToSkip
+            @NonNull Class<E> entityType,
+            @NonNull Set<Class<? extends E>> concreteTypes,
+            @NonNull ParameterResolverFactory parameterResolverFactory,
+            @NonNull MessageTypeResolver messageTypeResolver,
+            @NonNull MessageConverter messageConverter,
+            @NonNull EventConverter eventConverter,
+            @NonNull List<QualifiedName> commandsToSkip
     ) {
         this.commandsToSkip = requireNonNull(commandsToSkip, "The commandsToSkip may not be null.");
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
@@ -369,7 +369,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * {@code null} if no such representation is found.
      */
     @Nullable
-    public Class<?> getExpectedRepresentation(@Nonnull QualifiedName qualifiedName) {
+    public Class<?> getExpectedRepresentation(@NonNull QualifiedName qualifiedName) {
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
         }
@@ -447,27 +447,26 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Set<QualifiedName> supportedCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedCommands());
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Set<QualifiedName> supportedCreationalCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedCreationalCommands());
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Set<QualifiedName> supportedInstanceCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedInstanceCommands());
     }
 
     @Override
-    @Nonnull
-    public MessageStream.Single<CommandResultMessage> handleCreate(@Nonnull CommandMessage message,
-                                                                   @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Single<CommandResultMessage> handleCreate(@NonNull CommandMessage message,
+                                                                   @NonNull ProcessingContext context) {
         MessageType type = message.type();
         if (logger.isDebugEnabled()) {
             logger.debug("Handling creation command: {} for type: {}", type, entityType());
@@ -485,10 +484,9 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    @Nonnull
-    public MessageStream.Single<CommandResultMessage> handleInstance(@Nonnull CommandMessage message,
-                                                                     @Nonnull E entity,
-                                                                     @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Single<CommandResultMessage> handleInstance(@NonNull CommandMessage message,
+                                                                     @NonNull E entity,
+                                                                     @NonNull ProcessingContext context) {
         MessageType type = message.type();
         if (logger.isDebugEnabled()) {
             logger.debug("Handling instance command: {} for entity: {} of type: {}",
@@ -507,20 +505,20 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         logger.debug("Describing entity metamodel to descriptor for entity type: {}", entityType());
         descriptor.describeWrapperOf(delegateMetamodel);
         descriptor.describeProperty("entityType", entityType());
     }
 
     @Override
-    public E evolve(@Nonnull E entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public E evolve(@NonNull E entity, @NonNull EventMessage event, @NonNull ProcessingContext context) {
         logger.debug("Evolving entity: {} with event: {} for entity type: {}", entity, event.type(), entityType());
         return delegateMetamodel.evolve(entity, event, context);
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<E> entityType() {
         return entityType;
     }

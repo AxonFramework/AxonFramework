@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
@@ -288,8 +288,8 @@ class SagaManagerTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context,
-                                 @Nonnull Segment segment) {
+        public boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context,
+                                 @NonNull Segment segment) {
             return true;
         }
 

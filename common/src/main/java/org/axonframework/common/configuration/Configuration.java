@@ -16,8 +16,8 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
@@ -43,8 +43,8 @@ public interface Configuration extends DescribableComponent {
      * @return The component registered for the given type.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
-    @Nonnull
-    default <C> C getComponent(@Nonnull Class<C> type) {
+    @NonNull
+    default <C> C getComponent(@NonNull Class<C> type) {
         return getComponent(type, (String) null);
     }
 
@@ -60,8 +60,8 @@ public interface Configuration extends DescribableComponent {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
      *                                    {@code name}.
      */
-    @Nonnull
-    default <C> C getComponent(@Nonnull Class<C> type,
+    @NonNull
+    default <C> C getComponent(@NonNull Class<C> type,
                                @Nullable String name) {
         return getOptionalComponent(type, name)
                 .orElseThrow(() -> new ComponentNotFoundException(type, name));
@@ -75,7 +75,7 @@ public interface Configuration extends DescribableComponent {
      * @return An {@code Optional} wrapping the component registered for the given {@code type}. Might be empty when
      * there is no component present for the given {@code type}.
      */
-    default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
+    default <C> Optional<C> getOptionalComponent(@NonNull Class<C> type) {
         return getOptionalComponent(type, null);
     }
 
@@ -89,7 +89,7 @@ public interface Configuration extends DescribableComponent {
      * @return An {@code Optional} wrapping the component registered for the given {@code type} and {@code name}. Might
      * be empty when there is no component present for the given {@code type} and {@code name}.
      */
-    <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+    <C> Optional<C> getOptionalComponent(@NonNull Class<C> type,
                                          @Nullable String name);
 
     /**
@@ -99,7 +99,7 @@ public interface Configuration extends DescribableComponent {
      * @return {@code true} when there is a {@link Component} registered under the given {@code type}, {@code false}
      * otherwise.
      */
-    default boolean hasComponent(@Nonnull Class<?> type) {
+    default boolean hasComponent(@NonNull Class<?> type) {
         return hasComponent(type, null);
     }
 
@@ -113,7 +113,7 @@ public interface Configuration extends DescribableComponent {
      * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
      * {@code name combination}, {@code false} otherwise.
      */
-    default boolean hasComponent(@Nonnull Class<?> type,
+    default boolean hasComponent(@NonNull Class<?> type,
                                  @Nullable String name) {
         return getOptionalComponent(type, name).isPresent();
     }
@@ -130,9 +130,9 @@ public interface Configuration extends DescribableComponent {
      * @return The component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
      * such component is defined.
      */
-    @Nonnull
-    default <C> C getComponent(@Nonnull Class<C> type,
-                               @Nonnull Supplier<C> defaultImpl) {
+    @NonNull
+    default <C> C getComponent(@NonNull Class<C> type,
+                               @NonNull Supplier<C> defaultImpl) {
         return getComponent(type, null, defaultImpl);
     }
 
@@ -150,10 +150,10 @@ public interface Configuration extends DescribableComponent {
      * @return The component declared under the given {@code type} and {@code name}, reverting to the given
      * {@code defaultImpl} if no such component is defined.
      */
-    @Nonnull
-    <C> C getComponent(@Nonnull Class<C> type,
+    @NonNull
+    <C> C getComponent(@NonNull Class<C> type,
                        @Nullable String name,
-                       @Nonnull Supplier<C> defaultImpl);
+                       @NonNull Supplier<C> defaultImpl);
 
     /**
      * Returns all {@code Configurations} from the {@link Module Modules} that have been
@@ -174,7 +174,7 @@ public interface Configuration extends DescribableComponent {
      * @return An {@code Optional} with the {@code Configuration} for a {@link Module} with the given {@code name} or an
      * empty optional if no module exists with that name.
      */
-    Optional<Configuration> getModuleConfiguration(@Nonnull String name);
+    Optional<Configuration> getModuleConfiguration(@NonNull String name);
 
     /**
      * Returns the parent configuration of this configuration, if the parent configuration exists. Components can use
@@ -219,6 +219,6 @@ public interface Configuration extends DescribableComponent {
      * components are registered for the given type. The map may contain a {@code null} key for the unnamed
      * component.
      */
-    @Nonnull
-    <C> Map<String, C> getComponents(@Nonnull Class<C> type);
+    @NonNull
+    <C> Map<String, C> getComponents(@NonNull Class<C> type);
 }

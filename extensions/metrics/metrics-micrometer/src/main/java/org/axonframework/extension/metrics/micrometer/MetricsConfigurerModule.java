@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.micrometer;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 
@@ -44,7 +44,7 @@ public class MetricsConfigurerModule implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry configurer) {
+    public void enhance(@NonNull ComponentRegistry configurer) {
         if (useDimensions) {
 //            globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
         } else {

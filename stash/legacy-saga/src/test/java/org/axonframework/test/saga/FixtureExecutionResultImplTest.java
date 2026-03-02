@@ -19,8 +19,6 @@ package org.axonframework.test.saga;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.junit.jupiter.*;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * Test class to verify correct execution of the {@link FixtureExecutionResultImpl}.
  *

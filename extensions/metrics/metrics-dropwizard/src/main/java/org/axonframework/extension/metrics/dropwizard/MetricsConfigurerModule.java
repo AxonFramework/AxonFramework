@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 
@@ -36,7 +36,7 @@ public class MetricsConfigurerModule implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry configurer) {
+    public void enhance(@NonNull ComponentRegistry configurer) {
 //        globalMetricRegistry.registerWithConfigurer(configurer);
     }
 }

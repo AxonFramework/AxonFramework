@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
@@ -390,7 +390,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception {
+    public Object handle(@NonNull Message message, @NonNull ProcessingContext context) throws Exception {
         Callable<Object> messageHandling;
 
         if (message instanceof CommandMessage) {
@@ -577,8 +577,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        @Nonnull
-        public GenericDomainEventMessage withMetadata(@Nonnull Map<String, String> newMetadata) {
+                public @NonNull GenericDomainEventMessage withMetadata(@NonNull Map<String, String> newMetadata) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage(
@@ -594,8 +593,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
-        @Nonnull
-        public GenericDomainEventMessage andMetadata(@Nonnull Map<String, String> additionalMetadata) {
+                public @NonNull GenericDomainEventMessage andMetadata(@NonNull Map<String, String> additionalMetadata) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage(

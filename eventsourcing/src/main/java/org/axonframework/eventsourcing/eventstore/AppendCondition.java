@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.EventsCondition;
@@ -54,7 +54,7 @@ public sealed interface AppendCondition extends EventsCondition permits NoAppend
      * @param criteria The criteria for the AppendCondition.
      * @return A condition that matches against given criteria.
      */
-    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
+    static AppendCondition withCriteria(@NonNull EventCriteria criteria) {
         return new DefaultAppendCondition(ConsistencyMarker.ORIGIN, criteria);
     }
 
@@ -65,7 +65,7 @@ public sealed interface AppendCondition extends EventsCondition permits NoAppend
      * @param criteria The additional criteria the condition may match against.
      * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics.
      */
-    default AppendCondition orCriteria(@Nonnull EventCriteria criteria) {
+    default AppendCondition orCriteria(@NonNull EventCriteria criteria) {
         return new DefaultAppendCondition(this.consistencyMarker(), this.criteria().or(criteria));
     }
 

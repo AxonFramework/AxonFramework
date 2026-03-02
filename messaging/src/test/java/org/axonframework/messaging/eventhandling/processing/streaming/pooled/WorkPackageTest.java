@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
@@ -590,7 +590,7 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
+        public MessageStream.Empty<Message> process(@NonNull List<? extends EventMessage> events, @NonNull ProcessingContext context) {
             if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
                 processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
             }

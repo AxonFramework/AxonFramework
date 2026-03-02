@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Functional interface describing how to build a component of type {@code C} using the {@link Configuration} during
@@ -35,5 +35,5 @@ public interface ComponentBuilder<C> {
      * @param config The configuration from which other components can be retrieved to build the result.
      * @return A component of type {@code C} using the given {@code config} during construction.
      */
-    C build(@Nonnull Configuration config);
+    C build(@NonNull Configuration config);
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -43,7 +43,7 @@ public abstract class TypeReference<E> {
         }
     }
 
-    private TypeReference(@Nonnull Type type) {
+    private TypeReference(@NonNull Type type) {
         this.type = Objects.requireNonNull(type, "The given type may not be null.");
     }
 
@@ -54,7 +54,7 @@ public abstract class TypeReference<E> {
      * @param <C>   The clazz this {@code TypeReference} reflects.
      * @return A new {@code TypeReference} instance of the given {@code clazz}.
      */
-    public static <C> TypeReference<C> fromClass(@Nonnull Class<C> clazz) {
+    public static <C> TypeReference<C> fromClass(@NonNull Class<C> clazz) {
         return new TypeReference<>(clazz) {
         };
     }
@@ -66,7 +66,7 @@ public abstract class TypeReference<E> {
      * @param <C>  The type this {@code TypeReference} reflects.
      * @return A new {@code TypeReference} instance of the given {@code type}.
      */
-    public static <C> TypeReference<C> fromType(@Nonnull Type type) {
+    public static <C> TypeReference<C> fromType(@NonNull Type type) {
         return new TypeReference<>(type) {
         };
     }
@@ -77,7 +77,7 @@ public abstract class TypeReference<E> {
      * @return The class of the component.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
+    @NonNull
     public Class<E> getTypeAsClass() {
         if (type instanceof Class<?> clazz) {
             return (Class<E>) clazz;

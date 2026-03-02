@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -53,9 +53,9 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
     private static final Class<TargetEntityId> IDENTIFIER_ANNOTATION = TargetEntityId.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();
 
-    @Nonnull
+    @NonNull
     @Override
-    public T resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
+    public T resolve(@NonNull Message message, @NonNull ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();
         List<Object> identifiers = getIdentifiers(payload)
                 .stream()

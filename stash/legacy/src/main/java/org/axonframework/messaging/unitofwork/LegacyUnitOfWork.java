@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
@@ -351,7 +351,7 @@ public interface LegacyUnitOfWork<T extends Message> {
      * @return The result of the task wrapped in Result Message
      */
     <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
-                                           @Nonnull RollbackConfiguration rollbackConfiguration);
+                                           @NonNull RollbackConfiguration rollbackConfiguration);
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task

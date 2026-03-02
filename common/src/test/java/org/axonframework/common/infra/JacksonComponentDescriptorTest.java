@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -104,7 +104,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         ) implements DescribableComponent {
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 descriptor.describeProperty("stringValue", stringValue);
                 descriptor.describeProperty("numberValue", numberValue);
                 descriptor.describeProperty("booleanValue", booleanValue);

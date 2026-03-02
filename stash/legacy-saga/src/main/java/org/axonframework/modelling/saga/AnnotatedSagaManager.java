@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -94,7 +94,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+    public boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context, @NonNull Segment segment) {
         // The segment is used to filter Saga instances, so all events match when there's a handler
         return sagaMetaModel.hasHandlerMethod(eventMessage, context);
     }

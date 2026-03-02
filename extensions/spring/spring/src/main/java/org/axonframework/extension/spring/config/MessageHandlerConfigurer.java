@@ -16,8 +16,8 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentBuilder;
@@ -78,7 +78,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(@NonNull ComponentRegistry registry) {
         switch (type) {
             case EVENT:
                 configureEventHandlers(registry);
@@ -148,7 +148,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -159,8 +159,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      * @param definition bean definition.
      */
     record NamedBeanDefinition(
-            @Nonnull String name,
-            @Nonnull BeanDefinition definition
+            @NonNull String name,
+            @NonNull BeanDefinition definition
     ) {
 
     }
@@ -214,13 +214,12 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-        @Nonnull
-        public Object resolveBean() {
+                public @NonNull Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 
         @Override
-        @Nonnull
+        @NonNull
         public ComponentBuilder<Object> component() {
             return c -> resolveBean();
         }

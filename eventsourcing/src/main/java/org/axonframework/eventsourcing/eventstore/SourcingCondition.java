@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.EventsCondition;
 
@@ -43,7 +43,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
      */
-    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria) {
+    static SourcingCondition conditionFor(@NonNull EventCriteria criteria) {
         return conditionFor(Position.START, criteria);
     }
 
@@ -57,7 +57,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(@Nonnull Position start, @Nonnull EventCriteria criteria) {
+    static SourcingCondition conditionFor(@NonNull Position start, @NonNull EventCriteria criteria) {
         return new DefaultSourcingCondition(start, criteria);
     }
 
@@ -67,7 +67,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      *
      * @return The start position in the event sequence to source, never {@code null}.
      */
-    default @Nonnull Position start() {
+    default @NonNull Position start() {
         return Position.START;
     }
 
@@ -83,5 +83,5 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @param other The {@code SourcingCondition} to combine with {@code this SourcingCondition}.
      * @return A combined {@code SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
      */
-    SourcingCondition or(@Nonnull SourcingCondition other);
+    SourcingCondition or(@NonNull SourcingCondition other);
 }

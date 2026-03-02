@@ -16,8 +16,8 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.
@@ -36,7 +36,7 @@ public class ComponentOverrideException extends RuntimeException {
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers, potentially {@code null} when unimportant.
      */
-    public ComponentOverrideException(@Nonnull Class<?> type, @Nullable String name) {
+    public ComponentOverrideException(@NonNull Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 

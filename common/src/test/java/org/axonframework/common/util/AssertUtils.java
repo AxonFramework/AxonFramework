@@ -16,7 +16,7 @@
 
 package org.axonframework.common.util;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +67,7 @@ public abstract class AssertUtils {
      * @param <R>    The result of the given {@code future}.
      * @return The result from the given {@code future}.
      */
-    public static <R> R awaitSuccessfulCompletion(@Nonnull CompletableFuture<R> future) {
+    public static <R> R awaitSuccessfulCompletion(@NonNull CompletableFuture<R> future) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> assertTrue(
@@ -85,7 +85,7 @@ public abstract class AssertUtils {
      * @param <R>    The result of the given {@code future}.
      * @return The result from the given {@code future}.
      */
-    public static <R> R awaitExceptionalCompletion(@Nonnull CompletableFuture<R> future) {
+    public static <R> R awaitExceptionalCompletion(@NonNull CompletableFuture<R> future) {
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> assertTrue(

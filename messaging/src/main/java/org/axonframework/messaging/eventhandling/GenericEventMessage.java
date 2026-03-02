@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.GenericMessage;
@@ -64,7 +64,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      * @param type    The {@link MessageType type} for this {@link EventMessage}.
      * @param payload The payload for this {@link EventMessage}.
      */
-    public GenericEventMessage(@Nonnull MessageType type,
+    public GenericEventMessage(@NonNull MessageType type,
                                @Nullable Object payload) {
         this(type, payload, Metadata.emptyInstance());
     }
@@ -76,9 +76,9 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      * @param payload  The payload for this {@link EventMessage}.
      * @param metadata The metadata for this {@link EventMessage}.
      */
-    public GenericEventMessage(@Nonnull MessageType type,
+    public GenericEventMessage(@NonNull MessageType type,
                                @Nullable Object payload,
-                               @Nonnull Map<String, String> metadata) {
+                               @NonNull Map<String, String> metadata) {
         this(new GenericMessage(type, payload, metadata), clock.instant());
     }
 
@@ -92,11 +92,11 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      * @param metadata   The metadata for this {@link EventMessage}.
      * @param timestamp  The {@link Instant timestamp} of this {@link EventMessage EventMessage's} creation.
      */
-    public GenericEventMessage(@Nonnull String identifier,
-                               @Nonnull MessageType type,
+    public GenericEventMessage(@NonNull String identifier,
+                               @NonNull MessageType type,
                                @Nullable Object payload,
-                               @Nonnull Map<String, String> metadata,
-                               @Nonnull Instant timestamp) {
+                               @NonNull Map<String, String> metadata,
+                               @NonNull Instant timestamp) {
         this(new GenericMessage(identifier, type, payload, metadata), timestamp);
     }
 
@@ -116,8 +116,8 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
      */
-    public GenericEventMessage(@Nonnull Message delegate,
-                               @Nonnull Supplier<Instant> timestampSupplier) {
+    public GenericEventMessage(@NonNull Message delegate,
+                               @NonNull Supplier<Instant> timestampSupplier) {
         super(delegate);
         this.timestampSupplier = CachingSupplier.of(timestampSupplier);
     }
@@ -137,20 +137,18 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      *                  {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */
-    protected GenericEventMessage(@Nonnull Message delegate,
-                                  @Nonnull Instant timestamp) {
+    protected GenericEventMessage(@NonNull Message delegate,
+                                  @NonNull Instant timestamp) {
         this(delegate, CachingSupplier.of(timestamp));
     }
 
     @Override
-    @Nonnull
-    public Instant timestamp() {
+        public @NonNull Instant timestamp() {
         return timestampSupplier.get();
     }
 
     @Override
-    @Nonnull
-    public EventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull EventMessage withMetadata(@NonNull Map<String, String> metadata) {
         if (metadata().equals(metadata)) {
             return this;
         }
@@ -158,8 +156,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
     }
 
     @Override
-    @Nonnull
-    public EventMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull EventMessage andMetadata(@NonNull Map<String, String> metadata) {
         //noinspection ConstantConditions
         if (metadata == null || metadata.isEmpty() || metadata().equals(metadata)) {
             return this;
@@ -168,8 +165,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
     }
 
     @Override
-    @Nonnull
-    public EventMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public @NonNull EventMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

@@ -23,7 +23,7 @@ import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.Tag;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -60,7 +60,7 @@ public final class ConditionConverter {
      * @param condition The {@code AppendCondition} to base the {@link ConsistencyCondition} on.
      * @return A {@code ConsistencyCondition} based on the given {@code condition}.
      */
-    public static ConsistencyCondition convertAppendCondition(@Nonnull AppendCondition condition) {
+    public static ConsistencyCondition convertAppendCondition(@NonNull AppendCondition condition) {
         return ConsistencyCondition.newBuilder()
                                    .setConsistencyMarker(GlobalIndexConsistencyMarker.position(
                                            condition.consistencyMarker()
@@ -79,7 +79,7 @@ public final class ConditionConverter {
      * @param condition The {@code SourcingCondition} to base the {@link SourceEventsRequest} on.
      * @return A {@code SourceEventsRequest} based on the given {@code condition}.
      */
-    public static SourceEventsRequest convertSourcingCondition(@Nonnull SourcingCondition condition) {
+    public static SourceEventsRequest convertSourcingCondition(@NonNull SourcingCondition condition) {
         return SourceEventsRequest.newBuilder()
                                   .setFromSequence(GlobalIndexPosition.toIndex(condition.start()))
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
@@ -96,7 +96,7 @@ public final class ConditionConverter {
      * @param condition The {@code StreamingCondition} to base the {@link StreamEventsRequest} on.
      * @return A {@code StreamEventsRequest} based on the given {@code condition}.
      */
-    public static StreamEventsRequest convertStreamingCondition(@Nonnull StreamingCondition condition) {
+    public static StreamEventsRequest convertStreamingCondition(@NonNull StreamingCondition condition) {
         return StreamEventsRequest.newBuilder()
                                   .setFromSequence(condition.position().position().orElse(-1))
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))

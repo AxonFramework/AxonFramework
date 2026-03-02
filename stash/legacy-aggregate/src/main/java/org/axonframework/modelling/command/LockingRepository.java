@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
@@ -279,31 +279,31 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(@NonNull ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }
 
         @Override
-        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(@NonNull HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(@NonNull AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
 
         @Override
-        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+        public Builder<T> subtypes(@NonNull Set<Class<? extends T>> subtypes) {
             super.subtypes(subtypes);
             return this;
         }
 
         @Override
-        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+        public Builder<T> subtype(@NonNull Class<? extends T> subtype) {
             super.subtype(subtype);
             return this;
         }

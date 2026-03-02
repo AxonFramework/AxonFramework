@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -48,7 +48,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

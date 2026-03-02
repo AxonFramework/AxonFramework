@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -43,7 +43,7 @@ class OnNextMessageStream<M extends Message> extends DelegatingMessageStream<M, 
      * @param onNext   The {@link Consumer} to handle each consumed {@link Entry entry} from the given
      *                 {@code delegate}.
      */
-    OnNextMessageStream(@Nonnull MessageStream<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {
+    OnNextMessageStream(@NonNull MessageStream<M> delegate, @NonNull Consumer<Entry<M>> onNext) {
         super(delegate);
         this.onNext = onNext;
     }
@@ -77,7 +77,7 @@ class OnNextMessageStream<M extends Message> extends DelegatingMessageStream<M, 
          * @param onNext   The {@link Consumer} to handle the singular consumed {@link Entry} from the given
          *                 {@code delegate}.
          */
-        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {
+        Single(MessageStream.@NonNull Single<M> delegate, @NonNull Consumer<Entry<M>> onNext) {
             super(delegate, onNext);
         }
     }

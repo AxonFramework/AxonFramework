@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageStream;
@@ -309,8 +309,8 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
 
         @Override
-        public java.util.Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event,
-                                                                   @Nonnull ProcessingContext context) {
+        public java.util.Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event,
+                                                                   @NonNull ProcessingContext context) {
             return java.util.Optional.of("test");
         }
     }

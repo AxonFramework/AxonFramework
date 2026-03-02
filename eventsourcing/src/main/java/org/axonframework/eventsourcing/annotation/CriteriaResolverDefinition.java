@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -44,8 +44,8 @@ public interface CriteriaResolverDefinition {
      * @return A {@link CriteriaResolver} for the given {@code entityType} and {@code idType}.
      */
     <E, I> CriteriaResolver<I> createEventCriteriaResolver(
-            @Nonnull Class<E> entityType,
-            @Nonnull Class<I> idType,
-            @Nonnull Configuration configuration
+            @NonNull Class<E> entityType,
+            @NonNull Class<I> idType,
+            @NonNull Configuration configuration
     );
 }

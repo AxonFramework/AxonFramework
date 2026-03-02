@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,8 +42,8 @@ class MappedMessageStream<DM extends Message, RM extends Message> extends Delega
      *                 {@code mapper}.
      * @param mapper   The {@link Function} mapping {@link Entry entries}.
      */
-    MappedMessageStream(@Nonnull MessageStream<DM> delegate,
-                        @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
+    MappedMessageStream(@NonNull MessageStream<DM> delegate,
+                        @NonNull Function<Entry<DM>, Entry<RM>> mapper) {
         super(delegate);
         this.mapper = mapper;
     }
@@ -76,7 +76,7 @@ class MappedMessageStream<DM extends Message, RM extends Message> extends Delega
          *                 given {@code mapper}.
          * @param mapper   The {@link Function} mapping the first {@link Entry} from the given {@code delegate}.
          */
-        Single(@Nonnull MessageStream.Single<DM> delegate, @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
+        Single(MessageStream.@NonNull Single<DM> delegate, @NonNull Function<Entry<DM>, Entry<RM>> mapper) {
             super(delegate, mapper);
         }
     }

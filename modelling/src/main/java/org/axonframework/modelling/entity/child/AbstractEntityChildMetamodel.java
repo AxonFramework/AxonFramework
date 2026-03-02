@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.BuilderUtils;
@@ -53,9 +53,9 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
     protected final EventTargetMatcher<C> eventTargetMatcher;
 
     protected AbstractEntityChildMetamodel(
-            @Nonnull EntityMetamodel<C> metamodel,
-            @Nonnull CommandTargetResolver<C> commandTargetResolver,
-            @Nonnull EventTargetMatcher<C> eventTargetMatcher
+            @NonNull EntityMetamodel<C> metamodel,
+            @NonNull CommandTargetResolver<C> commandTargetResolver,
+            @NonNull EventTargetMatcher<C> eventTargetMatcher
     ) {
         this.metamodel = requireNonNull(metamodel, "The metamodel may not be null.");
         this.commandTargetResolver =
@@ -64,16 +64,16 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
                 requireNonNull(eventTargetMatcher, "The eventTargetMatcher may not be null.");
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return metamodel.supportedCommands();
     }
 
     @Override
-    public boolean canHandle(@Nonnull CommandMessage message,
-                             @Nonnull P parentEntity,
-                             @Nonnull ProcessingContext context) {
+    public boolean canHandle(@NonNull CommandMessage message,
+                             @NonNull P parentEntity,
+                             @NonNull ProcessingContext context) {
         if (!supportedCommands().contains(message.type().qualifiedName())) {
             return false;
         }
@@ -84,11 +84,10 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
         return commandTargetResolver.getTargetChildEntity(childEntities, message, context) != null;
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage message,
-                                                                @Nonnull P parentEntity,
-                                                                @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage message,
+                                                                      @NonNull P parentEntity,
+                                                                      @NonNull ProcessingContext context) {
         List<C> childEntities = getChildEntities(parentEntity);
         C targetChildEntity = commandTargetResolver.getTargetChildEntity(childEntities, message, context);
         if (targetChildEntity == null) {
@@ -100,7 +99,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
     protected abstract List<C> getChildEntities(P entity);
 
     @Override
-    public P evolve(@Nonnull P entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public P evolve(@NonNull P entity, @NonNull EventMessage event, @NonNull ProcessingContext context) {
         final AtomicBoolean evolvedChildEntity = new AtomicBoolean(false);
         var evolvedEntities = getChildEntities(entity)
                 .stream()
@@ -121,7 +120,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
 
     protected abstract P applyEvolvedChildEntities(P entity, List<C> evolvedChildEntities);
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<C> entityType() {
         return metamodel.entityType();
@@ -134,8 +133,8 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
         protected EventTargetMatcher<C> eventTargetMatcher;
 
         @SuppressWarnings("unused") // Is used for generics
-        protected Builder(@Nonnull Class<P> parentClass,
-                          @Nonnull EntityMetamodel<C> metamodel) {
+        protected Builder(@NonNull Class<P> parentClass,
+                          @NonNull EntityMetamodel<C> metamodel) {
             requireNonNull(parentClass, "The parentClass may not be null.");
             this.metamodel = requireNonNull(metamodel, "The metamodel may not be null.");
         }
@@ -149,7 +148,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
-        public R commandTargetResolver(@Nonnull CommandTargetResolver<C> commandTargetResolver) {
+        public R commandTargetResolver(@NonNull CommandTargetResolver<C> commandTargetResolver) {
             this.commandTargetResolver = requireNonNull(commandTargetResolver,
                                                         "The commandTargetResolver may not be null.");
             return (R) this;
@@ -172,7 +171,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
          * @return This builder instance.
          */
         @SuppressWarnings("unchecked")
-        public R eventTargetMatcher(@Nonnull EventTargetMatcher<C> eventTargetMatcher) {
+        public R eventTargetMatcher(@NonNull EventTargetMatcher<C> eventTargetMatcher) {
             this.eventTargetMatcher = requireNonNull(eventTargetMatcher, "The eventTargetMatcher may not be null.");
             return (R) this;
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
@@ -49,7 +49,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -191,7 +191,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public void enqueue(@Nonnull Object sequenceIdentifier, @Nonnull DeadLetter<? extends E> letter,
+    public void enqueue(@NonNull Object sequenceIdentifier, @NonNull DeadLetter<? extends E> letter,
                         @Nullable ProcessingContext context) throws DeadLetterQueueOverflowException {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (isFull(sequenceId, context)) {
@@ -280,8 +280,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
 
     @Override
     public void requeue(
-            @Nonnull DeadLetter<? extends E> letter,
-            @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
+            @NonNull DeadLetter<? extends E> letter,
+            @NonNull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
             @Nullable ProcessingContext context
     ) throws NoSuchDeadLetterException {
         if (!(letter instanceof JdbcDeadLetter)) {
@@ -324,7 +324,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean contains(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public boolean contains(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (logger.isDebugEnabled()) {
             logger.debug("Validating existence of sequence identifier [{}].", sequenceId);
@@ -339,7 +339,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public Iterable<DeadLetter<? extends E>> deadLetterSequence(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public @NonNull Iterable<DeadLetter<? extends E>> deadLetterSequence(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         if (!contains(sequenceId, context)) {
             return Collections.emptyList();
@@ -386,7 +386,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean isFull(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public boolean isFull(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         long numberInSequence = sequenceSize(sequenceId, context);
         return numberInSequence > 0 ? numberInSequence >= maxSequenceSize : amountOfSequences(context) >= maxSequences;
@@ -402,7 +402,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public long sequenceSize(@Nonnull Object sequenceIdentifier, @Nullable ProcessingContext context) {
+    public long sequenceSize(@NonNull Object sequenceIdentifier, @Nullable ProcessingContext context) {
         String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
         return executeQuery(getConnection(),
                             connection -> statementFactory.sequenceSizeStatement(
@@ -428,8 +428,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean process(@Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
-                           @Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
+    public boolean process(@NonNull Predicate<DeadLetter<? extends E>> sequenceFilter,
+                           @NonNull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
                            @Nullable ProcessingContext context) {
         logger.debug("Received a request to process matching dead letters.");
 
@@ -450,7 +450,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
     }
 
     @Override
-    public boolean process(@Nonnull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
+    public boolean process(@NonNull Function<DeadLetter<? extends E>, EnqueueDecision<E>> processingTask,
                            @Nullable ProcessingContext context) {
         logger.debug("Received a request to process any dead letters.");
         Iterator<? extends JdbcDeadLetter<E>> iterator = findClaimableSequences(1);
@@ -670,7 +670,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> processingGroup(@Nonnull String processingGroup) {
+        public Builder<E> processingGroup(@NonNull String processingGroup) {
             assertNonEmpty(processingGroup, "Can not set processingGroup to an empty String.");
             this.processingGroup = processingGroup;
             return this;
@@ -682,7 +682,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> connectionProvider(@Nonnull ConnectionProvider connectionProvider) {
+        public Builder<E> connectionProvider(@NonNull ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
             this.connectionProvider = connectionProvider;
             return this;
@@ -695,7 +695,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          *                           data.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> transactionManager(@Nonnull TransactionManager transactionManager) {
+        public Builder<E> transactionManager(@NonNull TransactionManager transactionManager) {
             assertNonNull(transactionManager, "The TransactionManager may not be null");
             this.transactionManager = transactionManager;
             return this;
@@ -714,7 +714,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          *               dead-letter queue.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> schema(@Nonnull DeadLetterSchema schema) {
+        public Builder<E> schema(@NonNull DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
@@ -735,7 +735,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          *                         {@link SequencedDeadLetterQueue}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> statementFactory(@Nonnull DeadLetterStatementFactory<E> statementFactory) {
+        public Builder<E> statementFactory(@NonNull DeadLetterStatementFactory<E> statementFactory) {
             assertNonNull(statementFactory, "The DeadLetterStatementFactory may not be null");
             this.statementFactory = statementFactory;
             return this;
@@ -755,7 +755,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          *                  {@link JdbcDeadLetter} implementation.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> converter(@Nonnull DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter) {
+        public Builder<E> converter(@NonNull DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter) {
             assertNonNull(converter, "The DeadLetterJdbcConverter may not be null");
             this.converter = converter;
             return this;
@@ -771,7 +771,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * @param genericSerializer The serializer to use.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> genericSerializer(@Nonnull Serializer genericSerializer) {
+        public Builder<E> genericSerializer(@NonNull Serializer genericSerializer) {
             assertNonNull(genericSerializer, "The generic serializer may not be null");
             this.genericSerializer = genericSerializer;
             return this;
@@ -787,7 +787,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * @param eventSerializer The serializer to use.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> eventSerializer(@Nonnull Serializer eventSerializer) {
+        public Builder<E> eventSerializer(@NonNull Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The event serializer may not be null");
             this.eventSerializer = eventSerializer;
             return this;
@@ -836,7 +836,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Syn
          * @param claimDuration The longest claim duration allowed.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> claimDuration(@Nonnull Duration claimDuration) {
+        public Builder<E> claimDuration(@NonNull Duration claimDuration) {
             assertNonNull(claimDuration, "Claim duration can not be set to null.");
             this.claimDuration = claimDuration;
             return this;
