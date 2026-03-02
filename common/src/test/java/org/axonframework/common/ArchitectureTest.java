@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author John Hendrikx
  */
-@AnalyzeClasses(packages = ArchitectureTest.BASE_PACKAGE_NAME, importOptions = DoNotIncludeTests.class)
+@AnalyzeClasses(packages = ArchitectureTest.BASE_PACKAGE_NAME)
 public class ArchitectureTest {
 
     static final String BASE_PACKAGE_NAME = "org.axonframework.common";
@@ -70,7 +70,8 @@ public class ArchitectureTest {
 
     @ArchTest
     private final ArchRule noClassesShouldDependOnUpperPackages = FreezingArchRule.freeze(
-            DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES.as("Package Hierarchy Violations")
+            DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES
+                    .as("Package Hierarchy Violations")
     );
 
     @Test
