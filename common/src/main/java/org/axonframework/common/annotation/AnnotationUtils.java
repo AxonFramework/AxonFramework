@@ -19,6 +19,7 @@ package org.axonframework.common.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -206,6 +207,63 @@ public final class AnnotationUtils {
         return findAnnotationAttributes(element, annotationType.getName())
                 .map(attributes -> attributes.get(attributeName))
                 .map(attribute -> (T) attribute);
+    }
+
+    /**
+     * Find the attributes of an annotation of type {@code annotationType} on the given {@code type}, following a
+     * layered search strategy. The search stops as soon as the {@code expectedAttributes} predicate returns
+     * {@code true} for the found attributes.
+     * <p>
+     * The search follows this ordering:
+     * <ol>
+     *     <li>The {@code type} itself</li>
+     *     <li>The {@link Class#getEnclosingClass() enclosing classes} (from innermost to outermost) of the {@code type}</li>
+     *     <li>The {@link Class#getPackage() package} of the {@code type}</li>
+     *     <li>The {@link Class#getModule() module} of the {@code type}</li>
+     * </ol>
+     *
+     * @param type               the type to search for the annotation on taking the described ordering
+     * @param annotationType     the type of the annotation to find
+     * @param expectedAttributes a predicate that returns {@code true} when the desired attribute is found in the
+     *                           attributes map, indicating the search should stop. For example, to search until a
+     *                           non-empty "namespace" attribute is found:
+     *                           {@code attrs -> !StringUtils.emptyOrNull((String) attrs.get("namespace"))}
+     * @return an optional containing the attributes map if the annotation was found and the predicate was satisfied,
+     * or an empty optional if the annotation was not found at any level
+     */
+    @Nonnull
+    public static Optional<Map<String, Object>> findAnnotationAttributesOnType(
+            @Nonnull Class<?> type,
+            @Nonnull Class<? extends Annotation> annotationType,
+            @Nonnull Predicate<Map<String, Object>> expectedAttributes
+    ) {
+        // Look at the type itself
+        Optional<Map<String, Object>> attributes = findAnnotationAttributes(type, annotationType);
+        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+            return attributes;
+        }
+
+        // Look at enclosing classes
+        for (Class<?> enclosingClass : ReflectionUtils.enclosingClassesOf(type)) {
+            attributes = findAnnotationAttributes(enclosingClass, annotationType);
+            if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+                return attributes;
+            }
+        }
+
+        // Look at the package
+        attributes = findAnnotationAttributes(type.getPackage(), annotationType);
+        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+            return attributes;
+        }
+
+        // Look at the module
+        attributes = findAnnotationAttributes(type.getModule(), annotationType);
+        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+            return attributes;
+        }
+
+        return Optional.empty();
     }
 
     private static boolean collectAnnotationAttributes(Class<? extends Annotation> target,

@@ -285,4 +285,124 @@ class AnnotationUtilsTest {
     public @interface NotMetaAnnotated {
 
     }
+
+    @Nested
+    class FindAnnotationAttributesOnTypeTest {
+
+        private static final String ATTRIBUTE_KEY = "layeredAnnotation";
+
+        @Test
+        void findsAnnotationOnTypeItself() {
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    DirectlyAnnotatedClass.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isPresent();
+            assertThat(result.get().get(ATTRIBUTE_KEY)).isEqualTo("direct");
+        }
+
+        @Test
+        void findsAnnotationOnEnclosingClass() {
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    AnnotatedContainer.NestedClass.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isPresent();
+            assertThat(result.get().get(ATTRIBUTE_KEY)).isEqualTo("container");
+        }
+
+        @Test
+        void findsAnnotationOnOutermostEnclosingClass() {
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    AnnotatedContainer.NestedClass.DeeplyNestedClass.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isPresent();
+            assertThat(result.get().get(ATTRIBUTE_KEY)).isEqualTo("container");
+        }
+
+        @Test
+        void prefersAnnotationOnInnerClassOverOuterClass() {
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    AnnotatedContainer.AnnotatedNestedClass.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isPresent();
+            assertThat(result.get().get(ATTRIBUTE_KEY)).isEqualTo("nested");
+        }
+
+        @Test
+        void returnsEmptyWhenAnnotationNotFound() {
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    UnannotatedClass.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void continuesSearchWhenPredicateReturnsFalse() {
+            // AnnotatedContainer has LayeredAnnotation("container"), NestedWithEmptyAnnotation has LayeredAnnotation("")
+            // The predicate requires non-empty value, so it should find the container's annotation
+            Optional<Map<String, Object>> result = findAnnotationAttributesOnType(
+                    AnnotatedContainer.NestedWithEmptyAnnotation.class,
+                    LayeredAnnotation.class,
+                    attrs -> hasNonEmptyAttribute(attrs, ATTRIBUTE_KEY)
+            );
+
+            assertThat(result).isPresent();
+            assertThat(result.get().get(ATTRIBUTE_KEY)).isEqualTo("container");
+        }
+
+        private boolean hasNonEmptyAttribute(Map<String, Object> attrs, String key) {
+            Object value = attrs.get(key);
+            return value instanceof String s && !s.isEmpty();
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target({ElementType.TYPE, ElementType.PACKAGE, ElementType.MODULE}) @interface LayeredAnnotation {
+
+            String value() default "";
+        }
+
+        @LayeredAnnotation("direct")
+        private static class DirectlyAnnotatedClass {
+
+        }
+
+        @LayeredAnnotation("container")
+        private static class AnnotatedContainer {
+
+            private static class NestedClass {
+
+                private static class DeeplyNestedClass {
+
+                }
+            }
+
+            @LayeredAnnotation("nested")
+            private static class AnnotatedNestedClass {
+
+            }
+
+            @LayeredAnnotation("")
+            private static class NestedWithEmptyAnnotation {
+
+            }
+        }
+
+        private static class UnannotatedClass {
+
+        }
+    }
 }
