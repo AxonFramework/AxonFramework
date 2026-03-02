@@ -17,6 +17,8 @@ package org.axonframework.messaging.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import reactor.util.context.ContextView;
+
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Context;
@@ -27,6 +29,7 @@ import org.axonframework.messaging.core.QueueMessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,27 +117,31 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    @Nonnull
-    private CompletableFuture<MessageStream<QueryResponseMessage>> handle(@Nonnull QueryMessage query,
-                                                                          @Nonnull QueryHandler handler) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Handling query [{} {name={}]",
-                         query.identifier(), query.type());
-        }
+  private CompletableFuture<MessageStream<QueryResponseMessage>> handle(
+        @Nonnull QueryMessage query, @Nonnull QueryHandler handler) {
 
-        UnitOfWork unitOfWork = unitOfWorkFactory.create();
-        return unitOfWork.executeWithResult(
-                context -> {
-                    MessageStream<QueryResponseMessage> result;
-                    try {
-                        result = handler.handle(query, context);
-                    } catch (Exception e) {
-                        result = MessageStream.failed(e);
+    UnitOfWork unitOfWork = unitOfWorkFactory.create();
+    return unitOfWork.executeWithResult(
+        context -> {
+            MessageStream<QueryResponseMessage> result;
+            try {
+                result = handler.handle(query, context);
+
+                // ✅ Restore Reactor Context if one was captured upstream
+                if (context != null) {
+                    ContextView reactorCtx = context.getResource(
+                        DefaultQueryGateway.REACTOR_CONTEXT_KEY);
+                    if (reactorCtx != null && !reactorCtx.isEmpty()) {
+                        result = result.withReactorContext(reactorCtx);
                     }
-                    return CompletableFuture.completedFuture(result);
                 }
-        );
-    }
+            } catch (Exception e) {
+                result = MessageStream.failed(e);
+            }
+            return CompletableFuture.completedFuture(result);
+        }
+    );
+}
 
     /**
      * Validates whether the given {@code responseStream} is <b>not</b> completed or has an exception thrown by the

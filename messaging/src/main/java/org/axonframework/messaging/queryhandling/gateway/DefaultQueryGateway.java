@@ -18,6 +18,7 @@ package org.axonframework.messaging.queryhandling.gateway;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.queryhandling.*;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
+import reactor.util.context.ContextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +53,8 @@ public class DefaultQueryGateway implements QueryGateway {
     private final MessageTypeResolver messageTypeResolver;
     private final QueryPriorityCalculator priorityCalculator;
     private final MessageConverter converter;
+    public static final ResourceKey<ContextView> REACTOR_CONTEXT_KEY = 
+        ResourceKey.withLabel("reactor-context");
 
     /**
      * Initialize the {@code DefaultQueryGateway} to send queries through the given {@code queryBus}.
@@ -83,24 +87,37 @@ public class DefaultQueryGateway implements QueryGateway {
                                           @Nonnull Class<R> responseType,
                                           @Nullable ProcessingContext context) {
         QueryMessage queryMessage = asQueryMessage(query);
-        MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
+        //  Wrap in deferContextual to capture the Reactor Context at subscription time
+    return Mono.deferContextual(reactorCtx -> {
+        // Store Reactor Context in ProcessingContext so SimpleQueryBus can retrieve it
+        ProcessingContext enrichedContext = enrichWithReactorContext(context, reactorCtx);
+
+        MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, enrichedContext);
         CompletableFuture<R> resultFuture =
                 resultStream.first()
                             .asCompletableFuture()
                             .thenApply(entry -> {
-                                if (entry == null) {
-                                    return null;
-                                }
+                                if (entry == null) return null;
                                 return entry.message().payloadAs(responseType, converter);
                             });
-        // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
         resultFuture.whenComplete((r, e) -> {
-            if (!resultStream.isCompleted()) {
-                resultStream.close();
-            }
+            if (!resultStream.isCompleted()) resultStream.close();
         });
-        return resultFuture;
+        return Mono.fromFuture(resultFuture);
+    }).toFuture();
+}
+public ProcessingContext enrichWithReactorContext(@Nullable ProcessingContext context,
+                                                  ContextView reactorCtx) {
+    if (reactorCtx.isEmpty()) {
+        return context; // nothing to enrich
     }
+    if (context == null) {
+        // find correct way to instantiate — check Axon source
+        return null; // handle this case separately
+    }
+    context.putResource(REACTOR_CONTEXT_KEY, reactorCtx);
+    return context;
+}
 
     @Nonnull
     @Override
