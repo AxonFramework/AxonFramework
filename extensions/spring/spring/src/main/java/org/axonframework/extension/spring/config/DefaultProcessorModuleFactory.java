@@ -115,14 +115,25 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             var module = switch (processorMode) {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
+                    var customization = SpringCustomizations.pooledStreamingCustomizations(processorName,
+                                                                                          moduleSettings)
+                                                           .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
+                                                                   UnitOfWorkFactory.class)))
+                                                           .andThen(customizeConfiguration(processorName));
+                    if (moduleSettings.dlq().enabled()) {
+                        var dlqFactory = axonConfiguration.getOptionalComponent(DeadLetterQueueFactory.class)
+                                                          .orElseThrow(() -> new AxonConfigurationException(
+                                                                  "DLQ is enabled for processor '" + processorName
+                                                                          + "' but no DeadLetterQueueFactory bean is available. "
+                                                                          + "Ensure a DeadLetterQueueFactory bean is registered "
+                                                                          + "(e.g. by including JPA or JDBC DLQ autoconfiguration)."));
+                        customization = customization.andThen(
+                                SpringCustomizations.dlqCustomization(moduleSettings.dlq(), dlqFactory));
+                    }
                     yield EventProcessorModule
                             .pooledStreaming(processorModuleName)
                             .eventHandlingComponents(componentRegistration)
-                            .customized(SpringCustomizations.pooledStreamingCustomizations(processorName,
-                                                                                           moduleSettings)
-                                                            .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
-                                                                    UnitOfWorkFactory.class)))
-                                                            .andThen(customizeConfiguration(processorName)))
+                            .customized(customization)
                             .build();
                 }
                 case SUBSCRIBING -> {

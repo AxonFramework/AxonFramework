@@ -396,6 +396,31 @@ public class EventProcessorProperties {
         public void setDlq(Dlq dlq) {
             this.dlq = dlq;
         }
+
+        @Override
+        public EventProcessorSettings.DlqSettings dlq() {
+            return new EventProcessorSettings.DlqSettings() {
+                @Override
+                public boolean enabled() {
+                    return dlq.isEnabled();
+                }
+
+                @Override
+                public EventProcessorSettings.DlqSettings.CacheSettings cache() {
+                    return new EventProcessorSettings.DlqSettings.CacheSettings() {
+                        @Override
+                        public boolean enabled() {
+                            return dlq.getCache().isEnabled();
+                        }
+
+                        @Override
+                        public int size() {
+                            return dlq.getCache().getSize();
+                        }
+                    };
+                }
+            };
+        }
     }
 
     /**

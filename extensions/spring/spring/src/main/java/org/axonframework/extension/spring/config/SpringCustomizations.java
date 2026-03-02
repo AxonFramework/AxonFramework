@@ -32,6 +32,7 @@ import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Holder for Spring customizations based on settings.
@@ -66,6 +67,25 @@ interface SpringCustomizations {
             String name,
             EventProcessorSettings.SubscribingEventProcessorSettings settings) {
         return new SpringSubscribingEventProcessingModuleCustomization(name, settings);
+    }
+
+    /**
+     * Creates a {@link PooledStreamingEventProcessorModule.Customization} that enables and configures a
+     * Dead Letter Queue on the processor using the given {@code dlqSettings} and {@code factory}.
+     *
+     * @param dlqSettings The {@link EventProcessorSettings.DlqSettings} controlling DLQ and cache behaviour.
+     * @param factory     The {@link DeadLetterQueueFactory} used to create the queue per processing group.
+     * @return A customization that enables and wires the Dead Letter Queue.
+     */
+    static UnaryOperator<PooledStreamingEventProcessorConfiguration> dlqCustomization(
+            EventProcessorSettings.DlqSettings dlqSettings, DeadLetterQueueFactory factory) {
+        return processorConfig -> processorConfig.deadLetterQueue(dlq -> {
+            var config = dlq.enabled().factory(factory::create);
+            if (dlqSettings.cache().enabled()) {
+                config = config.cacheMaxSize(dlqSettings.cache().size());
+            }
+            return config;
+        });
     }
 
     /**

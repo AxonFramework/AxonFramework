@@ -141,5 +141,87 @@ public sealed interface EventProcessorSettings {
          */
         @Nonnull
         String tokenStore();
+
+        /**
+         * Dead Letter Queue settings for this pooled processor.
+         *
+         * @return settings controlling whether the DLQ is enabled and how its cache behaves.
+         */
+        default DlqSettings dlq() {
+            return DlqSettings.DISABLED;
+        }
+    }
+
+    /**
+     * Settings for the {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}
+     * on a {@link PooledEventProcessorSettings pooled} processor.
+     */
+    interface DlqSettings {
+
+        /**
+         * Singleton representing a disabled (default) DLQ configuration.
+         */
+        DlqSettings DISABLED = new DlqSettings() {
+            @Override
+            public boolean enabled() {
+                return false;
+            }
+
+            @Override
+            public CacheSettings cache() {
+                return CacheSettings.DEFAULT;
+            }
+        };
+
+        /**
+         * Whether the Dead Letter Queue should be created for this processor. Defaults to {@code false}.
+         *
+         * @return {@code true} if the DLQ should be created, {@code false} otherwise.
+         */
+        boolean enabled();
+
+        /**
+         * Cache settings for the DLQ sequence identifier cache.
+         *
+         * @return cache configuration.
+         */
+        CacheSettings cache();
+
+        /**
+         * Cache settings for the DLQ sequence identifier in-memory cache.
+         */
+        interface CacheSettings {
+
+            /**
+             * Default cache settings: disabled with size 1024.
+             */
+            CacheSettings DEFAULT = new CacheSettings() {
+                @Override
+                public boolean enabled() {
+                    return false;
+                }
+
+                @Override
+                public int size() {
+                    return 1024;
+                }
+            };
+
+            /**
+             * Whether sequence identifier caching is enabled. When enabled, the processor avoids
+             * redundant database look-ups by keeping sequence identifiers in memory. Defaults to {@code false}.
+             *
+             * @return {@code true} if caching is enabled.
+             */
+            boolean enabled();
+
+            /**
+             * Maximum number of sequence identifiers kept in memory per segment. Only used when
+             * {@link #enabled()} is {@code true}. Defaults to {@code 1024}.
+             *
+             * @return maximum cache size per segment.
+             */
+            int size();
+        }
     }
 }
