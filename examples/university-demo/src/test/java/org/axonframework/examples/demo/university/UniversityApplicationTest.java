@@ -8,9 +8,8 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
-import org.axonframework.test.fixture.RecordingEventStore;
+import org.axonframework.test.fixture.RecordingComponentsRegistry;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,8 +65,8 @@ public abstract class UniversityApplicationTest {
         var unitOfWork = configuration.getComponent(UnitOfWorkFactory.class).create();
         unitOfWork.onInvocation(ctx -> eventGateway.publish(ctx, events));
         unitOfWork.execute().join();
-        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
-        eventStore.reset();
+        var eventSink = configuration.getComponent(RecordingComponentsRegistry.class).eventSink();
+        eventSink.reset();
     }
 
     protected void executeCommand(Object command) {
@@ -76,13 +75,13 @@ public abstract class UniversityApplicationTest {
     }
 
     protected void assertEvents(Object... events) {
-        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
-        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).contains(events);
+        var eventSink = configuration.getComponent(RecordingComponentsRegistry.class).eventSink();
+        Assertions.assertThat(eventSink.recorded().stream().map(Message::payload)).contains(events);
     }
 
     protected void assertNoEvents() {
-        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
-        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).isEmpty();
+        var eventSink = configuration.getComponent(RecordingComponentsRegistry.class).eventSink();
+        Assertions.assertThat(eventSink.recorded().stream().map(Message::payload)).isEmpty();
     }
 
     protected ConfigurationProperties overrideProperties(ConfigurationProperties properties) {
