@@ -38,8 +38,6 @@ updates:
           - "minor"
           - "major"
     ignore:
-      - dependency-name: "com.github.kagkarlsson:db-scheduler"
-        versions: [ "[14.0.0,)" ]
       - dependency-name: "com.fasterxml.jackson.core:jackson-databind"
         versions: [ "[2.18.0,)" ]
       - dependency-name: "com.lmax:disruptor"

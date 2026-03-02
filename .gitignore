@@ -22,3 +22,5 @@ axon.iws
 
 # documentation's local bulid
 docs/_playbook/build
+
+pom.xml.versionsBackup

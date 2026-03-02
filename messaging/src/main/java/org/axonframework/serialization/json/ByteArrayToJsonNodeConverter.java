@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.axonframework.serialization.ContentTypeConverter;
 import java.io.IOException;
 
 /**
- * ContentTypeConverter implementation that converts byte[] containing UTF8 encoded JSON string to a Jackson JsonNode.
+ * ContentTypeConverter implementation for Jackson 2 that converts byte[] containing UTF8 encoded
+ * JSON string to a Jackson JsonNode.
  *
  * @author Allard Buijze
  * @since 2.2

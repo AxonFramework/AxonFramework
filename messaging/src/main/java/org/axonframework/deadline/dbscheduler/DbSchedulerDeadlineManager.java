@@ -21,6 +21,7 @@ import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerState;
 import com.github.kagkarlsson.scheduler.exceptions.TaskInstanceNotFoundException;
 import com.github.kagkarlsson.scheduler.task.Task;
+import com.github.kagkarlsson.scheduler.task.TaskDescriptor;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
@@ -83,10 +84,10 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implements Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerDeadlineManager.class);
-    private static final TaskWithDataDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class);
-    private static final TaskWithDataDescriptor<DbSchedulerHumanReadableDeadlineDetails> humanReadableTaskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class);
+    private static final TaskDescriptor<DbSchedulerBinaryDeadlineDetails> binaryTaskDescriptor =
+            TaskDescriptor.of(TASK_NAME, DbSchedulerBinaryDeadlineDetails.class);
+    private static final TaskDescriptor<DbSchedulerHumanReadableDeadlineDetails> humanReadableTaskDescriptor =
+            TaskDescriptor.of(TASK_NAME, DbSchedulerHumanReadableDeadlineDetails.class);
 
     private final ScopeAwareProvider scopeAwareProvider;
     private final Scheduler scheduler;
@@ -171,7 +172,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                 deadlineScope,
                 interceptedDeadlineMessage,
                 serializer);
-        return binaryTaskDescriptor.instance(taskInstanceId.getId(), details);
+        return binaryTaskDescriptor.instance(taskInstanceId.getId()).data(details).build();
     }
 
     private TaskInstance<?> humanReadableTask(
@@ -185,7 +186,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
                 deadlineScope,
                 interceptedDeadlineMessage,
                 serializer);
-        return humanReadableTaskDescriptor.instance(taskInstanceId.getId(), details);
+        return humanReadableTaskDescriptor.instance(taskInstanceId.getId()).data(details).build();
     }
 
     /**

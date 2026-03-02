@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.12.4-SNAPSHOT</version>
+        <version>4.13.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>axon-messaging</artifactId>
@@ -178,6 +178,10 @@
                     <groupId>xalan</groupId>
                     <artifactId>xalan</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -189,6 +193,12 @@
         </dependency>
 
         <!-- Serialization - JSON -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

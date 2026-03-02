@@ -5,6 +5,28 @@ components can be configured programmatically and do not require Spring on the c
 much of the configuration is made easier with the use of Spring's annotation support. Axon provides Spring Boot starters
 on the top of that, so you can benefit from auto-configuration as well.
 
+The following table shows which Spring Boot versions are supported by each Axon Framework version:
+
+[cols="2,1,1,1", options="header"]
+|===
+|Axon Framework Version |Spring Boot 2 |Spring Boot 3 |Spring Boot 4
+
+|4.0 - 4.6
+|✓
+|
+|
+
+|4.7 - 4.12
+|✓
+|✓
+|
+
+|4.13
+|✓
+|✓
+|✓
+|===
+
 == Auto-configuration
 
 Axon's Spring Boot auto-configuration is by far the easiest option to get started configuring your Axon components. By
@@ -114,3 +136,19 @@ Specific Axon (Spring) component configurations will be explained in detail in t
 
 When using Spring to automatically wire everything, sometimes there is a need to know when all the (Command, Event and Query) handlers have been registered to their respective buses.
 To support this an `AxonStartedEvent` Spring event is published when the Configuration module has fully started.
+
+=== Customizing the `Jackson3Serializer`
+
+To customize the `ObjectMapper` used by the `Jackson3Serializer`, `AxonAutoConfiguration` will look for a bean of type `Jackson3SerializerCustomizer`. When found, it is given the `Builder` used to construct the `ObjectMapper` allowing you to customize it before it is constructed. For example:
+
+[source,java]
+----
+public class SerializerConfiguration {
+    @Bean
+    public Jackson3SerializerCustomizer customizer() {
+        return builder -> {
+            builder.enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION);
+        };
+    }
+}
+----

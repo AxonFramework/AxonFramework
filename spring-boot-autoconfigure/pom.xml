@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>4.12.4-SNAPSHOT</version>
+        <version>4.13.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -204,6 +204,16 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Other dependencies -->
         <dependency>

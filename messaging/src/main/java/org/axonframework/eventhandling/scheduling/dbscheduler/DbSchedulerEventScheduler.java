@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.scheduling.dbscheduler;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerState;
 import com.github.kagkarlsson.scheduler.task.Task;
+import com.github.kagkarlsson.scheduler.task.TaskDescriptor;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
-import com.github.kagkarlsson.scheduler.task.TaskWithDataDescriptor;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
@@ -64,10 +64,10 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
 
     private static final Logger logger = getLogger(DbSchedulerEventScheduler.class);
-    private static final TaskWithDataDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerHumanReadableEventData.class);
-    private static final TaskWithDataDescriptor<DbSchedulerBinaryEventData> binaryTaskDescriptor =
-            new TaskWithDataDescriptor<>(TASK_NAME, DbSchedulerBinaryEventData.class);
+    private static final TaskDescriptor<DbSchedulerHumanReadableEventData> humanReadableTaskDescriptor =
+            TaskDescriptor.of(TASK_NAME, DbSchedulerHumanReadableEventData.class);
+    private static final TaskDescriptor<DbSchedulerBinaryEventData> binaryTaskDescriptor =
+            TaskDescriptor.of(TASK_NAME, DbSchedulerBinaryEventData.class);
     private final Scheduler scheduler;
     private final Serializer serializer;
     private final TransactionManager transactionManager;
@@ -183,7 +183,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         } else {
             data = binaryDataFromObject(event);
         }
-        return binaryTaskDescriptor.instance(taskInstanceId.getId(), data);
+        return binaryTaskDescriptor.instance(taskInstanceId.getId()).data(data).build();
     }
 
     private DbSchedulerBinaryEventData binaryDataFromObject(Object event) {
@@ -210,7 +210,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
         } else {
             data = humanReadableDataFromObject(event);
         }
-        return humanReadableTaskDescriptor.instance(taskInstanceId.getId(), data);
+        return humanReadableTaskDescriptor.instance(taskInstanceId.getId()).data(data).build();
     }
 
     private DbSchedulerHumanReadableEventData humanReadableDataFromObject(Object event) {
