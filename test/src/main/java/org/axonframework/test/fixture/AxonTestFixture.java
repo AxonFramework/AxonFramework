@@ -165,10 +165,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
         this.commandBus = configuration.getComponent(CommandBus.class);
         this.eventSink = configuration.getComponent(EventSink.class);
-        this.recordingCommandBus = configuration.getComponent(
-                RecordingCommandBus.class, MessagesRecordingConfigurationEnhancer.RECORDING_COMPONENT_NAME);
-        this.recordingEventSink = configuration.getComponent(
-                RecordingEventSink.class, MessagesRecordingConfigurationEnhancer.RECORDING_COMPONENT_NAME);
+        var recordings = configuration.getComponent(RecordingComponentsRegistry.class);
+        this.recordingCommandBus = recordings.commandBus();
+        this.recordingEventSink = recordings.eventSink();
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
