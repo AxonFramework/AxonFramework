@@ -40,6 +40,7 @@ import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.core.Metadata;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -143,6 +144,25 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                     eventMessage = (EventMessage) event;
                 } else {
                     eventMessage = createEvent(event);
+                }
+                metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
+            });
+        }
+
+        @Override
+        public void append(@Nonnull List<?> events, @Nonnull Metadata metadata) {
+            publishedEvents.addAll(events);
+            if (entityState == null) {
+                return;
+            }
+            events.forEach(event -> {
+                EventMessage eventMessage;
+                if (event instanceof EventMessage e) {
+                    eventMessage = e.andMetadata(metadata);
+                } else {
+                    eventMessage = new GenericEventMessage(
+                            new MessageType(event.getClass()), event, metadata
+                    );
                 }
                 metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
