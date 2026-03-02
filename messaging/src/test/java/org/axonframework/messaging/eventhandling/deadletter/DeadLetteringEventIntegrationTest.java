@@ -494,6 +494,42 @@ public abstract class DeadLetteringEventIntegrationTest {
             // As evaluation fails, the sequenceId should still exist
             assertTrue(deadLetterQueue.contains(aggregateId, null).join());
         }
+
+        @Test
+        void processedDeadLetterIsAvailableInProcessingContext() {
+            // given
+            String aggregateId = UUID.randomUUID().toString();
+
+            // Three events in sequence "aggregateId" succeed
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            // One event in sequence "aggregateId" fails, causing the rest to fail, but succeed on retry
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+
+            startProcessingEvent();
+
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                assertEquals(1, streamingProcessor.processingStatus().size());
+                var status = streamingProcessor.processingStatus().get(0);
+                assertNotNull(status);
+                assertTrue(status.getCurrentPosition().orElse(-1) >= 6);
+            });
+
+            assertTrue(deadLetterQueue.contains(aggregateId, null).join());
+
+            // During initial event handling, the DeadLetter should NOT be in the ProcessingContext
+            assertEquals(0, eventHandler.deadLetterInContextCount(aggregateId));
+
+            // when
+            deadLetteringComponent.process(deadLetter -> true).join();
+
+            // then — all 3 dead-lettered events should have had the DeadLetter available in the ProcessingContext
+            assertWithin(1, TimeUnit.SECONDS,
+                         () -> assertEquals(3, eventHandler.deadLetterInContextCount(aggregateId)));
+        }
     }
 
     @Nested
@@ -732,6 +768,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
+        private final Map<String, Integer> deadLetterFoundInContext = new ConcurrentSkipListMap<>();
 
         ProblematicEventHandler(Converter converter) {
             this.converter = converter;
@@ -743,6 +780,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();
+
+            DeadLetter.fromContext(context).ifPresent(
+                    dl -> deadLetterFoundInContext.compute(sequenceId, (id, count) -> count == null ? 1 : ++count)
+            );
 
             if (!handledEvent.contains(eventIdentifier)) {
                 // This is the first time we get this event.
@@ -819,6 +860,10 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         public int overallSuccessfulHandlingCount(String sequenceId) {
             return firstTrySuccesses.get(sequenceId) + evaluationSuccesses.get(sequenceId);
+        }
+
+        public int deadLetterInContextCount(String sequenceId) {
+            return deadLetterFoundInContext.getOrDefault(sequenceId, 0);
         }
     }
 
