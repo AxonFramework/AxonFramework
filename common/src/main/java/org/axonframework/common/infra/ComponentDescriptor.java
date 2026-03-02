@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -51,7 +51,7 @@ public interface ComponentDescriptor {
      * @param name   The name for the {@code object} to describe.
      * @param object The object to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, Object object);
+    void describeProperty(@NonNull String name, Object object);
 
     /**
      * Describe the given {@code collection} with {@code this} descriptor for the given {@code name}.
@@ -65,7 +65,7 @@ public interface ComponentDescriptor {
      * @param name       The name for the {@code collection} to describe.
      * @param collection The collection to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, Collection<?> collection);
+    void describeProperty(@NonNull String name, Collection<?> collection);
 
     /**
      * Describe the given {@code map} with {@code this} descriptor for the given {@code name}.
@@ -80,7 +80,7 @@ public interface ComponentDescriptor {
      * @param name The name for the {@code map} to describe.
      * @param map  The map to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, Map<?, ?> map);
+    void describeProperty(@NonNull String name, Map<?, ?> map);
 
     /**
      * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
@@ -88,7 +88,7 @@ public interface ComponentDescriptor {
      * @param name  The name for the {@code value} to describe.
      * @param value The value to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, String value);
+    void describeProperty(@NonNull String name, String value);
 
     /**
      * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
@@ -96,7 +96,7 @@ public interface ComponentDescriptor {
      * @param name  The name for the {@code value} to describe.
      * @param value The value to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, Long value);
+    void describeProperty(@NonNull String name, Long value);
 
     /**
      * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
@@ -104,7 +104,7 @@ public interface ComponentDescriptor {
      * @param name  The name for the {@code value} to describe.
      * @param value The value to describe with {@code this} descriptor.
      */
-    void describeProperty(@Nonnull String name, Boolean value);
+    void describeProperty(@NonNull String name, Boolean value);
 
     /**
      * Describe the given {@code delegate} with {@code this} descriptor under the name {@code "delegate"}.

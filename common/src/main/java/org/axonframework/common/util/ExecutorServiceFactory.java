@@ -16,7 +16,7 @@
 
 package org.axonframework.common.util;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +46,6 @@ public interface ExecutorServiceFactory<C> {
      * @param queue         The {@link BlockingQueue} to use for the ExecutorService.
      * @return An {@link ExecutorService}based on the given {@code configuration} and {@code queue}.
      */
-    @Nonnull
-    ExecutorService createExecutorService(@Nonnull C configuration, @Nonnull BlockingQueue<Runnable> queue);
+    @NonNull
+    ExecutorService createExecutorService(@NonNull C configuration, @NonNull BlockingQueue<Runnable> queue);
 }

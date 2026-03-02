@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An exception indicating a {@link Component} is being {@link Configuration#getComponent(Class, String) retrieved} for
@@ -33,7 +33,7 @@ public class AmbiguousComponentMatchException extends RuntimeException {
      * @param identifier The identifier for which to create an {@code AmbiguousComponentMatchException}.
      * @param <C>        The {@link Component.Identifier#type()} of the given {@code identifier}.
      */
-    public <C> AmbiguousComponentMatchException(@Nonnull Component.Identifier<C> identifier) {
+    public <C> AmbiguousComponentMatchException(Component.@NonNull Identifier<C> identifier) {
         super("No single instance found for type ["
                       + identifier.typeAsClass()
                       + "] and name ["

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.scheduling.jobrunr;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -237,7 +237,7 @@ public class JobRunrEventScheduler implements EventScheduler {
         return asEventMessage(deserializedPayload);
     }
 
-    private EventMessage asEventMessage(@Nonnull Object event) {
+    private EventMessage asEventMessage(@NonNull Object event) {
         if (event instanceof EventMessage e) {
             return e;
         }

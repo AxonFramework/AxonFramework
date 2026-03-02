@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -74,7 +74,7 @@ public class StubProcessingContext implements ProcessingContext {
      *
      * @param applicationContext The application context to use for this processing context.
      */
-    public StubProcessingContext(@Nonnull ApplicationContext applicationContext) {
+    public StubProcessingContext(@NonNull ApplicationContext applicationContext) {
         Objects.requireNonNull(applicationContext, "The application context may not be null");
         this.applicationContext = applicationContext;
     }
@@ -99,7 +99,7 @@ public class StubProcessingContext implements ProcessingContext {
         return false;
     }
 
-    public CompletableFuture<Object> moveToPhase(@Nonnull ProcessingLifecycle.Phase phase) {
+    public CompletableFuture<Object> moveToPhase(ProcessingLifecycle.@NonNull Phase phase) {
         if (phase.isBefore(currentPhase)) {
             throw new IllegalArgumentException("Cannot move to a phase before the current phase");
         }
@@ -121,8 +121,8 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(@Nonnull Phase phase,
-                                  @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(@NonNull Phase phase,
+                                  @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
         if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
         }
@@ -131,31 +131,31 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
+    public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
         logger.warn("Error handler is not yet supported in the StubProcessingContext");
         return this;
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
         logger.warn("Completion action is not yet supported in the StubProcessingContext");
         return this;
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(@NonNull ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(@NonNull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
 
     @Override
-    public <T> ProcessingContext withResource(@Nonnull ResourceKey<T> key,
-                                              @Nonnull T resource) {
+    public <T> ProcessingContext withResource(@NonNull ResourceKey<T> key,
+                                              @NonNull T resource) {
         resources.put(key, resource);
         return this;
     }
@@ -166,42 +166,42 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key,
-                             @Nonnull T resource) {
+    public <T> T putResource(@NonNull ResourceKey<T> key,
+                             @NonNull T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key,
-                                @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(@NonNull ResourceKey<T> key,
+                                @NonNull UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (id, current) -> resourceUpdater.apply((T) current));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                     @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(@NonNull ResourceKey<T> key,
+                                     @NonNull T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                         @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(@NonNull ResourceKey<T> key,
+                                         @NonNull Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, k -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+    public <T> T removeResource(@NonNull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nonnull T expectedResource) {
+    public <T> boolean removeResource(@NonNull ResourceKey<T> key,
+                                      @NonNull T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 
@@ -243,7 +243,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param context the Context whose resources should be copied
      * @return a new StubProcessingContext containing the merged resources
      */
-    public StubProcessingContext withResources(@Nonnull Context context) {
+    public StubProcessingContext withResources(@NonNull Context context) {
         Objects.requireNonNull(context, "The context may not be null");
         StubProcessingContext copy = new StubProcessingContext(this.applicationContext);
         // Copy existing resources from this stub
@@ -259,7 +259,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param context the Context whose resources should be copied into the returned StubProcessingContext
      * @return a new StubProcessingContext containing the same resources as {@code context}
      */
-    public static StubProcessingContext fromContext(@Nonnull Context context) {
+    public static StubProcessingContext fromContext(@NonNull Context context) {
         Objects.requireNonNull(context, "The context may not be null");
         // Delegate to the instance helper to construct a new StubProcessingContext with the provided resources
         return new StubProcessingContext().withResources(context);
@@ -275,7 +275,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param <C>      The type of the component to register.
      * @return A new {@link ProcessingContext} instance containing the given {@code component} as a resource.
      */
-    public static <C> StubProcessingContext withComponent(@Nonnull Class<C> type, @Nonnull C instance) {
+    public static <C> StubProcessingContext withComponent(@NonNull Class<C> type, @NonNull C instance) {
         return withComponent(ComponentDefinition.ofType(type).withInstance(instance));
     }
 
@@ -288,7 +288,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param <C>        The type of the component to register.
      * @return A new {@link ProcessingContext} instance containing the given {@code componentDefinition} as a resource.
      */
-    public static <C> StubProcessingContext withComponent(@Nonnull ComponentDefinition<C> definition) {
+    public static <C> StubProcessingContext withComponent(@NonNull ComponentDefinition<C> definition) {
         return withComponents(componentRegistry -> componentRegistry.registerComponent(definition));
     }
 
@@ -300,7 +300,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param componentRegistrar The consumer that registers components in the component registry.
      * @return A new {@link ProcessingContext} instance containing the registered components as resources.
      */
-    public static StubProcessingContext withComponents(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public static StubProcessingContext withComponents(@NonNull Consumer<ComponentRegistry> componentRegistrar) {
         DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
         componentRegistrar.accept(componentRegistry);
         Configuration configuration = componentRegistry.build(new StubLifecycleRegistry());
@@ -320,9 +320,9 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(this, message);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
         return applicationContext.component(type, name);
     }
 }

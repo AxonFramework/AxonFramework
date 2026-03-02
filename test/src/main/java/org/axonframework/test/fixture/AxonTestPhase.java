@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -154,7 +154,7 @@ public interface AxonTestPhase {
          * @param payload The event payload or {@link EventMessage} to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given event(@Nonnull Object payload) {
+        default Given event(@NonNull Object payload) {
             return event(payload, Metadata.emptyInstance());
         }
 
@@ -170,7 +170,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+        default Given event(@NonNull Object payload, @NonNull Map<String, String> metadata) {
             return event(payload, Metadata.from(metadata));
         }
 
@@ -186,7 +186,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
-        Given event(@Nonnull Object payload, @Nonnull Metadata metadata);
+        Given event(@NonNull Object payload, @NonNull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as events in the "given" state. These events will be published in the
@@ -198,7 +198,7 @@ public interface AxonTestPhase {
          * @param messages The event messages to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given events(@Nonnull EventMessage... messages);
+        Given events(@NonNull EventMessage... messages);
 
         /**
          * Configures the given {@code events} as events in the "given" state. These events will be published in the
@@ -210,7 +210,7 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given events(@Nonnull Object... events) {
+        default Given events(@NonNull Object... events) {
             return events(Arrays.stream(events).toList());
         }
 
@@ -224,7 +224,7 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given events(@Nonnull List<?> events);
+        Given events(@NonNull List<?> events);
 
         /**
          * Configures a single command as part of the "given" state. This command will be dispatched to corresponding
@@ -236,7 +236,7 @@ public interface AxonTestPhase {
          * @param payload The command payload or {@link CommandMessage} to dispatch.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given command(@Nonnull Object payload) {
+        default Given command(@NonNull Object payload) {
             return command(payload, Metadata.emptyInstance());
         }
 
@@ -252,7 +252,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+        default Given command(@NonNull Object payload, @NonNull Map<String, String> metadata) {
             return command(payload, Metadata.from(metadata));
         }
 
@@ -268,7 +268,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current Given instance, for fluent interfacing.
          */
-        Given command(@Nonnull Object payload, @Nonnull Metadata metadata);
+        Given command(@NonNull Object payload, @NonNull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as commands in the "given" state.
@@ -280,7 +280,7 @@ public interface AxonTestPhase {
          * @param messages The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given commands(@Nonnull CommandMessage... messages);
+        Given commands(@NonNull CommandMessage... messages);
 
         /**
          * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
@@ -293,7 +293,7 @@ public interface AxonTestPhase {
          * @param commands The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given commands(@Nonnull Object... commands) {
+        default Given commands(@NonNull Object... commands) {
             return commands(Arrays.stream(commands).toList());
         }
 
@@ -308,7 +308,7 @@ public interface AxonTestPhase {
          * @param commands The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given commands(@Nonnull List<?> commands);
+        Given commands(@NonNull List<?> commands);
 
         /**
          * Allows running custom setup steps (other than executing messages) on any component retrievable from the
@@ -317,7 +317,7 @@ public interface AxonTestPhase {
          * @param consumer The consumer to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given execute(@Nonnull Consumer<Configuration> consumer) {
+        default Given execute(@NonNull Consumer<Configuration> consumer) {
             return executeAsync(config -> {
                 consumer.accept(config);
                 return FutureUtils.emptyCompletedFuture();
@@ -331,7 +331,7 @@ public interface AxonTestPhase {
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
+        Given executeAsync(@NonNull Function<Configuration, CompletableFuture<?>> function);
 
         /**
          * Transitions to the When phase to execute the test action.
@@ -407,7 +407,7 @@ public interface AxonTestPhase {
          * @param payload The command payload or {@link CommandMessage} to dispatch.
          * @return The current When instance, for fluent interfacing.
          */
-        default Command command(@Nonnull Object payload) {
+        default Command command(@NonNull Object payload) {
             return command(payload, new HashMap<>());
         }
 
@@ -423,7 +423,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current When instance, for fluent interfacing.
          */
-        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+        default Command command(@NonNull Object payload, @NonNull Map<String, String> metadata) {
             return command(payload, Metadata.from(metadata));
         }
 
@@ -439,7 +439,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the command (merged if payload is a {@link CommandMessage}).
          * @return The current When instance, for fluent interfacing.
          */
-        Command command(@Nonnull Object payload, @Nonnull Metadata metadata);
+        Command command(@NonNull Object payload, @NonNull Metadata metadata);
 
         /**
          * Publishes the given event to the appropriate event handler and records all activity for result validation.
@@ -451,7 +451,7 @@ public interface AxonTestPhase {
          * @param payload The event payload or {@link EventMessage} to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        default Event event(@Nonnull Object payload) {
+        default Event event(@NonNull Object payload) {
             return event(payload, Metadata.emptyInstance());
         }
 
@@ -467,7 +467,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current When instance, for fluent interfacing.
          */
-        default Event event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+        default Event event(@NonNull Object payload, @NonNull Map<String, String> metadata) {
             return event(payload, Metadata.from(metadata));
         }
 
@@ -483,7 +483,7 @@ public interface AxonTestPhase {
          * @param metadata The metadata to attach to the event (merged if payload is an {@link EventMessage}).
          * @return The current When instance, for fluent interfacing.
          */
-        Event event(@Nonnull Object payload, @Nonnull Metadata metadata);
+        Event event(@NonNull Object payload, @NonNull Metadata metadata);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -492,7 +492,7 @@ public interface AxonTestPhase {
          * @param messages The event messages to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        Event events(@Nonnull EventMessage... messages);
+        Event events(@NonNull EventMessage... messages);
 
         /**
          * Publishes the given events to the appropriate event handlers and records all activity for result
@@ -501,7 +501,7 @@ public interface AxonTestPhase {
          * @param events The events (payloads or EventMessages) to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        default Event events(@Nonnull Object... events) {
+        default Event events(@NonNull Object... events) {
             return events(Arrays.stream(events).toList());
         }
 
@@ -512,7 +512,7 @@ public interface AxonTestPhase {
          * @param events The list of events to publish.
          * @return The current When instance, for fluent interfacing.
          */
-        Event events(@Nonnull List<?> events);
+        Event events(@NonNull List<?> events);
 
         /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
@@ -548,7 +548,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer);
+            Command resultMessageSatisfies(@NonNull Consumer<? super CommandResultMessage> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -560,7 +560,7 @@ public interface AxonTestPhase {
              * @param expectedPayload The expected result message payload of the command execution.
              * @return The current Then, for fluent interfacing.
              */
-            Command resultMessagePayload(@Nonnull Object expectedPayload);
+            Command resultMessagePayload(@NonNull Object expectedPayload);
 
             /**
              * Invokes the given {@code consumer} of the command result payload that has been returned during the When
@@ -578,7 +578,7 @@ public interface AxonTestPhase {
              * handles payload conversion for distributed setups where conversion is necessary.
              */
             @Deprecated(since = "5.1.0", forRemoval = true)
-            Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
+            Command resultMessagePayloadSatisfies(@NonNull Consumer<Object> consumer);
 
             /**
              * Invokes the given {@code consumer} of the command result payload that has been returned during the When
@@ -591,7 +591,7 @@ public interface AxonTestPhase {
              * @param <T>      The type of the payload.
              * @return The current Then instance, for fluent interfacing.
              */
-            <T> Command resultMessagePayloadSatisfies(@Nonnull Class<T> type, @Nonnull Consumer<T> consumer);
+            <T> Command resultMessagePayloadSatisfies(@NonNull Class<T> type, @NonNull Consumer<T> consumer);
         }
 
         /**
@@ -632,7 +632,7 @@ public interface AxonTestPhase {
              * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
              * @return The current Then instance, for fluent interfacing.
              */
-            default T await(@Nonnull Consumer<T> assertion) {
+            default T await(@NonNull Consumer<T> assertion) {
                 return await(assertion, Duration.ofSeconds(5));
             }
 
@@ -645,7 +645,7 @@ public interface AxonTestPhase {
              *                  assertion.
              * @return The current Then instance, for fluent interfacing.
              */
-            T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout);
+            T await(@NonNull Consumer<T> assertion, @NonNull Duration timeout);
 
             /**
              * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
@@ -705,7 +705,7 @@ public interface AxonTestPhase {
              * @param expectedEvents The expected events, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.
              */
-            T events(@Nonnull Object... expectedEvents);
+            T events(@NonNull Object... expectedEvents);
 
             /**
              * Expect the given set of event messages to have been published during the {@link When} phase.
@@ -719,7 +719,7 @@ public interface AxonTestPhase {
              * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.
              */
-            T events(@Nonnull EventMessage... expectedEvents);
+            T events(@NonNull EventMessage... expectedEvents);
 
             /**
              * Invokes the given {@code consumer} of the set of event messages that have been published during the When
@@ -728,7 +728,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the published events. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer);
+            T eventsSatisfy(@NonNull Consumer<List<EventMessage>> consumer);
 
             /**
              * Allow to check if the set of event messages which have been published during the When phase match given
@@ -737,7 +737,7 @@ public interface AxonTestPhase {
              * @param predicate The predicate to check the dispatched events against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate);
+            T eventsMatch(@NonNull Predicate<List<EventMessage>> predicate);
 
             /**
              * Expect no events to have been published during the {@link When} phase.
@@ -758,7 +758,7 @@ public interface AxonTestPhase {
              * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commands(@Nonnull Object... expectedCommands);
+            T commands(@NonNull Object... expectedCommands);
 
             /**
              * Expect the given set of command messages to have been dispatched during the When phase.
@@ -771,7 +771,7 @@ public interface AxonTestPhase {
              *                         dispatched.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commands(@Nonnull CommandMessage... expectedCommands);
+            T commands(@NonNull CommandMessage... expectedCommands);
 
             /**
              * Invokes the given {@code consumer} of the set of command messages that have been dispatched during the
@@ -780,7 +780,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the dispatched commands. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer);
+            T commandsSatisfy(@NonNull Consumer<List<CommandMessage>> consumer);
 
             /**
              * Allow to check if the set of command messages which have been dispatched during the When phase match
@@ -789,7 +789,7 @@ public interface AxonTestPhase {
              * @param predicate The predicate to check the dispatched commands against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate);
+            T commandsMatch(@NonNull Predicate<List<CommandMessage>> predicate);
 
             /**
              * Expect no command messages to have been dispatched during the When phase.
@@ -809,7 +809,7 @@ public interface AxonTestPhase {
              * @param type The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
              */
-            T exception(@Nonnull Class<? extends Throwable> type);
+            T exception(@NonNull Class<? extends Throwable> type);
 
             /**
              * Expect the exception with given {@code type} and {@code message} to occur during the When phase
@@ -823,7 +823,7 @@ public interface AxonTestPhase {
              * @param message The message of the exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
              */
-            T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message);
+            T exception(@NonNull Class<? extends Throwable> type, @NonNull String message);
 
             /**
              * Invokes the given {@code consumer} of the exception that has been throw during the When phase, allowing
@@ -832,7 +832,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the thrown exception. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
+            T exceptionSatisfies(@NonNull Consumer<Throwable> consumer);
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
@@ -840,7 +840,7 @@ public interface AxonTestPhase {
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T expect(@Nonnull Consumer<Configuration> function);
+            T expect(@NonNull Consumer<Configuration> function);
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
@@ -848,7 +848,7 @@ public interface AxonTestPhase {
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
+            T expectAsync(@NonNull Function<Configuration, CompletableFuture<?>> function);
         }
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 
@@ -32,26 +32,24 @@ import java.util.Map;
 public interface ResultMessage extends Message {
 
     @Override
-    @Nonnull
-    ResultMessage withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    ResultMessage withMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    ResultMessage andMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    ResultMessage andMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    default ResultMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default @NonNull ResultMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default ResultMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default @NonNull ResultMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    ResultMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    @NonNull
+    ResultMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
 }

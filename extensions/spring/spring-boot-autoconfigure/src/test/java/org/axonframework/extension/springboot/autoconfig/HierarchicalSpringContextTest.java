@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -140,8 +140,7 @@ public class HierarchicalSpringContextTest {
         }
     }
 
-    @Nonnull
-    private static SimpleCommandBus aSimpleCommandBus() {
+    static @NonNull SimpleCommandBus aSimpleCommandBus() {
         return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
     }
 }

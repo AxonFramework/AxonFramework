@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface describing objects that are capable of enhancing a {@link MessageHandler}, giving it additional
@@ -34,5 +34,5 @@ public interface HandlerEnhancerDefinition {
      * @param original The original message handler
      * @return The enhanced message handler
      */
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original);
+    <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original);
 }

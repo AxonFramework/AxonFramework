@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.assertj.core.api.AbstractIterableAssert;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.eventsourcing.annotation.EventTag;
@@ -149,16 +149,14 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
      * @param converter The converter to use, cannot be {@code null}.
      * @return The {@link EventStorageEngine} used in this test suite.
      */
-    @Nonnull
-    protected abstract E getStorageEngine(@Nonnull EventConverter converter) throws Exception;
+    protected abstract @NonNull E getStorageEngine(@NonNull EventConverter converter) throws Exception;
 
     /**
      * Creates a {@link UnitOfWork} with its transactional resource configured.
      *
      * @return A {@link UnitOfWork}.
      */
-    @Nonnull
-    protected abstract UnitOfWork unitOfWork();
+    protected abstract @NonNull UnitOfWork unitOfWork();
 
     @Nested
     protected class GivenSomePublishedEvents {

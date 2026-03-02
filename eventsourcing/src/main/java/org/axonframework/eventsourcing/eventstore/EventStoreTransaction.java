@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
@@ -54,14 +54,14 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing to the event sequence complying to the
      * given {@code condition}.
      */
-    MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition);
+    MessageStream<? extends EventMessage> source(@NonNull SourcingCondition condition);
 
     /**
      * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction.
      *
      * @param eventMessage The {@link EventMessage} to append.
      */
-    void appendEvent(@Nonnull EventMessage eventMessage);
+    void appendEvent(@NonNull EventMessage eventMessage);
 
     /**
      * Registers a {@code callback} to invoke when an event is {@link #appendEvent(EventMessage) appended} to this
@@ -72,7 +72,7 @@ public interface EventStoreTransaction {
      *
      * @param callback A {@link Consumer} to invoke when an event is appended in this transaction.
      */
-    void onAppend(@Nonnull Consumer<EventMessage> callback);
+    void onAppend(@NonNull Consumer<EventMessage> callback);
 
     /**
      * Returns the position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this

@@ -18,7 +18,7 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -696,9 +696,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
 
-        @Nonnull
         @Override
-        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             DeadLetterableEvent payload = (DeadLetterableEvent) event.payload();
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();

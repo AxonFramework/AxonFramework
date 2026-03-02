@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
@@ -56,7 +56,7 @@ public interface EventMessage extends Message {
      * @return The identifier of this {@link EventMessage event}.
      */
     @Override
-    @Nonnull
+    @NonNull
     String identifier();
 
     /**
@@ -66,30 +66,28 @@ public interface EventMessage extends Message {
      *
      * @return The timestamp of this {@link EventMessage event}.
      */
-    @Nonnull
+    @NonNull
     Instant timestamp();
 
     @Override
-    @Nonnull
-    EventMessage withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    EventMessage withMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    EventMessage andMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    EventMessage andMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    default EventMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default @NonNull EventMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default EventMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default @NonNull EventMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    EventMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    @NonNull
+    EventMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
 }

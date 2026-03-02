@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -39,12 +39,12 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker lowerBound(@NonNull ConsistencyMarker other) {
             return this;
         }
 
         @Override
-        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker upperBound(@NonNull ConsistencyMarker other) {
             return Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         }
 
@@ -67,12 +67,12 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker lowerBound(@NonNull ConsistencyMarker other) {
             return Objects.requireNonNull(other, "The consistency marker cannot be null.");
         }
 
         @Override
-        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker upperBound(@NonNull ConsistencyMarker other) {
             return this;
         }
 

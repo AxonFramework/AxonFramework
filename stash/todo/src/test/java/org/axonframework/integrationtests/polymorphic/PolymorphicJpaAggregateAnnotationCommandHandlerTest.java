@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.polymorphic;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
@@ -51,7 +51,7 @@ public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
                 .entityManagerProvider(() -> entityManager)
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
-                    public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+                    public <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
                         //noinspection unchecked
                         return (Repository<R>) repositories.get(aggregateType);
                     }

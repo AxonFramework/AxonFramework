@@ -19,8 +19,6 @@ package org.axonframework.test.aggregate;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.junit.jupiter.*;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * Test class validating the {@link ResultValidatorImpl}.
  *

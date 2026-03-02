@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -118,7 +118,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * @return a future that completes with the initialized cache for the given segment
      */
     private CompletableFuture<SequenceIdentifierCache> getOrInitializeCache(
-            @Nonnull Segment segment, @Nullable ProcessingContext context) {
+            @NonNull Segment segment, @Nullable ProcessingContext context) {
         SequenceIdentifierCache existing = segmentCaches.get(segment);
         if (existing != null) {
             return CompletableFuture.completedFuture(existing);
@@ -136,10 +136,10 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                        }));
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends M> letter,
+    public CompletableFuture<Void> enqueue(@NonNull Object sequenceIdentifier,
+                                           @NonNull DeadLetter<? extends M> letter,
                                            @Nullable ProcessingContext context) {
         Optional<Segment> segmentOpt = extractSegment(context);
         if (segmentOpt.isEmpty()) {
@@ -155,10 +155,10 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                                               }));
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Boolean> enqueueIfPresent(@Nonnull Object sequenceIdentifier,
-                                                       @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+    public CompletableFuture<Boolean> enqueueIfPresent(@NonNull Object sequenceIdentifier,
+                                                       @NonNull Supplier<DeadLetter<? extends M>> letterBuilder,
                                                        @Nullable ProcessingContext context) {
         Optional<Segment> segmentOpt = extractSegment(context);
         if (segmentOpt.isEmpty()) {
@@ -188,27 +188,27 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                 });
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter,
+    public CompletableFuture<Void> evict(@NonNull DeadLetter<? extends M> letter,
                                          @Nullable ProcessingContext context) {
         // We don't have the sequence identifier here, so we cannot update the cache.
         // The cache will self-correct on the next contains() call.
         return delegate.evict(letter, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+    public CompletableFuture<Void> requeue(@NonNull DeadLetter<? extends M> letter,
+                                           @NonNull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                                            @Nullable ProcessingContext context) {
         // Requeue doesn't change the presence status, so no cache update needed.
         return delegate.requeue(letter, letterUpdater, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+    public CompletableFuture<Boolean> contains(@NonNull Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
         Optional<Segment> segmentOpt = extractSegment(context);
         if (segmentOpt.isEmpty()) {
@@ -239,52 +239,52 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                                               }));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
-            @Nonnull Object sequenceIdentifier,
+            @NonNull Object sequenceIdentifier,
             @Nullable ProcessingContext context) {
         return delegate.deadLetterSequence(sequenceIdentifier, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
             @Nullable ProcessingContext context) {
         return delegate.deadLetters(context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+    public CompletableFuture<Boolean> isFull(@NonNull Object sequenceIdentifier,
                                              @Nullable ProcessingContext context) {
         return delegate.isFull(sequenceIdentifier, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         return delegate.size(context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+    public CompletableFuture<Long> sequenceSize(@NonNull Object sequenceIdentifier,
                                                 @Nullable ProcessingContext context) {
         return delegate.sequenceSize(sequenceIdentifier, context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         return delegate.amountOfSequences(context);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Boolean> process(
-            @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            @NonNull Predicate<DeadLetter<? extends M>> sequenceFilter,
+            @NonNull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context) {
         // Processing may evict letters, but we don't know which sequences.
         // The cache will self-correct on subsequent contains() calls.
@@ -296,7 +296,7 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
      * <p>
      * Clears all per-segment caches and the delegate queue.
      */
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         // Clear all segment caches to avoid stale cache hits during delegate clear.

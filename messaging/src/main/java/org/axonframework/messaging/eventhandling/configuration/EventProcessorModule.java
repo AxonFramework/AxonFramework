@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
@@ -66,7 +66,7 @@ public interface EventProcessorModule extends Module {
      * @return A builder phase to configure the subscribing event processor.
      */
     static EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> subscribing(
-            @Nonnull String processorName
+            @NonNull String processorName
     ) {
         return new SubscribingEventProcessorModule(processorName);
     }
@@ -78,7 +78,7 @@ public interface EventProcessorModule extends Module {
      * @return A builder phase to configure the pooled streaming event processor.
      */
     static EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> pooledStreaming(
-            @Nonnull String processorName
+            @NonNull String processorName
     ) {
         return new PooledStreamingEventProcessorModule(processorName);
     }
@@ -98,7 +98,7 @@ public interface EventProcessorModule extends Module {
          * @return The customization phase for further configuration.
          */
         CustomizationPhase<P, C> eventHandlingComponents(
-                @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
+                @NonNull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
         );
     }
 
@@ -128,7 +128,7 @@ public interface EventProcessorModule extends Module {
          *                              returning the customized processor configuration.
          * @return The configured processor module.
          */
-        P customized(@Nonnull BiFunction<Configuration, C, C> instanceCustomization);
+        P customized(@NonNull BiFunction<Configuration, C, C> instanceCustomization);
 
         /**
          * Builds the processor module with the current configuration.

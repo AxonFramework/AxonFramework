@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.QualifiedName;
@@ -312,8 +312,7 @@ class LegacyEventHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private static LegacyMessageSupportingContext processingContextWith(EventMessage event) {
+    static @NonNull LegacyMessageSupportingContext processingContextWith(EventMessage event) {
         return new LegacyMessageSupportingContext(event);
     }
 }

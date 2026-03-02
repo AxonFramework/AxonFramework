@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -48,13 +48,13 @@ public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationE
      * @param entityType The declared type of the entity.
      * @param idType        The type of id.
      */
-    public SpringEventSourcedEntityConfigurer(@Nonnull Class<T> entityType, @Nonnull Class<ID> idType) {
+    public SpringEventSourcedEntityConfigurer(@NonNull Class<T> entityType, @NonNull Class<ID> idType) {
         this.entityType = entityType;
         this.idType = idType;
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(@NonNull ComponentRegistry registry) {
         var eventSourcedEntityModule = EventSourcedEntityModule.autodetected(this.idType, this.entityType);
         registry.registerModule(eventSourcedEntityModule);
     }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.conversion.Converter;
@@ -33,28 +33,26 @@ import java.util.Map;
 public interface SubscriptionQueryUpdateMessage extends QueryResponseMessage {
 
     @Override
-    @Nonnull
-    SubscriptionQueryUpdateMessage withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    SubscriptionQueryUpdateMessage withMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    SubscriptionQueryUpdateMessage andMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    SubscriptionQueryUpdateMessage andMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    default SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Class<?> type,
-                                                                       @Nonnull Converter converter) {
+        default @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Class<?> type,
+                                                                       @NonNull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull TypeReference<?> type,
-                                                                       @Nonnull Converter converter) {
+        default @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull TypeReference<?> type,
+                                                                       @NonNull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    @NonNull
+    SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
 }

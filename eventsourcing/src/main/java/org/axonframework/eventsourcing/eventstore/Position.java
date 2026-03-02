@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a position from which sourcing may start.
@@ -29,7 +29,7 @@ public sealed interface Position permits GlobalIndexPosition, AggregateSequenceN
     /**
      * Represents the smallest possible position.
      */
-    static final Position START = new StartPosition();
+    Position START = new StartPosition();
 
     /**
      * Returns the smallest of the two positions. If one of the positions is {@link #START},
@@ -41,5 +41,5 @@ public sealed interface Position permits GlobalIndexPosition, AggregateSequenceN
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position is incompatible with this position.
      */
-    @Nonnull Position min(@Nonnull Position other);
+    @NonNull Position min(@NonNull Position other);
 }

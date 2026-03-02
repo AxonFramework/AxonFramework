@@ -15,8 +15,8 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -50,7 +50,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
      * @param payload      The payload expressing the query for this {@link CommandMessage}.
      */
-    public GenericQueryMessage(@Nonnull MessageType type,
+    public GenericQueryMessage(@NonNull MessageType type,
                                @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()),
              null);
@@ -71,7 +71,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @see GenericQueryMessage(Message, MessageType, Integer)
      */
-    public GenericQueryMessage(@Nonnull Message delegate) {
+    public GenericQueryMessage(@NonNull Message delegate) {
         this(delegate, null);
     }
 
@@ -90,27 +90,24 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @param priority     The priority of this query message. May be {@code null} to indicate no priority.
      */
-    public GenericQueryMessage(@Nonnull Message delegate,
+    public GenericQueryMessage(@NonNull Message delegate,
                                @Nullable Integer priority) {
         super(delegate);
         this.priority = priority;
     }
 
     @Override
-    @Nonnull
-    public QueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull QueryMessage withMetadata(@NonNull Map<String, String> metadata) {
         return new GenericQueryMessage(delegate().withMetadata(metadata), priority);
     }
 
     @Override
-    @Nonnull
-    public QueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public @NonNull QueryMessage andMetadata(@NonNull Map<String, String> metadata) {
         return new GenericQueryMessage(delegate().andMetadata(metadata), priority);
     }
 
     @Override
-    @Nonnull
-    public QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public @NonNull QueryMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

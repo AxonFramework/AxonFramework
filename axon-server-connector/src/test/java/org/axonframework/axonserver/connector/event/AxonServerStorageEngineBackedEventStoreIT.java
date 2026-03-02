@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -75,9 +75,9 @@ class AxonServerStorageEngineBackedEventStoreIT
         container.stop();
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected AxonServerEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
+    protected AxonServerEventStorageEngine getStorageEngine(@NonNull EventConverter converter) {
         if (engine == null) {
             engine = new AxonServerEventStorageEngine(connection, converter);
         }
@@ -85,7 +85,7 @@ class AxonServerStorageEngineBackedEventStoreIT
         return engine;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected UnitOfWork unitOfWork() {
         return FACTORY.create();

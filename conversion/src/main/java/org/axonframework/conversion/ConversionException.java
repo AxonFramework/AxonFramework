@@ -16,8 +16,8 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonNonTransientException;
 
 /**
@@ -34,7 +34,7 @@ public class ConversionException extends AxonNonTransientException {
      *
      * @param message The message describing the problem.
      */
-    public ConversionException(@Nonnull String message) {
+    public ConversionException(@NonNull String message) {
         super(message);
     }
 
@@ -44,7 +44,7 @@ public class ConversionException extends AxonNonTransientException {
      * @param message The message describing the problem.
      * @param cause   The original cause of the exception.
      */
-    public ConversionException(@Nonnull String message, @Nullable Throwable cause) {
+    public ConversionException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

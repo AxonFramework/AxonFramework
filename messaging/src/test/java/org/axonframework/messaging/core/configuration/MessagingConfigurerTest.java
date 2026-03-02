@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
@@ -171,12 +171,12 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         EventSink expected = new EventSink() {
             @Override
             public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                                   @Nonnull List<EventMessage> events) {
+                                                   @NonNull List<EventMessage> events) {
                 return FutureUtils.emptyCompletedFuture();
             }
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 throw new UnsupportedOperationException("Unimportant for this test case");
             }
         };

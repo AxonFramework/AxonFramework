@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -47,9 +47,9 @@ public interface HandlerDefinition {
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise.
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(
-            @Nonnull Class<T> declaringType,
-            @Nonnull Method method,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
+            @NonNull Class<T> declaringType,
+            @NonNull Method method,
+            @NonNull ParameterResolverFactory parameterResolverFactory,
+            @NonNull Function<Object, MessageStream<?>> messageStreamResolver
     );
 }

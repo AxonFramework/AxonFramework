@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -134,7 +134,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
             implements DescribableComponent {
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             descriptor.describeProperty("name", name);
             descriptor.describeProperty("mainComponent", mainComponent);
             descriptor.describeProperty("componentList", componentList);

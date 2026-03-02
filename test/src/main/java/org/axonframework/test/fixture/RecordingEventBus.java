@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -48,18 +48,18 @@ public class RecordingEventBus extends RecordingEventSink implements EventBus {
      *
      * @param delegate The {@link EventBus} to which events will be published.
      */
-    public RecordingEventBus(@Nonnull EventBus delegate) {
+    public RecordingEventBus(@NonNull EventBus delegate) {
         super(Objects.requireNonNull(delegate, "The delegate EventBus may not be null"));
         this.eventBus = delegate;
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventBus.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

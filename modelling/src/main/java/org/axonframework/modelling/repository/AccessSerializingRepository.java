@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -63,34 +63,34 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity,
-                                       @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
+                                       @NonNull ProcessingContext processingContext) {
         return delegate.attach(entity, processingContext);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<E> entityType() {
         return delegate.entityType();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<ID> idType() {
         return delegate.idType();
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
+                                                        @NonNull ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
                          () -> delegate.load(identifier, processingContext));
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
+                                                                @NonNull ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
                          () -> delegate.loadOrCreate(identifier, processingContext));
@@ -170,9 +170,9 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@Nonnull ID identifier,
-                                        @Nonnull E entity,
-                                        @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(@NonNull ID identifier,
+                                        @NonNull E entity,
+                                        @NonNull ProcessingContext processingContext) {
         ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>> workingEntities =
                 processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
         ManagedEntity<ID, E> persisted = delegate.persist(identifier, entity, processingContext);
@@ -187,7 +187,7 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

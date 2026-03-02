@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
@@ -41,7 +41,6 @@ public interface EventHandler extends MessageHandler {
      * @param context The context to the given {@code event} is handled in.
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
-    @Nonnull
-    MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                        @Nonnull ProcessingContext context);
+    MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                 @NonNull ProcessingContext context);
 }

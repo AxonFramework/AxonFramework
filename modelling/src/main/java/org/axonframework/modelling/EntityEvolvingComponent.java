@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.QualifiedName;
 
@@ -39,6 +39,6 @@ public interface EntityEvolvingComponent<E> extends EntityEvolver<E> {
      *
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
-    @Nonnull
+    @NonNull
     Set<QualifiedName> supportedEvents();
 }

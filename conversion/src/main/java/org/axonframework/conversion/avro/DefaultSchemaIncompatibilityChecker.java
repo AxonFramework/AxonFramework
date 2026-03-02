@@ -19,7 +19,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.apache.commons.lang3.tuple.Pair;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +37,11 @@ public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilit
     private final ConcurrentHashMap<Pair<Long, Long>, List<SchemaCompatibility.Incompatibility>> cache
             = new ConcurrentHashMap<>();
 
-    @Nonnull
+    @NonNull
     @Override
     public List<SchemaCompatibility.Incompatibility> checkCompatibility(
-            @Nonnull Schema readerSchema,
-            @Nonnull Schema writerSchema
+            @NonNull Schema readerSchema,
+            @NonNull Schema writerSchema
     ) {
         return cache.computeIfAbsent(
                 Pair.of(AvroUtil.fingerprint(readerSchema), AvroUtil.fingerprint(writerSchema)),

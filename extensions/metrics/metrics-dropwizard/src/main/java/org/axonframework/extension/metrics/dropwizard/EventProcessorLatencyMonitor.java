@@ -19,7 +19,7 @@ package org.axonframework.extension.metrics.dropwizard;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -69,7 +69,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull EventMessage message) {
+    public MonitorCallback onMessageIngested(@NonNull EventMessage message) {
         //noinspection ConstantConditions
         if (message != null) {
             this.processTime.set(Duration.between(message.timestamp(), clock.instant()).toMillis());

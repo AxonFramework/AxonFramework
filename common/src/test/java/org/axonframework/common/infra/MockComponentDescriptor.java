@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -53,32 +53,32 @@ public class MockComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Object object) {
+    public void describeProperty(@NonNull String name, Object object) {
         properties.put(name, object);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Collection<?> collection) {
+    public void describeProperty(@NonNull String name, Collection<?> collection) {
         properties.put(name, collection);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Map<?, ?> map) {
+    public void describeProperty(@NonNull String name, Map<?, ?> map) {
         properties.put(name, map);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, String value) {
+    public void describeProperty(@NonNull String name, String value) {
         properties.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Long value) {
+    public void describeProperty(@NonNull String name, Long value) {
         properties.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, Boolean value) {
+    public void describeProperty(@NonNull String name, Boolean value) {
         properties.put(name, value);
     }
 

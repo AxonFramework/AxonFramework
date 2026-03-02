@@ -21,7 +21,7 @@ public class TracingQueryBus {
 
     /*
         @Override
-    public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+    public CompletableFuture<QueryResponseMessage> query(@NonNull QueryMessage query) {
         Span span = spanFactory.createQuerySpan(query, false);
         return span.runSupplier(() -> doQuery(query).whenComplete((r, t) -> {
             if (t != null) {
@@ -41,10 +41,10 @@ public class TracingQueryBus {
                 /*
                 // TODO 3594 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
-                    @Nonnull
+                    @NonNull
                     @Override
-                    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
-                                                                         @Nonnull ProcessingContext context) {
+                    public MessageStream<QueryResponseMessage<?>> handle(@NonNull QueryMessage<?, ?> query,
+                                                                         @NonNull ProcessingContext context) {
                         return handler.handle((StreamingQueryMessage<Q, R>)query, context).cast();
                     }
                 };

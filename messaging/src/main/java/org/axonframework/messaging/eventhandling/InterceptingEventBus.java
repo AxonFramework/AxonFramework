@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -73,8 +73,8 @@ public class InterceptingEventBus implements EventBus {
      * @param interceptors The interceptors to invoke before publishing an event.
      */
     @Internal
-    public InterceptingEventBus(@Nonnull EventBus delegate,
-                                @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
+    public InterceptingEventBus(@NonNull EventBus delegate,
+                                @NonNull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventBus may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.delegateSink = new InterceptingEventSink(delegate, interceptors);
@@ -82,17 +82,17 @@ public class InterceptingEventBus implements EventBus {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage> events) {
+                                           @NonNull List<EventMessage> events) {
         return delegateSink.publish(context, events);
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return delegate.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
         descriptor.describeProperty("delegateSink", delegateSink);

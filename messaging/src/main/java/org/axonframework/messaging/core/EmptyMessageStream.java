@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 
 import java.util.Optional;
@@ -61,19 +61,19 @@ class EmptyMessageStream extends AbstractMessageStream<Message> implements Messa
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NonNull R identity, @NonNull BiFunction<R, Entry<Message>, R> accumulator) {
         return (error().isPresent())
                 ? CompletableFuture.failedFuture(error().get())
                 : CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<Message> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message>> onError) {
+    public MessageStream<Message> onErrorContinue(@NonNull Function<Throwable, MessageStream<Message>> onError) {
         return this;
     }
 
     @Override
-    public Empty<Message> onComplete(@Nonnull Runnable completeHandler) {
+    public Empty<Message> onComplete(@NonNull Runnable completeHandler) {
         if (error().isPresent()) {
             return MessageStream.failed(error().get());
         }

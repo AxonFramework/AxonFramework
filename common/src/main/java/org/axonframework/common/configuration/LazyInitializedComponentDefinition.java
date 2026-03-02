@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 
@@ -46,14 +46,14 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
      * @param identifier The identifier of the component.
      * @param builder    The function used to create an instance of this component.
      */
-    public LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                              @Nonnull ComponentBuilder<A> builder) {
+    public LazyInitializedComponentDefinition(Component.@NonNull Identifier<C> identifier,
+                                              @NonNull ComponentBuilder<A> builder) {
         super(identifier);
         this.builder = Objects.requireNonNull(builder, "The builder must not be null.");
     }
 
     @Override
-    public A doResolve(@Nonnull Configuration configuration) {
+    public A doResolve(@NonNull Configuration configuration) {
         A resolvedInstance = instanceReference.get();
         if (resolvedInstance != null) {
             return resolvedInstance;
@@ -74,7 +74,7 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         C instance = instanceReference.get();
         if (instance != null) {

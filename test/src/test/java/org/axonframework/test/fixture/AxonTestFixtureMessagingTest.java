@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
@@ -376,8 +376,7 @@ class AxonTestFixtureMessagingTest {
                    .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
         }
 
-        @Nonnull
-        private static SimpleCommandBus aCommandBus() {
+        static @NonNull SimpleCommandBus aCommandBus() {
             return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
         }
 

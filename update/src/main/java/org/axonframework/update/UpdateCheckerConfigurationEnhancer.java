@@ -16,7 +16,7 @@
 
 package org.axonframework.update;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -52,7 +52,7 @@ public class UpdateCheckerConfigurationEnhancer implements ConfigurationEnhancer
     public static final int ENHANCER_ORDER = Integer.MAX_VALUE;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(@NonNull ComponentRegistry componentRegistry) {
         if (TestEnvironmentDetector.isTestEnvironment()) {
             logger.debug("Skipping AxonIQ UpdateChecker as a testsuite environment was detected.");
             return;

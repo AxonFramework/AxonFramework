@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream.Entry;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -48,7 +48,7 @@ public final class FluxUtils {
      * @param <M>    The type of Message returned by the source.
      * @return A Flux with the elements provided by the source.
      */
-    public static <M extends Message> Flux<MessageStream.Entry<M>> of(@Nonnull MessageStream<M> source) {
+    public static <M extends Message> Flux<MessageStream.Entry<M>> of(@NonNull MessageStream<M> source) {
         return Flux.create(emitter -> {
             FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
             emitter.onRequest(i -> fluxTask.process());
@@ -66,7 +66,7 @@ public final class FluxUtils {
      * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
      * {@code flux}.
      */
-    public static <M extends Message> MessageStream<M> asMessageStream(@Nonnull Flux<M> flux) {
+    public static <M extends Message> MessageStream<M> asMessageStream(@NonNull Flux<M> flux) {
         return asMessageStream(flux, message -> Context.empty());
     }
 
@@ -81,8 +81,8 @@ public final class FluxUtils {
      * @return A stream of {@link Entry entries} that returns the {@link Message Messages} provided by the given
      * {@code flux} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    public static <M extends Message> MessageStream<M> asMessageStream(@Nonnull Flux<M> flux,
-                                                                       @Nonnull Function<M, Context> contextSupplier) {
+    public static <M extends Message> MessageStream<M> asMessageStream(@NonNull Flux<M> flux,
+                                                                       @NonNull Function<M, Context> contextSupplier) {
         return new FluxMessageStream<>(flux.map(message -> new SimpleEntry<>(message, contextSupplier.apply(message))));
     }
 

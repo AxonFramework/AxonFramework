@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Iterator;
@@ -61,8 +61,8 @@ public class StreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
      *                            {@code action} of {@link #tryAdvance(Consumer)}.
      * @param finalFetchPredicate Lambda dictating when the {@code fetchFunction} has done its last fetch.
      */
-    public StreamSpliterator(@Nonnull Function<T, List<? extends T>> fetchFunction,
-                             @Nonnull Predicate<List<? extends T>> finalFetchPredicate) {
+    public StreamSpliterator(@NonNull Function<T, List<? extends T>> fetchFunction,
+                             @NonNull Predicate<List<? extends T>> finalFetchPredicate) {
         super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
         this.fetchFunction = fetchFunction;
         this.finalFetchPredicate = finalFetchPredicate;

@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
@@ -52,10 +52,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     };
 
     @Override
-    public @Nonnull DeadLetterEventEntry convert(@Nonnull EventMessage message,
+    public @NonNull DeadLetterEventEntry convert(@NonNull EventMessage message,
                                                  @Nullable Context context,
-                                                 @Nonnull EventConverter eventConverter,
-                                                 @Nonnull Converter genericConverter) {
+                                                 @NonNull EventConverter eventConverter,
+                                                 @NonNull Converter genericConverter) {
         Context effectiveContext = context != null ? context : Context.empty();
         TrackingToken token = effectiveContext.getResource(TrackingToken.RESOURCE_KEY);
 
@@ -73,11 +73,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         );
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Entry<EventMessage> convert(@Nonnull DeadLetterEventEntry entry,
-                                                     @Nonnull EventConverter eventConverter,
-                                                     @Nonnull Converter genericConverter) {
+    public MessageStream.@NonNull Entry<EventMessage> convert(@NonNull DeadLetterEventEntry entry,
+                                                              @NonNull EventConverter eventConverter,
+                                                              @NonNull Converter genericConverter) {
         return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
                                  restoreContext(entry, genericConverter));
     }

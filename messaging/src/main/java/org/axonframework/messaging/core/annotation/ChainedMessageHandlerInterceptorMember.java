@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
@@ -58,10 +58,10 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message,
-                                   @Nonnull ProcessingContext context,
-                                   @Nonnull T target,
-                                   @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<?> handle(@NonNull Message message,
+                                   @NonNull ProcessingContext context,
+                                   @NonNull T target,
+                                   @NonNull MessageHandlingMember<? super T> handler) {
 
         // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
@@ -88,10 +88,10 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+    public Object handleSync(@NonNull Message message,
+                             @NonNull ProcessingContext context,
+                             @NonNull T target,
+                             @NonNull MessageHandlingMember<? super T> handler) throws Exception {
         // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandleSync(message, context, target, handler);

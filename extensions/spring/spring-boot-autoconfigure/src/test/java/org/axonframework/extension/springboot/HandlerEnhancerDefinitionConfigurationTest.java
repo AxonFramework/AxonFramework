@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
@@ -104,8 +104,8 @@ class HandlerEnhancerDefinitionConfigurationTest {
     private static class CustomHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
         @Override
-        public @Nonnull
-        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        public @NonNull
+        <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
             VERIFY_ENHANCER.set(true);
             return original;
         }

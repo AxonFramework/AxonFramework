@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventsourcing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
@@ -278,7 +278,7 @@ class AbstractSnapshotterTest {
             }
 
             @Override
-            public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
+            public Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
             }
@@ -308,7 +308,7 @@ class AbstractSnapshotterTest {
         private final Queue<Runnable> tasks = new LinkedList<>();
 
         @Override
-        public void execute(@Nonnull Runnable runnable) {
+        public void execute(@NonNull Runnable runnable) {
             tasks.add(runnable);
         }
 

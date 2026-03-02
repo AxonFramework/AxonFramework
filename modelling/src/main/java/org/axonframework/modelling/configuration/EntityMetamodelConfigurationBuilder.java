@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
@@ -43,5 +43,5 @@ public interface EntityMetamodelConfigurationBuilder<E> {
      * @param builder       The builder to use for configuring the metamodel.
      * @return The built {@link EntityMetamodel}.
      */
-    EntityMetamodel<E> build(@Nonnull Configuration configuration, @Nonnull EntityMetamodelBuilder<E> builder);
+    EntityMetamodel<E> build(@NonNull Configuration configuration, @NonNull EntityMetamodelBuilder<E> builder);
 }

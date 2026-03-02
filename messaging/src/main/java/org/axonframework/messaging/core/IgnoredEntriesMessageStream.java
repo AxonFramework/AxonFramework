@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import org.jspecify.annotations.NonNull;
-
 import java.util.Optional;
 import java.util.function.Consumer;
+
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the {@link MessageStream} that ignores all {@link Entry entries} of the {@code delegate} stream and
@@ -45,7 +45,7 @@ class IgnoredEntriesMessageStream<M extends Message>
      *
      * @param delegate The instance to delegate calls to.
      */
-    IgnoredEntriesMessageStream(@Nonnull MessageStream<M> delegate) {
+    IgnoredEntriesMessageStream(@NonNull MessageStream<M> delegate) {
         super(delegate);
         this.empty = MessageStream.empty();
     }

@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
@@ -33,28 +33,26 @@ import java.util.OptionalInt;
 public interface QueryMessage extends Message {
 
     @Override
-    @Nonnull
-    QueryMessage withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    QueryMessage withMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    QueryMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
+    @NonNull
+    QueryMessage andMetadata(@NonNull Map<String, String> additionalMetadata);
 
     @Override
-    @Nonnull
-    default QueryMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default @NonNull QueryMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default QueryMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default @NonNull QueryMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    @NonNull
+    QueryMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
 
     /**
      * Returns the priority of this {@link QueryMessage}, if any is applicable.

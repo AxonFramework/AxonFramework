@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
@@ -68,13 +68,13 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
     }
 
     public Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
+            @NonNull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
+            @NonNull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -133,9 +133,9 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * @return a DeadlineMessage using the {@code deadlineName} as its deadline qualifiedName and containing the given
      * {@code messageOrPayload} as the payload
      */
-    protected DeadlineMessage asDeadlineMessage(@Nonnull String deadlineName,
+    protected DeadlineMessage asDeadlineMessage(@NonNull String deadlineName,
                                                        Object messageOrPayload,
-                                                       @Nonnull Instant expiryTime) {
+                                                       @NonNull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
             return new GenericDeadlineMessage(deadlineName,
                                               (Message) messageOrPayload,

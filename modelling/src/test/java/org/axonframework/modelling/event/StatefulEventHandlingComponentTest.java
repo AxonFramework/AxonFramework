@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.event;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -195,8 +195,7 @@ class StatefulEventHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private ProcessingContext messageProcessingContext(GenericEventMessage event) {
+        private @NonNull ProcessingContext messageProcessingContext(GenericEventMessage event) {
         return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(event);
     }
 }

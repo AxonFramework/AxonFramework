@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
 import java.util.ArrayList;
@@ -107,7 +107,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
         MessageHandlingMember<T> resolver = original;
         for (HandlerEnhancerDefinition enhancer : enhancers) {
             resolver = enhancer.wrapHandler(resolver);

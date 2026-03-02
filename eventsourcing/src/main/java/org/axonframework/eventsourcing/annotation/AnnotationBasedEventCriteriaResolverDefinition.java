@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 
@@ -32,9 +32,9 @@ public class AnnotationBasedEventCriteriaResolverDefinition implements CriteriaR
 
     @Override
     public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(
-            @Nonnull Class<E> entityType,
-            @Nonnull Class<ID> idType,
-            @Nonnull Configuration configuration
+            @NonNull Class<E> entityType,
+            @NonNull Class<ID> idType,
+            @NonNull Configuration configuration
     ) {
         return new AnnotationBasedEventCriteriaResolver<>(entityType, idType, configuration);
     }

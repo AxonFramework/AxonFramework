@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.configuration.reflection;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -51,8 +51,8 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
-                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
+    public static void registerToComponentRegistry(@NonNull ComponentRegistry componentRegistry,
+                                                   @NonNull Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         registerToComponentRegistry(componentRegistry, 0, factory);
@@ -67,9 +67,9 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
+    public static void registerToComponentRegistry(@NonNull ComponentRegistry componentRegistry,
                                                    int order,
-                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
+                                                   @NonNull Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");

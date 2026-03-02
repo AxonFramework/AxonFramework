@@ -17,7 +17,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -381,7 +381,7 @@ public abstract class ComponentDescriptorTestSuite {
             }
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 descriptor.describeProperty("name", name);
                 if (dependency != null) {
                     descriptor.describeProperty("dependency", dependency);
@@ -408,7 +408,7 @@ public abstract class ComponentDescriptorTestSuite {
     protected record SimpleTestComponent(String name, int value) implements DescribableComponent {
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             descriptor.describeProperty("name", name);
             descriptor.describeProperty("value", value);
         }

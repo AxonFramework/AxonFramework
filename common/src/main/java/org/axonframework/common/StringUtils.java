@@ -16,7 +16,7 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 

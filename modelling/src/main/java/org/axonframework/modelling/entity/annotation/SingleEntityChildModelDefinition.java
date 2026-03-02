@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
@@ -43,23 +43,23 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 public class SingleEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     @Override
-    protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
+    protected boolean isMemberTypeSupported(@NonNull Class<?> memberType) {
         return !Iterable.class.isAssignableFrom(memberType);
     }
 
     @Override
-    protected Class<?> getChildTypeFromMember(@Nonnull Member member) {
+    protected Class<?> getChildTypeFromMember(@NonNull Member member) {
         return getMemberValueType(member);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected <C, P> EntityChildMetamodel<C, P> doCreate(
-            @Nonnull Class<P> parentClass,
-            @Nonnull EntityMetamodel<C> entityMetamodel,
-            @Nonnull String fieldName,
-            @Nonnull EventTargetMatcher<C> eventTargetMatcher,
-            @Nonnull CommandTargetResolver<C> commandTargetResolver) {
+            @NonNull Class<P> parentClass,
+            @NonNull EntityMetamodel<C> entityMetamodel,
+            @NonNull String fieldName,
+            @NonNull EventTargetMatcher<C> eventTargetMatcher,
+            @NonNull CommandTargetResolver<C> commandTargetResolver) {
         return SingleEntityChildMetamodel
                 .forEntityModel(parentClass, entityMetamodel)
                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(

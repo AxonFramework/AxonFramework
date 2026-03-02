@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -57,14 +57,14 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
      * @param delegate The {@link EventHandlingComponent} instance to delegate calls to.
      */
     @Internal
-    public SequenceCachingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public SequenceCachingEventHandlingComponent(@NonNull EventHandlingComponent delegate) {
         super(delegate);
         this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         String eventIdentifier = event.identifier();
 
         SequenceIdentifiersCache cache = context.computeResourceIfAbsent(
@@ -109,7 +109,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          * @param eventIdentifier    The event identifier to use as the cache key.
          * @param sequenceIdentifier The sequence identifier to store in the cache.
          */
-        void put(@Nonnull String eventIdentifier, @Nonnull Object sequenceIdentifier) {
+        void put(@NonNull String eventIdentifier, @NonNull Object sequenceIdentifier) {
             cache.put(eventIdentifier, sequenceIdentifier);
         }
 
@@ -119,8 +119,8 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          * @param eventIdentifier The event identifier to look up in the cache.
          * @return An {@link Optional} containing the sequence identifier if present, or empty if not found.
          */
-        @Nonnull
-        Optional<Object> get(@Nonnull String eventIdentifier) {
+        @NonNull
+        Optional<Object> get(@NonNull String eventIdentifier) {
             return Optional.ofNullable(cache.get(eventIdentifier));
         }
     }

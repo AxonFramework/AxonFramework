@@ -16,9 +16,18 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.messaging.commandhandling.CommandMessage;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.core.MessagingTestUtils.command;
+import static org.axonframework.messaging.core.MessagingTestUtils.commandResult;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+
 import org.axonframework.messaging.commandhandling.interception.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
@@ -27,19 +36,9 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.core.MessagingTestUtils.command;
-import static org.axonframework.messaging.core.MessagingTestUtils.commandResult;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link CommandMessageHandlerInterceptorChain}.
@@ -88,22 +87,22 @@ class CommandMessageHandlerInterceptorChainTest {
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<CommandMessage> interceptorOne = spy(new MessageHandlerInterceptor<CommandMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull CommandMessage message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<CommandMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull CommandMessage message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<CommandMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<CommandMessage> interceptorTwo = spy(new MessageHandlerInterceptor<CommandMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull CommandMessage message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<CommandMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull CommandMessage message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<CommandMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
