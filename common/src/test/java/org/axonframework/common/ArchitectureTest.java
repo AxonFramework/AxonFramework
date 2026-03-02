@@ -16,7 +16,6 @@
 
 package org.axonframework.common;
 
-import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -80,7 +79,7 @@ public class ArchitectureTest {
     }
 
     private static SliceRule filterIgnoredDependencies(SliceRule rule) {
-        for (Map.Entry<String, String> entry : IGNORED_CYCLE) {
+        for (Map.Entry<String, String> entry : IGNORED_CYCLES) {
             rule = rule.ignoreDependency(entry.getKey(), entry.getValue());
         }
         return rule;
@@ -92,15 +91,14 @@ public class ArchitectureTest {
      * @return entries of ignored cycles
      */
     private static Set<Map.Entry<String, String>> parseIgnoredCycles() {
-        final Pattern CLASS_PATTERN = Pattern.compile("<([^>]+)>");
-
+        final Pattern classPattern = Pattern.compile("<([^>]+)>");
         List<Map.Entry<String, String>> ignoredCycles = new ArrayList<>();
         try (var lines = Files.lines(Paths.get(Objects.requireNonNull(ArchitectureTest.class.getResource(
                 "/archunit_store/package-cycles.txt")).toURI()))) {
             lines.map(String::trim)
                  .filter(line -> line.startsWith("-"))
                  .forEach(line -> {
-                     Matcher matcher = CLASS_PATTERN.matcher(line);
+                     Matcher matcher = classPattern.matcher(line);
                      List<String> classes = new ArrayList<>();
                      while (matcher.find()) {
                          String className = matcher.group(1);
@@ -119,7 +117,7 @@ public class ArchitectureTest {
                          ignoredCycles.add(Map.entry(classes.get(0), classes.get(1)));
                      }
                  });
-        } catch (IOException | URISyntaxException | NullPointerException e) {
+        } catch (IOException | URISyntaxException e) {
             // Ignore
         }
         return Set.copyOf(ignoredCycles);
