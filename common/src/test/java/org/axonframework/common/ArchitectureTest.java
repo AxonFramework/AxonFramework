@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ArchitectureTest {
 
     static final String BASE_PACKAGE_NAME = "org.axonframework.common";
-    static final Set<Map.Entry<String, String>> IGNORED_CYCLE = parseIgnoredCycles();
+    static final Set<Map.Entry<String, String>> IGNORED_CYCLES = parseIgnoredCycles();
 
 
     @ArchTest
