@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Optional;
@@ -41,7 +41,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
     private final AtomicBoolean completed = new AtomicBoolean(false);
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         this.callback.set(callback);
         if (hasNextAvailable() || isCompleted()) {
             invokeCallbackSafely();

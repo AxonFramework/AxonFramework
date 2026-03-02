@@ -20,7 +20,7 @@ import org.axonframework.common.digest.Digester;
 import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.conversion.Serializer;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility to create labels for use with JobRunr. As labels have a maximum length of 44, we hash a label whenever it
@@ -50,7 +50,7 @@ public abstract class LabelUtils {
         }
     }
 
-    private static String getScopeLabel(@Nonnull Serializer serializer, @Nonnull ScopeDescriptor scope) {
+    private static String getScopeLabel(@NonNull Serializer serializer, @NonNull ScopeDescriptor scope) {
         return getLabel(serializer.serialize(scope, String.class).getData());
     }
 
@@ -62,8 +62,8 @@ public abstract class LabelUtils {
      * @param scope        scope a {@link ScopeDescriptor} of which a label is needed
      * @return a {@link String} which can be used as a label
      */
-    public static String getCombinedLabel(@Nonnull Serializer serializer, @Nonnull String deadlineName,
-                                          @Nonnull ScopeDescriptor scope) {
+    public static String getCombinedLabel(@NonNull Serializer serializer, @NonNull String deadlineName,
+                                          @NonNull ScopeDescriptor scope) {
         String scopeLabel = getScopeLabel(serializer, scope);
         return getLabel(deadlineName + scopeLabel);
     }

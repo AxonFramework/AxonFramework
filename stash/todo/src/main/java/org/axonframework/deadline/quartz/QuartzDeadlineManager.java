@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline.quartz;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.core.Scope;
@@ -134,10 +134,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime,
-                           @Nonnull String deadlineName,
+    public String schedule(@NonNull Instant triggerDateTime,
+                           @NonNull String deadlineName,
                            Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.identifier();
 
@@ -158,21 +158,21 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Duration triggerDuration,
-                           @Nonnull String deadlineName,
+    public String schedule(@NonNull Duration triggerDuration,
+                           @NonNull String deadlineName,
                            Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         return schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> cancelSchedule(jobKey(scheduleId, deadlineName))));
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(@NonNull String deadlineName) {
         Span span = spanFactory.createCancelAllSpan(deadlineName);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
@@ -185,7 +185,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
         // By serializing and deserializing the ScopeDescriptor we make certain that the givenScope is in the right
         // format to compare with the outcome from the
         // DeadlineJob.DeadlineJobDataBinder#deadlineScope(Serializer, JobDataMap) operation.
@@ -330,7 +330,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(@NonNull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

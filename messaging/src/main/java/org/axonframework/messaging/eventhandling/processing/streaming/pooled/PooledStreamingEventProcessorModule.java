@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
@@ -95,7 +95,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      *
      * @param processorName The unique name for the pooled streaming event processor.
      */
-    public PooledStreamingEventProcessorModule(@Nonnull String processorName) {
+    public PooledStreamingEventProcessorModule(@NonNull String processorName) {
         super(processorName);
         this.processorName = processorName;
     }
@@ -293,18 +293,15 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                         .toList();
     }
 
-    @Nonnull
-    private String processorEventHandlingComponentName(int index) {
+        private @NonNull String processorEventHandlingComponentName(int index) {
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
-    @Nonnull
-    private String processorComponentDlqName(int index) {
+        private @NonNull String processorComponentDlqName(int index) {
         return "DeadLetterQueue[" + processorName + "][" + index + "]";
     }
 
-    @Nonnull
-    private String processorComponentCachingDlqName(int index) {
+        private @NonNull String processorComponentCachingDlqName(int index) {
         return "CachingDeadLetterQueue[" + processorName + "][" + index + "]";
     }
 
@@ -314,7 +311,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public PooledStreamingEventProcessorModule customized(
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
+            @NonNull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
     ) {
         this.customizedProcessorConfigurationBuilder = cfg -> {
             var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
@@ -356,7 +353,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Override
     public CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> eventHandlingComponents(
-            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
+            @NonNull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
@@ -396,7 +393,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.
          */
-        default Customization andThen(@Nonnull Customization other) {
+        default Customization andThen(@NonNull Customization other) {
             Objects.requireNonNull(other, "other may not be null");
             return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -67,10 +67,10 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
      * @param persister  The component capable of persisting entities.
      */
     public SimpleRepository(
-            @Nonnull Class<ID> idType,
-            @Nonnull Class<E> entityType,
-            @Nonnull SimpleRepositoryEntityLoader<ID, E> loader,
-            @Nonnull SimpleRepositoryEntityPersister<ID, E> persister
+            @NonNull Class<ID> idType,
+            @NonNull Class<E> entityType,
+            @NonNull SimpleRepositoryEntityLoader<ID, E> loader,
+            @NonNull SimpleRepositoryEntityPersister<ID, E> persister
     ) {
         this.idType = requireNonNull(idType, "The entityIdClass may not be null");
         this.entityType = requireNonNull(entityType, "The entityClass may not be null");
@@ -79,8 +79,8 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity,
-                                       @Nonnull ProcessingContext context) {
+    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
+                                       @NonNull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -93,20 +93,20 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
         ).resultNow();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<E> entityType() {
         return entityType;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<ID> idType() {
         return idType;
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID id, @Nonnull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID id, @NonNull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -126,13 +126,13 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
+                                                                @NonNull ProcessingContext processingContext) {
         return load(identifier, processingContext);
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@Nonnull ID id, @Nonnull E entity, @Nonnull ProcessingContext context) {
+    public ManagedEntity<ID, E> persist(@NonNull ID id, @NonNull E entity, @NonNull ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
         if (managedEntities.containsKey(id)) {
             ManagedEntity<ID, E> managedEntity = managedEntities.get(id).join();
@@ -147,7 +147,7 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("idClass", idType);
         descriptor.describeProperty("entityClass", entityType);
         descriptor.describeProperty("loader", loader);

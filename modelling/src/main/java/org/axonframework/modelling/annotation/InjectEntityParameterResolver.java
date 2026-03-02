@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
@@ -63,9 +63,9 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
      * @param identifierResolver The {@link EntityIdResolver} to resolve the id of the entity.
      */
     public InjectEntityParameterResolver(
-            @Nonnull Configuration configuration,
-            @Nonnull Class<?> type,
-            @Nonnull EntityIdResolver<?> identifierResolver,
+            @NonNull Configuration configuration,
+            @NonNull Class<?> type,
+            @NonNull EntityIdResolver<?> identifierResolver,
             boolean managedEntity
     ) {
         this.configuration = requireNonNull(configuration, "The Configuration is required");
@@ -74,9 +74,9 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         this.managedEntity = managedEntity;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
         Message message = requireNonNullElseGet(Message.fromContext(context), GenericMessage::emptyMessage);
 
         try {
@@ -105,7 +105,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(@NonNull ProcessingContext context) {
         return Message.fromContext(context) != null;
     }
 }

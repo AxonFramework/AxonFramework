@@ -16,8 +16,8 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
@@ -51,18 +51,18 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
      *
      * @param schemaStore The schema store to resolve schemas with based on a fingerprint.
      */
-    public ByteArrayToGenericRecordConverter(@Nonnull SchemaStore schemaStore) {
+    public ByteArrayToGenericRecordConverter(@NonNull SchemaStore schemaStore) {
         this.schemaStore = Objects.requireNonNull(schemaStore, "The SchemaStore may not be null.");
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<GenericRecord> targetType() {
         return GenericRecord.class;
     }

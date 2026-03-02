@@ -20,8 +20,8 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface towards a mechanism that decides whether to schedule a message for dispatching when a previous attempts
@@ -51,10 +51,10 @@ public interface RetryScheduler {
      * @return a MessageStream representing the result of the last attempt
      */
     <M extends Message, R extends Message> MessageStream<R> scheduleRetry(
-            @Nonnull M message,
+            @NonNull M message,
             @Nullable ProcessingContext processingContext,
-            @Nonnull Throwable cause,
-            @Nonnull Dispatcher<M, R> dispatcher);
+            @NonNull Throwable cause,
+            @NonNull Dispatcher<M, R> dispatcher);
 
     /**
      * Represents the logic to dispatch a message and attempt to retrieve the result
@@ -69,7 +69,7 @@ public interface RetryScheduler {
          * @param processingContext The processing context to dispatch the Message under
          * @return a Stream containing the result Messages
          */
-        MessageStream<R> dispatch(@Nonnull M message,
+        MessageStream<R> dispatch(@NonNull M message,
                                   @Nullable ProcessingContext processingContext);
     }
 }

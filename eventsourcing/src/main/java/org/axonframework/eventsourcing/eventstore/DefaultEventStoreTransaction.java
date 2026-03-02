@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -70,9 +70,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link Tag Tags}, before it is added to the
      *                           transaction.
      */
-    public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext,
-                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
+    public DefaultEventStoreTransaction(@NonNull EventStorageEngine eventStorageEngine,
+                                        @NonNull ProcessingContext processingContext,
+                                        @NonNull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
@@ -84,7 +84,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<? extends EventMessage> source(@NonNull SourcingCondition condition) {
         var appendCondition = processingContext.updateResource(
                 appendConditionKey,
                 ac -> ac == null
@@ -126,7 +126,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage eventMessage) {
+    public void appendEvent(@NonNull EventMessage eventMessage) {
         List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
@@ -178,7 +178,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void onAppend(@Nonnull Consumer<EventMessage> callback) {
+    public void onAppend(@NonNull Consumer<EventMessage> callback) {
         callbacks.add(callback);
     }
 

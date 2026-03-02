@@ -21,7 +21,7 @@ import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static java.util.Collections.singletonMap;
 
@@ -34,7 +34,7 @@ import static java.util.Collections.singletonMap;
 public class MessageNameSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
+    public @NonNull Map<String, String> provideForMessage(@NonNull Message message) {
         return singletonMap("axon_message_name", message.type().toString());
     }
 }

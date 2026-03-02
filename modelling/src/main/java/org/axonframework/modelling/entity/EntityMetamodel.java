@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.DescribableComponent;
@@ -48,7 +48,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @param <E>        The type of the entity to create a metamodel for.
      * @return A new {@link EntityMetamodelBuilder} for the given entity type.
      */
-    @Nonnull
+    @NonNull
     static <E> EntityMetamodelBuilder<E> forEntityType(Class<E> entityType) {
         return ConcreteEntityMetamodel.forEntityClass(entityType);
     }
@@ -64,8 +64,8 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @param <E>        The type of the entity to create a metamodel for.
      * @return A new {@link PolymorphicEntityMetamodelBuilder} for the given entity type.
      */
-    @Nonnull
-    static <E> PolymorphicEntityMetamodelBuilder<E> forPolymorphicEntityType(@Nonnull Class<E> entityType) {
+    @NonNull
+    static <E> PolymorphicEntityMetamodelBuilder<E> forPolymorphicEntityType(@NonNull Class<E> entityType) {
         return PolymorphicEntityMetamodel.forSuperType(entityType);
     }
 
@@ -74,7 +74,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      *
      * @return The {@link Class} of the entity this metamodel describes.
      */
-    @Nonnull
+    @NonNull
     Class<E> entityType();
 
     /**
@@ -90,9 +90,8 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
-    @Nonnull
-    MessageStream.Single<CommandResultMessage> handleCreate(
-            @Nonnull CommandMessage message, @Nonnull ProcessingContext context
+    MessageStream.@NonNull Single<CommandResultMessage> handleCreate(
+            @NonNull CommandMessage message, @NonNull ProcessingContext context
     );
 
     /**
@@ -111,9 +110,8 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
-    @Nonnull
-    MessageStream.Single<CommandResultMessage> handleInstance(
-            @Nonnull CommandMessage message, @Nonnull E entity, @Nonnull ProcessingContext context
+    MessageStream.@NonNull Single<CommandResultMessage> handleInstance(
+            @NonNull CommandMessage message, @NonNull E entity, @NonNull ProcessingContext context
     );
 
     /**
@@ -123,7 +121,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
-    @Nonnull
+    @NonNull
     Set<QualifiedName> supportedCreationalCommands();
 
     /**
@@ -133,7 +131,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
-    @Nonnull
+    @NonNull
     Set<QualifiedName> supportedInstanceCommands();
 
     /**
@@ -143,6 +141,6 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
-    @Nonnull
+    @NonNull
     Set<QualifiedName> supportedCommands();
 }

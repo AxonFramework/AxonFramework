@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import static java.util.Objects.requireNonNull;
@@ -30,8 +30,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultStreamingCondition(
-        @Nonnull TrackingToken position,
-        @Nonnull EventCriteria criteria
+        @NonNull TrackingToken position,
+        @NonNull EventCriteria criteria
 ) implements StreamingCondition {
 
     DefaultStreamingCondition {
@@ -40,7 +40,7 @@ record DefaultStreamingCondition(
     }
 
     @Override
-    public StreamingCondition or(@Nonnull EventCriteria criteria) {
+    public StreamingCondition or(@NonNull EventCriteria criteria) {
         return new DefaultStreamingCondition(this.position, this.criteria.or(criteria));
     }
 }

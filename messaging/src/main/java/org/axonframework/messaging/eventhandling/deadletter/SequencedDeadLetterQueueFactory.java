@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.Configuration;
@@ -56,23 +56,23 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
      * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name and configuration.
      */
     public SequencedDeadLetterQueueFactory(
-            @Nonnull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
+            @NonNull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
     ) {
         assertNonNull(factoryFn, "Factory function may not be null");
         this.factoryFn = factoryFn;
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
         return TYPE_REF.getTypeAsClass();
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(
-            @Nonnull String name,
-            @Nonnull Configuration config
+            @NonNull String name,
+            @NonNull Configuration config
     ) {
         return Optional.of(new InstantiatedComponentDefinition<>(
                 new Component.Identifier<>(forType(), name),
@@ -81,11 +81,11 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
     }
 
     @Override
-    public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+    public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("type", forType());
     }
 }

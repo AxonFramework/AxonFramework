@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -59,12 +59,12 @@ public class JpaTransactionalExecutorProvider implements TransactionalExecutorPr
      *
      * @param entityManagerFactory A factory constructing an {@link EntityManager} used when no processing context is supplied.
      */
-    public JpaTransactionalExecutorProvider(@Nonnull EntityManagerFactory entityManagerFactory) {
+    public JpaTransactionalExecutorProvider(@NonNull EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory, "entityManagerFactory");
     }
 
     @Override
-    public TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
+    public @NonNull TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
         if (processingContext != null) {
             Supplier<EntityManagerExecutor> executorSupplier = processingContext.getResource(SUPPLIER_KEY);
 
@@ -77,7 +77,7 @@ public class JpaTransactionalExecutorProvider implements TransactionalExecutorPr
 
         return new TransactionalExecutor<>() {
             @Override
-            public <R> CompletableFuture<R> apply(@Nonnull ThrowingFunction<EntityManager, R, Exception> function) {
+            public <R> @NonNull CompletableFuture<R> apply(@NonNull ThrowingFunction<EntityManager, R, Exception> function) {
                 // This uses the entity manager factory directly, so this always runs in its own transaction:
                 EntityManager entityManager = entityManagerFactory.createEntityManager();
                 EntityTransaction tx = entityManager.getTransaction();

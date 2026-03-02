@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
@@ -35,26 +35,24 @@ import java.util.Map;
 public interface ResetContext extends Message {
 
     @Override
-    @Nonnull
-    ResetContext withMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    ResetContext withMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    ResetContext andMetadata(@Nonnull Map<String, String> metadata);
+    @NonNull
+    ResetContext andMetadata(@NonNull Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    default ResetContext withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default @NonNull ResetContext withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default ResetContext withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default @NonNull ResetContext withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    ResetContext withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    @NonNull
+    ResetContext withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
 }

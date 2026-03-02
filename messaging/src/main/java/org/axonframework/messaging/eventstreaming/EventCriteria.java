@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.QualifiedName;
 
@@ -200,7 +200,7 @@ public sealed interface EventCriteria
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    static EventTypeRestrictableEventCriteria havingTags(@Nonnull Set<Tag> tags) {
+    static EventTypeRestrictableEventCriteria havingTags(@NonNull Set<Tag> tags) {
         if (tags.isEmpty()) {
             return AnyEvent.INSTANCE;
         }
@@ -217,7 +217,7 @@ public sealed interface EventCriteria
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    static EventTypeRestrictableEventCriteria havingTags(@Nonnull Tag... tags) {
+    static EventTypeRestrictableEventCriteria havingTags(@NonNull Tag... tags) {
         return havingTags(Set.of(tags));
     }
 
@@ -232,7 +232,7 @@ public sealed interface EventCriteria
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    static EventTypeRestrictableEventCriteria havingTags(@Nonnull String... tags) {
+    static EventTypeRestrictableEventCriteria havingTags(@NonNull String... tags) {
         if ((tags.length & 1) == 1) {
             throw new IllegalArgumentException("Tags must be in pairs of key and value");
         }
@@ -261,7 +261,7 @@ public sealed interface EventCriteria
      * @param eventCriteria The {@code EventCriteria} of which one must match.
      * @return An {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
      */
-    static EventCriteria either(@Nonnull Collection<EventCriteria> eventCriteria) {
+    static EventCriteria either(@NonNull Collection<EventCriteria> eventCriteria) {
         Objects.requireNonNull(eventCriteria, "The eventCriteria cannot be null.");
         return new OrEventCriteria(new HashSet<>(eventCriteria));
     }
@@ -297,7 +297,7 @@ public sealed interface EventCriteria
      * @param tags The tags to match against this criteria instance.
      * @return {@code true} if the type matches, otherwise {@code false}.
      */
-    boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags);
+    boolean matches(@NonNull QualifiedName type, @NonNull Set<Tag> tags);
 
     /**
      * Flatten this, possibly nested, {@code EventCriteria} into a {@link Set} of {@link EventCriterion}. These

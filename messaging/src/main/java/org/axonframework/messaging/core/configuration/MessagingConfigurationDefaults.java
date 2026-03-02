@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -148,12 +148,12 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(@NonNull ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
     }
 
-    private static void registerComponents(@Nonnull ComponentRegistry registry) {
+    private static void registerComponents(@NonNull ComponentRegistry registry) {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
@@ -286,7 +286,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultMessageMonitorRegistry();
     }
 
-    private static void registerDecorators(@Nonnull ComponentRegistry registry) {
+    private static void registerDecorators(@NonNull ComponentRegistry registry) {
         registry.registerDecorator(
                 CommandGateway.class,
                 CONVERTING_COMMAND_GATEWAY_ORDER,
@@ -331,7 +331,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static DispatchInterceptorRegistry registerMonitoringDispatchInterceptors(
-            @Nonnull DispatchInterceptorRegistry dispatchInterceptorRegistry, @Nonnull Configuration config
+            @NonNull DispatchInterceptorRegistry dispatchInterceptorRegistry, @NonNull Configuration config
     ) {
         var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
         var eventDispatcher = Optional.of(messageMonitorRegistry.eventMonitor(config))
@@ -351,8 +351,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(
-            @Nonnull HandlerInterceptorRegistry handlerInterceptorRegistry,
-            @Nonnull Configuration config
+            @NonNull HandlerInterceptorRegistry handlerInterceptorRegistry,
+            @NonNull Configuration config
     ) {
         final var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
         var commandDispatcher = Optional.of(messageMonitorRegistry.commandMonitor(config))

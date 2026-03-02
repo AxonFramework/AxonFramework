@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -44,13 +44,13 @@ class InMemoryStorageEngineBackedEventStoreTest
         engine = new InMemoryEventStorageEngine();
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected InMemoryEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
+    protected InMemoryEventStorageEngine getStorageEngine(@NonNull EventConverter converter) {
         return engine;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected UnitOfWork unitOfWork() {
         return FACTORY.create();

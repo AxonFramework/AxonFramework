@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -111,7 +111,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
     }
 
     @Override
-    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(@NonNull ConfigurableListableBeanFactory beanFactory) throws BeansException {
         if (!(beanFactory instanceof BeanDefinitionRegistry)) {
             logger.warn("Given bean factory is not a BeanDefinitionRegistry. Cannot auto-configure message handlers");
             return;
@@ -148,7 +148,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      * @return A new {@link List} of sorted bean references, according to the value of the {@link Order} annotation
      * value on the beans.
      */
-    private List<String> sortByOrder(List<String> found, @Nonnull ConfigurableListableBeanFactory beanFactory) {
+    private List<String> sortByOrder(List<String> found, @NonNull ConfigurableListableBeanFactory beanFactory) {
         return found.stream()
                     .collect(Collectors.toMap(
                             beanRef -> beanRef,
@@ -165,7 +165,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry registry) throws BeansException {
+    public void postProcessBeanDefinitionRegistry(@NonNull BeanDefinitionRegistry registry) throws BeansException {
         // No action required.
     }
 }

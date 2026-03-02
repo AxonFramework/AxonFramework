@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,5 +37,5 @@ public interface LifecycleHandler {
      * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler}
      * calls.
      */
-    CompletableFuture<?> run(@Nonnull Configuration configuration);
+    CompletableFuture<?> run(@NonNull Configuration configuration);
 }

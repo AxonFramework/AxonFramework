@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -43,8 +43,8 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record Tag(@Nonnull String key,
-                  @Nonnull String value) {
+public record Tag(@NonNull String key,
+                  @NonNull String value) {
 
     /**
      * Compact constructor validating that the given {@code key} and {@code value} are not {@code null}.
@@ -89,7 +89,7 @@ public record Tag(@Nonnull String key,
      * @param value The value of the new {@code Tag}.
      * @return A new {@code Tag} with the given {@code key} and {@code value}.
      */
-    public static Tag of(@Nonnull String key, @Nonnull String value) {
+    public static Tag of(@NonNull String key, @NonNull String value) {
         return new Tag(
                 Objects.requireNonNull(key, "The key of a Tag is required."),
                 Objects.requireNonNull(value, "The value of a Tag is required.")

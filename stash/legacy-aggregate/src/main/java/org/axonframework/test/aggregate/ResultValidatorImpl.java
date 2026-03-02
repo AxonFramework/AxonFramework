@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.core.HandlerExecutionException;
@@ -478,8 +478,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         return this;
     }
 
-    public void recordResult(@Nonnull CommandMessage commandMessage,
-                             @Nonnull Message result) {
+    public void recordResult(@NonNull CommandMessage commandMessage,
+                             @NonNull Message result) {
         if (result.payload() instanceof Throwable e) {
             recordException(e);
         } else {

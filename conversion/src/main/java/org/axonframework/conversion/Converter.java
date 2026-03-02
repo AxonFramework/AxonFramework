@@ -16,8 +16,8 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
@@ -42,7 +42,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    default boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    default boolean canConvert(@NonNull Class<?> sourceType, @NonNull Class<?> targetType) {
         return canConvert(sourceType, (Type) targetType);
     }
 
@@ -54,7 +54,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType);
+    boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType);
 
     /**
      * Converts the given {@code input} object into an object of the given {@code targetType}.
@@ -66,7 +66,7 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    default <T> T convert(@Nullable Object input, @Nonnull Class<T> targetType) {
+    default <T> T convert(@Nullable Object input, @NonNull Class<T> targetType) {
         return convert(input, (Type) targetType);
     }
 
@@ -80,5 +80,5 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    <T> T convert(@Nullable Object input, @Nonnull Type targetType);
+    <T> T convert(@Nullable Object input, @NonNull Type targetType);
 }

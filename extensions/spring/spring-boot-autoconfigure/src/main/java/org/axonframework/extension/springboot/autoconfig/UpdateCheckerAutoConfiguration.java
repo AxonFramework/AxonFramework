@@ -16,7 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import static org.axonframework.common.configuration.ComponentDefinition.ofType;
+
+
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.lifecycle.Phase;
@@ -27,6 +29,7 @@ import org.axonframework.update.UpdateCheckerHttpClient;
 import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -35,8 +38,6 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-
-import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 
 /**
  * Autoconfiguration class constructing the {@link UsagePropertyProvider} that will end up in the
@@ -84,7 +85,7 @@ public class UpdateCheckerAutoConfiguration {
     public ConfigurationEnhancer springUpdateCheckerConfigEnhancer(UsagePropertyProvider usagePropertyProvider) {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 registry.registerIfNotPresent(ofType(UpdateCheckerHttpClient.class).withBuilder(
                                 c -> new UpdateCheckerHttpClient(usagePropertyProvider)
                         ))
@@ -108,7 +109,7 @@ public class UpdateCheckerAutoConfiguration {
     static class NotTestEnvironmentCondition implements Condition {
 
         @Override
-        public boolean matches(@Nonnull ConditionContext context, @Nonnull AnnotatedTypeMetadata metadata) {
+        public boolean matches(@NonNull ConditionContext context, @NonNull AnnotatedTypeMetadata metadata) {
             return !TestEnvironmentDetector.isTestEnvironment();
         }
     }

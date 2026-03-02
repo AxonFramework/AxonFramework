@@ -22,6 +22,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -110,8 +111,8 @@ class PagingJpaQueryIterableTest {
             // given
             TransactionalExecutor<EntityManager> hangingExecutor = new TransactionalExecutor<>() {
                 @Override
-                public <R> CompletableFuture<R> apply(
-                        org.axonframework.common.function.ThrowingFunction<EntityManager, R, Exception> function
+                public <R> @NonNull CompletableFuture<R> apply(
+                        org.axonframework.common.function.@NonNull ThrowingFunction<EntityManager, R, Exception> function
                 ) {
                     return new CompletableFuture<>(); // never completes
                 }

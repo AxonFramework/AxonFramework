@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
@@ -64,7 +64,7 @@ public class ProcessingContextEventAppender implements EventAppender {
     }
 
     @Override
-    public void append(@Nonnull List<?> events) {
+    public void append(@NonNull List<?> events) {
         Objects.requireNonNull(events, "Events may not be null");
         List<EventMessage> eventMessages = events
                 .stream()
@@ -75,7 +75,7 @@ public class ProcessingContextEventAppender implements EventAppender {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("processingContext", processingContext);
         descriptor.describeProperty("eventSink", eventSink);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

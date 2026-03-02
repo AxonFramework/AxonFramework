@@ -16,6 +16,19 @@
 
 package org.axonframework.deadline.dbscheduler;
 
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineToken.TASK_NAME;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+
 import com.github.kagkarlsson.scheduler.ScheduledExecution;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.SchedulerState;
@@ -24,13 +37,11 @@ import com.github.kagkarlsson.scheduler.task.Task;
 import com.github.kagkarlsson.scheduler.task.TaskDescriptor;
 import com.github.kagkarlsson.scheduler.task.TaskInstance;
 import com.github.kagkarlsson.scheduler.task.helper.Tasks;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.core.*;
-import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.conversion.SerializedObject;
+import org.axonframework.conversion.Serializer;
 import org.axonframework.deadline.AbstractDeadlineManager;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -42,26 +53,23 @@ import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedu
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.ExecutionException;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeAwareProvider;
+import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.conversion.SerializedObject;
-import org.axonframework.conversion.Serializer;
+import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanScope;
 import org.jobrunr.scheduling.JobScheduler;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static java.lang.String.format;
-import static java.util.Objects.isNull;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineToken.TASK_NAME;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Implementation of {@link DeadlineManager} that delegates scheduling and triggering to a db scheduler
@@ -128,9 +136,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
+    public String schedule(@NonNull Instant triggerDateTime, @NonNull String deadlineName,
                            @Nullable Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String identifier = IdentifierFactory.getInstance().generateIdentifier();
         DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(identifier);
@@ -222,7 +230,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> {
@@ -238,7 +246,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(@NonNull String deadlineName) {
         Span span = spanFactory.createCancelAllSpan(deadlineName);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
@@ -258,7 +266,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfBinaryDeadlineMatches(
-            @Nonnull String deadlineName
+            @NonNull String deadlineName
     ) {
         return scheduledExecution -> {
             if (deadlineName.equals(scheduledExecution.getData().getD())) {
@@ -268,7 +276,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfHumanReadableDeadlineMatches(
-            @Nonnull String deadlineName
+            @NonNull String deadlineName
     ) {
         return scheduledExecution -> {
             if (deadlineName.equals(scheduledExecution.getData().getDeadlineName())) {
@@ -278,7 +286,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
         Span span = spanFactory.createCancelAllWithinScopeSpan(deadlineName, scope);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
@@ -302,8 +310,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
-            @Nonnull String deadlineName,
-            @Nonnull String scopeDescriptor
+            @NonNull String deadlineName,
+            @NonNull String scopeDescriptor
     ) {
         return scheduledExecution -> {
             DbSchedulerHumanReadableDeadlineDetails data = scheduledExecution.getData();
@@ -314,8 +322,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
-            @Nonnull String deadlineName,
-            @Nonnull byte[] scopeDescriptor
+            @NonNull String deadlineName,
+            @NonNull byte[] scopeDescriptor
     ) {
         return scheduledExecution -> {
             DbSchedulerBinaryDeadlineDetails data = scheduledExecution.getData();
@@ -509,7 +517,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(@NonNull DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

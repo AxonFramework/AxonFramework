@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
@@ -220,10 +220,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         });
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage message,
-                                                             @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage message,
+                                                                      @NonNull ProcessingContext context) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message, context))
                        .findFirst()
@@ -236,7 +235,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private static CommandResultMessage asCommandResultMessage(
             @Nullable Object commandResult,
-            @Nonnull Function<Object, MessageType> typeResolver
+            @NonNull Function<Object, MessageType> typeResolver
     ) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage) commandResult;
@@ -273,7 +272,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         // Unimplemented as this is legacy flow.
     }
 
@@ -488,14 +487,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handleSync(@Nonnull CommandMessage command,
-                                 @Nonnull ProcessingContext context) throws Exception {
+        public Object handleSync(@NonNull CommandMessage command,
+                                 @NonNull ProcessingContext context) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handleSync(command, context, null));
             return resolveReturnValue(command, aggregate);
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
@@ -513,8 +512,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage command,
-                                 @Nonnull ProcessingContext context) throws Exception {
+        public Object handleSync(@NonNull CommandMessage command,
+                                 @NonNull ProcessingContext context) throws Exception {
             return handleNewInstanceCreation(command,
                                              context,
                                              factoryMethod,
@@ -523,7 +522,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
@@ -541,8 +540,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage command,
-                                 @Nonnull ProcessingContext context) throws Exception {
+        public Object handleSync(@NonNull CommandMessage command,
+                                 @NonNull ProcessingContext context) throws Exception {
             String aggregateId = resolveNullableAggregateId(command);
 
             Object result;
@@ -558,8 +557,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage message,
-                                 @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull CommandMessage message,
+                                 @NonNull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
@@ -624,14 +623,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage command,
-                                 @Nonnull ProcessingContext context) throws Exception {
+        public Object handleSync(@NonNull CommandMessage command,
+                                 @NonNull ProcessingContext context) throws Exception {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command);
             return repository.load(aggregateIdentifier).handle(command, context);
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }

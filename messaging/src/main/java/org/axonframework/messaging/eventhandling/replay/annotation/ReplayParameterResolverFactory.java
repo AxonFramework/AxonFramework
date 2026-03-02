@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -46,8 +46,8 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
     @Nullable
     @Override
-    public ParameterResolver<ReplayStatus> createInstance(@Nonnull Executable executable,
-                                                          @Nonnull Parameter[] parameters,
+    public ParameterResolver<ReplayStatus> createInstance(@NonNull Executable executable,
+                                                          @NonNull Parameter[] parameters,
                                                           int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ReplayParameterResolver();
@@ -57,9 +57,9 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
     private static class ReplayParameterResolver implements ParameterResolver<ReplayStatus> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<ReplayStatus> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<ReplayStatus> resolveParameterValue(@NonNull ProcessingContext context) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
             if (Message.fromContext(context) instanceof EventMessage && optionalToken.isPresent()) {
                 return CompletableFuture.completedFuture(
@@ -70,7 +70,7 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

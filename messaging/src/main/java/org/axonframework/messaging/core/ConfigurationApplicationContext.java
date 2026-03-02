@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 
@@ -39,20 +39,20 @@ public class ConfigurationApplicationContext implements ApplicationContext {
      *
      * @param configuration The configuration to retrieve components from.
      */
-    public ConfigurationApplicationContext(@Nonnull Configuration configuration) {
+    public ConfigurationApplicationContext(@NonNull Configuration configuration) {
         Objects.requireNonNull(configuration, "configuration may not be null");
         this.configuration = configuration;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public <C> C component(@Nonnull Class<C> type) {
+    public <C> C component(@NonNull Class<C> type) {
         return configuration.getComponent(type);
     }
 }

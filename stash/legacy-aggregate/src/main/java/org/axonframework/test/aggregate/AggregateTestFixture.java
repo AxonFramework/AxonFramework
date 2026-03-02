@@ -16,78 +16,8 @@
 
 package org.axonframework.test.aggregate;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.commandhandling.SimpleCommandBus;
-import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHandlingComponent;
-import org.axonframework.common.Assert;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.Registration;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventsourcing.AggregateFactory;
-import org.axonframework.messaging.eventsourcing.GenericAggregateFactory;
-import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.GenericMessage;
-import org.axonframework.messaging.LegacyMessageHandler;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.core.annotation.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.HandlerDefinition;
-import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotation.MultiHandlerDefinition;
-import org.axonframework.messaging.core.annotation.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
-import org.axonframework.modelling.command.AggregateNotFoundException;
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
-import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.Repository;
-import org.axonframework.modelling.command.RepositoryProvider;
-import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.matchers.FieldFilter;
-import org.axonframework.test.matchers.IgnoreField;
-import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -111,8 +41,79 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static java.lang.String.format;
-import static org.axonframework.common.ReflectionUtils.*;
+
+import org.jspecify.annotations.Nullable;
+import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.Registration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.messaging.LegacyMessageHandler;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.GenericMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MultiHandlerDefinition;
+import org.axonframework.messaging.core.annotation.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventsourcing.AggregateFactory;
+import org.axonframework.messaging.eventsourcing.GenericAggregateFactory;
+import org.axonframework.messaging.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.modelling.command.Aggregate;
+import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
+import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.RepositoryProvider;
+import org.axonframework.modelling.command.inspection.AggregateModel;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
+import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.IgnoreField;
+import org.axonframework.test.matchers.MatchAllFieldFilter;
+import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
@@ -841,22 +842,22 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
-                                         @Nonnull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@NonNull String aggregateIdentifier,
+                                         @NonNull Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.loadOrCreate(aggregateIdentifier, factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@NonNull Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.newInstance(factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
+        public Aggregate<T> load(@NonNull String aggregateIdentifier) {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.load(aggregateIdentifier);
             validateIdentifier(aggregateIdentifier, aggregate);
@@ -916,7 +917,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(@NonNull Callable<T> factoryMethod) throws Exception {
             Assert.state(storedAggregate == null,
                          () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
             storedAggregate = AnnotatedAggregate.initialize(factoryMethod,
@@ -928,7 +929,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> load(@Nonnull String aggregateIdentifier) {
+        public Aggregate<T> load(@NonNull String aggregateIdentifier) {
             if (storedAggregate == null) {
                 throw new AggregateNotFoundException(aggregateIdentifier,
                                                      "Aggregate not found. No aggregate has been stored yet.");
@@ -960,8 +961,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
-                                         @Nonnull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(@NonNull String aggregateIdentifier,
+                                         @NonNull Callable<T> factoryMethod) throws Exception {
             if (storedAggregate == null) {
                 return newInstance(factoryMethod);
             }
@@ -973,7 +974,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class RecordingEventStore implements EventStore {
 
 //        @Override
-//        public DomainEventStream readEvents(@Nonnull String identifier) {
+//        public DomainEventStream readEvents(@NonNull String identifier) {
 //            if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
 //                String exceptionMessage = format(
 //                        "The aggregate identifier used in the 'when' step does not resemble the aggregate identifier"
@@ -997,7 +998,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 //        }
 //
 //        @Override
-//        public void publish(@Nonnull List<? extends EventMessage> events) {
+//        public void publish(@NonNull List<? extends EventMessage> events) {
 //            if (CurrentUnitOfWork.isStarted()) {
 //                CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
 //            } else {
@@ -1062,40 +1063,40 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 //        }
 //
 //        @Override
-//        public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
+//        public void storeSnapshot(@NonNull DomainEventMessage snapshot) {
 //            // A dedicated implementation is not necessary for test fixture.
 //        }
 //
-//        @Nonnull
+//        @NonNull
 //        @Override
-//        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
+//        public Registration subscribe(@NonNull Consumer<List<? extends EventMessage>> eventProcessor) {
 //            return () -> true;
 //        }
 //
-//        public @Nonnull
+//        public @NonNull
 //        Registration registerDispatchInterceptor(
-//                @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
+//                @NonNull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
 //            return () -> true;
 //        }
 
         @Override
-        public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
+        public EventStoreTransaction transaction(@NonNull ProcessingContext processingContext) {
             return null;
         }
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               @NonNull List<EventMessage> events) {
             return null;
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
 
         }
 
         @Override
-        public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+        public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                                 @Nullable ProcessingContext context) {
             return null;
         }
@@ -1111,13 +1112,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+        public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
             return null;
         }
 
         @Override
         public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             return null;
         }
     }
@@ -1125,7 +1126,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class DefaultRepositoryProvider implements RepositoryProvider {
 
         @Override
-        public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+        public <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
             return new CreationalRepository<>(aggregateType, this);
         }
     }
@@ -1142,13 +1143,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<R> load(@Nonnull String aggregateIdentifier) {
+        public Aggregate<R> load(@NonNull String aggregateIdentifier) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }
 
         @Override
-        public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
+        public Aggregate<R> newInstance(@NonNull Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
                     aggregateType, getParameterResolverFactory(), getHandlerDefinition()
             );

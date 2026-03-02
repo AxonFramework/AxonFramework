@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +37,8 @@ public interface ParameterResolver<T> {
      * @return A {@link CompletableFuture} that will complete with the parameter value, or completes with {@code null}.
      * @since 5.0.0
      */
-    @Nonnull
-    CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context);
+    @NonNull
+    CompletableFuture<T> resolveParameterValue(@NonNull ProcessingContext context);
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code context}.
@@ -46,7 +46,7 @@ public interface ParameterResolver<T> {
      * @param context The current processing context.
      * @return Returns {@code true} if this resolver can provide a value for the message, otherwise {@code false}.
      */
-    boolean matches(@Nonnull ProcessingContext context);
+    boolean matches(@NonNull ProcessingContext context);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class

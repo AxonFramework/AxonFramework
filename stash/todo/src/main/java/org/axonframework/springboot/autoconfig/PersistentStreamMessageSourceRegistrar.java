@@ -24,7 +24,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Post-processor to create Spring beans for persistent streams defined in the application context.
@@ -62,7 +62,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
 
     @Override
     public void postProcessBeanDefinitionRegistry(
-            @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
+            @NonNull BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
 //        persistentStreams.forEach((name, settings) -> {
 //            BeanDefinitionBuilder beanDefinition =
@@ -91,7 +91,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
 
     @Override
     public void postProcessBeanFactory(
-            @Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory
+            @NonNull ConfigurableListableBeanFactory configurableListableBeanFactory
     ) throws BeansException {
         // No actions needed here
     }

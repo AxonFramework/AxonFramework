@@ -16,7 +16,7 @@
 
 package org.axonframework.update;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.update.api.UpdateCheckRequest;
 import org.axonframework.update.api.UpdateCheckResponse;
@@ -55,7 +55,7 @@ public class UpdateCheckerHttpClient {
      *
      * @param userProperties The {@link UsagePropertyProvider} to use for retrieving the URL and other properties.
      */
-    public UpdateCheckerHttpClient(@Nonnull UsagePropertyProvider userProperties) {
+    public UpdateCheckerHttpClient(@NonNull UsagePropertyProvider userProperties) {
         this.userProperties = Objects.requireNonNull(userProperties, "The userProperties must not be null.");
         this.client = HttpClient.newBuilder()
                                 .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -71,7 +71,7 @@ public class UpdateCheckerHttpClient {
      * @return An {@link Optional} containing the {@link UpdateCheckResponse} if the request was successful, or empty if it
      * failed.
      */
-    public Optional<UpdateCheckResponse> sendRequest(@Nonnull UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
+    public Optional<UpdateCheckResponse> sendRequest(@NonNull UpdateCheckRequest updateCheckRequest, boolean firstRequest) {
         String url = userProperties.getUrl() + "?" + updateCheckRequest.toQueryString();
 
         try {

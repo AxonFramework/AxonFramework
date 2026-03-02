@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -36,8 +36,8 @@ public class EntityAlreadyExistsForCreationalCommandHandlerException extends Run
      * @param command        The {@link CommandMessage} that was handled.
      * @param existingEntity The existing entity that was found.
      */
-    public EntityAlreadyExistsForCreationalCommandHandlerException(@Nonnull CommandMessage command,
-                                                                   @Nonnull Object existingEntity) {
+    public EntityAlreadyExistsForCreationalCommandHandlerException(@NonNull CommandMessage command,
+                                                                   @NonNull Object existingEntity) {
         super(String.format(
                 "Creational command handler for command [%s] encountered an already existing entity: [%s]",
                 command.type(),

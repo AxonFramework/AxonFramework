@@ -37,7 +37,7 @@ import org.mockito.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static java.util.Collections.singleton;
 import static org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork.startAndGet;
@@ -182,10 +182,10 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull TestSaga target,
-                                 @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {
+        public Object handleSync(@NonNull Message message,
+                                 @NonNull ProcessingContext context,
+                                 @NonNull TestSaga target,
+                                 @NonNull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
             return handler.handleSync(message, context, target);
         }

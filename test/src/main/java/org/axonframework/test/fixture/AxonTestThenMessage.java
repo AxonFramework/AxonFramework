@@ -16,8 +16,8 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.awaitility.Awaitility;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -78,10 +78,10 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenMessage(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
+            @NonNull AxonConfiguration configuration,
+            AxonTestFixture.@NonNull Customization customization,
+            @NonNull RecordingCommandBus commandBus,
+            @NonNull RecordingEventSink eventSink,
             @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
@@ -95,7 +95,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Object... expectedEvents) {
+    public T events(@NonNull Object... expectedEvents) {
         var publishedEvents = eventSink.recorded();
 
         if (expectedEvents.length != publishedEvents.size()) {
@@ -113,7 +113,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull EventMessage... expectedEvents) {
+    public T events(@NonNull EventMessage... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(Message::payload).toArray());
 
         var publishedEvents = eventSink.recorded();
@@ -130,7 +130,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
+    public T eventsSatisfy(@NonNull Consumer<List<EventMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         var publishedEvents = eventSink.recorded();
         try {
@@ -142,7 +142,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
+    public T eventsMatch(@NonNull Predicate<List<EventMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
         var publishedEvents = eventSink.recorded();
         var result = predicate.test(publishedEvents);
@@ -153,13 +153,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Object... expectedCommands) {
+    public T commands(@NonNull Object... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(expectedCommands);
         return self();
     }
 
     @Override
-    public T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout) {
+    public T await(@NonNull Consumer<T> assertion, @NonNull Duration timeout) {
         Objects.requireNonNull(assertion, "The assertion may not be null.");
         Objects.requireNonNull(timeout, "The timeout may not be null.");
         Awaitility.waitAtMost(timeout)
@@ -169,13 +169,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull CommandMessage... expectedCommands) {
+    public T commands(@NonNull CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
     }
 
     @Override
-    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer) {
+    public T commandsSatisfy(@NonNull Consumer<List<CommandMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         var dispatchedCommands = commandBus.recordedCommands();
         try {
@@ -187,7 +187,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate) {
+    public T commandsMatch(@NonNull Predicate<List<CommandMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
         var dispatchedCommands = commandBus.recordedCommands();
         var result = predicate.test(dispatchedCommands);
@@ -204,7 +204,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+    public T exceptionSatisfies(@NonNull Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         try {
             consumer.accept(actualException);
@@ -215,7 +215,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+    public T exception(@NonNull Class<? extends Throwable> type, @NonNull String message) {
         Objects.requireNonNull(type, "The type may not be null.");
         Objects.requireNonNull(message, "The message may not be null.");
         if (actualException == null) {
@@ -230,7 +230,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type) {
+    public T exception(@NonNull Class<? extends Throwable> type) {
         Objects.requireNonNull(type, "The type may not be null.");
         if (actualException == null) {
             throw new AxonAssertionError(
@@ -283,14 +283,14 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T expect(@Nonnull Consumer<Configuration> function) {
+    public T expect(@NonNull Consumer<Configuration> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.accept(configuration);
         return self();
     }
 
     @Override
-    public T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+    public T expectAsync(@NonNull Function<Configuration, CompletableFuture<?>> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.apply(configuration).join();
         return self();

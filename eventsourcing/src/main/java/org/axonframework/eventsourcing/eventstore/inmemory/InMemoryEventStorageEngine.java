@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -101,9 +101,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
                                                                 @Nullable ProcessingContext processingContext,
-                                                                @Nonnull List<TaggedEventMessage<?>> events) {
+                                                                @NonNull List<TaggedEventMessage<?>> events) {
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
             return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
@@ -150,7 +150,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull ConsistencyMarker marker) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(@NonNull ConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -180,7 +180,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -197,7 +197,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -241,7 +241,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -263,7 +263,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("offset", offset);
     }
 
@@ -320,7 +320,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
-        public void setCallback(@Nonnull Runnable callback) {
+        public void setCallback(@NonNull Runnable callback) {
             this.callback.set(callback);
             callback.run();
         }

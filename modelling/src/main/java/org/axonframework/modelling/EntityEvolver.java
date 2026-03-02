@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -43,7 +43,7 @@ public interface EntityEvolver<E> {
      * @return The evolved {@code entity} based on the given {@code event}, or the same {@code entity} when nothing
      * happened.
      */
-    E evolve(@Nonnull E entity,
-             @Nonnull EventMessage event,
-             @Nonnull ProcessingContext context);
+    E evolve(@NonNull E entity,
+             @NonNull EventMessage event,
+             @NonNull ProcessingContext context);
 }

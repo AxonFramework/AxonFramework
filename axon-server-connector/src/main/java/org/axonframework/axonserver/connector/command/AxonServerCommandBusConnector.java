@@ -20,8 +20,8 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
@@ -71,8 +71,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      *                      {@link AxonServerConfiguration#getClientId()} to be set when
      *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
      */
-    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection,
-                                         @Nonnull AxonServerConfiguration configuration) {
+    public AxonServerCommandBusConnector(@NonNull AxonServerConnection connection,
+                                         @NonNull AxonServerConfiguration configuration) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
         Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
         this.clientId = configuration.getClientId();
@@ -87,9 +87,9 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         logger.trace("The AxonServerCommandBusConnector started.");
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
@@ -101,7 +101,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
@@ -132,7 +132,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName commandName) {
+    public boolean unsubscribe(@NonNull QualifiedName commandName) {
         Registration subscription = subscriptions.remove(commandName);
         if (subscription != null) {
             subscription.cancel();
@@ -142,7 +142,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull Handler handler) {
+    public void onIncomingCommand(@NonNull Handler handler) {
         this.incomingHandler = handler;
     }
 
@@ -184,15 +184,15 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("clientId", clientId);
         descriptor.describeProperty("componentName", componentName);
     }
 
     private record FutureResultCallback(
-            @Nonnull CompletableFuture<CommandResponse> result,
-            @Nonnull Command command
+            @NonNull CompletableFuture<CommandResponse> result,
+            @NonNull Command command
     ) implements ResultCallback {
 
         @Override
@@ -202,7 +202,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         }
 
         @Override
-        public void onError(@Nonnull Throwable cause) {
+        public void onError(@NonNull Throwable cause) {
             logger.info("Command [{}] raised an exception [{}]", command.getName(), cause.getMessage());
             result.completeExceptionally(cause);
         }

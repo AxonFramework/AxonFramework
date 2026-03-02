@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.LifecycleHandler;
 import org.springframework.context.SmartLifecycle;
@@ -50,7 +50,7 @@ public class SpringLifecycleStartHandler implements SmartLifecycle {
      * @param task  The task to execute on start-up.
      */
     SpringLifecycleStartHandler(int phase,
-                                @Nonnull Supplier<CompletableFuture<?>> task) {
+                                @NonNull Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }

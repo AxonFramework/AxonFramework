@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.configuration.Module;
 
@@ -40,8 +40,8 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
     private final ParameterResolverFactory parent;
     private final ParameterResolverFactory child;
 
-    private HierarchicalParameterResolverFactory(@Nonnull ParameterResolverFactory parent,
-                                                 @Nonnull ParameterResolverFactory child) {
+    private HierarchicalParameterResolverFactory(@NonNull ParameterResolverFactory parent,
+                                                 @NonNull ParameterResolverFactory child) {
         this.parent = parent;
         this.child = child;
     }
@@ -56,15 +56,15 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
      * @param child  The child {@link ParameterResolverFactory} to try first.
      * @return A new hierarchical {@link ParameterResolverFactory} that delegates to the given factories.
      */
-    public static HierarchicalParameterResolverFactory create(@Nonnull ParameterResolverFactory parent,
-                                                              @Nonnull ParameterResolverFactory child) {
+    public static HierarchicalParameterResolverFactory create(@NonNull ParameterResolverFactory parent,
+                                                              @NonNull ParameterResolverFactory child) {
         return new HierarchicalParameterResolverFactory(parent, child);
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
-                                               @Nonnull Parameter[] parameters,
+    public ParameterResolver<?> createInstance(@NonNull Executable executable,
+                                               @NonNull Parameter[] parameters,
                                                int parameterIndex) {
         ParameterResolver<?> resolver = child.createInstance(executable, parameters, parameterIndex);
         if (resolver != null) {

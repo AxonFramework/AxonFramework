@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -80,12 +80,11 @@ class SequenceOverridingEventHandlingComponentTest {
         assertThat(result).isEqualTo(delegateSequenceId);
     }
 
-    @Nonnull
-    private EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
+        private @NonNull EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
         return new EventHandlingComponent() {
-            @Nonnull
+            @NonNull
             @Override
-            public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+            public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
                 return delegateSequenceId;
             }
 
@@ -94,22 +93,20 @@ class SequenceOverridingEventHandlingComponentTest {
                 return Set.of();
             }
 
-            @Nonnull
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                                @NonNull ProcessingContext context) {
                 return MessageStream.empty();
             }
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 // Not important for this test to implement
             }
 
-            @Nonnull
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                                @NonNull ProcessingContext context) {
                 return MessageStream.empty();
             }
         };

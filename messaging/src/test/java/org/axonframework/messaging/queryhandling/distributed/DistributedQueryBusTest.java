@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -156,18 +156,18 @@ class DistributedQueryBusTest {
         final AtomicInteger queryCount = new AtomicInteger(0);
         final AtomicInteger subscriptionQueryCount = new AtomicInteger(0);
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+        public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query,
                                                          @Nullable ProcessingContext context) {
             queryCount.incrementAndGet();
             QueryResponseMessage response = mock(QueryResponseMessage.class);
             return MessageStream.fromIterable(() -> List.of(response).iterator());
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+        public MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
                                                                      @Nullable ProcessingContext context,
                                                                      int updateBufferSize) {
             subscriptionQueryCount.incrementAndGet();
@@ -176,23 +176,23 @@ class DistributedQueryBusTest {
         }
 
         @Override
-        public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+        public CompletableFuture<Void> subscribe(@NonNull QualifiedName name) {
             subscribedQueries.add(name);
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        public boolean unsubscribe(@Nonnull QualifiedName name) {
+        public boolean unsubscribe(@NonNull QualifiedName name) {
             return subscribedQueries.remove(name);
         }
 
         @Override
-        public void onIncomingQuery(@Nonnull Handler handler) {
+        public void onIncomingQuery(@NonNull Handler handler) {
             // No-op for tests
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             descriptor.describeProperty("name", "StubQueryBusConnector");
         }
     }

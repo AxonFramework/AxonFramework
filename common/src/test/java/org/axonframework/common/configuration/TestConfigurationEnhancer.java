@@ -16,9 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Classpath {@link ConfigurationEnhancer} registered through the serviceloader mechanism in tests. Useful for testing
@@ -50,7 +48,7 @@ public class TestConfigurationEnhancer implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry configurer) {
+    public void enhance(@NonNull ComponentRegistry configurer) {
         if (active) {
             hasEnhanced = true;
         }
