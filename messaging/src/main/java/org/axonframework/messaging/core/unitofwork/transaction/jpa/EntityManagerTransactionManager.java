@@ -39,6 +39,9 @@ import java.util.Objects;
  * Transaction propagation follows a {@code PROPAGATION_REQUIRED} semantic: if a transaction is already active on the
  * entity manager, the existing transaction is joined without taking ownership of its lifecycle.
  * <p>
+ * Note that JPA {@link jakarta.persistence.EntityManager} instances are not thread-safe and must be accessed from the
+ * thread that initiated the transaction. As a result, {@link #requiresSameThreadInvocations()} returns {@code true}.
+ * <p>
  * Example usage:
  * <pre>{@code
  * EntityManagerProvider provider = () -> entityManager;
@@ -65,13 +68,6 @@ public class EntityManagerTransactionManager implements TransactionManager {
         this.entityManagerProvider = Objects.requireNonNull(entityManagerProvider, "entityManagerProvider");
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If a transaction is already active on the underlying {@link jakarta.persistence.EntityManager}, the existing
-     * transaction is joined and its lifecycle is not managed by the returned {@link Transaction} (commit and rollback
-     * are no-ops). Otherwise a new transaction is begun and the returned {@link Transaction} controls its lifecycle.
-     */
     @Nonnull
     @Override
     public Transaction startTransaction() {
@@ -109,14 +105,6 @@ public class EntityManagerTransactionManager implements TransactionManager {
         };
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * In addition to the standard transaction lifecycle (start → commit/rollback), this method registers a
-     * {@link CachingSupplier}-wrapped {@link EntityManagerExecutor} under
-     * {@link JpaTransactionalExecutorProvider#SUPPLIER_KEY} in the processing context, making the entity manager
-     * available to downstream components such as {@link JpaTransactionalExecutorProvider}.
-     */
     @Override
     public void attachToProcessingLifecycle(@Nonnull ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
@@ -127,12 +115,6 @@ public class EntityManagerTransactionManager implements TransactionManager {
         });
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns {@code true} because JPA {@link jakarta.persistence.EntityManager} instances are not thread-safe and must
-     * be accessed from the thread that initiated the transaction.
-     */
     @Override
     public boolean requiresSameThreadInvocations() {
         return true;
