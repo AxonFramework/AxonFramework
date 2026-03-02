@@ -148,9 +148,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * <ul>
      *   <li>The outermost {@code commandBus} and {@code eventSink} are used for dispatching commands and publishing
      *       events through the full decorator chain.</li>
-     *   <li>The innermost {@code recordingCommandBus} and {@code recordingEventSink} are resolved via
-     *       {@link MessagesRecordingConfigurationEnhancer#RECORDING_COMPONENT_NAME} and used by the then-phase
-     *       for assertions.</li>
+     *   <li>The innermost {@code recordingCommandBus} and {@code recordingEventSink} are resolved via the
+     *       {@link RecordingComponentsRegistry} (populated by {@link MessagesRecordingConfigurationEnhancer}) and
+     *       used by the then-phase for assertions.</li>
      * </ul>
      *
      * @param configuration The configuration to obtain components from.
@@ -165,9 +165,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
         this.commandBus = configuration.getComponent(CommandBus.class);
         this.eventSink = configuration.getComponent(EventSink.class);
-        var recordings = configuration.getComponent(RecordingComponentsRegistry.class);
-        this.recordingCommandBus = recordings.commandBus();
-        this.recordingEventSink = recordings.eventSink();
+        var recordings = configuration.getOptionalComponent(RecordingComponentsRegistry.class)
+                .orElseThrow(() -> new FixtureExecutionException(
+                        "RecordingComponentsRegistry not found in Configuration. "
+                                + "Ensure MessagesRecordingConfigurationEnhancer is registered."
+                ));
+        this.recordingCommandBus = Objects.requireNonNull(recordings.commandBus(),
+                "RecordingCommandBus is not available. "
+                        + "Ensure CommandBus is resolved before constructing AxonTestFixture.");
+        this.recordingEventSink = Objects.requireNonNull(recordings.eventSink(),
+                "RecordingEventSink is not available. "
+                        + "Ensure EventSink is resolved before constructing AxonTestFixture.");
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
@@ -187,10 +195,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * Creates a new fixture.
      * <p>
      * Registers a {@link MessagesRecordingConfigurationEnhancer} that places recording decorators at the innermost
-     * position of the decorator chain and exposes them as {@link org.axonframework.common.configuration.ComponentFactory
-     * ComponentFactories}. The recording instances are resolved lazily from the configuration when the fixture
-     * constructor calls {@code configuration.getComponent(RecordingCommandBus.class, ...)} and
-     * {@code configuration.getComponent(RecordingEventSink.class, ...)}.
+     * position of the decorator chain and registers them in a {@link RecordingComponentsRegistry}. The recording
+     * instances are resolved from the configuration when the fixture constructor obtains the registry via
+     * {@code configuration.getComponent(RecordingComponentsRegistry.class)} and then reads the
+     * {@linkplain RecordingComponentsRegistry#commandBus() recordingCommandBus} and
+     * {@linkplain RecordingComponentsRegistry#eventSink() recordingEventSink} from it.
      *
      * @param configurer    The fixture will use the configuration build from the given configurer to obtain components
      *                      needed for test execution.
