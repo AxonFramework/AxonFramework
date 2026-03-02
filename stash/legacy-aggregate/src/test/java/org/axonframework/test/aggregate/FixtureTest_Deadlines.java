@@ -20,8 +20,6 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-
 /**
  * Test class intended to validate all methods in regards to scheduling and validating deadlines.
  *

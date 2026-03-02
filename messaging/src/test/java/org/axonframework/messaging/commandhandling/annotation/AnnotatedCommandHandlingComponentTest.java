@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;

@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.core.Message;
-
 import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;

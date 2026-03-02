@@ -24,7 +24,6 @@ import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Generic implementation of {@link ResultMessage} interface.

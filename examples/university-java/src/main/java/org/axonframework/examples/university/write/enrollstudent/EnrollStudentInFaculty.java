@@ -18,7 +18,6 @@ package org.axonframework.examples.university.write.enrollstudent;
 
 
 import jakarta.validation.constraints.NotEmpty;
-import org.axonframework.messaging.commandhandling.annotation.Command;
 
 /**
  * Create student command.
