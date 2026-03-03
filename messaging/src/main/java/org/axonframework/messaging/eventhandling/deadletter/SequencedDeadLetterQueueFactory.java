@@ -36,8 +36,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * A {@link ComponentFactory} implementation that creates {@link SequencedDeadLetterQueue} instances for event handling
  * components.
  * <p>
- * This factory is used to create DLQ instances on-demand based on the component name.
- * The factory function receives both the component name and the {@link Configuration} to allow
+ * This factory is used to create DLQ instances on-demand based on the component-scoped processing group identifier.
+ * Each event handling component within a processor gets its own DLQ, identified by a name following the pattern
+ * {@code "DeadLetterQueue[processorName][componentIndex]"} (e.g. {@code "DeadLetterQueue[myProcessor][0]"}).
+ * <p>
+ * The factory function receives both this processing group identifier and the {@link Configuration} to allow
  * retrieving configuration-dependent factories like those from {@link DeadLetterQueueConfiguration}.
  *
  * @author Mateusz Nowak
@@ -53,7 +56,8 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
     /**
      * Constructs a factory with a custom factory function that has access to the configuration.
      *
-     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name and configuration.
+     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given processing group
+     *                  identifier (e.g. {@code "DeadLetterQueue[myProcessor][0]"}) and configuration.
      */
     public SequencedDeadLetterQueueFactory(
             @Nonnull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn

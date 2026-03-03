@@ -189,15 +189,18 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     /**
      * Sets the factory function used to create {@link SequencedDeadLetterQueue} instances.
      * <p>
-     * The factory receives the component name (e.g., "EventHandlingComponent[processorName][componentIndex]")
-     * and should return a new {@link SequencedDeadLetterQueue} instance for that component.
+     * The factory receives a component-scoped processing group identifier that uniquely identifies the dead letter
+     * queue within its event processor. A single processor may contain multiple event handling components, each with
+     * its own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentIndex]"}, for example
+     * {@code "DeadLetterQueue[myProcessor][0]"} for the first component of a processor named {@code "myProcessor"}.
      * <p>
      * This allows using different DLQ implementations such as JPA or JDBC-backed queues
      * instead of the default in-memory implementation.
      * <p>
      * Defaults to a factory that creates {@link InMemorySequencedDeadLetterQueue} instances.
      *
-     * @param factory The factory function that creates a {@link SequencedDeadLetterQueue} for a given name.
+     * @param factory The factory function that creates a {@link SequencedDeadLetterQueue} for a given processing
+     *                group, e.g. {@code "DeadLetterQueue[myProcessor][0]"}.
      * @return This configuration instance for fluent chaining.
      */
     public DeadLetterQueueConfiguration factory(

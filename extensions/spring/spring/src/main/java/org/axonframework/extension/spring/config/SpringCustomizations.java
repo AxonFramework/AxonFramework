@@ -74,7 +74,7 @@ interface SpringCustomizations {
      * Dead Letter Queue on the processor using the given {@code dlqSettings} and {@code factory}.
      *
      * @param dlqSettings The {@link EventProcessorSettings.DlqSettings} controlling DLQ and cache behaviour.
-     * @param factory     The {@link DeadLetterQueueFactory} used to create the queue per processing group.
+     * @param factory     The {@link DeadLetterQueueFactory} used to create the queue per event handling component.
      * @return A customization that enables and wires the Dead Letter Queue.
      */
     static UnaryOperator<PooledStreamingEventProcessorConfiguration> dlqCustomization(

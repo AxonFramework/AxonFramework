@@ -34,8 +34,9 @@ import org.springframework.context.annotation.Bean;
  * <p>
  * This configuration activates when a {@code EntityManagerFactory} bean is present (i.e. JPA is on the
  * classpath and configured). The registered factory creates a {@link JpaSequencedDeadLetterQueue}
- * instance per processing group, using the application's {@code EntityManagerFactory},
- * {@link EventConverter}, and {@link Converter}.
+ * instance per event handling component, using the application's {@code EntityManagerFactory},
+ * {@link EventConverter}, and {@link Converter}. Each queue is scoped by a component-level processing
+ * group identifier (e.g. {@code "DeadLetterQueue[myProcessor][0]"}).
  * <p>
  * To enable Dead Letter Queue processing for a specific processor, set:
  * <pre>{@code
@@ -62,7 +63,10 @@ public class JpaDeadLetterQueueAutoConfiguration {
 
     /**
      * Creates a JPA-backed {@link DeadLetterQueueFactory} that instantiates a
-     * {@link JpaSequencedDeadLetterQueue} per processing group.
+     * {@link JpaSequencedDeadLetterQueue} per event handling component.
+     * <p>
+     * The {@code processingGroup} passed to the factory is a component-scoped identifier following the pattern
+     * {@code "DeadLetterQueue[processorName][componentIndex]"}, used to scope dead letters in the database.
      *
      * @param entityManagerFactory The JPA {@link EntityManagerFactory} used for persistence.
      * @param eventConverter       The {@link EventConverter} used to convert event payloads and metadata.
@@ -76,11 +80,11 @@ public class JpaDeadLetterQueueAutoConfiguration {
                                                             EventConverter eventConverter,
                                                             Converter genericConverter) {
         var provider = new JpaTransactionalExecutorProvider(entityManagerFactory);
-        return processingGroupName -> JpaSequencedDeadLetterQueue.builder()
-                                                                 .processingGroup(processingGroupName)
-                                                                 .transactionalExecutorProvider(provider)
-                                                                 .eventConverter(eventConverter)
-                                                                 .genericConverter(genericConverter)
-                                                                 .build();
+        return processingGroup -> JpaSequencedDeadLetterQueue.builder()
+                                                             .processingGroup(processingGroup)
+                                                             .transactionalExecutorProvider(provider)
+                                                             .eventConverter(eventConverter)
+                                                             .genericConverter(genericConverter)
+                                                             .build();
     }
 }
