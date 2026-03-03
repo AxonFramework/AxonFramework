@@ -104,8 +104,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
      * <p>
      * Will validate whether the {@link Builder#processingGroup(String) processing group} and
-     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider}
-     * are set. If for any this is not the case an {@link AxonConfigurationException} is thrown.
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider} are
+     * set. If for any this is not the case an {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
      */
@@ -154,10 +154,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param tableFactory The factory constructing the {@link java.sql.PreparedStatement} to construct a
      *                     {@link DeadLetter} entry table based on the
      *                     {@link Builder#schema(DeadLetterSchema) configured} {@link DeadLetterSchema}.
-     * @param context      The {@link ProcessingContext} in which the schema will be created. May be {@code null};
-     *                     when provided, the connection executor is obtained from the context.
-     * @return A {@link CompletableFuture} that completes when the schema has been created. Completes exceptionally
-     * with a {@link JdbcException} if the table or indices could not be created.
+     * @param context      The {@link ProcessingContext} in which the schema will be created. May be {@code null}; when
+     *                     provided, the connection executor is obtained from the context.
+     * @return A {@link CompletableFuture} that completes when the schema has been created. Completes exceptionally with
+     * a {@link JdbcException} if the table or indices could not be created.
      */
     public CompletableFuture<Void> createSchema(DeadLetterTableFactory tableFactory,
                                                 @Nullable ProcessingContext context) {
@@ -332,7 +332,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     private Iterable<DeadLetter<? extends E>> deadLetterSequenceIterable(String sequenceId,
-                                                                          @Nullable ProcessingContext context) {
+                                                                         @Nullable ProcessingContext context) {
         return new PagingJdbcIterable<>(
                 connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
@@ -574,8 +574,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param context  The processing context for this operation.
      * @return An iterator over the first letters of each claimable sequence.
      */
-    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize,
-                                                                          @Nullable ProcessingContext context) {
+    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(
+            int pageSize,
+            @Nullable ProcessingContext context
+    ) {
         return new PagingJdbcIterable<>(
                 connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
@@ -637,9 +639,11 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param context            The processing context for this operation.
      * @return A future completing with the next letter to process, or null if there are no more.
      */
-    private CompletableFuture<JdbcDeadLetter<E>> findNext(String sequenceIdentifier,
-                                                           long sequenceIndex,
-                                                           @Nullable ProcessingContext context) {
+    private CompletableFuture<JdbcDeadLetter<E>> findNext(
+            String sequenceIdentifier,
+            long sequenceIndex,
+            @Nullable ProcessingContext context
+    ) {
         return connectionExecutor(context).apply(connection -> executeQuery(
                 connection,
                 c -> statementFactory.nextLetterInSequenceStatement(
@@ -786,7 +790,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         /**
          * Sets the {@link DeadLetterJdbcConverter} used to convert a {@link java.sql.ResultSet} into a
          * {@link JdbcDeadLetter} implementation. The {@code converter} is, for example, used to service the
-         * {@link #deadLetters(ProcessingContext)} and {@link #deadLetterSequence(Object, ProcessingContext)} operations.
+         * {@link #deadLetters(ProcessingContext)} and {@link #deadLetterSequence(Object, ProcessingContext)}
+         * operations.
          * <p>
          * When the {@code converter} is not explicitly configured, this builder defaults to the
          * {@link DefaultDeadLetterJdbcConverter}. To construct the {@code DefaultDeadLetterJdbcConverter}, the

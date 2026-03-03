@@ -117,8 +117,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
 
         setIdFields(statement, fieldIndex, processingGroup, sequenceIdentifier, sequenceIndex);
         setEventFields(statement, fieldIndex, eventMessage);
-        setDomainEventFields(statement, fieldIndex, effectiveContext);
-        setTrackedEventFields(statement, fieldIndex, effectiveContext);
+        setAggregateBasedEventFields(statement, fieldIndex, effectiveContext);
+        setTrackingTokenFields(statement, fieldIndex, effectiveContext);
         setDeadLetterFields(statement, fieldIndex, letter);
 
         return statement;
@@ -149,9 +149,9 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
         statement.setBytes(fieldIndex.getAndIncrement(), serializedMetadata);
     }
 
-    private void setDomainEventFields(PreparedStatement statement,
-                                      AtomicInteger fieldIndex,
-                                      Context context) throws SQLException {
+    private void setAggregateBasedEventFields(PreparedStatement statement,
+                                              AtomicInteger fieldIndex,
+                                              Context context) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(), context.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
         statement.setString(fieldIndex.getAndIncrement(),
                             context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
@@ -163,9 +163,9 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
         }
     }
 
-    private void setTrackedEventFields(PreparedStatement statement,
-                                       AtomicInteger fieldIndex,
-                                       Context context) throws SQLException {
+    private void setTrackingTokenFields(PreparedStatement statement,
+                                        AtomicInteger fieldIndex,
+                                        Context context) throws SQLException {
         TrackingToken token = context.getResource(TrackingToken.RESOURCE_KEY);
         if (token != null) {
             byte[] serializedToken = genericConverter.convert(token, byte[].class);
