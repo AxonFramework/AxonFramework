@@ -193,33 +193,16 @@ public sealed interface EventProcessorSettings {
         interface CacheSettings {
 
             /**
-             * Default cache settings: disabled with size 1024.
+             * Default cache settings: size 1024.
              */
-            CacheSettings DEFAULT = new CacheSettings() {
-                @Override
-                public boolean enabled() {
-                    return false;
-                }
-
-                @Override
-                public int size() {
-                    return 1024;
-                }
-            };
+            CacheSettings DEFAULT = () -> 1024;
 
             /**
-             * Whether sequence identifier caching is enabled. When enabled, the processor avoids
-             * redundant database look-ups by keeping sequence identifiers in memory. Defaults to {@code false}.
+             * Maximum number of sequence identifiers kept in memory per segment.
+             * Setting this to {@code 0} disables the caching wrapper entirely.
+             * Defaults to {@code 1024}.
              *
-             * @return {@code true} if caching is enabled.
-             */
-            boolean enabled();
-
-            /**
-             * Maximum number of sequence identifiers kept in memory per segment. Only used when
-             * {@link #enabled()} is {@code true}. Defaults to {@code 1024}.
-             *
-             * @return maximum cache size per segment.
+             * @return maximum cache size per segment, or {@code 0} to disable caching.
              */
             int size();
         }

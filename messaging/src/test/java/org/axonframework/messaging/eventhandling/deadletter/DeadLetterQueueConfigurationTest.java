@@ -182,13 +182,15 @@ class DeadLetterQueueConfigurationTest {
         }
 
         @Test
-        void rejectsZeroCacheMaxSize() {
+        void acceptsZeroCacheMaxSize() {
             // given
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
 
-            // when / then
-            assertThatThrownBy(() -> config.cacheMaxSize(0))
-                    .isInstanceOf(AxonConfigurationException.class);
+            // when
+            config.cacheMaxSize(0);
+
+            // then
+            assertThat(config.cacheMaxSize()).isEqualTo(0);
         }
 
         @Test

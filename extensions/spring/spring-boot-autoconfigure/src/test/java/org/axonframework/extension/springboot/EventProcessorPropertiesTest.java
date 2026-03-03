@@ -144,7 +144,6 @@ class EventProcessorPropertiesTest {
             properties = {
                     "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors.dlq-enabled.dlq.enabled=true",
-                    "axon.eventhandling.processors.dlq-enabled.dlq.cache.enabled=true",
                     "axon.eventhandling.processors.dlq-enabled.dlq.cache.size=2048",
                     "axon.eventhandling.processors.dlq-disabled.dlq.enabled=false",
             }
@@ -163,7 +162,6 @@ class EventProcessorPropertiesTest {
             var settings = (EventProcessorSettings.PooledEventProcessorSettings)
                     eventProcessorProperties.settings().get("dlq-enabled");
             assertThat(settings.dlq().enabled()).isTrue();
-            assertThat(settings.dlq().cache().enabled()).isTrue();
             assertThat(settings.dlq().cache().size()).isEqualTo(2048);
         }
 
@@ -178,14 +176,13 @@ class EventProcessorPropertiesTest {
         }
 
         @Test
-        void defaultSettingsHaveDlqDisabledWithDefaultCache() {
+        void defaultSettingsHaveDlqDisabledWithDefaultCacheSize() {
             assertThat(eventProcessorProperties).isNotNull();
 
             var defaultSettings = (EventProcessorSettings.PooledEventProcessorSettings)
                     eventProcessorProperties.settings().get(EventProcessorSettings.DEFAULT);
             assertThat(defaultSettings).isNotNull();
             assertThat(defaultSettings.dlq().enabled()).isFalse();
-            assertThat(defaultSettings.dlq().cache().enabled()).isFalse();
             assertThat(defaultSettings.dlq().cache().size()).isEqualTo(1024);
         }
     }

@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.BuilderUtils.assertPositive;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
@@ -175,13 +175,16 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * avoiding expensive delegate calls. When the cache exceeds this size, oldest entries
      * are evicted using LRU policy.
      * <p>
+     * Setting this to {@code 0} disables the caching wrapper entirely — the underlying
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} will be used directly.
+     * <p>
      * Defaults to {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE} (1024).
      *
-     * @param cacheMaxSize The maximum number of non-enqueued identifiers to cache.
+     * @param cacheMaxSize The maximum number of non-enqueued identifiers to cache, or {@code 0} to disable caching.
      * @return This configuration instance for fluent chaining.
      */
     public DeadLetterQueueConfiguration cacheMaxSize(int cacheMaxSize) {
-        assertStrictPositive(cacheMaxSize, "Cache max size must be greater than zero");
+        assertPositive(cacheMaxSize, "Cache max size must not be negative");
         this.cacheMaxSize = cacheMaxSize;
         return this;
     }

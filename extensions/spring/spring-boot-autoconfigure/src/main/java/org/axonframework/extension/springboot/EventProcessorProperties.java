@@ -406,18 +406,8 @@ public class EventProcessorProperties {
                 }
 
                 @Override
-                public EventProcessorSettings.DlqSettings.CacheSettings cache() {
-                    return new EventProcessorSettings.DlqSettings.CacheSettings() {
-                        @Override
-                        public boolean enabled() {
-                            return dlq.getCache().isEnabled();
-                        }
-
-                        @Override
-                        public int size() {
-                            return dlq.getCache().getSize();
-                        }
-                    };
+                public CacheSettings cache() {
+                    return dlq::getCacheSize;
                 }
             };
         }
@@ -461,74 +451,58 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Retrieves the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * Retrieves the cache settings for the sequenced dead letter queue.
          *
-         * @return the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * @return the cache settings.
          */
         public DlqCache getCache() {
             return cache;
         }
 
         /**
-         * Defines the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * Defines the cache settings for the sequenced dead letter queue.
          *
-         * @param cache the cache settings for the sequenced dead letter.
+         * @param cache the cache settings.
          */
         public void setCache(DlqCache cache) {
             this.cache = cache;
         }
+
+        /**
+         * Returns the cache size. Convenience accessor equivalent to {@code getCache().getSize()}.
+         *
+         * @return the cache size, or {@code 0} if caching is disabled.
+         */
+        public int getCacheSize() {
+            return cache.getSize();
+        }
     }
 
     /**
-     * Configuration for the Dead-Letter-Queue Caching.
+     * Configuration for the Dead-Letter-Queue cache.
      */
     public static class DlqCache {
 
         /**
-         * Enables caching the sequence identifiers on the
-         * {@link org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker}. This can prevent calls
-         * to the database to check whether a sequence is already present. Defaults to {@code false}.
-         */
-        private boolean enabled = false;
-
-        /**
-         * The amount of sequence identifiers to keep in memory. This setting is used per segment, and only when the
-         * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is not empty. Defaults to
-         * {@code 1024}.
+         * The maximum number of sequence identifiers to keep in memory per segment.
+         * Setting this to {@code 0} disables the caching wrapper entirely. Defaults to {@code 1024}.
          */
         private int size = 1024;
 
         /**
-         * Indicates whether using a cache is enabled.
+         * Returns the maximum number of sequence identifiers to keep in memory per segment.
          *
-         * @return true if using a cache is enabled, false if otherwise.
-         */
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Enables (if {@code true}, default) or disables (if {@code false}) using a cache.
-         *
-         * @param enabled whether to enable using a cache.
-         */
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        /**
-         * Returns the size of the sequence identifiers to keep in memory, per segment.
-         *
-         * @return the amount of sequence identifiers to keep in memory.
+         * @return the cache size, or {@code 0} if caching is disabled.
          */
         public int getSize() {
             return size;
         }
 
         /**
-         * Set the amount of sequence identifiers to keep in memory, per segment.
+         * Sets the maximum number of sequence identifiers to keep in memory per segment.
+         * Setting this to {@code 0} disables the caching wrapper entirely.
          *
-         * @param size the maximum size of the sequence identifiers which are not present.
+         * @param size the maximum cache size per segment.
          */
         public void setSize(int size) {
             this.size = size;

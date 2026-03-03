@@ -79,13 +79,10 @@ interface SpringCustomizations {
      */
     static UnaryOperator<PooledStreamingEventProcessorConfiguration> dlqCustomization(
             EventProcessorSettings.DlqSettings dlqSettings, DeadLetterQueueFactory factory) {
-        return processorConfig -> processorConfig.deadLetterQueue(dlq -> {
-            var config = dlq.enabled().factory(factory::create);
-            if (dlqSettings.cache().enabled()) {
-                config = config.cacheMaxSize(dlqSettings.cache().size());
-            }
-            return config;
-        });
+        return processorConfig -> processorConfig.deadLetterQueue(dlq ->
+                dlq.enabled()
+                   .factory(factory::create)
+                   .cacheMaxSize(dlqSettings.cache().size()));
     }
 
     /**
