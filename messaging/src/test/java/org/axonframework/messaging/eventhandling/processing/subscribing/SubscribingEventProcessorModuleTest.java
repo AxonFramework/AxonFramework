@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
@@ -608,8 +608,7 @@ class SubscribingEventProcessorModuleTest {
         }
     }
 
-    @Nonnull
-    private static UnitOfWorkFactory aUnitOfWorkFactory() {
+    static @NonNull UnitOfWorkFactory aUnitOfWorkFactory() {
         var componentRegistry = new DefaultComponentRegistry();
         componentRegistry.registerComponent(EventConverter.class,
                                             cfg -> new DelegatingEventConverter(new JacksonConverter()));
@@ -626,7 +625,7 @@ class SubscribingEventProcessorModuleTest {
     }
 
     private static RecordingEventHandlingComponent simpleRecordingTestComponent(
-            @Nonnull QualifiedName supportedEventName
+            @NonNull QualifiedName supportedEventName
     ) {
         return new RecordingEventHandlingComponent(
                 SimpleEventHandlingComponent.create("test")
@@ -642,8 +641,7 @@ class SubscribingEventProcessorModuleTest {
                                                          .orElse(new SimpleEventBus())));
     }
 
-    @Nonnull
-    private static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
+        private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
         var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         return components -> components.declarative(cfg -> eventHandlingComponent);
@@ -661,8 +659,7 @@ class SubscribingEventProcessorModuleTest {
                                               processorName).ifPresent(p -> assertThat(p.isRunning()).isTrue()));
     }
 
-    @Nonnull
-    private static Optional<SubscribingEventProcessor> processor(
+        private @NonNull static Optional<SubscribingEventProcessor> processor(
             AxonConfiguration configuration,
             String processorName
     ) {

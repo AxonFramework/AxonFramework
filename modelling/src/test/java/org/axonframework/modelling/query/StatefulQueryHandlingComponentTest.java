@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.query;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -202,8 +202,7 @@ class StatefulQueryHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private ProcessingContext messageProcessingContext(QueryMessage query) {
+        private @NonNull ProcessingContext messageProcessingContext(QueryMessage query) {
         return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(query);
     }
 }

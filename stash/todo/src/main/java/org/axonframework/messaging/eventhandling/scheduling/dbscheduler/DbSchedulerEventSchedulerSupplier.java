@@ -20,7 +20,7 @@ import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Default supplier for an {@link DbSchedulerEventScheduler}. This makes it easier to use in context without more
@@ -50,7 +50,7 @@ public class DbSchedulerEventSchedulerSupplier implements Supplier<DbSchedulerEv
      *
      * @param eventScheduler the {@link DbSchedulerEventScheduler}
      */
-    public void set(@Nonnull DbSchedulerEventScheduler eventScheduler) {
+    public void set(@NonNull DbSchedulerEventScheduler eventScheduler) {
         this.eventScheduler.set(eventScheduler);
     }
 }

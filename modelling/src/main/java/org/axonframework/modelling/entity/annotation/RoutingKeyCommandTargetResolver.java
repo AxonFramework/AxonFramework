@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.ChildAmbiguityException;
@@ -52,9 +52,9 @@ public class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver
      * @param messageRoutingProperty The routing key property of the command, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyCommandTargetResolver(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
-                                           @Nonnull String entityRoutingProperty,
-                                           @Nonnull String messageRoutingProperty) {
+    public RoutingKeyCommandTargetResolver(@NonNull AnnotatedEntityMetamodel<E> metamodel,
+                                           @NonNull String entityRoutingProperty,
+                                           @NonNull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
                 entityRoutingProperty,
@@ -64,9 +64,9 @@ public class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver
 
 
     @Override
-    public E getTargetChildEntity(@Nonnull List<E> childEntities,
-                                  @Nonnull CommandMessage message,
-                                  @Nonnull ProcessingContext context) {
+    public E getTargetChildEntity(@NonNull List<E> childEntities,
+                                  @NonNull CommandMessage message,
+                                  @NonNull ProcessingContext context) {
         List<E> matchingCandidates = childEntities.stream()
                                                   .filter(entity -> routingKeyEntityMatcher.matches(entity, message))
                                                   .toList();

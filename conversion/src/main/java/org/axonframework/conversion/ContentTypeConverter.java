@@ -16,8 +16,8 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface describing a mechanism that converts an object from a specified {@link #expectedSourceType() source type} to
@@ -35,7 +35,7 @@ public interface ContentTypeConverter<S, T> {
      *
      * @return The expected type of input data for this {@code ContentTypeConverter} to {@link #convert(Object)}.
      */
-    @Nonnull
+    @NonNull
     Class<S> expectedSourceType();
 
     /**
@@ -43,7 +43,7 @@ public interface ContentTypeConverter<S, T> {
      *
      * @return The type of output for this {@code ContentTypeConverter} to {@link #convert(Object)} into.
      */
-    @Nonnull
+    @NonNull
     Class<T> targetType();
 
     /**

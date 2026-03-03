@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -51,14 +51,13 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      *
      * @param eventHandlerInvoker The {@link EventHandlerInvoker} to wrap.
      */
-    public LegacyEventHandlingComponent(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
+    public LegacyEventHandlingComponent(@NonNull EventHandlerInvoker eventHandlerInvoker) {
         this.eventHandlerInvoker = eventHandlerInvoker;
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
+    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                        @NonNull ProcessingContext context) {
         try {
             Segment segment = Segment.fromContext(context).orElse(Segment.ROOT_SEGMENT);
             eventHandlerInvoker.handle(event, context, segment);
@@ -77,14 +76,14 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(@NonNull QualifiedName eventName) {
         Set<QualifiedName> supportedEvents = supportedEvents();
         return supportedEvents.contains(eventName);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())
@@ -111,7 +110,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         // Unimplemented as this is legacy flow.
     }
 

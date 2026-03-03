@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 import java.util.Set;
@@ -56,6 +56,6 @@ public interface ProcessorModuleFactory {
      * @param handlers The set of discovered event handler components to be assigned to processors.
      * @return A set of event processor modules, each containing its assigned event handlers.
      */
-    @Nonnull
-    Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
+    @NonNull
+    Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
 }

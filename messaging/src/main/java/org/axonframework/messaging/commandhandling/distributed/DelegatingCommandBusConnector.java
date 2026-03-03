@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -44,37 +44,37 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
      *
      * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
-    protected DelegatingCommandBusConnector(@Nonnull CommandBusConnector delegate) {
+    protected DelegatingCommandBusConnector(@NonNull CommandBusConnector delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext);
     }
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
         return delegate.subscribe(commandName, loadFactor);
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName commandName) {
+    public boolean unsubscribe(@NonNull QualifiedName commandName) {
         return delegate.unsubscribe(commandName);
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull Handler handler) {
+    public void onIncomingCommand(@NonNull Handler handler) {
         delegate.onIncomingCommand(handler);
     }
 
     // endregion
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

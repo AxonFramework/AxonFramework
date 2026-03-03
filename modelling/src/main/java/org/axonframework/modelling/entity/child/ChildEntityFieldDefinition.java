@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -52,8 +52,8 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param childInput   The child entity to use for evolution.
      * @return The evolved parent entity.
      */
-    @Nonnull
-    P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nullable F childInput);
+    @NonNull
+    P evolveParentBasedOnChildInput(@NonNull P parentEntity, @Nullable F childInput);
 
     /**
      * Returns the type of the field.
@@ -62,7 +62,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @return The type of the field.
      */
     @Nullable
-    F getChildValue(@Nonnull P parentEntity);
+    F getChildValue(@NonNull P parentEntity);
 
     /**
      * Creates a new {@link FieldChildEntityFieldDefinition} for the given field name. This will use reflection to
@@ -75,10 +75,10 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>         The type of the field.
      * @return A new {@link FieldChildEntityFieldDefinition} for the given field name.
      */
-    @Nonnull
+    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forFieldName(
-            @Nonnull Class<P> parentClass,
-            @Nonnull String fieldName
+            @NonNull Class<P> parentClass,
+            @NonNull String fieldName
     ) {
         return new FieldChildEntityFieldDefinition<>(parentClass, fieldName);
     }
@@ -111,10 +111,10 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>     The type of the field.
      * @return A new {@link GetterEvolverChildEntityFieldDefinition} for the given getter and setter.
      */
-    @Nonnull
+    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterEvolver(
-            @Nonnull Function<P, F> getter,
-            @Nonnull BiFunction<P, F, P> evolver
+            @NonNull Function<P, F> getter,
+            @NonNull BiFunction<P, F, P> evolver
     ) {
         return new GetterEvolverChildEntityFieldDefinition<>(getter, evolver);
     }
@@ -129,10 +129,10 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>    The type of the field.
      * @return A new {@link GetterSetterChildEntityFieldDefinition} for the given getter and setter.
      */
-    @Nonnull
+    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterSetter(
-            @Nonnull Function<P, F> getter,
-            @Nonnull BiConsumer<P, F> setter
+            @NonNull Function<P, F> getter,
+            @NonNull BiConsumer<P, F> setter
     ) {
         return new GetterSetterChildEntityFieldDefinition<>(getter, setter);
     }

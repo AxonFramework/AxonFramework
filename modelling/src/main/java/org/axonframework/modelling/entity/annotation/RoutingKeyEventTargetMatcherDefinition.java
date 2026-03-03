@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
@@ -43,10 +43,10 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
  */
 public class RoutingKeyEventTargetMatcherDefinition implements EventTargetMatcherDefinition {
 
-    @Nonnull
+    @NonNull
     @Override
-    public <E> EventTargetMatcher<E> createChildEntityMatcher(@Nonnull AnnotatedEntityMetamodel<E> entity,
-                                                              @Nonnull Member member) {
+    public <E> EventTargetMatcher<E> createChildEntityMatcher(@NonNull AnnotatedEntityMetamodel<E> entity,
+                                                              @NonNull Member member) {
         Optional<String> messageRoutingField = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
         Optional<String> entityRoutingField = RoutingKeyUtils.getEntityRoutingKey(entity.entityType());
         if (messageRoutingField.isPresent() && entityRoutingField.isPresent()) {

@@ -16,8 +16,8 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
@@ -68,7 +68,7 @@ public sealed interface EventProcessorSettings {
      *
      * @return processor mode.
      */
-    @Nonnull
+    @NonNull
     ProcessorMode processorMode();
 
     /**
@@ -84,7 +84,7 @@ public sealed interface EventProcessorSettings {
      */
     non-sealed interface SubscribingEventProcessorSettings extends EventProcessorSettings {
 
-        @Nonnull
+        @NonNull
         @Override
         default ProcessorMode processorMode() {
             return ProcessorMode.SUBSCRIBING;
@@ -101,8 +101,7 @@ public sealed interface EventProcessorSettings {
          *
          * @return processor mode.
          */
-        @Nonnull
-        default ProcessorMode processorMode() {
+                default @NonNull ProcessorMode processorMode() {
             return ProcessorMode.POOLED;
         }
 
@@ -139,7 +138,7 @@ public sealed interface EventProcessorSettings {
          *
          * @return Name of the bean acting as token store for this pooled streaming processor.
          */
-        @Nonnull
+        @NonNull
         String tokenStore();
     }
 }

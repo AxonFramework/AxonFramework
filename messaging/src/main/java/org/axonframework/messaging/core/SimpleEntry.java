@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.MessageStream.Entry;
 
 import java.util.Map;
@@ -35,7 +35,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record SimpleEntry<M extends Message>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
+public record SimpleEntry<M extends Message>(@Nullable M message, @NonNull Context context) implements Entry<M> {
 
     /**
      * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
@@ -57,22 +57,22 @@ public record SimpleEntry<M extends Message>(@Nullable M message, @Nonnull Conte
     }
 
     @Override
-    public <RM extends Message> Entry<RM> map(@Nonnull Function<M, RM> mapper) {
+    public <RM extends Message> Entry<RM> map(@NonNull Function<M, RM> mapper) {
         return new SimpleEntry<>(mapper.apply(message()), context);
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(@NonNull ResourceKey<?> key) {
         return this.context.containsResource(key);
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(@NonNull ResourceKey<T> key) {
         return this.context.getResource(key);
     }
 
     @Override
-    public <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> Entry<M> withResource(@NonNull ResourceKey<T> key, @NonNull T resource) {
         return new SimpleEntry<>(message, context.withResource(key, resource));
     }
 

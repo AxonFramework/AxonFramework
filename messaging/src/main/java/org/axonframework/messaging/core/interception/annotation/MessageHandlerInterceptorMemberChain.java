@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
@@ -52,27 +52,27 @@ public interface MessageHandlerInterceptorMemberChain<T> {
     // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Internal
     @Deprecated(forRemoval = true, since = "5.2.0")
-    Object handleSync(@Nonnull Message message,
-                      @Nonnull ProcessingContext context,
-                      @Nonnull T target,
-                      @Nonnull MessageHandlingMember<? super T> handler
+    Object handleSync(@NonNull Message message,
+                      @NonNull ProcessingContext context,
+                      @NonNull T target,
+                      @NonNull MessageHandlingMember<? super T> handler
     ) throws Exception;
 
     // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Internal
     @Deprecated(forRemoval = true, since = "5.2.0")
-    default Object handleSync(@Nonnull Message message,
-                              @Nonnull T target,
-                              @Nonnull MessageHandlingMember<? super T> handler
+    default Object handleSync(@NonNull Message message,
+                              @NonNull T target,
+                              @NonNull MessageHandlingMember<? super T> handler
     ) throws Exception {
         ProcessingContext processingContext = new LegacyMessageSupportingContext(message);
         return handleSync(message, processingContext, target, handler);
     }
 
-    default MessageStream<?> handle(@Nonnull Message message,
-                                    @Nonnull ProcessingContext context,
-                                    @Nonnull T target,
-                                    @Nonnull MessageHandlingMember<? super T> handler) {
+    default MessageStream<?> handle(@NonNull Message message,
+                                    @NonNull ProcessingContext context,
+                                    @NonNull T target,
+                                    @NonNull MessageHandlingMember<? super T> handler) {
         try {
             Object result = handleSync(message, context, target, handler);
             return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));

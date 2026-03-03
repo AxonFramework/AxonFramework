@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -39,7 +39,7 @@ class IteratorMessageStream<M extends Message> extends AbstractMessageStream<M> 
      *
      * @param source The {@link Iterator} providing the {@link Entry entries} for this {@link MessageStream stream}.
      */
-    IteratorMessageStream(@Nonnull Iterator<? extends Entry<M>> source) {
+    IteratorMessageStream(@NonNull Iterator<? extends Entry<M>> source) {
         this.source = source;
     }
 

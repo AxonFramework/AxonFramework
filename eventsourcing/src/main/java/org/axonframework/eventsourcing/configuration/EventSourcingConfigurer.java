@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -93,7 +93,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
      */
-    public static EventSourcingConfigurer enhance(@Nonnull ModellingConfigurer modellingConfigurer) {
+    public static EventSourcingConfigurer enhance(@NonNull ModellingConfigurer modellingConfigurer) {
         return new EventSourcingConfigurer(modellingConfigurer)
                 .componentRegistry(cr -> cr
                         .registerEnhancer(new EventSourcingConfigurationDefaults())
@@ -108,7 +108,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
-    private EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
+    private EventSourcingConfigurer(@NonNull ModellingConfigurer delegate) {
         Objects.requireNonNull(delegate, "The delegate ModellingConfigurer may not be null.");
         this.delegate = delegate;
     }
@@ -158,8 +158,8 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param <E>          The type of the entity being built.
      * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
-    @Nonnull
-    public <I, E> EventSourcingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule) {
+    @NonNull
+    public <I, E> EventSourcingConfigurer registerEntity(@NonNull EntityModule<I, E> entityModule) {
         return modelling(modellingConfigurer -> modellingConfigurer.registerEntity(entityModule));
     }
 
@@ -172,7 +172,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param tagResolverFactory The factory building the {@link TagResolver}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentBuilder<TagResolver> tagResolverFactory) {
+    public EventSourcingConfigurer registerTagResolver(@NonNull ComponentBuilder<TagResolver> tagResolverFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
         return this;
     }
@@ -187,7 +187,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStorageEngine(
-            @Nonnull ComponentBuilder<EventStorageEngine> eventStorageEngineFactory
+            @NonNull ComponentBuilder<EventStorageEngine> eventStorageEngineFactory
     ) {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(EventStorageEngine.class, eventStorageEngineFactory)
@@ -204,7 +204,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param eventStoreFactory The factory building the {@link EventStore}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
+    public EventSourcingConfigurer registerEventStore(@NonNull ComponentBuilder<EventStore> eventStoreFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
         return this;
     }
@@ -218,7 +218,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param configurerTask Lambda consuming the delegate {@link ModellingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer modelling(@Nonnull Consumer<ModellingConfigurer> configurerTask) {
+    public EventSourcingConfigurer modelling(@NonNull Consumer<ModellingConfigurer> configurerTask) {
         configurerTask.accept(delegate);
         return this;
     }
@@ -232,19 +232,19 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+    public EventSourcingConfigurer messaging(@NonNull Consumer<MessagingConfigurer> configurerTask) {
         delegate.messaging(configurerTask);
         return this;
     }
 
     @Override
-    public EventSourcingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public EventSourcingConfigurer componentRegistry(@NonNull Consumer<ComponentRegistry> componentRegistrar) {
         delegate.componentRegistry(componentRegistrar);
         return this;
     }
 
     @Override
-    public EventSourcingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public EventSourcingConfigurer lifecycleRegistry(@NonNull Consumer<LifecycleRegistry> lifecycleRegistrar) {
         delegate.lifecycleRegistry(lifecycleRegistrar);
         return this;
     }

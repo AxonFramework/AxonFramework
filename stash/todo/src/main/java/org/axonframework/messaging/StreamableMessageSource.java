@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
@@ -84,7 +84,7 @@ public interface StreamableMessageSource<M extends Message> extends TrackingToke
     }
 
     @Override
-    default CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    default CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createTokenAt(at));
     }
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -52,8 +52,8 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
      * @param fieldName   The name of the field to use to access the child entity.
      */
     public FieldChildEntityFieldDefinition(
-            @Nonnull Class<P> parentClass,
-            @Nonnull String fieldName
+            @NonNull Class<P> parentClass,
+            @NonNull String fieldName
     ) {
         this.parentClass = Objects.requireNonNull(parentClass, "The parentClass may not be null.");
         this.fieldName = Objects.requireNonNull(fieldName, "The fieldName may not be null.");
@@ -102,10 +102,10 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         }
     }
 
-    @Nonnull
+    @NonNull
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+    public P evolveParentBasedOnChildInput(@NonNull P parentEntity, @NonNull F childInput) {
         try {
             if (optionalSetter != null) {
                 Object invokeResult = optionalSetter.invoke(parentEntity, childInput);
@@ -128,7 +128,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildValue(@Nonnull P parentEntity) {
+    public F getChildValue(@NonNull P parentEntity) {
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);
@@ -140,7 +140,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("parentClass", parentClass);
         descriptor.describeProperty("fieldName", fieldName);
         descriptor.describeProperty("field", field);

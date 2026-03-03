@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.common.annotation.Internal;
@@ -58,9 +58,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param interceptorBuilder The generic {@link Message} {@link MessageHandlerInterceptor} builder to register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @Nonnull
+    @NonNull
     HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     );
 
     /**
@@ -71,9 +71,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @Nonnull
+    @NonNull
     HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
@@ -84,9 +84,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @Nonnull
+    @NonNull
     HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -97,9 +97,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @Nonnull
+    @NonNull
     HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**
@@ -113,8 +113,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link CommandMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
-    @Nonnull
-    List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@Nonnull Configuration config);
+    @NonNull
+    List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@NonNull Configuration config);
 
     /**
      * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
@@ -127,8 +127,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
-    @Nonnull
-    List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@Nonnull Configuration config);
+    @NonNull
+    List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@NonNull Configuration config);
 
     /**
      * Returns the list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
@@ -141,6 +141,6 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
-    @Nonnull
-    List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@Nonnull Configuration config);
+    @NonNull
+    List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@NonNull Configuration config);
 }

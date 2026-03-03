@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -41,19 +41,19 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<EventAppender> createInstance(@Nonnull Executable executable,
-                                                           @Nonnull Parameter[] parameters,
+    public ParameterResolver<EventAppender> createInstance(@NonNull Executable executable,
+                                                           @NonNull Parameter[] parameters,
                                                            int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
-                @Nonnull
+                @NonNull
                 @Override
-                public CompletableFuture<EventAppender> resolveParameterValue(@Nonnull ProcessingContext context) {
+                public CompletableFuture<EventAppender> resolveParameterValue(@NonNull ProcessingContext context) {
                     return CompletableFuture.completedFuture(EventAppender.forContext(context));
                 }
 
                 @Override
-                public boolean matches(@Nonnull ProcessingContext context) {
+                public boolean matches(@NonNull ProcessingContext context) {
                     return true;
                 }
             };

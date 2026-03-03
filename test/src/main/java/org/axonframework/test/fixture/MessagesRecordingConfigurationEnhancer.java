@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -35,7 +35,7 @@ import java.util.Objects;
 public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(@NonNull ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
         registry.registerDecorator(CommandBus.class,

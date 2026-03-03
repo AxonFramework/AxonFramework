@@ -16,7 +16,7 @@
 
 package org.axonframework.test.util;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +55,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
      *
      * @param report The {@link MessageMonitorReport} instance to record message processing results.
      */
-    public RecordingMessageMonitor(@Nonnull MessageMonitorReport report) {
+    public RecordingMessageMonitor(@NonNull MessageMonitorReport report) {
         this.report = report;
     }
 
@@ -95,7 +95,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
      *
      * @param message The message that was reported as successful.
      */
-    protected void onReportSuccess(@Nonnull Message message) {
+    protected void onReportSuccess(@NonNull Message message) {
         // noop
     }
 
@@ -105,7 +105,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
      * @param message The message that was reported as failed.
      * @param cause   The cause of the failure.
      */
-    protected void onReportFailure(@Nonnull Message message, @Nonnull Throwable cause) {
+    protected void onReportFailure(@NonNull Message message, @NonNull Throwable cause) {
         // noop
     }
 
@@ -114,7 +114,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
      *
      * @param message The message that was reported as ignored.
      */
-    protected void onReportIgnored(@Nonnull Message message) {
+    protected void onReportIgnored(@NonNull Message message) {
         // noop
     }
 }

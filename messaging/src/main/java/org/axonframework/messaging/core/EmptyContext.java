@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -36,17 +36,17 @@ class EmptyContext implements Context {
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(@NonNull ResourceKey<?> key) {
         return false;
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(@NonNull ResourceKey<T> key) {
         return null;
     }
 
     @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> Context withResource(@NonNull ResourceKey<T> key, @NonNull T resource) {
         return Context.with(key, resource);
     }
 

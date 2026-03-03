@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
 
@@ -41,7 +41,7 @@ public interface ApplicationConfigurer {
      * @param componentRegistrar The actions to take on the component registry.
      * @return This {@code ApplicationConfigurer} for a fluent API.
      */
-    ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar);
+    ApplicationConfigurer componentRegistry(@NonNull Consumer<ComponentRegistry> componentRegistrar);
 
     /**
      * Executes the given {@code lifecycleRegistrar} on the lifecycle registry associated with this
@@ -50,7 +50,7 @@ public interface ApplicationConfigurer {
      * @param lifecycleRegistrar The actions to take on the lifecycle registry.
      * @return This {@code ApplicationConfigurer} for a fluent API.
      */
-    ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar);
+    ApplicationConfigurer lifecycleRegistry(@NonNull Consumer<LifecycleRegistry> lifecycleRegistrar);
 
     /**
      * Returns the completely initialized {@link Configuration} instance of type {@code C} built using this

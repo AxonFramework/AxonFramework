@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.reflection;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
@@ -33,7 +33,7 @@ import org.axonframework.messaging.core.configuration.reflection.ParameterResolv
 public class ClasspathParameterResolverConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(@NonNull ComponentRegistry componentRegistry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
                 componentRegistry,
                 c -> ClasspathParameterResolverFactory.forClass(c.getClass())

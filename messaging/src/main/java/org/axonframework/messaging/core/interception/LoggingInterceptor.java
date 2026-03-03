@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
@@ -69,19 +69,19 @@ public class LoggingInterceptor<M extends Message>
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+    @NonNull
+    public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                 @Nullable ProcessingContext context,
-                                                @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+                                                @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context);
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                              @Nonnull ProcessingContext context,
-                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+    @NonNull
+    public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                              @NonNull ProcessingContext context,
+                                              @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
         logger.info("Incoming message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context)
                                .map(returnValue -> {

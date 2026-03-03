@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.google.protobuf.ByteString.copyFromUtf8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AxonServerQueryBusConnectorTest {

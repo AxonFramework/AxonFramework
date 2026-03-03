@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
@@ -30,7 +31,6 @@ import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import jakarta.annotation.Nonnull;
 
 /**
  * A contract towards <b>all</b> {@link PreparedStatement PreparedStatements} a {@link JdbcSequencedDeadLetterQueue}
@@ -59,10 +59,10 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueue}.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement enqueueStatement(@Nonnull Connection connection,
-                                       @Nonnull String processingGroup,
-                                       @Nonnull String sequenceIdentifier,
-                                       @Nonnull DeadLetter<? extends E> letter,
+    PreparedStatement enqueueStatement(@NonNull Connection connection,
+                                       @NonNull String processingGroup,
+                                       @NonNull String sequenceIdentifier,
+                                       @NonNull DeadLetter<? extends E> letter,
                                        long sequenceIndex,
                                        @Nullable ProcessingContext context) throws SQLException;
 
@@ -84,9 +84,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@link DeadLetterSchema#sequenceIndexColumn() index} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement maxIndexStatement(@Nonnull Connection connection,
-                                        @Nonnull String processingGroup,
-                                        @Nonnull String sequenceIdentifier) throws SQLException;
+    PreparedStatement maxIndexStatement(@NonNull Connection connection,
+                                        @NonNull String processingGroup,
+                                        @NonNull String sequenceIdentifier) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter)}
@@ -97,8 +97,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter) evict}.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement evictStatement(@Nonnull Connection connection,
-                                     @Nonnull String identifier) throws SQLException;
+    PreparedStatement evictStatement(@NonNull Connection connection,
+                                     @NonNull String identifier) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the
@@ -114,10 +114,10 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@link JdbcSequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator) requeue}.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement requeueStatement(@Nonnull Connection connection,
-                                       @Nonnull String identifier,
+    PreparedStatement requeueStatement(@NonNull Connection connection,
+                                       @NonNull String identifier,
                                        Cause cause,
-                                       @Nonnull Instant lastTouched,
+                                       @NonNull Instant lastTouched,
                                        Metadata diagnostics) throws SQLException;
 
     /**
@@ -132,9 +132,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@link JdbcSequencedDeadLetterQueue#contains(Object) contained} in the queue.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement containsStatement(@Nonnull Connection connection,
-                                        @Nonnull String processingGroup,
-                                        @Nonnull String sequenceIdentifier) throws SQLException;
+    PreparedStatement containsStatement(@NonNull Connection connection,
+                                        @NonNull String processingGroup,
+                                        @NonNull String sequenceIdentifier) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the
@@ -154,9 +154,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@code sequenceIdentifier} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement letterSequenceStatement(@Nonnull Connection connection,
-                                              @Nonnull String processingGroup,
-                                              @Nonnull String sequenceIdentifier,
+    PreparedStatement letterSequenceStatement(@NonNull Connection connection,
+                                              @NonNull String processingGroup,
+                                              @NonNull String sequenceIdentifier,
                                               int offset,
                                               int maxSize) throws SQLException;
 
@@ -170,8 +170,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@code processingGroup} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement sequenceIdentifiersStatement(@Nonnull Connection connection,
-                                                   @Nonnull String processingGroup) throws SQLException;
+    PreparedStatement sequenceIdentifiersStatement(@NonNull Connection connection,
+                                                   @NonNull String processingGroup) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#size()} operation.
@@ -181,8 +181,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @return The {@link PreparedStatement} used to retrieve the size with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement sizeStatement(@Nonnull Connection connection,
-                                    @Nonnull String processingGroup) throws SQLException;
+    PreparedStatement sizeStatement(@NonNull Connection connection,
+                                    @NonNull String processingGroup) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#sequenceSize(Object)}
@@ -195,9 +195,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@code sequenceIdentifier} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement sequenceSizeStatement(@Nonnull Connection connection,
-                                            @Nonnull String processingGroup,
-                                            @Nonnull String sequenceIdentifier) throws SQLException;
+    PreparedStatement sequenceSizeStatement(@NonNull Connection connection,
+                                            @NonNull String processingGroup,
+                                            @NonNull String sequenceIdentifier) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#amountOfSequences()}
@@ -208,8 +208,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @return The {@link PreparedStatement} used to retrieve the amount of sequences with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement amountOfSequencesStatement(@Nonnull Connection connection,
-                                                 @Nonnull String processingGroup) throws SQLException;
+    PreparedStatement amountOfSequencesStatement(@NonNull Connection connection,
+                                                 @NonNull String processingGroup) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used to retrieve the identifiers of the first entries of each sequence
@@ -235,9 +235,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * claimable.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement claimableSequencesStatement(@Nonnull Connection connection,
-                                                  @Nonnull String processingGroup,
-                                                  @Nonnull Instant processingStartedLimit,
+    PreparedStatement claimableSequencesStatement(@NonNull Connection connection,
+                                                  @NonNull String processingGroup,
+                                                  @NonNull Instant processingStartedLimit,
                                                   int offset,
                                                   int maxSize) throws SQLException;
 
@@ -267,10 +267,10 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * same letter.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement claimStatement(@Nonnull Connection connection,
-                                     @Nonnull String identifier,
-                                     @Nonnull Instant current,
-                                     @Nonnull Instant processingStartedLimit) throws SQLException;
+    PreparedStatement claimStatement(@NonNull Connection connection,
+                                     @NonNull String identifier,
+                                     @NonNull Instant current,
+                                     @NonNull Instant processingStartedLimit) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used to retrieve the following {@link DeadLetter} from the sequence
@@ -291,9 +291,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * given {@code sequenceIdentifier} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement nextLetterInSequenceStatement(@Nonnull Connection connection,
-                                                    @Nonnull String processingGroup,
-                                                    @Nonnull String sequenceIdentifier,
+    PreparedStatement nextLetterInSequenceStatement(@NonNull Connection connection,
+                                                    @NonNull String processingGroup,
+                                                    @NonNull String sequenceIdentifier,
                                                     long sequenceIndex) throws SQLException;
 
     /**
@@ -308,6 +308,6 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * the given {@code processingGroup} with.
      * @throws SQLException When the statement could not be created.
      */
-    PreparedStatement clearStatement(@Nonnull Connection connection,
-                                     @Nonnull String processingGroup) throws SQLException;
+    PreparedStatement clearStatement(@NonNull Connection connection,
+                                     @NonNull String processingGroup) throws SQLException;
 }

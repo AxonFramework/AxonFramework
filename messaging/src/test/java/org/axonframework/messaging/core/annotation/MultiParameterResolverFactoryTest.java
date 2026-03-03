@@ -16,18 +16,8 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.common.Priority;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolver;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -35,8 +25,16 @@ import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+
+import org.jspecify.annotations.Nullable;
+import org.axonframework.common.Priority;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventTestUtils;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 /**
  * @author Allard Buijze
@@ -135,7 +133,7 @@ class MultiParameterResolverFactoryTest {
 
         @Nullable
         @Override
-        public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+        public ParameterResolver createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
             return null;
         }
     }

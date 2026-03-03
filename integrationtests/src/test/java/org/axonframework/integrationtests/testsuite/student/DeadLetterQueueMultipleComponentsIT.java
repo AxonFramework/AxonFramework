@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -323,9 +323,9 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             return MessageStream.<Message>empty().cast();
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             var converter = context.component(Converter.class);
             var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
             return payload.studentId();

@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.deadletter;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 
@@ -35,7 +35,7 @@ import org.axonframework.messaging.core.Message;
  * @since 5.1.0
  */
 public record DeadLetterWithContext<M extends Message>(
-        @Nonnull DeadLetter<M> letter,
+        @NonNull DeadLetter<M> letter,
         @Nullable Context context
 ) {
 

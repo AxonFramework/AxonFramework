@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -62,7 +62,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      * @param context The {@link ProcessingContext} to create the emitter for.
      * @return The emitter specific for the given {@code context}.
      */
-    static QueryUpdateEmitter forContext(@Nonnull ProcessingContext context) {
+    static QueryUpdateEmitter forContext(@NonNull ProcessingContext context) {
         return context.computeResourceIfAbsent(
                 RESOURCE_KEY,
                 () -> new SimpleQueryUpdateEmitter(
@@ -95,7 +95,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             if a {@link MessageType}
      *                                                             could be found for the given {@code queryType}.
      */
-    default <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
+    default <Q> void emit(@NonNull Class<Q> queryType, @NonNull Predicate<? super Q> filter, @Nullable Object update) {
         emit(queryType, filter, () -> update);
     }
 
@@ -122,9 +122,9 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             if a {@link MessageType}
      *                                                             could be found for the given {@code queryType}.
      */
-    <Q> void emit(@Nonnull Class<Q> queryType,
-                  @Nonnull Predicate<? super Q> filter,
-                  @Nonnull Supplier<Object> updateSupplier);
+    <Q> void emit(@NonNull Class<Q> queryType,
+                  @NonNull Predicate<? super Q> filter,
+                  @NonNull Supplier<Object> updateSupplier);
 
     /**
      * Emits given {@code update} to subscription queries matching the given {@code queryName} and given
@@ -137,7 +137,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
      *                  queries} matching the given {@code filter}.
      */
-    default void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
+    default void emit(@NonNull QualifiedName queryName, @NonNull Predicate<Object> filter, @Nullable Object update) {
         emit(queryName, filter, () -> update);
     }
 
@@ -154,9 +154,9 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                       {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
      *                       subscription queries} matching the given {@code queryName} and {@code filter}.
      */
-    void emit(@Nonnull QualifiedName queryName,
-              @Nonnull Predicate<Object> filter,
-              @Nonnull Supplier<Object> updateSupplier);
+    void emit(@NonNull QualifiedName queryName,
+              @NonNull Predicate<Object> filter,
+              @NonNull Supplier<Object> updateSupplier);
 
     /**
      * Completes subscription queries matching the given {@code queryType} and {@code filter}.
@@ -175,7 +175,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             if a {@link MessageType}
      *                                                             could be found for the given {@code queryType}.
      */
-    <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter);
+    <Q> void complete(@NonNull Class<Q> queryType, @NonNull Predicate<? super Q> filter);
 
     /**
      * Completes subscription queries matching the given {@code queryName} and {@code filter}.
@@ -184,7 +184,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()} as is to the given
      *                  {@code queryType} to filter on.
      */
-    void complete(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter);
+    void complete(@NonNull QualifiedName queryName, @NonNull Predicate<Object> filter);
 
     /**
      * Completes subscription queries with the given {@code cause} matching given {@code queryType} and {@code filter}.
@@ -204,9 +204,9 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             if a {@link MessageType}
      *                                                             could be found for the given {@code queryType}.
      */
-    <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
-                                   @Nonnull Predicate<? super Q> filter,
-                                   @Nonnull Throwable cause);
+    <Q> void completeExceptionally(@NonNull Class<Q> queryType,
+                                   @NonNull Predicate<? super Q> filter,
+                                   @NonNull Throwable cause);
 
     /**
      * Completes subscription queries with the given {@code cause} matching given {@code queryName} and {@code filter}.
@@ -216,7 +216,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                  {@code queryType} to filter on.
      * @param cause     The cause of an error leading to exceptionally complete subscription queries.
      */
-    void completeExceptionally(@Nonnull QualifiedName queryName,
-                               @Nonnull Predicate<Object> filter,
-                               @Nonnull Throwable cause);
+    void completeExceptionally(@NonNull QualifiedName queryName,
+                               @NonNull Predicate<Object> filter,
+                               @NonNull Throwable cause);
 }

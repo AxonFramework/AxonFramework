@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
@@ -536,10 +536,10 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            @Nonnull
-            public MessageStream<?> interceptOnHandle(@Nonnull T message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
+            @NonNull
+            public MessageStream<?> interceptOnHandle(@NonNull T message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<T> interceptorChain) {
                 interceptMessage(message);
                 return interceptorChain.proceed(message, context);
             }
@@ -644,10 +644,10 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            @Nonnull
-            public MessageStream<?> interceptOnHandle(@Nonnull Message message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<Message> interceptorChain) {
+            @NonNull
+            public MessageStream<?> interceptOnHandle(@NonNull Message message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<Message> interceptorChain) {
                 if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -698,7 +698,7 @@ class InterceptorAutoConfigurationTest {
 
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
-            @Nonnull
+            @NonNull
             @Override
             public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage message,
                                                                @NotNull ProcessingContext context,

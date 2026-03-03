@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -39,19 +39,19 @@ public class DefaultCorrelationDataProviderRegistry implements CorrelationDataPr
 
     private final List<ComponentDefinition<CorrelationDataProvider>> providerDefinitions = new ArrayList<>();
 
-    @Nonnull
+    @NonNull
     @Override
     public CorrelationDataProviderRegistry registerProvider(
-            @Nonnull ComponentBuilder<CorrelationDataProvider> providerBuilder
+            @NonNull ComponentBuilder<CorrelationDataProvider> providerBuilder
     ) {
         providerDefinitions.add(ComponentDefinition.ofType(CorrelationDataProvider.class)
                                                    .withBuilder(providerBuilder));
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<CorrelationDataProvider> correlationDataProviders(@Nonnull Configuration config) {
+    public List<CorrelationDataProvider> correlationDataProviders(@NonNull Configuration config) {
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         for (ComponentDefinition<CorrelationDataProvider> providerDefinition : providerDefinitions) {
             if (!(providerDefinition instanceof ComponentDefinition.ComponentCreator<CorrelationDataProvider> creator)) {

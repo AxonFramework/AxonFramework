@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -45,8 +45,8 @@ class FilteringMessageStream<M extends Message> extends DelegatingMessageStream<
      * @param filter   The {@link MessageStream.Entry entry} filter that will validate if the {@link #next()} invocation
      *                 should return the entry, yes or no.
      */
-    FilteringMessageStream(@Nonnull MessageStream<M> delegate,
-                           @Nonnull Predicate<Entry<M>> filter) {
+    FilteringMessageStream(@NonNull MessageStream<M> delegate,
+                           @NonNull Predicate<Entry<M>> filter) {
         super(delegate);
         this.filter = filter;
     }
@@ -107,7 +107,7 @@ class FilteringMessageStream<M extends Message> extends DelegatingMessageStream<
          *                 given {@code mapper}.
          * @param filter   The {@link Predicate} filtering the first {@link Entry} from the given {@code delegate}.
          */
-        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Predicate<Entry<M>> filter) {
+        Single(MessageStream.@NonNull Single<M> delegate, @NonNull Predicate<Entry<M>> filter) {
             super(delegate, filter);
         }
     }

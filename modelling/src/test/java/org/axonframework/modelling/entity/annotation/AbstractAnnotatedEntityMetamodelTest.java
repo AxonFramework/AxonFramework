@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
@@ -132,7 +132,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     private class EntityEvolvingEventAppender implements EventAppender {
 
         @Override
-        public void append(@Nonnull List<?> events) {
+        public void append(@NonNull List<?> events) {
             publishedEvents.addAll(events);
             if (entityState == null) {
                 return;
@@ -149,7 +149,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("Not required for testing");
         }
     }

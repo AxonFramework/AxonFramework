@@ -16,7 +16,7 @@
 
 package org.axonframework.update;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.update.api.UpdateCheckRequest;
@@ -77,9 +77,9 @@ public class UpdateChecker implements Runnable {
      * @param reporter              The reporter that will handle the response from the telemetry endpoint.
      * @param usagePropertyProvider The property provider used to determine if the update check is disabled.
      */
-    public UpdateChecker(@Nonnull UpdateCheckerHttpClient client,
-                         @Nonnull UpdateCheckerReporter reporter,
-                         @Nonnull UsagePropertyProvider usagePropertyProvider) {
+    public UpdateChecker(@NonNull UpdateCheckerHttpClient client,
+                         @NonNull UpdateCheckerReporter reporter,
+                         @NonNull UsagePropertyProvider usagePropertyProvider) {
         this.client = Objects.requireNonNull(client, "The client must not be null.");
         this.reporter = Objects.requireNonNull(reporter, "The reporter must not be null.");
         this.usagePropertyProvider = Objects.requireNonNull(
@@ -159,8 +159,7 @@ public class UpdateChecker implements Runnable {
         delayedTask = DelayedTask.of(this, nextInvocationTime);
     }
 
-    @Nonnull
-    private UpdateCheckRequest buildRequest() {
+        private @NonNull UpdateCheckRequest buildRequest() {
         String jvmVendor = System.getProperty("java.vendor");
         String javaVersion = System.getProperty("java.version");
         String osName = System.getProperty("os.name");

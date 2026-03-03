@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
@@ -555,10 +555,10 @@ class InterceptingQueryBusTest {
 
         private final List<QueryMessage> recordedQueries = new ArrayList<>();
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage message,
-                                                          @Nonnull ProcessingContext context) {
+        public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage message,
+                                                          @NonNull ProcessingContext context) {
             recordedQueries.add(message);
             return MessageStream.just(new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, "ok"));
         }
@@ -591,10 +591,10 @@ class InterceptingQueryBusTest {
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+        @NonNull
+        public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+                                                    @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to next interceptor/handler
             // This proves interception can add context (correlation IDs, auth tokens, etc.) to requests
             @SuppressWarnings("unchecked")
@@ -608,10 +608,10 @@ class InterceptingQueryBusTest {
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+        @NonNull
+        public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to handler
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));

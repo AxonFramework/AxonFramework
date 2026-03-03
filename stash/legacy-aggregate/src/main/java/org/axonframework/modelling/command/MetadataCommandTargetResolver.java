@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -46,7 +46,7 @@ public class MetadataCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public String resolveTarget(@Nonnull CommandMessage command) {
+    public String resolveTarget(@NonNull CommandMessage command) {
         String identifier = command.metadata().get(identifierKey).toString();
         if (identifier == null) {
             throw new IdentifierMissingException(
