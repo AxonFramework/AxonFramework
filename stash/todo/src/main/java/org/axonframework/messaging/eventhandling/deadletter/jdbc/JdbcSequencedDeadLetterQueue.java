@@ -88,8 +88,6 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final boolean CLOSE_QUIETLY = true;
-
     private final String processingGroup;
     private final TransactionalExecutorProvider<Connection> transactionalExecutorProvider;
     private final DeadLetterSchema schema;
@@ -103,9 +101,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     /**
      * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
      * <p>
-     * Will validate whether the {@link Builder#processingGroup(String) processing group} and
-     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider} are
-     * set. If for any this is not the case an {@link AxonConfigurationException} is thrown.
+     * Will validate whether the {@link Builder#processingGroup(String) processing group},
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider},
+     * and the converters required to construct statement factories/converters (the
+     * {@link Builder#eventConverter(EventConverter) EventConverter} and
+     * {@link Builder#genericConverter(Converter) generic Converter}) are set. If any of these are not provided an
+     * {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
      */
