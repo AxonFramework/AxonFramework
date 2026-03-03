@@ -40,12 +40,10 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -87,6 +85,12 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SequencedDeadLetterQueue<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    /**
+     * Instructs {@link org.axonframework.common.jdbc.JdbcUtils#executeQuery} not to close the connection, as it is
+     * owned and committed by the surrounding {@link org.axonframework.common.tx.TransactionalExecutor}.
+     */
+    private static final boolean AUTO_CLOSE_CONNECTION = false;
 
     private final String processingGroup;
     private final TransactionalExecutorProvider<Connection> transactionalExecutorProvider;
@@ -220,7 +224,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                                      resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                                      e -> new JdbcException("Failed to uncover the maximum index for sequence ["
                                                                     + sequenceId + "]", e),
-                                     false);
+                                     AUTO_CLOSE_CONNECTION);
         long nextIndex = maxIndex + 1;
         logger.debug("Next index for [{}] is [{}]", sequenceId, nextIndex);
         return nextIndex;
@@ -315,7 +319,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
                             e -> new JdbcException("Failed to validate whether there are letters "
                                                            + "present for sequence [" + sequenceId + "]", e),
-                            false
+                            AUTO_CLOSE_CONNECTION
                     ));
         });
     }
@@ -356,7 +360,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         c -> statementFactory.sequenceIdentifiersStatement(c, processingGroup),
                         listResults(resultSet -> resultSet.getString(1)),
                         e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
-                        false
+                        AUTO_CLOSE_CONNECTION
                 ))
                 .thenApply(sequenceIdentifiers -> (Iterable<Iterable<DeadLetter<? extends E>>>) () -> {
                     Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
@@ -396,7 +400,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                                                   resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                                                   e -> new JdbcException("Failed to check the total number of "
                                                                                  + "dead letters", e),
-                                                  false)));
+                                                  AUTO_CLOSE_CONNECTION)));
     }
 
     @Override
@@ -412,7 +416,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             e -> new JdbcException("Failed to check the number of dead letters in sequence ["
                                                            + sequenceId + "]", e),
-                            false));
+                            AUTO_CLOSE_CONNECTION));
         });
     }
 
@@ -426,7 +430,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                         e -> new JdbcException(
                                 "Failed to check the number of dead letter sequences in this queue", e),
-                        false)));
+                        AUTO_CLOSE_CONNECTION)));
     }
 
     /**
@@ -655,7 +659,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         "Failed to find the next dead letter in sequence [" + sequenceIdentifier
                                 + "] for processing", e
                 ),
-                false
+                AUTO_CLOSE_CONNECTION
         ));
     }
 
