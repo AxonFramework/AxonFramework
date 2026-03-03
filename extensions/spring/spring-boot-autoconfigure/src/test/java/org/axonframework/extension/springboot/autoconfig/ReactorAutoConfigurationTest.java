@@ -16,22 +16,14 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.extension.reactor.messaging.commandhandling.gateway.DefaultReactiveCommandGateway;
-import org.axonframework.extension.reactor.messaging.commandhandling.gateway.ReactiveCommandGateway;
-import org.axonframework.extension.reactor.messaging.eventhandling.gateway.DefaultReactiveEventGateway;
-import org.axonframework.extension.reactor.messaging.eventhandling.gateway.ReactiveEventGateway;
-import org.axonframework.extension.reactor.messaging.core.ReactiveMessageDispatchInterceptor;
-import org.axonframework.extension.reactor.messaging.queryhandling.gateway.DefaultReactiveQueryGateway;
-import org.axonframework.extension.reactor.messaging.queryhandling.gateway.ReactiveQueryGateway;
+import org.axonframework.common.configuration.DecoratorDefinition;
+import org.axonframework.extension.reactor.messaging.core.interception.ReactorDispatchInterceptorRegistry;
+import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.queryhandling.QueryMessage;
-import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -40,7 +32,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the {@link ReactorAutoConfiguration}.
@@ -48,159 +39,57 @@ import static org.mockito.Mockito.mock;
 class ReactorAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(ReactorAutoConfiguration.class))
-            .withUserConfiguration(RequiredBeansConfiguration.class);
+            .withConfiguration(AutoConfigurations.of(ReactorAutoConfiguration.class));
 
     @Nested
-    class BeanRegistration {
+    class DecoratorRegistration {
 
         @Test
-        void registersAllThreeReactiveGateways() {
-            contextRunner.run(context -> {
-                assertThat(context).hasSingleBean(ReactiveCommandGateway.class);
-                assertThat(context).hasSingleBean(ReactiveEventGateway.class);
-                assertThat(context).hasSingleBean(ReactiveQueryGateway.class);
-            });
-        }
-
-        @Test
-        void registersDefaultImplementations() {
-            contextRunner.run(context -> {
-                assertThat(context.getBean(ReactiveCommandGateway.class))
-                        .isInstanceOf(DefaultReactiveCommandGateway.class);
-                assertThat(context.getBean(ReactiveEventGateway.class))
-                        .isInstanceOf(DefaultReactiveEventGateway.class);
-                assertThat(context.getBean(ReactiveQueryGateway.class))
-                        .isInstanceOf(DefaultReactiveQueryGateway.class);
-            });
-        }
-    }
-
-    @Nested
-    class ConditionalOnMissingBean {
-
-        @Test
-        void doesNotOverrideUserDefinedReactiveCommandGateway() {
-            contextRunner
-                    .withUserConfiguration(CustomCommandGatewayConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveCommandGateway.class);
-                        assertThat(context.getBean(ReactiveCommandGateway.class))
-                                .isInstanceOf(CustomReactiveCommandGateway.class);
-                    });
-        }
-
-        @Test
-        void doesNotOverrideUserDefinedReactiveEventGateway() {
-            contextRunner
-                    .withUserConfiguration(CustomEventGatewayConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveEventGateway.class);
-                        assertThat(context.getBean(ReactiveEventGateway.class))
-                                .isInstanceOf(CustomReactiveEventGateway.class);
-                    });
-        }
-
-        @Test
-        void doesNotOverrideUserDefinedReactiveQueryGateway() {
-            contextRunner
-                    .withUserConfiguration(CustomQueryGatewayConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveQueryGateway.class);
-                        assertThat(context.getBean(ReactiveQueryGateway.class))
-                                .isInstanceOf(CustomReactiveQueryGateway.class);
-                    });
-        }
-    }
-
-    @Nested
-    class InterceptorWiring {
-
-        @Test
-        void commandInterceptorBeansAreWiredIntoGateway() {
+        void registersDecoratorDefinitionWhenCommandInterceptorBeanPresent() {
             contextRunner
                     .withUserConfiguration(CommandInterceptorConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveCommandGateway.class);
-                        // The gateway is created — if interceptor wiring failed, context would not start
-                        assertThat(context.getBean(ReactiveCommandGateway.class))
-                                .isInstanceOf(DefaultReactiveCommandGateway.class);
-                    });
+                    .run(context -> assertThat(context).hasBean("reactorDispatchInterceptorEnhancer"));
         }
 
         @Test
-        void eventInterceptorBeansAreWiredIntoGateway() {
+        void registersDecoratorDefinitionWhenEventInterceptorBeanPresent() {
             contextRunner
                     .withUserConfiguration(EventInterceptorConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveEventGateway.class);
-                        assertThat(context.getBean(ReactiveEventGateway.class))
-                                .isInstanceOf(DefaultReactiveEventGateway.class);
-                    });
+                    .run(context -> assertThat(context).hasBean("reactorDispatchInterceptorEnhancer"));
         }
 
         @Test
-        void queryInterceptorBeansAreWiredIntoGateway() {
+        void registersDecoratorDefinitionWhenQueryInterceptorBeanPresent() {
             contextRunner
                     .withUserConfiguration(QueryInterceptorConfiguration.class)
-                    .run(context -> {
-                        assertThat(context).hasSingleBean(ReactiveQueryGateway.class);
-                        assertThat(context.getBean(ReactiveQueryGateway.class))
-                                .isInstanceOf(DefaultReactiveQueryGateway.class);
-                    });
+                    .run(context -> assertThat(context).hasBean("reactorDispatchInterceptorEnhancer"));
+        }
+
+        @Test
+        void registersDecoratorDefinitionWhenGenericMessageInterceptorBeanPresent() {
+            contextRunner
+                    .withUserConfiguration(GenericInterceptorConfiguration.class)
+                    .run(context -> assertThat(context).hasBean("reactorDispatchInterceptorEnhancer"));
+        }
+
+        @Test
+        void doesNotRegisterDecoratorDefinitionWhenNoInterceptorBeansPresent() {
+            contextRunner
+                    .run(context -> assertThat(context).doesNotHaveBean("reactorDispatchInterceptorEnhancer"));
         }
     }
 
     // -- Test configurations --
 
     @Configuration
-    static class RequiredBeansConfiguration {
+    static class GenericInterceptorConfiguration {
 
         @Bean
-        CommandGateway commandGateway() {
-            return mock(CommandGateway.class);
-        }
-
-        @Bean
-        EventGateway eventGateway() {
-            return mock(EventGateway.class);
-        }
-
-        @Bean
-        QueryGateway queryGateway() {
-            return mock(QueryGateway.class);
-        }
-
-        @Bean
-        MessageTypeResolver messageTypeResolver() {
-            return new ClassBasedMessageTypeResolver();
-        }
-    }
-
-    @Configuration
-    static class CustomCommandGatewayConfiguration {
-
-        @Bean
-        ReactiveCommandGateway reactiveCommandGateway() {
-            return new CustomReactiveCommandGateway();
-        }
-    }
-
-    @Configuration
-    static class CustomEventGatewayConfiguration {
-
-        @Bean
-        ReactiveEventGateway reactiveEventGateway() {
-            return new CustomReactiveEventGateway();
-        }
-    }
-
-    @Configuration
-    static class CustomQueryGatewayConfiguration {
-
-        @Bean
-        ReactiveQueryGateway reactiveQueryGateway() {
-            return new CustomReactiveQueryGateway();
+        ReactorMessageDispatchInterceptor<Message> testGenericInterceptor() {
+            return (message, context, chain) -> {
+                var enriched = message.andMetadata(Metadata.with("intercepted", "true"));
+                return chain.proceed(enriched, context);
+            };
         }
     }
 
@@ -208,10 +97,10 @@ class ReactorAutoConfigurationTest {
     static class CommandInterceptorConfiguration {
 
         @Bean
-        ReactiveMessageDispatchInterceptor<CommandMessage> testCommandInterceptor() {
-            return (message, chain) -> {
+        ReactorMessageDispatchInterceptor<CommandMessage> testCommandInterceptor() {
+            return (message, context, chain) -> {
                 var enriched = message.andMetadata(Metadata.with("intercepted", "true"));
-                return chain.proceed(enriched);
+                return chain.proceed(enriched, context);
             };
         }
     }
@@ -220,10 +109,10 @@ class ReactorAutoConfigurationTest {
     static class EventInterceptorConfiguration {
 
         @Bean
-        ReactiveMessageDispatchInterceptor<EventMessage> testEventInterceptor() {
-            return (message, chain) -> {
+        ReactorMessageDispatchInterceptor<EventMessage> testEventInterceptor() {
+            return (message, context, chain) -> {
                 var enriched = message.andMetadata(Metadata.with("intercepted", "true"));
-                return chain.proceed(enriched);
+                return chain.proceed(enriched, context);
             };
         }
     }
@@ -232,74 +121,11 @@ class ReactorAutoConfigurationTest {
     static class QueryInterceptorConfiguration {
 
         @Bean
-        ReactiveMessageDispatchInterceptor<QueryMessage> testQueryInterceptor() {
-            return (message, chain) -> {
+        ReactorMessageDispatchInterceptor<QueryMessage> testQueryInterceptor() {
+            return (message, context, chain) -> {
                 var enriched = message.andMetadata(Metadata.with("intercepted", "true"));
-                return chain.proceed(enriched);
+                return chain.proceed(enriched, context);
             };
-        }
-    }
-
-    // -- Custom gateway stubs for ConditionalOnMissingBean tests --
-
-    static class CustomReactiveCommandGateway implements ReactiveCommandGateway {
-
-        @Override
-        public <R> reactor.core.publisher.Mono<R> send(Object command, Class<R> resultType) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public reactor.core.publisher.Mono<Void> send(Object command) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public void registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<CommandMessage> interceptor) {
-        }
-    }
-
-    static class CustomReactiveEventGateway implements ReactiveEventGateway {
-
-        @Override
-        public reactor.core.publisher.Mono<Void> publish(Object... events) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public reactor.core.publisher.Mono<Void> publish(java.util.List<?> events) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public void registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<EventMessage> interceptor) {
-        }
-    }
-
-    static class CustomReactiveQueryGateway implements ReactiveQueryGateway {
-
-        @Override
-        public <R> reactor.core.publisher.Mono<R> query(Object query, Class<R> responseType) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public <R> reactor.core.publisher.Mono<java.util.List<R>> queryMany(Object query, Class<R> responseType) {
-            return reactor.core.publisher.Mono.empty();
-        }
-
-        @Override
-        public <R> reactor.core.publisher.Flux<R> streamingQuery(Object query, Class<R> responseType) {
-            return reactor.core.publisher.Flux.empty();
-        }
-
-        @Override
-        public <R> reactor.core.publisher.Flux<R> subscriptionQuery(Object query, Class<R> responseType) {
-            return reactor.core.publisher.Flux.empty();
-        }
-
-        @Override
-        public void registerDispatchInterceptor(ReactiveMessageDispatchInterceptor<QueryMessage> interceptor) {
         }
     }
 }
