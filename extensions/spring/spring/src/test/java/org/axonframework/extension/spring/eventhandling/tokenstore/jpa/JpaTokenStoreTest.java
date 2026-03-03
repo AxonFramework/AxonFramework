@@ -18,14 +18,15 @@ package org.axonframework.extension.spring.eventhandling.tokenstore.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.conversion.TestConverter;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.TokenEntry;
-import org.axonframework.conversion.TestConverter;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.junit.jupiter.api.*;
@@ -142,13 +143,15 @@ class JpaTokenStoreTest {
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
             var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("local");
-            return new JpaTokenStore(entityManagerProvider, TestConverter.JACKSON.getConverter(), config);
+            return new JpaTokenStore(ctx -> new EntityManagerExecutor(entityManagerProvider),
+                                     TestConverter.JACKSON.getConverter(), config);
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("stealing").claimTimeout(Duration.ofSeconds(-1));
-            return new JpaTokenStore(entityManagerProvider, TestConverter.JACKSON.getConverter(), config);
+            return new JpaTokenStore(ctx -> new EntityManagerExecutor(entityManagerProvider),
+                                     TestConverter.JACKSON.getConverter(), config);
         }
 
         @Bean
