@@ -26,7 +26,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -48,8 +47,8 @@ import org.springframework.context.annotation.Bean;
  * axon.eventhandling.processors.<processorName>.dlq.cache.size=2048
  * }</pre>
  * <p>
- * To replace the default JPA factory with a custom backend, declare a {@link DeadLetterQueueFactory}
- * bean — the {@code @ConditionalOnMissingBean} on the default will yield to it.
+ * To replace the default JPA factory with a custom backend, declare your own {@link DeadLetterQueueFactory}
+ * bean — the {@code @ConditionalOnMissingBean} guard on the default will yield to it.
  *
  * @author Mateusz Nowak
  * @since 5.0.2
@@ -75,7 +74,6 @@ public class JpaDeadLetterQueueAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnSingleCandidate(Converter.class)
     public DeadLetterQueueFactory jpaDeadLetterQueueFactory(EntityManagerFactory entityManagerFactory,
                                                             EventConverter eventConverter,
                                                             Converter genericConverter) {
