@@ -29,6 +29,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -160,7 +161,7 @@ class EventSourcingRepositoryTest {
             }
 
             @Override
-            public String applyStateChange(UnaryOperator<String> change) {
+            public String applyStateChange(@NonNull UnaryOperator<String> change) {
                 fail("This should not have been invoked");
                 return "ERROR";
             }

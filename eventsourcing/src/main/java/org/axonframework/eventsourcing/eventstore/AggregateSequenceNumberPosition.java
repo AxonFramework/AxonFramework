@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * An implementation of {@link Position} based on aggregate sequence numbers.
@@ -54,7 +53,6 @@ public final class AggregateSequenceNumberPosition implements Position {
         this.sequenceNumber = sequenceNumber;
     }
 
-    @NonNull
     @Override
     public Position min(Position other) {
         return switch (other) {

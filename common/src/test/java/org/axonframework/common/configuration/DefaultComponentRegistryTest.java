@@ -1326,7 +1326,7 @@ class DefaultComponentRegistryTest {
             // Register a component factory that can create components on-demand
             ComponentFactory<ServiceInterface> factory = new ComponentFactory<>() {
                 @Override
-                public Class<ServiceInterface> forType() {
+                public @NonNull Class<ServiceInterface> forType() {
                     return ServiceInterface.class;
                 }
 
@@ -1343,7 +1343,7 @@ class DefaultComponentRegistryTest {
                 }
 
                 @Override
-                public void registerShutdownHandlers(LifecycleRegistry registry) {
+                public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
                     // No shutdown needed for this test
                 }
 

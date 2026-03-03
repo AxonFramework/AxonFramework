@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.apache.avro.generic.GenericRecord;
 import org.axonframework.common.infra.DescribableComponent;
 
@@ -60,7 +59,6 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param <T>   The payload type to convert to.
      * @return The deserialized object.
      */
-    @NonNull
     <T> T convertFromSingleObjectEncoded(byte [] bytes,
                                          Class<T> type);
 

@@ -84,6 +84,7 @@ class PropertyAccessStrategyTest {
         }
 
         @Override
+        @NonNull
         protected <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property) {
             return new StubProperty<>("testGetterInvoked");
         }
@@ -134,7 +135,8 @@ class PropertyAccessStrategyTest {
         }
 
         @Override
-        protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+        @NonNull
+        protected <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property) {
             return new TestPropertyAccessStrategy.StubProperty<>(value);
         }
     }

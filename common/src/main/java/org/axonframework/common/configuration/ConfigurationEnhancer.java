@@ -48,7 +48,7 @@ public interface ConfigurationEnhancer {
      *
      * @param registry The registry instance to enhance.
      */
-    void enhance(@NonNull ComponentRegistry registry);
+    void enhance(ComponentRegistry registry);
 
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.

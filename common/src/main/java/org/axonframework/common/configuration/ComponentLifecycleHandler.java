@@ -48,5 +48,5 @@ public interface ComponentLifecycleHandler<C> {
      * @param component     The instance of the component.
      * @return A future that completes when the lifecycle operation has terminated.
      */
-    CompletableFuture<?> run(@NonNull Configuration configuration, @NonNull C component);
+    CompletableFuture<?> run(Configuration configuration, C component);
 }

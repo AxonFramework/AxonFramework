@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -206,7 +205,6 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         }
     }
 
-    @NonNull
     @Override
     public EventCriteria resolve(Object id, ProcessingContext context) {
         Optional<Object> builderResult = builderMap

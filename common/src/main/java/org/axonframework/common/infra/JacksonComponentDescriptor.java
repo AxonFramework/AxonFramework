@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.common.configuration.Component;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -96,7 +98,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Object object) {
+    public void describeProperty(String name, Object object) {
         var json = describeObject(object);
         rootNode.set(name, json);
     }
@@ -145,7 +147,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Collection<?> collection) {
+    public void describeProperty(String name, @Nullable Collection<?> collection) {
         if (collection == null) {
             rootNode.set(name, null);
             return;
@@ -159,7 +161,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Map<?, ?> map) {
+    public void describeProperty(String name, @Nullable Map<?, ?> map) {
         if (map == null) {
             rootNode.set(name, null);
             return;
@@ -177,17 +179,17 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, String value) {
+    public void describeProperty(String name, String value) {
         rootNode.put(name, value);
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Long value) {
+    public void describeProperty(String name, Long value) {
         rootNode.put(name, value);
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Boolean value) {
+    public void describeProperty(String name, Boolean value) {
         rootNode.put(name, value);
     }
 

@@ -27,10 +27,8 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.DependencyRules;
 import com.tngtech.archunit.library.dependencies.SliceRule;
 import com.tngtech.archunit.library.freeze.FreezingArchRule;
-import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -42,8 +40,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
-import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.*;
 
 /**
@@ -63,7 +59,6 @@ public class ArchitectureTest {
 
     static final String BASE_PACKAGE_NAME = "org.axonframework.common";
     static final Set<Map.Entry<String, String>> IGNORED_CYCLES = parseIgnoredCycles();
-
 
     /**
      * Important: This module is not cycle free and cannot be made cycle free without introducing API breaking changes

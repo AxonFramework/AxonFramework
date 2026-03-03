@@ -33,7 +33,7 @@ public class LifecycleHandlerInvocationException extends RuntimeException {
      * @param message The message describing the exception.
      * @param cause   The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(@NonNull String message, @Nullable Throwable cause) {
+    public LifecycleHandlerInvocationException(String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

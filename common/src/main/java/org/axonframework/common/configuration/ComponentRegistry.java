@@ -51,8 +51,8 @@ public interface ComponentRegistry extends DescribableComponent {
      *                                    {@link OverridePolicy#REJECT} and a component
      *                                    with the same type is already defined.
      */
-    default <C> ComponentRegistry registerComponent(@NonNull Class<C> type,
-                                                    @NonNull ComponentBuilder<C> builder) {
+    default <C> ComponentRegistry registerComponent(Class<C> type,
+                                                    ComponentBuilder<C> builder) {
         return registerComponent(ComponentDefinition.ofType(type)
                                                     .withBuilder(builder));
     }

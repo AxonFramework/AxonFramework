@@ -54,7 +54,7 @@ public interface ComponentDecorator<C, D> {
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      * @throws ClassCastException When this decorator does not return a subclass of {@code C}.
      */
-    D decorate(@NonNull Configuration config,
+    D decorate(Configuration config,
                @Nullable String name,
-               @NonNull C delegate);
+               C delegate);
 }

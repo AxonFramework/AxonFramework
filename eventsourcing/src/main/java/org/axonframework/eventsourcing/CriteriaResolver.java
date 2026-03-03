@@ -19,8 +19,6 @@ package org.axonframework.eventsourcing;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code I}.
  *
@@ -38,6 +36,5 @@ public interface CriteriaResolver<I> {
      * @param context    The {@link ProcessingContext} in which the criteria is being resolved.
      * @return The given {@code identifier} resolved to an {@link EventCriteria}.
      */
-    @NonNull
     EventCriteria resolve(I identifier, ProcessingContext context);
 }

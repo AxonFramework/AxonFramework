@@ -36,6 +36,5 @@ public interface ThrowingFunction<T, R, X extends Exception> {
      * @return The result of applying the function.
      * @throws X When the function failed with an exception of type {@code X}.
      */
-    @Nullable
-    R apply(T input) throws X;
+    @Nullable  R apply(T input) throws X;
 }

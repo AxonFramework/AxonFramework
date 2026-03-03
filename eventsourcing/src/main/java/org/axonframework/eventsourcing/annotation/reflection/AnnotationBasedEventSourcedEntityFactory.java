@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation.reflection;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
@@ -363,7 +362,6 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                     .join();
         }
 
-        @NonNull
         private CompletableFuture<?> tryResolveParameterValue(
                 ParameterResolver<?> parameterResolver,
                 ProcessingContext context
@@ -440,7 +438,6 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      */
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
 
-        @NonNull
         @Override
         public CompletableFuture<ID> resolveParameterValue(ProcessingContext processingContext) {
             return CompletableFuture.completedFuture(processingContext.getResource(ID_KEY));

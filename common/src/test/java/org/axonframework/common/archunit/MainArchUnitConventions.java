@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.common.archunit;
 
-final class StartPosition implements Position {
-    @Override
-    public Position min(Position other) {
-        return START;
+import static org.axonframework.common.archunit.AxonFrameworkArchRules.CLASSES_MUST_RESIDE_IN_NULL_MARKED_PACKAGE;
+
+
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.junit.ArchTest;
+
+public interface MainArchUnitConventions {
+
+    @ArchTest
+    default void allPackageMustHaveANullMarkedPackageInfo(JavaClasses classes) {
+        CLASSES_MUST_RESIDE_IN_NULL_MARKED_PACKAGE
+                .because("We use NullMarked annotation to indicate nullability.")
+                .check(classes);
     }
 }

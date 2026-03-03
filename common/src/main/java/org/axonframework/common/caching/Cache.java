@@ -17,6 +17,8 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -39,7 +41,7 @@ public interface Cache {
      * @param <V> The type of value stored
      * @return the item stored under the given key
      */
-    <K, V> V get(K key);
+    @Nullable <K, V> V get(K key);
 
     /**
      * Stores the given {@code value} in the cache, under given {@code key}. If an item already exists, it is updated

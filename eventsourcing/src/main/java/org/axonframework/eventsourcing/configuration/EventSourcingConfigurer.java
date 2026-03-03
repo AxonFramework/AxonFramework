@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -158,7 +157,6 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @param <E>          The type of the entity being built.
      * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
-    @NonNull
     public <I, E> EventSourcingConfigurer registerEntity(EntityModule<I, E> entityModule) {
         return modelling(modellingConfigurer -> modellingConfigurer.registerEntity(entityModule));
     }

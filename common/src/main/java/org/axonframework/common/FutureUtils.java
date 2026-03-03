@@ -16,7 +16,6 @@
 
 package org.axonframework.common;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
@@ -116,7 +115,7 @@ public final class FutureUtils {
      * @param <T> Type of the completable future.
      * @return A completable future that completes exceptionally if the given lambda throws an exception.
      */
-        public @NonNull static <T> CompletableFuture<T> runFailing(@NonNull final Supplier<CompletableFuture<T>> fn) {
+        public static <T> CompletableFuture<T> runFailing(final Supplier<CompletableFuture<T>> fn) {
         try {
             return fn.get();
         } catch (Exception e) {
@@ -140,7 +139,7 @@ public final class FutureUtils {
      */
     @SuppressWarnings("JavadocDeclaration")
     @Nullable
-    public static <T> T joinAndUnwrap(@NonNull CompletableFuture<T> future) {
+    public static <T> T joinAndUnwrap(CompletableFuture<T> future) {
         return joinAndUnwrap(future, DEFAULT_JOIN_TIMEOUT);
     }
 
@@ -160,8 +159,7 @@ public final class FutureUtils {
      * @throws Throwable        the unwrapped cause if the future completed exceptionally (exact type preserved).
      */
     @SuppressWarnings("JavadocDeclaration")
-    @Nullable
-    public static <T> T joinAndUnwrap(@NonNull CompletableFuture<T> future, @NonNull Duration timeout) {
+    public static <T> T joinAndUnwrap(CompletableFuture<T> future, Duration timeout) {
         try {
             return future.orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                          .join();

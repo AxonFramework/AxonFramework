@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -279,7 +278,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
-        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
+        AtomicReference<@Nullable AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         long firstSequenceNumber = AggregateSequenceNumberPosition.toSequenceNumber(condition.start());
         //noinspection DataFlowIssue
@@ -412,7 +411,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 : token.advanceTo(globalIndex, allowGaps ? maxGapOffset : 0);
     }
 
-    @NonNull
     private Collection<Long> calculateGaps(long globalIndex, boolean allowGaps) {
         return allowGaps
                 ? LongStream.range(Math.min(lowestGlobalSequence, globalIndex), globalIndex)
@@ -457,7 +455,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return queryToken(LATEST_TOKEN_QUERY);
     }
 
-    @NonNull
     private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
         return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult(),

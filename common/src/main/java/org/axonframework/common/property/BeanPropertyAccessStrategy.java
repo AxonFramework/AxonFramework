@@ -16,6 +16,9 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.Nullable;
+
+
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 
@@ -30,7 +33,8 @@ import static java.util.Locale.ENGLISH;
 public class BeanPropertyAccessStrategy extends AbstractMethodPropertyAccessStrategy {
 
     @Override
-    protected String getterName(String property) {
+    protected String getterName(@Nullable String property) {
+
         return format(ENGLISH, "get%S%s", property.charAt(0), property.substring(1));
     }
 

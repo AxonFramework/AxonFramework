@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -53,7 +52,6 @@ public class MultiTagResolver implements TagResolver {
         this.delegates = List.of(tagResolvers);
     }
 
-    @NonNull
     @Override
     public Set<Tag> resolve(EventMessage event) {
         Set<Tag> tags = new HashSet<>();

@@ -178,8 +178,7 @@ public interface Configuration extends DescribableComponent {
      *
      * @return The parent configuration of this configuration, or {@code null} if no parent configuration exists.
      */
-    @Nullable
-    Configuration getParent();
+    @Nullable Configuration getParent();
 
     /**
      * Returns all components declared under the given {@code type} as a map of component names to component instances.

@@ -66,11 +66,11 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param <C>  The declared type of the components to decorate.
      * @return A builder for further configuration of this decorator definition.
      */
-    static <C> PartialDecoratorDefinition<C> forType(@NonNull Class<C> type) {
+    static <C> PartialDecoratorDefinition<C> forType(Class<C> type) {
         requireNonNull(type, "The type must not be null.");
         return new PartialDecoratorDefinition<>() {
             @Override
-            public <D extends C> DecoratorDefinition<C, D> with(@NonNull ComponentDecorator<C, D> decorator) {
+            public <D extends C> DecoratorDefinition<C, D> with(ComponentDecorator<C, D> decorator) {
                 return new DefaultDecoratorDefinition<>(id -> type.isAssignableFrom(id.typeAsClass()), decorator);
             }
         };

@@ -47,14 +47,14 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
      * @param identifier The identifier of the component.
      * @param builder    The function used to create an instance of this component.
      */
-    public LazyInitializedComponentDefinition(Component.@NonNull Identifier<C> identifier,
-                                              @NonNull ComponentBuilder<A> builder) {
+    public LazyInitializedComponentDefinition(Component.Identifier<C> identifier,
+                                              ComponentBuilder<A> builder) {
         super(identifier);
         this.builder = Objects.requireNonNull(builder, "The builder must not be null.");
     }
 
     @Override
-    public A doResolve(@NonNull Configuration configuration) {
+    public A doResolve(Configuration configuration) {
         A resolvedInstance = instanceReference.get();
         if (resolvedInstance != null) {
             return resolvedInstance;
@@ -75,7 +75,7 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         C instance = instanceReference.get();
         if (instance != null) {

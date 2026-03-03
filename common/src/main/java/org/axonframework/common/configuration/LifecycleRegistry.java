@@ -58,7 +58,7 @@ public interface LifecycleRegistry {
      * @see Phase
      * @see LifecycleHandler
      */
-    LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit);
+    LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit);
 
     /**
      * Registers a {@code startHandler} to be executed in the default phase {@code 0} when the configuration this
@@ -70,7 +70,7 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#start()
      */
-    default LifecycleRegistry onStart(@NonNull Runnable startHandler) {
+    default LifecycleRegistry onStart(Runnable startHandler) {
         return onStart(0, startHandler);
     }
 
@@ -87,7 +87,7 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#start()
      */
-    default LifecycleRegistry onStart(int phase, @NonNull Runnable startHandler) {
+    default LifecycleRegistry onStart(int phase, Runnable startHandler) {
         requireNonNull(startHandler, "The start handler must not be null.");
         return onStart(phase, (Consumer<Configuration>) configuration -> startHandler.run());
     }
@@ -105,7 +105,7 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#start()
      */
-    default LifecycleRegistry onStart(int phase, @NonNull Supplier<CompletableFuture<?>> startHandler) {
+    default LifecycleRegistry onStart(int phase, Supplier<CompletableFuture<?>> startHandler) {
         requireNonNull(startHandler, "The start handler must not be null.");
         return onStart(phase, (LifecycleHandler) configuration -> startHandler.get());
     }

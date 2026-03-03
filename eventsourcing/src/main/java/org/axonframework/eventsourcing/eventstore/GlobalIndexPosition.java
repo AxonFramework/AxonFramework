@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * An immutable implementation of {@link Position} which represents positions
@@ -51,7 +50,6 @@ public final class GlobalIndexPosition implements Position {
         this.index = index;
     }
 
-    @NonNull
     @Override
     public Position min(Position other) {
         return switch (other) {

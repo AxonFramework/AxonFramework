@@ -27,8 +27,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
-import org.jspecify.annotations.NonNull;
-
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -106,13 +104,11 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         ).resultNow();
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return entityType;
     }
 
-    @NonNull
     @Override
     public Class<ID> idType() {
         return idType;

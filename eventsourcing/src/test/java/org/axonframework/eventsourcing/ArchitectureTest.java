@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventsourcing;
 
-final class StartPosition implements Position {
-    @Override
-    public Position min(Position other) {
-        return START;
-    }
+import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import org.axonframework.common.archunit.MainArchUnitConventions;
+
+@AnalyzeClasses(packages = "org.axonframework.eventsourcing", importOptions = DoNotIncludeTests.class)
+public class ArchitectureTest implements MainArchUnitConventions {
+
 }

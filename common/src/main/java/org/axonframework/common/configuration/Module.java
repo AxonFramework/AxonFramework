@@ -49,5 +49,5 @@ public interface Module {
      * @param lifecycleRegistry         The registry where lifecycle handlers can be registered by this module.
      * @return The fully initialized {@link Configuration} instance from {@code this Module} specifically.
      */
-    Configuration build(@NonNull Configuration parent, @NonNull LifecycleRegistry lifecycleRegistry);
+    Configuration build(Configuration parent, LifecycleRegistry lifecycleRegistry);
 }
