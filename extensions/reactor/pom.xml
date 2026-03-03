@@ -24,52 +24,23 @@
     </parent>
 
     <groupId>org.axonframework.extensions.reactor</groupId>
-    <artifactId>axon-reactor</artifactId>
+    <artifactId>axon-reactor-extension</artifactId>
+    <packaging>pom</packaging>
 
-    <name>Axon Extension - Reactor</name>
-    <description>
-        This module provides reactive gateways for Axon Framework's command, event, and query buses using
-        Project Reactor. Reactive dispatch interceptors run inside the Reactor subscription, giving access
-        to Reactor context such as ReactiveSecurityContextHolder.
-    </description>
+    <name>Axon Extension - Reactor - Parent</name>
+    <description>Module providing parent for Axon Framework Reactor Extension.</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-messaging</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+    <modules>
+        <module>axon-reactor</module>
+    </modules>
 
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-        </dependency>
-
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Automatic-Module-Name>org.axonframework.extension.reactor</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.axonframework.extensions.reactor</groupId>
+                <artifactId>axon-reactor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
