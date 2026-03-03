@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -48,8 +46,8 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
      * @param onError  A {@link Function} providing the replacement {@link MessageStream stream} to continue from if the
      *                 given {@code delegate} completes exceptionally.
      */
-    OnErrorContinueMessageStream(@NonNull MessageStream<M> delegate,
-                                 @NonNull Function<Throwable, MessageStream<M>> onError) {
+    OnErrorContinueMessageStream(MessageStream<M> delegate,
+                                 Function<Throwable, MessageStream<M>> onError) {
         super(delegate);
         this.onError = onError;
     }
@@ -60,7 +58,7 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         resolveCurrentDelegate().setCallback(callback);
         this.callback.set(callback);
     }

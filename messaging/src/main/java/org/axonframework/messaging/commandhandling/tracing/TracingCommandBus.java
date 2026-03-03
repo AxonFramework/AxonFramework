@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.tracing;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -52,22 +51,22 @@ public class TracingCommandBus implements CommandBus {
      * @param delegate    The delegate {@code CommandBus} that will handle all dispatching and handling logic.
      * @param spanFactory The {@code CommandBusSpanFactory} to create spans with.
      */
-    public TracingCommandBus(@NonNull CommandBus delegate,
-                             @NonNull CommandBusSpanFactory spanFactory) {
+    public TracingCommandBus(CommandBus delegate,
+                             CommandBusSpanFactory spanFactory) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.spanFactory = requireNonNull(spanFactory, "The CommandBusSpanFactory must not be null.");
     }
 
     @Override
-    public TracingCommandBus subscribe(@NonNull QualifiedName name,
-                                       @NonNull CommandHandler commandHandler) {
+    public TracingCommandBus subscribe(QualifiedName name,
+                                       CommandHandler commandHandler) {
         delegate.subscribe(name,
                            new TracingHandler(requireNonNull(commandHandler, "The command handler cannot be null.")));
         return this;
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(
                 requireNonNull(command, "The command message cannot be null."), false
@@ -76,7 +75,7 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("spanFactory", spanFactory);
     }
@@ -90,9 +89,9 @@ public class TracingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream.@NonNull Single<CommandResultMessage> handle(
-                @NonNull CommandMessage message,
-                @NonNull ProcessingContext processingContext
+        public MessageStream.Single<CommandResultMessage> handle(
+                CommandMessage message,
+                ProcessingContext processingContext
         ) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));

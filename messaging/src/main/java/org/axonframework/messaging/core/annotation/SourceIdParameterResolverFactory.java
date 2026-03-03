@@ -18,7 +18,6 @@ package org.axonframework.messaging.core.annotation;
 
 import java.util.concurrent.CompletableFuture;
 
-
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -57,7 +56,7 @@ public final class SourceIdParameterResolverFactory
 
         @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             var sourceId = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
             if (sourceId != null) {
                 return CompletableFuture.completedFuture(sourceId);
@@ -66,7 +65,7 @@ public final class SourceIdParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
         }
     }

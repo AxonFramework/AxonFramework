@@ -71,8 +71,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      *                      {@link AxonServerConfiguration#getClientId()} to be set when
      *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
      */
-    public AxonServerCommandBusConnector(@NonNull AxonServerConnection connection,
-                                         @NonNull AxonServerConfiguration configuration) {
+    public AxonServerCommandBusConnector(AxonServerConnection connection,
+                                         AxonServerConfiguration configuration) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
         Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
         this.clientId = configuration.getClientId();
@@ -89,7 +89,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     @NonNull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
@@ -101,7 +101,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
@@ -132,7 +132,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@NonNull QualifiedName commandName) {
+    public boolean unsubscribe(QualifiedName commandName) {
         Registration subscription = subscriptions.remove(commandName);
         if (subscription != null) {
             subscription.cancel();
@@ -142,7 +142,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void onIncomingCommand(@NonNull Handler handler) {
+    public void onIncomingCommand(Handler handler) {
         this.incomingHandler = handler;
     }
 
@@ -184,15 +184,15 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("clientId", clientId);
         descriptor.describeProperty("componentName", componentName);
     }
 
     private record FutureResultCallback(
-            @NonNull CompletableFuture<CommandResponse> result,
-            @NonNull Command command
+            CompletableFuture<CommandResponse> result,
+            Command command
     ) implements ResultCallback {
 
         @Override
@@ -202,7 +202,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         }
 
         @Override
-        public void onError(@NonNull Throwable cause) {
+        public void onError(Throwable cause) {
             logger.info("Command [{}] raised an exception [{}]", command.getName(), cause.getMessage());
             result.completeExceptionally(cause);
         }

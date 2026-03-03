@@ -19,7 +19,6 @@ package org.axonframework.extension.tracing.opentelemetry;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import org.axonframework.messaging.core.Message;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.tracing.SpanFactory;
 
@@ -51,7 +50,7 @@ public class MetadataContextGetter implements TextMapGetter<Message> {
     }
 
     @Override
-    public String get(Message message, @NonNull String key) {
+    public String get(Message message, String key) {
         if (message == null) {
             return null;
         }

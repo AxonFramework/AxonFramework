@@ -60,7 +60,7 @@ public class Metadata implements Map<String, String> {
      *
      * @param items The items to populate the {@code Metadata} with.
      */
-    public Metadata(@NonNull Map<String, String> items) {
+    public Metadata(Map<String, String> items) {
         values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
@@ -98,7 +98,7 @@ public class Metadata implements Map<String, String> {
      * @param value The value of the entry.
      * @return A {@code Metadata} instance with a single entry.
      */
-    public static Metadata with(@NonNull String key, @Nullable String value) {
+    public static Metadata with(String key, @Nullable String value) {
         return Metadata.from(Collections.singletonMap(key, value));
     }
 
@@ -112,7 +112,7 @@ public class Metadata implements Map<String, String> {
      * @param value The value of the entry.
      * @return A {@code Metadata} instance with an additional entry.
      */
-    public Metadata and(@NonNull String key, @Nullable String value) {
+    public Metadata and(String key, @Nullable String value) {
         HashMap<String, String> newValues = new HashMap<>(values);
         newValues.put(key, value);
         return new Metadata(newValues);
@@ -129,7 +129,7 @@ public class Metadata implements Map<String, String> {
      * @param value A {@code Supplier} function which provides the value.
      * @return A {@code Metadata} instance with an additional entry.
      */
-    public Metadata andIfNotPresent(@NonNull String key, @NonNull Supplier<String> value) {
+    public Metadata andIfNotPresent(String key, Supplier<String> value) {
         return containsKey(key) ? this : this.and(key, value.get());
     }
 
@@ -143,7 +143,7 @@ public class Metadata implements Map<String, String> {
      * @return A {@code Metadata} instance containing values of {@code this}, combined with the given
      * {@code additionalEntries}.
      */
-    public Metadata mergedWith(@NonNull Map<String, String> additionalEntries) {
+    public Metadata mergedWith(Map<String, String> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
         }
@@ -164,7 +164,7 @@ public class Metadata implements Map<String, String> {
      * @param keys The keys of the entries to remove.
      * @return A {@code Metadata} instance without the given {@code keys}.
      */
-    public Metadata withoutKeys(@NonNull Set<String> keys) {
+    public Metadata withoutKeys(Set<String> keys) {
         if (keys.isEmpty()) {
             return this;
         }
@@ -220,7 +220,7 @@ public class Metadata implements Map<String, String> {
      * {@inheritDoc}
      */
     @Override
-    public void putAll(@NonNull Map<? extends String, ? extends String> m) {
+    public void putAll(Map<? extends String, ? extends String> m) {
         throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 

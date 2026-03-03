@@ -58,7 +58,7 @@ public class SpringTransactionManager implements TransactionManager {
      * @param connectionProvider    The optional connection provider to use.
      * @param transactionDefinition The optional definition for transactions to create.
      */
-    public SpringTransactionManager(@NonNull PlatformTransactionManager transactionManager,
+    public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     @Nullable EntityManagerProvider entityManagerProvider,
                                     @Nullable ConnectionProvider connectionProvider,
                                     @Nullable TransactionDefinition transactionDefinition) {
@@ -74,7 +74,7 @@ public class SpringTransactionManager implements TransactionManager {
      * @param transactionManager    The transaction manager to use.
      * @param transactionDefinition The optional definition for transactions to create.
      */
-    public SpringTransactionManager(@NonNull PlatformTransactionManager transactionManager,
+    public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     @Nullable TransactionDefinition transactionDefinition) {
         this(transactionManager, null, null, transactionDefinition);
     }
@@ -87,7 +87,7 @@ public class SpringTransactionManager implements TransactionManager {
      * @param entityManagerProvider The optional entity manager provider to use.
      * @param connectionProvider    The optional connection provider to use.
      */
-    public SpringTransactionManager(@NonNull PlatformTransactionManager transactionManager,
+    public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     @Nullable EntityManagerProvider entityManagerProvider,
                                     @Nullable ConnectionProvider connectionProvider) {
         this(transactionManager, entityManagerProvider, connectionProvider, new DefaultTransactionDefinition());
@@ -98,12 +98,12 @@ public class SpringTransactionManager implements TransactionManager {
      *
      * @param transactionManager The transaction manager to use.
      */
-    public SpringTransactionManager(@NonNull PlatformTransactionManager transactionManager) {
+    public SpringTransactionManager(PlatformTransactionManager transactionManager) {
         this(transactionManager, null, null, new DefaultTransactionDefinition());
     }
 
     @Override
-    public void attachToProcessingLifecycle(@NonNull ProcessingLifecycle processingLifecycle) {
+    public void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
 

@@ -58,8 +58,8 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @return The created {@link DeadLetterEventEntry}.
      */
     @NonNull
-    DeadLetterEventEntry convert(@NonNull M message, @Nullable Context context, @NonNull EventConverter eventConverter,
-                                 @NonNull Converter genericConverter);
+    DeadLetterEventEntry convert(M message, @Nullable Context context, EventConverter eventConverter,
+                                 Converter genericConverter);
 
     /**
      * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
@@ -73,6 +73,6 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
      * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
-    MessageStream.@NonNull Entry<M> convert(@NonNull DeadLetterEventEntry entry, @NonNull EventConverter eventConverter,
-                                   @NonNull Converter genericConverter);
+    MessageStream.Entry<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter,
+                                   Converter genericConverter);
 }

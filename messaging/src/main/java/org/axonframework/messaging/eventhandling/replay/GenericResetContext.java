@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -46,7 +45,7 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
      * @param type    The {@link MessageType type} for this {@link ResetContext}.
      * @param payload The payload for this {@link ResetContext}.
      */
-    public GenericResetContext(@NonNull MessageType type,
+    public GenericResetContext(MessageType type,
                                @Nullable Object payload) {
         this(type, payload, Metadata.emptyInstance());
     }
@@ -58,9 +57,9 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
      * @param payload  The payload for this {@link ResetContext}.
      * @param metadata The metadata for this {@link ResetContext}.
      */
-    public GenericResetContext(@NonNull MessageType type,
+    public GenericResetContext(MessageType type,
                                @Nullable Object payload,
-                               @NonNull Map<String, String> metadata) {
+                               Map<String, String> metadata) {
         this(new GenericMessage(type, payload, metadata));
     }
 
@@ -75,22 +74,22 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link EventMessage} to reconstruct.
      */
-    public GenericResetContext(@NonNull Message delegate) {
+    public GenericResetContext(Message delegate) {
         super(delegate);
     }
 
     @Override
-        public @NonNull ResetContext withMetadata(@NonNull Map<String, String> metadata) {
+        public ResetContext withMetadata(Map<String, String> metadata) {
         return new GenericResetContext(delegate().withMetadata(metadata));
     }
 
     @Override
-        public @NonNull ResetContext andMetadata(@NonNull Map<String, String> additionalMetadata) {
+        public ResetContext andMetadata(Map<String, String> additionalMetadata) {
         return new GenericResetContext(delegate().andMetadata(additionalMetadata));
     }
 
     @Override
-        public @NonNull ResetContext withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+        public ResetContext withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = this.payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

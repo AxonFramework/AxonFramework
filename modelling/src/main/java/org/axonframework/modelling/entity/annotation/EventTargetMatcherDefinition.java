@@ -44,7 +44,7 @@ public interface EventTargetMatcherDefinition {
      */
     @NonNull
     <E> EventTargetMatcher<E> createChildEntityMatcher(
-            @NonNull AnnotatedEntityMetamodel<E> entity,
-            @NonNull Member member
+            AnnotatedEntityMetamodel<E> entity,
+            Member member
     );
 }

@@ -63,8 +63,8 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
-                                       @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity,
+                                       ProcessingContext processingContext) {
         return delegate.attach(entity, processingContext);
     }
 
@@ -81,16 +81,16 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
-                                                        @NonNull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                        ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
                          () -> delegate.load(identifier, processingContext));
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
-                                                                @NonNull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                                ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
                          () -> delegate.loadOrCreate(identifier, processingContext));
@@ -170,9 +170,9 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@NonNull ID identifier,
-                                        @NonNull E entity,
-                                        @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(ID identifier,
+                                        E entity,
+                                        ProcessingContext processingContext) {
         ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, E>>> workingEntities =
                 processingContext.computeResourceIfAbsent(workingEntitiesKey, ConcurrentHashMap::new);
         ManagedEntity<ID, E> persisted = delegate.persist(identifier, entity, processingContext);
@@ -187,7 +187,7 @@ public class AccessSerializingRepository<ID, E>
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

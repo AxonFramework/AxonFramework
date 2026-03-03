@@ -66,7 +66,7 @@ public interface ComponentFactory<C> extends DescribableComponent {
      * @return An optional of a {@link Component} containing an implementation of the generic type {@code C}.
      */
     @NonNull
-    Optional<Component<C>> construct(String name, Configuration config);
+    Optional<Component<C>> construct(@NonNull String name, @NonNull Configuration config);
 
     /**
      * Registers this factory's shutdown process with the given {@code registry}.
@@ -83,5 +83,5 @@ public interface ComponentFactory<C> extends DescribableComponent {
      * @param registry The life cycle registry to
      *                 {@link LifecycleRegistry#onShutdown(Runnable) register shutdown handlers} with.
      */
-    void registerShutdownHandlers(LifecycleRegistry registry);
+    void registerShutdownHandlers(@NonNull LifecycleRegistry registry);
 }

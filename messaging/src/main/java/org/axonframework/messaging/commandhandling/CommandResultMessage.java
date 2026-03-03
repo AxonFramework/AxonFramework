@@ -34,24 +34,24 @@ public interface CommandResultMessage extends ResultMessage {
 
     @Override
     @NonNull
-    CommandResultMessage withMetadata(@NonNull Map<String, String> metadata);
+    CommandResultMessage withMetadata(Map<String, String> metadata);
 
     @Override
     @NonNull
-    CommandResultMessage andMetadata(@NonNull Map<String, String> metadata);
+    CommandResultMessage andMetadata(Map<String, String> metadata);
 
     @Override
-        default @NonNull CommandResultMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default CommandResultMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull CommandResultMessage withConvertedPayload(@NonNull TypeReference<?> type,
-                                                      @NonNull Converter converter) {
+        default CommandResultMessage withConvertedPayload(TypeReference<?> type,
+                                                      Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @NonNull
-    CommandResultMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    CommandResultMessage withConvertedPayload(Type type, Converter converter);
 }

@@ -22,7 +22,6 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.CompletableFuture;
 
-
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -44,8 +43,8 @@ import org.jspecify.annotations.NonNull;
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver<Object> createInstance(@NonNull Executable executable,
-                                                    @NonNull Parameter[] parameters,
+    public ParameterResolver<Object> createInstance(Executable executable,
+                                                    Parameter[] parameters,
                                                     int parameterIndex) {
         return new FailingParameterResolver(parameters[parameterIndex].getType());
     }
@@ -60,7 +59,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
 
         @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             throw new FixtureExecutionException(
                     "No resource of type [" + parameterType.getName()
                             + "] has been registered. It is required for one of the handlers being executed."
@@ -68,7 +67,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

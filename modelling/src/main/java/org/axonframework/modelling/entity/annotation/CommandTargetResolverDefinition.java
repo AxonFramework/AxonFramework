@@ -46,7 +46,7 @@ public interface CommandTargetResolverDefinition {
      */
     @NonNull
     <E> CommandTargetResolver<E> createCommandTargetResolver(
-            @NonNull AnnotatedEntityMetamodel<E> metamodel,
-            @NonNull Member member
+            AnnotatedEntityMetamodel<E> metamodel,
+            Member member
     );
 }

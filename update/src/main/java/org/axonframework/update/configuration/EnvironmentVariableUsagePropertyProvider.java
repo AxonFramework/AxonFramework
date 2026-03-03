@@ -16,7 +16,6 @@
 
 package org.axonframework.update.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Objects;
@@ -58,7 +57,7 @@ public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyPr
      *
      * @param envSupplier The supplier to use for retrieving environment variables.
      */
-    public EnvironmentVariableUsagePropertyProvider(@NonNull EnvironmentVariableSupplier envSupplier) {
+    public EnvironmentVariableUsagePropertyProvider(EnvironmentVariableSupplier envSupplier) {
         this.envSupplier = Objects.requireNonNull(envSupplier, "The envSupplier must not be null.");
     }
 

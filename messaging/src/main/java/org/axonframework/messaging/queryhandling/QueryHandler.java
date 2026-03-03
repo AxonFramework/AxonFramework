@@ -41,6 +41,6 @@ public interface QueryHandler extends MessageHandler {
      * @return A {@code MessagesStream} of zero, one, or N {@link QueryResponseMessage response messages}.
      */
     @NonNull
-    MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
-                                               @NonNull ProcessingContext context);
+    MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                               ProcessingContext context);
 }

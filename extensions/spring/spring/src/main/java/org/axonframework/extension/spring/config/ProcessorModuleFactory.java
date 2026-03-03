@@ -57,5 +57,5 @@ public interface ProcessorModuleFactory {
      * @return A set of event processor modules, each containing its assigned event handlers.
      */
     @NonNull
-    Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
+    Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
 }

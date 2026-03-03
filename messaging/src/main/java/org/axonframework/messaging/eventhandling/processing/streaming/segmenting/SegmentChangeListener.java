@@ -37,7 +37,7 @@ public interface SegmentChangeListener {
      * @param onClaim asynchronous claim callback
      * @return listener reacting to claim events
      */
-        static @NonNull SegmentChangeListener onClaim(@NonNull Function<Segment, CompletableFuture<Void>> onClaim) {
+        static SegmentChangeListener onClaim(Function<Segment, CompletableFuture<Void>> onClaim) {
         return new SimpleSegmentChangeListener(onClaim, segment -> CompletableFuture.completedFuture(null));
     }
 
@@ -47,7 +47,7 @@ public interface SegmentChangeListener {
      * @param onRelease asynchronous release callback
      * @return listener reacting to release events
      */
-        static @NonNull SegmentChangeListener onRelease(@NonNull Function<Segment, CompletableFuture<Void>> onRelease) {
+        static SegmentChangeListener onRelease(Function<Segment, CompletableFuture<Void>> onRelease) {
         return new SimpleSegmentChangeListener(segment -> CompletableFuture.completedFuture(null), onRelease);
     }
 
@@ -57,7 +57,7 @@ public interface SegmentChangeListener {
      * @param onClaim synchronous claim callback
      * @return listener reacting to claim events
      */
-        static @NonNull SegmentChangeListener runOnClaim(@NonNull Consumer<Segment> onClaim) {
+        static SegmentChangeListener runOnClaim(Consumer<Segment> onClaim) {
         Objects.requireNonNull(onClaim, "Claim listener may not be null");
         return new SimpleSegmentChangeListener(segment -> {
             onClaim.accept(segment);
@@ -71,7 +71,7 @@ public interface SegmentChangeListener {
      * @param onRelease synchronous release callback
      * @return listener reacting to release events
      */
-        static @NonNull SegmentChangeListener runOnRelease(@NonNull Consumer<Segment> onRelease) {
+        static SegmentChangeListener runOnRelease(Consumer<Segment> onRelease) {
         Objects.requireNonNull(onRelease, "Release listener may not be null");
         return new SimpleSegmentChangeListener(segment -> CompletableFuture.completedFuture(null), segment -> {
             onRelease.accept(segment);
@@ -84,7 +84,7 @@ public interface SegmentChangeListener {
      *
      * @return no-op segment change listener
      */
-        static @NonNull SegmentChangeListener noOp() {
+        static SegmentChangeListener noOp() {
         return new SimpleSegmentChangeListener(
                 segment -> CompletableFuture.completedFuture(null),
                 segment -> CompletableFuture.completedFuture(null)
@@ -98,7 +98,7 @@ public interface SegmentChangeListener {
      * @return {@link CompletableFuture} that completes when handling has finished
      */
     @NonNull
-    CompletableFuture<Void> onSegmentClaimed(@NonNull Segment segment);
+    CompletableFuture<Void> onSegmentClaimed(Segment segment);
 
     /**
      * Invoked when a segment has been released.
@@ -107,7 +107,7 @@ public interface SegmentChangeListener {
      * @return {@link CompletableFuture} that completes when handling has finished
      */
     @NonNull
-    CompletableFuture<Void> onSegmentReleased(@NonNull Segment segment);
+    CompletableFuture<Void> onSegmentReleased(Segment segment);
 
     /**
      * Compose this listener with {@code next}, invoking this listener first and the next listener second.
@@ -115,7 +115,7 @@ public interface SegmentChangeListener {
      * @param next listener to invoke after this listener
      * @return composed listener invoking listeners sequentially for claim and release events
      */
-        default @NonNull SegmentChangeListener andThen(@NonNull SegmentChangeListener next) {
+        default SegmentChangeListener andThen(SegmentChangeListener next) {
         Objects.requireNonNull(next, "Next listener may not be null");
         return new SimpleSegmentChangeListener(
                 segment -> onSegmentClaimed(segment).thenCompose(unused -> next.onSegmentClaimed(segment)),

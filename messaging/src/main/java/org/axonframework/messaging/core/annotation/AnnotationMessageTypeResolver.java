@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -82,13 +81,13 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      *                      when resolving the {@link MessageType}.
      */
     public AnnotationMessageTypeResolver(@Nullable MessageTypeResolver fallback,
-                                         @NonNull AnnotationSpecification specification) {
+                                         AnnotationSpecification specification) {
         this.fallback = fallback;
         this.specification = Objects.requireNonNull(specification, "The annotation specification may not be null.");
     }
 
     @Override
-    public Optional<MessageType> resolve(@NonNull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         return AnnotationUtils.findAnnotationAttributes(payloadType, specification.annotation())
                               .map(attributes -> new MessageType(
                                       ObjectUtils.getNonEmptyOrDefault((String) attributes.get(specification.namespaceAttribute()),
@@ -112,9 +111,9 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      *                           {@link QualifiedName} set in the resolved {@link MessageType}. Whenever {@code null},
      *                           the {@link #nameAttribute()} is used on its own.
      */
-    public record AnnotationSpecification(@NonNull Class<? extends Annotation> annotation,
-                                          @NonNull String nameAttribute,
-                                          @NonNull String versionAttribute,
+    public record AnnotationSpecification(Class<? extends Annotation> annotation,
+                                          String nameAttribute,
+                                          String versionAttribute,
                                           @Nullable String namespaceAttribute) {
 
         /**

@@ -69,7 +69,7 @@ public interface EventHandlingComponentsConfigurer {
          */
         @NonNull
         AdditionalComponentPhase declarative(
-                @NonNull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+                ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -78,7 +78,7 @@ public interface EventHandlingComponentsConfigurer {
          * @param handlingComponentBuilder The component builder.
          * @return The additional component phase for further configuration.
          */
-                default @NonNull AdditionalComponentPhase autodetected(@NonNull ComponentBuilder<Object> handlingComponentBuilder) {
+                default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
@@ -103,7 +103,7 @@ public interface EventHandlingComponentsConfigurer {
          */
         @NonNull
         CompletePhase decorated(
-                @NonNull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
+                BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
         );
 
         /**

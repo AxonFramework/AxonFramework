@@ -37,17 +37,17 @@ public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBui
 
     @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                                @NonNull EntityCommandHandler<E> messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(QualifiedName qualifiedName,
+                                                                EntityCommandHandler<E> messageHandler);
 
     @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                                  @NonNull CommandHandler messageHandler);
+    PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
+                                                                  CommandHandler messageHandler);
 
     @NonNull
     @Override
-    PolymorphicEntityMetamodelBuilder<E> addChild(@NonNull EntityChildMetamodel<?, E> child);
+    PolymorphicEntityMetamodelBuilder<E> addChild(EntityChildMetamodel<?, E> child);
 
     @NonNull
     @Override
@@ -62,5 +62,5 @@ public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBui
      */
     @NonNull
     PolymorphicEntityMetamodelBuilder<E> addConcreteType(
-            @NonNull EntityMetamodel<? extends E> metamodel);
+            EntityMetamodel<? extends E> metamodel);
 }

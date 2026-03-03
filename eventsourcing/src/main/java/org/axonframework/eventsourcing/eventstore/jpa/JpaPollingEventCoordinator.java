@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -63,8 +62,8 @@ public class JpaPollingEventCoordinator implements EventCoordinator {
      * @throws IllegalArgumentException if {@code pollingInterval} is not positive
      */
     public JpaPollingEventCoordinator(
-        @NonNull EntityManagerProvider entityManagerProvider,
-        @NonNull Duration pollingInterval
+        EntityManagerProvider entityManagerProvider,
+        Duration pollingInterval
     ) {
         this.entityManagerProvider = Objects.requireNonNull(entityManagerProvider, "entityManagerProvider");
         this.pollingInterval = Objects.requireNonNull(pollingInterval, "pollingInterval");

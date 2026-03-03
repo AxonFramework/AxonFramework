@@ -37,5 +37,5 @@ public interface SpanAttributesProvider {
      * @return The attributes
      */
     @NonNull
-    Map<String, String> provideForMessage(@NonNull Message message);
+    Map<String, String> provideForMessage(Message message);
 }

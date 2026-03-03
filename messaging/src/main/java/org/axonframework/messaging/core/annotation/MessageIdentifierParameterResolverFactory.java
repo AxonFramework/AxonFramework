@@ -56,12 +56,12 @@ public final class MessageIdentifierParameterResolverFactory
 
         @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(Message.fromContext(context).identifier());
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return Message.fromContext(context) != null;
         }
     }

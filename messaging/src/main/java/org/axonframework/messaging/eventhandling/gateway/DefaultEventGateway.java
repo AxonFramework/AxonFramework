@@ -28,7 +28,6 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Default implementation of the {@link EventGateway} interface using the {@link EventSink} to publish events.
@@ -50,15 +49,15 @@ public class DefaultEventGateway implements EventGateway {
      * @param eventSink           The {@link EventSink} to publish events to.
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      */
-    public DefaultEventGateway(@NonNull EventSink eventSink,
-                               @NonNull MessageTypeResolver messageTypeResolver) {
+    public DefaultEventGateway(EventSink eventSink,
+                               MessageTypeResolver messageTypeResolver) {
         this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @NonNull List<?> events) {
+                                           List<?> events) {
         List<EventMessage> eventMessages =
                 events.stream()
                       .map(event -> EventPublishingUtils.asEventMessage(event, messageTypeResolver))

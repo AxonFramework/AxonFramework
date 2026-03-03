@@ -68,10 +68,10 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
 
-    private ConcreteEntityMetamodel(@NonNull Class<E> entityType,
-                                    @NonNull Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers,
-                                    @NonNull Map<QualifiedName, CommandHandler> creationalCommandHandlers,
-                                    @NonNull List<EntityChildMetamodel<?, E>> children,
+    private ConcreteEntityMetamodel(Class<E> entityType,
+                                    Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers,
+                                    Map<QualifiedName, CommandHandler> creationalCommandHandlers,
+                                    List<EntityChildMetamodel<?, E>> children,
                                     @Nullable EntityEvolver<E> entityEvolver) {
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
         this.entityEvolver = entityEvolver;
@@ -100,7 +100,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
      * @param entityType The {@code Class} object representing the entity type.
      * @return A {@link Builder} instance configured for the specified entity type.
      */
-        public @NonNull static <E> EntityMetamodelBuilder<E> forEntityClass(@NonNull Class<E> entityType) {
+        public static <E> EntityMetamodelBuilder<E> forEntityClass(Class<E> entityType) {
         requireNonNull(entityType, "The entityType may not be null.");
         return new Builder<>(entityType);
     }
@@ -124,8 +124,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     }
 
     @Override
-        public MessageStream.@NonNull Single<CommandResultMessage> handleCreate(@NonNull CommandMessage message,
-                                                                   @NonNull ProcessingContext context) {
+        public MessageStream.Single<CommandResultMessage> handleCreate(CommandMessage message,
+                                                                   ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
@@ -142,10 +142,10 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     }
 
     @Override
-        public MessageStream.@NonNull Single<CommandResultMessage> handleInstance(
-            @NonNull CommandMessage message,
-            @NonNull E entity,
-            @NonNull ProcessingContext context
+        public MessageStream.Single<CommandResultMessage> handleInstance(
+            CommandMessage message,
+            E entity,
+            ProcessingContext context
     ) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
             return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
@@ -173,7 +173,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Nullable
     @Override
-    public E evolve(@NonNull E entity, @NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public E evolve(E entity, EventMessage event, ProcessingContext context) {
         var currentEntity = entity;
         for (EntityChildMetamodel<?, E> child : children) {
             currentEntity = child.evolve(currentEntity, event, context);
@@ -233,7 +233,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("commandHandlers", instanceCommandHandlers);
         descriptor.describeProperty("supportedCommandNames", supportedCommandNames);
@@ -268,8 +268,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
         @NonNull
         @Override
-        public Builder<E> instanceCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                 @NonNull EntityCommandHandler<E> messageHandler) {
+        public Builder<E> instanceCommandHandler(QualifiedName qualifiedName,
+                                                 EntityCommandHandler<E> messageHandler) {
             requireNonNull(qualifiedName, "The qualifiedName may not be null.");
             requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (commandHandlers.containsKey(qualifiedName)) {
@@ -286,8 +286,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
         @NonNull
         @Override
-        public EntityMetamodelBuilder<E> creationalCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                                  @NonNull CommandHandler messageHandler) {
+        public EntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
+                                                                  CommandHandler messageHandler) {
             requireNonNull(qualifiedName, "The qualifiedName may not be null.");
             requireNonNull(messageHandler, "The messageHandler may not be null.");
             if (creationalCommandHandlers.containsKey(qualifiedName)) {
@@ -304,7 +304,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
         @NonNull
         @Override
-        public Builder<E> addChild(@NonNull EntityChildMetamodel<?, E> child) {
+        public Builder<E> addChild(EntityChildMetamodel<?, E> child) {
             requireNonNull(child, "The child may not be null.");
             if (!child.entityMetamodel().supportedCreationalCommands().isEmpty()) {
                 throw new IllegalArgumentException(

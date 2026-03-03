@@ -16,7 +16,6 @@
 
 package org.axonframework.test.util;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.test.util.MessageMonitorReport.Report.Success;
@@ -116,7 +115,7 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
     private final List<Report> delegate = new CopyOnWriteArrayList<>();
 
     @Override
-    public void add(int index, @NonNull Report report) {
+    public void add(int index, Report report) {
         delegate.add(index, report);
     }
 

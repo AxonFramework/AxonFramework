@@ -57,10 +57,10 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
      * @param converter The {@link MessageConverter} to use.
      * @param delegate  The {@link EntityIdResolver} to use on the message after conversion.
      */
-    public AnnotatedEntityIdResolver(@NonNull AnnotatedEntityMetamodel<?> metamodel,
-                                     @NonNull Class<ID> idType,
-                                     @NonNull MessageConverter converter,
-                                     @NonNull EntityIdResolver<ID> delegate) {
+    public AnnotatedEntityIdResolver(AnnotatedEntityMetamodel<?> metamodel,
+                                     Class<ID> idType,
+                                     MessageConverter converter,
+                                     EntityIdResolver<ID> delegate) {
         this.idType = Objects.requireNonNull(idType, "The idType should not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel should not be null,");
         this.converter = Objects.requireNonNull(converter, "The converter should not be null.");
@@ -69,7 +69,7 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
 
     @NonNull
     @Override
-    public ID resolve(@NonNull Message message, @NonNull ProcessingContext context) throws EntityIdResolutionException {
+    public ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (expectedRepresentation != null) {
             return delegate.resolve(message.withConvertedPayload(expectedRepresentation, converter), context);
@@ -80,7 +80,7 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("idType", idType);

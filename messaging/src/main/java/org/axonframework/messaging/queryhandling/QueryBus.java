@@ -68,7 +68,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                                    {@link MessageType#qualifiedName() query name}.
      */
     @NonNull
-    MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query, @Nullable ProcessingContext context);
+    MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
@@ -96,7 +96,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * exists.
      */
     @NonNull
-    MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
+    MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
 
@@ -122,7 +122,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * exists.
      */
     @NonNull
-    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@NonNull QueryMessage query,
+    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                      int updateBufferSize);
 
     /**
@@ -140,8 +140,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @return A future completing whenever the updateSupplier has been emitted.
      */
     @NonNull
-    CompletableFuture<Void> emitUpdate(@NonNull Predicate<QueryMessage> filter,
-                                       @NonNull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
+                                       Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                        @Nullable ProcessingContext context);
 
     /**
@@ -160,7 +160,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * been completed.
      */
     @NonNull
-    CompletableFuture<Void> completeSubscriptions(@NonNull Predicate<QueryMessage> filter,
+    CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                   @Nullable ProcessingContext context);
 
     /**
@@ -181,7 +181,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * been completed exceptionally.
      */
     @NonNull
-    CompletableFuture<Void> completeSubscriptionsExceptionally(@NonNull Predicate<QueryMessage> filter,
-                                                               @NonNull Throwable cause,
+    CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<QueryMessage> filter,
+                                                               Throwable cause,
                                                                @Nullable ProcessingContext context);
 }

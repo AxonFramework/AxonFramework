@@ -34,25 +34,25 @@ public interface QueryMessage extends Message {
 
     @Override
     @NonNull
-    QueryMessage withMetadata(@NonNull Map<String, String> metadata);
+    QueryMessage withMetadata(Map<String, String> metadata);
 
     @Override
     @NonNull
-    QueryMessage andMetadata(@NonNull Map<String, String> additionalMetadata);
+    QueryMessage andMetadata(Map<String, String> additionalMetadata);
 
     @Override
-        default @NonNull QueryMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default QueryMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull QueryMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
+        default QueryMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @NonNull
-    QueryMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    QueryMessage withConvertedPayload(Type type, Converter converter);
 
     /**
      * Returns the priority of this {@link QueryMessage}, if any is applicable.

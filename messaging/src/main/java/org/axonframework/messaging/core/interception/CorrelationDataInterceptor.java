@@ -95,15 +95,15 @@ public class CorrelationDataInterceptor<M extends Message>
      *                                 {@link #interceptOnHandle(Message, ProcessingContext,
      *                                 MessageHandlerInterceptorChain) intercepted messages}.
      */
-    public CorrelationDataInterceptor(@NonNull Collection<CorrelationDataProvider> correlationDataProviders) {
+    public CorrelationDataInterceptor(Collection<CorrelationDataProvider> correlationDataProviders) {
         this.correlationDataProviders = new ArrayList<>(correlationDataProviders);
     }
 
     @Override
     @NonNull
-    public MessageStream<?> interceptOnDispatch(@NonNull M message,
+    public MessageStream<?> interceptOnDispatch(M message,
                                                 @Nullable ProcessingContext context,
-                                                @NonNull MessageDispatchInterceptorChain<M> chain) {
+                                                MessageDispatchInterceptorChain<M> chain) {
         //noinspection unchecked
         return context == null || !context.containsResource(CORRELATION_DATA)
                 ? chain.proceed(message, context)
@@ -112,9 +112,9 @@ public class CorrelationDataInterceptor<M extends Message>
 
     @Override
     @NonNull
-    public MessageStream<?> interceptOnHandle(@NonNull M message,
-                                              @NonNull ProcessingContext context,
-                                              @NonNull MessageHandlerInterceptorChain<M> chain) {
+    public MessageStream<?> interceptOnHandle(M message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<M> chain) {
         Map<String, String> correlationData = new ConcurrentHashMap<>();
         correlationDataProviders.forEach(provider -> {
             try {

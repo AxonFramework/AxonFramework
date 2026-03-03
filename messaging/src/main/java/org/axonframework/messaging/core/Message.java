@@ -67,7 +67,7 @@ public interface Message {
      * @param message The {@code Message} to add to the {@code context}.
      * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
      */
-        static @NonNull ProcessingContext addToContext(@NonNull ProcessingContext context, @NonNull Message message) {
+        static ProcessingContext addToContext(ProcessingContext context, Message message) {
         return context.withResource(RESOURCE_KEY, message);
     }
 
@@ -79,7 +79,7 @@ public interface Message {
      * found.
      */
     @Nullable
-    static Message fromContext(@NonNull ProcessingContext context) {
+    static Message fromContext(ProcessingContext context) {
         return context.getResource(RESOURCE_KEY);
     }
 
@@ -131,7 +131,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    default <T> T payloadAs(@NonNull Class<T> type, @Nullable Converter converter) {
+    default <T> T payloadAs(Class<T> type, @Nullable Converter converter) {
         return payloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
 
@@ -146,7 +146,7 @@ public interface Message {
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
     @Nullable
-    default <T> T payloadAs(@NonNull Class<T> type) {
+    default <T> T payloadAs(Class<T> type) {
         return payloadAs(type, null);
     }
 
@@ -168,7 +168,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    default <T> T payloadAs(@NonNull TypeReference<T> type, @Nullable Converter converter) {
+    default <T> T payloadAs(TypeReference<T> type, @Nullable Converter converter) {
         return payloadAs(type.getType(), converter);
     }
 
@@ -183,7 +183,7 @@ public interface Message {
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
     @Nullable
-    default <T> T payloadAs(@NonNull TypeReference<T> type) {
+    default <T> T payloadAs(TypeReference<T> type) {
         return payloadAs(type.getTypeAsClass());
     }
 
@@ -206,7 +206,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    <T> T payloadAs(@NonNull Type type, @Nullable Converter converter);
+    <T> T payloadAs(Type type, @Nullable Converter converter);
 
     /**
      * Returns the type of the payload.
@@ -241,7 +241,7 @@ public interface Message {
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
     @NonNull
-    Message withMetadata(@NonNull Map<String, String> metadata);
+    Message withMetadata(Map<String, String> metadata);
 
     /**
      * Returns a copy of this {@code Message} (implementation) with its {@link Message#metadata() metadata} merged with
@@ -253,7 +253,7 @@ public interface Message {
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
     @NonNull
-    Message andMetadata(@NonNull Map<String, String> metadata);
+    Message andMetadata(Map<String, String> metadata);
 
     /**
      * Returns a <b>new</b> {@code Message} implementation with its {@link #payload()} converted to the given
@@ -270,7 +270,7 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-        default @NonNull Message withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default Message withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
@@ -289,7 +289,7 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-        default @NonNull Message withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
+        default Message withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
@@ -309,5 +309,5 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @NonNull
-    Message withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    Message withConvertedPayload(Type type, Converter converter);
 }

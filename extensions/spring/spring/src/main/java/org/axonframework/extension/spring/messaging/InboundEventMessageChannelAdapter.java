@@ -84,7 +84,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
 
     @NonNull
     @Override
-    public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         messageProcessors.add(eventsBatchConsumer);
         return () -> messageProcessors.remove(eventsBatchConsumer);
     }
@@ -96,7 +96,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void handleMessage(@NonNull Message message) {
+    public void handleMessage(Message message) {
         List<? extends EventMessage> messages = singletonList(transformMessage(message));
         for (BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> messageProcessor : messageProcessors) {
             messageProcessor.apply(messages, null);

@@ -16,7 +16,6 @@
 
 package org.axonframework.examples.university;
 
-import lombok.extern.slf4j.Slf4j;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.BeforeAll;

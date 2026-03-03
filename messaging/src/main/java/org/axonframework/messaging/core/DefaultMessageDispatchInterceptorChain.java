@@ -49,7 +49,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param interceptors The list of dispatch interceptors that are part of this chain.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @NonNull Collection<MessageDispatchInterceptor<? super M>> interceptors
+            Collection<MessageDispatchInterceptor<? super M>> interceptors
     ) {
         this(interceptors, (message, processingContext) -> MessageStream.just(message).cast());
     }
@@ -62,8 +62,8 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param terminal     function to be invoked after the chain processing.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @NonNull Collection<MessageDispatchInterceptor<? super M>> interceptors,
-            @NonNull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
+            Collection<MessageDispatchInterceptor<? super M>> interceptors,
+            BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
         Iterator<MessageDispatchInterceptor<? super M>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
@@ -77,7 +77,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
 
     @Override
     @NonNull
-    public MessageStream<?> proceed(@NonNull M message, @Nullable ProcessingContext context) {
+    public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
         return interceptingDispatcher.apply(message, context);
     }
 
@@ -96,7 +96,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
 
         @NonNull
         @Override
-        public MessageStream<?> proceed(@NonNull M message, @Nullable ProcessingContext context) {
+        public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
             return next.apply(message, context);
         }
 

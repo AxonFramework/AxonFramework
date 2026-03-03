@@ -16,6 +16,8 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -82,7 +84,7 @@ class PropertyAccessStrategyTest {
         }
 
         @Override
-        protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+        protected <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property) {
             return new StubProperty<>("testGetterInvoked");
         }
 

@@ -101,7 +101,7 @@ public sealed interface EventProcessorSettings {
          *
          * @return processor mode.
          */
-                default @NonNull ProcessorMode processorMode() {
+                default ProcessorMode processorMode() {
             return ProcessorMode.POOLED;
         }
 

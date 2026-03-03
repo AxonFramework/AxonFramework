@@ -52,8 +52,8 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
      * @param interceptors   The list of handler interceptors that are part of this chain.
      * @param commandHandler The command handler to be invoked at the end of the interceptor chain.
      */
-    public CommandMessageHandlerInterceptorChain(@NonNull List<MessageHandlerInterceptor<? super CommandMessage>> interceptors,
-                                                 @NonNull CommandHandler commandHandler) {
+    public CommandMessageHandlerInterceptorChain(List<MessageHandlerInterceptor<? super CommandMessage>> interceptors,
+                                                 CommandHandler commandHandler) {
         Iterator<MessageHandlerInterceptor<? super CommandMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         CommandHandler handler = Objects.requireNonNull(commandHandler, "The Command Handler may not be null.");
@@ -65,7 +65,7 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
 
     @NonNull
     @Override
-    public MessageStream<?> proceed(@NonNull CommandMessage command, @NonNull ProcessingContext context) {
+    public MessageStream<?> proceed(CommandMessage command, ProcessingContext context) {
         try {
             return interceptingHandler.handle(command, context);
         } catch (Exception e) {
@@ -79,8 +79,8 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
     ) implements CommandHandler, MessageHandlerInterceptorChain<CommandMessage> {
 
         @Override
-                public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
-                                                                 @NonNull ProcessingContext context) {
+                public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                                 ProcessingContext context) {
             //noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(command, context, (MessageHandlerInterceptorChain) this)
                               .first();
@@ -88,8 +88,8 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
 
         @Override
         @NonNull
-        public MessageStream<?> proceed(@NonNull CommandMessage command,
-                                        @NonNull ProcessingContext context) {
+        public MessageStream<?> proceed(CommandMessage command,
+                                        ProcessingContext context) {
             return next.handle(command, context);
         }
     }

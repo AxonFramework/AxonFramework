@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -38,7 +36,7 @@ class FailedMessageStream<M extends Message> extends AbstractMessageStream<M> im
      *
      * @param error The {@link Throwable} that caused this {@link MessageStream stream} to complete exceptionally.
      */
-    FailedMessageStream(@NonNull Throwable error) {
+    FailedMessageStream(Throwable error) {
         completeExceptionally(error);
     }
 
@@ -68,25 +66,25 @@ class FailedMessageStream<M extends Message> extends AbstractMessageStream<M> im
     }
 
     @Override
-    public <RM extends Message> Empty<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> Empty<RM> map(Function<Entry<M>, Entry<RM>> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<RM>) this;
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NonNull R identity,
-                                           @NonNull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(R identity,
+                                           BiFunction<R, Entry<M>, R> accumulator) {
         //noinspection OptionalGetWithoutIsPresent
         return CompletableFuture.failedFuture(error().get());
     }
 
     @Override
-    public Empty<M> onComplete(@NonNull Runnable completeHandler) {
+    public Empty<M> onComplete(Runnable completeHandler) {
         return this;
     }
 
     @Override
-    public MessageStream<M> concatWith(@NonNull MessageStream<M> other) {
+    public MessageStream<M> concatWith(MessageStream<M> other) {
         return this;
     }
 

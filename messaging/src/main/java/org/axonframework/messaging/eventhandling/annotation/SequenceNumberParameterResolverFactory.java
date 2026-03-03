@@ -18,7 +18,6 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import java.util.concurrent.CompletableFuture;
 
-
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
@@ -62,12 +61,12 @@ public final class SequenceNumberParameterResolverFactory extends
 
         @NonNull
         @Override
-        public CompletableFuture<Long> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Long> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
         }
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -70,12 +69,12 @@ class AxonTestWhen implements AxonTestPhase.When {
      *                            execute every test in.
      */
     public AxonTestWhen(
-            @NonNull AxonConfiguration configuration,
-            AxonTestFixture.@NonNull Customization customization,
-            @NonNull RecordingCommandBus commandBus,
-            @NonNull RecordingEventSink eventSink,
-            @NonNull MessageTypeResolver messageTypeResolver,
-            @NonNull UnitOfWorkFactory unitOfWorkFactory
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingCommandBus commandBus,
+            RecordingEventSink eventSink,
+            MessageTypeResolver messageTypeResolver,
+            UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
@@ -86,7 +85,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Command command(@NonNull Object payload, @NonNull Metadata metadata) {
+    public Command command(Object payload, Metadata metadata) {
         CommandMessage message;
         if (payload instanceof CommandMessage commandMessage) {
             message = commandMessage.andMetadata(metadata);
@@ -110,7 +109,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event event(@NonNull Object payload, @NonNull Metadata metadata) {
+    public Event event(Object payload, Metadata metadata) {
         if (payload instanceof EventMessage message) {
             return events(message.andMetadata(metadata));
         }
@@ -128,7 +127,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(@NonNull List<?> events) {
+    public Event events(List<?> events) {
         var messages = events.stream()
                              .map(e -> e instanceof EventMessage message
                                      ? message
@@ -138,7 +137,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(@NonNull EventMessage... messages) {
+    public Event events(EventMessage... messages) {
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
     }

@@ -42,7 +42,7 @@ public class DefaultCorrelationDataProviderRegistry implements CorrelationDataPr
     @NonNull
     @Override
     public CorrelationDataProviderRegistry registerProvider(
-            @NonNull ComponentBuilder<CorrelationDataProvider> providerBuilder
+            ComponentBuilder<CorrelationDataProvider> providerBuilder
     ) {
         providerDefinitions.add(ComponentDefinition.ofType(CorrelationDataProvider.class)
                                                    .withBuilder(providerBuilder));
@@ -51,7 +51,7 @@ public class DefaultCorrelationDataProviderRegistry implements CorrelationDataPr
 
     @NonNull
     @Override
-    public List<CorrelationDataProvider> correlationDataProviders(@NonNull Configuration config) {
+    public List<CorrelationDataProvider> correlationDataProviders(Configuration config) {
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         for (ComponentDefinition<CorrelationDataProvider> providerDefinition : providerDefinitions) {
             if (!(providerDefinition instanceof ComponentDefinition.ComponentCreator<CorrelationDataProvider> creator)) {

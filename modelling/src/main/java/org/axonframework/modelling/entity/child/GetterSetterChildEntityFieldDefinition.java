@@ -46,8 +46,8 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
      * @param setter the setter to set the evolved child entity on the parent entity.
      */
     public GetterSetterChildEntityFieldDefinition(
-            @NonNull Function<P, F> getter,
-            @NonNull BiConsumer<P, F> setter
+            Function<P, F> getter,
+            BiConsumer<P, F> setter
     ) {
         this.getter = Objects.requireNonNull(getter, "The getter may not be null.");
         this.setter = Objects.requireNonNull(setter, "The setter may not be null.");
@@ -55,13 +55,13 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
 
     @NonNull
     @Override
-    public P evolveParentBasedOnChildInput(@NonNull P parentEntity, @Nullable F childInput) {
+    public P evolveParentBasedOnChildInput(P parentEntity, @Nullable F childInput) {
         setter.accept(parentEntity, childInput);
         return parentEntity;
     }
 
     @Override
-    public F getChildValue(@NonNull P parentEntity) {
+    public F getChildValue(P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

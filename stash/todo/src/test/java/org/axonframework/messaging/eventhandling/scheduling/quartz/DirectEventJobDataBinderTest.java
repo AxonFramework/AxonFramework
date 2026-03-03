@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 
 import static org.axonframework.messaging.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class DirectEventJobDataBinderTest {

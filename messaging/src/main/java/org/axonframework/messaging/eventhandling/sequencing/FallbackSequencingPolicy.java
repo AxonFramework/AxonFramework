@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -50,16 +49,16 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
      * @param exceptionType The type of exception to catch from the delegate policy, not {@code null}.
      * @throws NullPointerException When any of the parameters is {@code null}.
      */
-    public FallbackSequencingPolicy(@NonNull SequencingPolicy delegate,
-                                    @NonNull SequencingPolicy fallback,
-                                    @NonNull Class<E> exceptionType) {
+    public FallbackSequencingPolicy(SequencingPolicy delegate,
+                                    SequencingPolicy fallback,
+                                    Class<E> exceptionType) {
         this.delegate =  Objects.requireNonNull(delegate, "Delegate may not be null.");
         this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
         this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         try {
             return delegate.getSequenceIdentifierFor(event, context);
         } catch (Exception e) {

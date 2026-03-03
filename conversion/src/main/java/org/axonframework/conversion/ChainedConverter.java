@@ -60,9 +60,9 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      * @throws ConversionException if no converter can be created using given candidates.
      */
     public static <S, T> ChainedConverter<S, T> calculateChain(
-            @NonNull Class<S> sourceType,
-            @NonNull Class<T> targetType,
-            @NonNull Collection<ContentTypeConverter<?, ?>> candidates
+            Class<S> sourceType,
+            Class<T> targetType,
+            Collection<ContentTypeConverter<?, ?>> candidates
     ) {
         Route route = calculateRoute(sourceType, targetType, candidates);
         if (route == null) {
@@ -86,9 +86,9 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      * @return {@code true} if this {@code ChainedConverter} can convert between the given {@code sourceContentType} and
      * {@code targetContentType}, using the given {@code converters}, Otherwise {@code false}.
      */
-    public static <S, T> boolean canConvert(@NonNull Class<S> sourceContentType,
-                                            @NonNull Class<T> targetContentType,
-                                            @NonNull List<ContentTypeConverter<?, ?>> converters) {
+    public static <S, T> boolean canConvert(Class<S> sourceContentType,
+                                            Class<T> targetContentType,
+                                            List<ContentTypeConverter<?, ?>> converters) {
         return calculateRoute(sourceContentType, targetContentType, converters) != null;
     }
 
@@ -111,7 +111,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      * @param delegates The chain of delegates to perform the conversion.
      */
 
-    public ChainedConverter(@NonNull List<ContentTypeConverter<?, ?>> delegates) {
+    public ChainedConverter(List<ContentTypeConverter<?, ?>> delegates) {
         Assert.isTrue(!delegates.isEmpty(), () -> "The given delegates may not be null or empty");
         Assert.isTrue(isContinuous(delegates), () -> "The given delegates must form a continuous chain");
         this.delegates = new ArrayList<>(delegates);

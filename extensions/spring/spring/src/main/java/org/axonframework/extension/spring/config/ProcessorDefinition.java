@@ -67,7 +67,7 @@ public interface ProcessorDefinition {
      */
     @NonNull
     static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreamingProcessor(
-            @NonNull String name
+            String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
@@ -84,7 +84,7 @@ public interface ProcessorDefinition {
      */
     @NonNull
     static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribingProcessor(
-            @NonNull String name
+            String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
     }
@@ -95,7 +95,7 @@ public interface ProcessorDefinition {
      * @param eventHandlerDescriptor The descriptor of the event handler to check.
      * @return {@code true} if the event handler should be assigned to this processor, {@code false} otherwise.
      */
-    boolean matchesSelector(@NonNull EventHandlerDescriptor eventHandlerDescriptor);
+    boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor);
 
     /**
      * Applies this processor's configuration settings to the given settings object.
@@ -104,7 +104,7 @@ public interface ProcessorDefinition {
      * @return The configured settings, potentially modified by this processor's configuration.
      */
     @NonNull
-    EventProcessorConfiguration applySettings(@NonNull EventProcessorConfiguration settings);
+    EventProcessorConfiguration applySettings(EventProcessorConfiguration settings);
 
     /**
      * Returns the name of this processor.
@@ -119,7 +119,7 @@ public interface ProcessorDefinition {
      *
      * @return The processor mode.
      */
-    EventProcessorSettings.@NonNull ProcessorMode mode();
+    EventProcessorSettings.ProcessorMode mode();
 
     /**
      * Describes an event handler component that can be assigned to an event processor.
@@ -192,7 +192,7 @@ public interface ProcessorDefinition {
          * @return The next step in the fluent API to configure the processor settings.
          */
         @NonNull
-        ProcessorDefinitionConfigurationStep<T> assigningHandlers(@NonNull Predicate<EventHandlerDescriptor> selector);
+        ProcessorDefinitionConfigurationStep<T> assigningHandlers(Predicate<EventHandlerDescriptor> selector);
     }
 
     /**
@@ -220,7 +220,7 @@ public interface ProcessorDefinition {
          * @return The completed processor definition.
          */
         @NonNull
-        ProcessorDefinition withConfiguration(@NonNull Function<T, T> configurer);
+        ProcessorDefinition withConfiguration(Function<T, T> configurer);
 
         /**
          * Completes the processor definition using default settings for this processor type.

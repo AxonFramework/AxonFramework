@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
@@ -52,10 +51,10 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<MessageHandlingMember<T>> createHandler(
-            @NonNull Class<T> declaringType,
-            @NonNull Method method,
-            @NonNull ParameterResolverFactory parameterResolverFactory,
-            @NonNull Function<Object, MessageStream<?>> messageStreamResolver
+            Class<T> declaringType,
+            Method method,
+            ParameterResolverFactory parameterResolverFactory,
+            Function<Object, MessageStream<?>> messageStreamResolver
     ) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(

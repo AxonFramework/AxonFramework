@@ -34,25 +34,25 @@ public interface SubscriptionQueryUpdateMessage extends QueryResponseMessage {
 
     @Override
     @NonNull
-    SubscriptionQueryUpdateMessage withMetadata(@NonNull Map<String, String> metadata);
+    SubscriptionQueryUpdateMessage withMetadata(Map<String, String> metadata);
 
     @Override
     @NonNull
-    SubscriptionQueryUpdateMessage andMetadata(@NonNull Map<String, String> metadata);
+    SubscriptionQueryUpdateMessage andMetadata(Map<String, String> metadata);
 
     @Override
-        default @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Class<?> type,
-                                                                       @NonNull Converter converter) {
+        default SubscriptionQueryUpdateMessage withConvertedPayload(Class<?> type,
+                                                                       Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull TypeReference<?> type,
-                                                                       @NonNull Converter converter) {
+        default SubscriptionQueryUpdateMessage withConvertedPayload(TypeReference<?> type,
+                                                                       Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @NonNull
-    SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    SubscriptionQueryUpdateMessage withConvertedPayload(Type type, Converter converter);
 }

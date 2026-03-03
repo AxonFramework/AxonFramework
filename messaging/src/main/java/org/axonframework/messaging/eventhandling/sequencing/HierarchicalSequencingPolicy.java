@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -46,13 +45,13 @@ public class HierarchicalSequencingPolicy implements SequencingPolicy {
      * @param secondary The fallback policy to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
-    public HierarchicalSequencingPolicy(@NonNull SequencingPolicy primary, @NonNull SequencingPolicy secondary) {
+    public HierarchicalSequencingPolicy(SequencingPolicy primary, SequencingPolicy secondary) {
         this.primary = Objects.requireNonNull(primary, "Primary may not be null.");
         this.secondary = Objects.requireNonNull(secondary, "Secondary may not be null.");
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return primary.getSequenceIdentifierFor(event, context)
                       .or(() -> secondary.getSequenceIdentifierFor(event, context));
     }

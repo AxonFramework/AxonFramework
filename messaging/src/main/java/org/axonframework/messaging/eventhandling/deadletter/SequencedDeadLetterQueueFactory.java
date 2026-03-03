@@ -56,7 +56,7 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
      * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name and configuration.
      */
     public SequencedDeadLetterQueueFactory(
-            @NonNull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
+            BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
     ) {
         assertNonNull(factoryFn, "Factory function may not be null");
         this.factoryFn = factoryFn;
@@ -71,8 +71,8 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
     @Override
     @NonNull
     public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(
-            @NonNull String name,
-            @NonNull Configuration config
+            String name,
+            Configuration config
     ) {
         return Optional.of(new InstantiatedComponentDefinition<>(
                 new Component.Identifier<>(forType(), name),
@@ -81,11 +81,11 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
     }
 
     @Override
-    public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
+    public void registerShutdownHandlers(LifecycleRegistry registry) {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("type", forType());
     }
 }

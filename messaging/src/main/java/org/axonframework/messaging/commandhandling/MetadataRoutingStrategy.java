@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Metadata;
 
@@ -46,7 +45,7 @@ public class MetadataRoutingStrategy implements RoutingStrategy {
     }
 
     @Override
-    public String getRoutingKey(@NonNull CommandMessage command) {
+    public String getRoutingKey(CommandMessage command) {
         Object value = command.metadata().get(metadataKey);
         return value == null ? null : value.toString();
     }

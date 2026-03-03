@@ -52,9 +52,9 @@ public class MessageAuthorizationHandlerInterceptor<M extends Message> implement
 
     @Override
     @NonNull
-    public MessageStream<?> interceptOnHandle(@NonNull M message,
-                                              @NonNull ProcessingContext context,
-                                              @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(M message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<M> interceptorChain) {
         if (!AnnotationUtils.isAnnotationPresent(message.payloadType(), Secured.class)) {
             return interceptorChain.proceed(message, context);
         }

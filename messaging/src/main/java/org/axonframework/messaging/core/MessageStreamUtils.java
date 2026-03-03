@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,9 +68,9 @@ public abstract class MessageStreamUtils {
      * @param <R>         The type of result expected from the reduction operation.
      * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
-    public static <M extends Message, R> CompletableFuture<R> reduce(@NonNull MessageStream<M> source,
-                                                                     @NonNull R identity,
-                                                                     @NonNull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
+    public static <M extends Message, R> CompletableFuture<R> reduce(MessageStream<M> source,
+                                                                     R identity,
+                                                                     BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.setCallback(reducer::process);
         return reducer.result();
@@ -95,7 +93,7 @@ public abstract class MessageStreamUtils {
      * stream.
      */
     public static <M extends Message> CompletableFuture<MessageStream.Entry<M>> asCompletableFuture(
-            @NonNull MessageStream<M> source
+            MessageStream<M> source
     ) {
         FirstResult<M> firstResult = new FirstResult<>(source);
         source.setCallback(firstResult::process);

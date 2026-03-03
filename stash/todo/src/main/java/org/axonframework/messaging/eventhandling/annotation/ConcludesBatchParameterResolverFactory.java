@@ -16,9 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import java.util.concurrent.CompletableFuture;
-
-
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -27,6 +25,9 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.jspecify.annotations.NonNull;
+
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Parameter resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event

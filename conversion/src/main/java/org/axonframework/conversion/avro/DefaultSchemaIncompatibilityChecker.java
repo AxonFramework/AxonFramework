@@ -40,8 +40,8 @@ public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilit
     @NonNull
     @Override
     public List<SchemaCompatibility.Incompatibility> checkCompatibility(
-            @NonNull Schema readerSchema,
-            @NonNull Schema writerSchema
+            Schema readerSchema,
+            Schema writerSchema
     ) {
         return cache.computeIfAbsent(
                 Pair.of(AvroUtil.fingerprint(readerSchema), AvroUtil.fingerprint(writerSchema)),

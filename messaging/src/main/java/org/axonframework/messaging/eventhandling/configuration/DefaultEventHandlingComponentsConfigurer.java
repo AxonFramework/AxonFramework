@@ -51,8 +51,8 @@ public class DefaultEventHandlingComponentsConfigurer
     }
 
     @Override
-    public EventHandlingComponentsConfigurer.@NonNull AdditionalComponentPhase declarative(
-            @NonNull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+    public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
+            ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
         componentBuilders.add(handlingComponentBuilder);
@@ -60,8 +60,8 @@ public class DefaultEventHandlingComponentsConfigurer
     }
 
     @Override
-    public EventHandlingComponentsConfigurer.@NonNull CompletePhase decorated(
-            @NonNull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
+    public EventHandlingComponentsConfigurer.CompletePhase decorated(
+            BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
     ) {
         Objects.requireNonNull(decorator, "decorator may not be null");
         var decoratedBuilders = new ArrayList<ComponentBuilder<EventHandlingComponent>>();

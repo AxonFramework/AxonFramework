@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
@@ -126,9 +125,9 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *                                {@code PooledStreamingEventProcessor} instance.
      */
     public PooledStreamingEventProcessor(
-            @NonNull String name,
-            @NonNull List<EventHandlingComponent> eventHandlingComponents,
-            @NonNull PooledStreamingEventProcessorConfiguration configuration
+            String name,
+            List<EventHandlingComponent> eventHandlingComponents,
+            PooledStreamingEventProcessorConfiguration configuration
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
@@ -261,26 +260,26 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public CompletableFuture<Void> resetTokens(
-            @NonNull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
         return initialTrackingTokenSupplier.apply(eventSource).thenCompose(this::resetTokens);
     }
 
     @Override
     public <R> CompletableFuture<Void> resetTokens(
-            @NonNull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
         return initialTrackingTokenSupplier.apply(eventSource).thenCompose(r -> resetTokens(r, resetContext));
     }
 
     @Override
-    public CompletableFuture<Void> resetTokens(@NonNull TrackingToken startPosition) {
+    public CompletableFuture<Void> resetTokens(TrackingToken startPosition) {
         return resetTokens(startPosition, null);
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(@NonNull TrackingToken startPosition, R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(TrackingToken startPosition, R resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
@@ -449,7 +448,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "pooled");
         descriptor.describeProperty("running", isRunning());

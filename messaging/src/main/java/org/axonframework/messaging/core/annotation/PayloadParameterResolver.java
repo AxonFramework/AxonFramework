@@ -46,12 +46,12 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
 
     @NonNull
     @Override
-    public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+    public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
         return CompletableFuture.completedFuture(Message.fromContext(context).payload());
     }
 
     @Override
-    public boolean matches(@NonNull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return Optional.ofNullable(Message.fromContext(context))
                        .map(Message::payloadType)
                        .map(payloadType::isAssignableFrom)

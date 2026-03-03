@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
@@ -34,8 +33,8 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 public record GenericTaggedEventMessage<E extends EventMessage>(
-        @NonNull E event,
-        @NonNull Set<Tag> tags
+        E event,
+        Set<Tag> tags
 ) implements TaggedEventMessage<E> {
 
     /**
@@ -47,7 +46,7 @@ public record GenericTaggedEventMessage<E extends EventMessage>(
     }
 
     @Override
-    public TaggedEventMessage<E> updateTags(@NonNull Function<Set<Tag>, Set<Tag>> updater) {
+    public TaggedEventMessage<E> updateTags(Function<Set<Tag>, Set<Tag>> updater) {
         return new GenericTaggedEventMessage<>(this.event, updater.apply(this.tags));
     }
 }

@@ -79,11 +79,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param converter                The converter to use for converting the payload of the event to the type expected
      *                                 by the handling method.
      */
-    public AnnotatedEventHandlingComponent(@NonNull T annotatedEventHandler,
-                                           @NonNull ParameterResolverFactory parameterResolverFactory,
-                                           @NonNull HandlerDefinition handlerDefinition,
-                                           @NonNull MessageTypeResolver messageTypeResolver,
-                                           @NonNull EventConverter converter) {
+    public AnnotatedEventHandlingComponent(T annotatedEventHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition,
+                                           MessageTypeResolver messageTypeResolver,
+                                           EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
                 "AnnotatedEventHandlingComponent[%s]".formatted(annotatedEventHandler.getClass().getName())
@@ -149,8 +149,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }
 
@@ -161,7 +161,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     @NonNull
     @Override
-    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
 
@@ -176,7 +176,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
     }
 
-        private @NonNull ResetHandler constructResetHandlerFor(
+        private ResetHandler constructResetHandlerFor(
             MessageHandlingMember<? super T> handler,
             MessageHandlerInterceptorMemberChain<T> interceptorChain
     ) {
@@ -205,14 +205,14 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                                        ProcessingContext context) {
         return handlingComponent.handle(resetContext, context);
     }
     // endregion
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

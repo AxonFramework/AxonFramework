@@ -37,7 +37,7 @@ public final class GlobalIndexPosition implements Position {
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position could not be converted.
      */
-    public static long toIndex(@NonNull Position position) {
+    public static long toIndex(Position position) {
         return switch (position) {
             case GlobalIndexPosition gip -> gip.index;
             case Position p when p == Position.START -> MINIMUM_INDEX;
@@ -53,7 +53,7 @@ public final class GlobalIndexPosition implements Position {
 
     @NonNull
     @Override
-    public Position min(@NonNull Position other) {
+    public Position min(Position other) {
         return switch (other) {
             case Position p when p == Position.START -> Position.START;
             case GlobalIndexPosition gip -> index < gip.index ? this : gip;

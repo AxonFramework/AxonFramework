@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.List;
 import java.util.function.Predicate;
-import org.jspecify.annotations.NonNull;
 
 /**
  * A RetryPolicy that delegates to another RetryPolicy when the latest exception matches a given predicate.
@@ -44,8 +43,8 @@ public class FilteringRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@NonNull Message message, @NonNull Throwable cause,
-                             @NonNull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(Message message, Throwable cause,
+                             List<Class<? extends Throwable>[]> previousFailures) {
         if (retryableErrorPredicate.test(cause)) {
             return delegate.defineFor(message, cause, previousFailures);
         }
@@ -53,7 +52,7 @@ public class FilteringRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("filter", retryableErrorPredicate.toString());
     }

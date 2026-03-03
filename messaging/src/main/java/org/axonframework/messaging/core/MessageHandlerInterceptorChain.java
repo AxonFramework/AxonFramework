@@ -42,5 +42,5 @@ public interface MessageHandlerInterceptorChain<M extends Message> {
      * @return A {@link MessageStream} containing the result of processing the given {@code message}.
      */
     @NonNull
-    MessageStream<?> proceed(@NonNull M message, @NonNull ProcessingContext context);
+    MessageStream<?> proceed(M message, ProcessingContext context);
 }

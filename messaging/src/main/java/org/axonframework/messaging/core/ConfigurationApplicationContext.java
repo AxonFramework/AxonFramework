@@ -39,20 +39,20 @@ public class ConfigurationApplicationContext implements ApplicationContext {
      *
      * @param configuration The configuration to retrieve components from.
      */
-    public ConfigurationApplicationContext(@NonNull Configuration configuration) {
+    public ConfigurationApplicationContext(Configuration configuration) {
         Objects.requireNonNull(configuration, "configuration may not be null");
         this.configuration = configuration;
     }
 
     @NonNull
     @Override
-    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
     }
 
     @NonNull
     @Override
-    public <C> C component(@NonNull Class<C> type) {
+    public <C> C component(Class<C> type) {
         return configuration.getComponent(type);
     }
 }

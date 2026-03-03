@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -65,14 +64,14 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
      * @param delegate         The instance to delegate calls to.
      */
     public SequencingEventHandlingComponent(
-            @NonNull EventHandlingComponent delegate
+            EventHandlingComponent delegate
     ) {
         super(delegate);
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         Objects.requireNonNull(event, "Event may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
         Map<Object, CompletableFuture<?>> invocationsBySequenceIdentifier =

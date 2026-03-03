@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -52,7 +51,7 @@ public class BeanDefinitionUtils {
      * @param definition The bean definition to extract the package name from.
      * @return The package name, or "default" if the package cannot be determined.
      */
-    public static @NonNull String extractPackageName(@NonNull BeanDefinition definition) {
+    public static String extractPackageName(BeanDefinition definition) {
         return resolveClassName(definition)
                 .filter(className -> className.contains("."))
                 .map(className -> className.substring(0, className.lastIndexOf('.')))
@@ -67,7 +66,7 @@ public class BeanDefinitionUtils {
      * @param definition The bean definition to resolve the class name from.
      * @return An Optional containing the fully qualified class name, or empty if it cannot be determined.
      */
-        public @NonNull static Optional<String> resolveClassName(@NonNull BeanDefinition definition) {
+        public static Optional<String> resolveClassName(BeanDefinition definition) {
         // Standard bean class name
         String className = definition.getBeanClassName();
         if (className != null) {

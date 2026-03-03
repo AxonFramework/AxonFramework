@@ -51,7 +51,7 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
      *
      * @param schemaStore The schema store to resolve schemas with based on a fingerprint.
      */
-    public ByteArrayToGenericRecordConverter(@NonNull SchemaStore schemaStore) {
+    public ByteArrayToGenericRecordConverter(SchemaStore schemaStore) {
         this.schemaStore = Objects.requireNonNull(schemaStore, "The SchemaStore may not be null.");
     }
 

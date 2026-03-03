@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -67,7 +66,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
     private final Class<E> entityType;
     private final Set<Class<? extends E>> concreteTypes;
 
-    AnnotatedEventSourcedEntityModule(@NonNull Class<I> idType, @NonNull Class<E> entityType) {
+    AnnotatedEventSourcedEntityModule(Class<I> idType, Class<E> entityType) {
         super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
 
         this.idType = requireNonNull(idType, "The idType may not be null.");
@@ -88,7 +87,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
         );
     }
 
-    private AnnotatedEntityMetamodel<E> buildMetaModel(@NonNull Configuration c) {
+    private AnnotatedEntityMetamodel<E> buildMetaModel(Configuration c) {
         if (!concreteTypes.isEmpty()) {
             return AnnotatedEntityMetamodel.forPolymorphicType(
                     entityType,

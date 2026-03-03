@@ -38,7 +38,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for package-based class scanning for Avro schema extraction.
@@ -60,7 +59,7 @@ public class AvroSchemaPackages {
      * @param beanFactory bean factory.
      * @return registered bean or empty null-object.
      */
-    public static @NonNull AvroSchemaPackages get(BeanFactory beanFactory) {
+    public static AvroSchemaPackages get(BeanFactory beanFactory) {
         try {
             return beanFactory.getBean(BEAN, AvroSchemaPackages.class);
         } catch (NoSuchBeanDefinitionException e) {
@@ -89,12 +88,12 @@ public class AvroSchemaPackages {
 
         private final Environment environment;
 
-        Registrar(@NonNull Environment environment) {
+        Registrar(Environment environment) {
             Assert.notNull(environment, "Environment must not be null");
             this.environment = environment;
         }
 
-        public static void register(@NonNull BeanDefinitionRegistry registry, @NonNull Set<String> packageNames) {
+        public static void register(BeanDefinitionRegistry registry, Set<String> packageNames) {
             Assert.notNull(registry, "Registry must not be null");
             Assert.notNull(packageNames, "PackageNames must not be null");
             if (registry.containsBeanDefinition(BEAN)) {
@@ -138,8 +137,8 @@ public class AvroSchemaPackages {
         }
 
         @Override
-        public void registerBeanDefinitions(@NonNull AnnotationMetadata importingClassMetadata,
-                                            @NonNull BeanDefinitionRegistry registry) {
+        public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
+                                            BeanDefinitionRegistry registry) {
             register(
                     registry,
                     getPackagesToScan(

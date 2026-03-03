@@ -48,9 +48,9 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
      * @param converter  The converter to use to convert each Message's payload.
      * @param targetType The desired representation of forwarded Message's payload.
      */
-    public PayloadConvertingCommandBusConnector(@NonNull CommandBusConnector delegate,
-                                                @NonNull MessageConverter converter,
-                                                @NonNull Class<?> targetType) {
+    public PayloadConvertingCommandBusConnector(CommandBusConnector delegate,
+                                                MessageConverter converter,
+                                                Class<?> targetType) {
         super(delegate);
         this.converter = requireNonNull(converter, "The converter must not be null.");
         this.targetType = requireNonNull(targetType, "The targetType must not be null.");
@@ -58,13 +58,13 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
 
     @NonNull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command.withConvertedPayload(targetType, converter), processingContext);
     }
 
     @Override
-    public void onIncomingCommand(@NonNull Handler handler) {
+    public void onIncomingCommand(Handler handler) {
         delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
                 commandMessage,
                 new ConvertingResultMessageCallback(callback)
@@ -72,7 +72,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("targetType", targetType);
@@ -100,7 +100,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
         }
 
         @Override
-        public void onError(@NonNull Throwable cause) {
+        public void onError(Throwable cause) {
             callback.onError(cause);
         }
     }

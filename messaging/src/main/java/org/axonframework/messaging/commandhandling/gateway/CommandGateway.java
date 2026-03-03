@@ -66,7 +66,7 @@ public interface CommandGateway extends DescribableComponent {
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
     @NonNull
-    CommandResult send(@NonNull Object command, @NonNull Metadata metadata, @Nullable ProcessingContext context);
+    CommandResult send(Object command, Metadata metadata, @Nullable ProcessingContext context);
 
     /**
      * Sends the given {@code command} in the provided {@code context} (if available) and returns a
@@ -91,7 +91,7 @@ public interface CommandGateway extends DescribableComponent {
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      * @see CommandGateway#send(Object, Metadata, ProcessingContext)
      */
-        default @NonNull CommandResult send(@NonNull Object command) {
+        default CommandResult send(Object command) {
         return send(command, Metadata.emptyInstance(), null);
     }
 
@@ -119,7 +119,7 @@ public interface CommandGateway extends DescribableComponent {
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      * @see CommandGateway#send(Object, Metadata, ProcessingContext)
      */
-        default @NonNull CommandResult send(@NonNull Object command,
+        default CommandResult send(Object command,
                                @Nullable ProcessingContext context) {
         return send(command, Metadata.emptyInstance(), context);
     }
@@ -149,8 +149,8 @@ public interface CommandGateway extends DescribableComponent {
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      * @see CommandGateway#send(Object, Metadata, ProcessingContext)
      */
-        default @NonNull CommandResult send(@NonNull Object command,
-                               @NonNull Metadata metadata) {
+        default CommandResult send(Object command,
+                               Metadata metadata) {
         return send(command, metadata, null);
     }
 
@@ -178,8 +178,8 @@ public interface CommandGateway extends DescribableComponent {
      * @see CommandGateway#send(Object, Class, ProcessingContext)
      */
     @NonNull
-    default <R> CompletableFuture<R> send(@NonNull Object command,
-                                          @NonNull Class<R> resultType) {
+    default <R> CompletableFuture<R> send(Object command,
+                                          Class<R> resultType) {
         return send(command, resultType, null);
     }
 
@@ -208,8 +208,8 @@ public interface CommandGateway extends DescribableComponent {
      * @see CommandGateway#send(Object, ProcessingContext)
      */
     @NonNull
-    default <R> CompletableFuture<R> send(@NonNull Object command,
-                                          @NonNull Class<R> resultType,
+    default <R> CompletableFuture<R> send(Object command,
+                                          Class<R> resultType,
                                           @Nullable ProcessingContext context) {
         return send(command, context).resultAs(resultType);
     }
@@ -230,7 +230,7 @@ public interface CommandGateway extends DescribableComponent {
      * @see CommandGateway#sendAndWait(Object, Class)
      */
     @Nullable
-    default Object sendAndWait(@NonNull Object command) {
+    default Object sendAndWait(Object command) {
         return sendAndWait(command, Object.class);
     }
 
@@ -251,7 +251,7 @@ public interface CommandGateway extends DescribableComponent {
      * @see CommandGateway#sendAndWait(Object, Class, ProcessingContext)
      */
     @Nullable
-    default Object sendAndWait(@NonNull Object command,
+    default Object sendAndWait(Object command,
                                @Nullable ProcessingContext context) {
         return sendAndWait(command, Object.class, context);
     }
@@ -271,8 +271,8 @@ public interface CommandGateway extends DescribableComponent {
      * @see CommandGateway#sendAndWait(Object, Class, ProcessingContext)
      */
     @Nullable
-    default <R> R sendAndWait(@NonNull Object command,
-                              @NonNull Class<R> resultType) {
+    default <R> R sendAndWait(Object command,
+                              Class<R> resultType) {
         return sendAndWait(command, resultType, null);
     }
 
@@ -291,8 +291,8 @@ public interface CommandGateway extends DescribableComponent {
      * @throws CommandExecutionException When a checked exception occurs while handling the command.
      */
     @Nullable
-    default <R> R sendAndWait(@NonNull Object command,
-                              @NonNull Class<R> resultType,
+    default <R> R sendAndWait(Object command,
+                              Class<R> resultType,
                               @Nullable ProcessingContext context) {
         return send(command, context).wait(resultType);
     }

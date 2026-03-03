@@ -39,10 +39,10 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
     private final ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition;
 
     private ListEntityChildMetamodel(
-            @NonNull EntityMetamodel<C> metamodel,
-            @NonNull ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition,
-            @NonNull CommandTargetResolver<C> commandTargetResolver,
-            @NonNull EventTargetMatcher<C> eventTargetMatcher
+            EntityMetamodel<C> metamodel,
+            ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition,
+            CommandTargetResolver<C> commandTargetResolver,
+            EventTargetMatcher<C> eventTargetMatcher
     ) {
         super(metamodel, commandTargetResolver, eventTargetMatcher);
         this.childEntityFieldDefinition =
@@ -88,8 +88,8 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
      * @param <P>                      The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
-        public @NonNull static <C, P> Builder<C, P> forEntityModel(@NonNull Class<P> parentClass,
-                                                      @NonNull EntityMetamodel<C> entityMetamodel
+        public static <C, P> Builder<C, P> forEntityModel(Class<P> parentClass,
+                                                      EntityMetamodel<C> entityMetamodel
     ) {
         return new Builder<>(parentClass, entityMetamodel);
     }
@@ -110,7 +110,7 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
         private ChildEntityFieldDefinition<P, List<C>> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Is used for generics
-        private Builder(@NonNull Class<P> parentClass, @NonNull EntityMetamodel<C> metamodel) {
+        private Builder(Class<P> parentClass, EntityMetamodel<C> metamodel) {
             super(parentClass, metamodel);
         }
 
@@ -123,7 +123,7 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
          * @return This builder instance for a fluent API.
          */
         public Builder<C, P> childEntityFieldDefinition(
-                @NonNull ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
+                ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
             this.childEntityFieldDefinition = requireNonNull(fieldDefinition,
                                                              "The childEntityFieldDefinition may not be null.");
             return this;

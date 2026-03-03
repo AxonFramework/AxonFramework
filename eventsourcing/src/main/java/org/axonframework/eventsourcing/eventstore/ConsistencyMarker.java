@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Context;
 
 /**
@@ -64,7 +63,7 @@ public interface ConsistencyMarker {
      * @param other The other marker to create the lower bound for
      * @return a ConsistencyMarker that represents the lower bound of two other markers
      */
-    ConsistencyMarker lowerBound(@NonNull ConsistencyMarker other);
+    ConsistencyMarker lowerBound(ConsistencyMarker other);
 
     /**
      * Returns a ConsistencyMarker that represents the upper bound of {@code this} and given {@code other} markers.
@@ -74,7 +73,7 @@ public interface ConsistencyMarker {
      * @param other The other marker to create the upper bound for
      * @return a ConsistencyMarker that represents the upper bound of two other markers
      */
-    ConsistencyMarker upperBound(@NonNull ConsistencyMarker other);
+    ConsistencyMarker upperBound(ConsistencyMarker other);
 
     /**
      * Reduces this consistency marker to a single position if possible. 
@@ -92,8 +91,8 @@ public interface ConsistencyMarker {
      *                          {@link #RESOURCE_KEY}.
      * @return The given {@code context} with the given {@code consistencyMarker} attached to it.
      */
-    static Context addToContext(@NonNull Context context,
-                                @NonNull ConsistencyMarker consistencyMarker) {
+    static Context addToContext(Context context,
+                                ConsistencyMarker consistencyMarker) {
         return context.withResource(RESOURCE_KEY, consistencyMarker);
     }
 }

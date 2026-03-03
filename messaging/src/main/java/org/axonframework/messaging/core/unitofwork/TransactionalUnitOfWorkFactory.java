@@ -48,8 +48,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param delegate           the delegate factory used to create units of work
      */
     public TransactionalUnitOfWorkFactory(
-            @NonNull TransactionManager transactionManager,
-            @NonNull UnitOfWorkFactory delegate
+            TransactionManager transactionManager,
+            UnitOfWorkFactory delegate
     ) {
         Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         Objects.requireNonNull(delegate, "Delegate UnitOfWorkFactory cannot be null");
@@ -73,8 +73,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     @NonNull
     @Override
     public UnitOfWork create(
-            @NonNull String identifier,
-            @NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
+            String identifier,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
         if (transactionManager.requiresSameThreadInvocations()) {
             customization = customization.andThen(UnitOfWorkConfiguration::forcedSameThreadInvocation);

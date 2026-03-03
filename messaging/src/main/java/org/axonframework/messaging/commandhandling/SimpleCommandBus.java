@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.QualifiedName;
@@ -58,7 +57,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param unitOfWorkFactory the {@code UnitOfWorkFactory} used to construct {@link ProcessingContext contexts} to
      *                          handle commands in
      */
-    public SimpleCommandBus(@NonNull UnitOfWorkFactory unitOfWorkFactory) {
+    public SimpleCommandBus(UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = requireNonNull(unitOfWorkFactory, "The given UnitOfWorkFactory cannot be null.");
     }
 
@@ -67,7 +66,7 @@ public class SimpleCommandBus implements CommandBus {
      *                                                      {@code name}
      */
     @Override
-    public SimpleCommandBus subscribe(@NonNull QualifiedName name, @NonNull CommandHandler commandHandler) {
+    public SimpleCommandBus subscribe(QualifiedName name, CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "Given command handler cannot be null.");
         logger.debug("Subscribing command handler with name [{}].", name);
         var existingHandler =
@@ -80,7 +79,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return findCommandHandlerFor(command)
                 .map(handler -> handle(command, handler))
@@ -99,8 +98,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param command the actual command to handle
      * @param handler the handler that must be invoked for this command
      */
-    protected CompletableFuture<CommandResultMessage> handle(@NonNull CommandMessage command,
-                                                             @NonNull CommandHandler handler) {
+    protected CompletableFuture<CommandResultMessage> handle(CommandMessage command,
+                                                             CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.identifier(), command.type());
         }
@@ -125,7 +124,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("subscriptions", subscriptions);
     }

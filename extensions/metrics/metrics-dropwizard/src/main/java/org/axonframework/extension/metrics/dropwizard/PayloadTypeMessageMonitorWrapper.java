@@ -18,7 +18,6 @@ package org.axonframework.extension.metrics.dropwizard;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 
@@ -76,7 +75,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message> 
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NonNull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         String monitorName = monitorNameBuilder.apply(message.payloadType());
 
         MessageMonitor<Message> messageMonitorForPayloadType =

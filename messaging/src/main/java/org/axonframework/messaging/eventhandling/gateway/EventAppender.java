@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -62,7 +61,7 @@ public interface EventAppender extends DescribableComponent {
      * @param context The {@link ProcessingContext} to create the appender for.
      * @return The created appender.
      */
-    static EventAppender forContext(@NonNull ProcessingContext context) {
+    static EventAppender forContext(ProcessingContext context) {
         return forContext(context, context.component(EventSink.class), context.component(MessageTypeResolver.class));
     }
 
@@ -77,9 +76,9 @@ public interface EventAppender extends DescribableComponent {
      * @return The created appender.
      */
     static EventAppender forContext(
-            @NonNull ProcessingContext context,
-            @NonNull EventSink eventSink,
-            @NonNull MessageTypeResolver messageTypeResolver
+            ProcessingContext context,
+            EventSink eventSink,
+            MessageTypeResolver messageTypeResolver
     ) {
         Objects.requireNonNull(context, "ProcessingContext may not be null");
         return context.computeResourceIfAbsent(
@@ -104,5 +103,5 @@ public interface EventAppender extends DescribableComponent {
      *
      * @param events The collection of events to publish.
      */
-    void append(@NonNull List<?> events);
+    void append(List<?> events);
 }

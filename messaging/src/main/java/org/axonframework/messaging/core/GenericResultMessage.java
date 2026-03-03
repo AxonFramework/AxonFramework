@@ -19,12 +19,10 @@ package org.axonframework.messaging.core;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Generic implementation of {@link ResultMessage} interface.
@@ -43,7 +41,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      * @param type   The {@link MessageType type} for this {@link ResultMessage}.
      * @param result The result for this {@link ResultMessage}.
      */
-    public GenericResultMessage(@NonNull MessageType type,
+    public GenericResultMessage(MessageType type,
                                 @Nullable Object result) {
         this(type, result, Metadata.emptyInstance());
     }
@@ -55,9 +53,9 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      * @param result   The result for this {@link ResultMessage}.
      * @param metadata The metadata for this {@link ResultMessage}.
      */
-    public GenericResultMessage(@NonNull MessageType type,
+    public GenericResultMessage(MessageType type,
                                 @Nullable Object result,
-                                @NonNull Map<String, String> metadata) {
+                                Map<String, String> metadata) {
         this(new GenericMessage(type, result, metadata));
     }
 
@@ -72,7 +70,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericResultMessage(@NonNull Message delegate) {
+    public GenericResultMessage(Message delegate) {
         super(delegate);
     }
 
@@ -101,17 +99,17 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
     }
 
     @Override
-        public @NonNull ResultMessage withMetadata(@NonNull Map<String, String> metadata) {
+        public ResultMessage withMetadata(Map<String, String> metadata) {
         return new GenericResultMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-        public @NonNull ResultMessage andMetadata(@NonNull Map<String, String> metadata) {
+        public ResultMessage andMetadata(Map<String, String> metadata) {
         return new GenericResultMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-        public @NonNull ResultMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+        public ResultMessage withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

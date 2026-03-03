@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -426,7 +425,7 @@ class WorkPackage {
         }
     }
 
-    private void storeToken(TrackingToken token, @NonNull ProcessingContext processingContext) {
+    private void storeToken(TrackingToken token, ProcessingContext processingContext) {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         joinAndUnwrap(tokenStore.storeToken(token, name, segment.getSegmentId(), processingContext));
         lastStoredToken = token;
@@ -586,7 +585,7 @@ class WorkPackage {
          * @param context The processing context in which the event messages are processed.
          * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message> process(@NonNull List<? extends EventMessage> events, @NonNull ProcessingContext context);
+        MessageStream.Empty<Message> process(List<? extends EventMessage> events, ProcessingContext context);
     }
 
     /**
@@ -763,7 +762,7 @@ class WorkPackage {
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder schedulingProcessingContextProvider(
-                @NonNull Supplier<ProcessingContext> schedulingProcessingContextProvider
+                Supplier<ProcessingContext> schedulingProcessingContextProvider
         ) {
             Objects.requireNonNull(schedulingProcessingContextProvider,
                                    "schedulingProcessingContextProvider may not be null.");

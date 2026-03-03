@@ -68,9 +68,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @param settings             The map of processor settings, keyed by processor name.
      * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(@NonNull List<ProcessorDefinition> processorDefinitions,
-                                         @NonNull Map<String, EventProcessorSettings> settings,
-                                         @NonNull Configuration axonConfiguration) {
+    public DefaultProcessorModuleFactory(List<ProcessorDefinition> processorDefinitions,
+                                         Map<String, EventProcessorSettings> settings,
+                                         Configuration axonConfiguration) {
         this.processorDefinitions = processorDefinitions;
         this.allSettings = settings;
         this.axonConfiguration = axonConfiguration;
@@ -85,7 +85,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      */
     @NonNull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 

@@ -114,6 +114,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.axonframework.extensions.spring</groupId>
+                <artifactId>axon-spring-boot-starter-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.axonframework.extensions.tracing</groupId>
                 <artifactId>axon-tracing-opentelemetry</artifactId>
                 <version>${project.version}</version>

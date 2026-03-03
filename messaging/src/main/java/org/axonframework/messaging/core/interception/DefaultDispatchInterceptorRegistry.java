@@ -67,7 +67,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @NonNull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
-            @NonNull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
@@ -109,7 +109,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @NonNull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
-            @NonNull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         this.commandInterceptorDefinitions.add(ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF)
                                                                   .withBuilder(interceptorBuilder));
@@ -119,7 +119,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @NonNull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
-            @NonNull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         this.eventInterceptorDefinitions.add(ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF)
                                                                 .withBuilder(interceptorBuilder));
@@ -129,7 +129,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @NonNull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
-            @NonNull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         this.queryInterceptorDefinitions.add(ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF)
                                                                 .withBuilder(interceptorBuilder));
@@ -139,7 +139,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @NonNull
     @Override
     public DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
-            @NonNull ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
     ) {
         this.subscriptionQueryUpdateInterceptorDefinitions.add(ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_INTERCEPTOR_TYPE_REF)
                                                                                    .withBuilder(interceptorBuilder));
@@ -148,30 +148,30 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
 
     @NonNull
     @Override
-    public List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(@NonNull Configuration config) {
+    public List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
     @NonNull
     @Override
-    public List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(@NonNull Configuration config) {
+    public List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(Configuration config) {
         return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
     @NonNull
     @Override
-    public List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(@NonNull Configuration config) {
+    public List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(Configuration config) {
         return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
     @NonNull
     @Override
-    public List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(@NonNull Configuration config) {
+    public List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(Configuration config) {
         return resolveInterceptors(subscriptionQueryUpdateInterceptorDefinitions, config);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandDispatchInterceptors", commandInterceptorDefinitions);
         descriptor.describeProperty("eventDispatchInterceptors", eventInterceptorDefinitions);
         descriptor.describeProperty("queryDispatchInterceptors", queryInterceptorDefinitions);

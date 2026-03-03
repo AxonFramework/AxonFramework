@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
 import static java.util.Objects.requireNonNull;
@@ -34,8 +33,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultSourcingCondition(
-        @NonNull Position start,
-        @NonNull EventCriteria criteria
+        Position start,
+        EventCriteria criteria
 ) implements SourcingCondition {
 
     DefaultSourcingCondition {
@@ -44,7 +43,7 @@ record DefaultSourcingCondition(
     }
 
     @Override
-    public SourcingCondition or(@NonNull SourcingCondition other) {
+    public SourcingCondition or(SourcingCondition other) {
         return new DefaultSourcingCondition(
             other.start().min(start),
             other.criteria().or(criteria)

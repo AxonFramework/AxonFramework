@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 
@@ -66,7 +65,7 @@ public interface Context {
      * @param key The key of the resource to check.
      * @return {@code true} if a resource is registered with this {@code key}, otherwise {@code false}.
      */
-    boolean containsResource(@NonNull ResourceKey<?> key);
+    boolean containsResource(ResourceKey<?> key);
 
     /**
      * Returns the resource currently registered under the given {@code key}, or {@code null} if no resource is
@@ -76,7 +75,7 @@ public interface Context {
      * @param <T> The type of resource registered under the given {@code key}.
      * @return The resource currently registered under given {@code key}, or {@code null} if not present.
      */
-    <T> T getResource(@NonNull ResourceKey<T> key);
+    <T> T getResource(ResourceKey<T> key);
 
     /**
      * Constructs a copy of {@code this} Context with an additional {@code resource} for given {@code key}.
@@ -87,8 +86,8 @@ public interface Context {
      * @return A copy of {@code this} Context with the added given {@code resources} under the given {@code key} to the
      * copy.
      */
-    <T> Context withResource(@NonNull ResourceKey<T> key,
-                             @NonNull T resource);
+    <T> Context withResource(ResourceKey<T> key,
+                             T resource);
 
     /**
      * Retrieves all resources contained within the current {@code Context}.

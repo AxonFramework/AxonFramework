@@ -21,7 +21,6 @@ import org.axonframework.messaging.tracing.SpanAttributesProvider;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Adds the metadata of the message to the span as attributes.
@@ -34,7 +33,7 @@ import org.jspecify.annotations.NonNull;
 public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @NonNull Map<String, String> provideForMessage(@NonNull Message message) {
+    public Map<String, String> provideForMessage(Message message) {
         Map<String, String> map = new HashMap<>();
         message.metadata().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
         return map;

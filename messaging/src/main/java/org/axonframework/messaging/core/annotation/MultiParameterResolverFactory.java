@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
@@ -111,8 +110,8 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@NonNull Executable executable,
-                                               @NonNull Parameter[] parameters,
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
                                                int parameterIndex) {
         for (ParameterResolverFactory factory : factories) {
             ParameterResolver<?> resolver = factory.createInstance(executable, parameters, parameterIndex);

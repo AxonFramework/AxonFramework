@@ -63,7 +63,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     @NonNull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
@@ -97,7 +97,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     @NonNull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to CommandMessage is safe.
         this.commandInterceptorDefinitions.add(
@@ -112,7 +112,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     @NonNull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to EventMessage is safe.
         this.eventInterceptorDefinitions.add(
@@ -127,7 +127,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     @NonNull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         //noinspection unchecked | Casting to QueryMessage is safe.
         this.queryInterceptorDefinitions.add(
@@ -141,24 +141,24 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
 
     @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@NonNull Configuration config) {
+    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
     @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@NonNull Configuration config) {
+    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(Configuration config) {
         return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
     @NonNull
     @Override
-    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@NonNull Configuration config) {
+    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(Configuration config) {
         return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandHandlerInterceptors", commandInterceptorDefinitions);
         descriptor.describeProperty("eventHandlerInterceptors", eventInterceptorDefinitions);
         descriptor.describeProperty("queryHandlerInterceptors", queryInterceptorDefinitions);

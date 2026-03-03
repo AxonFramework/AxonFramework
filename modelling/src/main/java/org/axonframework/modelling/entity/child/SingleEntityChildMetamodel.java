@@ -41,10 +41,10 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
 
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildMetamodel(@NonNull EntityMetamodel<C> metamodel,
-                                       @NonNull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
-                                       @NonNull CommandTargetResolver<C> commandTargetMatcher,
-                                       @NonNull EventTargetMatcher<C> eventTargetMatcher
+    private SingleEntityChildMetamodel(EntityMetamodel<C> metamodel,
+                                       ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
+                                       CommandTargetResolver<C> commandTargetMatcher,
+                                       EventTargetMatcher<C> eventTargetMatcher
     ) {
         super(
                 metamodel,
@@ -100,8 +100,8 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
      * @param <P>         The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
-    public static <C, P> Builder<C, P> forEntityModel(@NonNull Class<P> parentClass,
-                                                      @NonNull EntityMetamodel<C> metamodel) {
+    public static <C, P> Builder<C, P> forEntityModel(Class<P> parentClass,
+                                                      EntityMetamodel<C> metamodel) {
         return new Builder<>(parentClass, metamodel);
     }
 
@@ -125,8 +125,8 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
         private ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Uses for generics
-        private Builder(@NonNull Class<P> parentClass,
-                        @NonNull EntityMetamodel<C> childEntityMetamodel
+        private Builder(Class<P> parentClass,
+                        EntityMetamodel<C> childEntityMetamodel
         ) {
             super(parentClass, childEntityMetamodel);
             this.commandTargetResolver = CommandTargetResolver.MATCH_ANY();
@@ -141,7 +141,7 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
          *                        the parent entity
          * @return This builder instance.
          */
-        public Builder<C, P> childEntityFieldDefinition(@NonNull ChildEntityFieldDefinition<P, C> fieldDefinition) {
+        public Builder<C, P> childEntityFieldDefinition(ChildEntityFieldDefinition<P, C> fieldDefinition) {
             this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
                                                                      "The fieldDefinition may not be null.");
             return this;

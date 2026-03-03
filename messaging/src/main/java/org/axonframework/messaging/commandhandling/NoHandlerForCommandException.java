@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonTransientException;
 import org.axonframework.messaging.core.retry.RetryScheduler;
 
@@ -65,7 +64,7 @@ public class NoHandlerForCommandException extends AxonTransientException {
      * @param message    The {@link CommandMessage} that was handled.
      * @param entityType The {@link Class} of the entity that was expected to handle the command.
      */
-    public NoHandlerForCommandException(@NonNull CommandMessage message, @NonNull Class<?> entityType) {
+    public NoHandlerForCommandException(CommandMessage message, Class<?> entityType) {
         this(String.format(
                 "No command handler was found for command of type [%s] for entity [%s]",
                 message.type(),

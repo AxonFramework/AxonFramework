@@ -63,9 +63,9 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
      * @param identifierResolver The {@link EntityIdResolver} to resolve the id of the entity.
      */
     public InjectEntityParameterResolver(
-            @NonNull Configuration configuration,
-            @NonNull Class<?> type,
-            @NonNull EntityIdResolver<?> identifierResolver,
+            Configuration configuration,
+            Class<?> type,
+            EntityIdResolver<?> identifierResolver,
             boolean managedEntity
     ) {
         this.configuration = requireNonNull(configuration, "The Configuration is required");
@@ -76,7 +76,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
 
     @NonNull
     @Override
-    public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+    public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
         Message message = requireNonNullElseGet(Message.fromContext(context), GenericMessage::emptyMessage);
 
         try {
@@ -105,7 +105,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     }
 
     @Override
-    public boolean matches(@NonNull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return Message.fromContext(context) != null;
     }
 }

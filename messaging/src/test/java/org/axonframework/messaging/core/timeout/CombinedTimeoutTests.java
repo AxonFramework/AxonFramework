@@ -15,10 +15,9 @@
  */
 package org.axonframework.messaging.core.timeout;
 
-import java.util.concurrent.TimeUnit;
-
-
 import org.junit.jupiter.api.*;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * The different timeout components, {@link TimeoutWrappedMessageHandlingMember} and

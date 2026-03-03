@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
@@ -42,7 +41,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    default boolean canConvert(@NonNull Class<?> sourceType, @NonNull Class<?> targetType) {
+    default boolean canConvert(Class<?> sourceType, Class<?> targetType) {
         return canConvert(sourceType, (Type) targetType);
     }
 
@@ -54,7 +53,7 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType);
+    boolean canConvert(Type sourceType, Type targetType);
 
     /**
      * Converts the given {@code input} object into an object of the given {@code targetType}.
@@ -66,7 +65,7 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    default <T> T convert(@Nullable Object input, @NonNull Class<T> targetType) {
+    default <T> T convert(@Nullable Object input, Class<T> targetType) {
         return convert(input, (Type) targetType);
     }
 
@@ -80,5 +79,5 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    <T> T convert(@Nullable Object input, @NonNull Type targetType);
+    <T> T convert(@Nullable Object input, Type targetType);
 }

@@ -70,18 +70,18 @@ public class LoggingInterceptor<M extends Message>
 
     @Override
     @NonNull
-    public MessageStream<?> interceptOnDispatch(@NonNull M message,
+    public MessageStream<?> interceptOnDispatch(M message,
                                                 @Nullable ProcessingContext context,
-                                                @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
+                                                MessageDispatchInterceptorChain<M> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context);
     }
 
     @Override
     @NonNull
-    public MessageStream<?> interceptOnHandle(@NonNull M message,
-                                              @NonNull ProcessingContext context,
-                                              @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(M message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<M> interceptorChain) {
         logger.info("Incoming message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context)
                                .map(returnValue -> {

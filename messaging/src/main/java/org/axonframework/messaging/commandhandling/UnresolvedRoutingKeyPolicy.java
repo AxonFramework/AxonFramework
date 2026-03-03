@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.retry.RetryScheduler;
 
 import java.util.function.Function;
@@ -75,7 +74,7 @@ public enum UnresolvedRoutingKeyPolicy implements RoutingStrategy {
     }
 
     @Override
-    public String getRoutingKey(@NonNull CommandMessage command) {
+    public String getRoutingKey(CommandMessage command) {
         return routingKeyResolver.apply(command);
     }
 }

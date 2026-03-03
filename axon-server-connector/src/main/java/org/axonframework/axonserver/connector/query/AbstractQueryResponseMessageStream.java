@@ -52,7 +52,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      * @param stream The {@link ResultStream} instance from which query response data will be fetched. Must not be
      *               null.
      */
-    public AbstractQueryResponseMessageStream(@NonNull ResultStream<T> stream) {
+    public AbstractQueryResponseMessageStream(ResultStream<T> stream) {
         this.stream = requireNonNull(stream, "The query result stream cannot be null.");
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         this.callback.set(callback);
         stream.onAvailable(callback);
     }
@@ -140,7 +140,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     }
 
     @NonNull
-    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(@NonNull T t) {
+    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(T t) {
         if (isError(t)) {
             error.set(createAxonException(t));
             close();
@@ -154,9 +154,9 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         ));
     }
 
-    abstract @NonNull QueryResponseMessage buildResponseMessage(@NonNull T t);
+    abstract QueryResponseMessage buildResponseMessage(T t);
 
-    abstract @NonNull AxonException createAxonException(@NonNull T t);
+    abstract AxonException createAxonException(T t);
 
-    protected abstract boolean isError(@NonNull T t);
+    protected abstract boolean isError(T t);
 }

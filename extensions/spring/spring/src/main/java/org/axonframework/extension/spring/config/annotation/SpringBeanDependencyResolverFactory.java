@@ -55,13 +55,13 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
      *
      * @param applicationContext The Spring application context for the executing application
      */
-    public SpringBeanDependencyResolverFactory(@NonNull ApplicationContext applicationContext) {
+    public SpringBeanDependencyResolverFactory(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         final Optional<Boolean> ann =
                 AnnotationUtils.findAnnotationAttribute(parameters[parameterIndex], Autowired.class, "required");
 
@@ -97,12 +97,12 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
 
         @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.resolveDependency(dependencyDescriptor, null));
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

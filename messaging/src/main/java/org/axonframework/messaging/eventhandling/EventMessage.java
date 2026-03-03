@@ -71,23 +71,23 @@ public interface EventMessage extends Message {
 
     @Override
     @NonNull
-    EventMessage withMetadata(@NonNull Map<String, String> metadata);
+    EventMessage withMetadata(Map<String, String> metadata);
 
     @Override
     @NonNull
-    EventMessage andMetadata(@NonNull Map<String, String> metadata);
+    EventMessage andMetadata(Map<String, String> metadata);
 
     @Override
-        default @NonNull EventMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default EventMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull EventMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
+        default EventMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @NonNull
-    EventMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    EventMessage withConvertedPayload(Type type, Converter converter);
 }

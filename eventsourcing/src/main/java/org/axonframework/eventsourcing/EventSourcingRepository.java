@@ -77,12 +77,12 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      *                         stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
-    public EventSourcingRepository(@NonNull Class<ID> idType,
-                                   @NonNull Class<E> entityType,
-                                   @NonNull EventStore eventStore,
-                                   @NonNull EventSourcedEntityFactory<ID, E> entityFactory,
-                                   @NonNull CriteriaResolver<ID> criteriaResolver,
-                                   @NonNull EntityEvolver<E> entityEvolver) {
+    public EventSourcingRepository(Class<ID> idType,
+                                   Class<E> entityType,
+                                   EventStore eventStore,
+                                   EventSourcedEntityFactory<ID, E> entityFactory,
+                                   CriteriaResolver<ID> criteriaResolver,
+                                   EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
@@ -92,8 +92,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
-                                       @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity,
+                                       ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -119,8 +119,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
-                                                        @NonNull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                        ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -131,8 +131,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
-                                                                @NonNull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                                ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -168,9 +168,9 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@NonNull ID identifier,
-                                        @NonNull E entity,
-                                        @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(ID identifier,
+                                        E entity,
+                                        ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(identifier, id -> {
@@ -209,7 +209,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("idType", idType);
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);

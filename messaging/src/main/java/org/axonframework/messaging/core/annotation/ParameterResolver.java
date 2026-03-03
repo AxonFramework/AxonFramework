@@ -38,7 +38,7 @@ public interface ParameterResolver<T> {
      * @since 5.0.0
      */
     @NonNull
-    CompletableFuture<T> resolveParameterValue(@NonNull ProcessingContext context);
+    CompletableFuture<T> resolveParameterValue(ProcessingContext context);
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code context}.
@@ -46,7 +46,7 @@ public interface ParameterResolver<T> {
      * @param context The current processing context.
      * @return Returns {@code true} if this resolver can provide a value for the message, otherwise {@code false}.
      */
-    boolean matches(@NonNull ProcessingContext context);
+    boolean matches(ProcessingContext context);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class

@@ -44,37 +44,37 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
      *
      * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
-    protected DelegatingCommandBusConnector(@NonNull CommandBusConnector delegate) {
+    protected DelegatingCommandBusConnector(CommandBusConnector delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
     }
 
     @NonNull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext);
     }
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(QualifiedName commandName, int loadFactor) {
         return delegate.subscribe(commandName, loadFactor);
     }
 
     @Override
-    public boolean unsubscribe(@NonNull QualifiedName commandName) {
+    public boolean unsubscribe(QualifiedName commandName) {
         return delegate.unsubscribe(commandName);
     }
 
     @Override
-    public void onIncomingCommand(@NonNull Handler handler) {
+    public void onIncomingCommand(Handler handler) {
         delegate.onIncomingCommand(handler);
     }
 
     // endregion
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

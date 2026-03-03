@@ -42,13 +42,13 @@ public class MultiCorrelationDataProvider implements CorrelationDataProvider {
      *
      * @param correlationDataProviders The {@code CorrelationDataProviders} to delegate to.
      */
-    public MultiCorrelationDataProvider(@NonNull List<? extends CorrelationDataProvider> correlationDataProviders) {
+    public MultiCorrelationDataProvider(List<? extends CorrelationDataProvider> correlationDataProviders) {
         delegates = new ArrayList<>(correlationDataProviders);
     }
 
     @NonNull
     @Override
-    public Map<String, String> correlationDataFor(@NonNull Message message) {
+    public Map<String, String> correlationDataFor(Message message) {
         Map<String, String> correlationData = new HashMap<>();
         for (CorrelationDataProvider delegate : delegates) {
             correlationData.putAll(delegate.correlationDataFor(message));

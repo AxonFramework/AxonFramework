@@ -44,15 +44,15 @@ public class MonitoringEventHandlerInterceptor implements MessageHandlerIntercep
      *
      * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
-    public MonitoringEventHandlerInterceptor(final @NonNull MessageMonitor<? super EventMessage> messageMonitor) {
+    public MonitoringEventHandlerInterceptor(final MessageMonitor<? super EventMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;
     }
 
     @NonNull
     @Override
-    public MessageStream<?> interceptOnHandle(@NonNull EventMessage message,
-                                              @NonNull ProcessingContext context,
-                                              @NonNull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(EventMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
         if (context.isStarted()) {
             final var monitorCallback = messageMonitor.onMessageIngested(message);
 

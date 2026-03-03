@@ -18,7 +18,6 @@ package org.axonframework.messaging.core.annotation;
 
 import java.util.concurrent.CompletableFuture;
 
-
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
@@ -59,7 +58,7 @@ public final class AggregateTypeParameterResolverFactory
 
         @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             var aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
             if (aggregateType != null) {
                 return CompletableFuture.completedFuture(aggregateType);
@@ -68,7 +67,7 @@ public final class AggregateTypeParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY);
         }
     }

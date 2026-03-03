@@ -55,7 +55,7 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
 
     @NonNull
     @Override
-    public T resolve(@NonNull Message message, @NonNull ProcessingContext context) throws EntityIdResolutionException {
+    public T resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();
         List<Object> identifiers = getIdentifiers(payload)
                 .stream()

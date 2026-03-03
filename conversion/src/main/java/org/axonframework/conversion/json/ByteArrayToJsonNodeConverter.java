@@ -42,7 +42,7 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */
-    public ByteArrayToJsonNodeConverter(@NonNull ObjectMapper objectMapper) {
+    public ByteArrayToJsonNodeConverter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 

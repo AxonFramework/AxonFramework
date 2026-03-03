@@ -50,5 +50,5 @@ public interface ResetHandlerRegistry<S extends ResetHandlerRegistry<S>> {
      * @return This registry instance for method chaining.
      */
     @NonNull
-    S subscribe(@NonNull ResetHandler resetHandler);
+    S subscribe(ResetHandler resetHandler);
 }

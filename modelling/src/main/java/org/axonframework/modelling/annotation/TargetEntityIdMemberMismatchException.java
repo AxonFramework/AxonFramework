@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.PropertyBasedEntityIdResolver;
 
 /**
@@ -37,7 +36,7 @@ public class TargetEntityIdMemberMismatchException extends RuntimeException {
      * Initialize the exception with the given {@code fieldName} that was not found in the payload of type
      * {@code payloadClass}.
      */
-    public TargetEntityIdMemberMismatchException(@NonNull String fieldName, @NonNull Class<?> payloadClass) {
+    public TargetEntityIdMemberMismatchException(String fieldName, Class<?> payloadClass) {
         super(String.format(
                 "Could not find field [%s] or its accessor in payload of type [%s] as indicated on the @InjectModel annotation.",
                 fieldName,

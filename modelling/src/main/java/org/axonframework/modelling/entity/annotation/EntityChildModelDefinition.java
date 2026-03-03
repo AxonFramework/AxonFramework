@@ -54,8 +54,8 @@ public interface EntityChildModelDefinition {
      */
     @NonNull
     <C, P> Optional<EntityChildMetamodel<C, P>> createChildDefinition(
-            @NonNull Class<P> parentClass,
-            @NonNull AnnotatedEntityMetamodelFactory metamodelFactory,
-            @NonNull Member member
+            Class<P> parentClass,
+            AnnotatedEntityMetamodelFactory metamodelFactory,
+            Member member
     );
 }

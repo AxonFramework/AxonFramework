@@ -60,7 +60,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @NonNull
     HandlerInterceptorRegistry registerInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     );
 
     /**
@@ -73,7 +73,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @NonNull
     HandlerInterceptorRegistry registerCommandInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
@@ -86,7 +86,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @NonNull
     HandlerInterceptorRegistry registerEventInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -99,7 +99,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @NonNull
     HandlerInterceptorRegistry registerQueryInterceptor(
-            @NonNull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**
@@ -114,7 +114,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @return The list of {@link CommandMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @NonNull
-    List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(@NonNull Configuration config);
+    List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(Configuration config);
 
     /**
      * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
@@ -128,7 +128,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @NonNull
-    List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(@NonNull Configuration config);
+    List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(Configuration config);
 
     /**
      * Returns the list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
@@ -142,5 +142,5 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @return The list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @NonNull
-    List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(@NonNull Configuration config);
+    List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(Configuration config);
 }

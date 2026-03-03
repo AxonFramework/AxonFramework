@@ -56,7 +56,7 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      *
      * @param delegate The {@link EventHandlingComponent} to delegate calls to.
      */
-    public ReplayBlockingEventHandlingComponent(@NonNull E delegate) {
+    public ReplayBlockingEventHandlingComponent(E delegate) {
         super(delegate);
         this.delegateComponentAndRegistry = delegate;
     }
@@ -72,7 +72,7 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      * @return An empty {@link MessageStream} if replaying, otherwise the result from the delegate.
      */
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event, ProcessingContext context) {
         Optional<TrackingToken> token = TrackingToken.fromContext(context);
         if (token.isPresent() && ReplayToken.isReplay(token.get())) {
             return MessageStream.empty();
@@ -90,7 +90,7 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      */
     @NonNull
     @Override
-    public ReplayBlockingEventHandlingComponent<E> subscribe(@NonNull ResetHandler resetHandler) {
+    public ReplayBlockingEventHandlingComponent<E> subscribe(ResetHandler resetHandler) {
         hasResetHandler.set(true);
         delegateComponentAndRegistry.subscribe(resetHandler);
         return this;

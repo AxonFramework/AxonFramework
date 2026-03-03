@@ -54,7 +54,7 @@ public interface StateManager {
      * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
      *                                              registered.
      */
-    <ID, T> StateManager register(@NonNull Repository<ID, T> repository);
+    <ID, T> StateManager register(Repository<ID, T> repository);
 
     /**
      * Registers a load and save function for state type {@code T} with id of type {@code ID}. Creates a
@@ -70,10 +70,10 @@ public interface StateManager {
      * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
      *                                              registered.
      */
-    default <ID, T> StateManager register(@NonNull Class<ID> idType,
-                                          @NonNull Class<T> entityType,
-                                          @NonNull SimpleRepositoryEntityLoader<ID, T> loader,
-                                          @NonNull SimpleRepositoryEntityPersister<ID, T> persister
+    default <ID, T> StateManager register(Class<ID> idType,
+                                          Class<T> entityType,
+                                          SimpleRepositoryEntityLoader<ID, T> loader,
+                                          SimpleRepositoryEntityPersister<ID, T> persister
     ) {
         return register(new SimpleRepository<>(idType, entityType, loader, persister));
     }
@@ -94,9 +94,9 @@ public interface StateManager {
      */
     @NonNull
     default <I, T> CompletableFuture<T> loadEntity(
-            @NonNull Class<T> type,
-            @NonNull I id,
-            @NonNull ProcessingContext context
+            Class<T> type,
+            I id,
+            ProcessingContext context
     ) {
         return loadManagedEntity(type, id, context).thenApply(ManagedEntity::entity);
     }
@@ -113,9 +113,9 @@ public interface StateManager {
      * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
     <ID, T> CompletableFuture<ManagedEntity<ID, T>> loadManagedEntity(
-            @NonNull Class<T> type,
-            @NonNull ID id,
-            @NonNull ProcessingContext context);
+            Class<T> type,
+            ID id,
+            ProcessingContext context);
 
     /**
      * The types of entities that are registered with this {@code StateManager}.
@@ -131,7 +131,7 @@ public interface StateManager {
      * @return the types of identifiers that are registered with this {@code StateManager} for the given
      * {@code entityType}.
      */
-    Set<Class<?>> registeredIdsFor(@NonNull Class<?> entityType);
+    Set<Class<?>> registeredIdsFor(Class<?> entityType);
 
     /**
      * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is registered
@@ -143,5 +143,5 @@ public interface StateManager {
      * @param idType     The type of the identifier of the entity.
      * @return The {@link Repository} for the given {@code idType} and {@code entityType}.
      */
-    <ID, T> Repository<ID, T> repository(@NonNull Class<T> entityType, @NonNull Class<ID> idType);
+    <ID, T> Repository<ID, T> repository(Class<T> entityType, Class<ID> idType);
 }

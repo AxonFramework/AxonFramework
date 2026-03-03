@@ -160,9 +160,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      * @param configurer            A unary operator of the {@link AggregateBasedJpaEventStorageEngineConfiguration}
      *                              that customizes the {@code AggregateBasedJpaEventStorageEngine} under construction.
      */
-    public AggregateBasedJpaEventStorageEngine(@NonNull TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
-                                               @NonNull EventConverter converter,
-                                               @NonNull UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
+    public AggregateBasedJpaEventStorageEngine(TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
+                                               EventConverter converter,
+                                               UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
         this.transactionalExecutorProvider =
                 requireNonNull(transactionalExecutorProvider, "The transactionalExecutorProvider may not be null.");
         this.converter = requireNonNull(converter, "The converter may not be null.");
@@ -184,9 +184,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext processingContext,
-                                                                @NonNull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -255,7 +255,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -333,7 +333,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
 
         return new ContinuousMessageStream<TokenAndEvent>(
@@ -404,8 +404,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private GapAwareTrackingToken calculateToken(@Nullable GapAwareTrackingToken token,
                                                  long globalIndex,
-                                                 @NonNull Instant timestamp,
-                                                 @NonNull Instant gapTimeoutThreshold) {
+                                                 Instant timestamp,
+                                                 Instant gapTimeoutThreshold) {
         boolean allowGaps = timestamp.isAfter(gapTimeoutThreshold);
         return token == null
                 ? GapAwareTrackingToken.newInstance(globalIndex, calculateGaps(globalIndex, allowGaps))
@@ -429,7 +429,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                        event.timestamp());
     }
 
-    private static Context buildTrackedContext(@NonNull TokenAndEvent tokenAndEvent) {
+    private static Context buildTrackedContext(TokenAndEvent tokenAndEvent) {
         AggregateEventEntry entry = tokenAndEvent.event();
         Context context = buildContext(Objects.requireNonNullElse(entry.aggregateIdentifier(), entry.identifier()),
                                        Objects.requireNonNullElse(entry.aggregateSequenceNumber(), 0L),
@@ -437,8 +437,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return context.withResource(TrackingToken.RESOURCE_KEY, tokenAndEvent.token);
     }
 
-    private static Context buildContext(@NonNull String aggregateIdentifier,
-                                        @NonNull Long aggregateSequenceNumber,
+    private static Context buildContext(String aggregateIdentifier,
+                                        Long aggregateSequenceNumber,
                                         @Nullable String aggregateType) {
         Context context = Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier)
                                  .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, aggregateSequenceNumber);
@@ -466,7 +466,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
                          .setParameter("dateTime", formatInstant(at))
@@ -476,7 +476,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("transactionalExecutorProvider", transactionalExecutorProvider);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);

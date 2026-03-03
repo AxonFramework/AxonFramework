@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.*;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;

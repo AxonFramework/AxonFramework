@@ -16,6 +16,7 @@
 
 package org.axonframework.common.annotation;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 
@@ -324,7 +325,7 @@ public final class AnnotationUtils {
      * @param annotationType The annotation type to check.
      * @return Predicate that checks whether the given annotation is present.
      */
-        public static Predicate<Member> isAnnotatedWith(Class<? extends Annotation> annotationType) {
+        public @NonNull static Predicate<Member> isAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
         return it -> it instanceof AnnotatedElement && isAnnotationPresent((AnnotatedElement) it, annotationType);
     }
 
@@ -334,7 +335,7 @@ public final class AnnotationUtils {
      * @param annotationType An annotated type to check for.
      * @return The predicate.
      */
-        public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
+        public @NonNull static Predicate<Object> isTypeAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
         return instance -> isAnnotationPresent(instance.getClass(), annotationType);
     }
 
@@ -347,9 +348,9 @@ public final class AnnotationUtils {
      * @param value          The value of the attribute.
      * @return The predicate.
      */
-        public static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
-            Class<? extends Annotation> annotationType,
-            String attributeName,
+        public @NonNull static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
+            @NonNull Class<? extends Annotation> annotationType,
+            @NonNull String attributeName,
             @Nullable Object value) {
         return instance -> findAnnotationAttributes(instance.getClass(), annotationType)
                 .filter(attribute -> (value != null)

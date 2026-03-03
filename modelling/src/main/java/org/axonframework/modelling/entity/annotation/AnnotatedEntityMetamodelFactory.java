@@ -39,5 +39,5 @@ public interface AnnotatedEntityMetamodelFactory {
      * @return An {@link AnnotatedEntityMetamodel} for the given entity type.
      */
     @NonNull
-    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(@NonNull Class<C> entityType);
+    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(Class<C> entityType);
 }

@@ -50,7 +50,7 @@ public interface MessageDispatchInterceptor<M extends Message> {
      * {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}.
      */
     @NonNull
-    MessageStream<?> interceptOnDispatch(@NonNull M message,
+    MessageStream<?> interceptOnDispatch(M message,
                                          @Nullable ProcessingContext context,
-                                         @NonNull MessageDispatchInterceptorChain<M> interceptorChain);
+                                         MessageDispatchInterceptorChain<M> interceptorChain);
 }

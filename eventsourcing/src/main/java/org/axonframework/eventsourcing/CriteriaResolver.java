@@ -39,5 +39,5 @@ public interface CriteriaResolver<I> {
      * @return The given {@code identifier} resolved to an {@link EventCriteria}.
      */
     @NonNull
-    EventCriteria resolve(@NonNull I identifier, @NonNull ProcessingContext context);
+    EventCriteria resolve(I identifier, ProcessingContext context);
 }

@@ -46,5 +46,5 @@ public interface EntityIdResolver<ID> {
      * @throws EntityIdResolutionException When the id could not be resolved.
      */
     @NonNull
-    ID resolve(@NonNull Message message, @NonNull ProcessingContext context) throws EntityIdResolutionException;
+    ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException;
 }

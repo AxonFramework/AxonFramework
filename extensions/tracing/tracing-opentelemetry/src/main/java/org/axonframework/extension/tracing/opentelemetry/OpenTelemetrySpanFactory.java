@@ -36,7 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.messaging.tracing.SpanUtils.determineMessageName;
 
@@ -223,7 +222,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
          * @param attributesProviders The {@link SpanAttributesProvider}s to add.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder addSpanAttributeProviders(@NonNull List<SpanAttributesProvider> attributesProviders) {
+        public Builder addSpanAttributeProviders(List<SpanAttributesProvider> attributesProviders) {
             BuilderUtils.assertNonNull(attributesProviders, "The attributesProviders should not be null");
             spanAttributesProviders.addAll(attributesProviders);
             return this;
@@ -247,7 +246,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
          * @param tracer The {@link Tracer} to configure for use.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder tracer(@NonNull Tracer tracer) {
+        public Builder tracer(Tracer tracer) {
             BuilderUtils.assertNonNull(tracer, "The Tracer should not be null");
             this.tracer = tracer;
             return this;

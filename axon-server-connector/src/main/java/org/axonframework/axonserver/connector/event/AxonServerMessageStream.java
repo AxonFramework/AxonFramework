@@ -50,8 +50,8 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
      * @param stream           The backing stream to Axon Server to read from
      * @param messageConverter The function to convert Axon Server events to Event Messages
      */
-    public AxonServerMessageStream(@NonNull EventStream stream,
-                                   @NonNull Function<Event, EventMessage> messageConverter) {
+    public AxonServerMessageStream(EventStream stream,
+                                   Function<Event, EventMessage> messageConverter) {
         this.stream = stream;
         this.messageConverter = messageConverter;
     }
@@ -92,7 +92,7 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         stream.onAvailable(callback);
     }
 

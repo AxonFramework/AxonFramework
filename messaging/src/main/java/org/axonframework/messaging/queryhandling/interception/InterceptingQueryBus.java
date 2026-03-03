@@ -98,10 +98,10 @@ public class InterceptingQueryBus implements QueryBus {
      * @param updateDispatchInterceptors The interception to invoke before emitting subscription query update.
      */
     public InterceptingQueryBus(
-            @NonNull QueryBus delegate,
-            @NonNull List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors,
-            @NonNull List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors,
-            @NonNull List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors
+            QueryBus delegate,
+            List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors,
+            List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors,
+            List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The query bus delegate must not be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -122,8 +122,8 @@ public class InterceptingQueryBus implements QueryBus {
     }
 
     @Override
-    public InterceptingQueryBus subscribe(@NonNull QualifiedName queryName,
-                                          @NonNull QueryHandler queryHandler) {
+    public InterceptingQueryBus subscribe(QualifiedName queryName,
+                                          QueryHandler queryHandler) {
         if (handlerInterceptors.isEmpty()) {
             delegate.subscribe(queryName, queryHandler);
         } else {
@@ -134,14 +134,14 @@ public class InterceptingQueryBus implements QueryBus {
 
     @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query,
+    public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         return queryInterceptingDispatcher.dispatch(query, context);
     }
 
     @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return subscriptionQueryInterceptingDispatcher.dispatch(query, context, updateBufferSize);
@@ -149,15 +149,15 @@ public class InterceptingQueryBus implements QueryBus {
 
     @NonNull
     @Override
-    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@NonNull QueryMessage query,
+    public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                             int updateBufferSize) {
         return subscribeToUpdatesInterceptingDispatcher.dispatch(query, updateBufferSize);
     }
 
     @NonNull
     @Override
-    public CompletableFuture<Void> emitUpdate(@NonNull Predicate<QueryMessage> filter,
-                                              @NonNull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    public CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
+                                              Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         if (updateDispatchInterceptors.isEmpty()) {
             return delegate.emitUpdate(filter, updateSupplier, context);
@@ -175,7 +175,7 @@ public class InterceptingQueryBus implements QueryBus {
 
     @NonNull
     @Override
-    public CompletableFuture<Void> completeSubscriptions(@NonNull Predicate<QueryMessage> filter,
+    public CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         return delegate.completeSubscriptions(filter, context);
     }
@@ -183,14 +183,14 @@ public class InterceptingQueryBus implements QueryBus {
     @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
-            @NonNull Predicate<QueryMessage> filter,
-            @NonNull Throwable cause,
+            Predicate<QueryMessage> filter,
+            Throwable cause,
             @Nullable ProcessingContext context
     ) {
         return delegate.completeSubscriptionsExceptionally(filter, cause, context);
     }
 
-    private MessageStream<?> dispatchQuery(@NonNull Message message,
+    private MessageStream<?> dispatchQuery(Message message,
                                            @Nullable ProcessingContext processingContext) {
         if (!(message instanceof QueryMessage query)) {
             // The compiler should avoid this from happening.
@@ -200,7 +200,7 @@ public class InterceptingQueryBus implements QueryBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
@@ -218,8 +218,8 @@ public class InterceptingQueryBus implements QueryBus {
 
         @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
-                                                          @NonNull ProcessingContext context) {
+        public MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                                          ProcessingContext context) {
             return interceptorChain.proceed(query, context)
                                    .cast();
         }
@@ -237,7 +237,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<QueryResponseMessage> dispatch(
-                @NonNull QueryMessage query,
+                QueryMessage query,
                 @Nullable ProcessingContext context
         ) {
             return interceptorChain.proceed(query, context)
@@ -259,7 +259,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<QueryResponseMessage> dispatch(
-                @NonNull QueryMessage query,
+                QueryMessage query,
                 @Nullable ProcessingContext context,
                 int updateBufferSize
         ) {
@@ -292,7 +292,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private MessageStream<SubscriptionQueryUpdateMessage> dispatch(
-                @NonNull QueryMessage query,
+                QueryMessage query,
                 int updateBufferSize
         ) {
             // Create a new chain per call because the dispatcher needs the updateBufferSize parameter
@@ -321,7 +321,7 @@ public class InterceptingQueryBus implements QueryBus {
         }
 
         private SubscriptionQueryUpdateMessage intercept(
-                @NonNull SubscriptionQueryUpdateMessage update,
+                SubscriptionQueryUpdateMessage update,
                 @Nullable ProcessingContext context
         ) {
             @SuppressWarnings("unchecked")

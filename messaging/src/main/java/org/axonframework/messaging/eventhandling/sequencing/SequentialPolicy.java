@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -46,7 +45,7 @@ public class SequentialPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage task, @NonNull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(EventMessage task, ProcessingContext context) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

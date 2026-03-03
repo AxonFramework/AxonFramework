@@ -43,7 +43,7 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     @Nullable
     @Override
-    public ParameterResolver<ProcessingContext> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters,
+    public ParameterResolver<ProcessingContext> createInstance(Executable executable, Parameter[] parameters,
                                                                int parameterIndex) {
 
         Parameter parameter = parameters[parameterIndex];
@@ -57,12 +57,12 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
         @NonNull
         @Override
-        public CompletableFuture<ProcessingContext> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<ProcessingContext> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(context);
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

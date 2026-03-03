@@ -31,7 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import static org.axonframework.common.FutureUtils.unwrap;
@@ -61,10 +60,10 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
     }
 
     @Override
-    public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(@NonNull M message,
+    public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(M message,
                                                                                        @Nullable ProcessingContext processingContext,
-                                                                                       @NonNull Throwable cause,
-                                                                                       @NonNull Dispatcher<M, R> dispatcher) {
+                                                                                       Throwable cause,
+                                                                                       Dispatcher<M, R> dispatcher) {
         RetryPolicy.Outcome outcome = retryPolicy.defineFor(message, cause, Collections.emptyList());
         if (!outcome.shouldReschedule()) {
             return MessageStream.failed(cause);
@@ -77,7 +76,7 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("retryPolicy", this.retryPolicy);
         descriptor.describeProperty("executor", this.executor);
     }

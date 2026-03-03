@@ -66,15 +66,15 @@ public class MessageOriginProvider implements CorrelationDataProvider {
      * @param causationKey   The key used to store the identifier of a {@link Message} in the {@link Message#metadata()}
      *                       of a resulting {@code Message}.
      */
-    public MessageOriginProvider(@NonNull String correlationKey,
-                                 @NonNull String causationKey) {
+    public MessageOriginProvider(String correlationKey,
+                                 String causationKey) {
         this.correlationKey = Objects.requireNonNull(correlationKey, "Correlation key must not be null.");
         this.causationKey = Objects.requireNonNull(causationKey, "Causation key must not be null.");
     }
 
     @NonNull
     @Override
-    public Map<String, String> correlationDataFor(@NonNull Message message) {
+    public Map<String, String> correlationDataFor(Message message) {
         Map<String, String> result = new HashMap<>();
         result.put(correlationKey, message.metadata().getOrDefault(correlationKey, message.identifier()));
         result.put(causationKey, message.identifier());

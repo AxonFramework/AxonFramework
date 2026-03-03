@@ -43,36 +43,36 @@ public class DelegatingMessageConverter implements MessageConverter {
      *
      * @param delegate The converter to delegate all conversion operations to.
      */
-    public DelegatingMessageConverter(@NonNull Converter delegate) {
+    public DelegatingMessageConverter(Converter delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
     }
 
     @Override
-    public boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType) {
+    public boolean canConvert(Type sourceType, Type targetType) {
         return delegate.canConvert(targetType, sourceType);
     }
 
     @Nullable
     @Override
-    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
+    public <T> T convert(@Nullable Object input, Type targetType) {
         return delegate.convert(input, targetType);
     }
 
     @Override
     @Nullable
-    public <M extends Message, T> T convertPayload(@NonNull M message, @NonNull Type targetType) {
+    public <M extends Message, T> T convertPayload(M message, Type targetType) {
         return message.payloadAs(targetType, delegate);
     }
 
     @Override
     @NonNull
-    public <M extends Message> M convertMessage(@NonNull M message, @NonNull Type targetType) {
+    public <M extends Message> M convertMessage(M message, Type targetType) {
         //noinspection unchecked
         return (M) message.withConvertedPayload(targetType, delegate);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 

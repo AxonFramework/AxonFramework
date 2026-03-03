@@ -53,14 +53,14 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
      *
      * @param delegate The synchronous dead letter queue to wrap.
      */
-    public SyncToAsyncDeadLetterQueueAdapter(@NonNull SyncSequencedDeadLetterQueue<M> delegate) {
+    public SyncToAsyncDeadLetterQueueAdapter(SyncSequencedDeadLetterQueue<M> delegate) {
         this.delegate = delegate;
     }
 
     @NonNull
     @Override
-    public CompletableFuture<Void> enqueue(@NonNull Object sequenceIdentifier,
-                                           @NonNull DeadLetter<? extends M> letter,
+    public CompletableFuture<Void> enqueue(Object sequenceIdentifier,
+                                           DeadLetter<? extends M> letter,
                                            @Nullable ProcessingContext context) {
         try {
             delegate.enqueue(sequenceIdentifier, letter, context);
@@ -72,8 +72,8 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Boolean> enqueueIfPresent(@NonNull Object sequenceIdentifier,
-                                                       @NonNull Supplier<DeadLetter<? extends M>> letterBuilder,
+    public CompletableFuture<Boolean> enqueueIfPresent(Object sequenceIdentifier,
+                                                       Supplier<DeadLetter<? extends M>> letterBuilder,
                                                        @Nullable ProcessingContext context) {
         try {
             boolean result = delegate.enqueueIfPresent(sequenceIdentifier, letterBuilder, context);
@@ -85,7 +85,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Void> evict(@NonNull DeadLetter<? extends M> letter,
+    public CompletableFuture<Void> evict(DeadLetter<? extends M> letter,
                                          @Nullable ProcessingContext context) {
         try {
             delegate.evict(letter, context);
@@ -97,8 +97,8 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Void> requeue(@NonNull DeadLetter<? extends M> letter,
-                                           @NonNull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+    public CompletableFuture<Void> requeue(DeadLetter<? extends M> letter,
+                                           UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                                            @Nullable ProcessingContext context) {
         try {
             delegate.requeue(letter, letterUpdater, context);
@@ -110,7 +110,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Boolean> contains(@NonNull Object sequenceIdentifier,
+    public CompletableFuture<Boolean> contains(Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
         try {
             boolean result = delegate.contains(sequenceIdentifier, context);
@@ -123,7 +123,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @NonNull
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
-            @NonNull Object sequenceIdentifier,
+            Object sequenceIdentifier,
             @Nullable ProcessingContext context) {
         try {
             Iterable<DeadLetter<? extends M>> result = delegate.deadLetterSequence(sequenceIdentifier, context);
@@ -148,7 +148,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Boolean> isFull(@NonNull Object sequenceIdentifier,
+    public CompletableFuture<Boolean> isFull(Object sequenceIdentifier,
                                              @Nullable ProcessingContext context) {
         try {
             boolean result = delegate.isFull(sequenceIdentifier, context);
@@ -171,7 +171,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
 
     @NonNull
     @Override
-    public CompletableFuture<Long> sequenceSize(@NonNull Object sequenceIdentifier,
+    public CompletableFuture<Long> sequenceSize(Object sequenceIdentifier,
                                                 @Nullable ProcessingContext context) {
         try {
             long result = delegate.sequenceSize(sequenceIdentifier, context);
@@ -195,8 +195,8 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
     @NonNull
     @Override
     public CompletableFuture<Boolean> process(
-            @NonNull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @NonNull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            Predicate<DeadLetter<? extends M>> sequenceFilter,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context) {
         try {
             // Convert async processing task to sync by joining the future

@@ -52,7 +52,7 @@ public interface ApplicationContext {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
     @NonNull
-    default <C> C component(@NonNull Class<C> type) {
+    default <C> C component(Class<C> type) {
         return component(type, (String) null);
     }
 
@@ -69,5 +69,5 @@ public interface ApplicationContext {
      *                                    {@code name}.
      */
     @NonNull
-    <C> C component(@NonNull Class<C> type, @Nullable String name);
+    <C> C component(Class<C> type, @Nullable String name);
 }

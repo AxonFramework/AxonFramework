@@ -63,8 +63,8 @@ public sealed interface Repository<ID, E>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
      * {@code null} if it can't be found.
      */
-    CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
-                                                 @NonNull ProcessingContext processingContext);
+    CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                 ProcessingContext processingContext);
 
     /**
      * Loads an entity from the repository.
@@ -74,8 +74,8 @@ public sealed interface Repository<ID, E>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or a newly
      * constructed entity instance based on the {@code factoryMethod}.
      */
-    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
-                                                         @NonNull ProcessingContext processingContext);
+    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                         ProcessingContext processingContext);
 
     /**
      * Persists the given {@code entity} in this repository
@@ -85,9 +85,9 @@ public sealed interface Repository<ID, E>
      * @param processingContext The {@link ProcessingContext} in which the entity is active.
      * @return a {@link ManagedEntity} wrapping the entity managed in the {@link ProcessingContext}.
      */
-    ManagedEntity<ID, E> persist(@NonNull ID identifier,
-                                 @NonNull E entity,
-                                 @NonNull ProcessingContext processingContext);
+    ManagedEntity<ID, E> persist(ID identifier,
+                                 E entity,
+                                 ProcessingContext processingContext);
 
     /**
      * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations of
@@ -117,6 +117,6 @@ public sealed interface Repository<ID, E>
          * @param processingContext The processing context to link the lifecycle with.
          * @return The instance of the entity whose lifecycle is managed by this repository.
          */
-        ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity, @NonNull ProcessingContext processingContext);
+        ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity, ProcessingContext processingContext);
     }
 }

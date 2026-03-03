@@ -76,7 +76,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {
             return null;
         }
@@ -149,12 +149,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
         @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.getBean(beanName));
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

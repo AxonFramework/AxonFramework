@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -72,7 +71,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
      * @param moduleName The name of the {@code QueryHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
-    static QueryHandlingModule.SetupPhase named(@NonNull String moduleName) {
+    static QueryHandlingModule.SetupPhase named(String moduleName) {
         return new SimpleQueryHandlingModule(moduleName);
     }
 
@@ -100,7 +99,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * @return The query handler phase of this module, for a fluent API.
          */
         default QueryHandlingModule.QueryHandlerPhase queryHandlers(
-                @NonNull Consumer<QueryHandlingModule.QueryHandlerPhase> configurationLambda
+                Consumer<QueryHandlingModule.QueryHandlerPhase> configurationLambda
         ) {
             QueryHandlingModule.QueryHandlerPhase queryHandlerPhase = queryHandlers();
             configurationLambda.accept(queryHandlerPhase);
@@ -136,8 +135,8 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * @param queryHandler The query handler to register with this module.
          * @return The query handler phase of this builder, for a fluent API.
          */
-        default QueryHandlingModule.QueryHandlerPhase queryHandler(@NonNull QualifiedName queryName,
-                                                                   @NonNull QueryHandler queryHandler) {
+        default QueryHandlingModule.QueryHandlerPhase queryHandler(QualifiedName queryName,
+                                                                   QueryHandler queryHandler) {
             requireNonNull(queryHandler, "The query handler cannot be null.");
             return queryHandler(queryName, c -> queryHandler);
         }
@@ -159,8 +158,8 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * @return The query handler phase of this builder, for a fluent API.
          */
         QueryHandlingModule.QueryHandlerPhase queryHandler(
-                @NonNull QualifiedName queryName,
-                @NonNull ComponentBuilder<QueryHandler> queryHandlerBuilder
+                QualifiedName queryName,
+                ComponentBuilder<QueryHandler> queryHandlerBuilder
         );
 
         /**
@@ -179,7 +178,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * @return The query handler phase of this builder, for a fluent API.
          */
         QueryHandlingModule.QueryHandlerPhase queryHandlingComponent(
-                @NonNull ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
+                ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -195,7 +194,7 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          * @return The query handler phase of this builder, for a fluent API.
          */
         default QueryHandlingModule.QueryHandlerPhase annotatedQueryHandlingComponent(
-                @NonNull ComponentBuilder<Object> handlingComponentBuilder
+                ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return queryHandlingComponent(c -> new AnnotatedQueryHandlingComponent<>(

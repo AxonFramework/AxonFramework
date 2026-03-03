@@ -65,7 +65,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @return A new {@link PolymorphicEntityMetamodelBuilder} for the given entity type.
      */
     @NonNull
-    static <E> PolymorphicEntityMetamodelBuilder<E> forPolymorphicEntityType(@NonNull Class<E> entityType) {
+    static <E> PolymorphicEntityMetamodelBuilder<E> forPolymorphicEntityType(Class<E> entityType) {
         return PolymorphicEntityMetamodel.forSuperType(entityType);
     }
 
@@ -90,8 +90,8 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
-    MessageStream.@NonNull Single<CommandResultMessage> handleCreate(
-            @NonNull CommandMessage message, @NonNull ProcessingContext context
+    MessageStream.Single<CommandResultMessage> handleCreate(
+            CommandMessage message, ProcessingContext context
     );
 
     /**
@@ -110,8 +110,8 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      * @return A stream with a message containing the result of the command handling, which may be a
      * {@link CommandResultMessage} or an error message.
      */
-    MessageStream.@NonNull Single<CommandResultMessage> handleInstance(
-            @NonNull CommandMessage message, @NonNull E entity, @NonNull ProcessingContext context
+    MessageStream.Single<CommandResultMessage> handleInstance(
+            CommandMessage message, E entity, ProcessingContext context
     );
 
     /**

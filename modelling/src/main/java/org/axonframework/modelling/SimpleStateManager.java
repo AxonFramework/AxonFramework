@@ -53,11 +53,11 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
      * @param name The name of the state manager, used for describing the component.
      * @return A new {@code SimpleStateManager} with the given name.
      */
-    public static StateManager named(@NonNull String name) {
+    public static StateManager named(String name) {
         return new SimpleStateManager(name);
     }
 
-    private SimpleStateManager(@NonNull String name) {
+    private SimpleStateManager(String name) {
         BuilderUtils.assertNonEmpty(name, "The name must be non-empty.");
         this.name = name;
     }
@@ -66,9 +66,9 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     @NonNull
     @Override
     public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
-            @NonNull Class<T> entityType,
-            @NonNull I id,
-            @NonNull ProcessingContext context
+            Class<T> entityType,
+            I id,
+            ProcessingContext context
     ) {
         var repository = repositories
                 .stream()
@@ -94,7 +94,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @Override
-    public Set<Class<?>> registeredIdsFor(@NonNull Class<?> entityType) {
+    public Set<Class<?>> registeredIdsFor(Class<?> entityType) {
         return repositories.stream()
                            .filter(r -> r.entityType().equals(entityType))
                            .map(Repository::idType)
@@ -102,7 +102,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @Override
-    public <I, T> Repository<I, T> repository(@NonNull Class<T> entityType, @NonNull Class<I> idType) {
+    public <I, T> Repository<I, T> repository(Class<T> entityType, Class<I> idType) {
         //noinspection unchecked
         return (Repository<I, T>) repositories.stream()
                                               .filter(r -> r.entityType().equals(entityType))
@@ -112,13 +112,13 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("repositories", repositories);
     }
 
     @Override
-    public <I, T> StateManager register(@NonNull Repository<I, T> repository) {
+    public <I, T> StateManager register(Repository<I, T> repository) {
         Objects.requireNonNull(repository, "The repository must not be null.");
         Optional<Repository<?, ?>> registeredRepository = repositories
                 .stream()

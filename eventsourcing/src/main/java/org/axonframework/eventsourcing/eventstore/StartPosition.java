@@ -21,7 +21,7 @@ import org.jspecify.annotations.NonNull;
 final class StartPosition implements Position {
     @NonNull
     @Override
-    public Position min(@NonNull Position other) {
+    public Position min(Position other) {
         return START;
     }
 }

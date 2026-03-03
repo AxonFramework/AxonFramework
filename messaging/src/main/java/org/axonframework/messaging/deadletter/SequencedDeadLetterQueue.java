@@ -66,8 +66,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * {@link #isFull(Object, ProcessingContext) is full}.
      */
     @NonNull
-    CompletableFuture<Void> enqueue(@NonNull Object sequenceIdentifier,
-                                    @NonNull DeadLetter<? extends M> letter,
+    CompletableFuture<Void> enqueue(Object sequenceIdentifier,
+                                    DeadLetter<? extends M> letter,
                                     @Nullable ProcessingContext context);
 
     /**
@@ -87,8 +87,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      */
     @NonNull
     default CompletableFuture<Boolean> enqueueIfPresent(
-            @NonNull Object sequenceIdentifier,
-            @NonNull Supplier<DeadLetter<? extends M>> letterBuilder,
+            Object sequenceIdentifier,
+            Supplier<DeadLetter<? extends M>> letterBuilder,
             @Nullable ProcessingContext context
     ) {
         return contains(sequenceIdentifier, context)
@@ -110,7 +110,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} that completes when the eviction is done.
      */
     @NonNull
-    CompletableFuture<Void> evict(@NonNull DeadLetter<? extends M> letter,
+    CompletableFuture<Void> evict(DeadLetter<? extends M> letter,
                                   @Nullable ProcessingContext context);
 
     /**
@@ -130,8 +130,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * with a {@link NoSuchDeadLetterException} if the given {@code letter} does not exist in the queue.
      */
     @NonNull
-    CompletableFuture<Void> requeue(@NonNull DeadLetter<? extends M> letter,
-                                    @NonNull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+    CompletableFuture<Void> requeue(DeadLetter<? extends M> letter,
+                                    UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                                     @Nullable ProcessingContext context);
 
     /**
@@ -144,7 +144,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * the given {@code sequenceIdentifier}, {@code false} otherwise.
      */
     @NonNull
-    CompletableFuture<Boolean> contains(@NonNull Object sequenceIdentifier,
+    CompletableFuture<Boolean> contains(Object sequenceIdentifier,
                                         @Nullable ProcessingContext context);
 
     /**
@@ -156,7 +156,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * {@code sequenceIdentifier} in insert order.
      */
     @NonNull
-    CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@NonNull Object sequenceIdentifier,
+    CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(Object sequenceIdentifier,
                                                                             @Nullable ProcessingContext context);
 
     /**
@@ -181,7 +181,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * {@code false} otherwise.
      */
     @NonNull
-    CompletableFuture<Boolean> isFull(@NonNull Object sequenceIdentifier,
+    CompletableFuture<Boolean> isFull(Object sequenceIdentifier,
                                       @Nullable ProcessingContext context);
 
     /**
@@ -206,7 +206,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * {@code sequenceIdentifier}.
      */
     @NonNull
-    CompletableFuture<Long> sequenceSize(@NonNull Object sequenceIdentifier,
+    CompletableFuture<Long> sequenceSize(Object sequenceIdentifier,
                                          @Nullable ProcessingContext context);
 
     /**
@@ -251,8 +251,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      */
     @NonNull
     CompletableFuture<Boolean> process(
-            @NonNull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @NonNull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            Predicate<DeadLetter<? extends M>> sequenceFilter,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context);
 
     /**
@@ -282,7 +282,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      */
     @NonNull
     default CompletableFuture<Boolean> process(
-            @NonNull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context
     ) {
         return process(letter -> true, processingTask, context);

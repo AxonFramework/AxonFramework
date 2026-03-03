@@ -55,7 +55,7 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * processed successfully, {@code false} otherwise
      */
     @NonNull
-    CompletableFuture<Boolean> process(@NonNull Predicate<DeadLetter<? extends M>> sequenceFilter);
+    CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends M>> sequenceFilter);
 
     /**
      * Process any sequence of {@link DeadLetter dead letters} belonging to this component.

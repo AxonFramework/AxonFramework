@@ -16,11 +16,13 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.Nullable;
+
+
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.jspecify.annotations.NonNull;
 
 
 /**
@@ -84,6 +86,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @param <T>          Thy type defining the property
      * @return suitable {@link Property}, or {@code null} if none is found
      */
+    @Nullable
     public static <T> Property<T> getProperty(Class<? extends T> targetClass, String propertyName) {
         Property<T> property = null;
         Iterator<PropertyAccessStrategy> strategies = STRATEGIES.iterator();
@@ -95,7 +98,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
     }
 
     @Override
-    public final int compareTo(PropertyAccessStrategy o) {
+    public final int compareTo(@NonNull PropertyAccessStrategy o) {
         if (o == this) {
             return 0;
         }
@@ -129,6 +132,6 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @return the Property instance providing access to the property value, or {@code null} if property could not
      * be found.
      */
-    protected abstract <T> Property<T> propertyFor(Class<? extends T> targetClass, String property);
+    protected abstract <T> Property<T> propertyFor(Class<? extends T> targetClass, @Nullable String property);
 }
 

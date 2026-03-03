@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 
@@ -49,13 +48,13 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType) {
+    public boolean canConvert(Type sourceType, Type targetType) {
         return sourceType.equals(targetType);
     }
 
     @Override
     @Nullable
-    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
+    public <T> T convert(@Nullable Object input, Type targetType) {
         if (input == null) {
             return null;
         }
@@ -72,7 +71,7 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         // Nothing internal to describe about this component
     }
 }

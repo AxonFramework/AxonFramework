@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -62,9 +60,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
      * @param first      The first message stream to merge.
      * @param second     The second message stream to merge.
      */
-    public MergedMessageStream(@NonNull Comparator<Entry<M>> comparator,
-                               @NonNull MessageStream<M> first,
-                               @NonNull MessageStream<M> second) {
+    public MergedMessageStream(Comparator<Entry<M>> comparator,
+                               MessageStream<M> first,
+                               MessageStream<M> second) {
         this.comparator = Objects.requireNonNull(comparator, "comparator must not be null");
         this.first = Objects.requireNonNull(first, "first must not be null");
         this.second = Objects.requireNonNull(second, "second must not be null");
@@ -103,7 +101,7 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         callbackRef.set(callback);
         Runnable delegating = () -> {
             if (hasNextAvailable() || isCompleted() || error().isPresent()) {

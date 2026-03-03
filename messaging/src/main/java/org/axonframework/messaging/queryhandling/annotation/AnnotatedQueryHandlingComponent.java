@@ -76,11 +76,11 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
      * @param converter                The converter to use for converting the payload of the query to the type expected
      *                                 by the handling method.
      */
-    public AnnotatedQueryHandlingComponent(@NonNull T annotatedQueryHandler,
-                                           @NonNull ParameterResolverFactory parameterResolverFactory,
-                                           @NonNull HandlerDefinition handlerDefinition,
-                                           @NonNull MessageTypeResolver messageTypeResolver,
-                                           @NonNull MessageConverter converter) {
+    public AnnotatedQueryHandlingComponent(T annotatedQueryHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition,
+                                           MessageTypeResolver messageTypeResolver,
+                                           MessageConverter converter) {
         this.target = requireNonNull(annotatedQueryHandler, "The Annotated Query Handler may not be null.");
         this.handlingComponent = SimpleQueryHandlingComponent.create(
                 "AnnotatedQueryHandlingComponent[%s]".formatted(annotatedQueryHandler.getClass().getName())
@@ -134,7 +134,7 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
         };
     }
 
-    private QueryResponseMessage asQueryResponseMessage(@NonNull Message queryResponse) {
+    private QueryResponseMessage asQueryResponseMessage(Message queryResponse) {
         return queryResponse instanceof QueryResponseMessage
                 ? (QueryResponseMessage) queryResponse
                 : new GenericQueryResponseMessage(queryResponse);
@@ -142,8 +142,8 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
 
     @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
-                                                      @NonNull ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                                      ProcessingContext context) {
         return handlingComponent.handle(query, context);
     }
 
@@ -153,7 +153,7 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

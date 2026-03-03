@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.DirectExecutor;
 
 import java.util.List;
@@ -25,38 +24,43 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+
+import org.axonframework.common.DirectExecutor;
+import org.jspecify.annotations.NonNull;
+
 /**
  * Configuration used for the {@link UnitOfWork} creation in the {@link UnitOfWorkFactory}.
  * <p>
- * Defines the work scheduler used during unit of work processing, and allows registering
- * possible enhancers for a unit of work's lifecycle.
+ * Defines the work scheduler used during unit of work processing, and allows registering possible enhancers for a unit
+ * of work's lifecycle.
  *
- * @param workScheduler The {@link Executor} for processing unit of work actions.
- * @param allowAsyncProcessing Whether the unit of work should allow fully asynchronous processing.
- * @param processingLifecycleEnhancers The enhancers that are applied to the processing lifecycle for each created unit of work.
+ * @param workScheduler                The {@link Executor} for processing unit of work actions.
+ * @param allowAsyncProcessing         Whether the unit of work should allow fully asynchronous processing.
+ * @param processingLifecycleEnhancers The enhancers that are applied to the processing lifecycle for each created unit
+ *                                     of work.
  * @author Mateusz Nowak
  * @author John Hendrikx
  * @since 5.0.0
  */
-public record UnitOfWorkConfiguration(@NonNull Executor workScheduler, boolean allowAsyncProcessing, @NonNull List<Consumer<ProcessingLifecycle>> processingLifecycleEnhancers) {
+public record UnitOfWorkConfiguration(Executor workScheduler, boolean allowAsyncProcessing, List<Consumer<ProcessingLifecycle>> processingLifecycleEnhancers) {
 
     /**
      * Creates default configuration with direct execution.
      *
      * @return Default {@link UnitOfWorkConfiguration} instance.
      */
-    static @NonNull UnitOfWorkConfiguration defaultValues() {
+    static UnitOfWorkConfiguration defaultValues() {
         return new UnitOfWorkConfiguration(DirectExecutor.instance(), true, List.of());
     }
 
     /**
-     * Creates a new {@link UnitOfWorkConfiguration} that forces all handlers to be invoked by the same thread.
-     * The configuration uses a direct execution model where all tasks are run immediately on the
-     * calling thread, and the coordinating thread will wait for any asynchronous processing to complete.
+     * Creates a new {@link UnitOfWorkConfiguration} that forces all handlers to be invoked by the same thread. The
+     * configuration uses a direct execution model where all tasks are run immediately on the calling thread, and the
+     * coordinating thread will wait for any asynchronous processing to complete.
      *
      * @return A new modified {@link UnitOfWorkConfiguration}.
      */
-        public @NonNull UnitOfWorkConfiguration forcedSameThreadInvocation() {
+        public UnitOfWorkConfiguration forcedSameThreadInvocation() {
         return new UnitOfWorkConfiguration(Runnable::run, false, List.of());
     }
 
@@ -66,7 +70,7 @@ public record UnitOfWorkConfiguration(@NonNull Executor workScheduler, boolean a
      * @param workScheduler The {@link Executor} for processing actions.
      * @return A new modified {@link UnitOfWorkConfiguration}.
      */
-        public @NonNull UnitOfWorkConfiguration workScheduler(@NonNull Executor workScheduler) {
+        public UnitOfWorkConfiguration workScheduler(Executor workScheduler) {
         Objects.requireNonNull(workScheduler, "workScheduler may not be null");
         return new UnitOfWorkConfiguration(workScheduler, allowAsyncProcessing, processingLifecycleEnhancers);
     }
@@ -77,13 +81,13 @@ public record UnitOfWorkConfiguration(@NonNull Executor workScheduler, boolean a
      * @param enhancer The processing lifecycle enhancer to include.
      * @return A new modified {@link UnitOfWorkConfiguration}.
      */
-        public @NonNull UnitOfWorkConfiguration registerProcessingLifecycleEnhancer(@NonNull Consumer<ProcessingLifecycle> enhancer) {
+        public UnitOfWorkConfiguration registerProcessingLifecycleEnhancer(Consumer<ProcessingLifecycle> enhancer) {
         Objects.requireNonNull(enhancer, "enhancer may not be null");
 
         return new UnitOfWorkConfiguration(
-            workScheduler,
-            allowAsyncProcessing,
-            Stream.concat(processingLifecycleEnhancers.stream(), Stream.of(enhancer)).toList()
+                workScheduler,
+                allowAsyncProcessing,
+                Stream.concat(processingLifecycleEnhancers.stream(), Stream.of(enhancer)).toList()
         );
     }
 }

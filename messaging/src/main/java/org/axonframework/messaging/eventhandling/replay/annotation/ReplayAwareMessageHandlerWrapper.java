@@ -49,7 +49,7 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
 
     @Override
     public @NonNull
-    <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         boolean isReplayAllowed = (boolean) original
                 .attribute(HandlerAttributes.ALLOW_REPLAY)
                 .orElseGet(() -> original.unwrap(Member.class)
@@ -83,8 +83,8 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public MessageStream<?> handle(@NonNull Message message,
-                                       @NonNull ProcessingContext context,
+        public MessageStream<?> handle(Message message,
+                                       ProcessingContext context,
                                        @Nullable T target) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
             if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {

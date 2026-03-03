@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.configuration.reflection;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -51,8 +50,8 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@NonNull ComponentRegistry componentRegistry,
-                                                   @NonNull Function<Configuration, ParameterResolverFactory> factory
+    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
+                                                   Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         registerToComponentRegistry(componentRegistry, 0, factory);
@@ -67,9 +66,9 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@NonNull ComponentRegistry componentRegistry,
+    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
                                                    int order,
-                                                   @NonNull Function<Configuration, ParameterResolverFactory> factory
+                                                   Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");

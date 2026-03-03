@@ -50,7 +50,7 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param object The object to convert.
      * @return The byte array containing Avro Single Object Encoded bytes.
      */
-    byte @NonNull [] convertToSingleObjectEncoded(@NonNull Object object);
+    byte [] convertToSingleObjectEncoded(Object object);
 
     /**
      * Converts from single object encoded byte array.
@@ -61,8 +61,8 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @return The deserialized object.
      */
     @NonNull
-    <T> T convertFromSingleObjectEncoded(byte @NonNull [] bytes,
-                                         @NonNull Class<T> type);
+    <T> T convertFromSingleObjectEncoded(byte [] bytes,
+                                         Class<T> type);
 
     /**
      * Converts from Apache Avro generic record (intermediate representation).
@@ -72,8 +72,8 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param <T>           The payload type to convert to.
      * @return deserialized object.
      */
-    <T> T convertFromGenericRecord(@NonNull GenericRecord genericRecord,
-                                   @NonNull Class<T> type);
+    <T> T convertFromGenericRecord(GenericRecord genericRecord,
+                                   Class<T> type);
 
     /**
      * Sets the configuration for the strategy.
@@ -87,6 +87,6 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param avroConverterStrategyConfiguration configuration passed after construction.
      */
     default void applyStrategyConfiguration(
-            @NonNull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
+            AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
     }
 }

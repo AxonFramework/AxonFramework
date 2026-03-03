@@ -45,5 +45,5 @@ public interface MessageDispatchInterceptorChain<M extends Message> {
      * @return A {@link MessageStream} containing the result of processing the given {@code message}.
      */
     @NonNull
-    MessageStream<?> proceed(@NonNull M message, @Nullable ProcessingContext context);
+    MessageStream<?> proceed(M message, @Nullable ProcessingContext context);
 }

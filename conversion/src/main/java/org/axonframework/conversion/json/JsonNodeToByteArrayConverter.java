@@ -44,7 +44,7 @@ public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNo
      *
      * @param objectMapper The object mapper to serialize the {@link JsonNode} into {@code byte[].
      */
-    public JsonNodeToByteArrayConverter(@NonNull ObjectMapper objectMapper) {
+    public JsonNodeToByteArrayConverter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 

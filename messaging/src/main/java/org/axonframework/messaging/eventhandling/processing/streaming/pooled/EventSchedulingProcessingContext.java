@@ -76,27 +76,27 @@ class EventSchedulingProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(@NonNull Phase phase, @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
+    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
+    public ProcessingLifecycle onError(ErrorHandler action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 
     @Override
-    public boolean containsResource(@NonNull ResourceKey<?> key) {
+    public boolean containsResource(ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(@NonNull ResourceKey<T> key) {
+    public <T> T getResource(ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
@@ -107,48 +107,48 @@ class EventSchedulingProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T putResource(@NonNull ResourceKey<T> key,
-                             @NonNull T resource) {
+    public <T> T putResource(ResourceKey<T> key,
+                             T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(@NonNull ResourceKey<T> key,
-                                @NonNull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(ResourceKey<T> key,
+                                UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@NonNull ResourceKey<T> key,
-                                     @NonNull T resource) {
+    public <T> T putResourceIfAbsent(ResourceKey<T> key,
+                                     T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@NonNull ResourceKey<T> key,
-                                         @NonNull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(ResourceKey<T> key,
+                                         Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(@NonNull ResourceKey<T> key) {
+    public <T> T removeResource(ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(@NonNull ResourceKey<T> key,
-                                      @NonNull T expectedResource) {
+    public <T> boolean removeResource(ResourceKey<T> key,
+                                      T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 
     @NonNull
     @Override
-    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         return applicationContext.component(type, name);
     }
 }

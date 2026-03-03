@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
@@ -75,12 +74,12 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
      *
      * @param annotationType The annotation specifying the field to check the payload for.
      */
-    public AnnotationRoutingStrategy(@NonNull Class<? extends Annotation> annotationType) {
+    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
         this.annotationType = Objects.requireNonNull(annotationType, "The annotationType can not be null.");
     }
 
     @Override
-    public String getRoutingKey(@NonNull CommandMessage command) {
+    public String getRoutingKey(CommandMessage command) {
         try {
             Object payload = command.payload();
             return payload == null ? null : findIdentifier(payload);

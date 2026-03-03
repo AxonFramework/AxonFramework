@@ -78,7 +78,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         switch (type) {
             case EVENT:
                 configureEventHandlers(registry);
@@ -148,7 +148,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -159,8 +159,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      * @param definition bean definition.
      */
     record NamedBeanDefinition(
-            @NonNull String name,
-            @NonNull BeanDefinition definition
+            String name,
+            BeanDefinition definition
     ) {
 
     }
@@ -214,7 +214,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-                public @NonNull Object resolveBean() {
+                public Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 

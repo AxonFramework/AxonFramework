@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;

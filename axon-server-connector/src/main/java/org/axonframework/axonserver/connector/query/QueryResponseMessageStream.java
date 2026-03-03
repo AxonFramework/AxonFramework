@@ -45,26 +45,26 @@ public class QueryResponseMessageStream extends AbstractQueryResponseMessageStre
      * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
      */
-    public QueryResponseMessageStream(@NonNull ResultStream<QueryResponse> stream) {
+    public QueryResponseMessageStream(ResultStream<QueryResponse> stream) {
         super(stream);
     }
 
     @NonNull
     @Override
-    protected QueryResponseMessage buildResponseMessage(@NonNull QueryResponse queryResponse) {
+    protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
         return convertQueryResponse(queryResponse);
     }
 
     @NonNull
     @Override
-    protected AxonException createAxonException(@NonNull QueryResponse queryResponse) {
+    protected AxonException createAxonException(QueryResponse queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),
                                       queryResponse.getErrorMessage(),
                                       queryResponse.getPayload());
     }
 
     @Override
-    protected boolean isError(@NonNull QueryResponse queryResponse) {
+    protected boolean isError(QueryResponse queryResponse) {
         return queryResponse.hasErrorMessage();
     }
 }

@@ -19,7 +19,6 @@ package org.axonframework.messaging.eventhandling.annotation;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
-
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Message;
@@ -64,7 +63,7 @@ public final class TimestampParameterResolverFactory
 
         @NonNull
         @Override
-        public CompletableFuture<Instant> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Instant> resolveParameterValue(ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
                 return CompletableFuture.completedFuture(eventMessage.timestamp());
             }
@@ -72,7 +71,7 @@ public final class TimestampParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

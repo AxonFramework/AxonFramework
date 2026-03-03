@@ -63,8 +63,8 @@ public interface QueryGateway extends DescribableComponent {
      * @return A {@code CompletableFuture} containing a single query response of type {@code responseType}.
      */
     @NonNull
-    <R> CompletableFuture<R> query(@NonNull Object query,
-                                   @NonNull Class<R> responseType,
+    <R> CompletableFuture<R> query(Object query,
+                                   Class<R> responseType,
                                    @Nullable ProcessingContext context);
 
     /**
@@ -85,8 +85,8 @@ public interface QueryGateway extends DescribableComponent {
      * @see #query(Object, Class, ProcessingContext)
      */
     @NonNull
-    default <R> CompletableFuture<R> query(@NonNull Object query,
-                                           @NonNull Class<R> responseType) {
+    default <R> CompletableFuture<R> query(Object query,
+                                           Class<R> responseType) {
         return query(query, responseType, null);
     }
 
@@ -108,8 +108,8 @@ public interface QueryGateway extends DescribableComponent {
      * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
      */
     @NonNull
-    <R> CompletableFuture<List<R>> queryMany(@NonNull Object query,
-                                             @NonNull Class<R> responseType,
+    <R> CompletableFuture<List<R>> queryMany(Object query,
+                                             Class<R> responseType,
                                              @Nullable ProcessingContext context);
 
     /**
@@ -130,8 +130,8 @@ public interface QueryGateway extends DescribableComponent {
      * @see #queryMany(Object, Class, ProcessingContext)
      */
     @NonNull
-    default <R> CompletableFuture<List<R>> queryMany(@NonNull Object query,
-                                                     @NonNull Class<R> responseType) {
+    default <R> CompletableFuture<List<R>> queryMany(Object query,
+                                                     Class<R> responseType) {
         return queryMany(query, responseType, null);
     }
 
@@ -160,8 +160,8 @@ public interface QueryGateway extends DescribableComponent {
      * {@code responseType}.
      */
     @NonNull
-    <R> Publisher<R> streamingQuery(@NonNull Object query,
-                                    @NonNull Class<R> responseType,
+    <R> Publisher<R> streamingQuery(Object query,
+                                    Class<R> responseType,
                                     @Nullable ProcessingContext context);
 
     /**
@@ -189,8 +189,8 @@ public interface QueryGateway extends DescribableComponent {
      * @see #streamingQuery(Object, Class, ProcessingContext)
      */
     @NonNull
-    default <R> Publisher<R> streamingQuery(@NonNull Object query,
-                                            @NonNull Class<R> responseType) {
+    default <R> Publisher<R> streamingQuery(Object query,
+                                            Class<R> responseType) {
         return streamingQuery(query, responseType, null);
     }
 
@@ -221,8 +221,8 @@ public interface QueryGateway extends DescribableComponent {
      * {@code responseType}.
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType,
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType,
                                                @Nullable ProcessingContext context) {
         return subscriptionQuery(query, responseType, context, Queues.SMALL_BUFFER_SIZE);
     }
@@ -253,8 +253,8 @@ public interface QueryGateway extends DescribableComponent {
      * {@code responseType}.
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType) {
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType) {
         return subscriptionQuery(query, responseType, (ProcessingContext) null);
     }
 
@@ -287,8 +287,8 @@ public interface QueryGateway extends DescribableComponent {
      * {@code responseType}.
      */
     @NonNull
-    <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                       @NonNull Class<R> responseType,
+    <R> Publisher<R> subscriptionQuery(Object query,
+                                       Class<R> responseType,
                                        @Nullable ProcessingContext context,
                                        int updateBufferSize);
 
@@ -325,9 +325,9 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType,
-                                               @NonNull Function<QueryResponseMessage, R> mapper,
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType,
+                                               Function<QueryResponseMessage, R> mapper,
                                                @Nullable ProcessingContext context) {
         return subscriptionQuery(query, responseType, mapper, context, Queues.SMALL_BUFFER_SIZE);
     }
@@ -364,9 +364,9 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType,
-                                               @NonNull Function<QueryResponseMessage, R> mapper) {
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType,
+                                               Function<QueryResponseMessage, R> mapper) {
         return subscriptionQuery(query, responseType, mapper, null, Queues.SMALL_BUFFER_SIZE);
     }
 
@@ -398,8 +398,8 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType,
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType,
                                                int updateBufferSize) {
         return subscriptionQuery(query, responseType, (ProcessingContext) null, updateBufferSize);
     }
@@ -435,9 +435,9 @@ public interface QueryGateway extends DescribableComponent {
      * @see QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      */
     @NonNull
-    <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                       @NonNull Class<R> responseType,
-                                       @NonNull Function<QueryResponseMessage, R> mapper,
+    <R> Publisher<R> subscriptionQuery(Object query,
+                                       Class<R> responseType,
+                                       Function<QueryResponseMessage, R> mapper,
                                        @Nullable ProcessingContext context,
                                        int updateBufferSize);
 
@@ -471,9 +471,9 @@ public interface QueryGateway extends DescribableComponent {
      * @see #subscriptionQuery(Object, Class, Function, ProcessingContext, int)
      */
     @NonNull
-    default <R> Publisher<R> subscriptionQuery(@NonNull Object query,
-                                               @NonNull Class<R> responseType,
-                                               @NonNull Function<QueryResponseMessage, R> mapper,
+    default <R> Publisher<R> subscriptionQuery(Object query,
+                                               Class<R> responseType,
+                                               Function<QueryResponseMessage, R> mapper,
                                                int updateBufferSize) {
         return subscriptionQuery(query, responseType, mapper, null, updateBufferSize);
     }

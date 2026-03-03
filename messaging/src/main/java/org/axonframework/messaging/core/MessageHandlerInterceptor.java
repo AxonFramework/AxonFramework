@@ -51,7 +51,7 @@ public interface MessageHandlerInterceptor<M extends Message> {
      * {@link MessageHandlerInterceptorChain#proceed(Message, ProcessingContext)}.
      */
     @NonNull
-    MessageStream<?> interceptOnHandle(@NonNull M message,
-                                       @NonNull ProcessingContext context,
-                                       @NonNull MessageHandlerInterceptorChain<M> interceptorChain);
+    MessageStream<?> interceptOnHandle(M message,
+                                       ProcessingContext context,
+                                       MessageHandlerInterceptorChain<M> interceptorChain);
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -65,9 +64,9 @@ public class StorageEngineBackedEventStore implements EventStore {
      *                           {@link EventStoreTransaction}.
      */
     public StorageEngineBackedEventStore(
-            @NonNull EventStorageEngine eventStorageEngine,
-            @NonNull EventBus eventBus,
-            @NonNull TagResolver tagResolver
+            EventStorageEngine eventStorageEngine,
+            EventBus eventBus,
+            TagResolver tagResolver
     ) {
         this.eventStorageEngine = eventStorageEngine;
         this.eventBus = eventBus;
@@ -77,7 +76,7 @@ public class StorageEngineBackedEventStore implements EventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@NonNull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
                 () -> {
@@ -90,7 +89,7 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @NonNull List<EventMessage> events) {
+                                           List<EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
@@ -133,18 +132,18 @@ public class StorageEngineBackedEventStore implements EventStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return eventStorageEngine.tokenAt(at);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+    public MessageStream<EventMessage> open(StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         return eventStorageEngine.stream(condition);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
         descriptor.describeProperty("eventBus", eventBus);
         descriptor.describeProperty("tagResolver", tagResolver);
@@ -157,7 +156,7 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     @Override
     public Registration subscribe(
-            @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventBus.subscribe(eventsBatchConsumer);
     }
 }

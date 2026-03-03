@@ -53,7 +53,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @return The evolved parent entity.
      */
     @NonNull
-    P evolveParentBasedOnChildInput(@NonNull P parentEntity, @Nullable F childInput);
+    P evolveParentBasedOnChildInput(P parentEntity, @Nullable F childInput);
 
     /**
      * Returns the type of the field.
@@ -62,7 +62,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @return The type of the field.
      */
     @Nullable
-    F getChildValue(@NonNull P parentEntity);
+    F getChildValue(P parentEntity);
 
     /**
      * Creates a new {@link FieldChildEntityFieldDefinition} for the given field name. This will use reflection to
@@ -77,8 +77,8 @@ public interface ChildEntityFieldDefinition<P, F> {
      */
     @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forFieldName(
-            @NonNull Class<P> parentClass,
-            @NonNull String fieldName
+            Class<P> parentClass,
+            String fieldName
     ) {
         return new FieldChildEntityFieldDefinition<>(parentClass, fieldName);
     }
@@ -113,8 +113,8 @@ public interface ChildEntityFieldDefinition<P, F> {
      */
     @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterEvolver(
-            @NonNull Function<P, F> getter,
-            @NonNull BiFunction<P, F, P> evolver
+            Function<P, F> getter,
+            BiFunction<P, F, P> evolver
     ) {
         return new GetterEvolverChildEntityFieldDefinition<>(getter, evolver);
     }
@@ -131,8 +131,8 @@ public interface ChildEntityFieldDefinition<P, F> {
      */
     @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterSetter(
-            @NonNull Function<P, F> getter,
-            @NonNull BiConsumer<P, F> setter
+            Function<P, F> getter,
+            BiConsumer<P, F> setter
     ) {
         return new GetterSetterChildEntityFieldDefinition<>(getter, setter);
     }

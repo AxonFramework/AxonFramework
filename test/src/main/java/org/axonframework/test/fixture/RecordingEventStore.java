@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
@@ -56,7 +55,7 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
      *
      * @param delegate The {@link EventStore} to which events will be published.
      */
-    public RecordingEventStore(@NonNull EventStore delegate) {
+    public RecordingEventStore(EventStore delegate) {
         super(Objects.requireNonNull(delegate, "The delegate EventStore may not be null"));
         this.eventStore = delegate;
     }
@@ -72,7 +71,7 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+    public MessageStream<EventMessage> open(StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         return eventStore.open(condition, context);
     }
@@ -88,13 +87,13 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return eventStore.tokenAt(at, context);
     }
 
     @Override
     public Registration subscribe(
-            @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventStore.subscribe(eventsBatchConsumer);
     }
 }

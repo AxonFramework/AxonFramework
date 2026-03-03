@@ -79,10 +79,10 @@ public class UnitOfWork implements ProcessingLifecycle {
      */
     @Internal
     UnitOfWork(
-            @NonNull String identifier,
-            @NonNull Executor workScheduler,
+            String identifier,
+            Executor workScheduler,
             boolean forceSyncProcessing,
-            @NonNull ApplicationContext applicationContext
+            ApplicationContext applicationContext
     ) {
         Objects.requireNonNull(identifier, "identifier may not be null.");
         Objects.requireNonNull(workScheduler, "workScheduler may not be null.");
@@ -117,18 +117,18 @@ public class UnitOfWork implements ProcessingLifecycle {
     }
 
     @Override
-    public UnitOfWork on(@NonNull Phase phase, @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
+    public UnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
         context.on(phase, action);
         return this;
     }
 
     @Override
-    public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
+    public ProcessingLifecycle onError(ErrorHandler action) {
         return context.onError(action);
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
+    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
         return context.whenComplete(action);
     }
 
@@ -158,7 +158,7 @@ public class UnitOfWork implements ProcessingLifecycle {
      * the Unit Of Work has been committed. Or, an exceptionally completed future with the exception that caused this
      * Unit of Work to fail.
      */
-    public <R> CompletableFuture<R> executeWithResult(@NonNull Function<ProcessingContext, CompletableFuture<R>> action) {
+    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
         CompletableFuture<R> result = new CompletableFuture<>();
         onInvocation(processingContext -> safe(() -> action.apply(processingContext))
                 .whenComplete(FutureUtils.alsoComplete(result)));
@@ -173,7 +173,7 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
      * {@code action}.
      */
-    private <R> CompletableFuture<R> safe(@NonNull Callable<CompletableFuture<R>> action) {
+    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> action) {
         try {
             CompletableFuture<R> result = action.call();
             if (result == null) {
@@ -243,7 +243,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle on(@NonNull Phase phase, @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
+        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
             var current = currentPhase.get();
             if (current != null && phase.order() <= current.order()) {
                 throw new IllegalStateException(
@@ -267,7 +267,7 @@ public class UnitOfWork implements ProcessingLifecycle {
          * {@code action}.
          */
         private Function<ProcessingContext, CompletableFuture<?>> safe(
-                @NonNull Phase phase, @NonNull Function<ProcessingContext, CompletableFuture<?>> action
+                Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
         ) {
             return processingContext -> {
                 CompletableFuture<?> result;
@@ -287,7 +287,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
+        public ProcessingLifecycle onError(ErrorHandler action) {
             ErrorHandler silentAction = failSilently(action);
             this.errorHandlers.add(silentAction);
             var currentStatus = status.get();
@@ -302,7 +302,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             return this;
         }
 
-        private ErrorHandler failSilently(@NonNull ErrorHandler action) {
+        private ErrorHandler failSilently(ErrorHandler action) {
             return (context, phase, exception) -> {
                 try {
                     action.handle(context, phase, exception);
@@ -313,7 +313,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
+        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
             Consumer<ProcessingContext> silentAction = completeSilently(action);
             this.completeHandlers.add(silentAction);
             var currentStatus = status.get();
@@ -327,7 +327,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             return this;
         }
 
-        private Consumer<ProcessingContext> completeSilently(@NonNull Consumer<ProcessingContext> action) {
+        private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
             return processingContext -> {
                 try {
                     action.accept(processingContext);
@@ -391,7 +391,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             }
         }
 
-        private CompletableFuture<Void> runErrorHandlers(@NonNull Throwable e) {
+        private CompletableFuture<Void> runErrorHandlers(Throwable e) {
             status.set(Status.COMPLETED_ERROR);
             CauseAndPhase recordedCause = errorCause.get();
 
@@ -441,12 +441,12 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public boolean containsResource(Context.@NonNull ResourceKey<?> key) {
+        public boolean containsResource(Context.ResourceKey<?> key) {
             return resources.containsKey(key);
         }
 
         @Override
-        public <T> T getResource(@NonNull ResourceKey<T> key) {
+        public <T> T getResource(ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.get(key);
         }
@@ -457,54 +457,54 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> T putResource(@NonNull ResourceKey<T> key,
-                                 @NonNull T resource) {
+        public <T> T putResource(ResourceKey<T> key,
+                                 T resource) {
             //noinspection unchecked
             return (T) resources.put(key, resource);
         }
 
         @Override
-        public <T> T updateResource(@NonNull ResourceKey<T> key,
-                                    @NonNull UnaryOperator<T> resourceUpdater) {
+        public <T> T updateResource(ResourceKey<T> key,
+                                    UnaryOperator<T> resourceUpdater) {
             //noinspection unchecked
             return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
         }
 
         @Override
-        public <T> T putResourceIfAbsent(@NonNull ResourceKey<T> key,
-                                         @NonNull T resource) {
+        public <T> T putResourceIfAbsent(ResourceKey<T> key,
+                                         T resource) {
             //noinspection unchecked
             return (T) resources.putIfAbsent(key, resource);
         }
 
         @Override
-        public <T> T computeResourceIfAbsent(@NonNull ResourceKey<T> key,
-                                             @NonNull Supplier<T> resourceSupplier) {
+        public <T> T computeResourceIfAbsent(ResourceKey<T> key,
+                                             Supplier<T> resourceSupplier) {
             //noinspection unchecked
             return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
         }
 
         @Override
-        public <T> T removeResource(@NonNull ResourceKey<T> key) {
+        public <T> T removeResource(ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.remove(key);
         }
 
         @Override
-        public <T> boolean removeResource(@NonNull ResourceKey<T> key,
-                                          @NonNull T expectedResource) {
+        public <T> boolean removeResource(ResourceKey<T> key,
+                                          T expectedResource) {
             return resources.remove(key, expectedResource);
         }
 
         @NonNull
         @Override
-        public <C> C component(@NonNull Class<C> type, @Nullable String name) {
+        public <C> C component(Class<C> type, @Nullable String name) {
             return applicationContext.component(type, name);
         }
 
         @NonNull
         @Override
-        public <C> C component(@NonNull Class<C> type) {
+        public <C> C component(Class<C> type) {
             return applicationContext.component(type);
         }
 
@@ -527,7 +527,7 @@ public class UnitOfWork implements ProcessingLifecycle {
          *              {@code cause} was thrown.
          * @param cause The {@link Throwable} thrown in an action executed in the given {@code phase}.
          */
-        private record CauseAndPhase(@NonNull Phase phase, @NonNull Throwable cause) {
+        private record CauseAndPhase(Phase phase, Throwable cause) {
 
         }
     }

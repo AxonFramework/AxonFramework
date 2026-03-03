@@ -52,8 +52,8 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
      * @param fieldName   The name of the field to use to access the child entity.
      */
     public FieldChildEntityFieldDefinition(
-            @NonNull Class<P> parentClass,
-            @NonNull String fieldName
+            Class<P> parentClass,
+            String fieldName
     ) {
         this.parentClass = Objects.requireNonNull(parentClass, "The parentClass may not be null.");
         this.fieldName = Objects.requireNonNull(fieldName, "The fieldName may not be null.");
@@ -105,7 +105,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     @NonNull
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildInput(@NonNull P parentEntity, @NonNull F childInput) {
+    public P evolveParentBasedOnChildInput(P parentEntity, F childInput) {
         try {
             if (optionalSetter != null) {
                 Object invokeResult = optionalSetter.invoke(parentEntity, childInput);
@@ -128,7 +128,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildValue(@NonNull P parentEntity) {
+    public F getChildValue(P parentEntity) {
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);
@@ -140,7 +140,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("parentClass", parentClass);
         descriptor.describeProperty("fieldName", fieldName);
         descriptor.describeProperty("field", field);

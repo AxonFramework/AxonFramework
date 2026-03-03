@@ -144,9 +144,9 @@ class SplitTask extends CoordinatorTask {
     }
 
     @NonNull
-    private CompletableFuture<Void> splitAndRelease(@NonNull TrackerStatus[] splitStatuses,
-                                                    @NonNull Segment segmentToSplit,
-                                                    @NonNull ProcessingContext context) {
+    private CompletableFuture<Void> splitAndRelease(TrackerStatus[] splitStatuses,
+                                                    Segment segmentToSplit,
+                                                    ProcessingContext context) {
         return tokenStore.initializeSegment(
                                  splitStatuses[1].getTrackingToken(),
                                  name,

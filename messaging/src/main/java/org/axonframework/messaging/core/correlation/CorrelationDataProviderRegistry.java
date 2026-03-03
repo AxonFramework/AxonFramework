@@ -53,7 +53,7 @@ public interface CorrelationDataProviderRegistry {
      */
     @NonNull
     CorrelationDataProviderRegistry registerProvider(
-            @NonNull ComponentBuilder<CorrelationDataProvider> providerBuilder
+            ComponentBuilder<CorrelationDataProvider> providerBuilder
     );
 
     /**
@@ -63,5 +63,5 @@ public interface CorrelationDataProviderRegistry {
      * @return The list of {@link CorrelationDataProvider CorrelationDataProviders}.
      */
     @NonNull
-    List<CorrelationDataProvider> correlationDataProviders(@NonNull Configuration config);
+    List<CorrelationDataProvider> correlationDataProviders(Configuration config);
 }

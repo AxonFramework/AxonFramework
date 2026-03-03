@@ -53,7 +53,7 @@ public interface EventHandlingComponent extends EventHandler, ResetHandler, Desc
      * @param eventName The name of the event to check for support.
      * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
      */
-    default boolean supports(@NonNull QualifiedName eventName) {
+    default boolean supports(QualifiedName eventName) {
         return supportedEvents().contains(eventName);
     }
 
@@ -70,7 +70,7 @@ public interface EventHandlingComponent extends EventHandler, ResetHandler, Desc
      * @return A sequence identifier for the given event.
      */
     @NonNull
-    Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context);
+    Object sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 
     /**
      * Indicates whether this component supports reset operations.
