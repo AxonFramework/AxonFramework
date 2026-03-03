@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
@@ -40,8 +39,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-
-import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
  * An {@link EventHandlingComponent} decorator that uses a {@link SequencedDeadLetterQueue} to enqueue
@@ -69,8 +66,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
-            (letter, cause) -> Decisions.enqueue(truncated(cause));
 
     /**
      * The order for decorating {@link EventHandlingComponent EventHandlingComponents} with dead-lettering support.
@@ -167,7 +162,8 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @param error              the error that occurred
      * @return a stream that completes after the error is handled (either enqueued or evicted)
      */
-    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier, Throwable error) {
+    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier,
+                                               Throwable error) {
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
         EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, error);
 
