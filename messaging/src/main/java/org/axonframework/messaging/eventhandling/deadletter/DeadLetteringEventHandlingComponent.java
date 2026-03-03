@@ -45,7 +45,7 @@ import java.util.function.Predicate;
  * {@link EventMessage events} for which handling failed.
  * <p>
  * Uses an {@link EnqueuePolicy} to decide whether a failed event should be
- * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued}. Subsequent events belonging to an already
+ * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueued}. Subsequent events belonging to an already
  * enqueued "sequence identifier" are also enqueued to maintain event ordering in the face of failures.
  * <p>
  * This component provides operations to {@link #processAny()} {@link DeadLetter dead letters} it has enqueued through
@@ -90,7 +90,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
      *                          processing dead letters
      * @param allowReset        whether to clear the queue on reset. If {@code true},
-     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset
+     *                          {@link SequencedDeadLetterQueue#clear(ProcessingContext)} will be invoked upon a reset
      */
     public DeadLetteringEventHandlingComponent(@Nonnull EventHandlingComponent delegate,
                                                @Nonnull SequencedDeadLetterQueue<EventMessage> queue,
