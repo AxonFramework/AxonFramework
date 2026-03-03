@@ -58,8 +58,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
-    private static final String TEST_PROCESSING_GROUP = "some-processing-group";
-
     private DataSource dataSource;
     private JdbcTransactionalExecutorProvider executorProvider;
     private DeadLetterStatementFactory<EventMessage> statementFactory;
@@ -82,7 +80,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                             .build();
 
         jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.<EventMessage>builder()
-                                                          .processingGroup(TEST_PROCESSING_GROUP)
+                                                          .processingGroup(PROCESSING_GROUP)
                                                           .transactionalExecutorProvider(executorProvider)
                                                           .schema(schema)
                                                           .statementFactory(statementFactory)
@@ -186,7 +184,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                                                              connection,
                                                                                              c -> statementFactory.enqueueStatement(
                                                                                                      c,
-                                                                                                     TEST_PROCESSING_GROUP,
+                                                                                                     PROCESSING_GROUP,
                                                                                                      aggregateId,
                                                                                                      letter,
                                                                                                      index,

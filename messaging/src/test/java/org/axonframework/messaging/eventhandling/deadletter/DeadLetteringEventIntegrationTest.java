@@ -106,7 +106,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public abstract class DeadLetteringEventIntegrationTest {
 
-    private static final String PROCESSING_GROUP = "problematicProcessingGroup";
+    protected static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;

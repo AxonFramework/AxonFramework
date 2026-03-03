@@ -87,9 +87,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
-    // Must match DeadLetteringEventIntegrationTest.PROCESSING_GROUP (private static final).
-    private static final String PROCESSING_GROUP = "problematicProcessingGroup";
-
     @Autowired
     private EntityManagerFactory entityManagerFactory;
     @Autowired
