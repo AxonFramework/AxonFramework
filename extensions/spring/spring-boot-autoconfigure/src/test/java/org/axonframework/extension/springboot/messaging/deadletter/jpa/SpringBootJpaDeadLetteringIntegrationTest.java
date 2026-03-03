@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * embedded HSQLDB database is auto-detected by Spring Boot.
  *
  * @author Mateusz Nowak
- * @since 5.0.2
+ * @since 5.1.0
  */
 @SpringBootTest(properties = {
         "axon.axonserver.enabled=false",

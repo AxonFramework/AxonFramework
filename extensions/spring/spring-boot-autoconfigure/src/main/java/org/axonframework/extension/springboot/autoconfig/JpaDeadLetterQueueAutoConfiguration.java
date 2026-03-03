@@ -51,7 +51,7 @@ import org.springframework.context.annotation.Bean;
  * bean — the {@code @ConditionalOnMissingBean} guard on the default will yield to it.
  *
  * @author Mateusz Nowak
- * @since 5.0.2
+ * @since 5.1.0
  * @see DeadLetterQueueFactory
  * @see JpaSequencedDeadLetterQueue
  */

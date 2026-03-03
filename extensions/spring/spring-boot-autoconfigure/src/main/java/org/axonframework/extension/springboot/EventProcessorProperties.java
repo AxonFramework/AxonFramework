@@ -407,7 +407,7 @@ public class EventProcessorProperties {
 
                 @Override
                 public CacheSettings cache() {
-                    return dlq::getCacheSize;
+                    return () -> dlq.getCache().getSize();
                 }
             };
         }
@@ -466,15 +466,6 @@ public class EventProcessorProperties {
          */
         public void setCache(DlqCache cache) {
             this.cache = cache;
-        }
-
-        /**
-         * Returns the cache size. Convenience accessor equivalent to {@code getCache().getSize()}.
-         *
-         * @return the cache size, or {@code 0} if caching is disabled.
-         */
-        public int getCacheSize() {
-            return cache.getSize();
         }
     }
 
