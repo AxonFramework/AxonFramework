@@ -61,17 +61,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * A Spring Boot-idiomatic implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link JpaSequencedDeadLetterQueue} with full Spring Boot auto-configuration.
  * <p>
- * Unlike {@link SpringJpaDeadLetteringIntegrationTest}, this test leverages Spring Boot auto-configuration for JPA
- * infrastructure ({@code DataSource}, {@code EntityManagerFactory}, {@code PlatformTransactionManager}) instead of
- * manually wiring these beans. The embedded HSQLDB database is auto-detected by Spring Boot.
- * <p>
- * Transaction management is delegated to the auto-configured
- * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager}, which automatically
- * registers {@link JpaTransactionalExecutorProvider#SUPPLIER_KEY} on the
- * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} — the same code path used in production.
+ * This test leverages Spring Boot auto-configuration for JPA infrastructure ({@code DataSource},
+ * {@code EntityManagerFactory}, {@code PlatformTransactionManager}) instead of manually wiring these beans. The
+ * embedded HSQLDB database is auto-detected by Spring Boot.
  *
  * @author Mateusz Nowak
- * @see SpringJpaDeadLetteringIntegrationTest
  * @since 5.0.2
  */
 @SpringBootTest(properties = {
@@ -101,13 +95,13 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         jpaDeadLetterQueue = JpaSequencedDeadLetterQueue.<EventMessage>builder()
-                                                         .processingGroup(PROCESSING_GROUP)
-                                                         .transactionalExecutorProvider(
-                                                                 new JpaTransactionalExecutorProvider(
-                                                                         entityManagerFactory))
-                                                         .eventConverter(eventConverter)
-                                                         .genericConverter(converter)
-                                                         .build();
+                                                        .processingGroup(PROCESSING_GROUP)
+                                                        .transactionalExecutorProvider(
+                                                                new JpaTransactionalExecutorProvider(
+                                                                        entityManagerFactory))
+                                                        .eventConverter(eventConverter)
+                                                        .genericConverter(converter)
+                                                        .build();
         return jpaDeadLetterQueue;
     }
 
@@ -190,7 +184,8 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             // The JPA DLQ stores payloads as serialized byte[]; convert back for comparison.
-            Object actualPayload = converter.convert(actual.message().payload(), expected.message().payload().getClass());
+            Object actualPayload = converter.convert(actual.message().payload(),
+                                                     expected.message().payload().getClass());
             assertEquals(expected.message().payload(), actualPayload, assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
