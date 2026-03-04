@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -154,9 +156,42 @@ public abstract class DeadLetteringEventIntegrationTest {
      */
     protected abstract SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue();
 
+    /**
+     * Returns the {@link Converter} used for payload deserialization via
+     * {@link Message#payloadAs(java.lang.reflect.Type, Converter)}.
+     * <p>
+     * Returns {@code PassThroughConverter} by default, which is sufficient for in-memory implementations where the payload is already
+     * the expected type. Subclasses backed by serialized storage (e.g. JDBC, JPA) should override this to return
+     * a converter capable of deserializing the stored payload bytes.
+     *
+     * @return A {@link Converter}, or {@code null} if no conversion is needed.
+     */
+    protected Converter converter() {
+        return PassThroughConverter.INSTANCE;
+    }
+
+    /**
+     * Builds the {@link UnitOfWorkFactory} used by both the {@link DeadLetteringEventHandlingComponent} and the
+     * {@link StreamingEventProcessor} in this integration test.
+     * <p>
+     * Returns a plain {@link SimpleUnitOfWorkFactory} by default. Subclasses that require resources in the
+     * {@link ProcessingContext} (e.g. a JDBC connection supplier for
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider})
+     * should override this to register the appropriate
+     * {@link UnitOfWorkConfiguration#registerProcessingLifecycleEnhancer processing lifecycle enhancer},
+     * similar to how
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.TransactionManager#attachToProcessingLifecycle}
+     * populates resources in production.
+     *
+     * @return A {@link UnitOfWorkFactory} used during the integration test.
+     */
+    protected UnitOfWorkFactory buildUnitOfWorkFactory() {
+        return new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+    }
+
     @BeforeEach
     void setUp() {
-        eventHandler = new ProblematicEventHandler();
+        eventHandler = new ProblematicEventHandler(converter());
         deadLetterQueue = buildDeadLetterQueue();
 
         // A policy that ensures a letter is only retried once by adding diagnostics.
@@ -181,7 +216,8 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // Create a SimpleEventHandlingComponent with custom sequencing policy
         SequencingPolicy sequencingPolicy = (event, context) ->
-                Optional.of(((DeadLetterableEvent) event.payload()).getAggregateIdentifier());
+                Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class, converter())
+                                  .getAggregateIdentifier());
 
         SimpleEventHandlingComponent simpleComponent = SimpleEventHandlingComponent.create("component", sequencingPolicy);
         simpleComponent.subscribe(
@@ -189,7 +225,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 eventHandler
         );
 
-        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+        UnitOfWorkFactory unitOfWorkFactory = buildUnitOfWorkFactory();
         deadLetteringComponent = new DeadLetteringEventHandlingComponent(
                 simpleComponent, deadLetterQueue, enqueuePolicy, unitOfWorkFactory, true
         );
@@ -200,7 +236,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         var configuration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(eventSource)
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
+                .unitOfWorkFactory(buildUnitOfWorkFactory())
                 .tokenStore(new InMemoryTokenStore())
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)
@@ -287,7 +323,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             Iterator<DeadLetter<? extends EventMessage>> sequence =
                     deadLetterQueue.deadLetterSequence("failure", null).join().iterator();
             assertTrue(sequence.hasNext());
-            assertEquals(failedEvent.payload(), sequence.next().message().payload());
+            assertEquals(failedEvent.payload(), sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
             assertFalse(sequence.hasNext());
         }
 
@@ -330,11 +366,11 @@ public abstract class DeadLetteringEventIntegrationTest {
                 Iterator<DeadLetter<? extends EventMessage>> sequence =
                         deadLetterQueue.deadLetterSequence(aggregateId, null).join().iterator();
                 assertTrue(sequence.hasNext());
-                assertEquals(firstDeadLetter, sequence.next().message().payload());
+                assertEquals(firstDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
                 assertTrue(sequence.hasNext());
-                assertEquals(secondDeadLetter, sequence.next().message().payload());
+                assertEquals(secondDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
                 assertTrue(sequence.hasNext());
-                assertEquals(thirdDeadLetter, sequence.next().message().payload());
+                assertEquals(thirdDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
                 assertFalse(sequence.hasNext());
             });
         }
@@ -690,15 +726,20 @@ public abstract class DeadLetteringEventIntegrationTest {
      */
     private static class ProblematicEventHandler implements EventHandler {
 
+        private final Converter converter;
         private final Set<String> handledEvent = new ConcurrentSkipListSet<>();
         private final Map<String, Integer> firstTrySuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
 
+        ProblematicEventHandler(Converter converter) {
+            this.converter = converter;
+        }
+
         @Override
         public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
-            DeadLetterableEvent payload = (DeadLetterableEvent) event.payload();
+            DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();
 

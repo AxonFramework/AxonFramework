@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
@@ -44,8 +43,6 @@ public class DeadLetterSchema {
     private final String eventIdentifierColumn;
     private final String typeColumn;
     private final String timestampColumn;
-    private final String payloadTypeColumn;
-    private final String payloadRevisionColumn;
     private final String payloadColumn;
     private final String metadataColumn;
     private final String aggregateTypeColumn;
@@ -71,8 +68,6 @@ public class DeadLetterSchema {
                         schema.eventIdentifierColumn(),
                         schema.typeColumn(),
                         schema.timestampColumn(),
-                        schema.payloadTypeColumn(),
-                        schema.payloadRevisionColumn(),
                         schema.payloadColumn(),
                         schema.metadataColumn(),
                         schema.aggregateTypeColumn(),
@@ -101,8 +96,6 @@ public class DeadLetterSchema {
         this.eventIdentifierColumn = builder.eventIdentifierColumn;
         this.typeColumn = builder.typeColumn;
         this.timestampColumn = builder.timeStampColumn;
-        this.payloadTypeColumn = builder.payloadTypeColumn;
-        this.payloadRevisionColumn = builder.payloadRevisionColumn;
         this.payloadColumn = builder.payloadColumn;
         this.metadataColumn = builder.metadataColumn;
         this.aggregateTypeColumn = builder.aggregateTypeColumn;
@@ -205,7 +198,7 @@ public class DeadLetterSchema {
     /**
      * Returns the configured {@code typeColumn} column name.
      * <p>
-     * Represents the {@link Message#type()} field, based on the
+     * Represents the {@link org.axonframework.messaging.core.Message#type()} field, based on the
      * {@link MessageType#toString()} output.
      *
      * @return The configured {@code typeColumn} column qualifiedName.
@@ -221,24 +214,6 @@ public class DeadLetterSchema {
      */
     public String timestampColumn() {
         return timestampColumn;
-    }
-
-    /**
-     * Returns the configured {@code payloadType} column name.
-     *
-     * @return The configured {@code payloadType} column name.
-     */
-    public String payloadTypeColumn() {
-        return payloadTypeColumn;
-    }
-
-    /**
-     * Returns the configured {@code payloadRevision} column name.
-     *
-     * @return The configured {@code payloadRevision} column name.
-     */
-    public String payloadRevisionColumn() {
-        return payloadRevisionColumn;
     }
 
     /**
@@ -385,8 +360,6 @@ public class DeadLetterSchema {
         private String eventIdentifierColumn = "eventIdentifier";
         private String typeColumn = "type";
         private String timeStampColumn = "timestamp";
-        private String payloadTypeColumn = "payloadType";
-        private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metadataColumn = "metadata";
         private String aggregateTypeColumn = "aggregateType";
@@ -506,30 +479,6 @@ public class DeadLetterSchema {
         public Builder timestampColumn(String timestampColumn) {
             assertNonEmpty(timestampColumn, "The timestampColumn should be not null or empty");
             this.timeStampColumn = timestampColumn;
-            return this;
-        }
-
-        /**
-         * Sets the name of the {@code payloadType} column. Defaults to {@code payloadType}.
-         *
-         * @param payloadTypeColumn The name for the {@code payloadType} column.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder payloadTypeColumn(String payloadTypeColumn) {
-            assertNonEmpty(payloadTypeColumn, "The payloadTypeColumn should be not null or empty");
-            this.payloadTypeColumn = payloadTypeColumn;
-            return this;
-        }
-
-        /**
-         * Sets the name of the {@code payloadRevision} column. Defaults to {@code payloadRevision}.
-         *
-         * @param payloadRevisionColumn The name for the {@code payloadRevision} column.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder payloadRevisionColumn(String payloadRevisionColumn) {
-            assertNonEmpty(payloadRevisionColumn, "The payloadRevisionColumn should be not null or empty");
-            this.payloadRevisionColumn = payloadRevisionColumn;
             return this;
         }
 

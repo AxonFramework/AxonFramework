@@ -16,19 +16,20 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.jdbc.JdbcUtils;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.tx.TransactionalExecutor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.axonframework.common.jdbc.JdbcUtils.executeQuery;
 import static org.axonframework.common.jdbc.JdbcUtils.listResults;
@@ -48,20 +49,24 @@ import static org.axonframework.common.jdbc.JdbcUtils.listResults;
  * @author Steven van Beelen
  * @since 4.8.0
  */
+@Internal
 public class PagingJdbcIterable<R> implements Iterable<R> {
 
+    private static final Duration DEFAULT_QUERY_TIMEOUT = Duration.ofSeconds(30);
+
     private final int pageSize;
-    private final Supplier<Connection> connectionProvider;
-    private final TransactionManager transactionManager;
+    private final Duration queryTimeout;
+    private final TransactionalExecutor<Connection> executor;
     private final PagingStatementSupplier pagingQuerySupplier;
     private final JdbcUtils.SqlResultConverter<R> resultConverter;
     private final Function<SQLException, RuntimeException> errorHandler;
 
     /**
      * Construct a new {@link Iterable} of type {@code R}, utilizing paging queries to retrieve the entries.
+     * <p>
+     * Uses a default query timeout of 30 seconds per page fetch.
      *
-     * @param transactionManager  The {@link TransactionManager} used to execute the paging query.
-     * @param connectionProvider  The supplier of the {@link Connection} used by the given {@code pagingQuerySupplier}.
+     * @param executor            The {@link TransactionalExecutor} used to execute the paging query.
      * @param pagingQuerySupplier A factory function supply the paging {@link PreparedStatement} to execute.
      * @param pageSize            The size of the pages to retrieve. Used to calculate the {@code offset} and
      *                            {@code maxSize} of the paging query
@@ -69,16 +74,36 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
      * @param errorHandler        The error handler to deal with exceptions when executing a paging
      *                            {@link PreparedStatement}.
      */
-    public PagingJdbcIterable(TransactionManager transactionManager,
-                              Supplier<Connection> connectionProvider,
+    public PagingJdbcIterable(TransactionalExecutor<Connection> executor,
                               PagingStatementSupplier pagingQuerySupplier,
                               int pageSize,
                               JdbcUtils.SqlResultConverter<R> resultConverter,
                               Function<SQLException, RuntimeException> errorHandler) {
-        this.transactionManager = transactionManager;
-        this.connectionProvider = connectionProvider;
+        this(executor, pagingQuerySupplier, pageSize, DEFAULT_QUERY_TIMEOUT, resultConverter, errorHandler);
+    }
+
+    /**
+     * Construct a new {@link Iterable} of type {@code R}, utilizing paging queries to retrieve the entries.
+     *
+     * @param executor            The {@link TransactionalExecutor} used to execute the paging query.
+     * @param pagingQuerySupplier A factory function supply the paging {@link PreparedStatement} to execute.
+     * @param pageSize            The size of the pages to retrieve. Used to calculate the {@code offset} and
+     *                            {@code maxSize} of the paging query
+     * @param queryTimeout        The maximum time to wait for each page query to complete.
+     * @param resultConverter     The converter of the {@link java.sql.ResultSet} into entries of type {@code R}.
+     * @param errorHandler        The error handler to deal with exceptions when executing a paging
+     *                            {@link PreparedStatement}.
+     */
+    public PagingJdbcIterable(TransactionalExecutor<Connection> executor,
+                              PagingStatementSupplier pagingQuerySupplier,
+                              int pageSize,
+                              Duration queryTimeout,
+                              JdbcUtils.SqlResultConverter<R> resultConverter,
+                              Function<SQLException, RuntimeException> errorHandler) {
+        this.executor = executor;
         this.pagingQuerySupplier = pagingQuerySupplier;
         this.pageSize = pageSize;
+        this.queryTimeout = queryTimeout;
         this.resultConverter = resultConverter;
         this.errorHandler = errorHandler;
     }
@@ -112,13 +137,17 @@ public class PagingJdbcIterable<R> implements Iterable<R> {
                 return;
             }
 
-            List<R> results = transactionManager.fetchInTransaction(
-                    () -> executeQuery(connectionProvider.get(),
-                                       connection -> pagingQuerySupplier.apply(connection, page * pageSize, pageSize),
-                                       listResults(resultConverter),
-                                       errorHandler)
+            FutureUtils.joinAndUnwrap(
+                    executor.accept(connection -> {
+                        var results = executeQuery(connection,
+                                                   c -> pagingQuerySupplier.apply(c, page * pageSize, pageSize),
+                                                   listResults(resultConverter),
+                                                   errorHandler,
+                                                   false);
+                        currentPage = new ArrayDeque<>(results);
+                    }),
+                    queryTimeout
             );
-            currentPage = new ArrayDeque<>(results);
             page++;
         }
     }

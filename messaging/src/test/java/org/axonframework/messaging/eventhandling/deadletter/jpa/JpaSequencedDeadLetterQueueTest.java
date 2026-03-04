@@ -23,6 +23,9 @@ import jakarta.persistence.Persistence;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerExecutor;
+import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
@@ -35,10 +38,12 @@ import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -163,17 +168,57 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
+    protected ProcessingContext toProcessingContext(Context context) {
+        ProcessingContext pc = super.toProcessingContext(context);
+        if (pc != null) {
+            pc.putResource(JpaTransactionalExecutorProvider.SUPPLIER_KEY,
+                           CachingSupplier.of(() -> new EntityManagerExecutor(() -> entityManager)));
+        }
+        return pc;
+    }
+
+    @Override
     public SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         return JpaSequencedDeadLetterQueue
                 .builder()
-                // TODO #3517 - why it doesn't work with: .transactionalExecutorProvider(new JpaTransactionalExecutorProvider(emf))
-                .transactionalExecutorProvider(pc -> new EntityManagerExecutor(() -> entityManager))
+                .transactionalExecutorProvider(testTransactionalExecutorProvider())
                 .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                 .processingGroup("my_processing_group")
                 .eventConverter(eventConverter)
                 .genericConverter(jacksonConverter)
                 .build();
+    }
+
+    /**
+     * Creates a {@link TransactionalExecutorProvider} that delegates to the real
+     * {@link JpaTransactionalExecutorProvider} when a {@link ProcessingContext} is available
+     * (exercising the production code path that extracts the executor from the context),
+     * and falls back to the test's single {@link EntityManager} when the context is {@code null}.
+     * <p>
+     * The fallback is necessary because this test uses rollback-based isolation: a single
+     * {@link EntityManager} with a transaction opened in {@code @BeforeEach} and rolled back in
+     * {@code @AfterEach}. This transaction also serves as the transaction management that
+     * {@link EntityManagerExecutor} assumes is already active (it does not begin/commit on its own —
+     * in production, the real {@link ProcessingContext} lifecycle handles that).
+     * <p>
+     * When the context is {@code null}, {@link JpaTransactionalExecutorProvider} creates a
+     * <em>second</em> {@link EntityManager} with its own transaction. That second transaction
+     * blocks on table locks held by the test's transaction, while the test thread blocks waiting
+     * for the operation to complete — a classic deadlock. The fallback avoids this by routing
+     * all null-context operations through the test's existing {@link EntityManager} and transaction.
+     */
+    private JpaTransactionalExecutorProvider testTransactionalExecutorProvider() {
+        return new JpaTransactionalExecutorProvider(emf) {
+            @Override
+            @NonNull
+            public TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
+                if (processingContext != null) {
+                    return super.getTransactionalExecutor(processingContext);
+                }
+                return new EntityManagerExecutor(() -> entityManager);
+            }
+        };
     }
 
     @Test
@@ -228,7 +273,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         );
 
         // when
-        queue.enqueue(sequenceId, letter, StubProcessingContext.fromContext(contextWithTokenOnly)).join();
+        queue.enqueue(sequenceId, letter, toProcessingContext(contextWithTokenOnly)).join();
 
         // then
         Iterator<DeadLetter<? extends EventMessage>> result =
