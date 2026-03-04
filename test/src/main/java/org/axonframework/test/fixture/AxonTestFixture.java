@@ -119,24 +119,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final EventSink eventSink;
 
     /**
-     * The innermost {@link RecordingCommandBus} in the decorator chain, created by
-     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Used by the
-     * then-phase to assert on dispatched commands. Because it is the innermost decorator, it captures commands
-     * <em>after</em> all dispatch interceptors have enriched them with metadata.
+     * Registry holding the innermost recording decorators created by
+     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Contains the
+     * {@link RecordingCommandBus} and {@link RecordingEventSink} used by the then-phase for assertions. Because they
+     * are the innermost decorators, they capture messages <em>after</em> all dispatch interceptors have enriched them
+     * with metadata.
      */
-    private final RecordingCommandBus recordingCommandBus;
-
-    /**
-     * The innermost {@link RecordingEventSink} in the decorator chain, created by
-     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Used by the
-     * then-phase to assert on published events. Because it is the innermost decorator, it captures events
-     * <em>after</em> all dispatch interceptors have enriched them with metadata.
-     * <p>
-     * The concrete type is either {@link RecordingEventStore} (when using {@code EventSourcingConfigurer}) or
-     * {@link RecordingEventBus} (when using {@code MessagingConfigurer}), but both implement
-     * {@link RecordingEventSink}.
-     */
-    private final RecordingEventSink recordingEventSink;
+    private final RecordingComponentsRegistry recordings;
 
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
@@ -165,15 +154,15 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
         this.commandBus = configuration.getComponent(CommandBus.class);
         this.eventSink = configuration.getComponent(EventSink.class);
-        var recordings = configuration.getOptionalComponent(RecordingComponentsRegistry.class)
+        this.recordings = configuration.getOptionalComponent(RecordingComponentsRegistry.class)
                 .orElseThrow(() -> new FixtureExecutionException(
                         "RecordingComponentsRegistry not found in Configuration. "
                                 + "Ensure MessagesRecordingConfigurationEnhancer is registered."
                 ));
-        this.recordingCommandBus = Objects.requireNonNull(recordings.commandBus(),
+        Objects.requireNonNull(recordings.commandBus(),
                 "RecordingCommandBus is not available. "
                         + "Ensure CommandBus is resolved before constructing AxonTestFixture.");
-        this.recordingEventSink = Objects.requireNonNull(recordings.eventSink(),
+        Objects.requireNonNull(recordings.eventSink(),
                 "RecordingEventSink is not available. "
                         + "Ensure EventSink is resolved before constructing AxonTestFixture.");
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
@@ -231,8 +220,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
-                recordingCommandBus,
-                recordingEventSink,
+                recordings,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
@@ -245,8 +233,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 customization,
                 commandBus,
                 eventSink,
-                recordingCommandBus,
-                recordingEventSink,
+                recordings,
                 messageTypeResolver,
                 unitOfWorkFactory
         );

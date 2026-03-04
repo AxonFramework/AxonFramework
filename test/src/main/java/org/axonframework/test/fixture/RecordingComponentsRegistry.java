@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.common.annotation.Internal;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A registry that holds references to the recording components created by
@@ -27,7 +28,7 @@ import org.axonframework.common.annotation.Internal;
  * and can be resolved via {@code configuration.getComponent(RecordingComponentsRegistry.class)}.
  *
  * @author Mateusz Nowak
- * @since 5.0.0
+ * @since 5.0.3
  */
 @Internal
 public class RecordingComponentsRegistry {
@@ -41,6 +42,7 @@ public class RecordingComponentsRegistry {
      *
      * @return the recording command bus, or {@code null} if the decorator has not yet run
      */
+    @Nullable
     public RecordingCommandBus commandBus() {
         return commandBus;
     }
@@ -52,6 +54,7 @@ public class RecordingComponentsRegistry {
      *
      * @return the recording event sink, or {@code null} if the decorator has not yet run
      */
+    @Nullable
     public RecordingEventSink eventSink() {
         return eventSink;
     }

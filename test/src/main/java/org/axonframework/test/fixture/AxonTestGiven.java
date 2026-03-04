@@ -48,8 +48,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final AxonTestFixture.Customization customization;
     private final CommandBus commandBus;
     private final EventSink eventSink;
-    private final RecordingCommandBus recordingCommandBus;
-    private final RecordingEventSink recordingEventSink;
+    private final RecordingComponentsRegistry recordings;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -62,10 +61,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
      *                            decorator chain (including interceptors).
      * @param eventSink           The outermost {@link EventSink}, used to publish events through the full
      *                            decorator chain (including interceptors).
-     * @param recordingCommandBus The recording {@link CommandBus}, used to capture
-     *                            and validate any commands that have been sent.
-     * @param recordingEventSink  The recording {@link EventSink}, used to capture and
-     *                            validate any events that have been sent.
+     * @param recordings          The registry holding recording components for assertions.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
@@ -77,8 +73,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull CommandBus commandBus,
             @Nonnull EventSink eventSink,
-            @Nonnull RecordingCommandBus recordingCommandBus,
-            @Nonnull RecordingEventSink recordingEventSink,
+            @Nonnull RecordingComponentsRegistry recordings,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -86,8 +81,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         this.customization = customization;
         this.commandBus = commandBus;
         this.eventSink = eventSink;
-        this.recordingCommandBus = recordingCommandBus;
-        this.recordingEventSink = recordingEventSink;
+        this.recordings = recordings;
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -189,8 +183,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
                 customization,
                 commandBus,
                 eventSink,
-                recordingCommandBus,
-                recordingEventSink,
+                recordings,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
@@ -201,8 +194,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
         return new AxonTestThenNothing(
                 configuration,
                 customization,
-                recordingCommandBus,
-                recordingEventSink,
+                recordings.commandBus(),
+                recordings.eventSink(),
                 null
         );
     }

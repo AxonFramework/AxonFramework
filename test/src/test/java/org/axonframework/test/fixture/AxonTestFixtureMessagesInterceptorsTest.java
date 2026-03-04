@@ -67,8 +67,6 @@ class AxonTestFixtureMessagesInterceptorsTest {
         );
 
         var fixture = AxonTestFixture.with(configurer);
-
-        // FAILS until bug is fixed: RecordingEventSink records events before InterceptingEventBus enriches them
         fixture.when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
@@ -123,8 +121,6 @@ class AxonTestFixtureMessagesInterceptorsTest {
         var fixture = AxonTestFixture.with(configurer);
 
         var studentNameChanged = new StudentNameChangedEvent("my-studentId-1", "name-1", 1);
-
-        // FAILS until bug is fixed: RecordingEventSink records events before InterceptingEventStore enriches them
         fixture.given()
                .events(studentNameChanged)
                .then()
