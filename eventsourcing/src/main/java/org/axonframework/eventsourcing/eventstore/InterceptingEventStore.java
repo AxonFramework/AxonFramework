@@ -36,7 +36,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -184,7 +183,7 @@ public class InterceptingEventStore implements EventStore {
         return delegate.subscribe(eventsBatchConsumer);
     }
 
-    private class InterceptingEventStoreTransaction implements EventStoreTransaction, MarkerExposingEventStoreTransaction {
+    private class InterceptingEventStoreTransaction implements EventStoreTransaction {
 
         private final ProcessingContext context;
         private final EventStoreTransaction delegate;
@@ -216,17 +215,6 @@ public class InterceptingEventStore implements EventStore {
         @Override
         public ConsistencyMarker appendPosition() {
             return delegate.appendPosition();
-        }
-
-        @Override // TODO #4199 remove this and the implemented interface
-        public MessageStream<? extends EventMessage> source(
-            SourcingCondition condition,
-            @Nullable AtomicReference<ConsistencyMarker> consistencyMarkerRef
-        ) {
-            return switch(delegate) {
-                case MarkerExposingEventStoreTransaction tx -> tx.source(condition, consistencyMarkerRef);
-                default -> throw new UnsupportedOperationException("transaction does not support exposing consistency marker: " + delegate);
-            };
         }
     }
 

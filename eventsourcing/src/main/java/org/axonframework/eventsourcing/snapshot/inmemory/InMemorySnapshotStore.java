@@ -17,8 +17,7 @@
 package org.axonframework.eventsourcing.snapshot.inmemory;
 
 import org.axonframework.eventsourcing.snapshot.api.Snapshot;
-import org.axonframework.eventsourcing.snapshot.api.SnapshotStore;
-import org.axonframework.messaging.core.MessageType;
+import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Map;
@@ -32,9 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This store keeps snapshots in memory only and does not persist them to any durable storage.
  * It is thread-safe.
  * <p>
- * Snapshots are stored per entity type (identified by {@link QualifiedName}) and entity identifier.
- * If multiple snapshots are stored for the same type and identifier, the most recent one
- * overwrites any previous snapshot.
+ * Snapshots are stored by their qualified name and identifier.
  * <p>
  * All operations return {@link CompletableFuture} to conform with the {@link SnapshotStore}
  * asynchronous API, but they complete immediately since storage is in-memory.</p>
@@ -46,24 +43,24 @@ public class InMemorySnapshotStore implements SnapshotStore {
     private final Map<QualifiedName, Map<Object, Snapshot>> entitiesByIdentifierByName = new ConcurrentHashMap<>();
 
     @Override
-    public CompletableFuture<Void> store(MessageType type, Object identifier, Snapshot snapshot) {
-        Objects.requireNonNull(type, "type");
-        Objects.requireNonNull(identifier, "identifier");
-        Objects.requireNonNull(snapshot, "snapshot");
+    public CompletableFuture<Void> store(QualifiedName qualifiedName, Object identifier, Snapshot snapshot) {
+        Objects.requireNonNull(qualifiedName, "The qualifiedName parameter must not be null.");
+        Objects.requireNonNull(identifier, "The identifier parameter must not be null.");
+        Objects.requireNonNull(snapshot, "The snapshot parameter must not be null.");
 
         entitiesByIdentifierByName
-            .computeIfAbsent(type.qualifiedName(), k -> new ConcurrentHashMap<>())
+            .computeIfAbsent(qualifiedName, k -> new ConcurrentHashMap<>())
             .put(identifier, snapshot);
 
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Snapshot> load(MessageType type, Object identifier) {
-        Objects.requireNonNull(type, "type");
-        Objects.requireNonNull(identifier, "identifier");
+    public CompletableFuture<Snapshot> load(QualifiedName qualifiedName, Object identifier) {
+        Objects.requireNonNull(qualifiedName, "The qualifiedName parameter must not be null.");
+        Objects.requireNonNull(identifier, "The identifier parameter must not be null.");
 
-        Map<Object, Snapshot> entitiesByIdentifier = entitiesByIdentifierByName.get(type.qualifiedName());
+        Map<Object, Snapshot> entitiesByIdentifier = entitiesByIdentifierByName.get(qualifiedName);
 
         return CompletableFuture.completedFuture(entitiesByIdentifier == null ? null : entitiesByIdentifier.get(identifier));
     }

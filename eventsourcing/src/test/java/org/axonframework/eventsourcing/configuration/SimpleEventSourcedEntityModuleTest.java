@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -75,7 +74,7 @@ class SimpleEventSourcedEntityModuleTest {
                                          .creationalCommandHandler(new QualifiedName("creational"),
                                                                    (command, context) -> MessageStream.empty().cast())
                                          .build();
-        testSnapshotter = identifier -> null;
+        testSnapshotter = Snapshotter.noSnapshotter();
 
         testSubject = EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                               .messagingModel((c, b) -> {

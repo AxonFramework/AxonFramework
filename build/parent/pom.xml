@@ -311,6 +311,11 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.sigpwned</groupId>
+                <artifactId>jackson-modules-java17-sealed-classes</artifactId>
+                <version>2.19.0.0</version>
+            </dependency>
             <!-- Spring -->
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -453,6 +458,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
             <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core-test</artifactId>
+            <version>2.25.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

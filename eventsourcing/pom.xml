@@ -142,6 +142,11 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.sigpwned</groupId>
+            <artifactId>jackson-modules-java17-sealed-classes</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Database testing -->
         <dependency>

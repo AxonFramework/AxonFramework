@@ -16,15 +16,18 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.common.util.MockException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.common.util.MockException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
@@ -32,13 +35,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test class validating the {@link InterceptingEventSink}.
  *
  * @author Steven van Beelen
  */
+@ExtendWith(MockitoExtension.class)
 class InterceptingEventSinkTest {
 
     private static final MessageType TEST_EVENT_TYPE = new MessageType("event");
@@ -54,11 +60,6 @@ class InterceptingEventSinkTest {
     @BeforeEach
     void setUp() {
         eventSink = mock(EventSink.class);
-        //noinspection unchecked
-        when(eventSink.publish(any(), any(List.class)))
-                .thenReturn(FutureUtils.emptyCompletedFuture());
-        when(eventSink.publish(any(), any(EventMessage.class)))
-                .thenReturn(FutureUtils.emptyCompletedFuture());
 
         interceptorCounterOne = new AtomicInteger(0);
         interceptorOne = (message, context, chain) -> {
@@ -75,18 +76,38 @@ class InterceptingEventSinkTest {
     }
 
     @Test
-    void dispatchInterceptorsInvokedOnPublish() {
-        EventMessage testEvent = new GenericEventMessage(TEST_EVENT_TYPE, "test");
+    void dispatchInterceptorsInvokedOnceOnPublishWithEventsInSameOrder(
+        @Captor ArgumentCaptor<List<EventMessage>> publishedEvents
+    ) {
+        EventMessage testEvent1 = new GenericEventMessage(TEST_EVENT_TYPE, "test");
+        EventMessage testEvent2 = new GenericEventMessage(TEST_EVENT_TYPE, "test");
 
         CompletableFuture<Void> result =
-                testSubject.publish(StubProcessingContext.forMessage(testEvent), testEvent);
+                testSubject.publish(StubProcessingContext.forMessage(testEvent1), testEvent1, testEvent2);
 
-        ArgumentCaptor<EventMessage> publishedEvent = ArgumentCaptor.forClass(EventMessage.class);
-        verify(eventSink).publish(any(), publishedEvent.capture());
+        verify(eventSink).publish(any(), publishedEvents.capture());
 
-        assertThat(publishedEvent.getValue()).isEqualTo(testEvent);
-        assertThat(interceptorCounterOne).hasValue(1);
-        assertThat(interceptorCounterTwo).hasValue(1);
+        assertThat(publishedEvents.getValue()).containsExactly(testEvent1, testEvent2);
+        assertThat(interceptorCounterOne).hasValue(2);
+        assertThat(interceptorCounterTwo).hasValue(2);
+        assertThat(result).isDone();
+    }
+
+    @Test
+    void dispatchInterceptorsInvokedOnceOnPublishWithEventsInSameOrderEvenWithoutContext(
+        @Captor ArgumentCaptor<List<EventMessage>> publishedEvents
+    ) {
+        EventMessage testEvent1 = new GenericEventMessage(TEST_EVENT_TYPE, "test");
+        EventMessage testEvent2 = new GenericEventMessage(TEST_EVENT_TYPE, "test");
+
+        CompletableFuture<Void> result =
+                testSubject.publish(null, testEvent1, testEvent2);
+
+        verify(eventSink).publish(any(), publishedEvents.capture());
+
+        assertThat(publishedEvents.getValue()).containsExactly(testEvent1, testEvent2);
+        assertThat(interceptorCounterOne).hasValue(2);
+        assertThat(interceptorCounterTwo).hasValue(2);
         assertThat(result).isDone();
     }
 
@@ -132,7 +153,7 @@ class InterceptingEventSinkTest {
         assertThat(describedProperties).containsKey("delegate");
         assertThat(describedProperties.get("delegate")).isEqualTo(eventSink);
         assertThat(describedProperties).containsKey("dispatchInterceptors");
-        //noinspection unchecked
+        @SuppressWarnings("unchecked")
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
                 (List<MessageDispatchInterceptor<? super Message>>) describedProperties.get("dispatchInterceptors");
         assertThat(dispatchInterceptors).containsExactly(interceptorOne, interceptorTwo);

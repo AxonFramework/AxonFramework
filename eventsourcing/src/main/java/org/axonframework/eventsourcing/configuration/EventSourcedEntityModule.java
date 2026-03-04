@@ -212,6 +212,8 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * Registers an optional {@link ComponentBuilder} of a {@link Snapshotter} as the snapshotter for the
          * event-sourced entity being built. This snapshotter is responsible for storing snapshots when it
          * is triggered during the loading of an entity.
+         * <p>
+         * If no {@link Snapshotter} is provided, there will be no snapshotting functionality.
          *
          * @param snapshotter A {@link ComponentBuilder} constructing the {@link Snapshotter} for the event-sourced entity.
          * @return The {@link OptionalPhase} phase of this builder, for a fluent API.

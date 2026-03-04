@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.snapshot.api;
+package org.axonframework.eventsourcing.snapshot.store;
 
-import org.axonframework.messaging.core.MessageType;
+import org.axonframework.eventsourcing.snapshot.api.Snapshot;
+import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * Represents storage for snapshots of event-sourced entities.
  * <p>
  * A {@code SnapshotStore} is responsible for persisting and retrieving snapshots
- * to optimize the loading of entities by avoiding replaying the full event history.
+ * to optimize the sourcing of entities, avoiding the need to apply all events from the beginning.
  * <p>
  * Implementations are expected to be thread-safe and fully asynchronous, returning
  * {@link CompletableFuture} for all operations.
@@ -36,31 +37,34 @@ public interface SnapshotStore {
 
     // TODO #4201 message type is a bad name here, we'll introduce VersionedType interface
     /**
-     * Persists a snapshot of an entity.
+     * Persists a snapshot under the given name and identifier. This replaces any previous
+     * snapshot(s) with the same name and identifier.
      * <p>
      * This method is asynchronous and returns a {@link CompletableFuture} that
      * completes when the snapshot has been durably stored.
      *
-     * @param type the type of the entity or message, identifies the snapshot category, cannot be {@code null}
-     * @param identifier the unique identifier of the entity, cannot be {@code null}
+     * @param qualifiedName the name of the snapshot to persist, cannot be {@code null}
+     * @param identifier the identifier of the snapshot to persist, cannot be {@code null}
      * @param snapshot the snapshot to persist, cannot be {@code null}
      * @return a {@link CompletableFuture} that completes when the snapshot has been stored
      * @throws NullPointerException if any argument is {@code null}
      */
-    CompletableFuture<Void> store(MessageType type, Object identifier, Snapshot snapshot);
+    CompletableFuture<Void> store(QualifiedName qualifiedName, Object identifier, Snapshot snapshot);
 
     /**
-     * Loads the latest snapshot for a given entity.
+     * Loads the latest snapshot for a given name and identifier.
+     * <p>
+     * The returned snapshot may have an older or newer version relative to what is expected.
+     * The caller is responsible for handling version compatibility or ignoring unusable snapshots.
      * <p>
      * This method is asynchronous and returns a {@link CompletableFuture} that
      * completes with the snapshot if one exists, or {@code null} if no snapshot
      * is available.
      *
-     * @param type the type of the entity or message, identifies the snapshot category, cannot be {@code null}
-     * @param identifier the unique identifier of the entity, cannot be {@code null}
-     * @return a {@link CompletableFuture} containing the snapshot, or containing {@code null} if none exists
+     * @param qualifiedName the name of the snapshot, cannot be {@code null}
+     * @param identifier the identifier of the snapshot, cannot be {@code null}
+     * @return a {@link CompletableFuture} containing the snapshot, or containing {@code null} if no matching snapshot exists
      * @throws NullPointerException if any argument is {@code null}
      */
-    CompletableFuture<Snapshot> load(MessageType type, Object identifier);
-
+    CompletableFuture<Snapshot> load(QualifiedName qualifiedName, Object identifier);
 }

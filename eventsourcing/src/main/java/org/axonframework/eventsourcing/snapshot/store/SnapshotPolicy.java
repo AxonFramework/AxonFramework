@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.snapshot.api;
+package org.axonframework.eventsourcing.snapshot.store;
+
+import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -23,8 +26,8 @@ import java.util.Objects;
  * Defines a policy for determining when an event-sourced entity should be snapshotted.
  * <p>
  * A {@code SnapshotPolicy} encapsulates the logic that decides whether a snapshot
- * is required based on the number of events applied since the last snapshot
- * and/or the time taken to load the entity.
+ * is required based on metrics collected during sourcing, such as the number of events
+ * applied since the last snapshot or the total time taken to source the entity.
  * <p>
  * Policies are <strong>immutable and thread-safe</strong>, so a single instance
  * can be shared across multiple entities and asynchronous operations.
@@ -34,7 +37,7 @@ import java.util.Objects;
  * <p>Typical usage:</p>
  * <pre>{@code
  * SnapshotPolicy policy = SnapshotPolicy.afterEvents(100)
- *                                       .or(SnapshotPolicy.whenLoadTimeExceeds(Duration.ofMillis(50)));
+ *                                       .or(SnapshotPolicy.whenSourcingTimeExceeds(Duration.ofMillis(50)));
  * }</pre>
  *
  * @author John Hendrikx
@@ -49,30 +52,45 @@ public interface SnapshotPolicy {
      * @param eventCount the minimum number of events after which a snapshot should be made
      * @return a snapshot policy based on event count, never {@code null}
      */
-    public static SnapshotPolicy afterEvents(int eventCount) {
-        return stats -> stats.evolutionsCount() > eventCount;
+    static SnapshotPolicy afterEvents(int eventCount) {
+        return result -> result.eventsApplied() > eventCount;
     }
 
     /**
-     * Creates a policy that triggers a snapshot if the load time of the entity
+     * Creates a policy that triggers a snapshot if the sourcing time of the entity
      * exceeds the specified duration.
      *
-     * @param duration the maximum load duration before a snapshot is triggered, cannot be {@code null}
-     * @return a snapshot policy based on load time, never {@code null}
+     * @param duration the maximum sourcing duration before a snapshot is triggered, cannot be {@code null}
+     * @return a snapshot policy based on sourcing time, never {@code null}
      * @throws NullPointerException if {@code duration} is {@code null}
      */
-    public static SnapshotPolicy whenLoadTimeExceeds(Duration duration) {
-        return stats -> stats.loadTime().compareTo(duration) > 0;
+    static SnapshotPolicy whenSourcingTimeExceeds(Duration duration) {
+        Objects.requireNonNull(duration, "duration");
+
+        return result -> result.sourcingTime().compareTo(duration) > 0;
     }
 
     /**
-     * Determines whether a snapshot is needed given the current evolution state.
+     * Creates a policy that triggers a snapshot when specifically requested
+     * by an {@link Snapshotter#onEventApplied(Object, Object, org.axonframework.messaging.eventhandling.EventMessage)}
+     * implementation.
      *
-     * @param loadStatistics information about the load process to base the decision on, cannot be {@code null}
+     * @param duration the maximum sourcing duration before a snapshot is triggered, cannot be {@code null}
+     * @return a snapshot policy based on sourcing time, never {@code null}
+     * @throws NullPointerException if {@code duration} is {@code null}
+     */
+    static SnapshotPolicy whenRequested() {
+        return result -> result.snapshotRequested();
+    }
+
+    /**
+     * Determines whether a snapshot is needed given an evolution result.
+     *
+     * @param evolutionResult information about the sourcing process to base the decision on, cannot be {@code null}
      * @return {@code true} if a snapshot should be made, {@code false} otherwise
      * @implNote implementations should be thread-safe and side-effect free
      */
-    boolean needsSnapshot(EntityLoadStatistics loadStatistics);
+    boolean needsSnapshot(EvolutionResult evolutionResult);
 
     /**
      * Composes this policy with another policy using logical OR.
@@ -85,8 +103,8 @@ public interface SnapshotPolicy {
      * @throws NullPointerException if {@code other} is {@code null}
      */
     default SnapshotPolicy or(SnapshotPolicy other) {
-        Objects.requireNonNull(other, "other");
+        Objects.requireNonNull(other, "The other parameter must not be null.");
 
-        return stats -> this.needsSnapshot(stats) || other.needsSnapshot(stats);
+        return result -> this.needsSnapshot(result) || other.needsSnapshot(result);
     }
 }
