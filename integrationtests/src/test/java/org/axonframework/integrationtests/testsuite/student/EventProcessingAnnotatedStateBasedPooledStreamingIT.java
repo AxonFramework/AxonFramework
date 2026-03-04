@@ -36,11 +36,13 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
@@ -123,7 +125,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
                     var converter = context.component(EventConverter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    var studentEnrolled = requireNonNull(event.payloadAs(StudentEnrolledEvent.class, converter));
                     var state = context.component(StateManager.class);
                     var studentId = studentEnrolled.studentId();
                     var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, studentId, context)

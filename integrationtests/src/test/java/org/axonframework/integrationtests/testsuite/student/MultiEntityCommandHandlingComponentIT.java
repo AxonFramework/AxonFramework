@@ -182,7 +182,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
         public static class MentorIdResolver implements EntityIdResolver<String> {
 
             @Override
-                        public @NonNull String resolve(@NonNull Message command, @NonNull ProcessingContext context) throws EntityIdResolutionException {
+            public @NonNull String resolve(@NonNull Message command, @NonNull ProcessingContext context) throws EntityIdResolutionException {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;
