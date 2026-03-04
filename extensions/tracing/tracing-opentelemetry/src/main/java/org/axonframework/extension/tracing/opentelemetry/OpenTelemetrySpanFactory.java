@@ -30,11 +30,14 @@ import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
 import org.axonframework.messaging.tracing.SpanFactory;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static org.axonframework.messaging.tracing.SpanUtils.determineMessageName;
@@ -71,8 +74,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
      */
     public OpenTelemetrySpanFactory(Builder builder) {
         this.spanAttributesProviders = builder.spanAttributesProviders;
-        this.tracer = builder.tracer;
-        this.textMapPropagator = builder.textMapPropagator;
+        this.tracer = Objects.requireNonNull(builder.tracer);
+        this.textMapPropagator = Objects.requireNonNull(builder.textMapPropagator);
         this.textMapGetter = builder.textMapGetter;
         this.textMapSetter = builder.textMapSetter;
     }
@@ -127,7 +130,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     @Override
     public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
-                                   Message... linkedSiblings) {
+                                   Message @Nullable ... linkedSiblings) {
         SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
                 formatName(operationNameSupplier.get(), parentMessage),
                 SpanKind.PRODUCER);
@@ -136,7 +139,10 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         return new OpenTelemetrySpan(spanBuilder);
     }
 
-    private void addLinks(SpanBuilder spanBuilder, Message[] linkedMessages) {
+    private void addLinks(SpanBuilder spanBuilder,  Message @Nullable [] linkedMessages) {
+        if (linkedMessages == null) {
+            return;
+        }
         for (Message message : linkedMessages) {
             Context linkedContext = textMapPropagator.extract(Context.current(),
                                                               message,
@@ -209,8 +215,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
      */
     public static class Builder {
 
-        private Tracer tracer = null;
-        private TextMapPropagator textMapPropagator = null;
+        private @Nullable Tracer tracer = null;
+        private @Nullable TextMapPropagator textMapPropagator = null;
         private TextMapSetter<Map<String, String>> textMapSetter = MetadataContextSetter.INSTANCE;
         private TextMapGetter<Message> textMapGetter = MetadataContextGetter.INSTANCE;
 

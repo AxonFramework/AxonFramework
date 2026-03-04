@@ -21,6 +21,7 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
 import org.axonframework.messaging.core.Metadata;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This {@link TextMapSetter} implementation is able to insert the current OpenTelemetry span context into a
@@ -45,7 +46,7 @@ public class MetadataContextSetter implements TextMapSetter<Map<String, String>>
     }
 
     @Override
-    public void set(Map<String, String> metadata, String key, String value) {
+    public void set(@Nullable Map<String, String> metadata, String key, String value) {
         if (metadata == null) {
             throw new IllegalArgumentException("The provided metadata may not be null!");
         }
