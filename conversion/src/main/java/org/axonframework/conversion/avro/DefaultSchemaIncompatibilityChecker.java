@@ -19,7 +19,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.apache.commons.lang3.tuple.Pair;
 
-import org.jspecify.annotations.NonNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilit
     private final ConcurrentHashMap<Pair<Long, Long>, List<SchemaCompatibility.Incompatibility>> cache
             = new ConcurrentHashMap<>();
 
-    @NonNull
     @Override
     public List<SchemaCompatibility.Incompatibility> checkCompatibility(
             Schema readerSchema,

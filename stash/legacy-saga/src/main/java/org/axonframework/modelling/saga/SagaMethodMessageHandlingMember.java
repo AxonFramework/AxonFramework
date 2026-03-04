@@ -77,7 +77,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, T target)
+    public Object handleSync(Message message, ProcessingContext context, T target)
             throws Exception {
         return delegate.handleSync(message, context, target);
     }

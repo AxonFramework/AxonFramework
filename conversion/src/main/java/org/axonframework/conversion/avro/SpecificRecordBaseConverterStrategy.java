@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -88,7 +87,6 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    @NonNull
     public <T> T convertFromSingleObjectEncoded(byte [] bytes,
                                                 Class<T> readerType) {
         if (!test(readerType)) {
@@ -136,7 +134,6 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    @NonNull
     public <T> T convertFromGenericRecord(GenericRecord genericRecord,
                                           Class<T> readerType) {
         if (!test(readerType)) {

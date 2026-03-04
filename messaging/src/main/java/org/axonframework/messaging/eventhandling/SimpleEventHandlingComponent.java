@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -163,7 +162,6 @@ public class SimpleEventHandlingComponent implements
      * <p>
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    @NonNull
     @Override
     public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         var qualifiedName = event.type().qualifiedName();
@@ -193,7 +191,6 @@ public class SimpleEventHandlingComponent implements
         return result.ignoreEntries().cast();
     }
 
-    @NonNull
     @Override
     public SimpleEventHandlingComponent subscribe(ResetHandler resetHandler) {
         resetHandlers.add(resetHandler);

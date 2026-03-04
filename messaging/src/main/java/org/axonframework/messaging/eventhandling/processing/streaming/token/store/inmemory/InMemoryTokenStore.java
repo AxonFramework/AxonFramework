@@ -69,7 +69,6 @@ public class InMemoryTokenStore implements TokenStore {
         );
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
             String processorName,
@@ -95,7 +94,6 @@ public class InMemoryTokenStore implements TokenStore {
                 });
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                               String processorName,
@@ -119,7 +117,6 @@ public class InMemoryTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(String processorName,
                                                        int segmentId,
@@ -134,7 +131,6 @@ public class InMemoryTokenStore implements TokenStore {
         return completedFuture(st.trackingToken);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
@@ -143,7 +139,6 @@ public class InMemoryTokenStore implements TokenStore {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> deleteToken(
             String processorName,
@@ -154,7 +149,6 @@ public class InMemoryTokenStore implements TokenStore {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
@@ -170,7 +164,6 @@ public class InMemoryTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Segment> fetchSegment(String processorName, int segmentId, @Nullable ProcessingContext context) {
         SegmentAndToken st = tokens.get(new ProcessAndSegmentId(processorName, segmentId));
@@ -178,7 +171,6 @@ public class InMemoryTokenStore implements TokenStore {
         return completedFuture(st == null ? null : st.segment);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
@@ -195,7 +187,6 @@ public class InMemoryTokenStore implements TokenStore {
         return fetchSegments(processorName, context);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         return completedFuture(identifier);

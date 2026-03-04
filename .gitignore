@@ -25,3 +25,6 @@ docs/_playbook/build
 # Claude Code
 .claude/settings.local.json
 .ai/temp
+
+# just - console helper
+.justfile

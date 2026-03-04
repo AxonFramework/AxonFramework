@@ -68,7 +68,6 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @NonNull
     @Override
     public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");

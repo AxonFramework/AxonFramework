@@ -19,7 +19,6 @@ package org.axonframework.conversion.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
@@ -49,20 +48,17 @@ public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNo
     }
 
     @Override
-    @NonNull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
-    @NonNull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    @Nullable
-    public byte[] convert(@Nullable JsonNode input) {
+    public byte @Nullable[] convert(@Nullable JsonNode input) {
         try {
             return objectMapper.writeValueAsBytes(input);
         } catch (JsonProcessingException e) {

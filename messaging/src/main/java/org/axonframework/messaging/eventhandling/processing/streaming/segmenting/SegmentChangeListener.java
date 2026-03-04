@@ -97,7 +97,6 @@ public interface SegmentChangeListener {
      * @param segment claimed {@link Segment}
      * @return {@link CompletableFuture} that completes when handling has finished
      */
-    @NonNull
     CompletableFuture<Void> onSegmentClaimed(Segment segment);
 
     /**
@@ -106,7 +105,6 @@ public interface SegmentChangeListener {
      * @param segment released {@link Segment}
      * @return {@link CompletableFuture} that completes when handling has finished
      */
-    @NonNull
     CompletableFuture<Void> onSegmentReleased(Segment segment);
 
     /**

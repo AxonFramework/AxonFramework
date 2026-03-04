@@ -37,13 +37,11 @@ import org.axonframework.conversion.ContentTypeConverter;
 public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonNode, ObjectNode> {
 
     @Override
-    @NonNull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
-    @NonNull
     public Class<ObjectNode> targetType() {
         return ObjectNode.class;
     }

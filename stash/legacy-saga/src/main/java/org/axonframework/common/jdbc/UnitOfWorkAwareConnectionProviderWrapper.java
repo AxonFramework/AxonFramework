@@ -49,7 +49,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
     }
 
     @Override
-    public @NonNull Connection getConnection() throws SQLException {
+    public Connection getConnection() throws SQLException {
         if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase()
                                                                .isAfter(LegacyUnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();

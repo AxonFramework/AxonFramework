@@ -94,7 +94,7 @@ public class EventValidator implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object handleSync(EventMessage event, ProcessingContext context) {
         publishedEvents.add(event);
         return null;
     }

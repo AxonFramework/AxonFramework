@@ -113,13 +113,13 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @Override
-    public Object handleSync(@NonNull Message message,
-                             @NonNull ProcessingContext context,
+    public Object handleSync(Message message,
+                             ProcessingContext context,
                              @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
@@ -132,7 +132,7 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context, @Nullable P target) {
+    public MessageStream<?> handle(Message message, ProcessingContext context, @Nullable P target) {
         try {
             Object result = handleSync(message, context, target);
             return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
@@ -149,7 +149,7 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
 
     @SuppressWarnings("unchecked")
     @Override
-    public @NonNull <HT> Optional<HT> unwrap(@NonNull Class<HT> handlerType) {
+    public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
         if (handlerType.isInstance(this)) {
             return (Optional<HT>) Optional.of(this);
         }

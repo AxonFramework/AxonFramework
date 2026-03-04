@@ -63,7 +63,7 @@ public class AssociationValuesImpl implements AssociationValues {
     }
 
     @Override
-    public @NonNull Iterator<AssociationValue> iterator() {
+    public Iterator<AssociationValue> iterator() {
         return Collections.unmodifiableSet(values).iterator();
     }
 

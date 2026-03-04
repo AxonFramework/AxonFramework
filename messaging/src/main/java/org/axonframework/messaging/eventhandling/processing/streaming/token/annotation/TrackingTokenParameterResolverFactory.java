@@ -53,7 +53,6 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
-        @NonNull
         @Override
         public CompletableFuture<TrackingToken> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(

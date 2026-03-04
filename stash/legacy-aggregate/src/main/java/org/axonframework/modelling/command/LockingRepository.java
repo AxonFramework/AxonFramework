@@ -285,25 +285,25 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
-        public Builder<T> handlerDefinition(@NonNull HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(@NonNull AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
 
         @Override
-        public Builder<T> subtypes(@NonNull Set<Class<? extends T>> subtypes) {
+        public Builder<T> subtypes(Set<Class<? extends T>> subtypes) {
             super.subtypes(subtypes);
             return this;
         }
 
         @Override
-        public Builder<T> subtype(@NonNull Class<? extends T> subtype) {
+        public Builder<T> subtype(Class<? extends T> subtype) {
             super.subtype(subtype);
             return this;
         }

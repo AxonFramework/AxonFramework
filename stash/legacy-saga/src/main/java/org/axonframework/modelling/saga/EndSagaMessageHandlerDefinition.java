@@ -38,7 +38,7 @@ import org.jspecify.annotations.Nullable;
 public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.unwrap(Executable.class)
                        .filter(executable -> AnnotationUtils.isAnnotationPresent(executable, EndSaga.class))
                        .map(e -> (MessageHandlingMember<T>) new EndSageMessageHandlingMember<>(original))
@@ -64,7 +64,7 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable T target) throws Exception {
+        public Object handleSync(Message message, ProcessingContext context, @Nullable T target) throws Exception {
             try {
                 return super.handleSync(message, context, target);
             } finally {

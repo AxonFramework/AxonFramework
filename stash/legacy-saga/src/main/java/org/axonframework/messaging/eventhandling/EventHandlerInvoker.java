@@ -44,7 +44,7 @@ public interface EventHandlerInvoker {
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise.
      */
-    boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context, @NonNull Segment segment);
+    boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment);
 
     /**
      * Check whether or not this invoker has handlers that can handle the given {@code payloadType}.
@@ -53,7 +53,7 @@ public interface EventHandlerInvoker {
      * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
      * otherwise
      */
-    default boolean canHandleType(@NonNull Class<?> payloadType) {
+    default boolean canHandleType(Class<?> payloadType) {
         return true;
     }
 
@@ -67,9 +67,9 @@ public interface EventHandlerInvoker {
      * @param segment The segment for which to handle the message.
      * @throws Exception when an exception occurs while handling the message.
      */
-    void handle(@NonNull EventMessage message,
-                @NonNull ProcessingContext context,
-                @NonNull Segment segment) throws Exception;
+    void handle(EventMessage message,
+                ProcessingContext context,
+                Segment segment) throws Exception;
 
     /**
      * Indicates whether the handlers managed by this invoker support a reset.

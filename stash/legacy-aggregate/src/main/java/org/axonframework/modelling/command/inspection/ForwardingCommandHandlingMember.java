@@ -36,5 +36,5 @@ public interface ForwardingCommandHandlingMember<T> extends CommandHandlingMembe
      * @param target  The target to forward the command message.
      * @return {@code true} if this handler can forward command to target entity, {@code false} otherwise.
      */
-    boolean canForward(@NonNull CommandMessage message, @NonNull T target);
+    boolean canForward(CommandMessage message, T target);
 }

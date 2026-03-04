@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -54,7 +53,6 @@ public final class MessageIdentifierParameterResolverFactory
      */
     static class MessageIdentifierParameterResolver implements ParameterResolver<String> {
 
-        @NonNull
         @Override
         public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(Message.fromContext(context).identifier());

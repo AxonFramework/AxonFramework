@@ -57,7 +57,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
 //        configurer.eventProcessing()
 //                  .registerSaga(sagaType,
 //                                sagaConfigurer -> {
@@ -71,7 +71,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

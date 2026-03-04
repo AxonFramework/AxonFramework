@@ -78,7 +78,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     @Override
-    public void scheduleSnapshot(@NonNull Class<?> aggregateType, @NonNull String aggregateIdentifier) {
+    public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
         if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(LegacyUnitOfWork.Phase.COMMIT)) {
             CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
         } else {
@@ -242,7 +242,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
          * @param spanFactory The {@link SpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
+        public Builder spanFactory(SnapshotterSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.builderSpanFactory = spanFactory;
             return this;

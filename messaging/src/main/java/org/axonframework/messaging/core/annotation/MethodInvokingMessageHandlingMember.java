@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.DelayedMessageStream;
@@ -225,7 +224,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                       .toArray());
     }
 
-    @NonNull
     private CompletableFuture<?> tryResolveParameterValue(ParameterResolver<?> parameterResolver,
                                                           ProcessingContext context) {
         try {

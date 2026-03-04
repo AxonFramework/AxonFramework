@@ -34,7 +34,7 @@ public class MetadataAssociationResolver implements AssociationResolver {
      * Does nothing because we can only check for existence of property in the metadata during event handling.
      */
     @Override
-    public <T> void validate(@NonNull String associationPropertyName, @NonNull MessageHandlingMember<T> handler) {
+    public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
         // Do nothing
     }
 
@@ -43,8 +43,8 @@ public class MetadataAssociationResolver implements AssociationResolver {
      * Metadata}.
      */
     @Override
-    public <T> Object resolve(@NonNull String associationPropertyName, @NonNull EventMessage message,
-                              @NonNull MessageHandlingMember<T> handler) {
+    public <T> Object resolve(String associationPropertyName, EventMessage message,
+                              MessageHandlingMember<T> handler) {
         return message.metadata().get(associationPropertyName);
     }
 }

@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
-
-import java.util.stream.Stream;
-
-
-import org.axonframework.messaging.core.Message;
-import org.jspecify.annotations.NonNull;
-
 /**
- * Forward no messages {@code T} regardless of their set up.
- *
- * @param <T> the implementation {@code T} of the {@link org.axonframework.messaging.core.Message} being filtered.
- * @author Steven van Beelen
- * @since 3.1
+ * This is part of a stashed module that is not actively maintained and just kept for reference.
  */
-public class ForwardNone<T extends Message> implements ForwardingMode<T> {
+@NullMarked
+@Deprecated(forRemoval = true, since = "5.0.0")
+package org.axonframework.messaging;
 
-    @Override
-    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
-        return Stream.empty();
-    }
-}
+import org.jspecify.annotations.NullMarked;

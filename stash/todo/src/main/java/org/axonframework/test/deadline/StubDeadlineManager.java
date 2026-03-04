@@ -99,7 +99,6 @@ public class StubDeadlineManager implements DeadlineManager {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
-    @NonNull
     @Override
     public String schedule(Instant triggerDateTime,
                            String deadlineName,
@@ -131,7 +130,6 @@ public class StubDeadlineManager implements DeadlineManager {
         );
     }
 
-    @NonNull
     @Override
     public String schedule(Duration triggerDuration,
                            String deadlineName,
@@ -236,14 +234,13 @@ public class StubDeadlineManager implements DeadlineManager {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
     }
 
-    public @NonNull
-    Registration registerDispatchInterceptor(
+    public Registration registerDispatchInterceptor(
             MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
-        public Registration registerHandlerInterceptor(
+    public Registration registerHandlerInterceptor(
             MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);

@@ -115,7 +115,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
             String processorName,
@@ -143,7 +142,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
@@ -168,7 +166,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         try {
@@ -221,7 +218,6 @@ public class JdbcTokenStore implements TokenStore {
         return converter;
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> storeToken(
             @Nullable TrackingToken token,
@@ -264,7 +260,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
             String processorName,
@@ -284,7 +279,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
             String processorName,
@@ -305,7 +299,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
@@ -324,7 +317,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> deleteToken(String processorName,
                                                int segment,
@@ -347,7 +339,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Segment> fetchSegment(
         String processorName,
@@ -367,7 +358,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
@@ -384,7 +374,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                                    @Nullable ProcessingContext context) {

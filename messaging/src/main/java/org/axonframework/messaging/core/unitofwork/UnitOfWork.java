@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
@@ -496,13 +495,11 @@ public class UnitOfWork implements ProcessingLifecycle {
             return resources.remove(key, expectedResource);
         }
 
-        @NonNull
         @Override
         public <C> C component(Class<C> type, @Nullable String name) {
             return applicationContext.component(type, name);
         }
 
-        @NonNull
         @Override
         public <C> C component(Class<C> type) {
             return applicationContext.component(type);

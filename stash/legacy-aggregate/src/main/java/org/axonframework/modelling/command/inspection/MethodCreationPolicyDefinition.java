@@ -34,7 +34,7 @@ import org.jspecify.annotations.NonNull;
 public class MethodCreationPolicyDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.<AggregateCreationPolicy>attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY)
                        .map(creationPolicy -> (MessageHandlingMember<T>) new MethodCreationPolicyHandlingMember<>(
                                original, creationPolicy

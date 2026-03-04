@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.converter;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
@@ -34,20 +33,17 @@ import java.sql.SQLException;
 public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, InputStream> {
 
     @Override
-    @NonNull
     public Class<Blob> expectedSourceType() {
         return Blob.class;
     }
 
     @Override
-    @NonNull
     public Class<InputStream> targetType() {
         return InputStream.class;
     }
 
     @Override
-    @Nullable
-    public InputStream convert(@Nullable Blob input) {
+    public @Nullable InputStream convert(@Nullable Blob input) {
         if (input == null) {
             return null;
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 
@@ -92,7 +91,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         return calculateRoute(sourceContentType, targetContentType, converters) != null;
     }
 
-    private static <S, T> Route calculateRoute(Class<S> sourceType,
+    private static <S, T> @Nullable Route calculateRoute(Class<S> sourceType,
                                                Class<T> targetType,
                                                Collection<ContentTypeConverter<?, ?>> candidates) {
         return new RouteCalculator(candidates).calculateRoute(sourceType, targetType);
@@ -134,20 +133,17 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     }
 
     @Override
-    @NonNull
     public Class<S> expectedSourceType() {
         return source;
     }
 
     @Override
-    @NonNull
     public Class<T> targetType() {
         return target;
     }
 
     @Override
-    @Nullable
-    public T convert(@Nullable S input) {
+    public @Nullable T convert(@Nullable S input) {
         Object intermediate = input;
         //noinspection rawtypes - Supressed inspection as each step has a different type
         for (ContentTypeConverter step : delegates) {
@@ -171,7 +167,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             this.candidates = new HashSet<>(candidates);
         }
 
-        private Route calculateRoute(Class<?> sourceType, Class<?> targetType) {
+        private @Nullable Route calculateRoute(Class<?> sourceType, Class<?> targetType) {
             Route match = buildInitialRoutes(sourceType, targetType);
             if (match != null) {
                 return match;
@@ -193,7 +189,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             return null;
         }
 
-        private Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
+        private @Nullable Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
             for (ContentTypeConverter<?, ?> converter : new HashSet<>(candidates)) {
                 if (converter.expectedSourceType().isAssignableFrom(sourceType)) {
                     Route route = new Route(converter);

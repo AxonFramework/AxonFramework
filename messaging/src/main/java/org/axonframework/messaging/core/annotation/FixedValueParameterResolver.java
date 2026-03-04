@@ -19,7 +19,6 @@ package org.axonframework.messaging.core.annotation;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.NonNull;
 
 /**
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely
@@ -42,7 +41,6 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
         this.value = value;
     }
 
-    @NonNull
     @Override
     public CompletableFuture<T> resolveParameterValue(ProcessingContext context) {
         return CompletableFuture.completedFuture(value);

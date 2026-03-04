@@ -66,7 +66,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public String resolveTarget(@NonNull CommandMessage command) {
+    public String resolveTarget(CommandMessage command) {
         Object aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);

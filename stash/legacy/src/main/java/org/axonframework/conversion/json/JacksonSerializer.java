@@ -288,7 +288,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public @NonNull SerializedType typeForClass(Class type) {
+    public SerializedType typeForClass(Class type) {
         if (type == null || Void.TYPE.equals(type) || Void.class.equals(type)) {
             return SimpleSerializedType.emptyType();
         }

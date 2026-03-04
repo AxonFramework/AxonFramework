@@ -62,7 +62,6 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
         this.resourceKey = Context.ResourceKey.withLabel("sequenceIdentifiersCache");
     }
 
-    @NonNull
     @Override
     public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         String eventIdentifier = event.identifier();
@@ -119,7 +118,6 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
          * @param eventIdentifier The event identifier to look up in the cache.
          * @return An {@link Optional} containing the sequence identifier if present, or empty if not found.
          */
-        @NonNull
         Optional<Object> get(String eventIdentifier) {
             return Optional.ofNullable(cache.get(eventIdentifier));
         }

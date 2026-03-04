@@ -74,17 +74,17 @@ public interface StreamableMessageSource<M extends Message> extends TrackingToke
     }
 
     @Override
-    default @NonNull CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    default CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createHeadToken());
     }
 
     @Override
-    default @NonNull CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    default CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createTailToken());
     }
 
     @Override
-    default @NonNull CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    default CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createTokenAt(at));
     }
 

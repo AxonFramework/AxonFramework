@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
@@ -56,20 +55,17 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
     }
 
     @Override
-    @NonNull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @NonNull
     public Class<GenericRecord> targetType() {
         return GenericRecord.class;
     }
 
     @Override
-    @Nullable
-    public GenericRecord convert(@Nullable byte[] input) {
+    public @Nullable GenericRecord convert(byte @Nullable[] input) {
         if (input == null) {
             return null;
         }

@@ -1080,13 +1080,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 //        }
 
         @Override
-        @NonNull
         public EventStoreTransaction transaction(ProcessingContext processingContext) {
             return null;
         }
 
         @Override
-        @NonNull
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                                List<EventMessage> events) {
             return null;

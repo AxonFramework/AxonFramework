@@ -50,12 +50,11 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnHandle(
-            @NonNull CommandMessage message,
-            @NonNull ProcessingContext context,
-            @NonNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
+            CommandMessage message,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain<CommandMessage> interceptorChain
     ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,

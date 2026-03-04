@@ -48,7 +48,7 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     }
 
     @Override
-    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<String> keyName = original.attribute("SagaEventHandler.keyName");
         Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
         Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +36,6 @@ public interface ParameterResolver<T> {
      * @return A {@link CompletableFuture} that will complete with the parameter value, or completes with {@code null}.
      * @since 5.0.0
      */
-    @NonNull
     CompletableFuture<T> resolveParameterValue(ProcessingContext context);
 
     /**

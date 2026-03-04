@@ -43,7 +43,7 @@ public class PayloadAssociationResolver implements AssociationResolver {
      * to create a {@link Property}. It also caches the resulting {@link Property} instance.
      */
     @Override
-    public <T> void validate(@NonNull String associationPropertyName, @NonNull MessageHandlingMember<T> handler) {
+    public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
         getProperty(associationPropertyName, handler);
     }
 
@@ -52,8 +52,8 @@ public class PayloadAssociationResolver implements AssociationResolver {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Object resolve(@NonNull String associationPropertyName, @NonNull EventMessage message,
-                              @NonNull MessageHandlingMember<T> handler) {
+    public <T> Object resolve(String associationPropertyName, EventMessage message,
+                              MessageHandlingMember<T> handler) {
         return getProperty(associationPropertyName, handler).getValue(message.payload());
     }
 

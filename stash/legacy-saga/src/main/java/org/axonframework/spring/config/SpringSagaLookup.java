@@ -39,7 +39,7 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SpringSagaLookup.class);
 
     @Override
-    public void postProcessBeanFactory(@NonNull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         if (!(beanFactory instanceof BeanDefinitionRegistry)) {
             logger.warn("Given bean factory is not a BeanDefinitionRegistry. Cannot auto-configure Sagas");
             return;
@@ -70,7 +70,7 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
 
     @Override
     public void postProcessBeanDefinitionRegistry(
-            @NonNull BeanDefinitionRegistry beanDefinitionRegistry
+            BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
         // No action required.
     }

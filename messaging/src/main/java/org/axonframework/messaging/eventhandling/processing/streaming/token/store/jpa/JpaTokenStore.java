@@ -98,7 +98,6 @@ public class JpaTokenStore implements TokenStore {
         this.loadingLockMode = configuration.loadingLockMode();
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
             String processorName,
@@ -127,7 +126,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                               String processorName,
@@ -175,7 +173,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
@@ -198,7 +195,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
@@ -222,7 +218,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> deleteToken(
             String processorName,
@@ -251,7 +246,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(String processorName,
                                                        int segment,
@@ -266,7 +260,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
             String processorName,
@@ -283,7 +276,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> extendClaim(
             String processorName,
@@ -316,7 +308,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Segment> fetchSegment(String processorName,
                                                    int segmentId,
@@ -341,7 +332,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
@@ -365,7 +355,6 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                                    @Nullable ProcessingContext context) {

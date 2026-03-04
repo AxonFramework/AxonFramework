@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -110,7 +109,6 @@ public class InterceptorChainParameterResolverFactory
         return (MessageHandlerInterceptorChain<M>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(ProcessingContext context) {
         // TODO #3485 - The MessageHandlerInterceptorChain should be registered as a resource to the ProcessingContext

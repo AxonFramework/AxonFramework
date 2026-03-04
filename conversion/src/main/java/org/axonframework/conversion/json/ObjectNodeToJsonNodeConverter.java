@@ -18,7 +18,6 @@ package org.axonframework.conversion.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
@@ -34,20 +33,17 @@ import org.axonframework.conversion.ContentTypeConverter;
 public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<ObjectNode, JsonNode> {
 
     @Override
-    @NonNull
     public Class<ObjectNode> expectedSourceType() {
         return ObjectNode.class;
     }
 
     @Override
-    @NonNull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
-    @Nullable
-    public JsonNode convert(@Nullable ObjectNode input) {
+    public @Nullable JsonNode convert(@Nullable ObjectNode input) {
         return input;
     }
 }

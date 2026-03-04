@@ -136,7 +136,6 @@ public class CachingSequencedDeadLetterQueue<M extends Message> implements Seque
                        }));
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> enqueue(Object sequenceIdentifier,
                                            DeadLetter<? extends M> letter,

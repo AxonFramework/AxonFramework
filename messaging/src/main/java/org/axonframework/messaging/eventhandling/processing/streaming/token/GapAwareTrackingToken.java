@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
-import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.util.Collection;
 import java.util.Collections;
@@ -221,7 +220,6 @@ public class GapAwareTrackingToken implements TrackingToken {
                 && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
-    @Nonnull
     private static GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken other) {
         Assert.isTrue(
                 other instanceof GapAwareTrackingToken,

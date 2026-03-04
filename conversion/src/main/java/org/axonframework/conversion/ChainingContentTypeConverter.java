@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -105,8 +104,7 @@ public class ChainingContentTypeConverter implements Converter {
     }
 
     @Override
-    @Nullable
-    public <T> T convert(@Nullable Object input, Type targetType) {
+    public <T> @Nullable T convert(@Nullable Object input, Type targetType) {
         if (input == null) {
             return null;
         }
@@ -225,7 +223,6 @@ public class ChainingContentTypeConverter implements Converter {
      * @return Unmodified list of all {@link ContentTypeConverter ContentTypeConverters} registered with this
      * {@code ChainingConverter}.
      */
-    @NonNull
     public List<ContentTypeConverter<?, ?>> getContentTypeConverters() {
         return Collections.unmodifiableList(this.converters);
     }

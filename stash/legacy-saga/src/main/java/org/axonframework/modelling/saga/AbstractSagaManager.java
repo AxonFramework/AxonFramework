@@ -80,7 +80,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void handle(@NonNull EventMessage event, @NonNull ProcessingContext context, @NonNull Segment segment)
+    public void handle(EventMessage event, ProcessingContext context, Segment segment)
             throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event, context);
         List<String> sagaIds =
