@@ -194,8 +194,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         return new AxonTestThenNothing(
                 configuration,
                 customization,
-                recordings.commandBus(),
-                recordings.eventSink(),
+                recordings,
                 null
         );
     }

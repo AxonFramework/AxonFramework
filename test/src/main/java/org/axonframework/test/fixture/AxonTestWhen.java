@@ -171,8 +171,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenCommand(
                     configuration,
                     customization,
-                    recordings.commandBus(),
-                    recordings.eventSink(),
+                    recordings,
                     actualResult,
                     actualException
             );
@@ -186,8 +185,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenEvent(
                     configuration,
                     customization,
-                    recordings.commandBus(),
-                    recordings.eventSink(),
+                    recordings,
                     actualException
             );
         }
@@ -205,8 +203,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             return new AxonTestThenNothing(
                     configuration,
                     customization,
-                    recordings.commandBus(),
-                    recordings.eventSink(),
+                    recordings,
                     actualException
             );
         }

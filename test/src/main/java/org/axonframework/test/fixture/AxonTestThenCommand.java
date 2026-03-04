@@ -21,10 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.conversion.MessageConverter;
-import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.StringDescription;
@@ -51,22 +49,18 @@ class AxonTestThenCommand
      *
      * @param configuration        The configuration which this test fixture phase is based on.
      * @param customization        Collection of customizations made for this test fixture.
-     * @param commandBus           The recording {@link CommandBus}, used to capture
-     *                             and validate any commands that have been sent.
-     * @param eventSink            The recording {@link EventSink}, used to capture and
-     *                             validate any events that have been sent.
+     * @param recordings           The registry holding recording components for assertions.
      * @param lastCommandResult    The last result of command handling.
      * @param lastCommandException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenCommand(
             @Nonnull AxonConfiguration configuration,
             @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
+            @Nonnull RecordingComponentsRegistry recordings,
             @Nonnull Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
-        super(configuration, customization, commandBus, eventSink, lastCommandException);
+        super(configuration, customization, recordings, lastCommandException);
         this.actualResult = lastCommandResult;
     }
 
