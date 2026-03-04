@@ -213,25 +213,29 @@ public final class AnnotationUtils {
                                                        Map<String, Object> attributes,
                                                        boolean overrideOnly) {
         Annotation ann = getAnnotation(target, annotationType);
-        if (ann == null && visited.add(target.getName())) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                if (collectAnnotationAttributes(metaAnn.annotationType(),
-                                                annotationType,
-                                                visited,
-                                                attributes,
-                                                overrideOnly)) {
-                    collectAttributes(metaAnn, attributes, overrideOnly);
-                    return true;
-                }
-            }
-        } else if (ann != null) {
+        if (ann != null) {
             collectAttributes(ann, attributes);
             return true;
+        }
+
+        if (!visited.add(target.getName())) {
+            return false;
+        }
+
+        for (Annotation metaAnn : target.getAnnotations()) {
+            if (collectAnnotationAttributes(metaAnn.annotationType(),
+                                            annotationType,
+                                            visited,
+                                            attributes,
+                                            overrideOnly)) {
+                collectAttributes(metaAnn, attributes, overrideOnly);
+                return true;
+            }
         }
         return false;
     }
 
-    private static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
+    private @Nullable static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
         for (Annotation annotation : target.getAnnotations()) {
             if (annotationType.equals(annotation.annotationType().getName())) {
                 return annotation;
