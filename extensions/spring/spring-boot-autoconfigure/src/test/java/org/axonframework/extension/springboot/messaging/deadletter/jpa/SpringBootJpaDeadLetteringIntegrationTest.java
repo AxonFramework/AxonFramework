@@ -118,12 +118,12 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
     }
 
     /**
-     * Returns a {@link JacksonConverter} since the JPA DLQ serializes event payloads to JSON, so deserialization
-     * requires a converter that understands the JSON format.
+     * Returns the autowired {@link EventConverter} since the JPA DLQ serializes event payloads to JSON, so
+     * deserialization requires a converter that understands the JSON format.
      */
     @Override
-    protected Converter converter() {
-        return converter;
+    protected EventConverter eventConverter() {
+        return eventConverter;
     }
 
     /**
@@ -184,8 +184,8 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             // The JPA DLQ stores payloads as serialized byte[]; convert back for comparison.
-            Object actualPayload = converter.convert(actual.message().payload(),
-                                                     expected.message().payload().getClass());
+            Object actualPayload = eventConverter.convert(actual.message().payload(),
+                                                          expected.message().payload().getClass());
             assertEquals(expected.message().payload(), actualPayload, assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
