@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Objects;
@@ -38,7 +38,7 @@ public class FutureCommandResult implements CommandResult {
      *
      * @param result The completable future that provides the result message when available
      */
-    public FutureCommandResult(@Nonnull CompletableFuture<? extends Message> result) {
+    public FutureCommandResult(@NonNull CompletableFuture<? extends Message> result) {
         this.completableFuture = Objects.requireNonNull(result, "The result may not be null.");
     }
 

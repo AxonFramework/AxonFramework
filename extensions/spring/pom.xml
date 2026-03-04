@@ -34,6 +34,7 @@
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
+        <module>spring-boot-starter-test</module>
     </modules>
 
     <dependencyManagement>
@@ -53,6 +54,12 @@
             <dependency>
                 <groupId>org.axonframework.extensions.spring</groupId>
                 <artifactId>axon-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.axonframework.extensions.spring</groupId>
+                <artifactId>axon-spring-boot-starter-test</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

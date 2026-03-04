@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
@@ -100,7 +100,7 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
      *                          handler registration.
      */
     protected void registerCommandHandlers(
-            @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
+            @NonNull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
         commandHandlingModule.commandHandlers(handlerConfigurer);
     }
@@ -110,7 +110,7 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
      *
      * @param interceptor The dispatch interceptor to register.
      */
-    protected void registerCommandDispatchInterceptor(@Nonnull MessageDispatchInterceptor<Message> interceptor) {
+    protected void registerCommandDispatchInterceptor(@NonNull MessageDispatchInterceptor<Message> interceptor) {
         dispatchInterceptors.add(interceptor);
     }
 
@@ -119,7 +119,7 @@ public abstract class AbstractCommandHandlingStudentIT extends AbstractStudentIT
      *
      * @param interceptor The handler interceptor to register.
      */
-    protected void registerCommandHandlerInterceptor(@Nonnull MessageHandlerInterceptor<CommandMessage> interceptor) {
+    protected void registerCommandHandlerInterceptor(@NonNull MessageHandlerInterceptor<CommandMessage> interceptor) {
         handlerInterceptors.add(interceptor);
     }
 

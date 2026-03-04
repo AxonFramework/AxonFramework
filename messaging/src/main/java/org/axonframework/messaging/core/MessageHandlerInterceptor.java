@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -50,8 +50,8 @@ public interface MessageHandlerInterceptor<M extends Message> {
      * @return The resulting message stream from
      * {@link MessageHandlerInterceptorChain#proceed(Message, ProcessingContext)}.
      */
-    @Nonnull
-    MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                       @Nonnull ProcessingContext context,
-                                       @Nonnull MessageHandlerInterceptorChain<M> interceptorChain);
+    @NonNull
+    MessageStream<?> interceptOnHandle(@NonNull M message,
+                                       @NonNull ProcessingContext context,
+                                       @NonNull MessageHandlerInterceptorChain<M> interceptorChain);
 }

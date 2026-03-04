@@ -16,8 +16,8 @@
 
 package org.axonframework.test.deadline;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
@@ -100,12 +100,12 @@ public class StubDeadlineManager implements DeadlineManager {
         this.currentDateTime = Instant.from(currentDateTime);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime,
-                           @Nonnull String deadlineName,
+    public String schedule(@NonNull Instant triggerDateTime,
+                           @NonNull String deadlineName,
                            Object payloadOrMessage,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         DeadlineMessage scheduledMessage =
                 processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage, triggerDateTime));
 
@@ -118,9 +118,9 @@ public class StubDeadlineManager implements DeadlineManager {
         return scheduledMessage.identifier();
     }
 
-    private static DeadlineMessage asDeadlineMessage(@Nonnull String deadlineName,
+    private static DeadlineMessage asDeadlineMessage(@NonNull String deadlineName,
                                                      @Nullable Object messageOrPayload,
-                                                     @Nonnull Instant expiryTime) {
+                                                     @NonNull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
             return new GenericDeadlineMessage(
                     deadlineName, (Message) messageOrPayload, () -> expiryTime
@@ -132,17 +132,17 @@ public class StubDeadlineManager implements DeadlineManager {
         );
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public String schedule(@Nonnull Duration triggerDuration,
-                           @Nonnull String deadlineName,
+    public String schedule(@NonNull Duration triggerDuration,
+                           @NonNull String deadlineName,
                            Object payloadOrMessage,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           @NonNull ScopeDescriptor deadlineScope) {
         return schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getScheduleId().equals(scheduleId)
@@ -150,12 +150,12 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(@NonNull String deadlineName) {
         scheduledDeadlines.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName));
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getDeadlineScope().equals(scope)
@@ -237,16 +237,15 @@ public class StubDeadlineManager implements DeadlineManager {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
     }
 
-    public @Nonnull
+    public @NonNull
     Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
+            @NonNull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
-    @Nonnull
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
+        public @NonNull Registration registerHandlerInterceptor(
+            @NonNull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }

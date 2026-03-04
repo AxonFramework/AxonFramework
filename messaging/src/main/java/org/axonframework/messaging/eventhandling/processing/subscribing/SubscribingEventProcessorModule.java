@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -79,7 +79,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      *
      * @param processorName The unique name for the subscribing event processor.
      */
-    public SubscribingEventProcessorModule(@Nonnull String processorName) {
+    public SubscribingEventProcessorModule(@NonNull String processorName) {
         super(processorName);
         this.processorName = processorName;
     }
@@ -150,14 +150,13 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         .toList();
     }
 
-    @Nonnull
-    private String processorEventHandlingComponentName(int index) {
+        private @NonNull String processorEventHandlingComponentName(int index) {
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
     @Override
     public SubscribingEventProcessorModule customized(
-            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
+            @NonNull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
         this.customizedProcessorConfigurationBuilder = cfg -> {
             var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
@@ -176,8 +175,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return this;
     }
 
-    @Nonnull
-    private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+    static @NonNull SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new SubscribingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(cfg)
                         .apply(cfg, new EventProcessorConfiguration(cfg)),
@@ -201,7 +199,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
+            @NonNull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
@@ -242,7 +240,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.
          */
-        default Customization andThen(@Nonnull Customization other) {
+        default Customization andThen(@NonNull Customization other) {
             Objects.requireNonNull(other, "other may not be null");
             return (config, pConfig) -> other.apply(config, this.apply(config, pConfig));
         }

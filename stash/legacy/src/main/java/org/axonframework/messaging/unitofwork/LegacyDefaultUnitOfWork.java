@@ -16,21 +16,20 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericResultMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.ResultMessage;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-
-import static org.axonframework.messaging.core.GenericResultMessage.asResultMessage;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the UnitOfWork that processes a single message.
@@ -71,7 +70,7 @@ public class LegacyDefaultUnitOfWork<T extends Message> extends AbstractLegacyUn
 
     @Override
     public <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
-                                                  @Nonnull RollbackConfiguration rollbackConfiguration) {
+                                                  @NonNull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }

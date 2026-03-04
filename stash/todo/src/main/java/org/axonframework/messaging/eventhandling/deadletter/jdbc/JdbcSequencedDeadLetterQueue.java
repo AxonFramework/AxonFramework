@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jdbc.JdbcException;
@@ -40,12 +40,10 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -88,7 +86,11 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final boolean CLOSE_QUIETLY = true;
+    /**
+     * Instructs {@link org.axonframework.common.jdbc.JdbcUtils#executeQuery} not to close the connection, as it is
+     * owned and committed by the surrounding {@link org.axonframework.common.tx.TransactionalExecutor}.
+     */
+    private static final boolean AUTO_CLOSE_CONNECTION = false;
 
     private final String processingGroup;
     private final TransactionalExecutorProvider<Connection> transactionalExecutorProvider;
@@ -103,9 +105,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     /**
      * Instantiate a JDBC-based {@link SequencedDeadLetterQueue} through the given {@link Builder builder}.
      * <p>
-     * Will validate whether the {@link Builder#processingGroup(String) processing group} and
-     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider}
-     * are set. If for any this is not the case an {@link AxonConfigurationException} is thrown.
+     * Will validate whether the {@link Builder#processingGroup(String) processing group},
+     * {@link Builder#transactionalExecutorProvider(TransactionalExecutorProvider) TransactionalExecutorProvider},
+     * and the converters required to construct statement factories/converters (the
+     * {@link Builder#eventConverter(EventConverter) EventConverter} and
+     * {@link Builder#genericConverter(Converter) generic Converter}) are set. If any of these are not provided an
+     * {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link JdbcSequencedDeadLetterQueue} instance.
      */
@@ -154,10 +159,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param tableFactory The factory constructing the {@link java.sql.PreparedStatement} to construct a
      *                     {@link DeadLetter} entry table based on the
      *                     {@link Builder#schema(DeadLetterSchema) configured} {@link DeadLetterSchema}.
-     * @param context      The {@link ProcessingContext} in which the schema will be created. May be {@code null};
-     *                     when provided, the connection executor is obtained from the context.
-     * @return A {@link CompletableFuture} that completes when the schema has been created. Completes exceptionally
-     * with a {@link JdbcException} if the table or indices could not be created.
+     * @param context      The {@link ProcessingContext} in which the schema will be created. May be {@code null}; when
+     *                     provided, the connection executor is obtained from the context.
+     * @return A {@link CompletableFuture} that completes when the schema has been created. Completes exceptionally with
+     * a {@link JdbcException} if the table or indices could not be created.
      */
     public CompletableFuture<Void> createSchema(DeadLetterTableFactory tableFactory,
                                                 @Nullable ProcessingContext context) {
@@ -174,9 +179,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
-    public CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                           @Nonnull DeadLetter<? extends E> letter,
+    @NonNull
+    public CompletableFuture<Void> enqueue(@NonNull Object sequenceIdentifier,
+                                           @NonNull DeadLetter<? extends E> letter,
                                            @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
@@ -219,16 +224,16 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                                      resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                                      e -> new JdbcException("Failed to uncover the maximum index for sequence ["
                                                                     + sequenceId + "]", e),
-                                     false);
+                                     AUTO_CLOSE_CONNECTION);
         long nextIndex = maxIndex + 1;
         logger.debug("Next index for [{}] is [{}]", sequenceId, nextIndex);
         return nextIndex;
     }
 
     @Override
-    @Nonnull
+    @NonNull
     @SuppressWarnings("unchecked")
-    public CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends E> letter,
+    public CompletableFuture<Void> evict(@NonNull DeadLetter<? extends E> letter,
                                          @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             if (!(letter instanceof JdbcDeadLetter)) {
@@ -260,10 +265,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
+    @NonNull
     @SuppressWarnings("unchecked")
-    public CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends E> letter,
-                                           @Nonnull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
+    public CompletableFuture<Void> requeue(@NonNull DeadLetter<? extends E> letter,
+                                           @NonNull UnaryOperator<DeadLetter<? extends E>> letterUpdater,
                                            @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             if (!(letter instanceof JdbcDeadLetter)) {
@@ -301,8 +306,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
-    public CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+    @NonNull
+    public CompletableFuture<Boolean> contains(@NonNull Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
@@ -314,15 +319,15 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L) > 0L,
                             e -> new JdbcException("Failed to validate whether there are letters "
                                                            + "present for sequence [" + sequenceId + "]", e),
-                            false
+                            AUTO_CLOSE_CONNECTION
                     ));
         });
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Iterable<DeadLetter<? extends E>>> deadLetterSequence(
-            @Nonnull Object sequenceIdentifier,
+            @NonNull Object sequenceIdentifier,
             @Nullable ProcessingContext context
     ) {
         return FutureUtils.runFailing(() -> {
@@ -332,7 +337,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     private Iterable<DeadLetter<? extends E>> deadLetterSequenceIterable(String sequenceId,
-                                                                          @Nullable ProcessingContext context) {
+                                                                         @Nullable ProcessingContext context) {
         return new PagingJdbcIterable<>(
                 connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.letterSequenceStatement(
@@ -345,7 +350,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends E>>>> deadLetters(
             @Nullable ProcessingContext context
     ) {
@@ -355,7 +360,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         c -> statementFactory.sequenceIdentifiersStatement(c, processingGroup),
                         listResults(resultSet -> resultSet.getString(1)),
                         e -> new JdbcException("Failed to retrieve all sequence identifiers", e),
-                        false
+                        AUTO_CLOSE_CONNECTION
                 ))
                 .thenApply(sequenceIdentifiers -> (Iterable<Iterable<DeadLetter<? extends E>>>) () -> {
                     Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
@@ -374,8 +379,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
-    public CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+    @NonNull
+    public CompletableFuture<Boolean> isFull(@NonNull Object sequenceIdentifier,
                                              @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
@@ -387,7 +392,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> connectionExecutor(context)
                 .apply(connection -> executeQuery(connection,
@@ -395,12 +400,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                                                   resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                                                   e -> new JdbcException("Failed to check the total number of "
                                                                                  + "dead letters", e),
-                                                  false)));
+                                                  AUTO_CLOSE_CONNECTION)));
     }
 
     @Override
-    @Nonnull
-    public CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+    @NonNull
+    public CompletableFuture<Long> sequenceSize(@NonNull Object sequenceIdentifier,
                                                 @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String sequenceId = toStringSequenceIdentifier(sequenceIdentifier);
@@ -411,12 +416,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                             resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                             e -> new JdbcException("Failed to check the number of dead letters in sequence ["
                                                            + sequenceId + "]", e),
-                            false));
+                            AUTO_CLOSE_CONNECTION));
         });
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> connectionExecutor(context)
                 .apply(connection -> executeQuery(
@@ -425,7 +430,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         resultSet -> nextAndExtract(resultSet, 1, Long.class, 0L),
                         e -> new JdbcException(
                                 "Failed to check the number of dead letter sequences in this queue", e),
-                        false)));
+                        AUTO_CLOSE_CONNECTION)));
     }
 
     /**
@@ -439,9 +444,9 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @see #process(Predicate, Function, ProcessingContext)
      */
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Boolean> process(
-            @Nonnull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
+            @NonNull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
             @Nullable ProcessingContext context
     ) {
         return FutureUtils.runFailing(() -> {
@@ -458,10 +463,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Boolean> process(
-            @Nonnull Predicate<DeadLetter<? extends E>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
+            @NonNull Predicate<DeadLetter<? extends E>> sequenceFilter,
+            @NonNull Function<DeadLetter<? extends E>, CompletableFuture<EnqueueDecision<E>>> processingTask,
             @Nullable ProcessingContext context
     ) {
         return FutureUtils.runFailing(() -> {
@@ -574,8 +579,10 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param context  The processing context for this operation.
      * @return An iterator over the first letters of each claimable sequence.
      */
-    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(int pageSize,
-                                                                          @Nullable ProcessingContext context) {
+    private Iterator<? extends JdbcDeadLetter<E>> findClaimableSequences(
+            int pageSize,
+            @Nullable ProcessingContext context
+    ) {
         return new PagingJdbcIterable<>(
                 connectionExecutor(context),
                 (connection, firstResult, maxSize) -> statementFactory.claimableSequencesStatement(
@@ -637,9 +644,11 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
      * @param context            The processing context for this operation.
      * @return A future completing with the next letter to process, or null if there are no more.
      */
-    private CompletableFuture<JdbcDeadLetter<E>> findNext(String sequenceIdentifier,
-                                                           long sequenceIndex,
-                                                           @Nullable ProcessingContext context) {
+    private CompletableFuture<JdbcDeadLetter<E>> findNext(
+            String sequenceIdentifier,
+            long sequenceIndex,
+            @Nullable ProcessingContext context
+    ) {
         return connectionExecutor(context).apply(connection -> executeQuery(
                 connection,
                 c -> statementFactory.nextLetterInSequenceStatement(
@@ -650,12 +659,12 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                         "Failed to find the next dead letter in sequence [" + sequenceIdentifier
                                 + "] for processing", e
                 ),
-                false
+                AUTO_CLOSE_CONNECTION
         ));
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> connectionExecutor(context)
                 .accept(connection -> executeUpdate(
@@ -721,7 +730,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          * @param processingGroup The processing group of this {@link SequencedDeadLetterQueue}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> processingGroup(@Nonnull String processingGroup) {
+        public Builder<E> processingGroup(@NonNull String processingGroup) {
             assertNonEmpty(processingGroup, "Can not set processingGroup to an empty String.");
             this.processingGroup = processingGroup;
             return this;
@@ -738,7 +747,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<E> transactionalExecutorProvider(
-                @Nonnull TransactionalExecutorProvider<Connection> transactionalExecutorProvider) {
+                @NonNull TransactionalExecutorProvider<Connection> transactionalExecutorProvider) {
             assertNonNull(transactionalExecutorProvider, "TransactionalExecutorProvider may not be null");
             this.transactionalExecutorProvider = transactionalExecutorProvider;
             return this;
@@ -757,7 +766,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          *               dead-letter queue.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> schema(@Nonnull DeadLetterSchema schema) {
+        public Builder<E> schema(@NonNull DeadLetterSchema schema) {
             assertNonNull(schema, "DeadLetterSchema may not be null");
             this.schema = schema;
             return this;
@@ -777,7 +786,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          *                         {@link SequencedDeadLetterQueue}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> statementFactory(@Nonnull DeadLetterStatementFactory<E> statementFactory) {
+        public Builder<E> statementFactory(@NonNull DeadLetterStatementFactory<E> statementFactory) {
             assertNonNull(statementFactory, "The DeadLetterStatementFactory may not be null");
             this.statementFactory = statementFactory;
             return this;
@@ -786,7 +795,8 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         /**
          * Sets the {@link DeadLetterJdbcConverter} used to convert a {@link java.sql.ResultSet} into a
          * {@link JdbcDeadLetter} implementation. The {@code converter} is, for example, used to service the
-         * {@link #deadLetters(ProcessingContext)} and {@link #deadLetterSequence(Object, ProcessingContext)} operations.
+         * {@link #deadLetters(ProcessingContext)} and {@link #deadLetterSequence(Object, ProcessingContext)}
+         * operations.
          * <p>
          * When the {@code converter} is not explicitly configured, this builder defaults to the
          * {@link DefaultDeadLetterJdbcConverter}. To construct the {@code DefaultDeadLetterJdbcConverter}, the
@@ -797,7 +807,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          *                  {@link JdbcDeadLetter} implementation.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> converter(@Nonnull DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter) {
+        public Builder<E> converter(@NonNull DeadLetterJdbcConverter<E, ? extends JdbcDeadLetter<E>> converter) {
             assertNonNull(converter, "The DeadLetterJdbcConverter may not be null");
             this.converter = converter;
             return this;
@@ -813,7 +823,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          * @param eventConverter The event converter to use for payload and metadata conversion.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> eventConverter(@Nonnull EventConverter eventConverter) {
+        public Builder<E> eventConverter(@NonNull EventConverter eventConverter) {
             assertNonNull(eventConverter, "The EventConverter may not be null");
             this.eventConverter = eventConverter;
             return this;
@@ -829,7 +839,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          * @param genericConverter The converter to use for tracking token and diagnostics conversion.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> genericConverter(@Nonnull Converter genericConverter) {
+        public Builder<E> genericConverter(@NonNull Converter genericConverter) {
             assertNonNull(genericConverter, "The generic Converter may not be null");
             this.genericConverter = genericConverter;
             return this;
@@ -878,7 +888,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
          * @param claimDuration The longest claim duration allowed.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<E> claimDuration(@Nonnull Duration claimDuration) {
+        public Builder<E> claimDuration(@NonNull Duration claimDuration) {
             assertNonNull(claimDuration, "Claim duration can not be set to null.");
             this.claimDuration = claimDuration;
             return this;

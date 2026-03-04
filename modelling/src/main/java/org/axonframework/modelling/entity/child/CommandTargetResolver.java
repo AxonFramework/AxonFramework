@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -48,9 +48,9 @@ public interface CommandTargetResolver<E> {
      * @return The target child entity that should handle the command, or {@code null} if no suitable entity is found.
      */
     @Nullable
-    E getTargetChildEntity(@Nonnull List<E> candidates,
-                           @Nonnull CommandMessage message,
-                           @Nonnull ProcessingContext context);
+    E getTargetChildEntity(@NonNull List<E> candidates,
+                           @NonNull CommandMessage message,
+                           @NonNull ProcessingContext context);
 
 
     /**

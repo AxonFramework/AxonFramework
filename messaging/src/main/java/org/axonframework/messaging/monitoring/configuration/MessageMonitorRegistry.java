@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
@@ -59,8 +59,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for generic {@link Message} types
      * @return the updated MessageMonitorRegistry instance for fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerMonitor(final @Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
+    @NonNull
+    MessageMonitorRegistry registerMonitor(final @NonNull ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specific for {@link EventMessage} types using the supplied
@@ -70,8 +70,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       instance for {@link EventMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerEventMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder);
+    @NonNull
+    MessageMonitorRegistry registerEventMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for monitoring the processing of {@link CommandMessage} instances.
@@ -81,8 +81,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link CommandMessage} types.
      * @return the updated MessageMonitorRegistry instance, allowing for a fluent configuration approach.
      */
-    @Nonnull
-    MessageMonitorRegistry registerCommandMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder);
+    @NonNull
+    MessageMonitorRegistry registerCommandMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link QueryMessage} types using the provided
@@ -93,8 +93,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link QueryMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerQueryMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
+    @NonNull
+    MessageMonitorRegistry registerQueryMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types using the
@@ -105,8 +105,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link SubscriptionQueryUpdateMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
+    @NonNull
+    MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
 
     /**
      * Retrieves a {@link MessageMonitor} dedicated for monitoring {@link CommandMessage} processing.
@@ -114,7 +114,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} instance used to create the {@link MessageMonitor} instances
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super CommandMessage> commandMonitor(@Nonnull Configuration config);
+    MessageMonitor<? super CommandMessage> commandMonitor(@NonNull Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} specifically designed to monitor the processing of {@link EventMessage} instances.
@@ -122,7 +122,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} instance used to create or retrieve the {@link MessageMonitor} instances
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super EventMessage> eventMonitor(@Nonnull Configuration config);
+    MessageMonitor<? super EventMessage> eventMonitor(@NonNull Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link QueryMessage} instances.
@@ -130,7 +130,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} used to create or retrieve the {@link MessageMonitor} for {@link QueryMessage} types
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super QueryMessage> queryMonitor(@Nonnull Configuration config);
+    MessageMonitor<? super QueryMessage> queryMonitor(@NonNull Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link SubscriptionQueryUpdateMessage} instances.
@@ -139,5 +139,5 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *               {@link SubscriptionQueryUpdateMessage} types
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@Nonnull Configuration config);
+    MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@NonNull Configuration config);
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;
@@ -94,7 +94,7 @@ public class EventValidator implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         publishedEvents.add(event);
         return null;
     }

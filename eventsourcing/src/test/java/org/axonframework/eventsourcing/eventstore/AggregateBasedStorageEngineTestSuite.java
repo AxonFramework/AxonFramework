@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -717,7 +717,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
     }
 
-    private @Nonnull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
+    private @NonNull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
                                                                                int expectedSequence) {
         return e -> expectedPayload.equals(convertPayload(e.message()).payload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))

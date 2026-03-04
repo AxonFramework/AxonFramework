@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
@@ -49,9 +49,9 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
-                                        @Nonnull String entityRoutingProperty,
-                                        @Nonnull String messageRoutingProperty) {
+    public RoutingKeyEventTargetMatcher(@NonNull AnnotatedEntityMetamodel<E> metamodel,
+                                        @NonNull String entityRoutingProperty,
+                                        @NonNull String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
                 entityRoutingProperty,
@@ -60,9 +60,9 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
 
     @Override
-    public boolean matches(@Nonnull E childEntity,
-                           @Nonnull EventMessage message,
-                           @Nonnull ProcessingContext processingContext) {
+    public boolean matches(@NonNull E childEntity,
+                           @NonNull EventMessage message,
+                           @NonNull ProcessingContext processingContext) {
         return routingKeyEntityMatcher.matches(childEntity, message);
     }
 }

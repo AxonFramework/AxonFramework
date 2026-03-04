@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 
@@ -48,8 +48,8 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param delegate           the delegate factory used to create units of work
      */
     public TransactionalUnitOfWorkFactory(
-            @Nonnull TransactionManager transactionManager,
-            @Nonnull UnitOfWorkFactory delegate
+            @NonNull TransactionManager transactionManager,
+            @NonNull UnitOfWorkFactory delegate
     ) {
         Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         Objects.requireNonNull(delegate, "Delegate UnitOfWorkFactory cannot be null");
@@ -70,11 +70,11 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      *
      * @return a new transactional unit of work
      */
-    @Nonnull
+    @NonNull
     @Override
     public UnitOfWork create(
-            @Nonnull String identifier,
-            @Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
+            @NonNull String identifier,
+            @NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
         if (transactionManager.requiresSameThreadInvocations()) {
             customization = customization.andThen(UnitOfWorkConfiguration::forcedSameThreadInvocation);

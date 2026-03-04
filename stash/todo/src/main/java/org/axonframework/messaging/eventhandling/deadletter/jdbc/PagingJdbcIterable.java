@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.tx.TransactionalExecutor;
 
@@ -48,6 +49,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.listResults;
  * @author Steven van Beelen
  * @since 4.8.0
  */
+@Internal
 public class PagingJdbcIterable<R> implements Iterable<R> {
 
     private static final Duration DEFAULT_QUERY_TIMEOUT = Duration.ofSeconds(30);

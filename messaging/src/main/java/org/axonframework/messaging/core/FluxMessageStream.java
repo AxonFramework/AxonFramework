@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
@@ -51,18 +51,18 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
      *
      * @param source The {@link Flux} providing the {@link Entry entries} for this {@link MessageStream stream}.
      */
-    FluxMessageStream(@Nonnull Flux<Entry<M>> source) {
+    FluxMessageStream(@NonNull Flux<Entry<M>> source) {
         this.source = source;
     }
 
     @Override
-    public <RM extends Message> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> MessageStream<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@NonNull R identity,
+                                           @NonNull BiFunction<R, Entry<M>, R> accumulator) {
         return source.reduce(identity, accumulator).toFuture();
     }
 
@@ -108,7 +108,7 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         super.setCallback(callback);
         subscribeToSource();
     }
@@ -148,7 +148,7 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
     }
 
     @Override
-    public MessageStream<M> onErrorContinue(@Nonnull Function<Throwable, MessageStream<M>> onError) {
+    public MessageStream<M> onErrorContinue(@NonNull Function<Throwable, MessageStream<M>> onError) {
         return new FluxMessageStream<>(source.onErrorResume(exception -> FluxUtils.of(onError.apply(exception))));
     }
 

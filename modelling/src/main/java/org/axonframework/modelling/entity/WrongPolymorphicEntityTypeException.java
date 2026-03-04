@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 import java.util.List;
@@ -41,10 +41,10 @@ public class WrongPolymorphicEntityTypeException extends RuntimeException {
      * @param givenEntityType       The entity type that was passed to the command handler.
      * @param <E>                   The type of the polymorphic entity.
      */
-    public <E> WrongPolymorphicEntityTypeException(@Nonnull CommandMessage commandMessage,
-                                                   @Nonnull Class<E> polymorphicEntityType,
-                                                   @Nonnull List<Class<E>> supportedEntityTypes,
-                                                   @Nonnull Class<E> givenEntityType
+    public <E> WrongPolymorphicEntityTypeException(@NonNull CommandMessage commandMessage,
+                                                   @NonNull Class<E> polymorphicEntityType,
+                                                   @NonNull List<Class<E>> supportedEntityTypes,
+                                                   @NonNull Class<E> givenEntityType
     ) {
         super(String.format(
                 "PolymorphicEntityMetamodel [%s] can not handle command [%s] as it is of the wrong type [%s]. Expected one of the following types: [%s]",

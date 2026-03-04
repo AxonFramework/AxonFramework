@@ -16,15 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.NonNull;
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -51,9 +52,9 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CompletableFuture<Boolean> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<Boolean> resolveParameterValue(@NonNull ProcessingContext context) {
         Message message = Message.fromContext(context);
         return CompletableFuture.completedFuture(
                 CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
@@ -62,7 +63,7 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(@NonNull ProcessingContext context) {
         return Message.fromContext(context) instanceof EventMessage;
     }
 }

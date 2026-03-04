@@ -40,7 +40,6 @@ import java.util.concurrent.Callable;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {

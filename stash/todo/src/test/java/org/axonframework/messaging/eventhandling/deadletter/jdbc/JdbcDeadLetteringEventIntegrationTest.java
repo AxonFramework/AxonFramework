@@ -131,12 +131,13 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
     @BeforeEach
     void setUpJdbc() {
-        joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
-                                                                                     connection.prepareStatement(
-                                                                                                       "DROP TABLE IF EXISTS "
-                                                                                                               + schema.deadLetterTable())
-                                                                                               .executeUpdate()
-        ));
+        joinAndUnwrap(
+                executorProvider.getTransactionalExecutor(null)
+                                .accept(connection -> connection.prepareStatement(
+                                                "DROP TABLE IF EXISTS " + schema.deadLetterTable()
+                                        ).executeUpdate()
+                                )
+        );
         joinAndUnwrap(jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory(), null));
     }
 
@@ -172,6 +173,9 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
             JdbcDeadLetter<? extends EventMessage> actual = ((JdbcDeadLetter<? extends EventMessage>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
+            assertEquals(expected.message().payload(),
+                         actual.message().payloadAs(Integer.class, converter()),
+                         assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
             assertEquals(sequenceIndex.longValue(), actual.getSequenceIndex(), assertMessageSupplier);
@@ -179,26 +183,28 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     }
 
     private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage> letter, int index) {
-        joinAndUnwrap(executorProvider.getTransactionalExecutor(null).accept(connection ->
-                                                                                     executeUpdate(
-                                                                                             connection,
-                                                                                             c -> statementFactory.enqueueStatement(
-                                                                                                     c,
-                                                                                                     PROCESSING_GROUP,
-                                                                                                     aggregateId,
-                                                                                                     letter,
-                                                                                                     index,
-                                                                                                     null
-                                                                                             ),
-                                                                                             e -> new JdbcException(
-                                                                                                     "Failed to enqueue dead letter with message id ["
-                                                                                                             +
-                                                                                                             letter.message()
-                                                                                                                   .identifier()
-                                                                                                             + "] during testing",
-                                                                                                     e
-                                                                                             )
-                                                                                     )
-        ));
+        joinAndUnwrap(
+                executorProvider.getTransactionalExecutor(null)
+                                .accept(connection -> executeUpdate(
+                                                connection,
+                                                c -> statementFactory.enqueueStatement(
+                                                        c,
+                                                        PROCESSING_GROUP,
+                                                        aggregateId,
+                                                        letter,
+                                                        index,
+                                                        null
+                                                ),
+                                                e -> new JdbcException(
+                                                        "Failed to enqueue dead letter with message id ["
+                                                                +
+                                                                letter.message()
+                                                                      .identifier()
+                                                                + "] during testing",
+                                                        e
+                                                )
+                                        )
+                                )
+        );
     }
 }

@@ -16,8 +16,8 @@
 
 package org.axonframework.common.lifecycle;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception indicating a failure occurred during a lifecycle handler method invocation.
@@ -34,7 +34,7 @@ public class LifecycleHandlerInvocationException extends RuntimeException {
      * @param message The message describing the exception.
      * @param cause   The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(@Nonnull String message, @Nullable Throwable cause) {
+    public LifecycleHandlerInvocationException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

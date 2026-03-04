@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
@@ -154,6 +154,7 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenPayloadClassIsNull() {
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () ->
                     new ExtractionSequencingPolicy<>(null, TestEvent::id));
         }
@@ -161,6 +162,7 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenIdentifierExtractorIsNull() {
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () ->
                     new ExtractionSequencingPolicy<>(TestEvent.class, null));
         }
@@ -168,6 +170,7 @@ final class ExtractionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenEventConverterIsNull() {
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () ->
                     new ExtractionSequencingPolicy<>(TestEvent.class, null));
         }
@@ -185,6 +188,7 @@ final class ExtractionSequencingPolicyTest {
             );
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () ->
                     sequencingPolicy.getSequenceIdentifierFor(null, aProcessingContext()));
         }
@@ -198,6 +202,7 @@ final class ExtractionSequencingPolicyTest {
             );
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () ->
                     sequencingPolicy.getSequenceIdentifierFor(anEvent(new TestEvent("42", 1)), null));
         }
@@ -211,8 +216,7 @@ final class ExtractionSequencingPolicyTest {
         return StubProcessingContext.withComponent(EventConverter.class, eventConverter());
     }
 
-    @Nonnull
-    private static EventConverter eventConverter() {
+    static @NonNull EventConverter eventConverter() {
         return new DelegatingEventConverter(new JacksonConverter());
     }
 

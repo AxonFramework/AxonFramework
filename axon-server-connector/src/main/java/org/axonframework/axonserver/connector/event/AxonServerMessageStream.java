@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
@@ -50,8 +50,8 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
      * @param stream           The backing stream to Axon Server to read from
      * @param messageConverter The function to convert Axon Server events to Event Messages
      */
-    public AxonServerMessageStream(@Nonnull EventStream stream,
-                                   @Nonnull Function<Event, EventMessage> messageConverter) {
+    public AxonServerMessageStream(@NonNull EventStream stream,
+                                   @NonNull Function<Event, EventMessage> messageConverter) {
         this.stream = stream;
         this.messageConverter = messageConverter;
     }
@@ -66,7 +66,7 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
         return Optional.of(entry);
     }
 
-    @Nonnull
+    @NonNull
     private SimpleEntry<EventMessage> toSimpleEntry(EventWithToken eventWithToken) {
         Event event = eventWithToken.getEvent();
         EventMessage message = messageConverter.apply(event);
@@ -92,7 +92,7 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         stream.onAvailable(callback);
     }
 

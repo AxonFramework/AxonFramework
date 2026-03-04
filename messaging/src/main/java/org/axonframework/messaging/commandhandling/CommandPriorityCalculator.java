@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Calculate the priority of {@link CommandMessage} based on its content.
@@ -35,15 +35,14 @@ public interface CommandPriorityCalculator {
      * @param command A {@link CommandMessage} to prioritize.
      * @return An {@code int} defining the priority of the given {@code command}.
      */
-    int determinePriority(@Nonnull CommandMessage command);
+    int determinePriority(@NonNull CommandMessage command);
 
     /**
      * Returns a default implementation of the {@code CommandPriorityCalculator}, always returning priority {@code 0}.
      *
      * @return A lambda taking in a {@link CommandMessage} to prioritize to the default of priority {@code 0}.
      */
-    @Nonnull
-    static CommandPriorityCalculator defaultCalculator() {
+        static @NonNull CommandPriorityCalculator defaultCalculator() {
         return command -> 0;
     }
 }

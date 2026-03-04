@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -41,7 +41,7 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
      *
      * @param delegate The actual message handling member to delegate to.
      */
-    protected WrappedMessageHandlingMember(@Nonnull MessageHandlingMember<T> delegate) {
+    protected WrappedMessageHandlingMember(@NonNull MessageHandlingMember<T> delegate) {
         this.delegate = delegate;
     }
 
@@ -56,29 +56,29 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
         return delegate.canHandle(message, context);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target) throws Exception {
+    public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, T target) throws Exception {
         return delegate.handleSync(message, context, target);
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message,
-                                   @Nonnull ProcessingContext context,
+    public MessageStream<?> handle(@NonNull Message message,
+                                   @NonNull ProcessingContext context,
                                    @Nullable T target) {
         return delegate.handle(message, context, target);
     }
 
     @Override
-    public boolean canHandleType(@Nonnull Class<?> payloadType) {
+    public boolean canHandleType(@NonNull Class<?> payloadType) {
         return delegate.canHandleType(payloadType);
     }
 
     @Override
-    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
         return delegate.canHandleMessageType(messageType);
     }
 

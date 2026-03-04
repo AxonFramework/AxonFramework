@@ -16,11 +16,11 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.core.Message;
-
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
+
+
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Forward no messages {@code T} regardless of their set up.
@@ -32,7 +32,7 @@ import org.axonframework.messaging.core.Message;
 public class ForwardNone<T extends Message> implements ForwardingMode<T> {
 
     @Override
-    public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(@NonNull T message, @NonNull Stream<E> candidates) {
         return Stream.empty();
     }
 }

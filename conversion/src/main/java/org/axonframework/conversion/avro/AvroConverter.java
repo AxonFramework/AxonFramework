@@ -16,8 +16,8 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.annotation.Internal;
@@ -68,8 +68,8 @@ public class AvroConverter implements Converter {
      * @param configurationOverride configuration customizer.
      */
     public AvroConverter(
-            @Nonnull SchemaStore schemaStore,
-            @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride
+            @NonNull SchemaStore schemaStore,
+            @NonNull UnaryOperator<AvroConverterConfiguration> configurationOverride
     ) {
         this(schemaStore, configurationOverride, new ChainingContentTypeConverter());
     }
@@ -83,9 +83,9 @@ public class AvroConverter implements Converter {
      */
     @Internal
     public AvroConverter(
-            @Nonnull SchemaStore schemaStore,
-            @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride,
-            @Nonnull ChainingContentTypeConverter chainingTypeConverter
+            @NonNull SchemaStore schemaStore,
+            @NonNull UnaryOperator<AvroConverterConfiguration> configurationOverride,
+            @NonNull ChainingContentTypeConverter chainingTypeConverter
     ) {
         var config = Objects.requireNonNull(configurationOverride, "the configurationOverride may not be null.")
                             .apply(
@@ -113,8 +113,8 @@ public class AvroConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@Nonnull Type sourceType,
-                              @Nonnull Type targetType) {
+    public boolean canConvert(@NonNull Type sourceType,
+                              @NonNull Type targetType) {
         if (logger.isTraceEnabled()) {
             logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
                          sourceType, targetType);
@@ -141,7 +141,7 @@ public class AvroConverter implements Converter {
 
     @Nullable
     @Override
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -212,7 +212,7 @@ public class AvroConverter implements Converter {
         }
     }
 
-    private <T> T serializeByStrategy(@Nonnull Object input, @Nonnull Class<?> sourceType) {
+    private <T> T serializeByStrategy(@NonNull Object input, @NonNull Class<?> sourceType) {
         return (T) converterStrategies
                 .stream()
                 .filter(it -> it.test(sourceType))
@@ -225,7 +225,7 @@ public class AvroConverter implements Converter {
                 .convertToSingleObjectEncoded(input);
     }
 
-    private <T> T deserializeByStrategy(@Nonnull byte[] input, @Nonnull Class<?> targetType) {
+    private <T> T deserializeByStrategy(byte @NonNull [] input, @NonNull Class<?> targetType) {
         //noinspection unchecked
         return (T) converterStrategies
                 .stream()
@@ -238,7 +238,7 @@ public class AvroConverter implements Converter {
                 .convertFromSingleObjectEncoded(input, targetType);
     }
 
-    private <T> T deserializeByStrategy(@Nonnull GenericRecord input, @Nonnull Class<?> targetType) {
+    private <T> T deserializeByStrategy(@NonNull GenericRecord input, @NonNull Class<?> targetType) {
         //noinspection unchecked
         return (T) converterStrategies
                 .stream()
@@ -252,7 +252,7 @@ public class AvroConverter implements Converter {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@NonNull ComponentDescriptor descriptor) {
         for (AvroConverterStrategy strategy : this.converterStrategies) {
             strategy.describeTo(descriptor);
         }

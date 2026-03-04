@@ -20,7 +20,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Repository} provides an abstraction for the storage of entities.
@@ -43,7 +43,7 @@ public sealed interface Repository<ID, E>
      *
      * @return The type of entity stored in this repository.
      */
-    @Nonnull
+    @NonNull
     Class<E> entityType();
 
     /**
@@ -51,7 +51,7 @@ public sealed interface Repository<ID, E>
      *
      * @return The type of the identifier used to identify entities in this repository.
      */
-    @Nonnull
+    @NonNull
     Class<ID> idType();
 
     /**
@@ -63,8 +63,8 @@ public sealed interface Repository<ID, E>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
      * {@code null} if it can't be found.
      */
-    CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
-                                                 @Nonnull ProcessingContext processingContext);
+    CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
+                                                 @NonNull ProcessingContext processingContext);
 
     /**
      * Loads an entity from the repository.
@@ -74,8 +74,8 @@ public sealed interface Repository<ID, E>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or a newly
      * constructed entity instance based on the {@code factoryMethod}.
      */
-    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext);
+    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
+                                                         @NonNull ProcessingContext processingContext);
 
     /**
      * Persists the given {@code entity} in this repository
@@ -85,9 +85,9 @@ public sealed interface Repository<ID, E>
      * @param processingContext The {@link ProcessingContext} in which the entity is active.
      * @return a {@link ManagedEntity} wrapping the entity managed in the {@link ProcessingContext}.
      */
-    ManagedEntity<ID, E> persist(@Nonnull ID identifier,
-                                 @Nonnull E entity,
-                                 @Nonnull ProcessingContext processingContext);
+    ManagedEntity<ID, E> persist(@NonNull ID identifier,
+                                 @NonNull E entity,
+                                 @NonNull ProcessingContext processingContext);
 
     /**
      * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations of
@@ -117,6 +117,6 @@ public sealed interface Repository<ID, E>
          * @param processingContext The processing context to link the lifecycle with.
          * @return The instance of the entity whose lifecycle is managed by this repository.
          */
-        ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity, @Nonnull ProcessingContext processingContext);
+        ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity, @NonNull ProcessingContext processingContext);
     }
 }

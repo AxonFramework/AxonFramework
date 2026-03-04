@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.monitoring.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
@@ -43,15 +43,15 @@ public class MonitoringSubscriptionQueryUpdateDispatchInterceptor implements Mes
      *
      * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
-    public MonitoringSubscriptionQueryUpdateDispatchInterceptor(final @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage> messageMonitor) {
+    public MonitoringSubscriptionQueryUpdateDispatchInterceptor(final @NonNull MessageMonitor<? super SubscriptionQueryUpdateMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public MessageStream<?> interceptOnDispatch(@Nonnull SubscriptionQueryUpdateMessage message,
+    public MessageStream<?> interceptOnDispatch(@NonNull SubscriptionQueryUpdateMessage message,
                                                 @Nullable ProcessingContext context,
-                                                @Nonnull MessageDispatchInterceptorChain<SubscriptionQueryUpdateMessage> interceptorChain) {
+                                                @NonNull MessageDispatchInterceptorChain<SubscriptionQueryUpdateMessage> interceptorChain) {
         if (context != null && context.isStarted()) {
             final var monitorCallback = messageMonitor.onMessageIngested(message);
 

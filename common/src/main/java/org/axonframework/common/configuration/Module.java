@@ -16,7 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface describing a module of Axon Framework's configuration API.
@@ -51,5 +51,5 @@ public interface Module {
      * @param lifecycleRegistry         The registry where lifecycle handlers can be registered by this module.
      * @return The fully initialized {@link Configuration} instance from {@code this Module} specifically.
      */
-    Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry);
+    Configuration build(@NonNull Configuration parent, @NonNull LifecycleRegistry lifecycleRegistry);
 }

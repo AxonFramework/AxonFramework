@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -76,9 +76,9 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected AggregateBasedJpaEventStorageEngine getStorageEngine(@Nonnull EventConverter converter) {
+    protected AggregateBasedJpaEventStorageEngine getStorageEngine(@NonNull EventConverter converter) {
         if(engine == null) {
             FactoryBasedEntityManagerProvider entityManagerProvider = new FactoryBasedEntityManagerProvider(entityManagerFactory);
 
@@ -105,7 +105,7 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
         return engine;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected UnitOfWork unitOfWork() {
         TransactionalUnitOfWorkFactory factory = new TransactionalUnitOfWorkFactory(

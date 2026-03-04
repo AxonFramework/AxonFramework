@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +43,7 @@ class TruncateFirstMessageStream<M extends Message>
      *
      * @param delegate The instance to delegate calls to.
      */
-    public TruncateFirstMessageStream(@Nonnull MessageStream<M> delegate) {
+    public TruncateFirstMessageStream(@NonNull MessageStream<M> delegate) {
         super(delegate);
     }
 
@@ -58,7 +58,7 @@ class TruncateFirstMessageStream<M extends Message>
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(@NonNull Runnable callback) {
         super.setCallback(() -> {
             if (!consumed.get()) {
                 callback.run();

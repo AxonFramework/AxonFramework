@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
@@ -42,7 +42,6 @@ public interface CommandHandler extends MessageHandler {
      * @param context The context to the given {@code command} is handled in.
      * @return A {@code MessagesStream.Single} of a {@link CommandResultMessage}.
      */
-    @Nonnull
-    MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                      @Nonnull ProcessingContext context);
+    MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
+                                                      @NonNull ProcessingContext context);
 }
