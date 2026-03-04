@@ -24,7 +24,7 @@ The following table shows which Spring Boot versions are supported by each Axon 
 |✓
 |✓
 
-|5.0+
+|5.0.3+
 |
 |✓
 |✓
