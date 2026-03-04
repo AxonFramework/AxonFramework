@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Part of the Axon Extension module. Contains classes related to test.
+ */
 @NullMarked
 package org.axonframework.extension.springboot.test;
 

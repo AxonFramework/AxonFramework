@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Eventsourcing module. Contains inmemory event store implementation.
+ */
 @NullMarked
 package org.axonframework.eventsourcing.eventstore.inmemory;
 

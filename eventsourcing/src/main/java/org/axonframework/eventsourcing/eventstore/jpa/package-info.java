@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Eventsourcing module. Contains {@code JPA} based event storage engines.
+ */
 @NullMarked
 package org.axonframework.eventsourcing.eventstore.jpa;
 

@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Modelling module. Contains classes related to repository.
+ */
 @NullMarked
 package org.axonframework.modelling.repository;
 

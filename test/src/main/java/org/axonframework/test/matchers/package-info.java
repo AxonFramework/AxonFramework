@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Test module. Contains classes related to matchers.
+ */
 @NullMarked
 package org.axonframework.test.matchers;
 

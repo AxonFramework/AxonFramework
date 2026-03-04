@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Root package for Axon Update. Contains utilities for detecting and performing updates to Axon Framework applications.
+ */
 @NullMarked
 package org.axonframework.update;
 

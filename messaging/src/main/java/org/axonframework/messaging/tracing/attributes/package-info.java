@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Messaging module. Contains classes related to attributes.
+ */
 @NullMarked
 package org.axonframework.messaging.tracing.attributes;
 

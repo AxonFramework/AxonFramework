@@ -15,6 +15,10 @@
  */
 
 
+/**
+ * Root package for Axon Eventsourcing. Provides support for Event Sourcing,
+ * storing application state as a sequence of immutable events.
+ */
 @NullMarked
 package org.axonframework.eventsourcing;
 

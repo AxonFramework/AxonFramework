@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Extension module. Contains classes related to messaging.
+ */
 @NullMarked
 package org.axonframework.extension.spring.messaging;
 

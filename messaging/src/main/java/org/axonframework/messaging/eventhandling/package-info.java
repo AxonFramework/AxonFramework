@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Package for event handling components in Axon Framework. Events describe something that has occurred in the application.
+ */
 @NullMarked
 package org.axonframework.messaging.eventhandling;
 

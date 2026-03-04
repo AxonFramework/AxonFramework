@@ -15,6 +15,10 @@
  */
 
 
+/**
+ * Part of the Axon Conversion module. Contains implementations of
+ * {@link org.axonframework.conversion.ContentTypeConverter}.
+ */
 @NullMarked
 package org.axonframework.conversion.converter;
 

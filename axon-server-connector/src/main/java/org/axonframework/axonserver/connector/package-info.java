@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Root package for the Axon Server Connector. Provides the necessary components to connect to Axon Server for message routing and event storage.
+ */
 @NullMarked
 package org.axonframework.axonserver.connector;
 

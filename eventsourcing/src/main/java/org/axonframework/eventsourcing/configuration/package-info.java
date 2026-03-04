@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Eventsourcing module. Contains classes related to configuration.
+ */
 @NullMarked
 package org.axonframework.eventsourcing.configuration;
 

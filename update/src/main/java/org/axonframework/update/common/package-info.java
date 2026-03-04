@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Update module. Contains classes related to common.
+ */
 @NullMarked
 package org.axonframework.update.common;
 

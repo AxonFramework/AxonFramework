@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Extension module. Contains classes related to actuator.
+ */
 @NullMarked
 package org.axonframework.extension.springboot.actuator;
 

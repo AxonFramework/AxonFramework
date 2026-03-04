@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Server Connector module. Contains classes related to event.
+ */
 @NullMarked
 package org.axonframework.axonserver.connector.event;
 

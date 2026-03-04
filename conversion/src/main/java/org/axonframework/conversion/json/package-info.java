@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Conversion module. Contains classes related to json conversion.
+ */
 @NullMarked
 package org.axonframework.conversion.json;
 

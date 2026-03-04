@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Messaging module. Contains classes related to interception.
+ */
 @NullMarked
 package org.axonframework.messaging.eventhandling.interception;
 

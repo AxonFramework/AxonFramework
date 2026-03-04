@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Messaging module. Contains classes related to subscribing.
+ */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 

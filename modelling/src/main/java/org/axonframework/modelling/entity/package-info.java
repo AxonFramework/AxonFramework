@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Part of the Axon Modelling module. Contains classes related to entity.
+ */
 @NullMarked
 package org.axonframework.modelling.entity;
 

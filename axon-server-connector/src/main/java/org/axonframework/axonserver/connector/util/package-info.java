@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Server Connector module. Contains classes related to utility.
+ */
 @NullMarked
 package org.axonframework.axonserver.connector.util;
 

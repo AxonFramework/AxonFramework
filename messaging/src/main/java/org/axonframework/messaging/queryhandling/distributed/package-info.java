@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Messaging module. Contains classes related to distributed.
+ */
 @NullMarked
 package org.axonframework.messaging.queryhandling.distributed;
 

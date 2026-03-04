@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Part of the Axon Eventsourcing module. Contains classes related to annotation reflection.
+ */
 @NullMarked
 package org.axonframework.eventsourcing.annotation.reflection;
 

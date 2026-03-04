@@ -15,6 +15,9 @@
  */
 
 
+/**
+ * Package for query handling components in Axon Framework. Queries describe a request for information or state.
+ */
 @NullMarked
 package org.axonframework.messaging.queryhandling;
 
