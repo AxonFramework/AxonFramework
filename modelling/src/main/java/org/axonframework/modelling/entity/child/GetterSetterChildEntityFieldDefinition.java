@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 
@@ -53,7 +52,6 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
         this.setter = Objects.requireNonNull(setter, "The setter may not be null.");
     }
 
-    @NonNull
     @Override
     public P evolveParentBasedOnChildInput(P parentEntity, @Nullable F childInput) {
         setter.accept(parentEntity, childInput);

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -57,7 +56,6 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 @Internal
 public abstract class AbstractEntityChildModelDefinition implements EntityChildModelDefinition {
 
-    @NonNull
     @Override
     public <C, P> Optional<EntityChildMetamodel<C, P>> createChildDefinition(
             Class<P> parentClass,

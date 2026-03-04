@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
@@ -55,7 +54,6 @@ public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
         this.property = Assert.nonEmpty(property, "Property cannot be empty or null");
     }
 
-    @NonNull
     @Override
     public Object resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();

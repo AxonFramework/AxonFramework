@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
 import java.lang.reflect.Member;
@@ -42,7 +41,6 @@ public interface EventTargetMatcherDefinition {
      * @param <E>    The type of the child entity.
      * @return An {@link EventTargetMatcher} that can be used to match child entities against messages.
      */
-    @NonNull
     <E> EventTargetMatcher<E> createChildEntityMatcher(
             AnnotatedEntityMetamodel<E> entity,
             Member member

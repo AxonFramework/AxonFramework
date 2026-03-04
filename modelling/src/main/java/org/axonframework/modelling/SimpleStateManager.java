@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -63,7 +62,6 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @SuppressWarnings("unchecked")
-    @NonNull
     @Override
     public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
             Class<T> entityType,

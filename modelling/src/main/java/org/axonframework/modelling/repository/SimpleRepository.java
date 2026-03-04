@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.repository;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -93,13 +92,11 @@ public class SimpleRepository<ID, E> implements Repository.LifecycleManagement<I
         ).resultNow();
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return entityType;
     }
 
-    @NonNull
     @Override
     public Class<ID> idType() {
         return idType;

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 @NullMarked
 package org.axonframework.modelling.entity;
 

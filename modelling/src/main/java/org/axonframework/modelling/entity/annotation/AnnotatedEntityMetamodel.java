@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -447,19 +446,16 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedCommands());
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedCreationalCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedCreationalCommands());
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedInstanceCommands() {
         return Collections.unmodifiableSet(delegateMetamodel.supportedInstanceCommands());
     }
@@ -518,7 +514,6 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    @NonNull
     public Class<E> entityType() {
         return entityType;
     }

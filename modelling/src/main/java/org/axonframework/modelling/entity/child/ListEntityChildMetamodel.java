@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
@@ -65,7 +64,6 @@ public class ListEntityChildMetamodel<C, P> extends AbstractEntityChildMetamodel
     }
 
     @Override
-    @NonNull
     public EntityMetamodel<C> entityMetamodel() {
         return metamodel;
     }

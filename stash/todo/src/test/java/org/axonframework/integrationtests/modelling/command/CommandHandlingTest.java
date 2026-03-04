@@ -97,7 +97,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                                @NonNull List<EventMessage> events) {
             if (context == null) {
                 storeEvents(events);
@@ -122,7 +122,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(
+        public @NonNull Registration subscribe(
                 @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }

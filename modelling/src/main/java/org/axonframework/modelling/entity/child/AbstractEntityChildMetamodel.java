@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.BuilderUtils;
@@ -64,7 +63,6 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
                 requireNonNull(eventTargetMatcher, "The eventTargetMatcher may not be null.");
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return metamodel.supportedCommands();
@@ -120,7 +118,6 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
 
     protected abstract P applyEvolvedChildEntities(P entity, List<C> evolvedChildEntities);
 
-    @NonNull
     @Override
     public Class<C> entityType() {
         return metamodel.entityType();

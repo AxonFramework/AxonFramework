@@ -36,7 +36,6 @@ import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.FixtureExecutionException;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -102,10 +101,10 @@ public class StubDeadlineManager implements DeadlineManager {
 
     @NonNull
     @Override
-    public String schedule(@NonNull Instant triggerDateTime,
-                           @NonNull String deadlineName,
+    public String schedule(Instant triggerDateTime,
+                           String deadlineName,
                            Object payloadOrMessage,
-                           @NonNull ScopeDescriptor deadlineScope) {
+                           ScopeDescriptor deadlineScope) {
         DeadlineMessage scheduledMessage =
                 processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage, triggerDateTime));
 
@@ -118,9 +117,9 @@ public class StubDeadlineManager implements DeadlineManager {
         return scheduledMessage.identifier();
     }
 
-    private static DeadlineMessage asDeadlineMessage(@NonNull String deadlineName,
+    private static DeadlineMessage asDeadlineMessage(String deadlineName,
                                                      @Nullable Object messageOrPayload,
-                                                     @NonNull Instant expiryTime) {
+                                                     Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
             return new GenericDeadlineMessage(
                     deadlineName, (Message) messageOrPayload, () -> expiryTime
@@ -134,15 +133,15 @@ public class StubDeadlineManager implements DeadlineManager {
 
     @NonNull
     @Override
-    public String schedule(@NonNull Duration triggerDuration,
-                           @NonNull String deadlineName,
+    public String schedule(Duration triggerDuration,
+                           String deadlineName,
                            Object payloadOrMessage,
-                           @NonNull ScopeDescriptor deadlineScope) {
+                           ScopeDescriptor deadlineScope) {
         return schedule(currentDateTime.plus(triggerDuration), deadlineName, payloadOrMessage, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
+    public void cancelSchedule(String deadlineName, String scheduleId) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getScheduleId().equals(scheduleId)
@@ -150,12 +149,12 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Override
-    public void cancelAll(@NonNull String deadlineName) {
+    public void cancelAll(String deadlineName) {
         scheduledDeadlines.removeIf(scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName));
     }
 
     @Override
-    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         scheduledDeadlines.removeIf(
                 scheduledDeadline -> scheduledDeadline.getDeadlineName().equals(deadlineName)
                         && scheduledDeadline.getDeadlineScope().equals(scope)
@@ -239,13 +238,13 @@ public class StubDeadlineManager implements DeadlineManager {
 
     public @NonNull
     Registration registerDispatchInterceptor(
-            @NonNull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
+            MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
-        public @NonNull Registration registerHandlerInterceptor(
-            @NonNull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
+        public Registration registerHandlerInterceptor(
+            MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -271,8 +270,8 @@ public class StubDeadlineManager implements DeadlineManager {
 
         MessageHandlerInterceptorChain<DeadlineMessage> chain = new MessageHandlerInterceptorChain<>() {
             @Override
-            public @NotNull MessageStream<?> proceed(@NotNull DeadlineMessage message,
-                                                     @NotNull ProcessingContext context) {
+            public MessageStream<?> proceed(DeadlineMessage message,
+                                            ProcessingContext context) {
                 try {
                     if (iterator.hasNext()) {
                         return iterator.next().interceptOnHandle(message, context, this);

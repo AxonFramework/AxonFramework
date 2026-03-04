@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
@@ -78,7 +77,6 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
         return childEntityFieldDefinition.evolveParentBasedOnChildInput(entity, evolvedChildEntities.getFirst());
     }
 
-    @NonNull
     @Override
     public EntityMetamodel<C> entityMetamodel() {
         return metamodel;

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -77,7 +76,6 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
         return entityEvolver.evolve(entity, event, context);
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(entityEvolvers.keySet());

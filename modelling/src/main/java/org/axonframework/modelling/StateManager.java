@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -92,7 +91,6 @@ public interface StateManager {
      * @param <I>     The type of the identifier of the entity.
      * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
-    @NonNull
     default <I, T> CompletableFuture<T> loadEntity(
             Class<T> type,
             I id,

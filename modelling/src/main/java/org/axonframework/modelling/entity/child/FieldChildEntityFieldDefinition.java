@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -102,7 +101,6 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         }
     }
 
-    @NonNull
     @SuppressWarnings("unchecked")
     @Override
     public P evolveParentBasedOnChildInput(P parentEntity, F childInput) {

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
@@ -74,7 +73,6 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
         this.managedEntity = managedEntity;
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
         Message message = requireNonNullElseGet(Message.fromContext(context), GenericMessage::emptyMessage);

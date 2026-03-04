@@ -38,6 +38,7 @@ import org.axonframework.common.util.SecondStubEvent;
 import org.axonframework.common.util.StubDomainEvent;
 import org.axonframework.util.TestDomainEventEntry;
 import org.axonframework.common.util.ThirdStubEvent;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -182,8 +183,8 @@ class ContextAwareEventMultiUpcasterTest {
         }
 
         @Override
-        protected Stream<IntermediateEventRepresentation> doUpcast(IntermediateEventRepresentation ir,
-                                                                   Map<Object, Object> context) {
+        protected @NonNull Stream<IntermediateEventRepresentation> doUpcast(@NonNull IntermediateEventRepresentation ir,
+                                                                            Map<Object, Object> context) {
             if (isContextEvent(ir)) {
                 context.put(CONTEXT_FIELD_KEY, CONTEXT_FIELD_VALUE);
                 return Stream.of(ir);

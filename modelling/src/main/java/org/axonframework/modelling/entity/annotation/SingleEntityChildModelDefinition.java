@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
@@ -52,7 +51,6 @@ public class SingleEntityChildModelDefinition extends AbstractEntityChildModelDe
         return getMemberValueType(member);
     }
 
-    @NonNull
     @Override
     protected <C, P> EntityChildMetamodel<C, P> doCreate(
             Class<P> parentClass,

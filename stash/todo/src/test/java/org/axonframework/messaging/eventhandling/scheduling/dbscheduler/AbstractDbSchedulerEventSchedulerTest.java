@@ -229,19 +229,19 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context, EventMessage... events) {
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context, EventMessage... events) {
             return publish(context, Arrays.asList(events));
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                                @NonNull List<EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+        public @NonNull Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 

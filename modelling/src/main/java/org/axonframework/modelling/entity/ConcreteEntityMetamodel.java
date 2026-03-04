@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -63,7 +62,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     private final List<EntityChildMetamodel<?, E>> children = new LinkedList<>();
     private final Map<QualifiedName, EntityCommandHandler<E>> instanceCommandHandlers = new HashMap<>();
     private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
-    private final EntityEvolver<E> entityEvolver;
+    private final @Nullable EntityEvolver<E> entityEvolver;
     private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedInstanceCommandNames = new HashSet<>();
     private final Set<QualifiedName> supportedCreationalCommandNames = new HashSet<>();
@@ -105,20 +104,17 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
         return new Builder<>(entityType);
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return Collections.unmodifiableSet(supportedCommandNames);
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedCreationalCommands() {
         return Collections.unmodifiableSet(supportedCreationalCommandNames);
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedInstanceCommands() {
         return Collections.unmodifiableSet(supportedInstanceCommandNames);
     }
@@ -218,7 +214,6 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
         return MessageStream.failed(new ChildEntityNotFoundException(message, entity));
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return entityType;
@@ -260,13 +255,12 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
         private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
         private final Map<QualifiedName, CommandHandler> creationalCommandHandlers = new HashMap<>();
         private final List<EntityChildMetamodel<?, E>> children = new ArrayList<>();
-        private EntityEvolver<E> entityEvolver;
+        private @Nullable EntityEvolver<E> entityEvolver;
 
         private Builder(Class<E> entityType) {
             this.entityType = entityType;
         }
 
-        @NonNull
         @Override
         public Builder<E> instanceCommandHandler(QualifiedName qualifiedName,
                                                  EntityCommandHandler<E> messageHandler) {
@@ -284,7 +278,6 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
             return this;
         }
 
-        @NonNull
         @Override
         public EntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
                                                                   CommandHandler messageHandler) {
@@ -302,7 +295,6 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
             return this;
         }
 
-        @NonNull
         @Override
         public Builder<E> addChild(EntityChildMetamodel<?, E> child) {
             requireNonNull(child, "The child may not be null.");
@@ -315,14 +307,12 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
             return this;
         }
 
-        @NonNull
         @Override
         public EntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
             this.entityEvolver = entityEvolver;
             return this;
         }
 
-        @NonNull
         public EntityMetamodel<E> build() {
             return new ConcreteEntityMetamodel<>(entityType,
                                                  commandHandlers,

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -51,7 +50,6 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
         this.evolver = Objects.requireNonNull(evolver, "The evolver may not be null.");
     }
 
-    @NonNull
     @Override
     public P evolveParentBasedOnChildInput(P parentEntity, F childInput) {
         return evolver.apply(parentEntity, childInput);

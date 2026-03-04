@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.core.QualifiedName;
@@ -35,21 +34,17 @@ import org.axonframework.modelling.entity.child.EntityChildMetamodel;
  */
 public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBuilder<E> {
 
-    @NonNull
     @Override
     PolymorphicEntityMetamodelBuilder<E> instanceCommandHandler(QualifiedName qualifiedName,
                                                                 EntityCommandHandler<E> messageHandler);
 
-    @NonNull
     @Override
     PolymorphicEntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
                                                                   CommandHandler messageHandler);
 
-    @NonNull
     @Override
     PolymorphicEntityMetamodelBuilder<E> addChild(EntityChildMetamodel<?, E> child);
 
-    @NonNull
     @Override
     PolymorphicEntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
@@ -60,7 +55,5 @@ public interface PolymorphicEntityMetamodelBuilder<E> extends EntityMetamodelBui
      * @param metamodel The {@link EntityMetamodel} for the concrete type.
      * @return This builder for further configuration.
      */
-    @NonNull
-    PolymorphicEntityMetamodelBuilder<E> addConcreteType(
-            EntityMetamodel<? extends E> metamodel);
+    PolymorphicEntityMetamodelBuilder<E> addConcreteType(EntityMetamodel<? extends E> metamodel);
 }

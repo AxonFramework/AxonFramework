@@ -20,7 +20,6 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Repository} provides an abstraction for the storage of entities.
@@ -43,7 +42,6 @@ public sealed interface Repository<ID, E>
      *
      * @return The type of entity stored in this repository.
      */
-    @NonNull
     Class<E> entityType();
 
     /**
@@ -51,7 +49,6 @@ public sealed interface Repository<ID, E>
      *
      * @return The type of the identifier used to identify entities in this repository.
      */
-    @NonNull
     Class<ID> idType();
 
     /**

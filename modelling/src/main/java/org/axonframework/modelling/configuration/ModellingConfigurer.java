@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.*;
 import org.axonframework.common.configuration.Module;
@@ -131,7 +130,6 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param <E>          The type of the entity being built.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    @NonNull
     public <I, E> ModellingConfigurer registerEntity(EntityModule<I, E> entityModule) {
         Objects.requireNonNull(entityModule, "EntityModule may not be null");
         delegate.componentRegistry(cr -> cr.registerModule(entityModule));

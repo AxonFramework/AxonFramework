@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -50,8 +49,8 @@ public class GenericDeadlineMessage extends GenericEventMessage implements Deadl
      * @param type         The {@link MessageType type} for this {@link DeadlineMessage}.
      * @param deadlineName The type for this {@link DeadlineMessage}.
      */
-    public GenericDeadlineMessage(@NonNull MessageType type,
-                                  @NonNull String deadlineName) {
+    public GenericDeadlineMessage(MessageType type,
+                                  String deadlineName) {
         this(deadlineName, type, null);
     }
 
@@ -65,8 +64,8 @@ public class GenericDeadlineMessage extends GenericEventMessage implements Deadl
      * @param type         The {@link MessageType type} for this {@link DeadlineMessage}.
      * @param payload      The payload for this {@link DeadlineMessage}.
      */
-    public GenericDeadlineMessage(@NonNull String deadlineName,
-                                  @NonNull MessageType type,
+    public GenericDeadlineMessage(String deadlineName,
+                                  MessageType type,
                                   @Nullable Object payload) {
         this(deadlineName, type, payload, Metadata.emptyInstance());
     }
@@ -80,10 +79,10 @@ public class GenericDeadlineMessage extends GenericEventMessage implements Deadl
      * @param payload      The payload for this {@link DeadlineMessage}.
      * @param metadata     The metadata for this {@link DeadlineMessage}.
      */
-    public GenericDeadlineMessage(@NonNull String deadlineName,
-                                  @NonNull MessageType type,
+    public GenericDeadlineMessage(String deadlineName,
+                                  MessageType type,
                                   @Nullable Object payload,
-                                  @NonNull Map<String, String> metadata) {
+                                  Map<String, String> metadata) {
         super(type, payload, metadata);
         this.deadlineName = deadlineName;
     }
@@ -99,12 +98,12 @@ public class GenericDeadlineMessage extends GenericEventMessage implements Deadl
      * @param metadata     The metadata for this {@link DeadlineMessage}.
      * @param timestamp    The {@link Instant timestamp} of this {@link DeadlineMessage DeadlineMessage's} creation.
      */
-    public GenericDeadlineMessage(@NonNull String deadlineName,
-                                  @NonNull String identifier,
-                                  @NonNull MessageType type,
+    public GenericDeadlineMessage(String deadlineName,
+                                  String identifier,
+                                  MessageType type,
                                   @Nullable Object payload,
-                                  @NonNull Map<String, String> metadata,
-                                  @NonNull Instant timestamp) {
+                                  Map<String, String> metadata,
+                                  Instant timestamp) {
         super(identifier, type, payload, metadata, timestamp);
         this.deadlineName = deadlineName;
     }
@@ -126,32 +125,32 @@ public class GenericDeadlineMessage extends GenericEventMessage implements Deadl
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link DeadlineMessage DeadlineMessage's} creation.
      */
-    public GenericDeadlineMessage(@NonNull String deadlineName,
-                                  @NonNull Message delegate,
-                                  @NonNull Supplier<Instant> timestampSupplier) {
+    public GenericDeadlineMessage(String deadlineName,
+                                  Message delegate,
+                                  Supplier<Instant> timestampSupplier) {
         super(delegate, timestampSupplier);
         this.deadlineName = deadlineName;
     }
 
     @Override
-        public @NonNull String getDeadlineName() {
+        public String getDeadlineName() {
         return deadlineName;
     }
 
     @Override
-        public @NonNull DeadlineMessage withMetadata(@NonNull Map<String, String> metadata) {
+        public DeadlineMessage withMetadata(Map<String, String> metadata) {
         return new GenericDeadlineMessage(deadlineName, delegate().withMetadata(metadata), this::timestamp);
     }
 
     @Override
-        public @NonNull DeadlineMessage andMetadata(@NonNull Map<String, String> additionalMetadata) {
+        public DeadlineMessage andMetadata(Map<String, String> additionalMetadata) {
         return new GenericDeadlineMessage(
                 deadlineName, delegate().andMetadata(additionalMetadata), this::timestamp
         );
     }
 
     @Override
-        public @NonNull DeadlineMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+        public DeadlineMessage withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -76,7 +75,6 @@ public interface EntityMetamodelBuilder<E> {
      * @param messageHandler The {@link EntityCommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
-    @NonNull
     EntityMetamodelBuilder<E> instanceCommandHandler(QualifiedName qualifiedName,
                                                      EntityCommandHandler<E> messageHandler);
 
@@ -99,7 +97,6 @@ public interface EntityMetamodelBuilder<E> {
      * @param messageHandler The {@link CommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
-    @NonNull
     EntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
                                                        CommandHandler messageHandler);
 
@@ -123,7 +120,6 @@ public interface EntityMetamodelBuilder<E> {
      * @param child The {@link EntityChildMetamodel} to add.
      * @return This builder for further configuration.
      */
-    @NonNull
     EntityMetamodelBuilder<E> addChild(EntityChildMetamodel<?, E> child);
 
     /**
@@ -136,7 +132,6 @@ public interface EntityMetamodelBuilder<E> {
      * @param entityEvolver The {@link EntityEvolver} to use.
      * @return This builder for further configuration.
      */
-    @NonNull
     EntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
@@ -145,6 +140,5 @@ public interface EntityMetamodelBuilder<E> {
      *
      * @return The {@link EntityMetamodel} instance based on the configuration of this builder.
      */
-    @NonNull
     EntityMetamodel<E> build();
 }

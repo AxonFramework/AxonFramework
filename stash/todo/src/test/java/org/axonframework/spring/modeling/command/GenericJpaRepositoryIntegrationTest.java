@@ -165,7 +165,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public @NonNull Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         this.capturedEvents.add(event);
         return null;
     }

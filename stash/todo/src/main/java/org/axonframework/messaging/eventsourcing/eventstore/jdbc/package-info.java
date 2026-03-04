@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * JDBC Implementation of the EventStore. This package contains all classes needed to provide such an implementation
- */
+@Deprecated(forRemoval = true, since = "5.0.0")
+@NullMarked
 package org.axonframework.messaging.eventsourcing.eventstore.jdbc;
+
+import org.jspecify.annotations.NullMarked;

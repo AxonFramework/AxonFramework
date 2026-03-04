@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.repository;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -90,13 +89,11 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
         return delegate.attach(entity, processingContext);
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return delegate.entityType();
     }
 
-    @NonNull
     @Override
     public Class<ID> idType() {
         return delegate.idType();

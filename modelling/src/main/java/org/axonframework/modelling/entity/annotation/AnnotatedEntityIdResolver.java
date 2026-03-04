@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -67,7 +66,6 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
         this.delegate = Objects.requireNonNull(delegate, "The delegate should not be null.");
     }
 
-    @NonNull
     @Override
     public ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());

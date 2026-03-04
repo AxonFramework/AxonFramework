@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.core.MessageStream;
@@ -44,7 +43,6 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      *
      * @return A set of {@link QualifiedName} instances representing the supported command names.
      */
-    @NonNull
     Set<QualifiedName> supportedCommands();
 
     /**
@@ -75,7 +73,6 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      *
      * @return The {@link Class} of the child entity this metamodel describes.
      */
-    @NonNull
     Class<C> entityType();
 
     /**
@@ -83,7 +80,6 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      *
      * @return The {@link EntityMetamodel} of the child entity this metamodel describes.
      */
-    @NonNull
     EntityMetamodel<C> entityMetamodel();
 
     /**

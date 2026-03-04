@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 
 import java.lang.reflect.Member;
@@ -44,7 +43,6 @@ public interface CommandTargetResolverDefinition {
      * @param <E>       The type of the child entity.
      * @return A {@link CommandTargetResolver} that can be used to match child entities against messages.
      */
-    @NonNull
     <E> CommandTargetResolver<E> createCommandTargetResolver(
             AnnotatedEntityMetamodel<E> metamodel,
             Member member

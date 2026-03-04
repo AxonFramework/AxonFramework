@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
@@ -139,7 +138,6 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
         return existing;
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return inspector.getHandlers(entityType).stream()

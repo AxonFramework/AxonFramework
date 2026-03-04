@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
@@ -52,7 +51,6 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param childInput   The child entity to use for evolution.
      * @return The evolved parent entity.
      */
-    @NonNull
     P evolveParentBasedOnChildInput(P parentEntity, @Nullable F childInput);
 
     /**
@@ -75,7 +73,6 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>         The type of the field.
      * @return A new {@link FieldChildEntityFieldDefinition} for the given field name.
      */
-    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forFieldName(
             Class<P> parentClass,
             String fieldName
@@ -111,7 +108,6 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>     The type of the field.
      * @return A new {@link GetterEvolverChildEntityFieldDefinition} for the given getter and setter.
      */
-    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterEvolver(
             Function<P, F> getter,
             BiFunction<P, F, P> evolver
@@ -129,7 +125,6 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param <F>    The type of the field.
      * @return A new {@link GetterSetterChildEntityFieldDefinition} for the given getter and setter.
      */
-    @NonNull
     static <P, F> ChildEntityFieldDefinition<P, F> forGetterSetter(
             Function<P, F> getter,
             BiConsumer<P, F> setter

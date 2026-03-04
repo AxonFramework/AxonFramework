@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -58,7 +57,6 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
         return getChildTypeFromList(member);
     }
 
-    @NonNull
     @Override
     protected <C, P> EntityChildMetamodel<C, P> doCreate(
             Class<P> parentClass,

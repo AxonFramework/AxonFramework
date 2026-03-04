@@ -68,7 +68,6 @@ import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanScope;
 import org.jobrunr.scheduling.JobScheduler;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 
 /**
@@ -136,9 +135,9 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@NonNull Instant triggerDateTime, @NonNull String deadlineName,
+    public String schedule(Instant triggerDateTime, String deadlineName,
                            @Nullable Object messageOrPayload,
-                           @NonNull ScopeDescriptor deadlineScope) {
+                           ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String identifier = IdentifierFactory.getInstance().generateIdentifier();
         DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(identifier);
@@ -230,7 +229,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelSchedule(@NonNull String deadlineName, @NonNull String scheduleId) {
+    public void cancelSchedule(String deadlineName, String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(
                 () -> {
@@ -246,7 +245,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAll(@NonNull String deadlineName) {
+    public void cancelAll(String deadlineName) {
         Span span = spanFactory.createCancelAllSpan(deadlineName);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
@@ -266,7 +265,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfBinaryDeadlineMatches(
-            @NonNull String deadlineName
+            String deadlineName
     ) {
         return scheduledExecution -> {
             if (deadlineName.equals(scheduledExecution.getData().getD())) {
@@ -276,7 +275,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfHumanReadableDeadlineMatches(
-            @NonNull String deadlineName
+            String deadlineName
     ) {
         return scheduledExecution -> {
             if (deadlineName.equals(scheduledExecution.getData().getDeadlineName())) {
@@ -286,7 +285,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@NonNull String deadlineName, @NonNull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         Span span = spanFactory.createCancelAllWithinScopeSpan(deadlineName, scope);
         if (useBinaryPojo) {
             runOnPrepareCommitOrNow(span.wrapRunnable(
@@ -310,8 +309,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerHumanReadableDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
-            @NonNull String deadlineName,
-            @NonNull String scopeDescriptor
+            String deadlineName,
+            String scopeDescriptor
     ) {
         return scheduledExecution -> {
             DbSchedulerHumanReadableDeadlineDetails data = scheduledExecution.getData();
@@ -322,8 +321,8 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     }
 
     private Consumer<ScheduledExecution<DbSchedulerBinaryDeadlineDetails>> cancelIfDeadlineAndScopeMatches(
-            @NonNull String deadlineName,
-            @NonNull byte[] scopeDescriptor
+            String deadlineName,
+            byte[] scopeDescriptor
     ) {
         return scheduledExecution -> {
             DbSchedulerBinaryDeadlineDetails data = scheduledExecution.getData();
@@ -517,7 +516,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@NonNull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;
