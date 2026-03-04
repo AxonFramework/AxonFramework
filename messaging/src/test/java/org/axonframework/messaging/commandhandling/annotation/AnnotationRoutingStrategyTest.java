@@ -22,6 +22,7 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -182,6 +183,7 @@ class AnnotationRoutingStrategyTest {
     private record SomeObject(String target) {
 
         @Override
+        @NonNull
         public String toString() {
             return target;
         }

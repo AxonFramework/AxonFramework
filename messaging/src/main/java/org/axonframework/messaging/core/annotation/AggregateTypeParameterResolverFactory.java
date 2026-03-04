@@ -22,7 +22,6 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jspecify.annotations.NonNull;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -56,7 +55,6 @@ public final class AggregateTypeParameterResolverFactory
      */
     static class AggregateTypeParameterResolver implements ParameterResolver<String> {
 
-        @NonNull
         @Override
         public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             var aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);

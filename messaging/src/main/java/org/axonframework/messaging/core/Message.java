@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -78,8 +77,7 @@ public interface Message {
      * @return The {@code Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
      * found.
      */
-    @Nullable
-    static Message fromContext(ProcessingContext context) {
+    static @Nullable Message fromContext(ProcessingContext context) {
         return context.getResource(RESOURCE_KEY);
     }
 
@@ -92,7 +90,6 @@ public interface Message {
      *
      * @return The unique identifier of this {@code Message}.
      */
-    @NonNull
     String identifier();
 
     /**
@@ -100,7 +97,6 @@ public interface Message {
      *
      * @return The message {@link MessageType type} of this {@code Message}.
      */
-    @NonNull
     MessageType type();
 
     /**
@@ -216,7 +212,6 @@ public interface Message {
      *
      * @return The type of payload.
      */
-    @NonNull
     Class<?> payloadType();
 
     /**
@@ -226,7 +221,6 @@ public interface Message {
      *
      * @return The {@link Metadata} for this {@code Message}.
      */
-    @NonNull
     Metadata metadata();
 
     /**
@@ -240,7 +234,6 @@ public interface Message {
      * @param metadata The new metadata for the {@code Message}.
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
-    @NonNull
     Message withMetadata(Map<String, String> metadata);
 
     /**
@@ -252,8 +245,7 @@ public interface Message {
      * @param metadata The metadata to merge with.
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
-    @NonNull
-    Message andMetadata(Map<String, String> metadata);
+    Message andMetadata(Map<String, @Nullable String> metadata);
 
     /**
      * Returns a <b>new</b> {@code Message} implementation with its {@link #payload()} converted to the given
@@ -308,6 +300,5 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-    @NonNull
     Message withConvertedPayload(Type type, Converter converter);
 }

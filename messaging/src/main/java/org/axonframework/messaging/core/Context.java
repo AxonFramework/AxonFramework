@@ -75,7 +75,7 @@ public interface Context {
      * @param <T> The type of resource registered under the given {@code key}.
      * @return The resource currently registered under given {@code key}, or {@code null} if not present.
      */
-    <T> T getResource(ResourceKey<T> key);
+    @Nullable <T> T getResource(ResourceKey<T> key);
 
     /**
      * Constructs a copy of {@code this} Context with an additional {@code resource} for given {@code key}.
@@ -122,7 +122,7 @@ public interface Context {
         private static final String RESOURCE_KEY_PREFIX = "ResourceKey@";
 
         private final String identity;
-        private final String label;
+        private final @Nullable String label;
 
         private ResourceKey(@Nullable String label) {
             this.label = label;
@@ -147,7 +147,7 @@ public interface Context {
             return new ResourceKey<>(label);
         }
 
-        public String label() {
+        public @Nullable String label() {
             return label;
         }
 

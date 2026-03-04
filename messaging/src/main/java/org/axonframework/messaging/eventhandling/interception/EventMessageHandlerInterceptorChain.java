@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -64,7 +63,6 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
     }
 
     @Override
-    @NonNull
     public MessageStream<?> proceed(EventMessage event, ProcessingContext context) {
         try {
             return interceptingHandler.handle(event, context);
@@ -86,7 +84,6 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
         }
 
         @Override
-        @NonNull
         public MessageStream<?> proceed(EventMessage event, ProcessingContext context) {
             return next.handle(event, context);
         }

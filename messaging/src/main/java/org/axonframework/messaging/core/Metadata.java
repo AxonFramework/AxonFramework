@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -40,7 +39,7 @@ import java.util.stream.Stream;
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class Metadata implements Map<String, String> {
+public class Metadata implements Map<String, @Nullable String> {
 
     private static final Metadata EMPTY_METADATA = new Metadata();
     private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
@@ -82,7 +81,7 @@ public class Metadata implements Map<String, String> {
      * @param metadataEntries The entries to populate the {@code Metadata} with.
      * @return A {@code Metadata}Data instance with the given {@code MetadataEntries} as content.
      */
-    public static Metadata from(@Nullable Map<String, String> metadataEntries) {
+    public static Metadata from(@Nullable Map<String, @Nullable String> metadataEntries) {
         if (metadataEntries instanceof Metadata) {
             return (Metadata) metadataEntries;
         } else if (metadataEntries == null || metadataEntries.isEmpty()) {
@@ -113,7 +112,7 @@ public class Metadata implements Map<String, String> {
      * @return A {@code Metadata} instance with an additional entry.
      */
     public Metadata and(String key, @Nullable String value) {
-        HashMap<String, String> newValues = new HashMap<>(values);
+        HashMap<String, @Nullable String> newValues = new HashMap<>(values);
         newValues.put(key, value);
         return new Metadata(newValues);
     }
@@ -143,14 +142,14 @@ public class Metadata implements Map<String, String> {
      * @return A {@code Metadata} instance containing values of {@code this}, combined with the given
      * {@code additionalEntries}.
      */
-    public Metadata mergedWith(Map<String, String> additionalEntries) {
+    public Metadata mergedWith(Map<String, @Nullable String> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
         }
         if (isEmpty()) {
             return Metadata.from(additionalEntries);
         }
-        Map<String, String> merged = new HashMap<>(values);
+        Map<String, @Nullable String> merged = new HashMap<>(values);
         merged.putAll(additionalEntries);
         return new Metadata(merged);
     }
@@ -168,7 +167,7 @@ public class Metadata implements Map<String, String> {
         if (keys.isEmpty()) {
             return this;
         }
-        Map<String, String> modified = new HashMap<>(values);
+        Map<String, @Nullable  String> modified = new HashMap<>(values);
         keys.forEach(modified::remove);
         return new Metadata(modified);
     }
@@ -200,7 +199,7 @@ public class Metadata implements Map<String, String> {
      * {@inheritDoc}
      */
     @Override
-    public String put(String key, String value) {
+    public String put(String key, @Nullable String value) {
         throw new UnsupportedOperationException(UNSUPPORTED_MUTATION_MSG);
     }
 
@@ -245,19 +244,16 @@ public class Metadata implements Map<String, String> {
     }
 
     @Override
-    @NonNull
     public Set<String> keySet() {
         return values.keySet();
     }
 
     @Override
-    @NonNull
     public Collection<String> values() {
         return values.values();
     }
 
     @Override
-    @NonNull
     public Set<Entry<String, String>> entrySet() {
         return values.entrySet();
     }
@@ -308,16 +304,16 @@ public class Metadata implements Map<String, String> {
      * Collector implementation that, unlike {@link java.util.stream.Collectors#toMap(Function, Function)} allows
      * {@code null} values.
      */
-    private record MetadataCollector(Function<String, String> valueProvider)
+    private record MetadataCollector(Function<String, @Nullable String> valueProvider)
             implements Collector<String, Map<String, String>, Metadata> {
 
         @Override
-        public Supplier<Map<String, String>> supplier() {
+        public Supplier<Map<String, @Nullable String>> supplier() {
             return HashMap::new;
         }
 
         @Override
-        public BiConsumer<Map<String, String>, String> accumulator() {
+        public BiConsumer<Map<String, @Nullable String>, String> accumulator() {
             return (map, key) -> map.put(key, valueProvider.apply(key));
         }
 

@@ -195,7 +195,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
-        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
+        AtomicReference<@Nullable AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         AggregateEventStream aggregateStream =
                 connection.eventChannel()

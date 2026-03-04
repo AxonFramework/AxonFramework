@@ -19,7 +19,6 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
@@ -66,7 +65,6 @@ class AxonServerMessageStream implements MessageStream<EventMessage> {
         return Optional.of(entry);
     }
 
-    @NonNull
     private SimpleEntry<EventMessage> toSimpleEntry(EventWithToken eventWithToken) {
         Event event = eventWithToken.getEvent();
         EventMessage message = messageConverter.apply(event);

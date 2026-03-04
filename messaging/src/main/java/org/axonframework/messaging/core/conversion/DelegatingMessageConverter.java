@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -65,7 +64,6 @@ public class DelegatingMessageConverter implements MessageConverter {
     }
 
     @Override
-    @NonNull
     public <M extends Message> M convertMessage(M message, Type targetType) {
         //noinspection unchecked
         return (M) message.withConvertedPayload(targetType, delegate);

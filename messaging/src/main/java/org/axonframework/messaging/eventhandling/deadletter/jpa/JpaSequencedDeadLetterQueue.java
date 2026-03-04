@@ -39,7 +39,6 @@ import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,7 +185,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
 
     @Override
     @SuppressWarnings("unchecked")
-    @NonNull
     public CompletableFuture<Void> evict(DeadLetter<? extends M> letter, @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             if (!(letter instanceof JpaDeadLetter)) {
@@ -217,7 +215,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
     public CompletableFuture<Void> requeue(DeadLetter<? extends M> letter,
                                            UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                                            @Nullable ProcessingContext context) {
@@ -250,7 +247,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
+
     public CompletableFuture<Boolean> contains(Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
@@ -260,7 +257,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
+
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
             Object sequenceIdentifier,
             @Nullable ProcessingContext context
@@ -290,7 +287,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
+
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
             @Nullable ProcessingContext context
     ) {
@@ -347,7 +344,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
+
     public CompletableFuture<Boolean> isFull(Object sequenceIdentifier, @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> {
             String stringSequenceIdentifier = toStringSequenceIdentifier(sequenceIdentifier);
@@ -369,7 +366,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * @see #process(Predicate, Function, ProcessingContext)
      */
     @Override
-    @NonNull
+
     public CompletableFuture<Boolean> process(
             Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context
@@ -387,7 +384,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
+
     public CompletableFuture<Boolean> process(
             Predicate<DeadLetter<? extends M>> sequenceFilter,
             Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
@@ -581,7 +578,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
     public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> entityManagerExecutor(context)
                 .accept(em -> em.createQuery("delete from DeadLetterEntry dl where dl.processingGroup=:processingGroup")
@@ -590,7 +586,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
     public CompletableFuture<Long> sequenceSize(Object sequenceIdentifier,
                                                 @Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> entityManagerExecutor(context)
@@ -608,7 +603,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
     public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> entityManagerExecutor(context)
                 .apply(em ->
@@ -623,7 +617,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     }
 
     @Override
-    @NonNull
     public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         return FutureUtils.runFailing(() -> entityManagerExecutor(context)
                 .apply(em ->

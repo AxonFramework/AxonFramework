@@ -26,7 +26,6 @@ import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
@@ -138,7 +137,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     // endregion
 
     // region [QueryBus]
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
@@ -155,7 +153,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
@@ -285,7 +282,6 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
             this.updateHandler = updateHandler;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(update));

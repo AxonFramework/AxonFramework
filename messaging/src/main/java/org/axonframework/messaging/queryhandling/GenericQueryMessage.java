@@ -38,7 +38,7 @@ import java.util.OptionalInt;
  */
 public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
-    private final Integer priority;
+    private final @Nullable Integer priority;
 
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
@@ -101,7 +101,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     }
 
     @Override
-        public QueryMessage andMetadata(Map<String, String> metadata) {
+        public QueryMessage andMetadata(Map<String, @Nullable String> metadata) {
         return new GenericQueryMessage(delegate().andMetadata(metadata), priority);
     }
 

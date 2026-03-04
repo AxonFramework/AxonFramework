@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -55,7 +54,6 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     private static class ProcessingContextParameterResolver implements ParameterResolver<ProcessingContext> {
 
-        @NonNull
         @Override
         public CompletableFuture<ProcessingContext> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(context);

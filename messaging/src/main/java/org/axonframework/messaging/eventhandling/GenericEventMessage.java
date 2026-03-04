@@ -77,7 +77,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      */
     public GenericEventMessage(MessageType type,
                                @Nullable Object payload,
-                               Map<String, String> metadata) {
+                               Map<String, @Nullable String> metadata) {
         this(new GenericMessage(type, payload, metadata), clock.instant());
     }
 

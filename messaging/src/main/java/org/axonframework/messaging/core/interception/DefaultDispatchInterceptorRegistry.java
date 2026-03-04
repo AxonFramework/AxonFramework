@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
@@ -64,7 +63,6 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     private final List<ComponentDefinition<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>>> subscriptionQueryUpdateInterceptorDefinitions = new ArrayList<>();
 
-    @NonNull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
@@ -106,7 +104,6 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return this;
     }
 
-    @NonNull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
@@ -116,7 +113,6 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return this;
     }
 
-    @NonNull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
@@ -126,7 +122,6 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return this;
     }
 
-    @NonNull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
@@ -136,7 +131,6 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return this;
     }
 
-    @NonNull
     @Override
     public DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
@@ -146,25 +140,21 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return this;
     }
 
-    @NonNull
     @Override
     public List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
-    @NonNull
     @Override
     public List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(Configuration config) {
         return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
-    @NonNull
     @Override
     public List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(Configuration config) {
         return resolveInterceptors(queryInterceptorDefinitions, config);
     }
 
-    @NonNull
     @Override
     public List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(Configuration config) {
         return resolveInterceptors(subscriptionQueryUpdateInterceptorDefinitions, config);

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
@@ -57,7 +56,6 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
      * @param genericConverter The {@link Converter} for conversion of the tracking token, if present.
      * @return The created {@link DeadLetterEventEntry}.
      */
-    @NonNull
     DeadLetterEventEntry convert(M message, @Nullable Context context, EventConverter eventConverter,
                                  Converter genericConverter);
 

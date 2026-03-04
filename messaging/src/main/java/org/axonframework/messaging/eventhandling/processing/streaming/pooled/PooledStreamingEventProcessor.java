@@ -44,6 +44,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +101,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
 
-    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+    private final AtomicReference<@Nullable String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**

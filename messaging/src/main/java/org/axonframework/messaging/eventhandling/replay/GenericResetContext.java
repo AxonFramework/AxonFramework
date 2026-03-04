@@ -59,7 +59,7 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
      */
     public GenericResetContext(MessageType type,
                                @Nullable Object payload,
-                               Map<String, String> metadata) {
+                               Map<String, @Nullable String> metadata) {
         this(new GenericMessage(type, payload, metadata));
     }
 
@@ -84,7 +84,7 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
     }
 
     @Override
-        public ResetContext andMetadata(Map<String, String> additionalMetadata) {
+        public ResetContext andMetadata(Map<String, @Nullable String> additionalMetadata) {
         return new GenericResetContext(delegate().andMetadata(additionalMetadata));
     }
 

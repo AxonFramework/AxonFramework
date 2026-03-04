@@ -170,7 +170,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerEventSinkOverridesDefault() {
         EventSink expected = new EventSink() {
             @Override
-            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+            public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                                    @NonNull List<EventMessage> events) {
                 return FutureUtils.emptyCompletedFuture();
             }

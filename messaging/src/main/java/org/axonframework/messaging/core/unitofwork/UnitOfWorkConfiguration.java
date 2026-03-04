@@ -16,17 +16,13 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.axonframework.common.DirectExecutor;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-
 import org.axonframework.common.DirectExecutor;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Configuration used for the {@link UnitOfWork} creation in the {@link UnitOfWorkFactory}.

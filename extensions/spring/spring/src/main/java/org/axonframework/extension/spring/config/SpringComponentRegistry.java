@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
@@ -589,7 +588,6 @@ public class SpringComponentRegistry implements
 
     private class SpringConfiguration implements Configuration {
 
-        @NonNull
         @Override
         public <C> C getComponent(Class<C> type) {
             try {
@@ -606,7 +604,6 @@ public class SpringComponentRegistry implements
             }
         }
 
-        @NonNull
         @Override
         public <C> C getComponent(Class<C> type,
                                   @Nullable String name) {
@@ -637,7 +634,6 @@ public class SpringComponentRegistry implements
             }
         }
 
-        @NonNull
         @Override
         public <C> C getComponent(Class<C> type,
                                   @Nullable String name,
@@ -671,7 +667,6 @@ public class SpringComponentRegistry implements
             descriptor.describeProperty("modules", moduleConfigurations.values());
         }
 
-        @NonNull
         @Override
         public <C> Map<String, C> getComponents(Class<C> type) {
             Map<String, C> result = new LinkedHashMap<>();

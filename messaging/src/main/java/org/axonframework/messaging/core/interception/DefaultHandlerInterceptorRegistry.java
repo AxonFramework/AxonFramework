@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
@@ -60,7 +59,6 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     private final List<ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>>> eventInterceptorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>>> queryInterceptorDefinitions = new ArrayList<>();
 
-    @NonNull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
             ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
@@ -94,7 +92,6 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @NonNull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
             ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
@@ -109,7 +106,6 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @NonNull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
             ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
@@ -124,7 +120,6 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @NonNull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
             ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
@@ -139,19 +134,16 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @NonNull
     @Override
     public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(Configuration config) {
         return resolveInterceptors(commandInterceptorDefinitions, config);
     }
 
-    @NonNull
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(Configuration config) {
         return resolveInterceptors(eventInterceptorDefinitions, config);
     }
 
-    @NonNull
     @Override
     public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(Configuration config) {
         return resolveInterceptors(queryInterceptorDefinitions, config);

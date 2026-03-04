@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -39,7 +38,6 @@ public class DefaultCorrelationDataProviderRegistry implements CorrelationDataPr
 
     private final List<ComponentDefinition<CorrelationDataProvider>> providerDefinitions = new ArrayList<>();
 
-    @NonNull
     @Override
     public CorrelationDataProviderRegistry registerProvider(
             ComponentBuilder<CorrelationDataProvider> providerBuilder
@@ -49,7 +47,6 @@ public class DefaultCorrelationDataProviderRegistry implements CorrelationDataPr
         return this;
     }
 
-    @NonNull
     @Override
     public List<CorrelationDataProvider> correlationDataProviders(Configuration config) {
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();

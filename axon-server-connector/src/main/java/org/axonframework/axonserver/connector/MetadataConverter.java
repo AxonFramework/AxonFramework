@@ -18,6 +18,8 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import org.axonframework.common.annotation.Internal;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,11 +48,13 @@ public final class MetadataConverter {
      * @param source The source map containing String key-value pairs.
      * @return A map where each value is converted to an Axon Server {@link MetaDataValue}.
      */
-        public static Map<String, MetaDataValue> convertGrpcToMetadataValues(Map<String, String> source) {
+    public static Map<String, MetaDataValue> convertGrpcToMetadataValues(Map<String, @Nullable String> source) {
         Map<String, MetaDataValue> result = new HashMap<>();
         source.forEach((k, v) -> {
-            MetaDataValue convertedValue = convertToTextMetaDataValue(v);
-            result.put(k, convertedValue);
+            if (v != null) {
+                MetaDataValue convertedValue = convertToTextMetaDataValue(v);
+                result.put(k, convertedValue);
+            }
         });
         return result;
     }
@@ -65,7 +69,7 @@ public final class MetadataConverter {
      * @param source The source map containing Axon Server {@link MetaDataValue} objects.
      * @return A map where each value is converted to a String representation.
      */
-        public static Map<String, String> convertMetadataValuesToGrpc(Map<String, MetaDataValue> source) {
+    public static Map<String, String> convertMetadataValuesToGrpc(Map<String, MetaDataValue> source) {
         Map<String, String> result = new HashMap<>();
         source.forEach((k, v) -> {
             String convertedValue = convertFromMetaDataValue(v);
@@ -76,6 +80,7 @@ public final class MetadataConverter {
         return result;
     }
 
+    @Nullable
     private static String convertFromMetaDataValue(MetaDataValue value) {
         return switch (value.getDataCase()) {
             case TEXT_VALUE -> value.getTextValue();

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -56,7 +55,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
 
-    private ApplicationContext applicationContext;
+    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Default constructor, which relies on Spring to inject the application context.
@@ -147,7 +146,6 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             this.beanName = beanName;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.getBean(beanName));

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 
 import java.util.HashMap;
@@ -72,7 +71,6 @@ public class MessageOriginProvider implements CorrelationDataProvider {
         this.causationKey = Objects.requireNonNull(causationKey, "Causation key must not be null.");
     }
 
-    @NonNull
     @Override
     public Map<String, String> correlationDataFor(Message message) {
         Map<String, String> result = new HashMap<>();

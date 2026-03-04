@@ -17,13 +17,16 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,7 +46,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
 public abstract class AbstractQueryResponseMessageStream<T> implements MessageStream<QueryResponseMessage> {
 
     private final ResultStream<T> stream;
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
     private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
@@ -72,7 +75,6 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         stream.onAvailable(callback);
     }
 
-    @NonNull
     @Override
     public Optional<Throwable> error() {
         return errorIfPresent();
@@ -113,7 +115,6 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      *
      * @return An {@link Optional} containing the error if present, or {@link Optional#empty()} if no error is detected.
      */
-    @NonNull
     private Optional<Throwable> errorIfPresent() {
         // Check if we've already processed and stored an error
         if (error.get() != null) {
@@ -139,7 +140,6 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         }
     }
 
-    @NonNull
     private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(T t) {
         if (isError(t)) {
             error.set(createAxonException(t));

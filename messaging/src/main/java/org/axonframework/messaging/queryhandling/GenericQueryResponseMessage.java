@@ -100,7 +100,7 @@ public class GenericQueryResponseMessage extends GenericResultMessage implements
     public <R> GenericQueryResponseMessage(MessageType type,
                                            @Nullable R result,
                                            Class<R> declaredResultType,
-                                           Map<String, String> metadata) {
+                                           Map<String, @Nullable String> metadata) {
         super(new GenericMessage(type, result, declaredResultType, metadata));
     }
 

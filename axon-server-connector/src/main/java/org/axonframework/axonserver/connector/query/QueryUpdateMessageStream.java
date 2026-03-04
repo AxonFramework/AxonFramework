@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
@@ -47,14 +46,11 @@ public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream
         super(stream);
     }
 
-    @NonNull
     @Override
     protected QueryResponseMessage buildResponseMessage(QueryUpdate queryUpdate) {
         return convertQueryUpdate(queryUpdate);
     }
 
-
-    @NonNull
     @Override
     protected AxonException createAxonException(QueryUpdate queryUpdate) {
         return convertToAxonException(queryUpdate.getErrorCode(),

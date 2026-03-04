@@ -89,7 +89,7 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
                     .eventCoordinator(new JpaPollingEventCoordinator(entityManagerProvider, Duration.ofMillis(500)))
                     .persistenceExceptionResolver(new PersistenceExceptionResolver() {
                         @Override
-                        public boolean isDuplicateKeyViolation(Exception exception) {
+                        public boolean isDuplicateKeyViolation(@NonNull Exception exception) {
                             return causeIsEntityExistsException(exception);
                         }
 

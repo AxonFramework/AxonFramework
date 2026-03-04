@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
@@ -59,7 +58,6 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for generic {@link Message} types
      * @return the updated MessageMonitorRegistry instance for fluent configuration
      */
-    @NonNull
     MessageMonitorRegistry registerMonitor(final ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
 
     /**
@@ -70,7 +68,6 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       instance for {@link EventMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing fluent configuration
      */
-    @NonNull
     MessageMonitorRegistry registerEventMonitor(final ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder);
 
     /**
@@ -81,7 +78,6 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link CommandMessage} types.
      * @return the updated MessageMonitorRegistry instance, allowing for a fluent configuration approach.
      */
-    @NonNull
     MessageMonitorRegistry registerCommandMonitor(final ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder);
 
     /**
@@ -93,7 +89,6 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link QueryMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @NonNull
     MessageMonitorRegistry registerQueryMonitor(final ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
 
     /**
@@ -105,7 +100,6 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link SubscriptionQueryUpdateMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @NonNull
     MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
 
     /**

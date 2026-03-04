@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 
@@ -70,7 +69,6 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      *
      * @return a new transactional unit of work
      */
-    @NonNull
     @Override
     public UnitOfWork create(
             String identifier,

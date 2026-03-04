@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -113,7 +112,6 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             this.parameterType = resultType;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(REGISTERED_RESULT.get());

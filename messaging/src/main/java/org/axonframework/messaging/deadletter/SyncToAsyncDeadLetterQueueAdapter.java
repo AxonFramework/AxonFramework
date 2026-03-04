@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -57,7 +56,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         this.delegate = delegate;
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Void> enqueue(Object sequenceIdentifier,
                                            DeadLetter<? extends M> letter,
@@ -70,7 +69,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Boolean> enqueueIfPresent(Object sequenceIdentifier,
                                                        Supplier<DeadLetter<? extends M>> letterBuilder,
@@ -83,7 +82,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Void> evict(DeadLetter<? extends M> letter,
                                          @Nullable ProcessingContext context) {
@@ -95,7 +94,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Void> requeue(DeadLetter<? extends M> letter,
                                            UnaryOperator<DeadLetter<? extends M>> letterUpdater,
@@ -108,7 +107,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Boolean> contains(Object sequenceIdentifier,
                                                @Nullable ProcessingContext context) {
@@ -120,7 +119,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(
             Object sequenceIdentifier,
@@ -133,7 +132,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(
             @Nullable ProcessingContext context
@@ -146,7 +145,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Boolean> isFull(Object sequenceIdentifier,
                                              @Nullable ProcessingContext context) {
@@ -158,7 +157,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Long> size(@Nullable ProcessingContext context) {
         try {
@@ -169,7 +168,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Long> sequenceSize(Object sequenceIdentifier,
                                                 @Nullable ProcessingContext context) {
@@ -181,7 +180,6 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context) {
         try {
@@ -192,7 +190,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Boolean> process(
             Predicate<DeadLetter<? extends M>> sequenceFilter,
@@ -209,7 +207,7 @@ public class SyncToAsyncDeadLetterQueueAdapter<M extends Message> implements Seq
         }
     }
 
-    @NonNull
+    
     @Override
     public CompletableFuture<Void> clear(@Nullable ProcessingContext context) {
         try {

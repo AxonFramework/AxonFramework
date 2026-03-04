@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.common.annotation.Internal;
@@ -51,7 +50,6 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
         }
 
         return new ParameterResolver<>() {
-            @NonNull
             @Override
             public CompletableFuture<CommandDispatcher> resolveParameterValue(ProcessingContext context) {
                 return CompletableFuture.completedFuture(CommandDispatcher.forContext(context));

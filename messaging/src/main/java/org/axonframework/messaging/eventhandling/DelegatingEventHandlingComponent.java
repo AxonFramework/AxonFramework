@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -65,7 +64,6 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
         return delegate.supports(eventName);
     }
 
-    @NonNull
     @Override
     public Object sequenceIdentifierFor(EventMessage event,
                                         ProcessingContext context) {

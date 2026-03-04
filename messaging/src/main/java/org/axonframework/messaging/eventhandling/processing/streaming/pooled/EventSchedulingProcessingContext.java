@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -146,7 +145,6 @@ class EventSchedulingProcessingContext implements ProcessingContext {
         return resources.remove(key, expectedResource);
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type, @Nullable String name) {
         return applicationContext.component(type, name);

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -50,7 +49,6 @@ public class QueryUpdateEmitterParameterResolverFactory implements ParameterReso
         }
 
         return new ParameterResolver<>() {
-            @NonNull
             @Override
             public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(ProcessingContext context) {
                 return CompletableFuture.completedFuture(QueryUpdateEmitter.forContext(context));

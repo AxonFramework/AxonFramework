@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -101,7 +100,6 @@ public class DistributedQueryBus implements QueryBus {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
@@ -111,7 +109,6 @@ public class DistributedQueryBus implements QueryBus {
         return connector.query(query, context);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
@@ -119,7 +116,6 @@ public class DistributedQueryBus implements QueryBus {
         return connector.subscriptionQuery(query, context, updateBufferSize);
     }
 
-    @NonNull
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                             int updateBufferSize) {
@@ -129,7 +125,6 @@ public class DistributedQueryBus implements QueryBus {
                 .cast();
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
                                               Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
@@ -143,7 +138,6 @@ public class DistributedQueryBus implements QueryBus {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
@@ -156,7 +150,6 @@ public class DistributedQueryBus implements QueryBus {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
             Predicate<QueryMessage> filter,
@@ -203,8 +196,6 @@ public class DistributedQueryBus implements QueryBus {
             return DelayedMessageStream.create(localResult);
         }
 
-
-        @NonNull
         @Override
         public Registration registerUpdateHandler(QueryMessage subscriptionQueryMessage,
                                                   QueryBusConnector.UpdateCallback updateCallback) {

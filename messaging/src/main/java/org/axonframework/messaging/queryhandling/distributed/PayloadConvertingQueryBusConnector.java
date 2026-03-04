@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -61,13 +60,11 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
     }
 
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context) {
         return delegate.query(query.withConvertedPayload(targetType, converter), context);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
@@ -85,12 +82,10 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
                               .mapMessage(rm -> rm.withConvertedPayload(targetType, converter));
             }
 
-            @NonNull
             @Override
             public Registration registerUpdateHandler(QueryMessage subscriptionQueryMessage,
                                                       UpdateCallback updateCallback) {
                 return handler.registerUpdateHandler(subscriptionQueryMessage, new UpdateCallback() {
-                    @NonNull
                     @Override
                     public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
                         return updateCallback.sendUpdate(update.withConvertedPayload(targetType, converter));

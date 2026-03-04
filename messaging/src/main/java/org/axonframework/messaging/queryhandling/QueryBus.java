@@ -15,7 +15,6 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.MessageStream;
@@ -67,7 +66,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
      *                                    {@link MessageType#qualifiedName() query name}.
      */
-    @NonNull
     MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context);
 
     /**
@@ -95,7 +93,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @NonNull
     MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
@@ -121,7 +118,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @NonNull
     MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                      int updateBufferSize);
 
@@ -139,7 +135,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                       {@code null}).
      * @return A future completing whenever the updateSupplier has been emitted.
      */
-    @NonNull
     CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
                                        Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                        @Nullable ProcessingContext context);
@@ -159,7 +154,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed.
      */
-    @NonNull
     CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                   @Nullable ProcessingContext context);
 
@@ -180,7 +174,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed exceptionally.
      */
-    @NonNull
     CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<QueryMessage> filter,
                                                                Throwable cause,
                                                                @Nullable ProcessingContext context);

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -167,7 +166,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
     }
 
-    @NonNull
     private <Q> Predicate<QueryMessage> queryTypeFilter(Class<Q> queryType,
                                                         Predicate<? super Q> filter) {
         return message -> {

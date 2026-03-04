@@ -18,6 +18,8 @@ package org.axonframework.messaging.monitoring;
 
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Collection;
 import java.util.Map;
@@ -78,7 +80,7 @@ public interface MessageMonitor<T extends Message> {
          */
         void reportIgnored();
 
-        default BiConsumer<? super CommandResultMessage, ? super Throwable> complete() {
+        default BiConsumer<? super CommandResultMessage, ? super @Nullable Throwable> complete() {
             return (r, e) -> {
                 if (e == null) {
                     reportSuccess();

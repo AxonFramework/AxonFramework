@@ -35,6 +35,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +110,7 @@ class Coordinator {
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
-    private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
+    private final AtomicReference<@Nullable CoordinationTask> coordinationTask = new AtomicReference<>();
     private final AtomicLong coordinationTaskGeneration = new AtomicLong(-1);
 
     private int errorWaitBackOff = 500;

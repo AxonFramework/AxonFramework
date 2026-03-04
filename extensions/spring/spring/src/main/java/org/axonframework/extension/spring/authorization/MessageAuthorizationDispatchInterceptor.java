@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.authorization;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -62,7 +61,6 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message> implemen
         this.converter = Objects.requireNonNull(converter, "Converter must not be null.");
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnDispatch(T message,
                                                 @Nullable ProcessingContext context,

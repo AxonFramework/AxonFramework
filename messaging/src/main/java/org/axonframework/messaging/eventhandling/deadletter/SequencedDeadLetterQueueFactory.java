@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.Configuration;
@@ -63,13 +62,11 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
     }
 
     @Override
-    @NonNull
     public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
         return TYPE_REF.getTypeAsClass();
     }
 
     @Override
-    @NonNull
     public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(
             String name,
             Configuration config

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -65,7 +64,6 @@ public interface CommandGateway extends DescribableComponent {
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
-    @NonNull
     CommandResult send(Object command, Metadata metadata, @Nullable ProcessingContext context);
 
     /**
@@ -177,7 +175,6 @@ public interface CommandGateway extends DescribableComponent {
      * command execution result.
      * @see CommandGateway#send(Object, Class, ProcessingContext)
      */
-    @NonNull
     default <R> CompletableFuture<R> send(Object command,
                                           Class<R> resultType) {
         return send(command, resultType, null);
@@ -207,7 +204,6 @@ public interface CommandGateway extends DescribableComponent {
      * command execution result.
      * @see CommandGateway#send(Object, ProcessingContext)
      */
-    @NonNull
     default <R> CompletableFuture<R> send(Object command,
                                           Class<R> resultType,
                                           @Nullable ProcessingContext context) {

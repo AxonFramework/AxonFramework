@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -48,7 +47,6 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
         this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
     }
 
-    @NonNull
     @Override
     public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {

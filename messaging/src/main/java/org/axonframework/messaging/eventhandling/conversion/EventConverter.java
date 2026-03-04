@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.conversion.Converter;
@@ -76,7 +75,6 @@ public interface EventConverter extends Converter {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
-    @NonNull
     default <E extends EventMessage, T> E convertEvent(E event, Class<T> targetType) {
         return convertEvent(event, (Type) targetType);
     }
@@ -91,6 +89,5 @@ public interface EventConverter extends Converter {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
-    @NonNull
     <E extends EventMessage> E convertEvent(E event, Type targetType);
 }

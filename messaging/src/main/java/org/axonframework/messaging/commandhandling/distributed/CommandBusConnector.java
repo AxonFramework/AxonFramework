@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -48,7 +47,6 @@ public interface CommandBusConnector extends DescribableComponent {
      * @param processingContext The processing context for the command.
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
-    @NonNull
     CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                      @Nullable ProcessingContext processingContext);
 

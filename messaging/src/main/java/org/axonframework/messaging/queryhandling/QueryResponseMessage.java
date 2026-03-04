@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.conversion.Converter;
@@ -33,25 +32,22 @@ import java.util.Map;
 public interface QueryResponseMessage extends ResultMessage {
 
     @Override
-    @NonNull
     QueryResponseMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
     QueryResponseMessage andMetadata(Map<String, String> additionalMetadata);
 
     @Override
-        default QueryResponseMessage withConvertedPayload(Class<?> type, Converter converter) {
+    default QueryResponseMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default QueryResponseMessage withConvertedPayload(TypeReference<?> type,
+    default QueryResponseMessage withConvertedPayload(TypeReference<?> type,
                                                       Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @NonNull
     QueryResponseMessage withConvertedPayload(Type type, Converter converter);
 }

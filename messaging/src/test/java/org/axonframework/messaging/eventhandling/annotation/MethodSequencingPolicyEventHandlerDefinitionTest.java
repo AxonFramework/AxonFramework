@@ -39,6 +39,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -309,7 +310,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
         }
 
         @Override
-        public java.util.Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event,
+        public @NonNull Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event,
                                                                    @NonNull ProcessingContext context) {
             return java.util.Optional.of("test");
         }

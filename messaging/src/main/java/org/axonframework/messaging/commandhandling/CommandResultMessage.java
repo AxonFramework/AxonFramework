@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.conversion.Converter;
@@ -33,11 +32,11 @@ import java.util.Map;
 public interface CommandResultMessage extends ResultMessage {
 
     @Override
-    @NonNull
+    
     CommandResultMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
+    
     CommandResultMessage andMetadata(Map<String, String> metadata);
 
     @Override
@@ -52,6 +51,6 @@ public interface CommandResultMessage extends ResultMessage {
     }
 
     @Override
-    @NonNull
+    
     CommandResultMessage withConvertedPayload(Type type, Converter converter);
 }

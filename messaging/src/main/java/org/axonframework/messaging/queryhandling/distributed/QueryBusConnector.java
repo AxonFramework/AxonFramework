@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.DescribableComponent;
@@ -53,7 +52,6 @@ public interface QueryBusConnector extends DescribableComponent {
      * @see QueryBus#query(QueryMessage, ProcessingContext)
      * @return the stream of responses for the query
      */
-    @NonNull
     MessageStream<QueryResponseMessage> query(QueryMessage query,
                                               @Nullable ProcessingContext context);
 
@@ -66,7 +64,6 @@ public interface QueryBusConnector extends DescribableComponent {
      * @see QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      * @return the stream of responses for the query
      */
-    @NonNull
     MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
@@ -123,7 +120,6 @@ public interface QueryBusConnector extends DescribableComponent {
          * @param updateCallback The callback responsible for sending update back to the subscription.
          * @return A {@link Registration} instance that can be used to deregister the update handler.
          */
-        @NonNull
         Registration registerUpdateHandler(QueryMessage subscriptionQueryMessage,
                                            UpdateCallback updateCallback);
 
@@ -149,7 +145,6 @@ public interface QueryBusConnector extends DescribableComponent {
          *         handled. If the update cannot be processed, the returned future will complete
          *         exceptionally.
          */
-        @NonNull
         CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update);
 
         /**

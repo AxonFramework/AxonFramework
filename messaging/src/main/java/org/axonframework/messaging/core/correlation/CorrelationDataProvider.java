@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
@@ -42,6 +41,5 @@ public interface CorrelationDataProvider {
      * @param message The message to define correlation data for.
      * @return The data to attach as correlation data to generated messages.
      */
-    @NonNull
     Map<String, String> correlationDataFor(Message message);
 }

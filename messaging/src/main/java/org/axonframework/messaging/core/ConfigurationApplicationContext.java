@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
@@ -44,13 +43,11 @@ public class ConfigurationApplicationContext implements ApplicationContext {
         this.configuration = configuration;
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type) {
         return configuration.getComponent(type);

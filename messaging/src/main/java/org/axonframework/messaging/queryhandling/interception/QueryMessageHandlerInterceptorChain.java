@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
@@ -63,7 +62,6 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
         this.interceptingHandler = handler;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> proceed(QueryMessage query, ProcessingContext context) {
         try {
@@ -78,7 +76,6 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
             QueryHandler next
     ) implements QueryHandler, MessageHandlerInterceptorChain<QueryMessage> {
 
-        @NonNull
         @Override
         public MessageStream<QueryResponseMessage> handle(QueryMessage query,
                                                           ProcessingContext context) {
@@ -86,7 +83,6 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
             return interceptor.interceptOnHandle(query, context, (MessageHandlerInterceptorChain) this);
         }
 
-        @NonNull
         @Override
         public MessageStream<?> proceed(QueryMessage query, ProcessingContext context) {
             return next.handle(query, context);

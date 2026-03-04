@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.ApplicationContext;
 
 import java.util.Objects;
@@ -65,7 +64,6 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         this.factoryCustomization = factoryCustomization;
     }
 
-    @NonNull
     @Override
     public UnitOfWork create(
             String identifier,

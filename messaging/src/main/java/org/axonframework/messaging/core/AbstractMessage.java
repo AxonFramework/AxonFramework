@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging.core;
 
+import org.jspecify.annotations.Nullable;
+
+
 import java.util.Map;
 
 /**
@@ -61,7 +64,7 @@ public abstract class AbstractMessage implements Message {
     }
 
     @Override
-        public Message andMetadata(Map<String, String> metadata) {
+        public Message andMetadata(Map<String, @Nullable String> metadata) {
         if (metadata.isEmpty()) {
             return this;
         }

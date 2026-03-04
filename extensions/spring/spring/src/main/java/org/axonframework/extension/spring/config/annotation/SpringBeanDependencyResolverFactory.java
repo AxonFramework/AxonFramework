@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -95,7 +94,6 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
             this.dependencyDescriptor = dependencyDescriptor;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.resolveDependency(dependencyDescriptor, null));

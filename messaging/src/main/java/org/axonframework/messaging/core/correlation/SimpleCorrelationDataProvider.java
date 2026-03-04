@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
@@ -49,7 +48,6 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
         this.headerNames = Arrays.copyOf(metadataKeys, metadataKeys.length);
     }
 
-    @NonNull
     @Override
     public Map<String, String> correlationDataFor(Message message) {
         if (headerNames.length == 0) {

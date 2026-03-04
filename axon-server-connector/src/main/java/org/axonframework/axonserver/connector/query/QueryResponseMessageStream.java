@@ -26,7 +26,6 @@ import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link MessageStream} implementation that wraps an {@link ResultStream} of {@link QueryResponse}s, using
@@ -49,13 +48,11 @@ public class QueryResponseMessageStream extends AbstractQueryResponseMessageStre
         super(stream);
     }
 
-    @NonNull
     @Override
     protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
         return convertQueryResponse(queryResponse);
     }
 
-    @NonNull
     @Override
     protected AxonException createAxonException(QueryResponse queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),

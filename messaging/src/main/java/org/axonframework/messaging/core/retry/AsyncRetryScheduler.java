@@ -117,7 +117,7 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
         @Override
         public void run() {
             AtomicBoolean entrySeen = new AtomicBoolean(false);
-            AtomicReference<MessageStream<T>> retryResult = new AtomicReference<>();
+            AtomicReference<@Nullable MessageStream<T>> retryResult = new AtomicReference<>();
             finalResult.complete(
                     dispatcher.get()
                               .onNext(entry -> entrySeen.set(true))

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
@@ -346,7 +345,7 @@ class GenericJpaRepositoryTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+                                               List<EventMessage> events) {
             publishedEvents.addAll(events);
             return super.publish(context, events);
         }
@@ -366,7 +365,7 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void describeTo(@NonNull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
 
         }
     }

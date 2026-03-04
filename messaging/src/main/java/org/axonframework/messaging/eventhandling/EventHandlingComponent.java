@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -69,7 +68,6 @@ public interface EventHandlingComponent extends EventHandler, ResetHandler, Desc
      * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
-    @NonNull
     Object sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 
     /**

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -75,7 +74,6 @@ public class DefaultEventHandlingComponentsConfigurer
         return this;
     }
 
-    @NonNull
     @Override
     public List<ComponentBuilder<EventHandlingComponent>> toList() {
         return List.copyOf(componentBuilders);

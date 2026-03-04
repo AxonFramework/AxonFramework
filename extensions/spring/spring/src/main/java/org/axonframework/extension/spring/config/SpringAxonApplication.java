@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -92,13 +91,11 @@ public class SpringAxonApplication implements ApplicationConfigurer {
                 // ignore, connected to Spring Lifecycle
             }
 
-            @NonNull
             @Override
             public <C> C getComponent(Class<C> type) {
                 return componentRegistry.configuration().getComponent(type);
             }
 
-            @NonNull
             @Override
             public <C> C getComponent(Class<C> type, @Nullable String name) {
                 return componentRegistry.configuration()
@@ -115,7 +112,6 @@ public class SpringAxonApplication implements ApplicationConfigurer {
                 return componentRegistry.configuration().getOptionalComponent(type, name);
             }
 
-            @NonNull
             @Override
             public <C> C getComponent(Class<C> type,
                                       @Nullable String name,
@@ -123,7 +119,6 @@ public class SpringAxonApplication implements ApplicationConfigurer {
                 return componentRegistry.configuration().getComponent(type, name, defaultImpl);
             }
 
-            @NonNull
             @Override
             public <C> C getComponent(Class<C> type,
                                       Supplier<C> defaultImpl) {
@@ -146,7 +141,6 @@ public class SpringAxonApplication implements ApplicationConfigurer {
                 return componentRegistry.configuration().getParent();
             }
 
-            @NonNull
             @Override
             public <C> Map<String, C> getComponents(Class<C> type) {
                 return componentRegistry.configuration().getComponents(type);

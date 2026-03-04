@@ -15,10 +15,11 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
+
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -33,25 +34,22 @@ import java.util.OptionalInt;
 public interface QueryMessage extends Message {
 
     @Override
-    @NonNull
     QueryMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
-    QueryMessage andMetadata(Map<String, String> additionalMetadata);
+    QueryMessage andMetadata(Map<String, @Nullable String> additionalMetadata);
 
     @Override
-        default QueryMessage withConvertedPayload(Class<?> type, Converter converter) {
+    default QueryMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default QueryMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
+    default QueryMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @NonNull
     QueryMessage withConvertedPayload(Type type, Converter converter);
 
     /**

@@ -36,6 +36,7 @@ import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactor
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -594,17 +595,17 @@ class WorkPackage {
      */
     static class Builder {
 
-        private String name;
-        private TokenStore tokenStore;
-        private UnitOfWorkFactory unitOfWorkFactory;
-        private ExecutorService executorService;
-        private EventFilter eventFilter;
-        private BatchProcessor batchProcessor;
-        private Segment segment;
-        private TrackingToken initialToken;
+        private @Nullable String name;
+        private @Nullable TokenStore tokenStore;
+        private @Nullable UnitOfWorkFactory unitOfWorkFactory;
+        private @Nullable ExecutorService executorService;
+        private @Nullable EventFilter eventFilter;
+        private @Nullable BatchProcessor batchProcessor;
+        private @Nullable Segment segment;
+        private @Nullable TrackingToken initialToken;
         private int batchSize = 1;
         private long claimExtensionThreshold = 5000;
-        private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+        private @Nullable Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
         private Clock clock = GenericEventMessage.clock;
         private Supplier<ProcessingContext> schedulingProcessingContextProvider = () ->
                 new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);

@@ -16,6 +16,9 @@
 
 package org.axonframework.modelling.saga;
 
+import org.jspecify.annotations.NonNull;
+
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -60,7 +63,7 @@ public class AssociationValuesImpl implements AssociationValues {
     }
 
     @Override
-    public Iterator<AssociationValue> iterator() {
+    public @NonNull Iterator<AssociationValue> iterator() {
         return Collections.unmodifiableSet(values).iterator();
     }
 

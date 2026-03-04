@@ -15,7 +15,6 @@
  */
 package org.axonframework.messaging.queryhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -140,7 +139,6 @@ public class AnnotatedQueryHandlingComponent<T> implements QueryHandlingComponen
                 : new GenericQueryResponseMessage(queryResponse);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> handle(QueryMessage query,
                                                       ProcessingContext context) {

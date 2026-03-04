@@ -64,7 +64,7 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable T target) throws Exception {
+        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable T target) throws Exception {
             try {
                 return super.handleSync(message, context, target);
             } finally {

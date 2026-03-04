@@ -200,7 +200,7 @@ public class UnitOfWork implements ProcessingLifecycle {
                 new ConcurrentSkipListMap<>(Comparator.comparingInt(Phase::order));
         private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
         private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
-        private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
+        private final AtomicReference<@Nullable CauseAndPhase> errorCause = new AtomicReference<>();
 
         private final String identifier;
         private final Executor workScheduler;

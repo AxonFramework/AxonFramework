@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -167,7 +166,6 @@ public class ProcessorEventHandlingComponents {
      * @param context      The processing context.
      * @return A future that completes when all reset handlers have completed.
      */
-    @NonNull
     public CompletableFuture<Void> handleReset(ResetContext resetContext,
                                                ProcessingContext context) {
         MessageStream<Message> result = MessageStream.empty();

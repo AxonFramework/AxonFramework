@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
@@ -57,7 +56,6 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
 
     private static class ReplayParameterResolver implements ParameterResolver<ReplayStatus> {
 
-        @NonNull
         @Override
         public CompletableFuture<ReplayStatus> resolveParameterValue(ProcessingContext context) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);

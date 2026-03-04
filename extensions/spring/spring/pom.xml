@@ -42,13 +42,6 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-common</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-conversion</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

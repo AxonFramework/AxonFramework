@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component;
@@ -73,13 +72,11 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
     }
 
     @Override
-    @NonNull
     public Class<AxonServerEventStorageEngine> forType() {
         return AxonServerEventStorageEngine.class;
     }
 
     @Override
-    @NonNull
     public Optional<Component<AxonServerEventStorageEngine>> construct(String name,
                                                                        Configuration config) {
         return contextNameFrom(name).map(context -> constructForContext(context, config))

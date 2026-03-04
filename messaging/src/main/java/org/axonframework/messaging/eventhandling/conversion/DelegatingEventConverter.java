@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -80,7 +79,6 @@ public class DelegatingEventConverter implements EventConverter {
     }
 
     @Override
-    @NonNull
     public <E extends EventMessage> E convertEvent(E event, Type targetType) {
         return delegate.convertMessage(event, targetType);
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.core.Message;
@@ -146,7 +145,6 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
         return resources.remove(key, expectedResource);
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type, @Nullable String name) {
         throw new ComponentNotFoundException(type, name);

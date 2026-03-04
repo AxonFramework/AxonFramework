@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.annotation.RegistrationScope;
@@ -63,7 +62,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
 
     private final Type type;
     private final List<String> handlerBeansRefs;
-    private ApplicationContext applicationContext;
+    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
@@ -219,7 +218,6 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-        @NonNull
         public ComponentBuilder<Object> component() {
             return c -> resolveBean();
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Registry for subscribing {@link ResetHandler} instances.
@@ -49,6 +48,5 @@ public interface ResetHandlerRegistry<S extends ResetHandlerRegistry<S>> {
      * @param resetHandler the reset handler to subscribe, must not be {@code null}
      * @return This registry instance for method chaining.
      */
-    @NonNull
     S subscribe(ResetHandler resetHandler);
 }

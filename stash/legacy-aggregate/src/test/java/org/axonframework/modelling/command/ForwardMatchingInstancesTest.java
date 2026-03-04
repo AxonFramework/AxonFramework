@@ -22,6 +22,8 @@ import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.modelling.command.inspection.EntityModel;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
@@ -207,6 +209,7 @@ class ForwardMatchingInstancesTest {
         }
 
         @Override
-        public abstract <T> Property<T> propertyFor(Class<? extends T> targetClass, String property);
+        @NonNull
+        public abstract <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property);
     }
 }

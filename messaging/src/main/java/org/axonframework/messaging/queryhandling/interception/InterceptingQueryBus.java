@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -132,14 +131,12 @@ public class InterceptingQueryBus implements QueryBus {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         return queryInterceptingDispatcher.dispatch(query, context);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
@@ -147,14 +144,12 @@ public class InterceptingQueryBus implements QueryBus {
         return subscriptionQueryInterceptingDispatcher.dispatch(query, context, updateBufferSize);
     }
 
-    @NonNull
     @Override
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                             int updateBufferSize) {
         return subscribeToUpdatesInterceptingDispatcher.dispatch(query, updateBufferSize);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
                                               Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
@@ -173,14 +168,12 @@ public class InterceptingQueryBus implements QueryBus {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
         return delegate.completeSubscriptions(filter, context);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
             Predicate<QueryMessage> filter,
@@ -216,7 +209,6 @@ public class InterceptingQueryBus implements QueryBus {
             this.interceptorChain = new QueryMessageHandlerInterceptorChain(interceptors, handler);
         }
 
-        @NonNull
         @Override
         public MessageStream<QueryResponseMessage> handle(QueryMessage query,
                                                           ProcessingContext context) {

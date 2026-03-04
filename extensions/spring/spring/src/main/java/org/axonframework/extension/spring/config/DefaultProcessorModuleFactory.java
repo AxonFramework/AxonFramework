@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
@@ -83,7 +82,6 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@link #assignedProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
-    @NonNull
     @Override
     public Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
 

@@ -22,7 +22,6 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
@@ -121,7 +120,6 @@ public class EventProcessorControlService {
         ));
     }
 
-    @NonNull
     private Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
         if (processor instanceof StreamingEventProcessor streamingProcessor) {
             return () -> EventProcessorInfoUtils.describeStreaming(streamingProcessor);

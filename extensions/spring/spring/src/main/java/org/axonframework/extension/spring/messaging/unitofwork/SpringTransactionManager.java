@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.messaging.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.ConnectionProvider;
@@ -126,7 +125,6 @@ public class SpringTransactionManager implements TransactionManager {
         });
     }
 
-    @NonNull
     @Override
     public Transaction startTransaction() {
         TransactionStatus status = transactionManager.getTransaction(transactionDefinition);

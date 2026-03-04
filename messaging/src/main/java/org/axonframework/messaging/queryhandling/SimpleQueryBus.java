@@ -15,7 +15,6 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -97,7 +96,6 @@ public class SimpleQueryBus implements QueryBus {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
@@ -114,7 +112,6 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    @NonNull
     private CompletableFuture<MessageStream<QueryResponseMessage>> handle(QueryMessage query,
                                                                           QueryHandler handler) {
         if (logger.isDebugEnabled()) {
@@ -155,7 +152,6 @@ public class SimpleQueryBus implements QueryBus {
                                  .orElse(false);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
@@ -167,7 +163,6 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    @NonNull
     public MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                             int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
@@ -195,7 +190,6 @@ public class SimpleQueryBus implements QueryBus {
         return subscriptions.get(handlerName);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
                                               Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
@@ -231,7 +225,6 @@ public class SimpleQueryBus implements QueryBus {
         });
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
@@ -253,7 +246,6 @@ public class SimpleQueryBus implements QueryBus {
                       });
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> completeSubscriptionsExceptionally(
             Predicate<QueryMessage> filter,
@@ -270,7 +262,6 @@ public class SimpleQueryBus implements QueryBus {
                       .forEach(entry -> emitError(entry.getValue(), cause, entry.getKey()));
     }
 
-    @NonNull
     private CompletableFuture<Void> runAfterCommitOrImmediately(@Nullable ProcessingContext context,
                                                                 Runnable updateTask) {
         if (context != null) {

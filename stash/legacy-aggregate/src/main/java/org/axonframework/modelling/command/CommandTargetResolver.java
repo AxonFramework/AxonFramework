@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -42,5 +41,5 @@ public interface CommandTargetResolver {
      * @see AggregateCreationPolicy#ALWAYS
      * @see AggregateCreationPolicy#CREATE_IF_MISSING
      */
-    String resolveTarget(@NonNull CommandMessage command);
+    String resolveTarget(CommandMessage command);
 }

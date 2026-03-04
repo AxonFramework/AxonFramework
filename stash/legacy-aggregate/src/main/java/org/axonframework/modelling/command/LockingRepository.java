@@ -279,7 +279,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(@NonNull ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }

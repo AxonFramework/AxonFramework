@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -59,7 +57,6 @@ public interface UnitOfWorkFactory {
      * @param customization A function to customize the unit of work's configuration.
      * @return A new {@link UnitOfWork} instance.
      */
-    @NonNull
     UnitOfWork create(String identifier,
                       Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization);
 

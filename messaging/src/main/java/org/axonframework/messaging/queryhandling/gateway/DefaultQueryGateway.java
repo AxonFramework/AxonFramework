@@ -15,7 +15,6 @@
  */
 package org.axonframework.messaging.queryhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.FluxUtils;
@@ -77,7 +76,6 @@ public class DefaultQueryGateway implements QueryGateway {
         this.converter = Objects.requireNonNull(converter, "The MessageConverter must not be null.");
     }
 
-    @NonNull
     @Override
     public <R> CompletableFuture<R> query(Object query,
                                           Class<R> responseType,
@@ -102,7 +100,6 @@ public class DefaultQueryGateway implements QueryGateway {
         return resultFuture;
     }
 
-    @NonNull
     @Override
     public <R> CompletableFuture<List<R>> queryMany(Object query,
                                                     Class<R> responseType,
@@ -123,7 +120,6 @@ public class DefaultQueryGateway implements QueryGateway {
         return resultFuture;
     }
 
-    @NonNull
     @Override
     public <R> Publisher<R> streamingQuery(Object query,
                                            Class<R> responseType,
@@ -134,13 +130,11 @@ public class DefaultQueryGateway implements QueryGateway {
                    .mapNotNull(m -> m.payloadAs(responseType, converter));
     }
 
-    @NonNull
     @Override
     public <R> Publisher<R> subscriptionQuery(Object query, Class<R> responseType) {
         return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType, converter), null, Queues.SMALL_BUFFER_SIZE);
     }
 
-    @NonNull
     @Override
     public <R> Publisher<R> subscriptionQuery(Object query,
                                               Class<R> responseType,
@@ -153,7 +147,6 @@ public class DefaultQueryGateway implements QueryGateway {
                                  updateBufferSize);
     }
 
-    @NonNull
     @Override
     public <R> Publisher<R> subscriptionQuery(Object query,
                                               Class<R> responseType,
@@ -165,7 +158,6 @@ public class DefaultQueryGateway implements QueryGateway {
                                  updateBufferSize);
     }
 
-    @NonNull
     @Override
     public <T> Publisher<T> subscriptionQuery(Object query,
                                               Class<T> responseType,

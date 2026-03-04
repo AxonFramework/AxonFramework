@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -49,7 +48,6 @@ public interface MessageDispatchInterceptor<M extends Message> {
      * @return The resulting message stream from
      * {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}.
      */
-    @NonNull
     MessageStream<?> interceptOnDispatch(M message,
                                          @Nullable ProcessingContext context,
                                          MessageDispatchInterceptorChain<M> interceptorChain);

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -51,7 +50,6 @@ public interface ApplicationContext {
      * @return The component registered for the given type.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
-    @NonNull
     default <C> C component(Class<C> type) {
         return component(type, (String) null);
     }
@@ -68,6 +66,5 @@ public interface ApplicationContext {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
      *                                    {@code name}.
      */
-    @NonNull
     <C> C component(Class<C> type, @Nullable String name);
 }

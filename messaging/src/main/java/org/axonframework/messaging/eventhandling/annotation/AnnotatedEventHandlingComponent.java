@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -159,7 +158,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return Set.copyOf(handlingComponent.supportedEvents());
     }
 
-    @NonNull
     @Override
     public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);

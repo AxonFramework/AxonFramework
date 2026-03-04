@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.authorization;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -51,7 +50,6 @@ public class MessageAuthorizationHandlerInterceptor<M extends Message> implement
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationHandlerInterceptor.class);
 
     @Override
-    @NonNull
     public MessageStream<?> interceptOnHandle(M message,
                                               ProcessingContext context,
                                               MessageHandlerInterceptorChain<M> interceptorChain) {

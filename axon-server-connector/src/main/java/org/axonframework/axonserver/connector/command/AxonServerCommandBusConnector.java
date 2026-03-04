@@ -20,7 +20,6 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.Assert;
@@ -57,7 +56,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final String clientId;
     private final String componentName;
 
-    private Handler incomingHandler;
+    private @Nullable Handler incomingHandler;
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ConcurrentHashMap<String, CompletableFuture<?>> commandsInProgress = new ConcurrentHashMap<>();
@@ -87,7 +86,6 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         logger.trace("The AxonServerCommandBusConnector started.");
     }
 
-    @NonNull
     @Override
     public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
@@ -119,8 +117,11 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             CompletableFuture<CommandResponse> result = new CompletableFuture<CommandResponse>()
                     .whenComplete((r, e) -> commandsInProgress.remove(command.getMessageIdentifier()));
             commandsInProgress.put(command.getMessageIdentifier(), result);
-            incomingHandler.handle(CommandConverter.convertCommand(command),
+
+            if (incomingHandler != null) {
+                incomingHandler.handle(CommandConverter.convertCommand(command),
                                    new FutureResultCallback(result, command));
+            }
             return result;
         } catch (Exception e) {
             logger.error("Error processing incoming command: {}", command.getName(), e);
@@ -196,7 +197,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     ) implements ResultCallback {
 
         @Override
-        public void onSuccess(CommandResultMessage resultMessage) {
+        public void onSuccess(@Nullable CommandResultMessage resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }

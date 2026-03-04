@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -66,7 +65,6 @@ public class BeanValidationInterceptor<M extends Message>
         this.validatorFactory = validatorFactory;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnDispatch(M message,
                                                 @Nullable ProcessingContext context,
@@ -74,7 +72,6 @@ public class BeanValidationInterceptor<M extends Message>
         return interceptOrContinue(message, (m) -> dispatchInterceptorChain.proceed(m, context));
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnHandle(M message,
                                               ProcessingContext context,
@@ -82,7 +79,6 @@ public class BeanValidationInterceptor<M extends Message>
         return interceptOrContinue(message, (m) -> handlerInterceptorChain.proceed(m, context));
     }
 
-    @NonNull
     private MessageStream<?> interceptOrContinue(M message,
                                                  Function<M, MessageStream<?>> continuation) {
         Set<ConstraintViolation<Object>> violations = validate(message);

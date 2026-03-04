@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -63,7 +62,6 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
         this.interceptingHandler = handler;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> proceed(CommandMessage command, ProcessingContext context) {
         try {
@@ -87,7 +85,6 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
         }
 
         @Override
-        @NonNull
         public MessageStream<?> proceed(CommandMessage command,
                                         ProcessingContext context) {
             return next.handle(command, context);

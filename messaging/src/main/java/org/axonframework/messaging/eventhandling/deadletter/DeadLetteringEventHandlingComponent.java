@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -213,7 +212,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         return delegate.handle(resetContext, context);
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(

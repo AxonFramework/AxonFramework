@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterRes
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jspecify.annotations.NonNull;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
@@ -59,7 +58,6 @@ public final class SequenceNumberParameterResolverFactory extends
      */
     public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
-        @NonNull
         @Override
         public CompletableFuture<Long> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));

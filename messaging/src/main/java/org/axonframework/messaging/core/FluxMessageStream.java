@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
@@ -42,7 +43,7 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
     private final Flux<Entry<M>> source;
     private final BlockingQueue<Entry<M>> peeked = new LinkedBlockingQueue<>(5);
     private final AtomicBoolean sourceSubscribed = new AtomicBoolean();
-    private final AtomicReference<Subscription> subscription = new AtomicReference<>();
+    private final AtomicReference<@Nullable Subscription> subscription = new AtomicReference<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -46,7 +45,6 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
                                                            int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
-                @NonNull
                 @Override
                 public CompletableFuture<EventAppender> resolveParameterValue(ProcessingContext context) {
                     return CompletableFuture.completedFuture(EventAppender.forContext(context));

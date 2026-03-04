@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -41,6 +40,5 @@ public interface MessageHandlerInterceptorChain<M extends Message> {
      * @param context The active processing context the given {@code message} is being processed in.
      * @return A {@link MessageStream} containing the result of processing the given {@code message}.
      */
-    @NonNull
     MessageStream<?> proceed(M message, ProcessingContext context);
 }

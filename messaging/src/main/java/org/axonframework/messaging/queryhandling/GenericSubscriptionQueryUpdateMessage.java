@@ -85,7 +85,7 @@ public class GenericSubscriptionQueryUpdateMessage
     public <P> GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                      @Nullable P payload,
                                                      Class<P> declaredUpdateType,
-                                                     Map<String, String> metadata) {
+                                                     Map<String, @Nullable String> metadata) {
         super(new GenericMessage(type, payload, declaredUpdateType, metadata));
     }
 

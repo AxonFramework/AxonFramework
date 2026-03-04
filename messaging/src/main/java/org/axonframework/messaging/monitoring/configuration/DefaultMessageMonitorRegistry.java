@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -71,7 +70,6 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private final List<ComponentDefinition<MessageMonitor<? super QueryMessage>>> queryMonitorDefinitions = new ArrayList<>();
     private final List<ComponentDefinition<MessageMonitor<? super SubscriptionQueryUpdateMessage>>> subscriptionQueryUpdateMonitorDefinitions = new ArrayList<>();
 
-    @NonNull
     @Override
     public MessageMonitorRegistry registerMonitor(ComponentBuilder<MessageMonitor<Message>> monitorBuilder) {
         final var genericMonitorDef = new GenericMonitorDefinition(monitorBuilder);
@@ -84,7 +82,6 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageMonitorRegistry registerEventMonitor(
             ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder) {
@@ -94,7 +91,6 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageMonitorRegistry registerCommandMonitor(
             ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder) {
@@ -104,7 +100,6 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageMonitorRegistry registerQueryMonitor(
             ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder) {
@@ -114,7 +109,6 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @NonNull
     @Override
     public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
             ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder) {

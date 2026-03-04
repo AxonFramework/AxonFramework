@@ -290,13 +290,13 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+        public @NonNull CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                                 @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public CommandBus subscribe(@NonNull QualifiedName name, @NonNull CommandHandler commandHandler) {
+        public @NonNull CommandBus subscribe(@NonNull QualifiedName name, @NonNull CommandHandler commandHandler) {
             throw new UnsupportedOperationException();
         }
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -100,7 +99,6 @@ public class CorrelationDataInterceptor<M extends Message>
     }
 
     @Override
-    @NonNull
     public MessageStream<?> interceptOnDispatch(M message,
                                                 @Nullable ProcessingContext context,
                                                 MessageDispatchInterceptorChain<M> chain) {
@@ -111,7 +109,6 @@ public class CorrelationDataInterceptor<M extends Message>
     }
 
     @Override
-    @NonNull
     public MessageStream<?> interceptOnHandle(M message,
                                               ProcessingContext context,
                                               MessageHandlerInterceptorChain<M> chain) {

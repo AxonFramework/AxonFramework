@@ -39,7 +39,6 @@ import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQu
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
@@ -57,7 +56,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerIfNotPresent(AxonServerConfiguration.class,
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)

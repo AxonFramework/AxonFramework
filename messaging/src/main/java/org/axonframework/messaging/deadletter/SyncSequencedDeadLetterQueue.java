@@ -24,7 +24,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -140,7 +139,6 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      *                           available.
      * @return All the {@link DeadLetter dead letters} for the given {@code sequenceIdentifier} in insert order.
      */
-    @NonNull
     Iterable<DeadLetter<? extends M>> deadLetterSequence(Object sequenceIdentifier,
                                                          @Nullable ProcessingContext context);
 
@@ -151,7 +149,6 @@ public interface SyncSequencedDeadLetterQueue<M extends Message> {
      * @param context The {@link ProcessingContext} for the current unit of work, or {@code null} if not available.
      * @return All {@link DeadLetter dead letter} sequences held by this queue.
      */
-    @NonNull
     Iterable<Iterable<DeadLetter<? extends M>>> deadLetters(@Nullable ProcessingContext context);
 
     /**

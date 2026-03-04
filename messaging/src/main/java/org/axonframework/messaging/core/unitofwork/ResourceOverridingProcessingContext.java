@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
@@ -236,13 +235,11 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
                 : delegate.removeResource(key, expectedResource);
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type) {
         return delegate.component(type);
     }
 
-    @NonNull
     @Override
     public <C> C component(Class<C> type, @Nullable String name) {
         return delegate.component(type, name);

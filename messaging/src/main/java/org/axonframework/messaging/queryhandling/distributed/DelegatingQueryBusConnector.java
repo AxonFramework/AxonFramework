@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageStream;
@@ -54,13 +53,11 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
 
     // region [QueryBus]
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context) {
         return delegate.query(query, context);
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,

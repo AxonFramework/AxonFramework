@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -81,7 +80,6 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(
@@ -113,7 +111,6 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private MetadataParameterResolver() {
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Metadata> resolveParameterValue(ProcessingContext context) {
             Message message = Message.fromContext(context);
@@ -134,7 +131,6 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Message> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(Message.fromContext(context));

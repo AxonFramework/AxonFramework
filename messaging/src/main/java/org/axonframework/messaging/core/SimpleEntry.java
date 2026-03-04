@@ -57,7 +57,10 @@ public record SimpleEntry<M extends Message>(@Nullable M message, Context contex
 
     @Override
     public <RM extends Message> Entry<RM> map(Function<M, RM> mapper) {
-        return new SimpleEntry<>(mapper.apply(message()), context);
+        return new SimpleEntry<>(
+                message == null ? null : mapper.apply(message),
+                context
+        );
     }
 
     @Override

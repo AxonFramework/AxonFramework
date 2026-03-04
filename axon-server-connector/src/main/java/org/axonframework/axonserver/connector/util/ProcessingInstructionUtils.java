@@ -19,6 +19,8 @@ package org.axonframework.axonserver.connector.util;
 import io.axoniq.axonserver.grpc.MetaDataValue;
 import io.axoniq.axonserver.grpc.ProcessingInstruction;
 import io.axoniq.axonserver.grpc.ProcessingKey;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -103,7 +105,7 @@ public final class ProcessingInstructionUtils {
      *                     {@link ProcessingKey#ROUTING_KEY} from.
      * @return A {@link String} specifying the routing key for a given operation, or {@code null} if not found.
      */
-    public static String routingKey(List<ProcessingInstruction> instructions) {
+    public static @Nullable String routingKey(List<ProcessingInstruction> instructions) {
         return getProcessingInstructionString(instructions, ProcessingKey.ROUTING_KEY).orElse(null);
     }
 

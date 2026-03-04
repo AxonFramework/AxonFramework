@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -40,7 +39,7 @@ import java.util.function.BiFunction;
 public class DefaultMessageDispatchInterceptorChain<M extends Message>
         implements MessageDispatchInterceptorChain<M> {
 
-    private final BiFunction<? super M, ProcessingContext, MessageStream<?>> interceptingDispatcher;
+    private final BiFunction<? super M, @Nullable ProcessingContext, MessageStream<?>> interceptingDispatcher;
 
     /**
      * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors} without a
@@ -76,7 +75,6 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     }
 
     @Override
-    @NonNull
     public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
         return interceptingDispatcher.apply(message, context);
     }
@@ -86,7 +84,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             BiFunction<M, ProcessingContext, MessageStream<?>> {
 
         private final MessageDispatchInterceptor<? super M> interceptor;
-        private final BiFunction<? super M, ProcessingContext, MessageStream<?>> next;
+        private final BiFunction<? super M, @Nullable ProcessingContext, MessageStream<?>> next;
 
         private InterceptingDispatcher(MessageDispatchInterceptor<? super M> interceptor,
                                        BiFunction<? super M, ProcessingContext, MessageStream<?>> next) {
@@ -94,7 +92,6 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             this.next = next;
         }
 
-        @NonNull
         @Override
         public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
             return next.apply(message, context);

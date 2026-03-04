@@ -17,12 +17,17 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.core.Metadata;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default entry point to gain access to the current UnitOfWork. Components managing transactional boundaries can
@@ -35,7 +40,7 @@ import java.util.function.Function;
 @Deprecated(since ="5.0.0")
 public abstract class CurrentUnitOfWork {
 
-    private static final ThreadLocal<Deque<LegacyUnitOfWork<?>>> CURRENT = new ThreadLocal<>();
+    private static final ThreadLocal<@Nullable Deque<LegacyUnitOfWork<?>>> CURRENT = new ThreadLocal<>();
 
     /**
      * Indicates whether a unit of work has already been started. This method can be used by interceptors to prevent
@@ -44,7 +49,7 @@ public abstract class CurrentUnitOfWork {
      * @return whether a UnitOfWork has already been started.
      */
     public static boolean isStarted() {
-        return CURRENT.get() != null && !CURRENT.get().isEmpty();
+        return CURRENT.get() != null && !requireNonNull(CURRENT.get()).isEmpty();
     }
 
     /**
@@ -89,7 +94,8 @@ public abstract class CurrentUnitOfWork {
         if (isEmpty()) {
             throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
-        return CURRENT.get().peek();
+        Deque<LegacyUnitOfWork<?>> unitsOfWork = requireNonNull(CURRENT.get());
+        return requireNonNull(unitsOfWork.peek());
     }
 
     private static boolean isEmpty() {

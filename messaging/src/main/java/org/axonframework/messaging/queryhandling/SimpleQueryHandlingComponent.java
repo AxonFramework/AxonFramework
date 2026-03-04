@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -84,7 +83,6 @@ public class SimpleQueryHandlingComponent implements
         return this;
     }
 
-    @NonNull
     @Override
     public MessageStream<QueryResponseMessage> handle(QueryMessage query,
                                                       ProcessingContext context) {

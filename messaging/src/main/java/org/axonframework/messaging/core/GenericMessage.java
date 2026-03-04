@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.ObjectUtils;
@@ -44,7 +43,7 @@ import java.util.Map;
  */
 public class GenericMessage extends AbstractMessage {
 
-    private final Object payload;
+    private final @Nullable Object payload;
     private final Class<?> payloadType;
     private final Metadata metadata;
 
@@ -198,23 +197,22 @@ public class GenericMessage extends AbstractMessage {
     }
 
     @Override
-    @NonNull
     public Class<?> payloadType() {
         return this.payloadType;
     }
 
     @Override
-        public Metadata metadata() {
+    public Metadata metadata() {
         return this.metadata;
     }
 
     @Override
-        protected Message withMetadata(Metadata metadata) {
+    protected Message withMetadata(Metadata metadata) {
         return new GenericMessage(this, metadata);
     }
 
     @Override
-        public Message withConvertedPayload(Type type,
+    public Message withConvertedPayload(Type type,
                                         Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
 

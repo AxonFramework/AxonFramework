@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging.core;
 
+import org.jspecify.annotations.Nullable;
+
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,9 +50,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     private final MessageStream<M> second;
     private final Comparator<Entry<M>> comparator;
 
-    private final AtomicReference<Runnable> callbackRef = new AtomicReference<>();
+    private final AtomicReference<@Nullable Runnable> callbackRef = new AtomicReference<>();
     private final AtomicBoolean callbackRunning = new AtomicBoolean(false);
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
 
 
     /**

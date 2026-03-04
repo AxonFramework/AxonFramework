@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
@@ -35,11 +34,9 @@ import java.util.Map;
 public interface ResetContext extends Message {
 
     @Override
-    @NonNull
     ResetContext withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
     ResetContext andMetadata(Map<String, String> metadata);
 
     @Override
@@ -53,6 +50,5 @@ public interface ResetContext extends Message {
     }
 
     @Override
-    @NonNull
     ResetContext withConvertedPayload(Type type, Converter converter);
 }

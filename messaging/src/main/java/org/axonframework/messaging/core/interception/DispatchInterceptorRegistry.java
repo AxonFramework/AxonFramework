@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.common.annotation.Internal;
@@ -59,7 +58,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @param interceptorBuilder The generic {@link Message} {@link MessageDispatchInterceptor} builder to register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     DispatchInterceptorRegistry registerInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     );
@@ -72,7 +70,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     DispatchInterceptorRegistry registerCommandInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     );
@@ -85,7 +82,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     DispatchInterceptorRegistry registerEventInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     );
@@ -98,7 +94,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     DispatchInterceptorRegistry registerQueryInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     );
@@ -111,7 +106,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           builder to register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
             ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
     );
@@ -123,7 +117,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *               with.
      * @return The list of {@link MessageDispatchInterceptor MessageDispatchInterceptors} registered in this registry.
      */
-    @NonNull
     List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(Configuration config);
 
     /**
@@ -137,7 +130,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *               {@link MessageDispatchInterceptor MessageDispatchInterceptors} with.
      * @return The list of {@link EventMessage}-specific {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
      */
-    @NonNull
     List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(Configuration config);
 
     /**
@@ -151,7 +143,6 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *               {@link MessageDispatchInterceptor MessageDispatchInterceptors} with.
      * @return The list of {@link QueryMessage}-specific {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
      */
-    @NonNull
     List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(Configuration config);
 
     /**
@@ -166,6 +157,5 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @return The list of {@link SubscriptionQueryUpdateMessage}-specific
      *         {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
      */
-    @NonNull
     List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(Configuration config);
 }

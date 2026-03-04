@@ -19,6 +19,8 @@ package org.axonframework.common.jdbc;
 import org.axonframework.messaging.core.ExecutionException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.jspecify.annotations.NonNull;
+
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -47,7 +49,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
     }
 
     @Override
-    public Connection getConnection() throws SQLException {
+    public @NonNull Connection getConnection() throws SQLException {
         if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase()
                                                                .isAfter(LegacyUnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();

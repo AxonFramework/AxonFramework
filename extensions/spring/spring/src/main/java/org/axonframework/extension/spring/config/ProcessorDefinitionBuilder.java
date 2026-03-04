@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.config.ProcessorDefinition.ProcessorDefinitionConfigurationStep;
@@ -68,7 +67,6 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     }
 
     @Override
-    @NonNull
     public ProcessorDefinitionConfigurationStep<T> assigningHandlers(
             Predicate<ProcessorDefinition.EventHandlerDescriptor> selector
     ) {
@@ -88,7 +86,6 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
             return selector.test(eventHandlerDescriptor);
         }
 
-        @NonNull
         @Override
         public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
             //noinspection unchecked

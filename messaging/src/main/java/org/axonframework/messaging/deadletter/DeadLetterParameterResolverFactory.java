@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -59,7 +58,6 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
      */
     static class DeadLetterParameterResolver implements ParameterResolver<DeadLetter<?>> {
 
-        @NonNull
         @Override
         public CompletableFuture<DeadLetter<?>> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(DeadLetter.fromContext(context).orElse(null));

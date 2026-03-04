@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -47,7 +46,6 @@ public class MonitoringEventDispatchInterceptor implements MessageDispatchInterc
         this.messageMonitor = messageMonitor;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnDispatch(EventMessage message,
                                                 @Nullable ProcessingContext context,

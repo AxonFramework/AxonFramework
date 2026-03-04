@@ -167,23 +167,23 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        public @NonNull <HT> Optional<HT> unwrap(@NonNull Class<HT> handlerType) {
             return Optional.empty();
         }
 
         @Override
-        public <R> Optional<R> attribute(String attributeKey) {
+        public @NonNull <R> Optional<R> attribute(@NonNull String attributeKey) {
             return Optional.empty();
         }
 
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "Handler {" +
                     payloadType +
                     ", p=" + priority +
@@ -205,23 +205,23 @@ class HandlerComparatorTest {
         }
 
         @Override
-        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, Object target) {
+        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        public @NonNull <HT> Optional<HT> unwrap(@NonNull Class<HT> handlerType) {
             return Optional.empty();
         }
 
         @Override
-        public <R> Optional<R> attribute(String attributeKey) {
+        public @NonNull <R> Optional<R> attribute(@NonNull String attributeKey) {
             //noinspection unchecked
             return "ResultHandler.resultType".equals(attributeKey) ? Optional.of((R) Object.class) : Optional.empty();
         }

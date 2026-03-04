@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -88,7 +87,6 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      * @param resetHandler The reset handler to subscribe.
      * @return A {@link ResetHandlerRegistry} for managing the subscription.
      */
-    @NonNull
     @Override
     public ReplayBlockingEventHandlingComponent<E> subscribe(ResetHandler resetHandler) {
         hasResetHandler.set(true);
