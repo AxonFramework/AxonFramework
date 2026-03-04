@@ -26,7 +26,13 @@ import javax.annotation.Nonnull;
  */
 public class SequentialPolicy implements SequencingPolicy<Object> {
 
-    private static final Object FULL_SEQUENTIAL_POLICY = new Object();
+    /**
+     * Object used to represent the full sequential policy.
+     * <p>
+     * Note: This uses a String constant to provide a consistent {@link Object#hashCode()} and
+     * {@link Object#equals(Object)} behaviour across JVM restarts.
+     */
+    public static final Object FULL_SEQUENTIAL_POLICY = "FULL_SEQUENTIAL_POLICY";
 
     @Override
     public Object getSequenceIdentifierFor(@Nonnull Object task) {
