@@ -26,7 +26,6 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jspecify.annotations.NonNull;
 
 /**
  * ParameterResolverFactory implementation for use in test cases that prevent that all declared resources on message
@@ -57,7 +56,6 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
             this.parameterType = parameterType;
         }
 
-        @NonNull
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             throw new FixtureExecutionException(

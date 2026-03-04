@@ -18,7 +18,6 @@ package org.axonframework.test.util;
 
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A message monitor implementation that records the processing results of messages in the provided
@@ -59,7 +58,7 @@ public class RecordingMessageMonitor implements MessageMonitor<Message> {
     }
 
     @Override
-    public final MonitorCallback onMessageIngested(@NotNull Message message) {
+    public final MonitorCallback onMessageIngested(Message message) {
 
         return new MonitorCallback() {
             @Override

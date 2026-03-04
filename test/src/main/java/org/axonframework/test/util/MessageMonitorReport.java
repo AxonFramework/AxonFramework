@@ -19,7 +19,6 @@ package org.axonframework.test.util;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.test.util.MessageMonitorReport.Report.Success;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractList;
 import java.util.Collections;
@@ -163,7 +162,7 @@ public class MessageMonitorReport extends AbstractList<MessageMonitorReport.Repo
     }
 
     @Override
-    public @NotNull Iterator<Report> iterator() {
+    public Iterator<Report> iterator() {
         return Collections.unmodifiableList(delegate).iterator();
     }
 

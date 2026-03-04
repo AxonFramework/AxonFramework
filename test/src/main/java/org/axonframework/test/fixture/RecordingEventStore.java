@@ -27,7 +27,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.List;
@@ -61,12 +60,12 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(ProcessingContext processingContext) {
         return eventStore.transaction(processingContext);
     }
 
     @Override
-    public void describeTo(@NotNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 

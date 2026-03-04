@@ -63,7 +63,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final RecordingCommandBus commandBus;
 
     private final CommandValidator commandValidator;
-    protected final Throwable actualException;
+    protected final @Nullable Throwable actualException;
 
     /**
      * Constructs an {@code AxonTestThenMessage} for the given parameters.
@@ -243,7 +243,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+    protected boolean verifyPayloadEquality(@Nullable Object expectedPayload, @Nullable Object actualPayload) {
         if (Objects.equals(expectedPayload, actualPayload)) {
             return true;
         }
@@ -265,8 +265,8 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean verifyMetadataEquality(Class<?> eventType,
-                                             Map<String, String> expectedMetadata,
-                                             Map<String, String> actualMetadata) {
+                                             Map<String, @Nullable String> expectedMetadata,
+                                             Map<String, @Nullable String> actualMetadata) {
         MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
         if (!matcher.matches(actualMetadata)) {
             reporter.reportDifferentMetadata(eventType,
