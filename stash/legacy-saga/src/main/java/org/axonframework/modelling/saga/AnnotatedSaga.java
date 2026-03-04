@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;

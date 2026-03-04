@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;

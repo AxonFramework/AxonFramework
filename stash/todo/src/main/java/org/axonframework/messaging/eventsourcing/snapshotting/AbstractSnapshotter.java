@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;

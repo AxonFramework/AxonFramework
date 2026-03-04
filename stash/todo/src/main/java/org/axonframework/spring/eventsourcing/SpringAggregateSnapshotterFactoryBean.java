@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;

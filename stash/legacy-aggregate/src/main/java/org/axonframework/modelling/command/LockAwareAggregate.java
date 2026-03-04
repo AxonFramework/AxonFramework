@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.eventhandling.EventHandlerInvoker;

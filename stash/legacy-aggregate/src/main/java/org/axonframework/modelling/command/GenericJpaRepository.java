@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;

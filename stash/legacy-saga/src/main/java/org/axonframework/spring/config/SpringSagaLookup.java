@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

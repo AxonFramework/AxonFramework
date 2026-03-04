@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to be implemented by classes that can handle events.

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**

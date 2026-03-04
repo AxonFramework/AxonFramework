@@ -22,8 +22,6 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
  *

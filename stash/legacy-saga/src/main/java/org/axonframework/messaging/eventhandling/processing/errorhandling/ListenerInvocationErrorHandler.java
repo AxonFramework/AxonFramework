@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;

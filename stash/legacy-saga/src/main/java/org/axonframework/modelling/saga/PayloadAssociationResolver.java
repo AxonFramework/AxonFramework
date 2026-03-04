@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import java.lang.reflect.Executable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jspecify.annotations.NonNull;
 
 import static java.lang.String.format;
 

@@ -20,8 +20,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Used to derive the value of an association property by looking it up the event message's {@link
  * Metadata}.

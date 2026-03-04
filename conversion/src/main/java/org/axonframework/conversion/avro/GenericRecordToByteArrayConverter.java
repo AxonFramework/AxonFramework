@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;

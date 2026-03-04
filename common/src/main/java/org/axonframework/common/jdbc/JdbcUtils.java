@@ -16,6 +16,8 @@
 
 package org.axonframework.common.jdbc;
 
+import org.axonframework.common.annotation.Internal;
+
 import org.jspecify.annotations.Nullable;
 
 
@@ -38,19 +40,27 @@ import java.util.stream.IntStream;
  * @author Rene de Waele
  * @since 2.2
  */
+@Internal
 public class JdbcUtils {
 
     /**
      * Execute the query given by the {@code sqlFunction}. The {@link ResultSet} returned when the query is executed
      * will be converted using the given {@code sqlResultConverter}. Any errors will be handled by the given {@code
      * errorHandler}.
+     * <p>
+     * <b>Closes the connection</b> after the query completes. Do not use this overload when the connection is managed
+     * by a {@link org.axonframework.common.tx.TransactionalExecutor TransactionalExecutor} &mdash; the executor needs
+     * the connection open to commit or rollback. Use
+     * {@link #executeQuery(Connection, SqlFunction, SqlResultConverter, Function, boolean)} with
+     * {@code closeConnection=false} instead.
      *
      * @param connection         connection to the underlying database that should be used for the query
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
      * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
      * @param <R>                the type result of the query
-     * @return the query result  the result of the query
+     * @return the query result
+     * @see #executeQuery(Connection, SqlFunction, SqlResultConverter, Function, boolean)
      */
     public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
                                      SqlResultConverter<R> sqlResultConverter,
@@ -62,14 +72,18 @@ public class JdbcUtils {
      * Execute the query given by the {@code sqlFunction}. The {@link ResultSet} returned when the query is executed
      * will be converted using the given {@code sqlResultConverter}. Any errors will be handled by the given {@code
      * errorHandler}.
+     * <p>
+     * <b>Closes the connection only when {@code closeConnection} is {@code true}.</b> When the connection is managed
+     * by a {@link org.axonframework.common.tx.TransactionalExecutor TransactionalExecutor}, pass {@code false} so the
+     * executor can commit or rollback.
      *
      * @param connection         connection to the underlying database that should be used for the query
      * @param sqlFunction        the function that returns a {@link PreparedStatement} to execute the query against
      * @param sqlResultConverter converts the result set to a value of type R
      * @param errorHandler       handles errors as result of executing the query or converting the result set
-     * @param closeConnection    whether provided {@code connection} should be closed or not
+     * @param closeConnection    whether the provided {@code connection} should be closed after the query completes
      * @param <R>                the type result of the query
-     * @return the query result  the result of the query
+     * @return the query result
      */
     public static <R> R executeQuery(Connection connection, SqlFunction sqlFunction,
                                      SqlResultConverter<R> sqlResultConverter,
@@ -104,9 +118,11 @@ public class JdbcUtils {
     /**
      * Execute the update statement produced by the given {@code updateFunction}. Any errors will be handled by the
      * given {@code errorHandler}.
+     * <p>
+     * <b>Does not close the connection</b> &mdash; only closes the {@link PreparedStatement} after execution.
      *
      * @param connection     connection to the underlying database that should be used for the update
-     * @param updateFunction the function that produce the update statement
+     * @param updateFunction the function that produces the update statement
      * @param errorHandler   handles errors as result of executing the update
      * @return the update count resulting from the given {@code updateFunction}
      */
@@ -126,6 +142,9 @@ public class JdbcUtils {
     /**
      * Execute the update statements produced by the given {@code sqlFunctions}. Any errors will be handled by the given
      * {@code errorHandler}.
+     * <p>
+     * <b>Closes the connection</b> after all statements have been executed. Do not use this method when the connection
+     * is managed by a {@link org.axonframework.common.tx.TransactionalExecutor TransactionalExecutor}.
      *
      * @param connection   connection to the underlying database that should be used for the update
      * @param errorHandler handles errors as result of executing the update
@@ -155,8 +174,11 @@ public class JdbcUtils {
     }
 
     /**
-     * Execute the a batch update or insert statement produced by the given {@code sqlFunction}. Any errors will be
+     * Execute a batch update or insert statement produced by the given {@code sqlFunction}. Any errors will be
      * handled by the given {@code errorHandler}.
+     * <p>
+     * <b>Closes the connection</b> after the batch has been executed. Do not use this method when the connection is
+     * managed by a {@link org.axonframework.common.tx.TransactionalExecutor TransactionalExecutor}.
      *
      * @param connection   connection to the underlying database that should be used for the update
      * @param sqlFunction  the function that produces the batch update statement

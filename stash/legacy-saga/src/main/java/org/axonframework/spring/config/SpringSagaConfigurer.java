@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.modelling.saga.repository.SagaStore;

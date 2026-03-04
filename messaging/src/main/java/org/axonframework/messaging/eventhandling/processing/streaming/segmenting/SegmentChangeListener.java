@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.function.Consumer;

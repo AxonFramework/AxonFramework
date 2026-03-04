@@ -17,30 +17,26 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ClassUtils;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.core.Message;
+import org.axonframework.common.TypeReference;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
-import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
-import org.axonframework.conversion.SerializedMessage;
-import org.axonframework.conversion.SerializedObject;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.conversion.SimpleSerializedObject;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.function.Supplier;
+import java.util.Map;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -49,10 +45,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link JdbcDeadLetter} instances.
  * <p>
  * This converter expects a {@link DeadLetterSchema} to define the column names / labels used to retrieve the fields
- * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericSerializer} to deserialize
- * {@link TrackingToken TrackingTokens} for {@link TrackedEventMessage} instances. Lastly, this factory uses the
- * {@code eventSerializer} to deserialize the {@link EventMessage#payload() event payload},
- * {@link EventMessage#metadata() Metadata}, and {@link DeadLetter#diagnostics() diagnostics} for the
+ * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericConverter} to convert
+ * {@link TrackingToken TrackingTokens} and diagnostics. Lastly, this converter uses the {@code eventConverter} to
+ * convert the {@link EventMessage#payload() event payload} and {@link EventMessage#metadata() Metadata} for the
  * {@code JdbcDeadLetter} to return.
  *
  * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
@@ -63,15 +58,20 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         implements DeadLetterJdbcConverter<E, JdbcDeadLetter<E>> {
 
+    private static final TypeReference<Map<String, String>> METADATA_MAP_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<Map<String, String>> DIAGNOSTICS_MAP_TYPE_REF = new TypeReference<>() {
+    };
+
     private final DeadLetterSchema schema;
-    private final Serializer genericSerializer;
-    private final Serializer eventSerializer;
+    private final Converter genericConverter;
+    private final EventConverter eventConverter;
 
     /**
      * Instantiate a default {@link DeadLetterJdbcConverter} based on the given {@code builder}.
      * <p>
-     * Will validate whether the {@link Builder#genericSerializer(Serializer) generic Serializer} and
-     * {@link Builder#eventSerializer(Serializer) event Serializer} are set. If for either this is not the case an
+     * Will validate whether the {@link Builder#genericConverter(Converter) generic Converter} and
+     * {@link Builder#eventConverter(EventConverter) EventConverter} are set. If for either this is not the case an
      * {@link AxonConfigurationException} is thrown.
      *
      * @param builder The {@link Builder} used to instantiate a {@link DefaultDeadLetterJdbcConverter} instance.
@@ -79,20 +79,20 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
     protected DefaultDeadLetterJdbcConverter(Builder<E> builder) {
         builder.validate();
         schema = builder.schema;
-        genericSerializer = builder.genericSerializer;
-        eventSerializer = builder.eventSerializer;
+        genericConverter = builder.genericConverter;
+        eventConverter = builder.eventConverter;
     }
 
     /**
      * Instantiate a builder to construct a {@link DefaultDeadLetterJdbcConverter}.
      * <p>
      * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
-     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
-     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     * The {@link Builder#genericConverter(Converter) generic Converter} and
+     * {@link Builder#eventConverter(EventConverter) EventConverter} are hard requirements and should be provided.
      *
      * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
      *            this converter converts.
-     * @return A builder that con construct a {@link DefaultDeadLetterJdbcConverter}.
+     * @return A builder that can construct a {@link DefaultDeadLetterJdbcConverter}.
      */
     public static <E extends EventMessage> Builder<E> builder() {
         return new Builder<>();
@@ -100,37 +100,8 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
 
     @Override
     public JdbcDeadLetter<E> convertToLetter(ResultSet resultSet) throws SQLException {
-        EventMessage eventMessage;
-        Message serializedMessage = convertToSerializedMessage(resultSet);
-        String eventTimestampString = resultSet.getString(schema.timestampColumn());
-        Supplier<Instant> timestampSupplier = () -> DateTimeUtils.parseInstant(eventTimestampString);
-
-        if (resultSet.getString(schema.tokenTypeColumn()) != null) {
-            TrackingToken trackingToken = convertToTrackingToken(resultSet);
-            if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-                eventMessage = new GenericTrackedDomainEventMessage(
-                        trackingToken,
-                        resultSet.getString(schema.aggregateTypeColumn()),
-                        resultSet.getString(schema.aggregateIdentifierColumn()),
-                        resultSet.getLong(schema.sequenceNumberColumn()),
-                        serializedMessage,
-                        timestampSupplier
-                );
-            } else {
-                eventMessage = new GenericTrackedEventMessage(trackingToken, serializedMessage, timestampSupplier);
-            }
-        } else if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-            eventMessage = new GenericDomainEventMessage(resultSet.getString(schema.aggregateTypeColumn()),
-                                                           resultSet.getString(schema.aggregateIdentifierColumn()),
-                                                           resultSet.getLong(schema.sequenceNumberColumn()),
-                                                           serializedMessage.identifier(),
-                                                           MessageType.fromString(resultSet.getString(schema.typeColumn())),
-                                                           serializedMessage.payload(),
-                                                           serializedMessage.metadata(),
-                                                           timestampSupplier.get());
-        } else {
-            eventMessage = new GenericEventMessage(serializedMessage, timestampSupplier);
-        }
+        EventMessage eventMessage = deserializeMessage(resultSet);
+        Context context = restoreContext(resultSet);
 
         String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdentifierColumn());
         long sequenceIndex = resultSet.getLong(schema.sequenceIndexColumn());
@@ -152,56 +123,72 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
                                     lastTouched,
                                     cause,
                                     diagnostics,
-                                    (E) eventMessage);
+                                    (E) eventMessage,
+                                    context);
     }
 
-    private SerializedMessage convertToSerializedMessage(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedPayload = convertToSerializedPayload(resultSet);
-        SerializedObject<byte[]> serializedMetadata = convertToSerializedMetadata(resultSet);
-        return new SerializedMessage(resultSet.getString(schema.eventIdentifierColumn()),
-                                       serializedPayload,
-                                       serializedMetadata,
-                                       eventSerializer);
+    private EventMessage deserializeMessage(ResultSet resultSet) throws SQLException {
+        byte[] payloadBytes = resultSet.getBytes(schema.payloadColumn());
+        byte[] metadataBytes = resultSet.getBytes(schema.metadataColumn());
+        Map<String, String> metadataMap = eventConverter.convert(metadataBytes, METADATA_MAP_TYPE_REF.getType());
+
+        String eventTimestampString = resultSet.getString(schema.timestampColumn());
+
+        return new GenericEventMessage(
+                resultSet.getString(schema.eventIdentifierColumn()),
+                MessageType.fromString(resultSet.getString(schema.typeColumn())),
+                payloadBytes,
+                Metadata.from(metadataMap),
+                DateTimeUtils.parseInstant(eventTimestampString)
+        );
     }
 
-    private SerializedObject<byte[]> convertToSerializedPayload(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(schema.payloadColumn()),
-                                            byte[].class,
-                                            resultSet.getString(schema.payloadTypeColumn()),
-                                            resultSet.getString(schema.payloadRevisionColumn()));
-    }
+    private Context restoreContext(ResultSet resultSet) throws SQLException {
+        Context context = Context.empty();
 
-    private SerializedObject<byte[]> convertToSerializedMetadata(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(schema.metadataColumn()),
-                                            byte[].class,
-                                            Metadata.class.getName(),
-                                            null);
-    }
+        String tokenType = resultSet.getString(schema.tokenTypeColumn());
+        if (tokenType != null) {
+            byte[] tokenBytes = resultSet.getBytes(schema.tokenColumn());
+            if (tokenBytes != null) {
+                TrackingToken token = genericConverter.convert(tokenBytes, ClassUtils.loadClass(tokenType));
+                if (token != null) {
+                    context = context.withResource(TrackingToken.RESOURCE_KEY, token);
+                }
+            }
+        }
 
-    private TrackingToken convertToTrackingToken(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedToken =
-                new SimpleSerializedObject<>(resultSet.getBytes(schema.tokenColumn()),
-                                             byte[].class,
-                                             resultSet.getString(schema.tokenTypeColumn()),
-                                             null);
-        return genericSerializer.deserialize(serializedToken);
+        String aggregateIdentifier = resultSet.getString(schema.aggregateIdentifierColumn());
+        if (aggregateIdentifier != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier);
+        }
+        String aggregateType = resultSet.getString(schema.aggregateTypeColumn());
+        if (aggregateType != null) {
+            context = context.withResource(LegacyResources.AGGREGATE_TYPE_KEY, aggregateType);
+        }
+        long sequenceNumber = resultSet.getLong(schema.sequenceNumberColumn());
+        if (!resultSet.wasNull()) {
+            context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, sequenceNumber);
+        }
+
+        return context;
     }
 
     private Metadata convertToDiagnostics(ResultSet resultSet) throws SQLException {
-        SerializedObject<byte[]> serializedDiagnostics =
-                new SimpleSerializedObject<>(resultSet.getBytes(schema.diagnosticsColumn()),
-                                             byte[].class,
-                                             Metadata.class.getName(),
-                                             null);
-        return eventSerializer.deserialize(serializedDiagnostics);
+        byte[] diagnosticsBytes = resultSet.getBytes(schema.diagnosticsColumn());
+        if (diagnosticsBytes == null) {
+            return Metadata.emptyInstance();
+        }
+        Map<String, String> diagnosticsMap = genericConverter.convert(diagnosticsBytes,
+                                                                      DIAGNOSTICS_MAP_TYPE_REF.getType());
+        return Metadata.from(diagnosticsMap);
     }
 
     /**
      * Builder class to instantiate a {@link DefaultDeadLetterJdbcConverter}.
      * <p>
      * The {@link Builder#schema(DeadLetterSchema) schema} is defaulted to a {@link DeadLetterSchema#defaultSchema()}.
-     * The {@link Builder#genericSerializer(Serializer) generic Serializer} and
-     * {@link Builder#eventSerializer(Serializer) event Serializer} are hard requirements and should be provided.
+     * The {@link Builder#genericConverter(Converter) generic Converter} and
+     * {@link Builder#eventConverter(EventConverter) EventConverter} are hard requirements and should be provided.
      *
      * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
      *            this converter converts.
@@ -209,8 +196,8 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
     protected static class Builder<E extends EventMessage> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
-        private Serializer genericSerializer;
-        private Serializer eventSerializer;
+        private Converter genericConverter;
+        private EventConverter eventConverter;
 
         /**
          * Sets the given {@code schema} used to define the column names / labels with to return fields from the
@@ -227,31 +214,28 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         }
 
         /**
-         * Sets the {@link Serializer} to deserialize the {@link TrackingToken} of a {@link TrackedEventMessage}
-         * instance.
+         * Sets the {@link Converter} to convert the {@link TrackingToken} and diagnostics.
          *
-         * @param genericSerializer The serializer used to deserialize {@link TrackingToken TrackingTokens} with
+         * @param genericConverter The converter used to convert {@link TrackingToken TrackingTokens} and diagnostics.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> genericSerializer(Serializer genericSerializer) {
-            assertNonNull(genericSerializer, "The generic Serializer may not be null");
-            this.genericSerializer = genericSerializer;
+        public Builder<E> genericConverter(Converter genericConverter) {
+            assertNonNull(genericConverter, "The generic Converter may not be null");
+            this.genericConverter = genericConverter;
             return this;
         }
 
         /**
-         * Sets the {@link Serializer} to deserialize {@link EventMessage#payload() event payloads},
-         * {@link EventMessage#metadata() Metadata} instances, and {@link DeadLetter#diagnostics() diagnostics}
-         * with.
+         * Sets the {@link EventConverter} to convert {@link EventMessage#payload() event payloads} and
+         * {@link EventMessage#metadata() Metadata} instances.
          *
-         * @param eventSerializer The serializer used to deserialize {@link EventMessage#payload() event payloads},
-         *                        {@link EventMessage#metadata() Metadata} instances, and
-         *                        {@link DeadLetter#diagnostics() diagnostics} with.
+         * @param eventConverter The event converter used to convert {@link EventMessage#payload() event payloads} and
+         *                       {@link EventMessage#metadata() Metadata} instances.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder<E> eventSerializer(Serializer eventSerializer) {
-            assertNonNull(eventSerializer, "The event Serializer may not be null");
-            this.eventSerializer = eventSerializer;
+        public Builder<E> eventConverter(EventConverter eventConverter) {
+            assertNonNull(eventConverter, "The EventConverter may not be null");
+            this.eventConverter = eventConverter;
             return this;
         }
 
@@ -271,8 +255,8 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
          *                                    specifications.
          */
         protected void validate() {
-            assertNonNull(genericSerializer, "The generic Serializer is a hard requirement and should be provided");
-            assertNonNull(eventSerializer, "The event Serializer is a hard requirement and should be provided");
+            assertNonNull(genericConverter, "The generic Converter is a hard requirement and should be provided");
+            assertNonNull(eventConverter, "The EventConverter is a hard requirement and should be provided");
         }
     }
 }

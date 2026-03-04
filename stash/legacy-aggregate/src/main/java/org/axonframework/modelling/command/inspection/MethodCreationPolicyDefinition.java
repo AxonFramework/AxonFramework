@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CreationPolicy} annotated methods.

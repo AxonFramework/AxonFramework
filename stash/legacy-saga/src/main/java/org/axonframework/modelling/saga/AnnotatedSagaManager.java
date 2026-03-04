@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 

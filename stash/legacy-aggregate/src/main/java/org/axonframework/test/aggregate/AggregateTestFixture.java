@@ -111,7 +111,6 @@ import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

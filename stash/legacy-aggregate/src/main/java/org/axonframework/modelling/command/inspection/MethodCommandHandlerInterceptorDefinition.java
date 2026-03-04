@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 
 import java.util.regex.Pattern;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CommandHandlerInterceptor} annotated methods.

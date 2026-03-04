@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;

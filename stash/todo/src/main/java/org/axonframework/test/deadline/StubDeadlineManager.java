@@ -16,7 +16,6 @@
 
 package org.axonframework.test.deadline;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;

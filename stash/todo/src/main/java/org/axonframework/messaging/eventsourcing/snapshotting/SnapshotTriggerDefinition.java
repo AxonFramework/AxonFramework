@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Interface describing the mechanism for triggering Snapshots. The SnapshotTriggerDefinition creates specific trigger

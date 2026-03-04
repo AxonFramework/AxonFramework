@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 
 
 import org.axonframework.messaging.core.Message;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Forward no messages {@code T} regardless of their set up.

@@ -16,7 +16,6 @@
 
 package org.axonframework.test.saga;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;

@@ -20,7 +20,6 @@ package org.axonframework.axonserver.connector.util;
 import org.axonframework.common.util.PriorityCallable;
 import org.axonframework.common.util.PriorityRunnable;
 import org.axonframework.common.util.PriorityTask;
-import org.jspecify.annotations.NonNull;
 
 
 import java.util.Collection;

@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token.annotation;
 
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.WrappedToken;

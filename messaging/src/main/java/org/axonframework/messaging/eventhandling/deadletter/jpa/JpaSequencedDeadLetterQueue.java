@@ -373,7 +373,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
     ) {
         return FutureUtils.runFailing(() -> {
             Iterator<JpaDeadLetter<M>> iterator = findFirstLetterOfEachAvailableSequence(1, context);
-            return claimFirstAvailableLetter(iterator, context).thenCompose(claimedLetter -> {
+            return claimFirstMatchingLetter(iterator, letter -> true, context).thenCompose(claimedLetter -> {
                 if (claimedLetter == null) {
                     logger.info("No claimable dead letters found to process.");
                     return CompletableFuture.completedFuture(false);
@@ -400,20 +400,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 return processLetterAndFollowing(claimedLetter, processingTask, context);
             });
         });
-    }
-
-    private CompletableFuture<JpaDeadLetter<M>> claimFirstAvailableLetter(
-            Iterator<JpaDeadLetter<M>> iterator,
-            @Nullable ProcessingContext context
-    ) {
-        while (iterator.hasNext()) {
-            JpaDeadLetter<M> next = iterator.next();
-            return claimDeadLetter(next, context)
-                    .thenCompose(claimed -> claimed
-                            ? CompletableFuture.completedFuture(next)
-                            : claimFirstAvailableLetter(iterator, context));
-        }
-        return CompletableFuture.completedFuture(null);
     }
 
     private CompletableFuture<JpaDeadLetter<M>> claimFirstMatchingLetter(
