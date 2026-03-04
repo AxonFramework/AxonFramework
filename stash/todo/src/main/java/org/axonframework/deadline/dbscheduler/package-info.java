@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-@Deprecated(forRemoval = true, since = "5.0.0")
+/**
+ * This is part of a stashed module that is not actively maintained and just kept for reference.
+ */
 @NullMarked
+@Deprecated(forRemoval = true, since = "5.0.0")
 package org.axonframework.deadline.dbscheduler;
 
 import org.jspecify.annotations.NullMarked;
