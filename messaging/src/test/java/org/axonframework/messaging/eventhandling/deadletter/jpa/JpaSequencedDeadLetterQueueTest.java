@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -44,6 +42,8 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -211,7 +211,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     private JpaTransactionalExecutorProvider testTransactionalExecutorProvider() {
         return new JpaTransactionalExecutorProvider(emf) {
             @Override
-            @Nonnull
+            @NonNull
             public TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
                 if (processingContext != null) {
                     return super.getTransactionalExecutor(processingContext);

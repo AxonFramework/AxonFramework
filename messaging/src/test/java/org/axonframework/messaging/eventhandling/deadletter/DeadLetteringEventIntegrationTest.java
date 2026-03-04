@@ -737,9 +737,8 @@ public abstract class DeadLetteringEventIntegrationTest {
             this.converter = converter;
         }
 
-        @NonNull
         @Override
-        public MessageStream.Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();

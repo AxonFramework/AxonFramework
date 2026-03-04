@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import javax.sql.DataSource;
@@ -92,7 +92,7 @@ class PagingJdbcIterableTest {
         }
     }
 
-    @Nonnull
+    @NonNull
     private static JDBCDataSource dataSource() {
         JDBCDataSource dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:" + PagingJdbcIterableTest.class.getSimpleName());
