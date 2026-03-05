@@ -17,8 +17,6 @@
 package org.axonframework.common.util;
 
 import org.jspecify.annotations.NonNull;
-
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
