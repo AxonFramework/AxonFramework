@@ -16,7 +16,7 @@
 
 
 /**
- * Root package for Axon Modelling. Contains components for building domain models, including aggregates and entities.
+ * Root package for Axon Modelling. Contains components for building domain models, like entities or aggregates.
  */
 @NullMarked
 package org.axonframework.modelling;
