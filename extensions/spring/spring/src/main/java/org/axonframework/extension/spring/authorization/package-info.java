@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to authorization.
+ * Part of the Axon Extension module. Contains classes related to Spring authorization.
  */
 @NullMarked
 package org.axonframework.extension.spring.authorization;
