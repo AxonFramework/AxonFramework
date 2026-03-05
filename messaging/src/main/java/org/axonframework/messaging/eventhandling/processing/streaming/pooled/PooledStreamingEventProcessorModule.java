@@ -164,7 +164,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                         cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
                                            .deadLetterQueue();
                                 if (dlqConfig.isEnabled()) {
-                                    var underlyingDlq = dlqConfig.factory().apply(dlqName);
+                                    var underlyingDlq = dlqConfig.factory().create(dlqName);
                                     if (dlqConfig.cacheMaxSize() > 0) {
                                         return new CachingSequencedDeadLetterQueue<EventMessage>(
                                                 underlyingDlq,

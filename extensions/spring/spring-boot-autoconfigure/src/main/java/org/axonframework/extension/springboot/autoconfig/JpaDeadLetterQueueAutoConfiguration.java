@@ -18,7 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.conversion.Converter;
-import org.axonframework.extension.spring.config.DeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;

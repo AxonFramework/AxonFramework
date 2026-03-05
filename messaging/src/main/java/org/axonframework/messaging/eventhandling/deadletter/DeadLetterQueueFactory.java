@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.config;
+package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -22,22 +22,13 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 /**
  * Factory that creates a {@link SequencedDeadLetterQueue} for a given processing group.
  * <p>
- * Implementations are registered as Spring beans and discovered automatically by the
- * {@link DefaultProcessorModuleFactory} when Dead Letter Queue support is enabled for a pooled
- * streaming event processor via the {@code axon.eventhandling.processors.<name>.dlq.enabled}
- * property.
- * <p>
- * The default implementation backed by JPA is registered automatically by
- * {@code JpaDeadLetterQueueAutoConfiguration} when a {@code EntityManagerFactory} bean is present.
- * To use a custom backend, declare a bean of this type with {@code @Bean} — the
- * {@code @ConditionalOnMissingBean} on the default will yield to it.
+ * Implementations provide the backing store for dead-lettered events. The factory is invoked once per event handling
+ * component when DLQ support is enabled, allowing each component within a processor to have its own queue.
  * <p>
  * Example:
  * <pre>{@code
- * @Bean
- * public DeadLetterQueueFactory myDlqFactory(MyStorage storage) {
- *     return processingGroup -> new MySequencedDeadLetterQueue(processingGroup, storage);
- * }
+ * DeadLetterQueueFactory myFactory = processingGroup ->
+ *     new MySequencedDeadLetterQueue(processingGroup, storage);
  * }</pre>
  *
  * @author Mateusz Nowak

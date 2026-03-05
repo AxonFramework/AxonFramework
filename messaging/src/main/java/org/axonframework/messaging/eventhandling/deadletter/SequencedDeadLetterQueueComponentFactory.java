@@ -46,7 +46,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.1.0
  */
-public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
+public class SequencedDeadLetterQueueComponentFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
     private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> TYPE_REF = new TypeReference<>() {
     };
@@ -59,7 +59,7 @@ public class SequencedDeadLetterQueueFactory implements ComponentFactory<Sequenc
      * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given processing group
      *                  identifier (e.g. {@code "DeadLetterQueue[myProcessor][0]"}) and configuration.
      */
-    public SequencedDeadLetterQueueFactory(
+    public SequencedDeadLetterQueueComponentFactory(
             @NonNull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
     ) {
         assertNonNull(factoryFn, "Factory function may not be null");

@@ -22,6 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -81,7 +82,7 @@ interface SpringCustomizations {
             EventProcessorSettings.DlqSettings dlqSettings, DeadLetterQueueFactory factory) {
         return processorConfig -> processorConfig.deadLetterQueue(dlq ->
                 dlq.enabled()
-                   .factory(factory::create)
+                   .factory(factory)
                    .cacheMaxSize(dlqSettings.cache().size()));
     }
 
