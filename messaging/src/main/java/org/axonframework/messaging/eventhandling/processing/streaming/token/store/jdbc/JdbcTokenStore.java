@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -251,9 +250,8 @@ public class JdbcTokenStore implements TokenStore {
                 token,
                 processorName,
                 segment);
-        try (PreparedStatement preparedStatement = selectForUpdate(connection,
-                                                                   processorName,
-                                                                   segment); ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (PreparedStatement preparedStatement = selectForUpdate(connection, processorName, segment);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
             updateToken(connection, resultSet, token, processorName, segment);
         } catch (SQLException e) {
             throw new JdbcException(String.format("Could not store token [%s] for processor [%s] and segment [%d]",
@@ -283,8 +281,8 @@ public class JdbcTokenStore implements TokenStore {
     @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@NonNull String processorName, @NonNull Segment segment,
-            @Nullable ProcessingContext context
-    ) throws UnableToClaimTokenException {
+                                                       @Nullable ProcessingContext context)
+            throws UnableToClaimTokenException {
         return connectionExecutor(context).apply(connection -> {
             try (PreparedStatement preparedStatement = selectForUpdate(connection,
                                                                        processorName,
@@ -373,7 +371,7 @@ public class JdbcTokenStore implements TokenStore {
                 List<JdbcTokenEntry> tokenEntries = result;
                 return tokenEntries.stream()
                                    .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                                   .map(JdbcTokenEntry::getSegment).collect(Collectors.toList());
+                                   .map(JdbcTokenEntry::getSegment).toList();
             } catch (SQLException e) {
                 throw new JdbcException(String.format("Could not load segments for processor [%s]", processorName), e);
             }
