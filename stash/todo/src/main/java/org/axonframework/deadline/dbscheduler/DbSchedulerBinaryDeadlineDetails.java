@@ -29,7 +29,6 @@ import org.axonframework.conversion.SimpleSerializedObject;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import static java.lang.String.format;
@@ -72,14 +71,14 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      * @param metadata             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
-    public DbSchedulerBinaryDeadlineDetails(@NonNull String deadlineName,
-                                            @NonNull String type,
-                                            @NonNull byte[] scopeDescriptor,
-                                            @NonNull String scopeDescriptorClass,
-                                            @Nullable byte[] payload,
+    public DbSchedulerBinaryDeadlineDetails(String deadlineName,
+                                            String type,
+                                            byte[] scopeDescriptor,
+                                            String scopeDescriptorClass,
+                                            byte @Nullable [] payload,
                                             @Nullable String payloadClass,
                                             @Nullable String payloadRevision,
-                                            @Nullable byte[] metadata) {
+                                            byte @Nullable [] metadata) {
         this.d = deadlineName;
         this.t = type;
         this.s = scopeDescriptor;
@@ -101,10 +100,10 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      *                     {@code metadata}, as well as the whole {@link DbSchedulerBinaryDeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    static DbSchedulerBinaryDeadlineDetails serialized(@NonNull String deadlineName,
-                                                       @NonNull ScopeDescriptor descriptor,
-                                                       @NonNull DeadlineMessage message,
-                                                       @NonNull Serializer serializer) {
+    static DbSchedulerBinaryDeadlineDetails serialized(String deadlineName,
+                                                       ScopeDescriptor descriptor,
+                                                       DeadlineMessage message,
+                                                       Serializer serializer) {
         SerializedObject<byte[]> serializedDescriptor = serializer.serialize(descriptor, byte[].class);
         SerializedObject<byte[]> serializedPayload = serializer.serialize(message.payload(), byte[].class);
         SerializedObject<byte[]> serializedMetadata = serializer.serialize(message.metadata(), byte[].class);

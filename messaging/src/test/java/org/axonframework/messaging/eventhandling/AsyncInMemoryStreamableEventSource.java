@@ -118,7 +118,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+    public @NonNull MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
@@ -127,7 +127,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
@@ -136,12 +136,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
@@ -252,7 +252,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> next() {
+        public @NonNull Optional<Entry<EventMessage>> next() {
             if (closed) {
                 return Optional.empty();
             }
@@ -284,7 +284,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> peek() {
+        public @NonNull Optional<Entry<EventMessage>> peek() {
             if (closed) {
                 return Optional.empty();
             }
@@ -339,7 +339,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Throwable> error() {
+        public @NonNull Optional<Throwable> error() {
             return Optional.empty();
         }
 

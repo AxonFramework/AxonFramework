@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
@@ -48,8 +47,7 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
     private static final Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);
 
     @Override
-    public @NonNull
-    <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         boolean isReplayAllowed = (boolean) original
                 .attribute(HandlerAttributes.ALLOW_REPLAY)
                 .orElseGet(() -> original.unwrap(Member.class)
@@ -83,8 +81,8 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public MessageStream<?> handle(@NonNull Message message,
-                                       @NonNull ProcessingContext context,
+        public MessageStream<?> handle(Message message,
+                                       ProcessingContext context,
                                        @Nullable T target) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
             if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {

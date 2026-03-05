@@ -16,6 +16,7 @@
 
 package org.axonframework.conversion.upcasting;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
@@ -114,7 +115,7 @@ class GenericUpcasterChainTest {
         }
 
         @Override
-        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+        public @NonNull Stream<Object> upcast(@NonNull Stream<Object> intermediateRepresentations) {
             return Stream.concat(intermediateRepresentations, remainder.stream());
         }
     }
@@ -130,7 +131,7 @@ class GenericUpcasterChainTest {
         }
 
         @Override
-        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+        public @NonNull Stream<Object> upcast(@NonNull Stream<Object> intermediateRepresentations) {
             AtomicReference<Object> previous = new AtomicReference<>();
             return Stream.concat(intermediateRepresentations
                                          .filter(entry -> !(entry == first && previous.compareAndSet(null, entry)))
@@ -148,7 +149,7 @@ class GenericUpcasterChainTest {
     private static class MultipleTypesUpcaster implements Upcaster<Object> {
 
         @Override
-        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+        public @NonNull Stream<Object> upcast(@NonNull Stream<Object> intermediateRepresentations) {
             return intermediateRepresentations.flatMap(entry -> Stream.of(entry, entry));
         }
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
@@ -65,9 +64,8 @@ public interface ProcessorDefinition {
      * @param name The name of the processor.
      * @return The next step in the fluent API to define the handler selection criteria.
      */
-    @NonNull
     static ProcessorDefinitionSelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreamingProcessor(
-            @NonNull String name
+            String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
@@ -82,9 +80,8 @@ public interface ProcessorDefinition {
      * @param name The name of the processor.
      * @return The next step in the fluent API to define the handler selection criteria.
      */
-    @NonNull
     static ProcessorDefinitionSelectorStep<SubscribingEventProcessorConfiguration> subscribingProcessor(
-            @NonNull String name
+            String name
     ) {
         return new ProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
     }
@@ -95,7 +92,7 @@ public interface ProcessorDefinition {
      * @param eventHandlerDescriptor The descriptor of the event handler to check.
      * @return {@code true} if the event handler should be assigned to this processor, {@code false} otherwise.
      */
-    boolean matchesSelector(@NonNull EventHandlerDescriptor eventHandlerDescriptor);
+    boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor);
 
     /**
      * Applies this processor's configuration settings to the given settings object.
@@ -103,15 +100,13 @@ public interface ProcessorDefinition {
      * @param settings The base settings to apply configuration to.
      * @return The configured settings, potentially modified by this processor's configuration.
      */
-    @NonNull
-    EventProcessorConfiguration applySettings(@NonNull EventProcessorConfiguration settings);
+    EventProcessorConfiguration applySettings(EventProcessorConfiguration settings);
 
     /**
      * Returns the name of this processor.
      *
      * @return The processor name.
      */
-    @NonNull
     String name();
 
     /**
@@ -119,7 +114,7 @@ public interface ProcessorDefinition {
      *
      * @return The processor mode.
      */
-    EventProcessorSettings.@NonNull ProcessorMode mode();
+    EventProcessorSettings.ProcessorMode mode();
 
     /**
      * Describes an event handler component that can be assigned to an event processor.
@@ -134,7 +129,6 @@ public interface ProcessorDefinition {
          *
          * @return The bean name.
          */
-        @NonNull
         String beanName();
 
         /**
@@ -157,7 +151,6 @@ public interface ProcessorDefinition {
          *
          * @return The event handler bean.
          */
-        @NonNull
         Object resolveBean();
 
         /**
@@ -165,7 +158,6 @@ public interface ProcessorDefinition {
          *
          * @return The component builder.
          */
-        @NonNull
         ComponentBuilder<Object> component();
     }
 
@@ -191,8 +183,7 @@ public interface ProcessorDefinition {
          * @param selector A predicate that determines which event handlers to assign to this processor.
          * @return The next step in the fluent API to configure the processor settings.
          */
-        @NonNull
-        ProcessorDefinitionConfigurationStep<T> assigningHandlers(@NonNull Predicate<EventHandlerDescriptor> selector);
+        ProcessorDefinitionConfigurationStep<T> assigningHandlers(Predicate<EventHandlerDescriptor> selector);
     }
 
     /**
@@ -219,8 +210,7 @@ public interface ProcessorDefinition {
          * @param configurer A function that modifies the processor configuration.
          * @return The completed processor definition.
          */
-        @NonNull
-        ProcessorDefinition withConfiguration(@NonNull Function<T, T> configurer);
+        ProcessorDefinition withConfiguration(Function<T, T> configurer);
 
         /**
          * Completes the processor definition using default settings for this processor type.
@@ -230,7 +220,6 @@ public interface ProcessorDefinition {
          *
          * @return The completed processor definition.
          */
-        @NonNull
         ProcessorDefinition withDefaultSettings();
     }
 }

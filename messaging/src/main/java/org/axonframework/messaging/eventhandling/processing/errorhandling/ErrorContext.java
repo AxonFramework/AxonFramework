@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
@@ -38,10 +37,10 @@ import java.util.Objects;
  * @since 3.0.0
  */
 public record ErrorContext(
-        @NonNull String eventProcessor,
-        @NonNull Throwable error,
-        @NonNull List<? extends EventMessage> failedEvents,
-        @NonNull Context context
+        String eventProcessor,
+        Throwable error,
+        List<? extends EventMessage> failedEvents,
+        Context context
 ) {
 
     /**

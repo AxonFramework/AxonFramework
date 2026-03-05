@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -54,12 +53,12 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @param delegate The {@link CommandBus} to which commands will be dispatched.
      */
-    public RecordingCommandBus(@NonNull CommandBus delegate) {
+    public RecordingCommandBus(CommandBus delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate CommandBus may not be null");
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
@@ -71,12 +70,12 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@NonNull QualifiedName name, @NonNull CommandHandler commandHandler) {
+    public CommandBus subscribe(QualifiedName name, CommandHandler commandHandler) {
         return delegate.subscribe(name, commandHandler);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 
@@ -105,7 +104,7 @@ public class RecordingCommandBus implements CommandBus {
      * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
      */
     @Nullable
-    public Message resultOf(@NonNull CommandMessage command) {
+    public Message resultOf(CommandMessage command) {
         Objects.requireNonNull(command, "Command Message may not be null.");
         return recorded.get(command);
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.ApplicationContext;
 
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param applicationContext The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
      *                           instances.
      */
-    public SimpleUnitOfWorkFactory(@NonNull ApplicationContext applicationContext) {
+    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
         this(applicationContext, c -> c);
     }
 
@@ -56,8 +55,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      *                             {@link UnitOfWork} instances.
      */
     public SimpleUnitOfWorkFactory(
-            @NonNull ApplicationContext applicationContext,
-            @NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization
+            ApplicationContext applicationContext,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization
     ) {
         Objects.requireNonNull(applicationContext, "The applicationContext may not be null.");
         Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null.");
@@ -65,11 +64,10 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         this.factoryCustomization = factoryCustomization;
     }
 
-    @NonNull
     @Override
     public UnitOfWork create(
-            @NonNull String identifier,
-            @NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
+            String identifier,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
         Objects.requireNonNull(identifier, "The identifier may not be null.");
         Objects.requireNonNull(customization, "The customization may not be null.");

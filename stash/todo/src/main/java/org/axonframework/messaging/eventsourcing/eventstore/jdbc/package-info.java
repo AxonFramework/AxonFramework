@@ -15,6 +15,10 @@
  */
 
 /**
- * JDBC Implementation of the EventStore. This package contains all classes needed to provide such an implementation
+ * This is part of a stashed module that is not actively maintained and just kept for reference.
  */
+@NullMarked
+@Deprecated(forRemoval = true, since = "5.0.0")
 package org.axonframework.messaging.eventsourcing.eventstore.jdbc;
+
+import org.jspecify.annotations.NullMarked;

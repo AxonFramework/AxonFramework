@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
@@ -61,9 +60,8 @@ public interface TokenStore {
      * @param context       The processing context to use when initializing the segments, if any.
      * @return A {@code CompletableFuture} that completes when the segments have been initialized
      */
-    @NonNull
     CompletableFuture<List<Segment>> initializeTokenSegments(
-            @NonNull String processorName,
+            String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
@@ -85,9 +83,8 @@ public interface TokenStore {
      * @param context       The current {@link ProcessingContext}, if any.
      * @return A {@code CompletableFuture} that completes when the token has been stored.
      */
-    @NonNull
     CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
-                                       @NonNull String processorName,
+                                       String processorName,
                                        int segmentId,
                                        @Nullable ProcessingContext context);
 
@@ -107,8 +104,7 @@ public interface TokenStore {
      * @return A {@code CompletableFuture} with the last stored TrackingToken or {@code null} if the store holds no
      * token for the given process and segment.
      */
-    @NonNull
-    CompletableFuture<TrackingToken> fetchToken(@NonNull String processorName,
+    CompletableFuture<TrackingToken> fetchToken(String processorName,
                                                 int segmentId,
                                                 @Nullable ProcessingContext context);
 
@@ -128,10 +124,9 @@ public interface TokenStore {
      * @return A {@code CompletableFuture} with the last stored {@link TrackingToken token} or {@code null} if the store
      * holds no token for the given process and segment.
      */
-    @NonNull
     default CompletableFuture<TrackingToken> fetchToken(
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
         return fetchToken(processorName, segment.getSegmentId(), context);
@@ -153,9 +148,8 @@ public interface TokenStore {
      * the claim if the token is held. Token store implementations may choose to implement this method if they can
      * provide a more efficient way of extending this claim.
      */
-    @NonNull
     default CompletableFuture<Void> extendClaim(
-            @NonNull String processorName,
+            String processorName,
             int segmentId,
             @Nullable ProcessingContext context
     ) {
@@ -174,8 +168,7 @@ public interface TokenStore {
      * @param context       The current {@link ProcessingContext}, if any.
      * @return A {@code CompletableFuture} that completes when the claim-release has been completed.
      */
-    @NonNull
-    CompletableFuture<Void> releaseClaim(@NonNull String processorName,
+    CompletableFuture<Void> releaseClaim(String processorName,
                                          int segmentId,
                                          @Nullable ProcessingContext context);
 
@@ -198,11 +191,10 @@ public interface TokenStore {
      * @return A {@link CompletableFuture} that completes when the segment has been initialized.
      * @throws UnsupportedOperationException If this implementation does not support explicit initialization.
      */
-    @NonNull
     CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     );
 
@@ -221,8 +213,7 @@ public interface TokenStore {
      * @return A {@link CompletableFuture} that completes when the token deletion is complete.
      * @throws UnsupportedOperationException If this operation is not supported by this implementation.
      */
-    @NonNull
-    CompletableFuture<Void> deleteToken(@NonNull String processorName,
+    CompletableFuture<Void> deleteToken(String processorName,
                                         int segmentId,
                                         @Nullable ProcessingContext context);
 
@@ -235,8 +226,7 @@ public interface TokenStore {
      * @param context       The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} with the segment, or {@code null} on completion
      */
-    @NonNull
-    CompletableFuture<Segment> fetchSegment(@NonNull String processorName, int segmentId, @Nullable ProcessingContext context);
+    CompletableFuture<Segment> fetchSegment(String processorName, int segmentId, @Nullable ProcessingContext context);
 
     /**
      * Returns a {@link CompletableFuture} that supplies a list of known {@link Segment segments} for a
@@ -249,8 +239,7 @@ public interface TokenStore {
      * @param context       The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} with a list of segments on completion.
      */
-    @NonNull
-    CompletableFuture<List<Segment>> fetchSegments(@NonNull String processorName, @Nullable ProcessingContext context);
+    CompletableFuture<List<Segment>> fetchSegments(String processorName, @Nullable ProcessingContext context);
 
     /**
      * Returns a {@link CompletableFuture} supplying a {@code List} of known <b>available</b> {@link Segment Segments}
@@ -265,8 +254,7 @@ public interface TokenStore {
      * @param context       The current {@link ProcessingContext}, if any.
      * @return A {@code List} of available {@link Segment Segments} for the specified {@code processorName}.
      */
-    @NonNull
-    CompletableFuture<List<Segment>> fetchAvailableSegments(@NonNull String processorName,
+    CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                             @Nullable ProcessingContext context);
 
     /**
@@ -290,6 +278,5 @@ public interface TokenStore {
      * @return A {@link CompletableFuture} that provides an identifier to uniquely identify the storage location of
      * tokens in this {@code TokenStore} on completion.
      */
-    @NonNull
     CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context);
 }

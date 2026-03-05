@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.scheduling.quartz;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
@@ -144,7 +143,7 @@ public class QuartzEventScheduler implements EventScheduler {
         return tr;
     }
 
-    private EventMessage asEventMessage(@NonNull Object event) {
+    private EventMessage asEventMessage(Object event) {
         if (event instanceof EventMessage e) {
             return e;
         }

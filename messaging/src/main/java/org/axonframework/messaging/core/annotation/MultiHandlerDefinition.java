@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 import org.axonframework.messaging.core.MessageStream;
 
@@ -172,10 +171,10 @@ public class MultiHandlerDefinition implements HandlerDefinition {
 
     @Override
     public <T> Optional<MessageHandlingMember<T>> createHandler(
-            @NonNull Class<T> declaringType,
-            @NonNull Method method,
-            @NonNull ParameterResolverFactory parameterResolverFactory,
-            @NonNull Function<Object, MessageStream<?>> messageStreamResolver
+            Class<T> declaringType,
+            Method method,
+            ParameterResolverFactory parameterResolverFactory,
+            Function<Object, MessageStream<?>> messageStreamResolver
     ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {

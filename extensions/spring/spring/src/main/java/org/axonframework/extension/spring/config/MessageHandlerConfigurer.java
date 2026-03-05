@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.annotation.RegistrationScope;
@@ -63,7 +62,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
 
     private final Type type;
     private final List<String> handlerBeansRefs;
-    private ApplicationContext applicationContext;
+    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
@@ -78,7 +77,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         switch (type) {
             case EVENT:
                 configureEventHandlers(registry);
@@ -148,7 +147,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -159,8 +158,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      * @param definition bean definition.
      */
     record NamedBeanDefinition(
-            @NonNull String name,
-            @NonNull BeanDefinition definition
+            String name,
+            BeanDefinition definition
     ) {
 
     }
@@ -214,12 +213,11 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-                public @NonNull Object resolveBean() {
+                public Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 
         @Override
-        @NonNull
         public ComponentBuilder<Object> component() {
             return c -> resolveBean();
         }

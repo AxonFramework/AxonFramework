@@ -22,7 +22,6 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.Timer;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -77,7 +76,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NonNull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final Timer.Context allTimerContext = this.allTimer.time();
         final Timer.Context successTimerContext = this.successTimer.time();
         final Timer.Context failureTimerContext = this.failureTimer.time();

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
@@ -45,7 +44,7 @@ public class SegmentMatcher {
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(@NonNull SequencingPolicy sequencingPolicy) {
+    public SegmentMatcher(SequencingPolicy sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.sequencingPolicy = sequencingPolicy;
     }
@@ -60,7 +59,7 @@ public class SegmentMatcher {
 
      * @return {@code true} if the event matches the segment, {@code false} otherwise.
      */
-    public boolean matches(@NonNull Segment segment, @NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public boolean matches(Segment segment, EventMessage event, ProcessingContext context) {
         Objects.requireNonNull(segment, "Segment may not be null");
         Objects.requireNonNull(event, "EventMessage may not be null");
         return segment.matches(Objects.hashCode(sequenceIdentifier(event, context)));
@@ -74,7 +73,7 @@ public class SegmentMatcher {
      * @param context The processing context in which the event is being handled.
      * @return The sequence identifier for the event, never {@code null}.
      */
-    public Object sequenceIdentifier(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifier(EventMessage event, ProcessingContext context) {
         Objects.requireNonNull(event, "EventMessage may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event, context).orElseGet(event::identifier);
     }

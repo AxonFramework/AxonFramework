@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -61,5 +60,5 @@ public interface SequencingPolicy {
      * @return A sequence identifier for the given event, or {@code Optional#empty()} if this policy cannot determine a
      * sequence identifier for the given event.
      */
-    Optional<Object> getSequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context);
+    Optional<Object> getSequenceIdentifierFor(EventMessage event, ProcessingContext context);
 }

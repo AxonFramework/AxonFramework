@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction.jdbc;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
@@ -60,12 +59,12 @@ public class JdbcTransactionalExecutorProvider implements TransactionalExecutorP
      *
      * @param dataSource A JDBC {@link DataSource} used when no processing context is supplied, cannot be {@code null}.
      */
-    public JdbcTransactionalExecutorProvider(@NonNull DataSource dataSource) {
+    public JdbcTransactionalExecutorProvider(DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
     }
 
     @Override
-    public @NonNull TransactionalExecutor<Connection> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
+    public TransactionalExecutor<Connection> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
         if (processingContext != null) {
             Supplier<ConnectionExecutor> executorSupplier = processingContext.getResource(SUPPLIER_KEY);
 
@@ -78,7 +77,7 @@ public class JdbcTransactionalExecutorProvider implements TransactionalExecutorP
 
         return new TransactionalExecutor<>() {
             @Override
-            public <R> @NonNull CompletableFuture<R> apply(@NonNull ThrowingFunction<Connection, R, Exception> function) {
+            public <R> CompletableFuture<R> apply(ThrowingFunction<Connection, R, Exception> function) {
                 try {
                     return applyInTx(function, dataSource.getConnection());
                 }

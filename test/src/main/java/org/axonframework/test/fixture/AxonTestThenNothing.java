@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
@@ -46,10 +45,10 @@ class AxonTestThenNothing
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenNothing(
-            @NonNull AxonConfiguration configuration,
-            AxonTestFixture.@NonNull Customization customization,
-            @NonNull RecordingCommandBus commandBus,
-            @NonNull RecordingEventSink eventSink,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingCommandBus commandBus,
+            RecordingEventSink eventSink,
             @Nullable Throwable actualException
     ) {
         super(configuration, customization, commandBus, eventSink, actualException);

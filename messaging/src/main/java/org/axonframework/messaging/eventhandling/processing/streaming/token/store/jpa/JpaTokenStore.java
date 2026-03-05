@@ -84,9 +84,9 @@ public class JpaTokenStore implements TokenStore {
      * @param converter             The {@link Converter} used to serialize and deserialize token for storage.
      * @param configuration         The configuration for JPA token store.
      */
-    public JpaTokenStore(@NonNull EntityManagerProvider entityManagerProvider,
-                         @NonNull Converter converter,
-                         @NonNull JpaTokenStoreConfiguration configuration
+    public JpaTokenStore(EntityManagerProvider entityManagerProvider,
+                         Converter converter,
+                         JpaTokenStoreConfiguration configuration
     ) {
         assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
         assertNonNull(converter, "The Converter is a hard requirement and should be provided");
@@ -98,10 +98,9 @@ public class JpaTokenStore implements TokenStore {
         this.loadingLockMode = configuration.loadingLockMode();
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
-            @NonNull String processorName,
+            String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
@@ -127,10 +126,9 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
-                                              @NonNull String processorName,
+                                              String processorName,
                                               int segment,
                                               @Nullable ProcessingContext context) {
         try {
@@ -175,9 +173,8 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<Void> releaseClaim(@NonNull String processorName,
+    public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
         try {
@@ -198,12 +195,11 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
         try {
@@ -222,10 +218,9 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> deleteToken(
-            @NonNull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) {
@@ -251,9 +246,8 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@NonNull String processorName,
+    public CompletableFuture<TrackingToken> fetchToken(String processorName,
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
         try {
@@ -266,11 +260,10 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
         try {
@@ -283,10 +276,9 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> extendClaim(
-            @NonNull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) {
@@ -316,9 +308,8 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<Segment> fetchSegment(@NonNull String processorName,
+    public CompletableFuture<Segment> fetchSegment(String processorName,
                                                    int segmentId,
                                                    @Nullable ProcessingContext context) {
         try {
@@ -341,9 +332,8 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<List<Segment>> fetchSegments(@NonNull String processorName,
+    public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
         try {
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
@@ -365,9 +355,8 @@ public class JpaTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<List<Segment>> fetchAvailableSegments(@NonNull String processorName,
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                                    @Nullable ProcessingContext context) {
         try {
             // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions

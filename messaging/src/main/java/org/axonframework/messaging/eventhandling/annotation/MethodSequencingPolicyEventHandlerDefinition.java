@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
@@ -44,7 +43,7 @@ import java.util.Optional;
 public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @NonNull <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original instanceof EventHandlingMember<T> eventHandlingMember
                 ? eventHandlingMember.unwrap(Method.class)
                                      .flatMap(method -> optionalSequencingAwareMember(eventHandlingMember, method))

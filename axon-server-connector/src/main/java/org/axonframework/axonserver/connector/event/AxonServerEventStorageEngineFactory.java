@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component;
@@ -64,8 +63,8 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
      *                {@link EventConverter} for the {@link AxonServerEventStorageEngine} under construction.
      * @return An {@link AxonServerEventStorageEngine}, connecting to the given {@code context}.
      */
-    public static @NonNull AxonServerEventStorageEngine constructForContext(@NonNull String context,
-                                                                            @NonNull Configuration config) {
+    public static AxonServerEventStorageEngine constructForContext(String context,
+                                                                            Configuration config) {
         AxonServerConnection connection = config.getComponent(AxonServerConnectionManager.class)
                                                 .getConnection(context);
         EventConverter eventConverter = config.getComponent(EventConverter.class);
@@ -73,15 +72,13 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
     }
 
     @Override
-    @NonNull
     public Class<AxonServerEventStorageEngine> forType() {
         return AxonServerEventStorageEngine.class;
     }
 
     @Override
-    @NonNull
-    public Optional<Component<AxonServerEventStorageEngine>> construct(@NonNull String name,
-                                                                       @NonNull Configuration config) {
+    public Optional<Component<AxonServerEventStorageEngine>> construct(String name,
+                                                                       Configuration config) {
         return contextNameFrom(name).map(context -> constructForContext(context, config))
                                     .map(engine -> new InstantiatedComponentDefinition<>(
                                             new Component.Identifier<>(forType(), name),
@@ -90,7 +87,7 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
     }
 
     @Override
-    public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
+    public void registerShutdownHandlers(LifecycleRegistry registry) {
         // Nothing to do here
     }
 
@@ -101,7 +98,7 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("type", forType());
         descriptor.describeProperty("nameFormat", ENGINE_PREFIX + CONTEXT_DELIMITER + "{context-name}");
     }

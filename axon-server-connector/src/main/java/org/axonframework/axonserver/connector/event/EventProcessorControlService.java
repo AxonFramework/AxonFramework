@@ -22,7 +22,6 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
@@ -84,10 +83,10 @@ public class EventProcessorControlService {
      *                          example) retrieve the load balancing strategies from.
      */
     public EventProcessorControlService(
-            @NonNull Configuration configuration,
-            @NonNull AxonServerConnectionManager connectionManager,
-            @NonNull String context,
-            @NonNull Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig
+            Configuration configuration,
+            AxonServerConnectionManager connectionManager,
+            String context,
+            Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig
     ) {
         this.axonServerConnectionManager = Objects.requireNonNull(
                 connectionManager, "The Axon Server Connection Manager must not be null."
@@ -113,16 +112,15 @@ public class EventProcessorControlService {
         setLoadBalancingStrategies(connection, eventProcessors.keySet());
     }
 
-    private void registerInstructionHandlers(@NonNull AxonServerConnection connection,
-                                             @NonNull Map<String, EventProcessor> eventProcessors) {
+    private void registerInstructionHandlers(AxonServerConnection connection,
+                                             Map<String, EventProcessor> eventProcessors) {
         ControlChannel controlChannel = connection.controlChannel();
         eventProcessors.forEach((name, processor) -> controlChannel.registerEventProcessor(
                 name, infoSupplier(processor), new AxonProcessorInstructionHandler(processor, name)
         ));
     }
 
-    @NonNull
-    private Supplier<EventProcessorInfo> infoSupplier(@NonNull EventProcessor processor) {
+    private Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
         if (processor instanceof StreamingEventProcessor streamingProcessor) {
             return () -> EventProcessorInfoUtils.describeStreaming(streamingProcessor);
         } else if (processor instanceof SubscribingEventProcessor subscribingProcessor) {

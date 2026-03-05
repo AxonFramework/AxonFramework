@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
 
 import java.util.function.Consumer;
@@ -69,7 +68,7 @@ public interface TransactionManager {
      *
      * @param processingLifecycle the {@code ProcessingLifecycle} to attach a {@link Transaction} to
      */
-    default void attachToProcessingLifecycle(@NonNull ProcessingLifecycle processingLifecycle) {
+    default void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
             pc.runOnCommit(p -> transaction.commit());

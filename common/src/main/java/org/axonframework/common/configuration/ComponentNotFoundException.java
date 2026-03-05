@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -35,11 +34,11 @@ public class ComponentNotFoundException extends RuntimeException {
      * @param type The type of the component that could not be found, typically an interface.
      * @param name The name of the component that could not be found, potentially {@code null} when unimportant.
      */
-    public ComponentNotFoundException(@NonNull Class<?> type, @Nullable String name) {
+    public ComponentNotFoundException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 
-    private static String exceptionMessageFor(Class<?> type, String name) {
+    private static String exceptionMessageFor(Class<?> type, @Nullable String name) {
         return name != null
                 ? "No component found for type [" + type + "] name [" + name + "]."
                 : "No component found for type [" + type + "].";

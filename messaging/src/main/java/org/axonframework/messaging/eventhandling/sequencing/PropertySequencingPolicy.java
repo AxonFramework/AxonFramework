@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.sequencing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 
@@ -41,13 +40,13 @@ public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T
      * @param propertyName   The name of the property to be extracted as sequence identifier.
      */
     public PropertySequencingPolicy(
-            @NonNull Class<T> payloadClass,
-            @NonNull String propertyName
+            Class<T> payloadClass,
+            String propertyName
     ) {
         super(payloadClass, extractProperty(payloadClass, propertyName)::getValue);
     }
 
-    private static <T> Property<T> extractProperty(@NonNull Class<T> payloadClass, @NonNull String propertyName) {
+    private static <T> Property<T> extractProperty(Class<T> payloadClass, String propertyName) {
         final Property<T> property = PropertyAccessStrategy.getProperty(payloadClass, propertyName);
         assertNonNull(property, "Property cannot be found");
         return property;

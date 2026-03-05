@@ -16,6 +16,8 @@
 
 package org.axonframework.common.function;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Functional interface for operations which may throw a checked exception.
  *
@@ -34,5 +36,5 @@ public interface ThrowingFunction<T, R, X extends Exception> {
      * @return The result of applying the function.
      * @throws X When the function failed with an exception of type {@code X}.
      */
-    R apply(T input) throws X;
+    @Nullable  R apply(T input) throws X;
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
@@ -45,7 +44,7 @@ class EventPublishingUtils {
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      * @return The event as an {@link EventMessage}.
      */
-    static EventMessage asEventMessage(@NonNull Object event, MessageTypeResolver messageTypeResolver) {
+    static EventMessage asEventMessage(Object event, MessageTypeResolver messageTypeResolver) {
         if (event instanceof EventMessage e) {
             return e;
         }

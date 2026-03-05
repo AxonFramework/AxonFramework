@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      *
      * @param name The name of this module. Must not be {@code null}.
      */
-    protected BaseModule(@NonNull String name) {
+    protected BaseModule(String name) {
         this.name = Assert.nonEmpty(name, "The Module name cannot be null or empty.");
     }
 
@@ -55,8 +54,8 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
     }
 
     @Override
-    public Configuration build(@NonNull Configuration parent,
-                               @NonNull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(Configuration parent,
+                               LifecycleRegistry lifecycleRegistry) {
 
         var registry = Optional.of(parent.getComponent(ComponentRegistry.class,
                                                        () ->
@@ -96,7 +95,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      * @param registryAction The action to perform on the component registry.
      * @return This instance for fluent interfacing.
      */
-    public S componentRegistry(@NonNull Consumer<ComponentRegistry> registryAction) {
+    public S componentRegistry(Consumer<ComponentRegistry> registryAction) {
         if (built.get()) {
             throw new IllegalStateException("Module has already been built.");
         }

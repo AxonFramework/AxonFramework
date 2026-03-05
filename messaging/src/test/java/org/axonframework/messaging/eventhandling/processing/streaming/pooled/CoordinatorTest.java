@@ -20,10 +20,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyLong;
 
 import java.util.Collections;
 import java.util.List;

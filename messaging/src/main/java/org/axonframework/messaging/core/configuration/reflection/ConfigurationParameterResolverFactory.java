@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.configuration.reflection;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.configuration.Configuration;
@@ -49,14 +48,14 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
      *
      * @param configuration The configuration to look for component with.
      */
-    public ConfigurationParameterResolverFactory(@NonNull Configuration configuration) {
+    public ConfigurationParameterResolverFactory(Configuration configuration) {
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@NonNull Executable executable,
-                                               @NonNull Parameter[] parameters,
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
                                                int parameterIndex) {
         Class<?> componentType = parameters[parameterIndex].getType();
         return configuration.getOptionalComponent(componentType)

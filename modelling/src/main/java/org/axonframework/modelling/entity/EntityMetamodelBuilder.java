@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -76,9 +75,8 @@ public interface EntityMetamodelBuilder<E> {
      * @param messageHandler The {@link EntityCommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
-    @NonNull
-    EntityMetamodelBuilder<E> instanceCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                     @NonNull EntityCommandHandler<E> messageHandler);
+    EntityMetamodelBuilder<E> instanceCommandHandler(QualifiedName qualifiedName,
+                                                     EntityCommandHandler<E> messageHandler);
 
     /**
      * Adds a {@link CommandHandler} to this metamodel for the given {@link QualifiedName} that is in charge of creation
@@ -99,9 +97,8 @@ public interface EntityMetamodelBuilder<E> {
      * @param messageHandler The {@link CommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
-    @NonNull
-    EntityMetamodelBuilder<E> creationalCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                       @NonNull CommandHandler messageHandler);
+    EntityMetamodelBuilder<E> creationalCommandHandler(QualifiedName qualifiedName,
+                                                       CommandHandler messageHandler);
 
     /**
      * Adds a {@link EntityChildMetamodel} to this metamodel. The child metamodel will be used to handle
@@ -123,8 +120,7 @@ public interface EntityMetamodelBuilder<E> {
      * @param child The {@link EntityChildMetamodel} to add.
      * @return This builder for further configuration.
      */
-    @NonNull
-    EntityMetamodelBuilder<E> addChild(@NonNull EntityChildMetamodel<?, E> child);
+    EntityMetamodelBuilder<E> addChild(EntityChildMetamodel<?, E> child);
 
     /**
      * Adds a {@link EntityEvolver} to this metamodel. This evolver will be called upon applying an event to the entity.
@@ -136,7 +132,6 @@ public interface EntityMetamodelBuilder<E> {
      * @param entityEvolver The {@link EntityEvolver} to use.
      * @return This builder for further configuration.
      */
-    @NonNull
     EntityMetamodelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
@@ -145,6 +140,5 @@ public interface EntityMetamodelBuilder<E> {
      *
      * @return The {@link EntityMetamodel} instance based on the configuration of this builder.
      */
-    @NonNull
     EntityMetamodel<E> build();
 }

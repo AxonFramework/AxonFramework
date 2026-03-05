@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * A collection of classes which may prove useful when testing Axon-based classes.
+ * Part of the Axon Test module. Contains classes related to utility.
  */
+@NullMarked
 package org.axonframework.test.util;
+
+import org.jspecify.annotations.NullMarked;

@@ -72,7 +72,7 @@ class PayloadAssociationResolverTest {
     private static class TestHandlingMember implements MessageHandlingMember<Object> {
 
         @Override
-        public Class<?> payloadType() {
+        public @NonNull Class<?> payloadType() {
             try {
                 Thread.sleep(10L);
             } catch (InterruptedException e) {
@@ -87,12 +87,12 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable Object target) {
+        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable Object target) {
             return null;
         }
 
         @Override
-        public MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             return MessageStream.empty();
         }

@@ -17,6 +17,7 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -55,7 +56,7 @@ class WeakReferenceCacheTest {
         final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
         testSubject.registerCacheEntryListener(new Cache.EntryListenerAdapter() {
             @Override
-            public void onEntryExpired(Object key) {
+            public void onEntryExpired(@NonNull Object key) {
                 expiredEntries.add(key.toString());
             }
         });

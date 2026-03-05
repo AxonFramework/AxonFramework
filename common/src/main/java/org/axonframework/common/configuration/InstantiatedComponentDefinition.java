@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 
@@ -43,14 +42,14 @@ public class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> 
      * @param identifier The identifier of the component.
      * @param instance   The instance the components resolves to.
      */
-    public InstantiatedComponentDefinition(Component.@NonNull Identifier<C> identifier,
-                                           @NonNull C instance) {
+    public InstantiatedComponentDefinition(Component.Identifier<C> identifier,
+                                           C instance) {
         super(identifier, Collections.emptyList(), Collections.emptyList());
         this.instance = Objects.requireNonNull(instance, "The instance must not be null.");
     }
 
     @Override
-    public C doResolve(@NonNull Configuration configuration) {
+    public C doResolve(Configuration configuration) {
         return instance;
     }
 
@@ -60,7 +59,7 @@ public class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> 
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("instance", instance);
     }

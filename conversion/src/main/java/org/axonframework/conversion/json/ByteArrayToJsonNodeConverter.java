@@ -18,7 +18,6 @@ package org.axonframework.conversion.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
@@ -42,25 +41,23 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */
-    public ByteArrayToJsonNodeConverter(@NonNull ObjectMapper objectMapper) {
+    public ByteArrayToJsonNodeConverter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
-    @NonNull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @NonNull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }
 
     @Override
     @Nullable
-    public JsonNode convert(@Nullable byte[] input) {
+    public JsonNode convert(byte @Nullable[] input) {
         if (input == null) {
             return null;
         }

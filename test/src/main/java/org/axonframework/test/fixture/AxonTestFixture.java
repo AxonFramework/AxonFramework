@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -59,8 +58,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param customization A function that allows to customize the fixture setup.
      */
     public AxonTestFixture(
-            @NonNull AxonConfiguration configuration,
-            @NonNull Customization customization
+            AxonConfiguration configuration,
+            Customization customization
     ) {
         this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
@@ -98,7 +97,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *                   needed for test execution.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@NonNull ApplicationConfigurer configurer) {
+    public static AxonTestFixture with(ApplicationConfigurer configurer) {
         return with(configurer, c -> c);
     }
 
@@ -111,8 +110,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @return A new fixture instance
      */
     public static AxonTestFixture with(
-            @NonNull ApplicationConfigurer configurer,
-            @NonNull UnaryOperator<Customization> customization
+            ApplicationConfigurer configurer,
+            UnaryOperator<Customization> customization
     ) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
@@ -165,7 +164,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      */
     public record Customization(
             boolean axonServerEnabled,
-            @NonNull List<FieldFilter> fieldFilters
+            List<FieldFilter> fieldFilters
     ) {
 
         /**
@@ -197,7 +196,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @param fieldFilter The FieldFilter that defines which fields to include in the comparison.
          * @return the current Customization, for fluent interfacing.
          */
-        public Customization registerFieldFilter(@NonNull FieldFilter fieldFilter) {
+        public Customization registerFieldFilter(FieldFilter fieldFilter) {
             List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
             fieldFiltersCopy.add(fieldFilter);
             return new Customization(axonServerEnabled, fieldFiltersCopy);
@@ -222,7 +221,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @return the current Customization, for fluent interfacing
          * @throws FixtureExecutionException when no such field is declared
          */
-        public Customization registerIgnoredField(@NonNull Class<?> declaringClass, @NonNull String fieldName) {
+        public Customization registerIgnoredField(Class<?> declaringClass, String fieldName) {
             return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
         }
 

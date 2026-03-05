@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
@@ -118,7 +117,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@NonNull EventMessage message, @NonNull ProcessingContext context, @NonNull Segment segment)
+    public void handle(EventMessage message, ProcessingContext context, Segment segment)
             throws Exception {
         if (!sequencingPolicyMatchesSegment(message, segment, context)) {
             return;
@@ -126,7 +125,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@NonNull EventMessage message, @NonNull Segment segment, @NonNull ProcessingContext context) {
+    protected boolean sequencingPolicyMatchesSegment(EventMessage message, Segment segment, ProcessingContext context) {
         return segmentMatcher.matches(segment, message, context);
     }
 
@@ -145,18 +144,18 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(@NonNull EventMessage eventMessage,
-                             @NonNull ProcessingContext context,
-                             @NonNull Segment segment) {
+    public boolean canHandle(EventMessage eventMessage,
+                             ProcessingContext context,
+                             Segment segment) {
         return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage, context);
     }
 
     @Override
-    public boolean canHandleType(@NonNull Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         return eventHandlingComponents.stream().anyMatch(eh -> eh.canHandleType(payloadType));
     }
 
-    private boolean hasHandler(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context) {
+    private boolean hasHandler(EventMessage eventMessage, ProcessingContext context) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
             if (eventHandler.canHandle(eventMessage, context)) {
                 return true;
@@ -243,7 +242,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandlers a {@link List} of {@link Object}s which can handle events
          * @return the current Builder instance, for fluent interfacing
          */
-        public B eventHandlers(@NonNull List<?> eventHandlers) {
+        public B eventHandlers(List<?> eventHandlers) {
             assertThat(eventHandlers,
                        list -> list != null && !list.isEmpty(),
                        "At least one EventMessageHandler should be provided");
@@ -262,7 +261,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                                 instantiated {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public B parameterResolverFactory(@NonNull ParameterResolverFactory parameterResolverFactory) {
+        public B parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
             this.parameterResolverFactory = parameterResolverFactory;
             //noinspection unchecked
@@ -279,7 +278,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                          {@link AnnotationEventHandlerAdapter}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public B handlerDefinition(@NonNull HandlerDefinition handlerDefinition) {
+        public B handlerDefinition(HandlerDefinition handlerDefinition) {
             assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
             this.handlerDefinition = handlerDefinition;
             //noinspection unchecked
@@ -295,7 +294,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @return the current Builder instance, for fluent interfacing
          */
         public B listenerInvocationErrorHandler(
-                @NonNull ListenerInvocationErrorHandler listenerInvocationErrorHandler
+                ListenerInvocationErrorHandler listenerInvocationErrorHandler
         ) {
             assertNonNull(listenerInvocationErrorHandler, "ListenerInvocationErrorHandler may not be null");
             this.listenerInvocationErrorHandler = listenerInvocationErrorHandler;
@@ -313,7 +312,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          *                         handled by the given {@link Segment}
          * @return the current Builder instance, for fluent interfacing
          */
-        public B sequencingPolicy(@NonNull SequencingPolicy sequencingPolicy) {
+        public B sequencingPolicy(SequencingPolicy sequencingPolicy) {
             assertNonNull(sequencingPolicy, "The SequencingPolicy may not be null");
             this.sequencingPolicy = sequencingPolicy;
             //noinspection unchecked
@@ -353,7 +352,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          * @param eventHandler an {@link Object} which will be wrapped in an {@link AnnotationEventHandlerAdapter}
          * @return an {@link AnnotationEventHandlerAdapter} which the given {@code eventHandler} will be wrapped in
          */
-        public AnnotationEventHandlerAdapter wrapEventMessageHandler(@NonNull Object eventHandler) {
+        public AnnotationEventHandlerAdapter wrapEventMessageHandler(Object eventHandler) {
             if (parameterResolverFactory == null && handlerDefinition == null) {
                 return new AnnotationEventHandlerAdapter(eventHandler, messageTypeResolver);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {

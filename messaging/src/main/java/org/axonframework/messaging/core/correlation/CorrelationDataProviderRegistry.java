@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.*;
 import org.axonframework.messaging.core.interception.CorrelationDataInterceptor;
@@ -51,9 +50,8 @@ public interface CorrelationDataProviderRegistry {
      * @param providerBuilder The {@link CorrelationDataProvider} builder to register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
-    @NonNull
     CorrelationDataProviderRegistry registerProvider(
-            @NonNull ComponentBuilder<CorrelationDataProvider> providerBuilder
+            ComponentBuilder<CorrelationDataProvider> providerBuilder
     );
 
     /**
@@ -62,6 +60,5 @@ public interface CorrelationDataProviderRegistry {
      * @param config The configuration to build all {@link CorrelationDataProvider CorrelationDataProviders} with.
      * @return The list of {@link CorrelationDataProvider CorrelationDataProviders}.
      */
-    @NonNull
-    List<CorrelationDataProvider> correlationDataProviders(@NonNull Configuration config);
+    List<CorrelationDataProvider> correlationDataProviders(Configuration config);
 }

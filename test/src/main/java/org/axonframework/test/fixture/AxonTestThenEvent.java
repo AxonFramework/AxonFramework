@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.commandhandling.CommandBus;
@@ -50,10 +49,10 @@ class AxonTestThenEvent
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenEvent(
-            @NonNull AxonConfiguration configuration,
-            AxonTestFixture.@NonNull Customization customization,
-            @NonNull RecordingCommandBus commandBus,
-            @NonNull RecordingEventSink eventSink,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingCommandBus commandBus,
+            RecordingEventSink eventSink,
             @Nullable Throwable actualException
     ) {
         super(configuration, customization, commandBus, eventSink, actualException);
@@ -69,7 +68,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NonNull Class<? extends Throwable> type) {
+    public AxonTestPhase.Then.Event exception(Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
@@ -78,7 +77,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NonNull Class<? extends Throwable> type, @NonNull String message) {
+    public AxonTestPhase.Then.Event exception(Class<? extends Throwable> type, String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
@@ -87,7 +86,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exceptionSatisfies(@NonNull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Event exceptionSatisfies(Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);

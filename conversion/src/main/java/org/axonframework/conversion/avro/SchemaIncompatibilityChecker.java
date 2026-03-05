@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.axonframework.conversion.ConversionException;
@@ -43,9 +42,9 @@ public interface SchemaIncompatibilityChecker {
      * @throws ConversionException if the schema check has not passed.
      */
     default void assertSchemaCompatibility(
-            @NonNull Class<?> readerType,
-            @NonNull Schema readerSchema,
-            @NonNull Schema writerSchema,
+            Class<?> readerType,
+            Schema readerSchema,
+            Schema writerSchema,
             boolean includeSchemasInStackTraces) {
         List<SchemaCompatibility.Incompatibility> incompatibilities = checkCompatibility(
                 readerSchema, writerSchema
@@ -74,10 +73,9 @@ public interface SchemaIncompatibilityChecker {
      * @param writerSchema writer schema to check.
      * @return list of compatibilities if any, or empty list
      */
-    @NonNull
     default List<SchemaCompatibility.Incompatibility> checkCompatibility(
-            @NonNull Schema readerSchema,
-            @NonNull Schema writerSchema
+            Schema readerSchema,
+            Schema writerSchema
     ) {
         return AvroUtil.checkCompatibility(
                 readerSchema,

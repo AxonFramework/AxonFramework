@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
@@ -48,7 +47,7 @@ public class AppendEventsTransactionRejectedException extends AxonNonTransientEx
      * matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      */
     public static AppendEventsTransactionRejectedException conflictingEventsDetected(
-            @NonNull ConsistencyMarker consistencyMarker
+            ConsistencyMarker consistencyMarker
     ) {
         return new AppendEventsTransactionRejectedException(
                 "Event matching append criteria have been detected beyond provided consistency marker: "

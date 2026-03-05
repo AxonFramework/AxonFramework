@@ -18,7 +18,6 @@ package org.axonframework.extension.springboot.autoconfig;
 
 
 import io.axoniq.axonserver.connector.control.ControlChannel;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -82,7 +81,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     public ConfigurationEnhancer disableAxonServerConfigurationEnhancer() {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@NonNull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
             }
 
@@ -210,7 +209,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

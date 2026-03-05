@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -46,7 +45,7 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param type          The {@link MessageType type} for this {@link CommandResultMessage}.
      * @param commandResult The result for this {@link CommandResultMessage}.
      */
-    public GenericCommandResultMessage(@NonNull MessageType type,
+    public GenericCommandResultMessage(MessageType type,
                                        @Nullable Object commandResult) {
         super(type, commandResult);
     }
@@ -61,8 +60,8 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      *                  {@link CommandResultMessage}.
      */
     @Deprecated
-    public GenericCommandResultMessage(@NonNull MessageType type,
-                                       @NonNull Throwable exception) {
+    public GenericCommandResultMessage(MessageType type,
+                                       Throwable exception) {
         super(type, exception);
     }
 
@@ -74,9 +73,9 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param commandResult The result for this {@link CommandResultMessage}.
      * @param metadata      The metadata for this {@link CommandResultMessage}.
      */
-    public GenericCommandResultMessage(@NonNull MessageType type,
+    public GenericCommandResultMessage(MessageType type,
                                        @Nullable Object commandResult,
-                                       @NonNull Map<String, String> metadata) {
+                                       Map<String, String> metadata) {
         super(type, commandResult, metadata);
     }
 
@@ -90,9 +89,9 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      * @param metadata  The metadata for this {@link CommandResultMessage}.
      */
     @Deprecated
-    public GenericCommandResultMessage(@NonNull MessageType type,
-                                       @NonNull Throwable exception,
-                                       @NonNull Map<String, String> metadata) {
+    public GenericCommandResultMessage(MessageType type,
+                                       Throwable exception,
+                                       Map<String, String> metadata) {
         super(type, exception, metadata);
     }
 
@@ -107,23 +106,23 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericCommandResultMessage(@NonNull Message delegate) {
+    public GenericCommandResultMessage(Message delegate) {
         super(delegate);
     }
 
     @Override
-        public @NonNull CommandResultMessage withMetadata(@NonNull Map<String, String> metadata) {
+        public CommandResultMessage withMetadata(Map<String, String> metadata) {
         return new GenericCommandResultMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-        public @NonNull CommandResultMessage andMetadata(@NonNull Map<String, String> metadata) {
+        public CommandResultMessage andMetadata(Map<String, String> metadata) {
         return new GenericCommandResultMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-        public @NonNull CommandResultMessage withConvertedPayload(@NonNull Type type,
-                                                     @NonNull Converter converter) {
+        public CommandResultMessage withConvertedPayload(Type type,
+                                                     Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

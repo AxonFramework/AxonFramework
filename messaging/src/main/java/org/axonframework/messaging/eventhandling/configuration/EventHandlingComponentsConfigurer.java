@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -67,9 +66,8 @@ public interface EventHandlingComponentsConfigurer {
          * @param handlingComponentBuilder The component to configure.
          * @return The complete phase for decoration and finalization.
          */
-        @NonNull
         AdditionalComponentPhase declarative(
-                @NonNull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+                ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -78,7 +76,7 @@ public interface EventHandlingComponentsConfigurer {
          * @param handlingComponentBuilder The component builder.
          * @return The additional component phase for further configuration.
          */
-                default @NonNull AdditionalComponentPhase autodetected(@NonNull ComponentBuilder<Object> handlingComponentBuilder) {
+                default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
@@ -101,9 +99,8 @@ public interface EventHandlingComponentsConfigurer {
          * @param decorator Function to decorate each component.
          * @return This phase for further decoration or finalization.
          */
-        @NonNull
         CompletePhase decorated(
-                @NonNull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
+                BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
         );
 
         /**
@@ -111,7 +108,6 @@ public interface EventHandlingComponentsConfigurer {
          *
          * @return The immutable list of configured components.
          */
-        @NonNull
         List<ComponentBuilder<EventHandlingComponent>> toList();
 
         /**
@@ -120,7 +116,6 @@ public interface EventHandlingComponentsConfigurer {
          * @param configuration The framework configuration.
          * @return The list of built event handling components.
          */
-        @NonNull
         default List<EventHandlingComponent> build(Configuration configuration) {
             return toList().stream()
                            .map(builder -> builder.build(configuration))

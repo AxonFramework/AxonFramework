@@ -20,7 +20,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 
@@ -88,7 +87,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NonNull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
 
         Iterable<Tag> tags = tagsBuilder.apply(message);
         Counter ingestedCounter = meterRegistry.counter(meterNamePrefix + INGESTED_COUNTER, tags);

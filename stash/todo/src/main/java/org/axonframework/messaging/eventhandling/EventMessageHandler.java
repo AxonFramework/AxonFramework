@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.LegacyMessageHandler;
@@ -47,9 +46,9 @@ public interface EventMessageHandler extends LegacyMessageHandler<EventMessage, 
      * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) throws Exception;
+    Object handleSync(EventMessage event, ProcessingContext context) throws Exception;
 
-    default MessageStream<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    default MessageStream<Message> handle(EventMessage event, ProcessingContext context) {
         try {
             handleSync(event, context);
             return MessageStream.empty();

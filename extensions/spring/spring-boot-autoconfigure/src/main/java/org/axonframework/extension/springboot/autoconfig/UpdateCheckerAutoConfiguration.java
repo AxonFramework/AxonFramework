@@ -29,7 +29,6 @@ import org.axonframework.update.UpdateCheckerHttpClient;
 import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
-import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -85,7 +84,7 @@ public class UpdateCheckerAutoConfiguration {
     public ConfigurationEnhancer springUpdateCheckerConfigEnhancer(UsagePropertyProvider usagePropertyProvider) {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@NonNull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.registerIfNotPresent(ofType(UpdateCheckerHttpClient.class).withBuilder(
                                 c -> new UpdateCheckerHttpClient(usagePropertyProvider)
                         ))
@@ -109,7 +108,7 @@ public class UpdateCheckerAutoConfiguration {
     static class NotTestEnvironmentCondition implements Condition {
 
         @Override
-        public boolean matches(@NonNull ConditionContext context, @NonNull AnnotatedTypeMetadata metadata) {
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
             return !TestEnvironmentDetector.isTestEnvironment();
         }
     }

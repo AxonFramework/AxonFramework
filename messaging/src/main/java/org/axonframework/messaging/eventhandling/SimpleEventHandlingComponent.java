@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -75,7 +74,7 @@ public class SimpleEventHandlingComponent implements
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleEventHandlingComponent create(@NonNull String name) {
+    public static SimpleEventHandlingComponent create(String name) {
         return create(name, DEFAULT_SEQUENCING_POLICY);
     }
 
@@ -89,20 +88,20 @@ public class SimpleEventHandlingComponent implements
      *                         {@link #sequenceIdentifierFor(EventMessage, ProcessingContext)}.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleEventHandlingComponent create(@NonNull String name,
-                                                      @NonNull SequencingPolicy sequencingPolicy) {
+    public static SimpleEventHandlingComponent create(String name,
+                                                      SequencingPolicy sequencingPolicy) {
         return new SimpleEventHandlingComponent(name, sequencingPolicy);
     }
 
-    protected SimpleEventHandlingComponent(@NonNull String name,
-                                         @NonNull SequencingPolicy sequencingPolicy) {
+    protected SimpleEventHandlingComponent(String name,
+                                         SequencingPolicy sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
         List<EventHandler> handlers = eventHandlers.get(name);
         if (handlers == null || handlers.isEmpty()) {
@@ -120,8 +119,8 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public SimpleEventHandlingComponent subscribe(@NonNull Set<QualifiedName> names,
-                                                  @NonNull EventHandler handler) {
+    public SimpleEventHandlingComponent subscribe(Set<QualifiedName> names,
+                                                  EventHandler handler) {
         Objects.requireNonNull(handler, "The given handler cannot be null.");
         names.forEach(name -> eventHandlers.compute(name, (q, handlers) -> {
             if (handlers == null) {
@@ -134,8 +133,8 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public SimpleEventHandlingComponent subscribe(@NonNull QualifiedName name,
-                                                  @NonNull EventHandler handler) {
+    public SimpleEventHandlingComponent subscribe(QualifiedName name,
+                                                  EventHandler handler) {
         return subscribe(Set.of(name), handler);
     }
 
@@ -163,9 +162,8 @@ public class SimpleEventHandlingComponent implements
      * <p>
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         var qualifiedName = event.type().qualifiedName();
         List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
@@ -182,7 +180,7 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext, @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext, ProcessingContext context) {
         MessageStream<Message> result = MessageStream.empty();
 
         for (ResetHandler handler : resetHandlers) {
@@ -193,15 +191,14 @@ public class SimpleEventHandlingComponent implements
         return result.ignoreEntries().cast();
     }
 
-    @NonNull
     @Override
-    public SimpleEventHandlingComponent subscribe(@NonNull ResetHandler resetHandler) {
+    public SimpleEventHandlingComponent subscribe(ResetHandler resetHandler) {
         resetHandlers.add(resetHandler);
         return this;
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("eventHandlers", eventHandlers);
         descriptor.describeProperty("resetHandlers", resetHandlers);

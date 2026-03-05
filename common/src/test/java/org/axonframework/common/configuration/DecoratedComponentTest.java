@@ -69,7 +69,6 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
 
     @Test
     void delegateReusesPreviouslyCreatedInstance() {
-        //noinspection unchecked
         ComponentBuilder<String> mock = mock();
         when(mock.build(any())).thenReturn(TEST_COMPONENT);
         Component<String> target = new LazyInitializedComponentDefinition<>(identifier, mock);

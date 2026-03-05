@@ -15,7 +15,9 @@
  */
 
 /**
- * Contains the main classes for annotation support in Axon Framework. These classes are typically independent of the
- * type of annotated handler (e.g. event handler, command handler).
+ * Annotations and markers used within the common module.
  */
+@NullMarked
 package org.axonframework.common.annotation;
+
+import org.jspecify.annotations.NullMarked;

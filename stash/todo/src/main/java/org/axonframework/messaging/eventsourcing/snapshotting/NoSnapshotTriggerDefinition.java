@@ -18,7 +18,6 @@ package org.axonframework.messaging.eventsourcing.snapshotting;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of {@link SnapshotTriggerDefinition} that doesn't trigger snapshots at all.
@@ -36,14 +35,14 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
     public static final SnapshotTrigger TRIGGER = new NoSnapshotTrigger();
 
     @Override
-    public SnapshotTrigger prepareTrigger(@NonNull Class<?> aggregateType) {
+    public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {
         return TRIGGER;
     }
 
     private static class NoSnapshotTrigger implements SnapshotTrigger {
 
         @Override
-        public void eventHandled(@NonNull EventMessage msg) {
+        public void eventHandled(EventMessage msg) {
             // No operation necessary for a no-op implementation.
         }
 

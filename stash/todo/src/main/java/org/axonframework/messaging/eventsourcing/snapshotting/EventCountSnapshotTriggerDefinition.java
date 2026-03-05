@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. A snapshot is
@@ -54,12 +53,12 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
     }
 
     @Override
-    public SnapshotTrigger prepareTrigger(@NonNull Class<?> aggregateType) {
+    public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {
         return new EventCountSnapshotTrigger(snapshotter, aggregateType, threshold);
     }
 
     @Override
-    public SnapshotTrigger reconfigure(@NonNull Class<?> aggregateType, @NonNull SnapshotTrigger trigger) {
+    public SnapshotTrigger reconfigure(Class<?> aggregateType, SnapshotTrigger trigger) {
         if (trigger instanceof EventCountSnapshotTrigger) {
             ((EventCountSnapshotTrigger) trigger).setSnapshotter(snapshotter);
             return trigger;

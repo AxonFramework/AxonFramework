@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -51,7 +50,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param type    The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload The payload for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@NonNull MessageType type,
+    public GenericCommandMessage(MessageType type,
                                  @Nullable Object payload) {
         this(type, payload, Metadata.emptyInstance());
     }
@@ -63,9 +62,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param payload  The payload for this {@link CommandMessage}.
      * @param metadata The metadata for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@NonNull MessageType type,
+    public GenericCommandMessage(MessageType type,
                                  @Nullable Object payload,
-                                 @NonNull Map<String, String> metadata) {
+                                 Map<String, String> metadata) {
         this(new GenericMessage(type, payload, metadata));
     }
 
@@ -81,9 +80,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@NonNull MessageType type,
-                                 @NonNull Object payload,
-                                 @NonNull Map<String, String> metadata,
+    public GenericCommandMessage(MessageType type,
+                                 Object payload,
+                                 Map<String, String> metadata,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         this(new GenericMessage(type, payload, metadata), routingKey, priority);
@@ -103,7 +102,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
      *                 {@link Message#metadata() metadata} for the {@link CommandMessage} to reconstruct.
      */
-    public GenericCommandMessage(@NonNull Message delegate) {
+    public GenericCommandMessage(Message delegate) {
         this(delegate, null, null);
     }
 
@@ -124,7 +123,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@NonNull Message delegate,
+    public GenericCommandMessage(Message delegate,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         super(delegate);
@@ -143,17 +142,17 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
     }
 
     @Override
-        public @NonNull CommandMessage withMetadata(@NonNull Map<String, String> metadata) {
+        public CommandMessage withMetadata(Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-        public @NonNull CommandMessage andMetadata(@NonNull Map<String, String> metadata) {
+        public CommandMessage andMetadata(Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-        public @NonNull CommandMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+        public CommandMessage withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

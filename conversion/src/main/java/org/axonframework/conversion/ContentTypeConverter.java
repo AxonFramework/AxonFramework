@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -35,7 +34,6 @@ public interface ContentTypeConverter<S, T> {
      *
      * @return The expected type of input data for this {@code ContentTypeConverter} to {@link #convert(Object)}.
      */
-    @NonNull
     Class<S> expectedSourceType();
 
     /**
@@ -43,7 +41,6 @@ public interface ContentTypeConverter<S, T> {
      *
      * @return The type of output for this {@code ContentTypeConverter} to {@link #convert(Object)} into.
      */
-    @NonNull
     Class<T> targetType();
 
     /**
@@ -52,6 +49,5 @@ public interface ContentTypeConverter<S, T> {
      * @param input The object of generic type {@code S} to convert into an object of generic type {@code T}.
      * @return The converted version of the given {@code input} in type {@code T}.
      */
-    @Nullable
-    T convert(@Nullable S input);
+    @Nullable T convert(@Nullable S input);
 }

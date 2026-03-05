@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,7 +36,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  */
 class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
+    private final AtomicReference<@Nullable MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
     private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
@@ -48,8 +49,8 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
      * @param onError  A {@link Function} providing the replacement {@link MessageStream stream} to continue from if the
      *                 given {@code delegate} completes exceptionally.
      */
-    OnErrorContinueMessageStream(@NonNull MessageStream<M> delegate,
-                                 @NonNull Function<Throwable, MessageStream<M>> onError) {
+    OnErrorContinueMessageStream(MessageStream<M> delegate,
+                                 Function<Throwable, MessageStream<M>> onError) {
         super(delegate);
         this.onError = onError;
     }
@@ -60,7 +61,7 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         resolveCurrentDelegate().setCallback(callback);
         this.callback.set(callback);
     }

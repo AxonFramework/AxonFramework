@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.DescribableComponent;
@@ -53,8 +52,7 @@ public interface QueryBusConnector extends DescribableComponent {
      * @see QueryBus#query(QueryMessage, ProcessingContext)
      * @return the stream of responses for the query
      */
-    @NonNull
-    MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query,
+    MessageStream<QueryResponseMessage> query(QueryMessage query,
                                               @Nullable ProcessingContext context);
 
     /**
@@ -66,8 +64,7 @@ public interface QueryBusConnector extends DescribableComponent {
      * @see QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)
      * @return the stream of responses for the query
      */
-    @NonNull
-    MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
+    MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
 
@@ -83,7 +80,7 @@ public interface QueryBusConnector extends DescribableComponent {
      * @return A {@code CompletableFuture} that completes successfully when this connector subscribed to the given
      * {@code name}.
      */
-    CompletableFuture<Void> subscribe(@NonNull QualifiedName name);
+    CompletableFuture<Void> subscribe(QualifiedName name);
 
     /**
      * Unsubscribes this connector from queries with the given {@code name}.
@@ -91,7 +88,7 @@ public interface QueryBusConnector extends DescribableComponent {
      * @param name The {@link org.axonframework.messaging.core.QualifiedName} of the {@link QueryMessage#type()} to unsubscribe from.
      * @return {@code true} if unsubscribing was successful, {@code false} otherwise.
      */
-    boolean unsubscribe(@NonNull QualifiedName name);
+    boolean unsubscribe(QualifiedName name);
 
 
     /**
@@ -99,7 +96,7 @@ public interface QueryBusConnector extends DescribableComponent {
      *
      * @param handler The handler responsible for managing incoming queries.
      */
-    void onIncomingQuery(@NonNull Handler handler);
+    void onIncomingQuery(Handler handler);
 
     /**
      * Defines a handler for processing query messages and managing subscription queries.
@@ -114,7 +111,7 @@ public interface QueryBusConnector extends DescribableComponent {
          * @param query    The query message to handle.
          * @return a MessageStream containing the responses for the query
          */
-        MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query);
+        MessageStream<QueryResponseMessage> query(QueryMessage query);
 
         /**
          * Registers an update handler for a given subscription query message and its associated update sender.
@@ -123,9 +120,8 @@ public interface QueryBusConnector extends DescribableComponent {
          * @param updateCallback The callback responsible for sending update back to the subscription.
          * @return A {@link Registration} instance that can be used to deregister the update handler.
          */
-        @NonNull
-        Registration registerUpdateHandler(@NonNull QueryMessage subscriptionQueryMessage,
-                                           @NonNull UpdateCallback updateCallback);
+        Registration registerUpdateHandler(QueryMessage subscriptionQueryMessage,
+                                           UpdateCallback updateCallback);
 
     }
 
@@ -149,8 +145,7 @@ public interface QueryBusConnector extends DescribableComponent {
          *         handled. If the update cannot be processed, the returned future will complete
          *         exceptionally.
          */
-        @NonNull
-        CompletableFuture<Void> sendUpdate(@NonNull SubscriptionQueryUpdateMessage update);
+        CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update);
 
         /**
          * Completes the processing of a subscription query gracefully.
@@ -172,7 +167,7 @@ public interface QueryBusConnector extends DescribableComponent {
          *              subscription query to terminate.
          * @return A {@link CompletableFuture} that completes exceptionally with the provided cause.
          */
-        CompletableFuture<Void> completeExceptionally(@NonNull Throwable cause);
+        CompletableFuture<Void> completeExceptionally(Throwable cause);
     }
 
     // endregion [Connector]

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Collections;
@@ -40,8 +39,8 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-record TagAndTypeFilteredEventCriteria(@NonNull Set<QualifiedName> types,
-                                       @NonNull Set<Tag> tags) implements EventCriteria, EventCriterion {
+record TagAndTypeFilteredEventCriteria(Set<QualifiedName> types,
+                                       Set<Tag> tags) implements EventCriteria, EventCriterion {
 
     /**
      * Constructs an {@link EventCriteria} that matches against given {@code types} and the given {@code tags}. If the
@@ -51,8 +50,8 @@ record TagAndTypeFilteredEventCriteria(@NonNull Set<QualifiedName> types,
      * @param types The types that this criteria instance matches with.
      * @param tags  The tags that events are expected to have.
      */
-    TagAndTypeFilteredEventCriteria(@NonNull Set<QualifiedName> types,
-                                    @NonNull Set<Tag> tags) {
+    TagAndTypeFilteredEventCriteria(Set<QualifiedName> types,
+                                    Set<Tag> tags) {
         this.types = Set.copyOf(requireNonNull(types, "The types cannot be null"));
         this.tags = Set.copyOf(requireNonNull(tags, "The tags cannot be null"));
     }
@@ -76,7 +75,7 @@ record TagAndTypeFilteredEventCriteria(@NonNull Set<QualifiedName> types,
     }
 
     @Override
-    public boolean matches(@NonNull QualifiedName type, @NonNull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return matchesType(type) && matchesTags(tags);
     }
 

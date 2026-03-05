@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
@@ -68,9 +67,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @param settings             The map of processor settings, keyed by processor name.
      * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(@NonNull List<ProcessorDefinition> processorDefinitions,
-                                         @NonNull Map<String, EventProcessorSettings> settings,
-                                         @NonNull Configuration axonConfiguration) {
+    public DefaultProcessorModuleFactory(List<ProcessorDefinition> processorDefinitions,
+                                         Map<String, EventProcessorSettings> settings,
+                                         Configuration axonConfiguration) {
         this.processorDefinitions = processorDefinitions;
         this.allSettings = settings;
         this.axonConfiguration = axonConfiguration;
@@ -83,9 +82,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@link #assignedProcessor(ProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
-    @NonNull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 

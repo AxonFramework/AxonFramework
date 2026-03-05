@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ModuleBuilder;
@@ -88,7 +87,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @param <E>        The type of the event-sourced entity being built.
      * @return The {@link MessagingModelPhase} phase of this builder, for a fluent API.
      */
-    static <ID, E> MessagingModelPhase<ID, E> declarative(@NonNull Class<ID> idType, @NonNull Class<E> entityType) {
+    static <ID, E> MessagingModelPhase<ID, E> declarative(Class<ID> idType, Class<E> entityType) {
         return new SimpleEventSourcedEntityModule<>(idType, entityType);
     }
 
@@ -105,7 +104,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @throws IllegalArgumentException When the given {@code entityType} is not annotated with
      *                                  {@link EventSourcedEntity}.
      */
-    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(@NonNull Class<ID> idType, @NonNull Class<E> entityType) {
+    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(Class<ID> idType, Class<E> entityType) {
         return new AnnotatedEventSourcedEntityModule<>(idType, entityType);
     }
 
@@ -128,7 +127,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          *                         {@link EntityMetamodel} for the event-sourced entity.
          * @return The {@link EntityFactoryPhase} phase of this builder, for a fluent API.
          */
-        EntityFactoryPhase<ID, E> messagingModel(@NonNull EntityMetamodelConfigurationBuilder<E> metamodelFactory);
+        EntityFactoryPhase<ID, E> messagingModel(EntityMetamodelConfigurationBuilder<E> metamodelFactory);
     }
 
     /**
@@ -153,7 +152,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The {@link CriteriaResolver} phase of this builder, for a fluent API.
          */
         CriteriaResolverPhase<ID, E> entityFactory(
-                @NonNull ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
+                ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
         );
     }
 
@@ -183,7 +182,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The {@link EntityIdResolverPhase} phase of this builder, for a fluent API.
          */
         EntityIdResolverPhase<ID, E> criteriaResolver(
-                @NonNull ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
+                ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
         );
     }
 
@@ -212,7 +211,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The finished module.
          */
         EventSourcedEntityModule<ID, E> entityIdResolver(
-                @NonNull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
+                ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
         );
     }
 }

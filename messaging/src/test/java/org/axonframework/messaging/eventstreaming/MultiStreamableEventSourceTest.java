@@ -330,7 +330,7 @@ class MultiStreamableEventSourceTest {
         AtomicBoolean streamOpened = new AtomicBoolean(false);
         StreamableEventSource source1 = new AsyncInMemoryStreamableEventSource() {
             @Override
-            public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+            public @NonNull MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                                     @Nullable ProcessingContext context) {
                 if (streamOpened.compareAndSet(false, true)) {
                     return super.open(condition, context).onClose(() -> streamClosed.set(true));
@@ -340,7 +340,7 @@ class MultiStreamableEventSourceTest {
         };
         StreamableEventSource source2 = new AsyncInMemoryStreamableEventSource() {
             @Override
-            public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+            public @NonNull MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                                     @Nullable ProcessingContext context) {
                 if (streamOpened.compareAndSet(false, true)) {
                     return super.open(condition, context).onClose(() -> streamClosed.set(true));

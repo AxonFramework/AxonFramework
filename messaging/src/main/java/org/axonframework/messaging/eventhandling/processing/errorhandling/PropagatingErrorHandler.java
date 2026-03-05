@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.EventProcessingException;
 
 /**
@@ -42,7 +41,7 @@ public enum PropagatingErrorHandler implements ErrorHandler {
     }
 
     @Override
-    public void handleError(@NonNull ErrorContext errorContext) throws Exception {
+    public void handleError(ErrorContext errorContext) throws Exception {
         Throwable error = errorContext.error();
         if (error instanceof Error) {
             throw (Error) error;

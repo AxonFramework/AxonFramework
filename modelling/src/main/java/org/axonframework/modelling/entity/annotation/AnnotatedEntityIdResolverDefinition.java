@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -37,10 +36,10 @@ import org.axonframework.modelling.annotation.TargetEntityId;
 public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefinition {
 
     @Override
-    public <E, ID> EntityIdResolver<ID> createIdResolver(@NonNull Class<E> entityType,
-                                                         @NonNull Class<ID> idType,
-                                                         @NonNull AnnotatedEntityMetamodel<E> entityMetamodel,
-                                                         @NonNull Configuration configuration) {
+    public <E, ID> EntityIdResolver<ID> createIdResolver(Class<E> entityType,
+                                                         Class<ID> idType,
+                                                         AnnotatedEntityMetamodel<E> entityMetamodel,
+                                                         Configuration configuration) {
         return new AnnotatedEntityIdResolver<>(
                 entityMetamodel,
                 idType,

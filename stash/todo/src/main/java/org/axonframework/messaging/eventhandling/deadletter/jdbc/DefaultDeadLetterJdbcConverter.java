@@ -26,7 +26,6 @@ import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
-import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;

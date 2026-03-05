@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * Classes in support of testing Axon based applications.
+ * Root package for Axon Test. Provides test fixtures and utilities for testing Axon-based applications.
  */
+@NullMarked
 package org.axonframework.test;
+
+import org.jspecify.annotations.NullMarked;

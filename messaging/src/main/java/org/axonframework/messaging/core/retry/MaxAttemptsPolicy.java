@@ -20,7 +20,6 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 
 import java.util.List;
-import org.jspecify.annotations.NonNull;
 
 /**
  * A retry policy that caps another policy to maximum number of retries
@@ -42,8 +41,8 @@ public class MaxAttemptsPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@NonNull Message message, @NonNull Throwable cause,
-                             @NonNull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(Message message, Throwable cause,
+                             List<Class<? extends Throwable>[]> previousFailures) {
         if (previousFailures.size() < maxAttempts) {
             return delegate.defineFor(message, cause, previousFailures);
         } else {
@@ -52,7 +51,7 @@ public class MaxAttemptsPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("maxAttempts", maxAttempts);
     }

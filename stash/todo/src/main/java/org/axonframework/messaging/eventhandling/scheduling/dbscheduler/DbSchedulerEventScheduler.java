@@ -48,7 +48,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -249,7 +248,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return eventMessage;
     }
 
-    private EventMessage asEventMessage(@NonNull Object event) {
+    private EventMessage asEventMessage(Object event) {
         if (event instanceof EventMessage e) {
             return e;
         }

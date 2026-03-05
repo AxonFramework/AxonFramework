@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.util.ExecutorServiceFactory;
 
@@ -43,7 +42,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public record DistributedCommandBusConfiguration(
         int loadFactor,
         int commandThreads,
-        @NonNull ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory
+        ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory
 ) {
 
     private static final int DEFAULT_LOAD_FACTOR = 100;
@@ -104,7 +103,7 @@ public record DistributedCommandBusConfiguration(
      * @param executorService The {@link ExecutorService} to use for the distributed command bus.
      * @return The configuration itself, for fluent API usage.
      */
-    public DistributedCommandBusConfiguration executorService(@NonNull ExecutorService executorService) {
+    public DistributedCommandBusConfiguration executorService(ExecutorService executorService) {
         Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
         return new DistributedCommandBusConfiguration(loadFactor, commandThreads, (config, queue) -> executorService);
     }

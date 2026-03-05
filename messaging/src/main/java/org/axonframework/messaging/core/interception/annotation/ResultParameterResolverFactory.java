@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -96,7 +95,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     @Nullable
     @Override
-    public ParameterResolver<Object> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters,
+    public ParameterResolver<Object> createInstance(Executable executable, Parameter[] parameters,
                                                     int parameterIndex) {
         if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
                 && AnnotationUtils.isAnnotationPresent(executable, ResultHandler.class)) {
@@ -113,14 +112,13 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             this.parameterType = resultType;
         }
 
-        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(REGISTERED_RESULT.get());
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             // we must always match, because this parameter is based on execution result
             Object registeredResult = REGISTERED_RESULT.get();
 

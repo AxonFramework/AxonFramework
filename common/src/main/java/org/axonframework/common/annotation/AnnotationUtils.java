@@ -16,7 +16,6 @@
 
 package org.axonframework.common.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 
@@ -214,25 +213,29 @@ public final class AnnotationUtils {
                                                        Map<String, Object> attributes,
                                                        boolean overrideOnly) {
         Annotation ann = getAnnotation(target, annotationType);
-        if (ann == null && visited.add(target.getName())) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                if (collectAnnotationAttributes(metaAnn.annotationType(),
-                                                annotationType,
-                                                visited,
-                                                attributes,
-                                                overrideOnly)) {
-                    collectAttributes(metaAnn, attributes, overrideOnly);
-                    return true;
-                }
-            }
-        } else if (ann != null) {
+        if (ann != null) {
             collectAttributes(ann, attributes);
             return true;
+        }
+
+        if (!visited.add(target.getName())) {
+            return false;
+        }
+
+        for (Annotation metaAnn : target.getAnnotations()) {
+            if (collectAnnotationAttributes(metaAnn.annotationType(),
+                                            annotationType,
+                                            visited,
+                                            attributes,
+                                            overrideOnly)) {
+                collectAttributes(metaAnn, attributes, overrideOnly);
+                return true;
+            }
         }
         return false;
     }
 
-    private static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
+    private @Nullable static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
         for (Annotation annotation : target.getAnnotations()) {
             if (annotationType.equals(annotation.annotationType().getName())) {
                 return annotation;
@@ -325,7 +328,7 @@ public final class AnnotationUtils {
      * @param annotationType The annotation type to check.
      * @return Predicate that checks whether the given annotation is present.
      */
-        public @NonNull static Predicate<Member> isAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
+    public static Predicate<Member> isAnnotatedWith(Class<? extends Annotation> annotationType) {
         return it -> it instanceof AnnotatedElement && isAnnotationPresent((AnnotatedElement) it, annotationType);
     }
 
@@ -335,7 +338,7 @@ public final class AnnotationUtils {
      * @param annotationType An annotated type to check for.
      * @return The predicate.
      */
-        public @NonNull static Predicate<Object> isTypeAnnotatedWith(@NonNull Class<? extends Annotation> annotationType) {
+    public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
         return instance -> isAnnotationPresent(instance.getClass(), annotationType);
     }
 
@@ -348,9 +351,9 @@ public final class AnnotationUtils {
      * @param value          The value of the attribute.
      * @return The predicate.
      */
-        public @NonNull static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
-            @NonNull Class<? extends Annotation> annotationType,
-            @NonNull String attributeName,
+    public static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
+            Class<? extends Annotation> annotationType,
+            String attributeName,
             @Nullable Object value) {
         return instance -> findAnnotationAttributes(instance.getClass(), annotationType)
                 .filter(attribute -> (value != null)

@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.spring.util;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MySQLContainer;
@@ -53,12 +54,12 @@ public class MysqlTestContainerExtension extends MySQLContainer<MysqlTestContain
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    public void beforeAll(@NonNull ExtensionContext extensionContext) throws Exception {
         MysqlTestContainerExtension.getInstance().start();
     }
 
     @Override
-    public void afterAll(ExtensionContext extensionContext) throws Exception {
+    public void afterAll(@NonNull ExtensionContext extensionContext) throws Exception {
         MysqlTestContainerExtension.getInstance().stop();
     }
 }

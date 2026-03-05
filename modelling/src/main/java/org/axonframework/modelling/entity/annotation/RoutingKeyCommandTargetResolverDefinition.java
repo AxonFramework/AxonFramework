@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
@@ -45,11 +44,10 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 public class RoutingKeyCommandTargetResolverDefinition implements CommandTargetResolverDefinition {
 
 
-    @NonNull
     @Override
     public <E> CommandTargetResolver<E> createCommandTargetResolver(
-            @NonNull AnnotatedEntityMetamodel<E> metamodel,
-            @NonNull Member member) {
+            AnnotatedEntityMetamodel<E> metamodel,
+            Member member) {
         Optional<String> messageRoutingField = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member);
         Optional<String> entityRoutingField = RoutingKeyUtils.getEntityRoutingKey(metamodel.entityType());
         if (messageRoutingField.isPresent() && entityRoutingField.isPresent()) {

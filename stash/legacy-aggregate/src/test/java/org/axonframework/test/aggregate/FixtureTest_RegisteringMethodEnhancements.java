@@ -115,20 +115,20 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Nullable
         @Override
-        public ParameterResolver<AtomicBoolean> createInstance(@NonNull Executable executable,
-                                                               @NonNull Parameter[] parameters,
+        public ParameterResolver<AtomicBoolean> createInstance(Executable executable,
+                                                               Parameter[] parameters,
                                                                int parameterIndex) {
             return AtomicBoolean.class.equals(parameters[parameterIndex].getType()) ? this : null;
         }
 
         @NonNull
         @Override
-        public CompletableFuture<AtomicBoolean> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<AtomicBoolean> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(assertion);
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             Message message = Message.fromContext(context);
             return message.payloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
@@ -144,10 +144,10 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public <T> Optional<MessageHandlingMember<T>> createHandler(
-                @NonNull Class<T> declaringType,
-                @NonNull Method method,
-                @NonNull ParameterResolverFactory parameterResolverFactory,
-                @NonNull Function<Object, MessageStream<?>> messageStreamResolver
+                Class<T> declaringType,
+                Method method,
+                ParameterResolverFactory parameterResolverFactory,
+                Function<Object, MessageStream<?>> messageStreamResolver
         ) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
@@ -166,7 +166,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public @NonNull
-        <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+        <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,
             //  only that this method is called to ensure its part of the FixtureConfiguration.

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.EventCoordinator;
@@ -61,8 +60,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public record AggregateBasedJpaEventStorageEngineConfiguration(
         @Nullable PersistenceExceptionResolver persistenceExceptionResolver,
-        @NonNull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
-        @NonNull EventCoordinator eventCoordinator,
+        Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
+        EventCoordinator eventCoordinator,
         int batchSize,
         int gapCleaningThreshold,
         int maxGapOffset,
@@ -141,7 +140,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @return A new configuration instance, for fluent interfacing.
      */
     public AggregateBasedJpaEventStorageEngineConfiguration finalBatchPredicate(
-            @NonNull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate
+            Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate
     ) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     finalBatchPredicate,
@@ -162,7 +161,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @return A new configuration instance, for fluent interfacing.
      */
     public AggregateBasedJpaEventStorageEngineConfiguration eventCoordinator(
-            @NonNull EventCoordinator eventCoordinator) {
+            EventCoordinator eventCoordinator) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     this.finalBatchPredicate,
                                                                     eventCoordinator,

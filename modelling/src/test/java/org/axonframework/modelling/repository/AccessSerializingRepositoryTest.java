@@ -18,6 +18,7 @@ package org.axonframework.modelling.repository;
 
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -165,7 +166,7 @@ class AccessSerializingRepositoryTest {
         }
 
         @Override
-        public String applyStateChange(UnaryOperator<String> change) {
+        public String applyStateChange(@NonNull UnaryOperator<String> change) {
             throw new UnsupportedOperationException("Not implemented");
         }
     }

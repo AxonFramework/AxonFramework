@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 
@@ -39,9 +38,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 5.0.0
  */
 public record JdbcTokenStoreConfiguration(
-        @NonNull TokenSchema schema,
-        @NonNull TemporalAmount claimTimeout,
-        @NonNull String nodeId
+        TokenSchema schema,
+        TemporalAmount claimTimeout,
+        String nodeId
 ) {
 
     /**
@@ -73,7 +72,7 @@ public record JdbcTokenStoreConfiguration(
      * @param schema a {@link TokenSchema} which describes a JDBC token entry for this {@link TokenStore}
      * @return The configuration itself, for fluent API usage.
      */
-    public JdbcTokenStoreConfiguration schema(@NonNull TokenSchema schema) {
+    public JdbcTokenStoreConfiguration schema(TokenSchema schema) {
         assertNonNull(schema, "The TokenSchema may not be null.");
         return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }
@@ -88,7 +87,7 @@ public record JdbcTokenStoreConfiguration(
      * @param claimTimeout a timeout specifying the time after which this process will force a claim
      * @return The configuration itself, for fluent API usage.
      */
-    public JdbcTokenStoreConfiguration claimTimeout(@NonNull TemporalAmount claimTimeout) {
+    public JdbcTokenStoreConfiguration claimTimeout(TemporalAmount claimTimeout) {
         assertNonNull(claimTimeout, "The claim timeout may not be null");
         return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }
@@ -101,7 +100,7 @@ public record JdbcTokenStoreConfiguration(
      * @param nodeId the id as a {@link String} to identify ownership of the tokens
      * @return The configuration itself, for fluent API usage.
      */
-    public JdbcTokenStoreConfiguration nodeId(@NonNull String nodeId) {
+    public JdbcTokenStoreConfiguration nodeId(String nodeId) {
         assertNonEmpty(nodeId, "The nodeId may not be null or empty.");
         return new JdbcTokenStoreConfiguration(schema, claimTimeout, nodeId);
     }

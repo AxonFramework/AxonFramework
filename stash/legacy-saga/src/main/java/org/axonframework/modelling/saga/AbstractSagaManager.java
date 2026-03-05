@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.eventhandling.EventHandlerInvoker;
@@ -80,7 +79,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void handle(@NonNull EventMessage event, @NonNull ProcessingContext context, @NonNull Segment segment)
+    public void handle(EventMessage event, ProcessingContext context, Segment segment)
             throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event, context);
         List<String> sagaIds =

@@ -16,8 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -62,21 +60,21 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
     }
 
     private HierarchicalLifecycleRegistry(
-            @NonNull LifecycleRegistry parentLifecycleRegistry,
-            @NonNull Function<LifecycleRegistry, Configuration> childConfigurationBuilder) {
+            LifecycleRegistry parentLifecycleRegistry,
+            Function<LifecycleRegistry, Configuration> childConfigurationBuilder) {
         this.parentLifecycleRegistry = requireNonNull(parentLifecycleRegistry,
                                                       "parentLifecycleRegistry may not be null");
         this.childConfiguration = childConfigurationBuilder.apply(this);
     }
 
     @Override
-    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
+    public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
         parentLifecycleRegistry.registerLifecyclePhaseTimeout(timeout, timeUnit);
         return this;
     }
 
     @Override
-    public LifecycleRegistry onStart(int phase, @NonNull LifecycleHandler startHandler) {
+    public LifecycleRegistry onStart(int phase, LifecycleHandler startHandler) {
         parentLifecycleRegistry.onStart(phase, parentConfiguration -> {
             return startHandler.run(childConfiguration);
         });
@@ -84,7 +82,7 @@ public class HierarchicalLifecycleRegistry implements LifecycleRegistry {
     }
 
     @Override
-    public LifecycleRegistry onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
+    public LifecycleRegistry onShutdown(int phase, LifecycleHandler shutdownHandler) {
         parentLifecycleRegistry.onShutdown(phase, parentConfiguration -> {
             return shutdownHandler.run(childConfiguration);
         });

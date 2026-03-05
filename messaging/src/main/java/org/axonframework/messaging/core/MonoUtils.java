@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream.Single;
 import reactor.core.publisher.Mono;
 
@@ -44,7 +43,7 @@ public abstract class MonoUtils {
      * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
      */
-    public static <M extends Message> Single<M> asSingle(@NonNull Mono<M> mono) {
+    public static <M extends Message> Single<M> asSingle(Mono<M> mono) {
         return MessageStream.fromFuture(mono.toFuture());
     }
 
@@ -63,8 +62,8 @@ public abstract class MonoUtils {
      * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
      */
-    public static <M extends Message> Single<M> asSingle(@NonNull Mono<M> mono,
-                                                         @NonNull Function<M, Context> contextSupplier) {
+    public static <M extends Message> Single<M> asSingle(Mono<M> mono,
+                                                         Function<M, Context> contextSupplier) {
         return MessageStream.fromFuture(mono.toFuture(), contextSupplier);
     }
 

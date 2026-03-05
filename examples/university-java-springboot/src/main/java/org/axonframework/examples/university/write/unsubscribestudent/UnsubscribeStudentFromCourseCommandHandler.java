@@ -91,7 +91,7 @@ class UnsubscribeStudentFromCourseCommandHandler {
     private static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
         @Override
-                public @NonNull SubscriptionId resolve(@NonNull Message command, @NonNull ProcessingContext context) {
+        public @NonNull SubscriptionId resolve(@NonNull Message command, @NonNull ProcessingContext context) {
             var converter = context.component(MessageConverter.class);
             UnsubscribeStudentFromCourse payload = command.payloadAs(UnsubscribeStudentFromCourse.class, converter);
             if (payload == null) {

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.config.ProcessorDefinition.ProcessorDefinitionConfigurationStep;
@@ -50,27 +49,26 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
      * @param name The processor name.
      * @param mode The processor mode (type).
      */
-    public ProcessorDefinitionBuilder(@NonNull String name, EventProcessorSettings.@NonNull ProcessorMode mode) {
+    public ProcessorDefinitionBuilder(String name, EventProcessorSettings.ProcessorMode mode) {
         Assert.notNull(mode, () -> "Processor mode must not be null");
         this.mode = mode;
         this.name = Assert.nonEmpty(name, "Processor name must not be null");
     }
 
     @Override
-        public @NonNull ProcessorDefinition withConfiguration(@NonNull Function<T, T> configurer) {
+        public ProcessorDefinition withConfiguration(Function<T, T> configurer) {
         Assert.notNull(configurer, () -> "Configuration customizer must not be null");
         return new CompletedProcessorDefinitionImpl<>(mode, name, selector, configurer);
     }
 
     @Override
-        public @NonNull ProcessorDefinition withDefaultSettings() {
+        public ProcessorDefinition withDefaultSettings() {
         return withConfiguration(Function.identity());
     }
 
     @Override
-    @NonNull
     public ProcessorDefinitionConfigurationStep<T> assigningHandlers(
-            @NonNull Predicate<ProcessorDefinition.EventHandlerDescriptor> selector
+            Predicate<ProcessorDefinition.EventHandlerDescriptor> selector
     ) {
         Assert.notNull(selector, () -> "Selector predicate must not be null");
         this.selector = selector;
@@ -84,13 +82,12 @@ class ProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
             Function<T, T> configurationCustomizer) implements ProcessorDefinition {
 
         @Override
-        public boolean matchesSelector(@NonNull EventHandlerDescriptor eventHandlerDescriptor) {
+        public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
             return selector.test(eventHandlerDescriptor);
         }
 
-        @NonNull
         @Override
-        public EventProcessorConfiguration applySettings(@NonNull EventProcessorConfiguration settings) {
+        public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
             //noinspection unchecked
             return configurationCustomizer.apply((T) settings);
         }

@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
@@ -141,7 +140,7 @@ public class JacksonSerializer implements Serializer {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T convert(@Nullable Object source, @NonNull Type targetRepresentation) {
+    public <T> T convert(@Nullable Object source, Type targetRepresentation) {
         if (source == null) {
             return null;
         }
@@ -176,7 +175,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public <T> SerializedObject<T> serialize(Object object, @NonNull Class<T> expectedRepresentation) {
+    public <T> SerializedObject<T> serialize(@Nullable Object object, Class<T> expectedRepresentation) {
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
@@ -224,13 +223,13 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public <T> boolean canSerializeTo(@NonNull Class<T> expectedRepresentation) {
+    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
         return JsonNode.class.equals(expectedRepresentation) || String.class.equals(expectedRepresentation) ||
                 converter.canConvert(byte[].class, expectedRepresentation);
     }
 
     @Override
-    public <S, T> T deserialize(@NonNull SerializedObject<S> serializedObject) {
+    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         try {
             if (SerializedType.emptyType().equals(serializedObject.getType())) {
                 return null;
@@ -260,7 +259,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(@NonNull SerializedType type) {
+    public Class classForType(SerializedType type) {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }

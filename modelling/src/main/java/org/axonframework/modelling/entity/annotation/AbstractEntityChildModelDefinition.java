@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -57,12 +56,11 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
 @Internal
 public abstract class AbstractEntityChildModelDefinition implements EntityChildModelDefinition {
 
-    @NonNull
     @Override
     public <C, P> Optional<EntityChildMetamodel<C, P>> createChildDefinition(
-            @NonNull Class<P> parentClass,
-            @NonNull AnnotatedEntityMetamodelFactory metamodelFactory,
-            @NonNull Member member
+            Class<P> parentClass,
+            AnnotatedEntityMetamodelFactory metamodelFactory,
+            Member member
     ) {
         Map<String, Object> attributes = findAnnotationAttributes((AnnotatedElement) member, EntityMember.class)
                 .orElse(null);
@@ -93,7 +91,7 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param memberType The type of the member to check.
      * @return Should return {@code true} if the member type is supported, {@code false} otherwise.
      */
-    protected abstract boolean isMemberTypeSupported(@NonNull Class<?> memberType);
+    protected abstract boolean isMemberTypeSupported(Class<?> memberType);
 
     /**
      * Returns the actual child type. If it needs to be retrieved from a generic, this method should do so. This is used
@@ -103,7 +101,7 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param member The member to retrieve the child type from.
      * @return The child type.
      */
-    protected abstract Class<?> getChildTypeFromMember(@NonNull Member member);
+    protected abstract Class<?> getChildTypeFromMember(Member member);
 
     /**
      * Creates a new {@link EntityChildMetamodel} for the given parent class and child metamodel. This method
@@ -121,12 +119,12 @@ public abstract class AbstractEntityChildModelDefinition implements EntityChildM
      * @param <P>                   The type of the parent entity.
      * @return A new {@link EntityChildMetamodel} for the given parent class and child metamodel.
      */
-        protected @NonNull abstract <C, P> EntityChildMetamodel<C, P> doCreate(
-            @NonNull Class<P> parentClass,
-            @NonNull EntityMetamodel<C> entityMetamodel,
-            @NonNull String fieldName,
-            @NonNull EventTargetMatcher<C> eventTargetMatcher,
-            @NonNull CommandTargetResolver<C> commandTargetResolver);
+        protected abstract <C, P> EntityChildMetamodel<C, P> doCreate(
+            Class<P> parentClass,
+            EntityMetamodel<C> entityMetamodel,
+            String fieldName,
+            EventTargetMatcher<C> eventTargetMatcher,
+            CommandTargetResolver<C> commandTargetResolver);
 
     private EventTargetMatcherDefinition constructForwardingDefinition(Map<String, Object> attributes) {
         //noinspection unchecked

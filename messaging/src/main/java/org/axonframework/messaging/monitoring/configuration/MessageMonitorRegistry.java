@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
@@ -59,8 +58,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for generic {@link Message} types
      * @return the updated MessageMonitorRegistry instance for fluent configuration
      */
-    @NonNull
-    MessageMonitorRegistry registerMonitor(final @NonNull ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
+    MessageMonitorRegistry registerMonitor(final ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specific for {@link EventMessage} types using the supplied
@@ -70,8 +68,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       instance for {@link EventMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing fluent configuration
      */
-    @NonNull
-    MessageMonitorRegistry registerEventMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder);
+    MessageMonitorRegistry registerEventMonitor(final ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for monitoring the processing of {@link CommandMessage} instances.
@@ -81,8 +78,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link CommandMessage} types.
      * @return the updated MessageMonitorRegistry instance, allowing for a fluent configuration approach.
      */
-    @NonNull
-    MessageMonitorRegistry registerCommandMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder);
+    MessageMonitorRegistry registerCommandMonitor(final ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link QueryMessage} types using the provided
@@ -93,8 +89,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link QueryMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @NonNull
-    MessageMonitorRegistry registerQueryMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
+    MessageMonitorRegistry registerQueryMonitor(final ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types using the
@@ -105,8 +100,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link SubscriptionQueryUpdateMessage} types
      * @return the updated MessageMonitorRegistry instance, allowing for fluent configuration
      */
-    @NonNull
-    MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final @NonNull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
+    MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(final ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder);
 
     /**
      * Retrieves a {@link MessageMonitor} dedicated for monitoring {@link CommandMessage} processing.
@@ -114,7 +108,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} instance used to create the {@link MessageMonitor} instances
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super CommandMessage> commandMonitor(@NonNull Configuration config);
+    MessageMonitor<? super CommandMessage> commandMonitor(Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} specifically designed to monitor the processing of {@link EventMessage} instances.
@@ -122,7 +116,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} instance used to create or retrieve the {@link MessageMonitor} instances
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super EventMessage> eventMonitor(@NonNull Configuration config);
+    MessageMonitor<? super EventMessage> eventMonitor(Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link QueryMessage} instances.
@@ -130,7 +124,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @param config the {@link Configuration} used to create or retrieve the {@link MessageMonitor} for {@link QueryMessage} types
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super QueryMessage> queryMonitor(@NonNull Configuration config);
+    MessageMonitor<? super QueryMessage> queryMonitor(Configuration config);
 
     /**
      * Retrieves a {@link MessageMonitor} for monitoring the processing of {@link SubscriptionQueryUpdateMessage} instances.
@@ -139,5 +133,5 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *               {@link SubscriptionQueryUpdateMessage} types
      * @return {@link MultiMessageMonitor} composed of all registered {@link MessageMonitor}s, or {@link NoOpMessageMonitor}.
      */
-    MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(@NonNull Configuration config);
+    MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(Configuration config);
 }

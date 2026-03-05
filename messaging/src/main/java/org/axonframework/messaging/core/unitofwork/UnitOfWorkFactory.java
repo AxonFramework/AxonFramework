@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -37,7 +35,7 @@ public interface UnitOfWorkFactory {
      *
      * @return A new {@link UnitOfWork} instance.
      */
-        default @NonNull UnitOfWork create() {
+        default UnitOfWork create() {
         return create(UUID.randomUUID().toString(), UnaryOperator.identity());
     }
 
@@ -47,7 +45,7 @@ public interface UnitOfWorkFactory {
      * @param identifier The identifier for the unit of work.
      * @return A new {@link UnitOfWork} instance.
      */
-        default @NonNull UnitOfWork create(@NonNull String identifier) {
+        default UnitOfWork create(String identifier) {
         return create(identifier, UnaryOperator.identity());
     }
 
@@ -59,9 +57,8 @@ public interface UnitOfWorkFactory {
      * @param customization A function to customize the unit of work's configuration.
      * @return A new {@link UnitOfWork} instance.
      */
-    @NonNull
-    UnitOfWork create(@NonNull String identifier,
-                      @NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization);
+    UnitOfWork create(String identifier,
+                      Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization);
 
     /**
      * Creates a new {@link UnitOfWork} with a random identifier and applies the provided customization to its
@@ -70,7 +67,7 @@ public interface UnitOfWorkFactory {
      * @param customization A function to customize the unit of work's configuration.
      * @return A new {@link UnitOfWork} instance.
      */
-        default @NonNull UnitOfWork create(@NonNull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization) {
+        default UnitOfWork create(Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization) {
         return create(UUID.randomUUID().toString(), customization);
     }
 }

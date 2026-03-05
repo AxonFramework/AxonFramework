@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Objects;
 import java.util.Optional;
 
@@ -44,7 +42,7 @@ public class HierarchicalMessageTypeResolver implements MessageTypeResolver {
      * @param secondary The fallback resolver to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
-    public HierarchicalMessageTypeResolver(@NonNull MessageTypeResolver primary, @NonNull MessageTypeResolver secondary) {
+    public HierarchicalMessageTypeResolver(MessageTypeResolver primary, MessageTypeResolver secondary) {
         Objects.requireNonNull(primary, "Primary may not be null.");
         Objects.requireNonNull(secondary, "Fallback may not be null.");
         this.primary = primary;
@@ -52,7 +50,7 @@ public class HierarchicalMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public Optional<MessageType> resolve(@NonNull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         return primary.resolve(payloadType)
                       .or(() -> secondary.resolve(payloadType));
     }

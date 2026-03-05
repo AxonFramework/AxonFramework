@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -36,11 +35,11 @@ public class ComponentOverrideException extends RuntimeException {
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers, potentially {@code null} when unimportant.
      */
-    public ComponentOverrideException(@NonNull Class<?> type, @Nullable String name) {
+    public ComponentOverrideException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 
-    private static String exceptionMessageFor(Class<?> type, String name) {
+    private static String exceptionMessageFor(Class<?> type, @Nullable String name) {
         if (name != null) {
             return "Cannot override Component with type [" + type + "] and name ["
                     + name + "]; it is already registered.";

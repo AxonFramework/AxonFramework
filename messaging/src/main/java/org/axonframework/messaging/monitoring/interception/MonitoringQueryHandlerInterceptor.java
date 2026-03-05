@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
@@ -46,15 +45,14 @@ public class MonitoringQueryHandlerInterceptor implements MessageHandlerIntercep
      *
      * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
-    public MonitoringQueryHandlerInterceptor(final @NonNull MessageMonitor<? super QueryMessage> messageMonitor) {
+    public MonitoringQueryHandlerInterceptor(final MessageMonitor<? super QueryMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;
     }
 
-    @NonNull
     @Override
-    public MessageStream<?> interceptOnHandle(@NonNull QueryMessage message,
-                                              @NonNull ProcessingContext context,
-                                              @NonNull MessageHandlerInterceptorChain<QueryMessage> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(QueryMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<QueryMessage> interceptorChain) {
         if (context.isStarted()) {
             final var monitorCallback = messageMonitor.onMessageIngested(message);
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
@@ -204,7 +203,7 @@ public class EventProcessorProperties {
          * @return pooled-streaming or subscribed mode, falls back to pooled-streaming.
          */
         @Override
-                public EventProcessorSettings.@NonNull ProcessorMode processorMode() {
+        public EventProcessorSettings.ProcessorMode processorMode() {
             if (Mode.SUBSCRIBING.equals(mode)) {
                 return ProcessorMode.SUBSCRIBING;
             }
@@ -337,7 +336,7 @@ public class EventProcessorProperties {
          *
          * @param tokenStore A name of the Spring Bean used for this processor.
          */
-        public void setTokenStore(@NonNull String tokenStore) {
+        public void setTokenStore(String tokenStore) {
             Objects.requireNonNull(tokenStore, "TokenStore cannot be null");
             this.tokenStore = tokenStore;
         }
@@ -348,7 +347,7 @@ public class EventProcessorProperties {
          * @return Name of the token store Spring Bean.
          */
         @Override
-                public @NonNull String tokenStore() {
+                public String tokenStore() {
             return tokenStore;
         }
 

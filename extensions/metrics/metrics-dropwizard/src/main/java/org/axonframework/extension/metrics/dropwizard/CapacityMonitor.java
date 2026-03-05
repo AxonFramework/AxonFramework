@@ -23,7 +23,6 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Snapshot;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 
@@ -88,7 +87,7 @@ public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NonNull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final long start = clock.getTime();
         return new MonitorCallback() {
             @Override

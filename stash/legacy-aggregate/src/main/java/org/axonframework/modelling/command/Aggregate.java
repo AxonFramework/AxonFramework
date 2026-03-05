@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -84,7 +83,7 @@ public interface Aggregate<T> {
      * {@link CommandMessage} yields no results.
      * @throws Exception in case one is triggered during message processing.
      */
-    Object handle(@NonNull Message message, @NonNull ProcessingContext context) throws Exception;
+    Object handle(Message message, ProcessingContext context) throws Exception;
 
     /**
      * Invoke a method on the underlying aggregate root or one of its instances. Use this over

@@ -111,7 +111,6 @@ import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -842,22 +841,22 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(@NonNull String aggregateIdentifier,
-                                         @NonNull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier,
+                                         Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.loadOrCreate(aggregateIdentifier, factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> newInstance(@NonNull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.newInstance(factoryMethod);
             return aggregate;
         }
 
         @Override
-        public Aggregate<T> load(@NonNull String aggregateIdentifier) {
+        public Aggregate<T> load(String aggregateIdentifier) {
             CurrentUnitOfWork.get().onRollback(u -> this.rolledBack = true);
             aggregate = delegate.load(aggregateIdentifier);
             validateIdentifier(aggregateIdentifier, aggregate);
@@ -917,7 +916,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> newInstance(@NonNull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             Assert.state(storedAggregate == null,
                          () -> "Creating an Aggregate while one is already stored. Test fixtures do not allow multiple instances to be stored.");
             storedAggregate = AnnotatedAggregate.initialize(factoryMethod,
@@ -929,7 +928,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> load(@NonNull String aggregateIdentifier) {
+        public Aggregate<T> load(String aggregateIdentifier) {
             if (storedAggregate == null) {
                 throw new AggregateNotFoundException(aggregateIdentifier,
                                                      "Aggregate not found. No aggregate has been stored yet.");
@@ -961,8 +960,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<T> loadOrCreate(@NonNull String aggregateIdentifier,
-                                         @NonNull Callable<T> factoryMethod) throws Exception {
+        public Aggregate<T> loadOrCreate(String aggregateIdentifier,
+                                         Callable<T> factoryMethod) throws Exception {
             if (storedAggregate == null) {
                 return newInstance(factoryMethod);
             }
@@ -974,7 +973,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class RecordingEventStore implements EventStore {
 
 //        @Override
-//        public DomainEventStream readEvents(@NonNull String identifier) {
+//        public DomainEventStream readEvents(String identifier) {
 //            if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
 //                String exceptionMessage = format(
 //                        "The aggregate identifier used in the 'when' step does not resemble the aggregate identifier"
@@ -998,7 +997,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 //        }
 //
 //        @Override
-//        public void publish(@NonNull List<? extends EventMessage> events) {
+//        public void publish(List<? extends EventMessage> events) {
 //            if (CurrentUnitOfWork.isStarted()) {
 //                CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
 //            } else {
@@ -1063,40 +1062,40 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 //        }
 //
 //        @Override
-//        public void storeSnapshot(@NonNull DomainEventMessage snapshot) {
+//        public void storeSnapshot(DomainEventMessage snapshot) {
 //            // A dedicated implementation is not necessary for test fixture.
 //        }
 //
 //        @NonNull
 //        @Override
-//        public Registration subscribe(@NonNull Consumer<List<? extends EventMessage>> eventProcessor) {
+//        public Registration subscribe(Consumer<List<? extends EventMessage>> eventProcessor) {
 //            return () -> true;
 //        }
 //
 //        public @NonNull
 //        Registration registerDispatchInterceptor(
-//                @NonNull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
+//                MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
 //            return () -> true;
 //        }
 
         @Override
-        public EventStoreTransaction transaction(@NonNull ProcessingContext processingContext) {
+        public EventStoreTransaction transaction(ProcessingContext processingContext) {
             return null;
         }
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+                                               List<EventMessage> events) {
             return null;
         }
 
         @Override
-        public void describeTo(@NonNull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
 
         }
 
         @Override
-        public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+        public MessageStream<EventMessage> open(StreamingCondition condition,
                                                 @Nullable ProcessingContext context) {
             return null;
         }
@@ -1112,13 +1111,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+        public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
             return null;
         }
 
         @Override
         public Registration subscribe(
-                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+                BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             return null;
         }
     }
@@ -1126,7 +1125,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class DefaultRepositoryProvider implements RepositoryProvider {
 
         @Override
-        public <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
+        public <R> Repository<R> repositoryFor(Class<R> aggregateType) {
             return new CreationalRepository<>(aggregateType, this);
         }
     }
@@ -1143,13 +1142,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public Aggregate<R> load(@NonNull String aggregateIdentifier) {
+        public Aggregate<R> load(String aggregateIdentifier) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }
 
         @Override
-        public Aggregate<R> newInstance(@NonNull Callable<R> factoryMethod) throws Exception {
+        public Aggregate<R> newInstance(Callable<R> factoryMethod) throws Exception {
             AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
                     aggregateType, getParameterResolverFactory(), getHandlerDefinition()
             );

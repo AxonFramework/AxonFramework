@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.CollectionUtils;
 
 import java.util.HashMap;
@@ -195,7 +194,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
             );
         }
 
-        private long positionOf(@NonNull String aggregateIdentifier) {
+        private long positionOf(String aggregateIdentifier) {
             return aggregatePositions.getOrDefault(aggregateIdentifier, -1L);
         }
     }

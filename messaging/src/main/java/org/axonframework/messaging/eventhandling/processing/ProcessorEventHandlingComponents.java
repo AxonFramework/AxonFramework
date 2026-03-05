@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -65,7 +64,7 @@ public class ProcessorEventHandlingComponents {
      * @param components The list of {@link EventHandlingComponent}s to be used for event processing. Must not be null
      *                   and is transformed into a list of {@link SequencingEventHandlingComponent}s if necessary.
      */
-    public ProcessorEventHandlingComponents(@NonNull List<EventHandlingComponent> components) {
+    public ProcessorEventHandlingComponents(List<EventHandlingComponent> components) {
         Objects.requireNonNull(components, "Components may not be null");
         this.components = components.stream()
                                     .map(c -> c instanceof SequencingEventHandlingComponent
@@ -87,9 +86,9 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the event messages are processed.
      * @return A stream of messages resulting from the processing of the event messages.
      */
-        public MessageStream.@NonNull Empty<Message> handle(
-            @NonNull List<? extends EventMessage> events,
-            @NonNull ProcessingContext context
+        public MessageStream.Empty<Message> handle(
+            List<? extends EventMessage> events,
+            ProcessingContext context
     ) {
         MessageStream<Message> batchResult = MessageStream.empty().cast();
         for (var event : events) {
@@ -100,9 +99,9 @@ public class ProcessorEventHandlingComponents {
                           .cast();
     }
 
-        private MessageStream.@NonNull Empty<Message> handle(
-            @NonNull EventMessage event,
-            @NonNull ProcessingContext context
+        private MessageStream.Empty<Message> handle(
+            EventMessage event,
+            ProcessingContext context
     ) {
         Optional<TrackingToken> token = TrackingToken.fromContext(context);
         boolean isReplaying = token.isPresent() && ReplayToken.isReplay(token.get());
@@ -139,7 +138,7 @@ public class ProcessorEventHandlingComponents {
      * @param eventName The qualified name of the event to be checked. Must not be null.
      * @return true if the event name is supported, false otherwise.
      */
-    public boolean supports(@NonNull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         return components.stream().anyMatch(c -> c.supports(eventName));
     }
 
@@ -151,7 +150,7 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the sequence identifiers are evaluated. Must not be null.
      * @return A set of sequence identifiers associated with the given event and context.
      */
-    public Set<Object> sequenceIdentifiersFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Set<Object> sequenceIdentifiersFor(EventMessage event, ProcessingContext context) {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());
@@ -167,9 +166,8 @@ public class ProcessorEventHandlingComponents {
      * @param context      The processing context.
      * @return A future that completes when all reset handlers have completed.
      */
-    @NonNull
-    public CompletableFuture<Void> handleReset(@NonNull ResetContext resetContext,
-                                               @NonNull ProcessingContext context) {
+    public CompletableFuture<Void> handleReset(ResetContext resetContext,
+                                               ProcessingContext context) {
         MessageStream<Message> result = MessageStream.empty();
 
         for (var component : components) {

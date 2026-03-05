@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -62,12 +61,12 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
     }
 
-    private static void registerComponents(@NonNull ComponentRegistry registry) {
+    private static void registerComponents(ComponentRegistry registry) {
         registry.registerIfNotPresent(EventBus.class, EventBusConfigurationDefaults::defaultEventBus);
     }
 
@@ -75,7 +74,7 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
         return new SimpleEventBus();
     }
 
-    private static void registerDecorators(@NonNull ComponentRegistry registry) {
+    private static void registerDecorators(ComponentRegistry registry) {
         registry.registerDecorator(
                 EventBus.class,
                 InterceptingEventBus.DECORATION_ORDER,

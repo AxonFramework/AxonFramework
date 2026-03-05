@@ -59,7 +59,7 @@ class EventProcessorMonitoringTest {
             }
 
             @Override
-            public void reportFailure(Throwable cause) {
+            public void reportFailure(@NonNull Throwable cause) {
                 fail("Test expects 'reportSuccess' to be called");
             }
 
@@ -100,17 +100,17 @@ class EventProcessorMonitoringTest {
         }
 
         @Override
-        public String name() {
+        public @NonNull String name() {
             return "test";
         }
 
         @Override
-        public CompletableFuture<Void> start() {
+        public @NonNull CompletableFuture<Void> start() {
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public CompletableFuture<Void> shutdown() {
+        public @NonNull CompletableFuture<Void> shutdown() {
             return FutureUtils.emptyCompletedFuture();
         }
 

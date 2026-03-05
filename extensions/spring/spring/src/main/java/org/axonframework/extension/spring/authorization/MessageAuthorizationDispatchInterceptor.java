@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.authorization;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -58,15 +57,14 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message> implemen
      *                  {@link Authentication#getAuthorities()} before they go into the
      *                  {@link Metadata} of the outgoing {@link Message} of type {@code T}.
      */
-    public MessageAuthorizationDispatchInterceptor(@NonNull Converter converter) {
+    public MessageAuthorizationDispatchInterceptor(Converter converter) {
         this.converter = Objects.requireNonNull(converter, "Converter must not be null.");
     }
 
-    @NonNull
     @Override
-    public MessageStream<?> interceptOnDispatch(@NonNull T message,
+    public MessageStream<?> interceptOnDispatch(T message,
                                                 @Nullable ProcessingContext context,
-                                                @NonNull MessageDispatchInterceptorChain<T> interceptorChain) {
+                                                MessageDispatchInterceptorChain<T> interceptorChain) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             logger.debug("No authentication found.");

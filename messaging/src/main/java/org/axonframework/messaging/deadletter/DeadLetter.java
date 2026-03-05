@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
@@ -53,7 +52,7 @@ public interface DeadLetter<M extends Message> {
      * @return an {@link Optional} of {DeadLetter}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}
      */
-    static Optional<DeadLetter<?>> fromContext(@NonNull Context context) {
+    static Optional<DeadLetter<?>> fromContext(Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
 

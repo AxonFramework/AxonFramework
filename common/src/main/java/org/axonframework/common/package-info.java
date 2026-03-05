@@ -18,4 +18,7 @@
  * Contains common utility classes needed in different components of the framework. Components placed
  * here cannot generally be included in one of the other component's packages.
  */
+@NullMarked
 package org.axonframework.common;
+
+import org.jspecify.annotations.NullMarked;

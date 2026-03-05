@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -37,6 +36,5 @@ public interface CreationPolicyAggregateFactory<A> {
      * @param identifier the identifier extracted from the command message
      * @return an identifier initialized aggregate root instance ready to handle commands
      */
-    @NonNull
     A create(@Nullable Object identifier);
 }

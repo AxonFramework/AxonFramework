@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
@@ -86,9 +85,9 @@ public class JdbcTokenStore implements TokenStore {
      * @param configuration       The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
      *                           instance
      */
-    public JdbcTokenStore(@NonNull ConnectionProvider connectionProvider,
-                          @NonNull Converter converter,
-                          @NonNull JdbcTokenStoreConfiguration configuration) {
+    public JdbcTokenStore(ConnectionProvider connectionProvider,
+                          Converter converter,
+                          JdbcTokenStoreConfiguration configuration) {
         assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
         assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(configuration, "The JdbcTokenStoreConfiguration should be provided");
@@ -115,10 +114,9 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
-            @NonNull String processorName,
+            String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
@@ -143,12 +141,11 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
         try (Connection connection = getConnection()) {
@@ -168,7 +165,6 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         try {
@@ -221,11 +217,10 @@ public class JdbcTokenStore implements TokenStore {
         return converter;
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Void> storeToken(
             @Nullable TrackingToken token,
-            @NonNull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) {
@@ -264,10 +259,9 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
-            @NonNull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
@@ -284,11 +278,10 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
-            @NonNull String processorName,
-            @NonNull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) throws UnableToClaimTokenException {
         try (Connection connection = getConnection()) {
@@ -305,9 +298,8 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<Void> releaseClaim(@NonNull String processorName,
+    public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
         try (Connection connection = getConnection()) {
@@ -324,9 +316,8 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<Void> deleteToken(@NonNull String processorName,
+    public CompletableFuture<Void> deleteToken(String processorName,
                                                int segment,
                                                @Nullable ProcessingContext context) {
         try (Connection connection = getConnection()) {
@@ -347,10 +338,9 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
     public CompletableFuture<Segment> fetchSegment(
-        @NonNull String processorName,
+        String processorName,
         int segmentId,
         @Nullable ProcessingContext context
     ) {
@@ -367,9 +357,8 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<List<Segment>> fetchSegments(@NonNull String processorName,
+    public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
         try (Connection connection = getConnection()) {
             return completedFuture(executeQuery(
@@ -384,9 +373,8 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<List<Segment>> fetchAvailableSegments(@NonNull String processorName,
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                                    @Nullable ProcessingContext context) {
         try (Connection connection = getConnection()) {
             List<JdbcTokenEntry> tokenEntries = executeQuery(connection,
@@ -764,9 +752,9 @@ public class JdbcTokenStore implements TokenStore {
      * @throws SQLException When an exception occurs while inserting a token entry.
      */
     protected TrackingToken insertTokenEntry(Connection connection,
-                                             @NonNull TrackingToken token,
+                                             TrackingToken token,
                                              String processorName,
-                                             @NonNull Segment segment) throws SQLException {
+                                             Segment segment) throws SQLException {
         JdbcTokenEntry entry = new JdbcTokenEntry(token, converter);
 
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +

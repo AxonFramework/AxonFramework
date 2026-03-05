@@ -27,6 +27,7 @@ import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitorCallback;
 import org.axonframework.messaging.monitoring.configuration.DefaultMessageMonitorRegistry;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -121,7 +122,7 @@ class DefaultMessageMonitorRegistryTest {
             }
 
             @Override
-            public void reportFailure(Throwable cause) {
+            public void reportFailure(@NonNull Throwable cause) {
                 // noop
             }
 
