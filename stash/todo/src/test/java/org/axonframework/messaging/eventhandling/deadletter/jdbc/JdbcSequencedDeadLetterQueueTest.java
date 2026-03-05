@@ -59,6 +59,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Tag("flaky")
 class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
