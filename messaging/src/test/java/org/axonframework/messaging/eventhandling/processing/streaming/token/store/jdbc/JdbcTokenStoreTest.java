@@ -16,16 +16,18 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;
 
+import org.axonframework.common.jdbc.ConnectionExecutor;
+import org.axonframework.conversion.TestConverter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.TestConverter;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -55,7 +58,6 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link JdbcTokenStore}.
@@ -160,9 +162,7 @@ class JdbcTokenStoreTest {
                         createProcessingContext())
                 ));
         Segment segmentToFetch = createdSegments.get(0);
-
-        transactionManager.executeInTransaction(() -> assertNull(
-                joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null))));
+        assertNull(joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null)));
     }
 
     @Transactional
@@ -239,6 +239,25 @@ class JdbcTokenStoreTest {
 
     @Transactional
     @Test
+    void fetchSegment() {
+        prepareTokenStore();
+
+        {
+            Segment segment = joinAndUnwrap(tokenStore.fetchSegment("proc1", 1, null));
+            assertThat(segment).isNotNull();
+        }
+        {
+            Segment segment = joinAndUnwrap(tokenStore.fetchSegment("proc2", 0, null));
+            assertThat(segment).isNotNull();
+        }
+        {
+            Segment segment = joinAndUnwrap(tokenStore.fetchSegment("proc3", 1, null));
+            assertThat(segment).isNull();
+        }
+    }
+
+    @Transactional
+    @Test
     void initializeTokenSegmentsResultsToExpectedSegments() {
         List<Segment> createdSegments = joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test1",
@@ -269,6 +288,17 @@ class JdbcTokenStoreTest {
             assertEquals(new GlobalSequenceTrackingToken(10),
                          joinAndUnwrap(tokenStore.fetchToken("test1", segment, null)));
         }
+    }
+
+    @Test
+    @Transactional
+    void initializeTokensFailsIfTokensPresent() {
+        joinAndUnwrap(tokenStore.initializeTokenSegments("test1", 7, null, createProcessingContext()));
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> joinAndUnwrap(tokenStore.initializeTokenSegments("test1",
+                                                                            7,
+                                                                            null,
+                                                                            createProcessingContext())));
     }
 
     @Transactional
@@ -551,9 +581,10 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void identifierInitializedOnDemand() {
-        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        ProcessingContext context = createProcessingContext();
+        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(context));
         assertNotNull(id1);
-        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(context));
         assertNotNull(id2);
         assertEquals(id1, id2);
     }
@@ -562,6 +593,7 @@ class JdbcTokenStoreTest {
     @Test
     void identifierReadIfAvailable() throws SQLException {
         ConfigToken token = new ConfigToken(Collections.singletonMap("id", "test123"));
+        ProcessingContext context = createProcessingContext();
         PreparedStatement ps = dataSource.getConnection()
                                          .prepareStatement(
                                                  "INSERT INTO TokenEntry(processorName, segment, mask, tokenType, token) VALUES(?, ?, ?, ?, ?)");
@@ -572,17 +604,48 @@ class JdbcTokenStoreTest {
         ps.setBytes(5, tokenStore.converter().convert(token, byte[].class));
         ps.executeUpdate();
 
-        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        String id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(context));
         assertNotNull(id1);
-        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
+        String id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(context));
         assertNotNull(id2);
         assertEquals(id1, id2);
 
         assertEquals("test123", id1);
     }
 
+    @Test
+    void rollbackTransaction() {
+        ProcessingContext context = createProcessingContext();
+        transactionManager.executeInTransaction(
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments("multi", 1, null, context))
+        );
+
+        transactionManager.executeInTransaction( () ->  {
+            joinAndUnwrap(tokenStore.fetchToken("multi", 0, null));
+            joinAndUnwrap(tokenStore.storeToken(new GlobalSequenceTrackingToken(1), "multi", 0, context));
+        });
+
+        {
+            Transaction transaction = transactionManager.startTransaction();
+            TrackingToken actual = joinAndUnwrap(tokenStore.fetchToken("multi", 0, null));
+            assertEquals(new GlobalSequenceTrackingToken(1), actual);
+            joinAndUnwrap(tokenStore.storeToken(new GlobalSequenceTrackingToken(2),
+                                                "multi",
+                                                0,
+                                                context));
+            transaction.rollback();
+        }
+
+        transactionManager.executeInTransaction( () ->  {
+            TrackingToken actual = joinAndUnwrap(tokenStore.fetchToken("multi", 0, null));
+            assertEquals(new GlobalSequenceTrackingToken(1), actual);
+        });
+    }
+
     private ProcessingContext createProcessingContext() {
-        return new StubProcessingContext();
+        return new StubProcessingContext()
+                .withResource(JdbcTransactionalExecutorProvider.SUPPLIER_KEY,
+                              () -> new ConnectionExecutor(() -> DataSourceUtils.getConnection(dataSource)));
     }
 
     @Configuration
@@ -605,7 +668,7 @@ class JdbcTokenStoreTest {
 
         @Bean
         public JdbcTokenStore tokenStore(DataSource dataSource) {
-            return new JdbcTokenStore(dataSource::getConnection,
+            return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource),
                                       TestConverter.JACKSON.getConverter(),
                                       JdbcTokenStoreConfiguration.DEFAULT);
         }
@@ -615,7 +678,7 @@ class JdbcTokenStoreTest {
             var config = JdbcTokenStoreConfiguration.DEFAULT
                     .claimTimeout(Duration.ofSeconds(2))
                     .nodeId("concurrent");
-            return new JdbcTokenStore(dataSource::getConnection,
+            return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource),
                                       TestConverter.JACKSON.getConverter(),
                                       config);
         }
@@ -625,7 +688,7 @@ class JdbcTokenStoreTest {
             var config = JdbcTokenStoreConfiguration.DEFAULT
                     .claimTimeout(Duration.ofSeconds(-1))
                     .nodeId("stealing");
-            return new JdbcTokenStore(dataSource::getConnection,
+            return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource),
                                       TestConverter.JACKSON.getConverter(),
                                       config);
         }
