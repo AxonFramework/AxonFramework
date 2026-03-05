@@ -34,8 +34,7 @@ public class BeanPropertyAccessStrategy extends AbstractMethodPropertyAccessStra
 
     @Override
     protected String getterName(@Nullable String property) {
-
-        return format(ENGLISH, "get%S%s", property.charAt(0), property.substring(1));
+return format(ENGLISH, "get%S%s", property.charAt(0), property.substring(1));
     }
 
     @Override
