@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to connection.
+ * Part of the Axon Extension module. Contains classes related to Spring Boot service connections.
  */
 @NullMarked
 package org.axonframework.extension.springboot.service.connection;
