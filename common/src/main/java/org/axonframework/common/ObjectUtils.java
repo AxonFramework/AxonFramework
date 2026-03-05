@@ -18,7 +18,6 @@ package org.axonframework.common;
 
 import org.jspecify.annotations.Nullable;
 
-
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
