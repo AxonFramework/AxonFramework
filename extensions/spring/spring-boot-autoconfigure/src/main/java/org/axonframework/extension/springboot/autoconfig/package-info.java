@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to autoconfig.
+ * Part of the Axon Extension module. Contains classes related to Spring Boot autoconfiguration.
  */
 @NullMarked
 package org.axonframework.extension.springboot.autoconfig;
