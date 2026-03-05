@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Update module. Contains classes related to detection.
+ * Part of the Axon Update module. Contains classes related to Update Checker detection logic.
  */
 @NullMarked
 package org.axonframework.update.detection;
