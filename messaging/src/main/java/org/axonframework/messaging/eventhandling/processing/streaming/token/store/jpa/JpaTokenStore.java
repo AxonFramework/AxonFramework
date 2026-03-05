@@ -141,13 +141,14 @@ public class JpaTokenStore implements TokenStore {
                 tokenDataToStore = null;
                 tokenTypeToStore = TrackingToken.class.getName();
             }
-            int updatedTokens = em.createQuery("UPDATE TokenEntry te SET "
-                                                       + "te.token = :token, "
-                                                       + "te.tokenType = :tokenType, "
-                                                       + "te.timestamp = :timestamp "
-                                                       + "WHERE te.owner = :owner "
-                                                       + "AND te.processorName = :processorName "
-                                                       + "AND te.segment = :segment")
+            int updatedTokens = em.createQuery("""
+                                                       UPDATE TokenEntry te SET
+                                                       te.token = :token,
+                                                       te.tokenType = :tokenType,
+                                                       te.timestamp = :timestamp
+                                                       WHERE te.owner = :owner
+                                                       AND te.processorName = :processorName
+                                                       AND te.segment = :segment""")
                                   .setParameter("token", tokenDataToStore)
                                   .setParameter("tokenType", tokenTypeToStore)
                                   .setParameter("timestamp", TokenEntry.computeTokenTimestamp())
@@ -157,9 +158,11 @@ public class JpaTokenStore implements TokenStore {
                                   .executeUpdate();
 
             if (updatedTokens == 0) {
-                logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
-                                     + "Trying load-then-save approach instead.",
-                             token, processorName, segment);
+                logger.debug(
+                        "Could not update token [{}] for processor [{}] and segment [{}]. Trying load-then-save approach instead.",
+                        token,
+                        processorName,
+                        segment);
                 TokenEntry tokenEntry = loadToken(processorName, segment, em);
                 tokenEntry.updateToken(token, converter);
             }
@@ -171,16 +174,16 @@ public class JpaTokenStore implements TokenStore {
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
-        return entityManagerExecutor(context).accept(em ->
-                                                             em.createQuery(
-                                                                       "UPDATE TokenEntry te SET te.owner = null " +
-                                                                               "WHERE te.owner = :owner AND te.processorName = :processorName "
-                                                                               +
-                                                                               "AND te.segment = :segment")
-                                                               .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                                               .setParameter(SEGMENT_PARAM, segment)
-                                                               .setParameter(OWNER_PARAM, nodeId)
-                                                               .executeUpdate()
+        return entityManagerExecutor(context)
+                .accept(em ->
+                                em.createQuery("""
+                                                       UPDATE TokenEntry te SET te.owner = null \
+                                                       WHERE te.owner = :owner AND te.processorName = :processorName \
+                                                       AND te.segment = :segment""")
+                                  .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                  .setParameter(SEGMENT_PARAM, segment)
+                                  .setParameter(OWNER_PARAM, nodeId)
+                                  .executeUpdate()
         );
     }
 
@@ -212,10 +215,10 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         return entityManagerExecutor(context).accept(em -> {
-            int updates = em.createQuery(
-                                    "DELETE FROM TokenEntry te " +
-                                            "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                            "AND te.segment = :segment")
+            int updates = em.createQuery("""
+                                                 DELETE FROM TokenEntry te \
+                                                 WHERE te.owner = :owner AND te.processorName = :processorName \
+                                                 AND te.segment = :segment""")
                             .setParameter(PROCESSOR_NAME_PARAM, processorName)
                             .setParameter(SEGMENT_PARAM, segment)
                             .setParameter(OWNER_PARAM, nodeId)
@@ -253,10 +256,11 @@ public class JpaTokenStore implements TokenStore {
             @Nullable ProcessingContext context
     ) {
         return entityManagerExecutor(context).accept(em -> {
-            int updates = em.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                 "WHERE te.processorName = :processorName " +
-                                                 "AND te.segment = :segment " +
-                                                 "AND te.owner = :owner")
+            int updates = em.createQuery("""
+                                                 UPDATE TokenEntry te SET te.timestamp = :timestamp \
+                                                 WHERE te.processorName = :processorName \
+                                                 AND te.segment = :segment \
+                                                 AND te.owner = :owner""")
                             .setParameter(PROCESSOR_NAME_PARAM, processorName)
                             .setParameter(SEGMENT_PARAM, segment)
                             .setParameter(OWNER_PARAM, nodeId)
@@ -278,14 +282,13 @@ public class JpaTokenStore implements TokenStore {
                                                    int segmentId,
                                                    @Nullable ProcessingContext context) {
         return entityManagerExecutor(context).apply(em -> {
-            final TokenEntry te = em.createQuery(
-                    "SELECT te FROM TokenEntry te "
-                            + "WHERE te.processorName = :processorName AND te.segment = :segment",
-                    TokenEntry.class
-            )
-            .setParameter(SEGMENT_PARAM, segmentId)
-            .setParameter(PROCESSOR_NAME_PARAM, processorName)
-            .getSingleResultOrNull();
+            final TokenEntry te = em.createQuery("""
+                                                         SELECT te FROM TokenEntry te \
+                                                         WHERE te.processorName = :processorName AND te.segment = :segment""",
+                                                 TokenEntry.class)
+                                    .setParameter(SEGMENT_PARAM, segmentId)
+                                    .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                    .getSingleResultOrNull();
 
             return te == null ? null : te.getSegment();
         });
@@ -300,11 +303,10 @@ public class JpaTokenStore implements TokenStore {
 
     private static @NonNull List<Segment> fetchSegmentsInternal(@NonNull String processorName, EntityManager em) {
         final List<TokenEntry> resultList =
-                em.createQuery(
-                          "SELECT te FROM TokenEntry te "
-                                  + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                          TokenEntry.class
-                  )
+                em.createQuery("""
+                                       SELECT te FROM TokenEntry te \
+                                       WHERE te.processorName = :processorName ORDER BY te.segment ASC""",
+                               TokenEntry.class)
                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
                   .setLockMode(LockModeType.NONE)
                   .getResultList();
@@ -318,11 +320,10 @@ public class JpaTokenStore implements TokenStore {
                                                                    @Nullable ProcessingContext context) {
         return entityManagerExecutor(context).apply(em -> {
             final List<TokenEntry> resultList =
-                    em.createQuery(
-                              "SELECT te FROM TokenEntry te "
-                                      + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                              TokenEntry.class
-                      )
+                    em.createQuery("""
+                                           SELECT te FROM TokenEntry te \
+                                           WHERE te.processorName = :processorName ORDER BY te.segment ASC""",
+                                   TokenEntry.class)
                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
                       .setLockMode(LockModeType.NONE)
                       .getResultList();
