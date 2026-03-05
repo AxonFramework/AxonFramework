@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Modelling module. Contains classes related to child.
+ * Part of the Axon Modelling module. Contains classes related to child entity logic.
  */
 @NullMarked
 package org.axonframework.modelling.entity.child;
