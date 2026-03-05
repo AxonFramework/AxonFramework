@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
@@ -41,14 +40,12 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
-
 /**
  * An {@link EventHandlingComponent} decorator that uses a {@link SequencedDeadLetterQueue} to enqueue
  * {@link EventMessage events} for which handling failed.
  * <p>
  * Uses an {@link EnqueuePolicy} to decide whether a failed event should be
- * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued}. Subsequent events belonging to an already
+ * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueued}. Subsequent events belonging to an already
  * enqueued "sequence identifier" are also enqueued to maintain event ordering in the face of failures.
  * <p>
  * This component provides operations to {@link #processAny()} {@link DeadLetter dead letters} it has enqueued through
@@ -69,8 +66,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
-            (letter, cause) -> Decisions.enqueue(truncated(cause));
 
     /**
      * The order for decorating {@link EventHandlingComponent EventHandlingComponents} with dead-lettering support.
@@ -95,7 +90,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
      *                          processing dead letters
      * @param allowReset        whether to clear the queue on reset. If {@code true},
-     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset
+     *                          {@link SequencedDeadLetterQueue#clear(ProcessingContext)} will be invoked upon a reset
      */
     public DeadLetteringEventHandlingComponent(@NonNull EventHandlingComponent delegate,
                                                @NonNull SequencedDeadLetterQueue<EventMessage> queue,
@@ -166,7 +161,8 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @param error              the error that occurred
      * @return a stream that completes after the error is handled (either enqueued or evicted)
      */
-    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier, Throwable error) {
+    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier,
+                                               Throwable error) {
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
         EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, error);
 

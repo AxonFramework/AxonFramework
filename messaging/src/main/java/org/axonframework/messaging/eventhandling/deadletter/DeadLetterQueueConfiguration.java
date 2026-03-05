@@ -25,10 +25,8 @@ import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
-import java.util.function.Function;
-
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.BuilderUtils.assertPositive;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
@@ -73,8 +71,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     private EnqueuePolicy<EventMessage> enqueuePolicy = DEFAULT_ENQUEUE_POLICY;
     private boolean clearOnReset = true;
     private int cacheMaxSize = SequenceIdentifierCache.DEFAULT_MAX_SIZE;
-    private Function<String, SequencedDeadLetterQueue<EventMessage>> factory =
-            ignored -> InMemorySequencedDeadLetterQueue.defaultQueue();
+    private DeadLetterQueueFactory factory = ignored -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
     /**
      * Creates a new {@code DeadLetterQueueConfiguration} with default settings.
@@ -175,35 +172,39 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * avoiding expensive delegate calls. When the cache exceeds this size, oldest entries
      * are evicted using LRU policy.
      * <p>
+     * Setting this to {@code 0} disables the caching wrapper entirely — the underlying
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} will be used directly.
+     * <p>
      * Defaults to {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE} (1024).
      *
-     * @param cacheMaxSize The maximum number of non-enqueued identifiers to cache.
+     * @param cacheMaxSize The maximum number of non-enqueued identifiers to cache, or {@code 0} to disable caching.
      * @return This configuration instance for fluent chaining.
      */
     public DeadLetterQueueConfiguration cacheMaxSize(int cacheMaxSize) {
-        assertStrictPositive(cacheMaxSize, "Cache max size must be greater than zero");
+        assertPositive(cacheMaxSize, "Cache max size must not be negative");
         this.cacheMaxSize = cacheMaxSize;
         return this;
     }
 
     /**
-     * Sets the factory function used to create {@link SequencedDeadLetterQueue} instances.
+     * Sets the {@link DeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
      * <p>
-     * The factory receives the component name (e.g., "EventHandlingComponent[processorName][componentIndex]")
-     * and should return a new {@link SequencedDeadLetterQueue} instance for that component.
+     * The factory receives a component-scoped processing group identifier that uniquely identifies the dead letter
+     * queue within its event processor. A single processor may contain multiple event handling components, each with
+     * its own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentIndex]"}, for example
+     * {@code "DeadLetterQueue[myProcessor][0]"} for the first component of a processor named {@code "myProcessor"}.
      * <p>
      * This allows using different DLQ implementations such as JPA or JDBC-backed queues
      * instead of the default in-memory implementation.
      * <p>
      * Defaults to a factory that creates {@link InMemorySequencedDeadLetterQueue} instances.
      *
-     * @param factory The factory function that creates a {@link SequencedDeadLetterQueue} for a given name.
+     * @param factory The {@link DeadLetterQueueFactory} that creates a {@link SequencedDeadLetterQueue} for a given
+     *                processing group, e.g. {@code "DeadLetterQueue[myProcessor][0]"}.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration factory(
-            @NonNull Function<String, SequencedDeadLetterQueue<EventMessage>> factory
-    ) {
-        assertNonNull(factory, "Factory function may not be null");
+    public DeadLetterQueueConfiguration factory(@NonNull DeadLetterQueueFactory factory) {
+        assertNonNull(factory, "Factory may not be null");
         this.factory = factory;
         return this;
     }
@@ -236,11 +237,11 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     /**
-     * Returns the factory function used to create {@link SequencedDeadLetterQueue} instances.
+     * Returns the {@link DeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
      *
-     * @return The factory function.
+     * @return The {@link DeadLetterQueueFactory}.
      */
-    public Function<String, SequencedDeadLetterQueue<EventMessage>> factory() {
+    public DeadLetterQueueFactory factory() {
         return factory;
     }
 

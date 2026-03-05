@@ -36,11 +36,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * Tests for {@link SequencedDeadLetterQueueFactory}.
+ * Tests for {@link SequencedDeadLetterQueueComponentFactory}.
  *
  * @author Mateusz Nowak
  */
-class SequencedDeadLetterQueueFactoryTest {
+class SequencedDeadLetterQueueComponentFactoryTest {
 
     @Nested
     class WhenConstructingFactory {
@@ -52,7 +52,7 @@ class SequencedDeadLetterQueueFactoryTest {
                     (name, config) -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
             // when
-            var factory = new SequencedDeadLetterQueueFactory(factoryFn);
+            var factory = new SequencedDeadLetterQueueComponentFactory(factoryFn);
 
             // then
             assertThat(factory).isNotNull();
@@ -61,7 +61,7 @@ class SequencedDeadLetterQueueFactoryTest {
         @Test
         void constructorRejectsNullFactoryFunction() {
             // given / when / then
-            assertThatThrownBy(() -> new SequencedDeadLetterQueueFactory(null))
+            assertThatThrownBy(() -> new SequencedDeadLetterQueueComponentFactory(null))
                     .isInstanceOf(AxonConfigurationException.class)
                     .hasMessageContaining("may not be null");
         }
@@ -73,7 +73,7 @@ class SequencedDeadLetterQueueFactoryTest {
         @Test
         void forTypeReturnsCorrectTypeReference() {
             // given
-            var factory = new SequencedDeadLetterQueueFactory(
+            var factory = new SequencedDeadLetterQueueComponentFactory(
                     (name, config) -> InMemorySequencedDeadLetterQueue.defaultQueue()
             );
 
@@ -95,7 +95,7 @@ class SequencedDeadLetterQueueFactoryTest {
             AtomicReference<String> capturedName = new AtomicReference<>();
             AtomicReference<Configuration> capturedConfig = new AtomicReference<>();
 
-            var factory = new SequencedDeadLetterQueueFactory((name, config) -> {
+            var factory = new SequencedDeadLetterQueueComponentFactory((name, config) -> {
                 capturedName.set(name);
                 capturedConfig.set(config);
                 return InMemorySequencedDeadLetterQueue.defaultQueue();
@@ -115,7 +115,7 @@ class SequencedDeadLetterQueueFactoryTest {
         @Test
         void constructReturnsOptionalWithComponent() {
             // given
-            var factory = new SequencedDeadLetterQueueFactory(
+            var factory = new SequencedDeadLetterQueueComponentFactory(
                     (name, config) -> InMemorySequencedDeadLetterQueue.defaultQueue()
             );
             Configuration mockConfig = mock(Configuration.class);
@@ -132,7 +132,7 @@ class SequencedDeadLetterQueueFactoryTest {
         @Test
         void constructReturnsComponentWithCorrectIdentifier() {
             // given
-            var factory = new SequencedDeadLetterQueueFactory(
+            var factory = new SequencedDeadLetterQueueComponentFactory(
                     (name, config) -> InMemorySequencedDeadLetterQueue.defaultQueue()
             );
             Configuration mockConfig = mock(Configuration.class);
@@ -156,7 +156,7 @@ class SequencedDeadLetterQueueFactoryTest {
         @Test
         void describeToAddsTypeProperty() {
             // given
-            var factory = new SequencedDeadLetterQueueFactory(
+            var factory = new SequencedDeadLetterQueueComponentFactory(
                     (name, config) -> InMemorySequencedDeadLetterQueue.defaultQueue()
             );
             ComponentDescriptor mockDescriptor = mock(ComponentDescriptor.class);

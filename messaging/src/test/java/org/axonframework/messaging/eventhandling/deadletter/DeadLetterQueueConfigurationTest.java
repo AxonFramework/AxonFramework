@@ -182,13 +182,15 @@ class DeadLetterQueueConfigurationTest {
         }
 
         @Test
-        void rejectsZeroCacheMaxSize() {
+        void acceptsZeroCacheMaxSize() {
             // given
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
 
-            // when / then
-            assertThatThrownBy(() -> config.cacheMaxSize(0))
-                    .isInstanceOf(AxonConfigurationException.class);
+            // when
+            config.cacheMaxSize(0);
+
+            // then
+            assertThat(config.cacheMaxSize()).isEqualTo(0);
         }
 
         @Test
@@ -306,7 +308,7 @@ class DeadLetterQueueConfigurationTest {
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
 
             // when
-            SequencedDeadLetterQueue<EventMessage> queue = config.factory().apply("test-component");
+            SequencedDeadLetterQueue<EventMessage> queue = config.factory().create("test-component");
 
             // then
             assertThat(queue).isNotNull();
@@ -323,7 +325,7 @@ class DeadLetterQueueConfigurationTest {
             config.factory(name -> customQueue);
 
             // then
-            assertThat(config.factory().apply("any-name")).isSameAs(customQueue);
+            assertThat(config.factory().create("any-name")).isSameAs(customQueue);
         }
 
         @Test
@@ -348,7 +350,7 @@ class DeadLetterQueueConfigurationTest {
             });
 
             // when
-            config.factory().apply("my-processor-dlq");
+            config.factory().create("my-processor-dlq");
 
             // then
             assertThat(capturedName.get()).isEqualTo("my-processor-dlq");

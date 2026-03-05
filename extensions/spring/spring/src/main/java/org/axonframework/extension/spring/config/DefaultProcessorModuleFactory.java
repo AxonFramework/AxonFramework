@@ -20,6 +20,7 @@ import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
@@ -115,14 +116,25 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             var module = switch (processorMode) {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
+                    var customization = SpringCustomizations.pooledStreamingCustomizations(processorName,
+                                                                                          moduleSettings)
+                                                           .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
+                                                                   UnitOfWorkFactory.class)))
+                                                           .andThen(customizeConfiguration(processorName));
+                    if (moduleSettings.dlq().enabled()) {
+                        var dlqFactory = axonConfiguration.getOptionalComponent(DeadLetterQueueFactory.class)
+                                                          .orElseThrow(() -> new AxonConfigurationException(
+                                                                  "DLQ is enabled for processor '" + processorName
+                                                                          + "' but no DeadLetterQueueFactory bean is available. "
+                                                                          + "Ensure a DeadLetterQueueFactory bean is registered "
+                                                                          + "(e.g. by including JPA or JDBC DLQ autoconfiguration)."));
+                        customization = customization.andThen(
+                                SpringCustomizations.dlqCustomization(moduleSettings.dlq(), dlqFactory));
+                    }
                     yield EventProcessorModule
                             .pooledStreaming(processorModuleName)
                             .eventHandlingComponents(componentRegistration)
-                            .customized(SpringCustomizations.pooledStreamingCustomizations(processorName,
-                                                                                           moduleSettings)
-                                                            .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
-                                                                    UnitOfWorkFactory.class)))
-                                                            .andThen(customizeConfiguration(processorName)))
+                            .customized(customization)
                             .build();
                 }
                 case SUBSCRIBING -> {
