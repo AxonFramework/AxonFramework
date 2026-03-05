@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Test module. Contains classes related to fixture.
+ * Part of the Axon Test module. Contains classes related to test fixtures.
  */
 @NullMarked
 package org.axonframework.test.fixture;
