@@ -40,6 +40,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * An implementation of the {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
  * commands. It uses the Axon Server gRPC API to communicate with the server.
@@ -72,8 +74,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      */
     public AxonServerCommandBusConnector(AxonServerConnection connection,
                                          AxonServerConfiguration configuration) {
-        this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
-        Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
+        this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
+        requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
         this.clientId = configuration.getClientId();
         this.componentName = configuration.getComponentName();
     }
@@ -118,10 +120,9 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                     .whenComplete((r, e) -> commandsInProgress.remove(command.getMessageIdentifier()));
             commandsInProgress.put(command.getMessageIdentifier(), result);
 
-            if (incomingHandler != null) {
-                incomingHandler.handle(CommandConverter.convertCommand(command),
-                                   new FutureResultCallback(result, command));
-            }
+            requireNonNull(incomingHandler, "incomingHandler not configured")
+                   .handle(CommandConverter.convertCommand(command), new FutureResultCallback(result, command));
+
             return result;
         } catch (Exception e) {
             logger.error("Error processing incoming command: {}", command.getName(), e);
