@@ -15,7 +15,7 @@
  */
 
 /**
- * Part of the Axon Modelling module. Contains classes related to entity.
+ * Part of the Axon Modelling module. Contains classes related to entity modelling.
  */
 @NullMarked
 package org.axonframework.modelling.entity;
