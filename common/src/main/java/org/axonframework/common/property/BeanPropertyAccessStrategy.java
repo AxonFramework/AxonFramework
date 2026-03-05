@@ -18,7 +18,6 @@ package org.axonframework.common.property;
 
 import org.jspecify.annotations.Nullable;
 
-
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 
