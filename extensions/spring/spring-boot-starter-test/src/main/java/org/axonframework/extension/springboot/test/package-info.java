@@ -15,7 +15,7 @@
  */
 
 /**
- * Part of the Axon Extension module. Contains classes related to test.
+ * Part of the Axon Extension module. Contains classes related to Spring Boot testing.
  */
 @NullMarked
 package org.axonframework.extension.springboot.test;
