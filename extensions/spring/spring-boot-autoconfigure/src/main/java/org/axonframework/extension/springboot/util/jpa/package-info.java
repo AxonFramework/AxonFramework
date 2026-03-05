@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to JPA.
+ * Part of the Axon Extension module. Contains classes related to Spring Boot JPA utilities.
  */
 @NullMarked
 package org.axonframework.extension.springboot.util.jpa;
