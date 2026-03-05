@@ -39,9 +39,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.SequencedCollection;
 import java.util.stream.Collectors;
 
 /**
@@ -99,10 +100,10 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
-        Set<ProcessorDefinition.EventHandlerDescriptor> handlers =
+        SequencedCollection<ProcessorDefinition.EventHandlerDescriptor> handlers =
                 handlerBeansRefs.stream()
                                 .map(name -> new SimpleEventHandlerDescriptor(name, beanFactory))
-                                .collect(Collectors.toSet());
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
         for (EventProcessorModule processorModule : processorModuleFactory.buildProcessorModules(handlers)) {
             registry.registerModule(processorModule);
         }

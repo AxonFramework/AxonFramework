@@ -29,10 +29,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedCollection;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -86,11 +88,14 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      */
     @NonNull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(@NonNull SequencedCollection<ProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 
-        var assignments = handlers.stream().collect(Collectors.groupingBy(this::assignedProcessor));
+        var assignments = handlers.stream()
+                                  .collect(Collectors.groupingBy(this::assignedProcessor,
+                                                                 LinkedHashMap::new,
+                                                                 Collectors.toList()));
 
         for (ProcessorDefinition definition : processorDefinitions) {
             if (!assignments.containsKey(definition.name())) {

@@ -151,6 +151,21 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
+    /**
+     * Registers one {@link SequencedDeadLetterQueue} component per event handling component.
+     * <p>
+     * Each queue is named {@code "DeadLetterQueue[processorName][index]"} where {@code index} is the
+     * zero-based position of the corresponding event handling component in the registration list.
+     * When a persistent DLQ backend (JPA, JDBC) is used, this name is stored in the database as the
+     * processing-group identifier.
+     * <p>
+     * <strong>Ordering constraint</strong>: the mapping between a component and its DLQ is
+     * position-based. <strong>Do not change the registration order of event handling components
+     * once a persistent DLQ has been created.</strong> Adding, removing, or reordering components,
+     * or modifying {@code @Order} values, shifts indices and causes each component to read dead
+     * letters that belong to a different component. If you must change the order, drain or
+     * migrate the DLQ data first.
+     */
     @SuppressWarnings("unchecked")
     private void registerDeadLetterQueues() {
         for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
@@ -286,7 +301,19 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
-        private @NonNull String processorComponentDlqName(int index) {
+    /**
+     * Returns the stable component name used to register and look up the {@link SequencedDeadLetterQueue}
+     * for the event handling component at the given {@code index}.
+     * <p>
+     * The resulting name (e.g. {@code "DeadLetterQueue[myProcessor][0]"}) is also used as the
+     * <em>processing-group identifier</em> by persistent DLQ backends (JPA, JDBC). Changing the
+     * {@code index} of an existing component — by adding/removing/reordering components or altering
+     * {@code @Order} values — will cause that component to be mapped to the wrong persisted DLQ data.
+     *
+     * @param index The zero-based position of the event handling component in the registration list.
+     * @return The component-scoped DLQ name.
+     */
+    private @NonNull String processorComponentDlqName(int index) {
         return "DeadLetterQueue[" + processorName + "][" + index + "]";
     }
 

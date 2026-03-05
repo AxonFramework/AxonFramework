@@ -40,6 +40,7 @@ import org.springframework.core.annotation.OrderUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -150,17 +151,12 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      */
     private List<String> sortByOrder(List<String> found, @NonNull ConfigurableListableBeanFactory beanFactory) {
         return found.stream()
-                    .collect(Collectors.toMap(
-                            beanRef -> beanRef,
-                            beanRef -> OrderUtils.getOrder(
+                    .sorted(Comparator
+                            .<String, Integer>comparing(beanRef -> OrderUtils.getOrder(
                                     ObjectUtils.getOrDefault(beanFactory.getType(beanRef), Object.class),
                                     Ordered.LOWEST_PRECEDENCE
-                            )
-                    ))
-                    .entrySet()
-                    .stream()
-                    .sorted(java.util.Map.Entry.comparingByValue())
-                    .map(java.util.Map.Entry::getKey)
+                            ))
+                            .thenComparing(Comparator.naturalOrder()))
                     .collect(Collectors.toList());
     }
 

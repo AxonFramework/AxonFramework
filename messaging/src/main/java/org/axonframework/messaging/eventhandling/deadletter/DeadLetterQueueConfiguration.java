@@ -197,6 +197,13 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * This allows using different DLQ implementations such as JPA or JDBC-backed queues
      * instead of the default in-memory implementation.
      * <p>
+     * <strong>Ordering constraint for persistent DLQ backends</strong>: the {@code componentIndex} in the
+     * processing group name is the zero-based registration position of the event handling component within its
+     * processor. When a JPA- or JDBC-backed factory is used, this name is stored persistently. <strong>Do not
+     * change the registration order of event handling components once a persistent DLQ has been
+     * created</strong> — adding, removing, or reordering components, or modifying their {@code @Order} values,
+     * will shift indices and associate each component with the wrong stored dead letters.
+     * <p>
      * Defaults to a factory that creates {@link InMemorySequencedDeadLetterQueue} instances.
      *
      * @param factory The {@link DeadLetterQueueFactory} that creates a {@link SequencedDeadLetterQueue} for a given

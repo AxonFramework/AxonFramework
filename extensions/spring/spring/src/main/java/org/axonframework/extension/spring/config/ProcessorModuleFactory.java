@@ -19,6 +19,7 @@ package org.axonframework.extension.spring.config;
 import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
+import java.util.SequencedCollection;
 import java.util.Set;
 
 /**
@@ -52,10 +53,19 @@ public interface ProcessorModuleFactory {
      * <p>
      * Each module represents an event processor with its assigned event handlers. The factory determines the
      * assignment logic and creates appropriately configured modules.
+     * <p>
+     * <strong>Ordering contract</strong>: {@code handlers} must be a stable, ordered collection (e.g.
+     * {@link java.util.LinkedHashSet}). The position of each handler in the collection directly determines the
+     * component index used to name its {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}
+     * (e.g. {@code "DeadLetterQueue[processorName][0]"}). When a persistent DLQ backend (JPA, JDBC) is in use,
+     * this name is stored in the database as the processing-group identifier. <strong>Changing the registration
+     * order of handlers — by adding, removing, or reordering them, or by modifying {@code @Order} values —
+     * will shift component indices and cause each handler to be associated with the wrong DLQ data.</strong>
      *
-     * @param handlers The set of discovered event handler components to be assigned to processors.
+     * @param handlers The ordered collection of discovered event handler components to be assigned to processors.
+     *                 Must preserve insertion order (e.g. {@link java.util.LinkedHashSet}).
      * @return A set of event processor modules, each containing its assigned event handlers.
      */
     @NonNull
-    Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
+    Set<EventProcessorModule> buildProcessorModules(@NonNull SequencedCollection<ProcessorDefinition.EventHandlerDescriptor> handlers);
 }
