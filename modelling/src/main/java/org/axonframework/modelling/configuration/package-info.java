@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Modelling module. Contains classes related to configuration.
+ * Part of the Axon Modelling module. Contains classes related to modelling configuration components.
  */
 @NullMarked
 package org.axonframework.modelling.configuration;
