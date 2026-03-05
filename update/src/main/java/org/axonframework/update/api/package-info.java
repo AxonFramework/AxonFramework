@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Update module. Contains classes related to api.
+ * Part of the Axon Update module. Contains classes related to the Update Checker API.
  */
 @NullMarked
 package org.axonframework.update.api;
