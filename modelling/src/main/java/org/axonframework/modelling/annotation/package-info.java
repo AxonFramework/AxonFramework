@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Modelling module. Contains classes related to annotation.
+ * Part of the Axon Modelling module. Contains classes related to modelling annotation logic.
  */
 @NullMarked
 package org.axonframework.modelling.annotation;
