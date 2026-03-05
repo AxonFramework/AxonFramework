@@ -45,3 +45,20 @@ updates:
       versions: [ "[3.0.0,)" ]
     - dependency-name: "org.springframework.data:*"
       versions: [ "[2025.0.0,)" ]
+
+- package-ecosystem: npm
+  directory: "/docs/_playbook"
+  schedule:
+    interval: weekly
+    day: "sunday"
+  open-pull-requests-limit: 5
+  labels:
+    - "Type: Dependency Upgrade"
+    - "Priority 1: Must"
+  milestone: 119
+  groups:
+    maven-dependencies:
+      update-types:
+        - "patch"
+        - "minor"
+        - "major"
