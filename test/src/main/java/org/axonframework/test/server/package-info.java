@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Test module. Contains classes related to server.
+ * Part of the Axon Test module. Contains classes related to test container logic of Axon Server.
  */
 @NullMarked
 package org.axonframework.test.server;
