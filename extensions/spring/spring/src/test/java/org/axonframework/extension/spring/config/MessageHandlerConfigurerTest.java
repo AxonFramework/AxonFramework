@@ -29,10 +29,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedCollection;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -205,5 +208,78 @@ class MessageHandlerConfigurerTest {
 
     private static class MyHandler {
 
+    }
+
+    /**
+     * Tests that {@link MessageHandlerConfigurer#enhance(ComponentRegistry)} passes handlers to
+     * {@link ProcessorModuleFactory#buildProcessorModules(SequencedCollection)} in the same order
+     * as the original {@code handlerBeansRefs} list.
+     * <p>
+     * Before the fix, {@code configureEventHandlers()} used {@code Collectors.toSet()} which produced
+     * a {@code HashSet} whose iteration order is based on hash codes — non-deterministic across JVM
+     * restarts because {@code SimpleEventHandlerDescriptor.hashCode()} includes the bean factory's
+     * identity hash. This made the DLQ component index (e.g. {@code "DeadLetterQueue[p][0]"})
+     * unstable for any given handler.
+     */
+    @Nested
+    class WhenConfiguringEventHandlerOrdering {
+
+        private final ProcessorModuleFactory capturingProcessorModuleFactory = mock(ProcessorModuleFactory.class);
+        private final List<String> receivedBeanNameOrder = new ArrayList<>();
+
+        @BeforeEach
+        void setupCapturingFactory() {
+            when(applicationContext.getBean(ProcessorModuleFactory.class))
+                    .thenReturn(capturingProcessorModuleFactory);
+            when(capturingProcessorModuleFactory.buildProcessorModules(any())).thenAnswer(inv -> {
+                // record the encounter order of descriptors passed to buildProcessorModules
+                SequencedCollection<ProcessorDefinition.EventHandlerDescriptor> handlers =
+                        inv.getArgument(0);
+                handlers.forEach(d -> receivedBeanNameOrder.add(d.beanName()));
+                return Set.of();
+            });
+        }
+
+        @Test
+        void buildProcessorModulesReceivesHandlersInInputListOrder() {
+            // given: bean refs in NON-alphabetical order — insertion order must be preserved
+            List<String> beanRefs = List.of("z-handler", "a-handler", "m-handler");
+            beanRefs.forEach(name -> {
+                var bd = beanDefinitionMock("com.example." + name);
+                when(beanFactory.getBeanDefinition(name)).thenReturn(bd);
+                //noinspection unchecked,rawtypes
+                when(beanFactory.getType(name)).thenReturn((Class) MyHandler.class);
+            });
+
+            // when: configure event handlers
+            var configurer = new MessageHandlerConfigurer(MessageHandlerConfigurer.Type.EVENT, beanRefs);
+            configurer.setApplicationContext(applicationContext);
+            configurer.enhance(registry);
+
+            // then: buildProcessorModules received handlers in z, a, m order (NOT alphabetical a, m, z)
+            // Before the fix (Collectors.toSet() → HashSet), iteration order was hash-based and
+            // non-deterministic. With LinkedHashSet, insertion order is always preserved.
+            assertThat(receivedBeanNameOrder).containsExactly("z-handler", "a-handler", "m-handler");
+        }
+
+        @Test
+        void encounterOrderIsStableRegardlessOfBeanNameCharacteristics() {
+            // given: bean refs where alphabetical order ≠ insertion order
+            List<String> beanRefs = List.of("c-handler", "a-handler", "b-handler");
+            beanRefs.forEach(name -> {
+                var bd = beanDefinitionMock("com.example." + name);
+                when(beanFactory.getBeanDefinition(name)).thenReturn(bd);
+                //noinspection unchecked,rawtypes
+                when(beanFactory.getType(name)).thenReturn((Class) MyHandler.class);
+            });
+
+            // when
+            var configurer = new MessageHandlerConfigurer(MessageHandlerConfigurer.Type.EVENT, beanRefs);
+            configurer.setApplicationContext(applicationContext);
+            configurer.enhance(registry);
+
+            // then: c, a, b order preserved (insertion order) — not alphabetical a, b, c
+            assertThat(receivedBeanNameOrder).containsExactly("c-handler", "a-handler", "b-handler");
+        }
     }
 }
