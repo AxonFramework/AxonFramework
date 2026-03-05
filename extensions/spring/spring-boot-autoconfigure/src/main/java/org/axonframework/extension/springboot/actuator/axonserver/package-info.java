@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to axonserver.
+ * Part of the Axon Extension module. Contains classes related to Axon Server's actuator support.
  */
 @NullMarked
 package org.axonframework.extension.springboot.actuator.axonserver;
