@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to utility.
+ * Part of the Axon Extension module. Contains classes related to Spring Boot utilities.
  */
 @NullMarked
 package org.axonframework.extension.springboot.util;
