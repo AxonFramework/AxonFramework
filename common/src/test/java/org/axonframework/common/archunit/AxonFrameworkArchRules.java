@@ -25,8 +25,6 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
 public final class AxonFrameworkArchRules {
 
-
-
     public static final ArchRule CLASSES_MUST_RESIDE_IN_NULL_MARKED_PACKAGE = classes()
             .should(new NullMarkedPackageCondition());
 
