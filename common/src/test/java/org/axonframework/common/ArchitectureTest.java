@@ -55,7 +55,7 @@ import org.junit.jupiter.api.*;
  * @author John Hendrikx
  */
 @AnalyzeClasses(packages = ArchitectureTest.BASE_PACKAGE_NAME)
-public class ArchitectureTest {
+class ArchitectureTest {
 
     static final String BASE_PACKAGE_NAME = "org.axonframework.common";
     static final Set<Map.Entry<String, String>> IGNORED_CYCLES = parseIgnoredCycles();

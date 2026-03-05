@@ -21,6 +21,6 @@ import com.tngtech.archunit.junit.AnalyzeClasses;
 import org.axonframework.common.archunit.MainArchUnitConventions;
 
 @AnalyzeClasses(packages = "org.axonframework.extension.spring", importOptions = DoNotIncludeTests.class)
-public class ArchitectureTest implements MainArchUnitConventions {
+class ArchitectureTest implements MainArchUnitConventions {
 
 }
