@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to deadletter.
+ * Part of the Axon Messaging module. Contains classes related to dead lettering.
  */
 @NullMarked
 package org.axonframework.messaging.deadletter;

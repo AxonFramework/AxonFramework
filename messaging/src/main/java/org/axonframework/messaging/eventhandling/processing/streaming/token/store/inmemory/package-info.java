@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to inmemory.
+ * Part of the Axon Messaging module. Contains classes related to in memory token stores.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory;

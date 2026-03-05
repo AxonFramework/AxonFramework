@@ -19,7 +19,6 @@ package org.axonframework.messaging.core;
 import org.axonframework.common.annotation.Internal;
 import org.jspecify.annotations.Nullable;
 
-
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;

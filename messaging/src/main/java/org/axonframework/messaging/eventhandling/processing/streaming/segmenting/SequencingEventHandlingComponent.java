@@ -71,7 +71,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         Objects.requireNonNull(event, "Event may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
         Map<Object, CompletableFuture<?>> invocationsBySequenceIdentifier =

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to stereotype.
+ * Part of the Axon Extension module. Contains classes related to Axon's Spring stereotypes.
  */
 @NullMarked
 package org.axonframework.extension.spring.stereotype;

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to annotation.
+ * Part of the Axon Messaging module. Contains classes related to streaming processor token annotation component.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.token.annotation;

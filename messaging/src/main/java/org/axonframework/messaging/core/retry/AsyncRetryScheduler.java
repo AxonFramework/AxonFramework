@@ -61,9 +61,9 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
 
     @Override
     public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(M message,
-                                                                                       @Nullable ProcessingContext processingContext,
-                                                                                       Throwable cause,
-                                                                                       Dispatcher<M, R> dispatcher) {
+                                                                                 @Nullable ProcessingContext processingContext,
+                                                                                 Throwable cause,
+                                                                                 Dispatcher<M, R> dispatcher) {
         RetryPolicy.Outcome outcome = retryPolicy.defineFor(message, cause, Collections.emptyList());
         if (!outcome.shouldReschedule()) {
             return MessageStream.failed(cause);

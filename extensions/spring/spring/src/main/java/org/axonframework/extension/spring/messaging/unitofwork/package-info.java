@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to unitofwork.
+ * Part of the Axon Extension module. Contains classes related to transaction management.
  */
 @NullMarked
 package org.axonframework.extension.spring.messaging.unitofwork;

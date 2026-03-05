@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to configuration.
+ * Part of the Axon Messaging module. Contains classes related to command-specific configuration components.
  */
 @NullMarked
 package org.axonframework.messaging.commandhandling.configuration;

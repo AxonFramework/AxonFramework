@@ -125,7 +125,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
 
     @Override
     public MessageStream.Single<CommandResultMessage> handleCreate(CommandMessage message,
-                                                                            ProcessingContext context) {
+                                                                   ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }

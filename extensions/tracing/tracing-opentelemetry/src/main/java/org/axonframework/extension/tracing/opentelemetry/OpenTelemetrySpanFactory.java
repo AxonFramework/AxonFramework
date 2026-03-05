@@ -32,7 +32,6 @@ import org.axonframework.messaging.tracing.SpanAttributesProvider;
 import org.axonframework.messaging.tracing.SpanFactory;
 import org.jspecify.annotations.Nullable;
 
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;

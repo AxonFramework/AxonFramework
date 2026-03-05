@@ -75,7 +75,7 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
 
     @Override
     public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
-                                                                      ProcessingContext context) {
+                                                             ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
             QualifiedName messageName = command.type().qualifiedName();

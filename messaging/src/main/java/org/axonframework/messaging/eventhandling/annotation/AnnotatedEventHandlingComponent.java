@@ -149,7 +149,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }
 

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to annotation.
+ * Part of the Axon Messaging module. Contains classes related to Unit of Work specific annotation logic.
  */
 @NullMarked
 package org.axonframework.messaging.core.unitofwork.annotation;

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to reflection.
+ * Part of the Axon Messaging module. Contains classes related to message reflection logic.
  */
 @NullMarked
 package org.axonframework.messaging.core.reflection;

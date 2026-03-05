@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to errorhandling.
+ * Part of the Axon Messaging module. Contains classes related to event-specific error handling.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.errorhandling;

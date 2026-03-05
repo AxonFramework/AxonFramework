@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to transaction.
+ * Part of the Axon Messaging module. Contains classes related to the Unit of Work transaction components.
  */
 @NullMarked
 package org.axonframework.messaging.core.unitofwork.transaction;

@@ -35,12 +35,12 @@ import java.util.Set;
  * Note: an existing {@code package-info.java} file without any relevant annotations is ignored by the compiler,
  * so we cannot reliably detect the absence of the {@code package-info.java} file.
  */
-public class NullMarkedPackageCondition extends ArchCondition<JavaClass> {
+class NullMarkedPackageCondition extends ArchCondition<JavaClass> {
 
     // only report each package once
     private final Set<String> checkedPackages = new HashSet<>();
 
-    public NullMarkedPackageCondition() {
+    NullMarkedPackageCondition() {
         super("reside in a package marked with @NullMarked");
     }
 

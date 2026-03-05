@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to gateway.
+ * Part of the Axon Messaging module. Contains classes related to event gateways.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.gateway;

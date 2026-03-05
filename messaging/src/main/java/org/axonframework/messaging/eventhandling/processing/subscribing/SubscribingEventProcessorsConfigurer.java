@@ -120,7 +120,7 @@ public class SubscribingEventProcessorsConfigurer {
      *                          applied.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
@@ -140,7 +140,7 @@ public class SubscribingEventProcessorsConfigurer {
      *                          defaults.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer defaults(
+    public SubscribingEventProcessorsConfigurer defaults(
             UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
@@ -158,7 +158,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer defaultProcessor(
+    public SubscribingEventProcessorsConfigurer defaultProcessor(
             String name,
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
@@ -178,7 +178,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param moduleCustomizer Function to customize the processor module configuration.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer processor(
+    public SubscribingEventProcessorsConfigurer processor(
             String name,
             Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
     ) {
@@ -194,7 +194,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param moduleBuilder A builder that creates a {@link SubscribingEventProcessorModule} instance.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer processor(
+    public SubscribingEventProcessorsConfigurer processor(
             ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
         Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
@@ -208,7 +208,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param registryAction Action to perform on the component registry.
      * @return This configurer instance for method chaining.
      */
-        public SubscribingEventProcessorsConfigurer componentRegistry(Consumer<ComponentRegistry> registryAction) {
+    public SubscribingEventProcessorsConfigurer componentRegistry(Consumer<ComponentRegistry> registryAction) {
         Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;

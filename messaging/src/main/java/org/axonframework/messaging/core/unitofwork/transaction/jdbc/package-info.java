@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to JDBC.
+ * Part of the Axon Messaging module. Contains classes related to JDBC-specific Unit of Work transaction logic.
  */
 @NullMarked
 package org.axonframework.messaging.core.unitofwork.transaction.jdbc;

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to annotation.
+ * Part of the Axon Messaging module. Contains classes related to event-specific annotation logic.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.annotation;

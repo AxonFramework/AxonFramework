@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to distributed.
+ * Part of the Axon Messaging module. Contains classes related to command distribution.
  */
 @NullMarked
 package org.axonframework.messaging.commandhandling.distributed;

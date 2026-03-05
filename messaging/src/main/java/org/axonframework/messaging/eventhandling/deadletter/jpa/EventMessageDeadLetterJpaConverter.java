@@ -52,9 +52,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @Override
     public DeadLetterEventEntry convert(EventMessage message,
-                                                 @Nullable Context context,
-                                                 EventConverter eventConverter,
-                                                 Converter genericConverter) {
+                                        @Nullable Context context,
+                                        EventConverter eventConverter,
+                                        Converter genericConverter) {
         Context effectiveContext = context != null ? context : Context.empty();
         TrackingToken token = effectiveContext.getResource(TrackingToken.RESOURCE_KEY);
 

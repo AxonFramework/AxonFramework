@@ -461,7 +461,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-        public MessageStream.Single<CommandResultMessage> handleCreate(CommandMessage message,
+    public MessageStream.Single<CommandResultMessage> handleCreate(CommandMessage message,
                                                                    ProcessingContext context) {
         MessageType type = message.type();
         if (logger.isDebugEnabled()) {

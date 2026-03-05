@@ -43,8 +43,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SimpleCommandHandlingComponent implements
-        CommandHandlingComponent,
+public class SimpleCommandHandlingComponent implements CommandHandlingComponent,
         CommandHandlerRegistry<SimpleCommandHandlingComponent> {
 
     private final String name;
@@ -90,7 +89,7 @@ public class SimpleCommandHandlingComponent implements
 
     @Override
     public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
-                                                                      ProcessingContext context) {
+                                                             ProcessingContext context) {
         QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
                 .type()
                 .qualifiedName();

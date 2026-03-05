@@ -35,7 +35,6 @@ public class BeanDefinitionUtils {
     private BeanDefinitionUtils() {
         // Utility class
     }
-
     /**
      * Extracts the package name from the given bean definition's class name.
      * <p>
@@ -57,7 +56,6 @@ public class BeanDefinitionUtils {
                 .map(className -> className.substring(0, className.lastIndexOf('.')))
                 .orElse("default");
     }
-
     /**
      * Resolves the fully qualified class name from a bean definition.
      * <p>
@@ -66,7 +64,7 @@ public class BeanDefinitionUtils {
      * @param definition The bean definition to resolve the class name from.
      * @return An Optional containing the fully qualified class name, or empty if it cannot be determined.
      */
-        public static Optional<String> resolveClassName(BeanDefinition definition) {
+    public static Optional<String> resolveClassName(BeanDefinition definition) {
         // Standard bean class name
         String className = definition.getBeanClassName();
         if (className != null) {

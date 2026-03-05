@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to JPA.
+ * Part of the Axon Messaging module. Contains classes related to JPA-specific Unit of Work transaction logic.
  */
 @NullMarked
 package org.axonframework.messaging.core.unitofwork.transaction.jpa;

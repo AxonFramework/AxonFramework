@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to retry.
+ * Part of the Axon Messaging module. Contains classes related to command retries.
  */
 @NullMarked
 package org.axonframework.messaging.commandhandling.retry;

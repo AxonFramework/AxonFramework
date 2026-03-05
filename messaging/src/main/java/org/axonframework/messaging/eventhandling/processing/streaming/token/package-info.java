@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to token.
+ * Part of the Axon Messaging module. Contains classes related to streaming processor token logic.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.token;

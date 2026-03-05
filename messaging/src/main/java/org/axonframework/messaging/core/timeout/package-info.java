@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to timeout.
+ * Part of the Axon Messaging module. Contains classes related to message timeout logic.
  */
 @NullMarked
 package org.axonframework.messaging.core.timeout;

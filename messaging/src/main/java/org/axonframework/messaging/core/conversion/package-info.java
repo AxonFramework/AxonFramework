@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to conversion.
+ * Part of the Axon Messaging module. Contains classes related to message-specific conversion.
  */
 @NullMarked
 package org.axonframework.messaging.core.conversion;

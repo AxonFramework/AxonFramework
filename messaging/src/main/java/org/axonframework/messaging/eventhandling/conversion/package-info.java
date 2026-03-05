@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to conversion.
+ * Part of the Axon Messaging module. Contains classes related to event-specific conversion logic.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.conversion;

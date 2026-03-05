@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to unitofwork.
+ * Part of the Axon Messaging module. Contains classes related to the Unit of Work.
  */
 @NullMarked
 package org.axonframework.messaging.core.unitofwork;

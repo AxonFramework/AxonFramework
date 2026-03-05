@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to interception.
+ * Part of the Axon Messaging module. Contains classes related to message interception components.
  */
 @NullMarked
 package org.axonframework.messaging.core.interception;

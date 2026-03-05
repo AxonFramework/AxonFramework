@@ -18,7 +18,6 @@ package org.axonframework.common.property;
 
 import org.jspecify.annotations.Nullable;
 
-
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.SortedSet;

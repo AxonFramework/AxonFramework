@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to replay.
+ * Part of the Axon Messaging module. Contains classes related to event replays.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.replay;

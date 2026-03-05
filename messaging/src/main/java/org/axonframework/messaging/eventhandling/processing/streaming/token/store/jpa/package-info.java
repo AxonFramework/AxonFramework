@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to JPA.
+ * Part of the Axon Messaging module. Contains classes related to JPA token stores.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;

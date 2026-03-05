@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to segmenting.
+ * Part of the Axon Messaging module. Contains classes related to streaming processor segment logic.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;

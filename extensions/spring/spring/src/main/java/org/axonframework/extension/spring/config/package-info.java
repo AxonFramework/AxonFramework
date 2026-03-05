@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to config.
+ * Part of the Axon Extension module. Contains classes related to Spring config.
  */
 @NullMarked
 package org.axonframework.extension.spring.config;

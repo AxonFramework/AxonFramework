@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to JDBC.
+ * Part of the Axon Messaging module. Contains classes related to JDBC token stores.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc;

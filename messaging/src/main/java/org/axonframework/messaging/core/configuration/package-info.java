@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to configuration.
+ * Part of the Axon Messaging module. Contains classes related to messaging configuration.
  */
 @NullMarked
 package org.axonframework.messaging.core.configuration;

@@ -110,7 +110,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(

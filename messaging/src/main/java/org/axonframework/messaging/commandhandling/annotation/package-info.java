@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Messaging module. Contains classes related to annotation.
+ * Part of the Axon Messaging module. Contains classes related to command-specific annotation logic
  */
 @NullMarked
 package org.axonframework.messaging.commandhandling.annotation;

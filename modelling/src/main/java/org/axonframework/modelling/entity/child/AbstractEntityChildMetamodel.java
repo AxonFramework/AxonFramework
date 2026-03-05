@@ -84,8 +84,8 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
 
     @Override
     public MessageStream.Single<CommandResultMessage> handle(CommandMessage message,
-                                                                      P parentEntity,
-                                                                      ProcessingContext context) {
+                                                             P parentEntity,
+                                                             ProcessingContext context) {
         List<C> childEntities = getChildEntities(parentEntity);
         C targetChildEntity = commandTargetResolver.getTargetChildEntity(childEntities, message, context);
         if (targetChildEntity == null) {

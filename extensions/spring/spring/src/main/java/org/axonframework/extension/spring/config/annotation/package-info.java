@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to annotation.
+ * Part of the Axon Extension module. Contains classes related to Axon's Spring configuration annotations.
  */
 @NullMarked
 package org.axonframework.extension.spring.config.annotation;

@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to JDBC.
+ * Part of the Axon Extension module. Contains classes related to Spring JDBC components.
  */
 @NullMarked
 package org.axonframework.extension.spring.jdbc;

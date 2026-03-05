@@ -86,7 +86,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
@@ -97,7 +97,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
 
     @Override
     public MessageStream.Empty<Message> handle(ResetContext resetContext,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 

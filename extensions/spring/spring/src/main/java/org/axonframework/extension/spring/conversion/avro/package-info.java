@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to avro.
+ * Part of the Axon Extension module. Contains classes related to Spring Avro conversion components.
  */
 @NullMarked
 package org.axonframework.extension.spring.conversion.avro;

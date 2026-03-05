@@ -203,7 +203,7 @@ public class EventProcessorProperties {
          * @return pooled-streaming or subscribed mode, falls back to pooled-streaming.
          */
         @Override
-                public EventProcessorSettings.ProcessorMode processorMode() {
+        public EventProcessorSettings.ProcessorMode processorMode() {
             if (Mode.SUBSCRIBING.equals(mode)) {
                 return ProcessorMode.SUBSCRIBING;
             }

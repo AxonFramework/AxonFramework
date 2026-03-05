@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to data.
+ * Part of the Axon Extension module. Contains classes related to Spring data components.
  */
 @NullMarked
 package org.axonframework.extension.spring.data;

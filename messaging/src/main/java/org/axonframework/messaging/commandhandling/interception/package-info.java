@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-
 /**
- * Part of the Axon Messaging module. Contains classes related to interception.
+ * Part of the Axon Messaging module. Contains classes related to command interception.
  */
 @NullMarked
 package org.axonframework.messaging.commandhandling.interception;

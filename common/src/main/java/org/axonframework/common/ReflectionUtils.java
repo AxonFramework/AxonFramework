@@ -101,16 +101,6 @@ public final class ReflectionUtils {
         }
     }
 
-    /**
-     * Set the {@code field} of {@code object} to a certain {@code value}.
-     * <p>
-     * If necessary, the field is made accessible, assuming the security manager allows it.
-     *
-     * @param field  The field to set {@code value} on.
-     * @param object The object to set the {@code value} on {@code field}.
-     * @param value  The value to set on {@code field}.
-     * @param <T>    The type of the {@code value}.
-     */
     public static <T> void setFieldValue(Field field, Object object, T value) {
         ensureAccessible(field);
         try {
@@ -133,8 +123,8 @@ public final class ReflectionUtils {
      * @return The class on which the method is declared, or {@code null} if not found.
      */
     public static @Nullable Class<?> declaringClass(Class<?> instanceClass,
-                                          String methodName,
-                                          Class<?>... parameterTypes) {
+                                                    String methodName,
+                                                    Class<?>... parameterTypes) {
         try {
             return instanceClass.getMethod(methodName, parameterTypes).getDeclaringClass();
         } catch (NoSuchMethodException e) {
@@ -188,7 +178,7 @@ public final class ReflectionUtils {
      * @throws IllegalStateException If the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible.
      */
-        public static <T extends AccessibleObject> T ensureAccessible(T member) {
+    public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
             member.setAccessible(true);
         }
@@ -231,7 +221,7 @@ public final class ReflectionUtils {
      * @param clazz The class to return fields for.
      * @return An {@code Iterable} providing access to all declared fields in the class hierarchy.
      */
-        public static Iterable<Field> fieldsOf(Class<?> clazz) {
+    public static Iterable<Field> fieldsOf(Class<?> clazz) {
         return fieldsOf(clazz, RECURSIVE);
     }
 
@@ -246,7 +236,7 @@ public final class ReflectionUtils {
      * @return An {@code Iterable} providing access to all declared fields in the class, including the hierarchy if
      * {@code recursive} was set.
      */
-        public static Iterable<Field> fieldsOf(Class<?> clazz, boolean recursive) {
+    public static Iterable<Field> fieldsOf(Class<?> clazz, boolean recursive) {
         List<Field> fields = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
@@ -269,8 +259,8 @@ public final class ReflectionUtils {
      *                               {@code clazz}.
      */
     static Method methodOf(Class<?> clazz,
-                                  String methodName,
-                                  Class<?>... parameterTypes) throws NoSuchMethodException {
+                           String methodName,
+                           Class<?>... parameterTypes) throws NoSuchMethodException {
         return clazz.getMethod(methodName, parameterTypes);
     }
 
@@ -282,7 +272,7 @@ public final class ReflectionUtils {
      * @param clazz The class to return methods for.
      * @return An {@code Iterable} providing access to all declared methods in the class hierarchy.
      */
-        public static Iterable<Method> methodsOf(Class<?> clazz) {
+    public static Iterable<Method> methodsOf(Class<?> clazz) {
         return methodsOf(clazz, RECURSIVE);
     }
 
@@ -297,7 +287,7 @@ public final class ReflectionUtils {
      * @return An {@code Iterable} providing access to all declared methods in the class, including the hierarchy if
      * {@code recursive} was set.
      */
-        public static Iterable<Method> methodsOf(Class<?> clazz, boolean recursive) {
+    public static Iterable<Method> methodsOf(Class<?> clazz, boolean recursive) {
         List<Method> methods = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
@@ -315,7 +305,7 @@ public final class ReflectionUtils {
      * @return The boxed wrapper type for the given {@code primitiveType}.
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
-        public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
+    public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
         Assert.notNull(primitiveType, () -> "primitiveType may not be null");
         Assert.isTrue(primitiveType.isPrimitive(), () -> "primitiveType is not actually primitive: " + primitiveType);
 
@@ -392,7 +382,7 @@ public final class ReflectionUtils {
      * @param genericTypeIndex The index of the type.
      * @return An optional that contains the resolved type, if found.
      */
-        public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
+    public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
         final Type genericType = field.getGenericType();
         if (!(genericType instanceof ParameterizedType)
                 || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
@@ -408,7 +398,7 @@ public final class ReflectionUtils {
      * @param genericTypeIndex The index of the type.
      * @return An optional that contains the resolved type, if found.
      */
-        public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
+    public static Optional<Class<?>> resolveMemberGenericType(Member member, int genericTypeIndex) {
         final Type genericType = getMemberGenericType(member);
         if (!(genericType instanceof ParameterizedType)
                 || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
@@ -468,7 +458,7 @@ public final class ReflectionUtils {
      * @return The type of value of the {@code member}.
      * @throws IllegalStateException If the member is not supported.
      */
-        public static Class<?> getMemberValueType(Member member) {
+    public static Class<?> getMemberValueType(Member member) {
         if (member instanceof Method method) {
             return method.getReturnType();
         } else if (member instanceof Field field) {
@@ -595,7 +585,7 @@ public final class ReflectionUtils {
      * @return List of all found fields and messages.
      * @see #collectMatchingMethodsAndFields(Class, Predicate)
      */
-        public static List<? extends Member> collectMethodsAndFields(Class<?> type) {
+    public static List<? extends Member> collectMethodsAndFields(Class<?> type) {
         return collectMatchingMethodsAndFields(type, it -> true);
     }
 
@@ -607,7 +597,7 @@ public final class ReflectionUtils {
      * @param filter A filter that only keeps matching members.
      * @return List of all found fields and messages.
      */
-        public static List<? extends Member> collectMatchingMethodsAndFields(Class<?> type,
+    public static List<? extends Member> collectMatchingMethodsAndFields(Class<?> type,
                                                                          Predicate<Member> filter) {
         List<Method> methods = stream(ReflectionUtils.methodsOf(type).spliterator(), false).toList();
         var deduplicateFilter = deduplicateRecordFields(methods);
@@ -628,7 +618,7 @@ public final class ReflectionUtils {
      * @param <T>      The type parameter.
      * @return A set of all concrete types in the hierarchy, or an empty set if the type is not sealed.
      */
-        public static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(Class<T> rootType) {
+    public static <T> Set<Class<? extends T>> collectSealedHierarchyIfSealed(Class<T> rootType) {
         if (!rootType.isSealed()) {
             return Set.of();
         }

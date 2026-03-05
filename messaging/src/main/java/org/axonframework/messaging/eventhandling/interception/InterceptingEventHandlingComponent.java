@@ -77,7 +77,7 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         return interceptorChain.proceed(event, context)
                                .ignoreEntries()
                                .cast();
