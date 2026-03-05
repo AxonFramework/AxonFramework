@@ -92,6 +92,7 @@ These extensions are part of the main Axon Framework repository and provide esse
 |<<Dropwizard metrics>>            |`axon-metrics-dropwizard`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-dropwizard[available]
 |<<Micrometer metrics>>            |`axon-metrics-micrometer`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-micrometer[available]
 |<<Axon Tracing OpenTelemetry>>         |`axon-tracing-opentelemetry`      |`org.axonframework.extensions.tracing`  |https://central.sonatype.com/search?q=a:axon-tracing-opentelemetry[available]
+|<<Axon Reactor>>                       |`axon-reactor`                    |`org.axonframework.extensions.reactor`  |https://central.sonatype.com/search?q=a:axon-reactor[available]
 |===
 
 ==== Axon Spring
@@ -117,6 +118,45 @@ https://micrometer.io/[Micrometer] is a dimensional-first metrics collection fac
 ==== Axon Tracing OpenTelemetry
 
 This extension contains the components needed to xref:axon-framework-reference:monitoring:tracing.adoc[enable tracing with OpenTelemetry].
+
+[[axon-reactor]]
+==== Axon Reactor
+
+This extension provides reactive gateways for Axon Framework's command, event, and query buses using https://projectreactor.io/[Project Reactor].
+It includes `ReactorCommandGateway`, `ReactorEventGateway`, and `ReactorQueryGateway` — reactor counterparts to Axon's standard gateways that return `Mono` and `Flux` instead of `CompletableFuture`.
+
+The key feature is that reactive dispatch interceptors run inside the Reactor subscription chain.
+This gives interceptors access to the Reactor context, enabling integration with reactive context holders such as Spring Security's `ReactiveSecurityContextHolder`.
+This is particularly useful in Spring WebFlux applications where thread-local context holders are not available.
+
+When using Spring Boot, the reactive gateways are auto-configured when `reactor-core` is on the classpath.
+
+To add the extension to your project:
+
+[tabs]
+====
+Maven::
++
+--
+[source,xml]
+----
+<dependency>
+    <groupId>org.axonframework.extensions.reactor</groupId>
+    <artifactId>axon-reactor</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+--
+
+Gradle::
++
+--
+[source,groovy]
+----
+implementation 'org.axonframework.extensions.reactor:axon-reactor:${axonVersion}'
+----
+--
+====
 
 === External extensions
 

@@ -18,25 +18,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon-parent</artifactId>
+        <groupId>org.axonframework.extensions</groupId>
+        <artifactId>axon-extensions</artifactId>
         <version>5.1.0-SNAPSHOT</version>
-        <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
-    <groupId>org.axonframework.extensions</groupId>
-    <artifactId>axon-extensions</artifactId>
-
-    <name>Axon Extension - Parent</name>
-    <description>
-        Module providing parent for Axon Framework Extensions.
-    </description>
-
+    <groupId>org.axonframework.extensions.reactor</groupId>
+    <artifactId>axon-reactor-extension</artifactId>
     <packaging>pom</packaging>
+
+    <name>Axon Extension - Reactor - Parent</name>
+    <description>Module providing parent for Axon Framework Reactor Extension.</description>
+
     <modules>
-        <module>spring</module>
-        <module>metrics</module>
-        <module>tracing</module>
-        <module>reactor</module>
+        <module>axon-reactor</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.axonframework.extensions.reactor</groupId>
+                <artifactId>axon-reactor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
