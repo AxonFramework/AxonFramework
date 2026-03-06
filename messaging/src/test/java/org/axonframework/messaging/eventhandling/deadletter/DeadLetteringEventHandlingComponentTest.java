@@ -936,6 +936,11 @@ class DeadLetteringEventHandlingComponentTest {
             this.sequenceId = sequenceId;
         }
 
+        @Override
+        public String name() {
+            return "StubEventHandlingComponent";
+        }
+
         void failingWith(RuntimeException exception) {
             this.failWith = exception;
         }

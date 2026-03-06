@@ -40,6 +40,17 @@ import java.util.Set;
 public interface EventHandlingComponent extends EventHandler, ResetHandler, DescribableComponent {
 
     /**
+     * Returns the name of this component.
+     * <p>
+     * The name should be stable across deployments and restarts, and should be unique within a single
+     * {@link org.axonframework.messaging.eventhandling.processing.EventProcessor} instance. This enables stable
+     * identity-based matching by infrastructure that manages per-component state.
+     *
+     * @return The name of this {@link EventHandlingComponent}.
+     */
+    String name();
+
+    /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      *
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

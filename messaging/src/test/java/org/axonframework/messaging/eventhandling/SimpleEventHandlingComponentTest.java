@@ -45,6 +45,35 @@ class SimpleEventHandlingComponentTest {
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
 
     @Nested
+    class NameTest {
+
+        @Test
+        void shouldReturnConstructorProvidedName() {
+            // given
+            var expectedName = "myComponentName";
+
+            // when
+            var component = SimpleEventHandlingComponent.create(expectedName);
+
+            // then
+            assertThat(component.name()).isEqualTo(expectedName);
+        }
+
+        @Test
+        void delegatingShouldReturnDelegateName() {
+            // given
+            var expectedName = "delegatedName";
+            var delegate = SimpleEventHandlingComponent.create(expectedName);
+
+            // when
+            var decorating = new DecoratedTest.SampleDecoration(delegate);
+
+            // then
+            assertThat(decorating.name()).isEqualTo(expectedName);
+        }
+    }
+
+    @Nested
     class SequencingPolicyTest {
 
         @Test

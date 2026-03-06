@@ -54,6 +54,11 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
+    public String name() {
+        return "LegacyEventHandlingComponent[%s]".formatted(eventHandlerInvoker.getClass().getName());
+    }
+
+    @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
                                                         ProcessingContext context) {
         try {

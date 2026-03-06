@@ -82,6 +82,11 @@ class SequenceOverridingEventHandlingComponentTest {
 
         private @NonNull EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
         return new EventHandlingComponent() {
+            @Override
+            public String name() {
+                return "test-delegate";
+            }
+
             @NonNull
             @Override
             public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {

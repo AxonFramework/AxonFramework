@@ -100,6 +100,11 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
                                                         ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();

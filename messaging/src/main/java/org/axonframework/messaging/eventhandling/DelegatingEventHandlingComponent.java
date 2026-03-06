@@ -49,6 +49,11 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
+    public String name() {
+        return delegate.name();
+    }
+
+    @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
                                                         ProcessingContext context) {
         return delegate.handle(event, context);
