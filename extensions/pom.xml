@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring</module>
+        <module>micronaut</module>
         <module>metrics</module>
         <module>tracing</module>
     </modules>
