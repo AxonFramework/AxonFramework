@@ -45,7 +45,7 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 - link:https://github.com/AxonFramework/AxonFramework/pull/4227[#4227] Migration paths documentation for serializer/converter (link:https://github.com/AxonFramework/AxonFramework/issues/4091)[#4091])
 - link:https://github.com/AxonFramework/AxonFramework/pull/4256[#4256] Adjust Spring-Boot version support matrix
 
-==== Bug Fixes
+==== Bug fixes
 
 - link:https://github.com/AxonFramework/AxonFramework/pull/4149[#4149] Rename missing annotated to autodetected in configuration API
 - link:https://github.com/AxonFramework/AxonFramework/pull/4166[#4166] Ensure Event Handling Components are described correctly
