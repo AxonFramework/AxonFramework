@@ -28,6 +28,7 @@ import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -117,13 +118,13 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore(ConnectionProvider connectionProvider,
+    public TokenStore tokenStore(DataSource dataSource,
                                  TokenSchema tokenSchema, ObjectMapper defaultAxonObjectMapper) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
                 .schema(tokenSchema)
                 .claimTimeout(tokenStoreProperties.getClaimTimeout());
         var converter = new JacksonConverter(defaultAxonObjectMapper);
-        return new JdbcTokenStore(connectionProvider::getConnection, converter, config);
+        return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource), converter, config);
     }
 
 //    @Bean
