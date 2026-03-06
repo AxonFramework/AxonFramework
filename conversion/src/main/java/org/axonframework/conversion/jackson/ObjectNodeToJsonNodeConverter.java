@@ -16,10 +16,10 @@
 
 package org.axonframework.conversion.jackson;
 
+import org.axonframework.conversion.ContentTypeConverter;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-import org.axonframework.conversion.ContentTypeConverter;
 
 /**
  * A {@link ContentTypeConverter} implementation for Jackson 3 that converts an {@link ObjectNode} object

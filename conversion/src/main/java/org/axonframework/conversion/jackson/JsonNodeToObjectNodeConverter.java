@@ -16,12 +16,12 @@
 
 package org.axonframework.conversion.jackson;
 
+import org.axonframework.conversion.ContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.JsonNodeType;
 import tools.jackson.databind.node.ObjectNode;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.ContentTypeConverter;
 
 /**
  * A {@link ContentTypeConverter} implementation that converts a {@link JsonNode} into an {@link ObjectNode}.

@@ -30,7 +30,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.jspecify.annotations.Nullable;
 
-
 import java.util.List;
 
 /**
