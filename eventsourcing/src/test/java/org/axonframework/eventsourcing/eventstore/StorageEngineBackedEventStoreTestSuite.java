@@ -48,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -256,10 +257,10 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
 
         @Test
         protected void shouldAppendEventAfterSourcing() {
-            UnitOfWork workUnit = unitOfWork();
+            UnitOfWork uow = unitOfWork();
             EventMessage newMessage = message(new CourseUpdated(TAG1.value(), "4"));
 
-            workUnit.runOnInvocation(pc -> {
+            uow.runOnInvocation(pc -> {
                 EventStoreTransaction tx = eventStore.transaction(pc);
                 MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
 
@@ -269,7 +270,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                 tx.appendEvent(newMessage);
             });
 
-            execute(workUnit);
+            execute(uow);
 
             assertThat(stream(StreamingCondition.conditionFor(baseToken, EventCriteria.havingTags(TAG1)), 4))
                 .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
@@ -277,9 +278,135 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
         }
 
         @Test
+        protected void latestTokenShouldSeeOnlyNewEvents() {
+            TrackingToken latestToken = unitOfWork().executeWithResult(eventStore::latestToken).join();
+
+            // Append a message:
+            EventMessage newMessage = message(new CourseUpdated(TAG1.value(), "4"));
+            UnitOfWork uow = unitOfWork();
+
+            uow.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                tx.appendEvent(newMessage);
+            });
+
+            execute(uow);
+
+            assertThat(stream(StreamingCondition.startingFrom(latestToken), 1))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(newMessage);
+        }
+
+        @Test
+        protected void consistencyMarkerPositionFromAppendEventShouldSeeOnlyNewEvents() {
+            EventMessage newMessage1 = message(new CourseUpdated(TAG1.value(), "4"));
+            EventMessage newMessage2 = message(new CourseUpdated(TAG1.value(), "5"));
+            AtomicReference<EventStoreTransaction> tx1 = new AtomicReference<>();
+            AtomicReference<EventStoreTransaction> tx2 = new AtomicReference<>();
+            UnitOfWork uow1 = unitOfWork();
+            UnitOfWork uow2 = unitOfWork();
+
+            uow1.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+
+                tx1.set(tx);
+
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                tx.appendEvent(newMessage1);
+            });
+
+            execute(uow1);
+
+            ConsistencyMarker marker1 = tx1.get().appendPosition();
+
+            assertThat(source(SourcingCondition.conditionFor(marker1.position(), EventCriteria.havingTags(TAG1))))
+                .isEmpty();
+
+            uow2.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+
+                tx2.set(tx);
+
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(4);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                tx.appendEvent(newMessage2);
+            });
+
+            execute(uow2);
+
+            ConsistencyMarker marker2 = tx2.get().appendPosition();
+
+            assertThat(source(SourcingCondition.conditionFor(marker1.position(), EventCriteria.havingTags(TAG1))))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(newMessage2);
+
+            assertThat(source(SourcingCondition.conditionFor(marker2.position(), EventCriteria.havingTags(TAG1))))
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .isEmpty();
+        }
+
+        @Test
+        protected void resumePositionAfterSourcingShouldBeUsableForResumingSourcing() {
+            // Obtain a resume position from a sourcing:
+            Position resumePosition = unitOfWork().executeWithResult(pc -> {
+                AtomicReference<Position> ref = new AtomicReference<>();
+
+                MessageStream<? extends EventMessage> sourcing = eventStore.transaction(pc).source(
+                    SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)),
+                    ref::set
+                );
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+
+                return CompletableFuture.completedFuture(ref.get());
+            }).join();
+
+            // Expect that sourcing with the resume position returns nothing:
+            List<EventMessage> result = source(SourcingCondition.conditionFor(resumePosition, EventCriteria.havingTags(TAG1)));
+
+            assertThat(result).isEmpty();
+
+            // Append a message that would match:
+            EventMessage newMessage = message(new CourseUpdated(TAG1.value(), "4"));
+            UnitOfWork uow = unitOfWork();
+
+            uow.runOnInvocation(pc -> {
+                EventStoreTransaction tx = eventStore.transaction(pc);
+                MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
+
+                assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                assertThat(tx.appendPosition()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+
+                tx.appendEvent(newMessage);
+            });
+
+            execute(uow);
+
+            // Expect that sourcing with the resume position now returns only this new message:
+            result = source(SourcingCondition.conditionFor(resumePosition, EventCriteria.havingTags(TAG1)));
+
+            assertThat(result).hasSize(1);
+            assertThat(result)
+                .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                .containsExactly(newMessage);
+        }
+
+        @Test
         protected void shouldDetectConflictWhenAppendingWithSameConsistencyMarker() {
-            UnitOfWork workUnit1 = unitOfWork();
-            UnitOfWork workUnit2 = unitOfWork();
+            UnitOfWork uow1 = unitOfWork();
+            UnitOfWork uow2 = unitOfWork();
             EventMessage newMessage1 = message(new CourseUpdated(TAG1.value(), "4a"));
             EventMessage newMessage2 = message(new CourseUpdated(TAG1.value(), "4b"));
 
@@ -291,7 +418,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
              * Transaction 1:
              */
 
-            workUnit1.runOnInvocation(pc -> {
+            uow1.runOnInvocation(pc -> {
                 EventStoreTransaction tx = eventStore.transaction(pc);
                 MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
 
@@ -308,7 +435,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
              * Transaction 2:
              */
 
-            workUnit2.runOnInvocation(pc -> {
+            uow2.runOnInvocation(pc -> {
                 EventStoreTransaction tx = eventStore.transaction(pc);
                 MessageStream<? extends EventMessage> sourcing = tx.source(SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1)));
 
@@ -325,8 +452,8 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
              * Start both units of work, and wait until they finished sourcing:
              */
 
-            CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> workUnit1.execute().join());
-            CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> workUnit2.execute().join());
+            CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> uow1.execute().join());
+            CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> uow2.execute().join());
 
             awaitLatch(sourcingFinished);
 

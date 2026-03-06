@@ -16,29 +16,40 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
+import org.axonframework.eventsourcing.eventstore.Position;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
+import org.axonframework.eventsourcing.snapshot.api.Snapshot;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -48,21 +59,21 @@ import static org.mockito.Mockito.*;
  *
  * @author Allard Buijze
  */
+@ExtendWith(MockitoExtension.class)
 class EventSourcingRepositoryTest {
 
     private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("aggregateId", "id");
 
-    private EventStore eventStore;
-    private EventStoreTransaction eventStoreTransaction;
+    private EventStore eventStore = mock();
+    private EventStoreTransaction eventStoreTransaction = mock();
+    private Snapshotter<String, String> snapshotter = mock();
     private EventSourcedEntityFactory<String, String> factory;
 
     private EventSourcingRepository<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
-        eventStore = mock();
-        eventStoreTransaction = mock();
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
 
         factory = (id, event, ctx) -> {
@@ -77,7 +88,8 @@ class EventSourcingRepositoryTest {
                 eventStore,
                 (id, event, context) -> factory.create(id, event, context),
                 (identifier, ctx) -> TEST_CRITERIA,
-                (entity, event, context) -> entity + "-" + event.payload()
+                (entity, event, context) -> entity + "-" + event.payload(),
+                snapshotter
         );
     }
 
@@ -86,7 +98,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
@@ -95,9 +107,60 @@ class EventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+        verify(snapshotter).load("test");
 
         assertEquals("test(0)-0-1", result.resultNow().entity());
+    }
+
+    @Test
+    void loadEventSourcedEntityFromSnapshot(@Captor ArgumentCaptor<EvolutionResult> evolutionResult) {
+        ProcessingContext processingContext = new StubProcessingContext();
+        EventMessage event1 = createEvent(0);
+        EventMessage event2 = createEvent(1);
+
+        doAnswer(m -> {
+            @SuppressWarnings("unchecked")
+            Consumer<Position> consumer = (Consumer<Position>)m.getArgument(1);
+
+            consumer.accept(new GlobalIndexPosition(10));
+
+            return MessageStream.fromStream(Stream.of(event1, event2));
+        })
+        .when(eventStoreTransaction)
+        .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+
+        when(snapshotter.load("test")).thenReturn(CompletableFuture.completedFuture(new Snapshot(
+            new GlobalIndexPosition(5),
+            "1",
+            "payload",
+            Instant.now(),
+            Map.of()
+        )));
+
+        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
+
+        assertTrue(result.isDone());
+        assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
+        verify(eventStore, times(2)).transaction(processingContext);
+        verify(eventStoreTransaction).onAppend(any());
+        verify(eventStoreTransaction)
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+        verify(snapshotter).load("test");
+        verify(snapshotter).onEventApplied("test", "payload-0", event1);
+        verify(snapshotter).onEventApplied("test", "payload-0-1", event2);
+        verify(snapshotter).onEvolutionCompleted(
+            eq("test"),
+            eq("payload-0-1"),
+            eq(new GlobalIndexPosition(10)),
+            evolutionResult.capture()
+        );
+
+        assertThat(evolutionResult.getValue().eventsApplied()).isEqualTo(2);
+        assertThat(evolutionResult.getValue().sourcingTime()).isLessThan(Duration.ofSeconds(1));
+        assertThat(evolutionResult.getValue().snapshotRequested()).isFalse();
+
+        assertEquals("payload-0-1", result.resultNow().entity());
     }
 
     @Test
@@ -130,13 +193,14 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
         testSubject.attach(result, processingContext2);
 
         verify(eventStoreTransaction, times(2)).onAppend(any());
+        verify(snapshotter).load("test");
     }
 
     @Test
@@ -145,7 +209,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
@@ -168,6 +232,7 @@ class EventSourcingRepositoryTest {
         }, processingContext2);
 
         verify(eventStoreTransaction, times(2)).onAppend(any());
+        verify(snapshotter).load("test");
     }
 
     @Test
@@ -175,7 +240,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
@@ -184,8 +249,10 @@ class EventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
-        //noinspection unchecked
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+        verify(snapshotter).load("test");
+
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Consumer<EventMessage>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
         assertEquals("test(0)-0-1", result.resultNow().entity());
@@ -199,7 +266,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.load("test", processingContext);
@@ -218,7 +285,7 @@ class EventSourcingRepositoryTest {
         };
         doReturn(MessageStream.fromStream(Stream.of()))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.loadOrCreate("test", processingContext);
         assertTrue(result.isCompletedExceptionally());
@@ -233,7 +300,7 @@ class EventSourcingRepositoryTest {
         };
         doReturn(MessageStream.fromStream(Stream.of(createEvent(0))))
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
@@ -246,7 +313,7 @@ class EventSourcingRepositoryTest {
         StubProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.load("test", processingContext);
@@ -256,7 +323,8 @@ class EventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+        verify(snapshotter).load("test");
 
         assertNull(loaded.resultNow().entity());
     }
@@ -266,7 +334,7 @@ class EventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.loadOrCreate("test", processingContext);
@@ -276,7 +344,8 @@ class EventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
+                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
+        verify(snapshotter).load("test");
 
         assertEquals("test()", loaded.resultNow().entity());
     }

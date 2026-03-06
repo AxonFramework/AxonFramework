@@ -169,7 +169,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             return WITHOUT_MARKER;
         }
 
-        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
+        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()))
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
@@ -321,7 +321,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public void setCallback(Runnable callback) {
             this.callback.set(callback);
-            callback.run();
+            if (isCompleted() || hasNextAvailable()) {
+                callback.run();
+            }
         }
 
         @Override
@@ -364,7 +366,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         Optional<Entry<EventMessage>> lastEntry() {
             if (sharedLastEntry.compareAndSet(false, true)) {
-                Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end));
+                Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end + 1));
                 return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
             } else {
                 return Optional.empty();

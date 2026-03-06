@@ -16,10 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.jspecify.annotations.Nullable;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.core.MessageStream;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -50,10 +51,47 @@ public interface EventStoreTransaction {
      *
      * @param condition The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing the sequence
      *                  of events that can rehydrate a model.
-     * @return The {@link MessageStream} of type {@link EventMessage} containing to the event sequence complying to the
+     * @return The {@link MessageStream} of type {@link EventMessage} containing the event sequence complying to the
      * given {@code condition}.
      */
-    MessageStream<? extends EventMessage> source(SourcingCondition condition);
+    default MessageStream<? extends EventMessage> source(SourcingCondition condition) {
+        return source(condition, null);
+    }
+
+    /**
+     * Sources a {@link MessageStream} of type {@link EventMessage} based on the given {@code condition},
+     * optionally invoking the given {@link Position resume position} callback.
+     * <p>
+     * The provided {@code resumePositionCallback}, if non-{@code null}, is invoked at most once and only
+     * after the returned {@link MessageStream} has been consumed completely. For most implementations, the
+     * {@link Position resume position} is only known when the stream reaches its terminal event. As such, the
+     * callback is guaranteed to be invoked only if the stream is fully consumed.
+     * <p>
+     * If the stream terminates with an error, is closed prematurely, or is not consumed to completion,
+     * the callback is not guaranteed to be invoked.
+     * <p>
+     * The callback should not throw exceptions; doing so may result in undefined behavior.
+     * <p>
+     * Note that using {@link EventCriteria#havingAnyTag no criteria} does not make sense for sourcing, as it is
+     * <b>not</b> recommended to source the entire event store.
+     * <p>
+     * <b>Any</b> {@code EventStoreTransaction} using the {@link EventStorageEngine#source(SourcingCondition)} is
+     * expected to {@link MessageStream#filter(Predicate) filter} the
+     * {@link TerminalEventMessage} with the {@link ConsistencyMarker}.
+     *
+     * @param condition              The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing
+     *                               the sequence of events that can rehydrate a model.
+     * @param resumePositionCallback An optional callback that receives the {@link Position} from which sourcing
+     *                               may be resumed once it becomes available.
+     * @return The {@link MessageStream} of type {@link EventMessage} containing the event sequence complying to the
+     * given {@code condition}.
+     *
+     * @since 5.0.3
+     */
+    MessageStream<? extends EventMessage> source(
+        SourcingCondition condition,
+        @Nullable Consumer<Position> resumePositionCallback
+    );
 
     /**
      * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction.
