@@ -42,7 +42,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.PreparedStatement;
@@ -139,16 +138,14 @@ class JdbcTokenStoreTest {
 
     @Test
     void fetchTokenBySegment() {
-        List<Segment> createdSegments = transactionManager.fetchInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
-                "test",
-                2,
-                null,
-                createProcessingContext())
-        ));
-        Segment segmentToFetch = createdSegments.get(1);
+        TrackingToken exToken = new GlobalSequenceTrackingToken(3);
+        List<Segment> createdSegments = transactionManager.fetchInTransaction(
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments("test", 2, exToken, createProcessingContext())));
 
-        transactionManager.executeInTransaction(() -> assertNull(
-                joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, null))));
+        Segment segmentToFetch = createdSegments.get(1);
+        TrackingToken token = transactionManager.fetchInTransaction(
+                () -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch, createProcessingContext())));
+        assertEquals(exToken, token);
     }
 
     @Test
@@ -281,7 +278,6 @@ class JdbcTokenStoreTest {
                                                                                     createProcessingContext()))));
     }
 
-    @Transactional
     @Test
     void readingMissingTokenThrowsException() {
         assertThrows(UnableToClaimTokenException.class,
@@ -520,7 +516,6 @@ class JdbcTokenStoreTest {
                              () -> joinAndUnwrap(tokenStore.fetchToken("test1", 1, null))));
     }
 
-    @Transactional
     @Test
     void fetchTokenFailsWhenClaimedByOtherNode() {
         assertThrows(UnableToClaimTokenException.class,
@@ -528,7 +523,6 @@ class JdbcTokenStoreTest {
                              () -> joinAndUnwrap(concurrentTokenStore.fetchToken("test1", 1, null))));
     }
 
-    @Transactional
     @Test
     void identifierInitializedOnDemand() {
         ProcessingContext context = createProcessingContext();
@@ -541,7 +535,6 @@ class JdbcTokenStoreTest {
         assertEquals(id1, id2);
     }
 
-    @Transactional
     @Test
     void identifierReadIfAvailable() throws SQLException {
         ConfigToken token = new ConfigToken(Collections.singletonMap("id", "test123"));
