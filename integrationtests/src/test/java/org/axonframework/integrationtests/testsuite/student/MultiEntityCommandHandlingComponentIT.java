@@ -61,7 +61,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();
@@ -123,7 +123,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
     @Test
     void canHandleCommandThatTargetsMultipleOfTheSameModelInSameAnnotatedCommandHandler() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();

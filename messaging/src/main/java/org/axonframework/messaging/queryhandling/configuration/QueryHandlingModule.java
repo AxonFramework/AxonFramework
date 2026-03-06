@@ -24,6 +24,7 @@ import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryBus;
@@ -193,14 +194,15 @@ public interface QueryHandlingModule extends Module, ModuleBuilder<QueryHandling
          *                                 of the query handling component.
          * @return The query handler phase of this builder, for a fluent API.
          */
-        default QueryHandlingModule.QueryHandlerPhase annotatedQueryHandlingComponent(
+        default QueryHandlingModule.QueryHandlerPhase autodetectedQueryHandlingComponent(
                 ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return queryHandlingComponent(c -> new AnnotatedQueryHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
-                    ClasspathHandlerDefinition.forClass(c.getClass()),
+                    c.getOptionalComponent(HandlerDefinition.class)
+                     .orElse(ClasspathHandlerDefinition.forClass(c.getClass())),
                     c.getComponent(MessageTypeResolver.class),
                     c.getComponent(MessageConverter.class)
             ));

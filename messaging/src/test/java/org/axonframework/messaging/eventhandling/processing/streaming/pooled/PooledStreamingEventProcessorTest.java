@@ -34,6 +34,7 @@ import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
@@ -139,7 +140,8 @@ class PooledStreamingEventProcessorTest {
         var componentsWithDefault = new ArrayList<>(eventHandlingComponents);
         componentsWithDefault.add(defaultEventHandlingComponent);
 
-        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
+        EventProcessorConfiguration baseConfig = new EventProcessorConfiguration(PROCESSOR_NAME, null);
+        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration(baseConfig)
                 .eventSource(stubMessageSource)
                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
                 .tokenStore(tokenStore)

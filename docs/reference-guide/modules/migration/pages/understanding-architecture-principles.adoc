@@ -24,6 +24,7 @@ This change flows through:
 Modern systems increasingly demand non-blocking execution.
 By making async explicit, developers can reason about concurrency clearly and therefore can optimize scheduling effectively.
 
+[#improved_configuration_architecture]
 == The improved configuration architecture makes configuring your project easier
 
 One of the most architecturally significant changes is how Axon Framework approaches configuration.
@@ -91,6 +92,7 @@ The benefits of this architecture include:
 
 **For more info:** link:https://www.axoniq.io/blog/announcing-axon-framework-5-configuring-axon-made-easy[Configuration Blog]
 
+[#moving-away-from-aggregates]
 == Moving away from fixed aggregates to entities with tags: the Dynamic Consistency Boundary approach
 
 One of the most significant changes is how Axon Framework 5 conceptualizes event storage.

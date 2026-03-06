@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - master
-      - axon-*.*.x
+      - 'axon-5.*.x'
     paths-ignore:
       - 'docs/**'
 
@@ -21,6 +21,9 @@ jobs:
           - java-version: 21
             sonar-enabled: true
             deploy-enabled: true
+          - java-version: 25
+            sonar-enabled: false
+            deploy-enabled: false
 
     steps:
       - name: Checkout code

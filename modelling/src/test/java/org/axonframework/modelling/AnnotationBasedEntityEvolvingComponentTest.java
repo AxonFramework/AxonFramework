@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;

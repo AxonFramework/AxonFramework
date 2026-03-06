@@ -17,6 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import org.jspecify.annotations.Nullable;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ApplicationConfigurer;
@@ -26,6 +27,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 
 import java.util.List;
 import java.util.Map;
@@ -110,6 +112,27 @@ public class SpringAxonApplication implements ApplicationConfigurer {
             @Override
             public <C> Optional<C> getOptionalComponent(Class<C> type, @Nullable String name) {
                 return componentRegistry.configuration().getOptionalComponent(type, name);
+            }
+
+            @Override
+            public <C> C getComponent(TypeReference<C> typeReference) {
+                return componentRegistry.configuration().getComponent(typeReference);
+            }
+
+            @Override
+            public <C> C getComponent(TypeReference<C> typeReference, @Nullable String name) {
+                return componentRegistry.configuration().getComponent(typeReference, name);
+            }
+
+            @Override
+            public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference) {
+                return componentRegistry.configuration().getOptionalComponent(typeReference);
+            }
+
+            @Override
+            public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference,
+                                                        @Nullable String name) {
+                return componentRegistry.configuration().getOptionalComponent(typeReference, name);
             }
 
             @Override

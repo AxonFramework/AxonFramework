@@ -18,7 +18,6 @@ package org.axonframework.conversion.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.core.Metadata;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.SerializationException;
@@ -38,6 +36,12 @@ import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.SimpleSerializedObject;
 import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.UnknownSerializedType;
+import org.axonframework.conversion.jackson2.ByteArrayToJsonNodeConverter;
+import org.axonframework.conversion.jackson2.JsonNodeToByteArrayConverter;
+import org.axonframework.conversion.jackson2.JsonNodeToObjectNodeConverter;
+import org.axonframework.conversion.jackson2.ObjectNodeToJsonNodeConverter;
+import org.axonframework.messaging.core.Metadata;
+
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -138,40 +142,9 @@ public class JacksonSerializer implements Serializer {
         converter.registerConverter(new ObjectNodeToJsonNodeConverter());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T convert(@Nullable Object source, Type targetRepresentation) {
-        if (source == null) {
-            return null;
-        }
-        Class<?> sourceType = source.getClass();
-        JavaType valueType = objectMapper.constructType(targetRepresentation);
-        if (converter.canConvert(sourceType, valueType.getRawClass())) {
-            return (T) converter.convert(source, valueType.getRawClass());
-        } else if (converter.canConvert(sourceType, byte[].class)) {
-            // must be a serialized form
-            byte[] bytes = converter.convert(source, byte[].class);
-            try {
-                return objectMapper.readValue(bytes, valueType);
-            } catch (IOException e) {
-                throw new SerializationException(
-                        "Exception when trying to convert object of type '" + sourceType.getTypeName() + "' to '"
-                                + targetRepresentation.getTypeName() + "'", e);
-            }
-        } else if (converter.canConvert(valueType.getRawClass(),
-                                        byte[].class)) {
-            // the target is a serialized form
-            try {
-                byte[] bytes = objectMapper.writeValueAsBytes(source);
-                return (T) converter.convert(bytes, valueType.getRawClass());
-            } catch (JsonProcessingException e) {
-                throw new SerializationException(
-                        "Exception when trying to convert object of type '" + sourceType.getTypeName() + "' to '"
-                                + targetRepresentation.getTypeName() + "'", e);
-            }
-        } else {
-            return objectMapper.convertValue(source, valueType);
-        }
+        return converter.convert(source, targetRepresentation);
     }
 
     @Override
@@ -224,8 +197,10 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
-        return JsonNode.class.equals(expectedRepresentation) || String.class.equals(expectedRepresentation) ||
-                converter.canConvert(byte[].class, expectedRepresentation);
+        return JsonNode.class.equals(expectedRepresentation)
+                || String.class.equals(expectedRepresentation)
+                || (converter instanceof ChainingContentTypeConverter
+                && ((ChainingContentTypeConverter) converter).canConvert(byte[].class, expectedRepresentation));
     }
 
     @Override

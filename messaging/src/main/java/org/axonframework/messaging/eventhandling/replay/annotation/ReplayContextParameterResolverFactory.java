@@ -18,17 +18,17 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -66,14 +66,14 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
         @Override
         public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
-            Optional<TrackingToken> token = TrackingToken.fromContext(context);
-            if (token.isPresent()) {
-                Converter converter = context.component(Converter.class);
-                return CompletableFuture.completedFuture(
-                        ReplayToken.replayContext(token.get(), this.type, converter).orElse(null)
-                );
+            TrackingToken token = TrackingToken.fromContext(context).orElse(null);
+            if (token == null) {
+                return CompletableFuture.completedFuture(null);
             }
-            return CompletableFuture.completedFuture(null);
+
+            return CompletableFuture.completedFuture(
+                    ReplayToken.replayContext(token, type, context.component(Converter.class)).orElse(null)
+            );
         }
 
         @Override

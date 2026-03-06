@@ -22,6 +22,10 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
@@ -31,6 +35,7 @@ import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequenci
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+
 
 import java.util.List;
 import java.util.Objects;
@@ -54,14 +59,14 @@ public class SimpleEventHandlingComponent implements
         EventHandlerRegistry<SimpleEventHandlingComponent>,
         ResetHandlerRegistry<SimpleEventHandlingComponent> {
 
-    private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
-            SequentialPerAggregatePolicy.instance(),
+    private static final SequencingPolicy<? super EventMessage> DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy<>(
+            SequentialPerAggregatePolicy.INSTANCE,
             SequentialPolicy.INSTANCE
     );
 
     private final String name;
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
 
     /**
@@ -89,19 +94,19 @@ public class SimpleEventHandlingComponent implements
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
     public static SimpleEventHandlingComponent create(String name,
-                                                      SequencingPolicy sequencingPolicy) {
+                                                      SequencingPolicy<? super EventMessage> sequencingPolicy) {
         return new SimpleEventHandlingComponent(name, sequencingPolicy);
     }
 
     protected SimpleEventHandlingComponent(String name,
-                                         SequencingPolicy sequencingPolicy) {
+                                           SequencingPolicy<? super EventMessage> sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
 
     @Override
     public MessageStream.Empty<Message> handle(EventMessage event,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
         List<EventHandler> handlers = eventHandlers.get(name);
         if (handlers == null || handlers.isEmpty()) {
@@ -168,7 +173,7 @@ public class SimpleEventHandlingComponent implements
         List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
         if (handlers == null || handlers.isEmpty()) {
-            return sequencingPolicy.getSequenceIdentifierFor(event, context).get();
+            return sequencingPolicy.sequenceIdentifierFor(event, context).get();
         }
 
         return handlers.stream()
@@ -176,7 +181,7 @@ public class SimpleEventHandlingComponent implements
                        .map(EventHandlingComponent.class::cast)
                        .findFirst()
                        .map(component -> component.sequenceIdentifierFor(event, context))
-                       .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
+                       .orElse(sequencingPolicy.sequenceIdentifierFor(event, context).get());
     }
 
     @Override

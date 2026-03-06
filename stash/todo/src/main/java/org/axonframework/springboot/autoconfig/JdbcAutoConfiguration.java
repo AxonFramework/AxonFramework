@@ -16,29 +16,29 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
+import org.axonframework.conversion.Serializer;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
+import org.axonframework.extension.springboot.EventProcessorProperties;
+import org.axonframework.extension.springboot.TokenStoreProperties;
+import org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.JdbcTokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.JdbcTokenStoreConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.TokenSchema;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.messaging.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
-import org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
-import org.axonframework.extension.springboot.EventProcessorProperties;
-import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -48,6 +48,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.sql.DataSource;
 
@@ -117,13 +118,13 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore(ConnectionProvider connectionProvider,
+    public TokenStore tokenStore(DataSource dataSource,
                                  TokenSchema tokenSchema, ObjectMapper defaultAxonObjectMapper) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
                 .schema(tokenSchema)
                 .claimTimeout(tokenStoreProperties.getClaimTimeout());
         var converter = new JacksonConverter(defaultAxonObjectMapper);
-        return new JdbcTokenStore(connectionProvider::getConnection, converter, config);
+        return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource), converter, config);
     }
 
 //    @Bean

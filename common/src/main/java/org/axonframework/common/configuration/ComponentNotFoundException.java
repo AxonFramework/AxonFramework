@@ -17,6 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.Nullable;
+import org.axonframework.common.TypeReference;
 
 /**
  * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link Configuration}.
@@ -31,11 +32,23 @@ public class ComponentNotFoundException extends RuntimeException {
      * Constructs a {@code ComponentNotFoundException} with a default message describing a {@link Component} couldn't be
      * found for the given {@code type} and {@code name}.
      *
-     * @param type The type of the component that could not be found, typically an interface.
-     * @param name The name of the component that could not be found, potentially {@code null} when unimportant.
+     * @param type the type of the component that could not be found, typically an interface
+     * @param name the name of the component that could not be found, potentially {@code null} when unimportant
      */
     public ComponentNotFoundException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
+    }
+
+    /**
+     * Constructs a {@code ComponentNotFoundException} with a default message describing a {@link Component} couldn't be
+     * found for the given {@code typeReference} and {@code name}.
+     *
+     * @param typeReference the type of the component that could not be found, typically an interface
+     * @param name          the name of the component that could not be found, potentially {@code null} when
+     *                      unimportant
+     */
+    public ComponentNotFoundException(TypeReference<?> typeReference, @Nullable String name) {
+        super(exceptionMessageFor(typeReference.getTypeAsClass(), name));
     }
 
     private static String exceptionMessageFor(Class<?> type, @Nullable String name) {

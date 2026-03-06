@@ -22,7 +22,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.StubLifecycleRegistry;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -39,6 +39,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
@@ -427,13 +428,11 @@ class SubscribingEventProcessorModuleTest {
             SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {
             };
-            configurer.eventProcessing(ep ->
-                                               ep.subscribing(sp -> sp.defaults(
-                                                       d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                             .eventSource(typeMessageSource)
-                                                             .errorHandler(typeErrorHandler))
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeMessageSource)
+                          .errorHandler(typeErrorHandler))
+            ));
 
             // and - instance-specific customization
             ErrorHandler instanceErrorHandler = exception -> {
@@ -441,9 +440,11 @@ class SubscribingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new SubscribingEventProcessorConfiguration().eventSource(p.eventSource())
-                                                                                       .errorHandler(
-                                                                                               instanceErrorHandler));
+                    .customized((__, p) -> new SubscribingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .errorHandler(instanceErrorHandler)
+                    );
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
             // when

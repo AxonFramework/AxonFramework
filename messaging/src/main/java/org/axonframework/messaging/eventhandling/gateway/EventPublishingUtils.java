@@ -57,4 +57,31 @@ class EventPublishingUtils {
                 Metadata.emptyInstance()
         );
     }
+
+    /**
+     * Converts the given {@code event} to an {@link EventMessage} with the provided {@code metadata}. If the event is
+     * already an {@link EventMessage}, the provided metadata is merged with its existing metadata (provided values take
+     * precedence on conflict). If the event is a {@link Message}, it is wrapped in a {@link GenericEventMessage} with
+     * merged metadata. Otherwise, a new {@link GenericEventMessage} is created with the given event, the provided
+     * metadata, and the type resolved by the given {@link MessageTypeResolver}.
+     *
+     * @param event               The event to convert.
+     * @param metadata            The metadata to attach to the event.
+     * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
+     * @return The event as an {@link EventMessage} with the given metadata applied.
+     */
+    static EventMessage asEventMessage(@Nonnull Object event, @Nonnull Metadata metadata,
+                                       MessageTypeResolver messageTypeResolver) {
+        if (event instanceof EventMessage e) {
+            return e.andMetadata(metadata);
+        }
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message.andMetadata(metadata), () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
+                messageTypeResolver.resolveOrThrow(event),
+                event,
+                metadata
+        );
+    }
 }
