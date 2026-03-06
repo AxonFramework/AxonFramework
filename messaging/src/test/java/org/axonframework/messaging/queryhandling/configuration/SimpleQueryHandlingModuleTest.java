@@ -99,7 +99,7 @@ class SimpleQueryHandlingModuleTest {
 
         Configuration resultConfig =
                 setupPhase.queryHandlers()
-                          .annotatedQueryHandlingComponent(c -> myQueryHandlingObject)
+                          .autodetectedQueryHandlingComponent(c -> myQueryHandlingObject)
                           .build()
                           .build(MessagingConfigurer.create().build(), new StubLifecycleRegistry());
 
@@ -124,7 +124,7 @@ class SimpleQueryHandlingModuleTest {
                 MessagingConfigurer.create()
                                    .registerQueryHandlingModule(
                                            setupPhase.queryHandlers()
-                                                     .annotatedQueryHandlingComponent(c -> myQueryHandlingObject)
+                                                     .autodetectedQueryHandlingComponent(c -> myQueryHandlingObject)
                                                      .build()
                                    ).build();
 
@@ -199,7 +199,7 @@ class SimpleQueryHandlingModuleTest {
     @Test
     void annotatedQueryHandlingComponentThrowsNullPointerExceptionForNullQueryHandlingComponentBuilder() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> queryHandlerPhase.annotatedQueryHandlingComponent(null));
+        assertThrows(NullPointerException.class, () -> queryHandlerPhase.autodetectedQueryHandlingComponent(null));
     }
 
     @Test

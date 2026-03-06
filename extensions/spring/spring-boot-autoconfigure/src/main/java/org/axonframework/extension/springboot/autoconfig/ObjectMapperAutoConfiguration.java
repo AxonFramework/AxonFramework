@@ -33,10 +33,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
- * {@link JacksonConverter}.
+ * {@link org.axonframework.conversion.jackson.JacksonConverter}.
  *
  * @author Steven van Beelen
  * @author Theo Emanuelsson
@@ -45,7 +47,7 @@ import org.springframework.context.annotation.Conditional;
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
-@ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
+@ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
 
@@ -54,8 +56,8 @@ public class ObjectMapperAutoConfiguration {
      * <p>
      * This {@code ObjectMapper} bean is only created when there is no other {@code ObjectMapper} bean present
      * <b>and</b> whenever the user specified either the
-     * {@link ConverterProperties.ConverterType#DEFAULT} or
-     * {@link ConverterProperties.ConverterType#JACKSON} {@code ConverterType}.
+     * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
+     * {@code ConverterType}.
      *
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
@@ -63,7 +65,7 @@ public class ObjectMapperAutoConfiguration {
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper() {
-        return new ObjectMapper().findAndRegisterModules();
+        return JsonMapper.builder().findAndAddModules().build();
     }
 
     /**
@@ -75,7 +77,7 @@ public class ObjectMapperAutoConfiguration {
      * instances into {@link org.springframework.data.domain.PageImpl PageImpl} objects.
      *
      * @return A Jackson {@link Module} that deserializes {@link Page} into
-     *         {@link org.springframework.data.domain.PageImpl PageImpl}.
+     * {@link org.springframework.data.domain.PageImpl PageImpl}.
      * @see JacksonPageDeserializer
      * @since 5.1.0
      */

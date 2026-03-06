@@ -96,12 +96,40 @@ public abstract class TypeReference<E> {
         return type;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+    /**
+     * Checks if this {@code TypeReference} is assignable from the {@code other} {@code TypeReference}.
+     * <p>
+     * It takes generic parameters into account by first checking if the raw types match by means of
+     * {@link Class#isAssignableFrom(Class)}, subsequently checking for compatibility of generic types by expecting an
+     * exact match of the types if any of {@code this} and {@code other} represent a parameterized type.
+     *
+     * @param other the other {@code TypeReference} to compare this to
+     * @return {@code true} if the {@code other} {@code TypeReference} is assignable from this {@code TypeReference}.
+     */
+    public boolean isAssignableFrom(TypeReference<?> other) {
+        // check raw type compatibility
+        if (!getTypeAsClass().isAssignableFrom(other.getTypeAsClass())) {
             return false;
         }
-        TypeReference<?> that = (TypeReference<?>) o;
+        // if both are parameterized types we attempt an exact match of the types
+        // no subtype/supertype support for generic types at the moment
+        if (type instanceof ParameterizedType && other.type instanceof ParameterizedType) {
+            return type.equals(other.type);
+        }
+        // if any of the types is parameterized we would need to check in more detail to be sure
+        // defensively returning false
+        if (type instanceof ParameterizedType || other.type instanceof ParameterizedType) {
+            return false;
+        }
+        // if both types are raw and compatible, we assume assignability
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof TypeReference<?> that)) {
+            return false;
+        }
         return Objects.equals(type, that.type);
     }
 

@@ -1,0 +1,160 @@
+= Serializer Migration
+:navtitle: Serializer Migration
+
+Axon Framework 5 introduces a significant shift in how data conversion is handled. The `Serializer` API, which has been part of the framework since its early versions, has been entirely replaced by a more streamlined `Converter` API.
+
+This change aims to simplify the conversion flow and provide more flexibility for future architectural improvements.
+
+This path covers the migration from Serializers to Converters in Axon Framework 5.
+
+[NOTE]
+====
+The framework internal refactoring of converters will probably only affect your configuration, as it is unlikely you are using a custom serializer that needs to be rewritten.
+
+Special attention should be given to users of the `XStreamSerializer`, as it has been removed and there is no direct replacement. See the section on its removal below for more details.
+====
+
+== Adjustment of `Serializer` to `Converter`
+
+The `org.axonframework.serialization.Serializer` interface and all its specific implementations (like `JacksonSerializer`, `XStreamSerializer`, etc.) have been removed. They are replaced by the `org.axonframework.conversion.Converter` interface.
+
+In most cases, this is a straightforward replacement:
+
+* Instead of `JacksonSerializer`, use `JacksonConverter`.
+* Instead of `XStreamSerializer`, see the section on its removal below.
+
+The `Converter` interface focuses on converting data between different content types (like `byte[]`, `JsonNode`, or specific Java objects) without the heavy baggage of the previous serialization API.
+
+== Removal of `XStreamSerializer`
+
+The `XStreamSerializer` has been removed in Axon Framework 5. XStream is nearing its end-of-life, and the framework has moved towards Jackson as the default and recommended conversion library.
+
+For users who require an XML-based format, it is recommended to use the `JacksonConverter` configured with an `XmlMapper` from the `jackson-dataformat-xml` artifact.
+
+[source,java]
+----
+// Configuring Jackson for XML conversion
+XmlMapper xmlMapper = new XmlMapper();
+Converter xmlConverter = new JacksonConverter(xmlMapper);
+----
+
+[WARNING]
+.Incompatibility between Jackson and XStream
+====
+Using the `XmlMapper` as stated above provides a valid solution for `XML` as serialization format. However, it is not safe to assume  that the resulting XML format will be compatible with the one produced by the `XStreamSerializer`.
+
+If you have used the `XStreamSerializer` in for serialization of your events, you should expect to have to reprocess your event store with the new converter, as the format will likely be different.
+
+xref:paths/index.adoc#missing-a-migration-path[Contact the Axon Framework team] for assistance with this migration step.
+====
+
+== Message and event converter types
+
+Axon Framework 5 continues to support three levels of conversion configuration, but with more concrete types:
+
+1. **General Converter** (`Converter`): Used as the fallback for all conversion tasks.
+2. **Message Converter** (`MessageConverter`): Dedicated to converting all `Message` implementations.
+3. **Event Converter** (`EventConverter`): Specifically for `EventMessage` implementations. Also applies to anything stored in the event store.
+
+Infrastructure components now explicitly require these more specific types where appropriate. For instance, the `EventStorageEngine` now expects an `EventConverter`.
+
+== Converter configuration
+
+As with serializers, converters can be configured in multiple ways depending on your environment and preferences. For the most likely case of using the `JacksonConverter`, you will probably provide your own `ObjectMapper` setup to be used.
+
+=== Declarative configuration
+
+When using the `MessagingConfigurer` in a non-Spring environment, the configuration has shifted from the `Configurer` to a more modular approach.
+
+[source,java]
+----
+// AF4
+public void configure(Configurer configurer) {
+    configurer.configureSerializer(c -> JacksonSerializer.defaultSerializer())
+              .configureMessageSerializer(c -> JacksonSerializer.defaultSerializer())
+              .configureEventSerializer(c -> JacksonSerializer.defaultSerializer());
+}
+
+// AF5
+public void configure(MessagingConfigurer configurer, ObjectMapper objectMapper) {
+    configurer.componentRegistry(registry -> {
+        Converter generalConverter = new JacksonConverter(objectMapper);
+        registry.registerComponent(Converter.class, c -> generalConverter);
+        registry.registerComponent(MessageConverter.class, c -> new DelegatingMessageConverter(generalConverter));
+        registry.registerComponent(EventConverter.class, c -> new DelegatingEventConverter(generalConverter));
+    });
+}
+----
+
+=== Spring configuration
+
+In a Spring environment, you can define beans for the different converter levels. Axon's auto-configuration will automatically pick them up.
+
+[source,java]
+----
+// AF4
+@Configuration
+public class SerializationConfig {
+    @Bean
+    @Primary
+    public Serializer serializer() {
+        return JacksonSerializer.defaultSerializer();
+    }
+}
+
+// AF5
+@Configuration
+public class ConversionConfig {
+    @Bean
+    @Primary
+    public Converter converter(ObjectMapper objectMapper) {
+        return new JacksonConverter(objectMapper);
+    }
+
+    @Bean
+    public MessageConverter messageConverter(Converter generalConverter) {
+        return new DelegatingMessageConverter(generalConverter);
+    }
+
+    @Bean
+    public EventConverter eventConverter(MessageConverter messageConverter) {
+        return new DelegatingEventConverter(messageConverter);
+    }
+}
+----
+
+=== Spring Boot properties configuration
+
+Configuration via properties has also been updated to reflect the new naming and structure.
+
+[source,yaml]
+----
+# AF4
+axon:
+  serializer:
+    general: jackson
+    messages: jackson
+    events: jackson
+----
+
+[source,yaml]
+----
+# AF5
+axon:
+  converter:
+    general: jackson
+    messages: jackson
+    events: jackson
+----
+
+Available types for properties are:
+
+* `jackson` - using jackson latest version 3 as propagated by Spring Boot 4
+* `jackson2` - fallback for legacy jackson version 2 (Spring Boot 2/3)
+* `avro` - https://avro.apache.org/[Apache Avro] schema based, see the xref:axon-framework-reference:ROOT:conversion.adoc#avro_converter[AvroConverter] section
+* `cbor` - uses Jackson/CBORMapper to convert objects into the Concise Binary Object Representation.
+
+Note that `avro` can only be used for `messages` or `events`, not as a `general` converter.
+
+
+

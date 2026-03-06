@@ -108,26 +108,12 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    private List<MessageHandlerInterceptor<? super EventMessage>> psepInterceptors;
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
     private final List<SegmentChangeListener> segmentChangeListeners = new ArrayList<>();
     private UnaryOperator<DeadLetterQueueConfiguration> deadLetterQueueCustomization = UnaryOperator.identity();
-
-    /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
-     * global default values.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public PooledStreamingEventProcessorConfiguration() {
-        super();
-    }
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} copying properties from the given
@@ -198,8 +184,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         public PooledStreamingEventProcessorConfiguration withInterceptor(
             MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
-        //noinspection unchecked | Casting to EventMessage is safe.
-        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
+        this.interceptors.add(interceptor);
         return this;
     }
 
@@ -253,8 +238,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
      * {@link PooledStreamingEventProcessor}.
      * </p>
-     * Note that {@link #workerExecutor(Supplier)} is favored over this method, as it avoids eager initialization of
-     * an executor that may be overridden by other components.
+     * Note that {@link #workerExecutor(Supplier)} is favored over this method, as it avoids eager initialization of an
+     * executor that may be overridden by other components.
      *
      * @param workerExecutor The {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
      *                       this {@link PooledStreamingEventProcessor}.
@@ -687,11 +672,33 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link PooledStreamingEventProcessor} under construction with this configuration implementation.
+     *
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link PooledStreamingEventProcessor} under construction with this configuration implementation.
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+        if (psepInterceptors == null) {
+            psepInterceptors = new ArrayList<>();
+            psepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            psepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(psepInterceptors);
+    }
+
+    /**
      * Returns the handler for ignored messages.
      *
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 

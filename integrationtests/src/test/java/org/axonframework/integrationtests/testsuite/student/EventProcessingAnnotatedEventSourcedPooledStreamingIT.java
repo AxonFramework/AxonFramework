@@ -172,7 +172,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule
                 .named("send-max-courses-notification-command-handler")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
+                .autodetectedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
 
         configurer.registerCommandHandlingModule(sendMaxCoursesNotificationCommandHandler);
     }

@@ -16,13 +16,14 @@
 
 package org.axonframework.conversion.upcasting.event;
 
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.core.Metadata;
+import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.LazyDeserializingObject;
 import org.axonframework.conversion.SerializedObject;
 import org.axonframework.conversion.SerializedType;
 import org.axonframework.conversion.SimpleSerializedObject;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -159,6 +160,10 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
 
     @Override
     public boolean canConvertDataTo(Class<?> requiredType) {
-        return converter.canConvert(source.getData().getContentType(), requiredType);
+        if (converter instanceof ChainingContentTypeConverter chainingConverter) {
+            return chainingConverter.canConvert(source.getData().getContentType(), requiredType);
+        } else {
+            return false;
+        }
     }
 }

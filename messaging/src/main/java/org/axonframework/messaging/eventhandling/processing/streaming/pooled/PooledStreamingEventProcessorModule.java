@@ -312,10 +312,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     public PooledStreamingEventProcessorModule customized(
             BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> instanceCustomization
     ) {
-        this.customizedProcessorConfigurationBuilder = cfg -> {
-            var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
-                                                                               defaultEventProcessorsConfiguration(cfg));
-            return instanceCustomization.apply(cfg, typeCustomization);
+        this.customizedProcessorConfigurationBuilder = config -> {
+            var typeCustomization = typeSpecificCustomizationOrNoOp(config)
+                    .apply(config, defaultEventProcessorsConfiguration(config, processorName));
+            return instanceCustomization.apply(config, typeCustomization);
         };
         return this;
     }
@@ -327,11 +327,14 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                   .orElseGet(PooledStreamingEventProcessorModule.Customization::noOp);
     }
 
-    private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+    private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(
+            Configuration config,
+            String processorName
+    ) {
         return new PooledStreamingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg)),
-                cfg
+                parentSharedCustomizationOrDefault(config)
+                        .apply(config, new EventProcessorConfiguration(processorName, config)),
+                config
         );
     }
 

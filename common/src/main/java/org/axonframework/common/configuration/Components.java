@@ -18,9 +18,9 @@ package org.axonframework.common.configuration;
 
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.common.configuration.Component.Identifier;
 
 import java.util.List;
 import java.util.Map;
@@ -50,14 +50,17 @@ public class Components implements DescribableComponent {
     /**
      * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
      * <p>
-     * When no exact match is found with the given {@code identifier}, a {@link Class#isAssignableFrom(Class)} check is
-     * done between the stored {@link Identifier#type() types} and the type of the given {@code identifier}.
+     * When no exact match is found with the given {@link Identifier}s {@code type} and {@code name}, a raw type
+     * {@link Class#isAssignableFrom(Class)} check is done between the stored {@link Identifier#type() types} and the
+     * type of the given {@code identifier}.
+     * <p>
+     * Note: Generic type parameters are not taken into account for retrieving components via this method.
      *
-     * @param identifier The identifier to retrieve a {@link Component} for.
-     * @param <C>        The type of the component to retrieve.
-     * @return An {@link Optional} on the {@link Component} registered under the given {@code identifier}.
-     * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
-     *                                          given {@code identifier}.
+     * @param identifier the {@link Identifier} to retrieve a {@link Component} for
+     * @param <C>  the type of the component to retrieve
+     * @return an {@link Optional} on the {@link Component} registered under the given {@code identifier}
+     * @throws AmbiguousComponentMatchException when multiple matching {@link Component Components} are found for the
+     *                                          given {@code identifier}
      */
     public <C> Optional<Component<C>> get(Identifier<C> identifier) {
         //noinspection unchecked
@@ -68,10 +71,49 @@ public class Components implements DescribableComponent {
                        });
     }
 
+    @SuppressWarnings("unchecked")
     private <C> List<Component<C>> getComponentsAssignableTo(Identifier<C> identifier) {
-        //noinspection unchecked
         List<Component<C>> matches = components.entrySet().stream()
                                                .filter(entry -> identifier.matches(entry.getKey()))
+                                               .map(Map.Entry::getValue)
+                                               .map(component -> (Component<C>) component)
+                                               .toList();
+
+        if (matches.size() > 1) {
+            throw new AmbiguousComponentMatchException(identifier);
+        }
+        return matches;
+    }
+
+    /**
+     * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     * <p>
+     * When no exact match is found with the given {@code typeReference} and {@code name}, the given
+     * {@code typeReference}
+     * {@link org.axonframework.common.TypeReference#isAssignableFrom is checked for assignability} against the type
+     * references of the stored {@link Identifier#type() types}.
+     *
+     * @param identifier the {@link Identifier} to retrieve a {@link Component} for
+     * @param <C>        the type of the component to retrieve
+     * @return an {@link Optional} on the {@link Component} registered under the given {@code identifier}
+     * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
+     *                                          given {@code identifier}.
+     */
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
+        return Optional.ofNullable((Component<C>) components.get(identifier))
+                       .or(() -> {
+                           List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier);
+                           return Optional.ofNullable(matches.isEmpty() ? null : matches.getFirst());
+                       });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <C> List<Component<C>> getComponentsTypeRefAssignableTo(Identifier<C> identifier) {
+        List<Component<C>> matches = components.entrySet().stream()
+                                               .filter(e ->
+                                                               identifier.matchesByTypeRef(e.getKey()))
                                                .map(Map.Entry::getValue)
                                                .map(component -> (Component<C>) component)
                                                .toList();
@@ -120,7 +162,7 @@ public class Components implements DescribableComponent {
      * Check whether there is a {@link Component} present for the given {@code identifier}.
      * <p>
      * If the given {@code identifier} has a nullable {@link Identifier#name() name}, <b>all</b> identifiers of this
-     * collection trigger a match if their {@link Identifier#type() type} is assignable to the given
+     * collection trigger a match if their {@link Identifier#type() raw type} is assignable to the given
      * {@code identifier's} type.
      *
      * @param identifier The identifier for which to check if there is a {@link Component} present.

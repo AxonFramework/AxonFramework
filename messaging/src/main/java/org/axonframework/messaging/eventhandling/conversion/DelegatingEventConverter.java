@@ -19,10 +19,10 @@ package org.axonframework.messaging.eventhandling.conversion;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
-import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -59,11 +59,6 @@ public class DelegatingEventConverter implements EventConverter {
      */
     public DelegatingEventConverter(MessageConverter delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
-    }
-
-    @Override
-    public boolean canConvert(Type sourceType, Type targetType) {
-        return delegate.canConvert(sourceType, targetType);
     }
 
     @Nullable

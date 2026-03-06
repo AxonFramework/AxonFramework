@@ -19,13 +19,13 @@ package org.axonframework.messaging.eventhandling.configuration;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 
 import java.util.List;
 
@@ -80,7 +80,9 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
                 InterceptingEventBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .eventInterceptors(config, EventBus.class, name);
+
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventBus(delegate, dispatchInterceptors);

@@ -16,38 +16,70 @@
 
 package org.axonframework.test.fixture;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
+
 import java.util.Objects;
 
 /**
  * ConfigurationEnhancer that registers {@link RecordingEventStore}, {@link RecordingEventSink} and
  * {@link RecordingCommandBus}. The recorded messages can then be used to assert expectations with test cases.
+ * <p>
+ * Recording decorators are registered as the <b>innermost</b> decorators ({@code DECORATION_ORDER = Integer.MIN_VALUE})
+ * so that they capture messages <em>after</em> dispatch interceptors have enriched them (e.g., with correlation
+ * metadata).
+ * <p>
+ * The recording instances are stored in a {@link RecordingComponentsRegistry} that is registered as a regular
+ * component. The fixture resolves the registry via
+ * {@code configuration.getComponent(RecordingComponentsRegistry.class)} and reads the recording instances from it.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
+
+    /**
+     * Innermost position — recording sees the message after all other decorators (interceptors) have processed it.
+     */
+    private static final int DECORATION_ORDER = Integer.MIN_VALUE;
 
     @Override
     public void enhance(ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
+        var recordings = new RecordingComponentsRegistry();
+        registry.registerComponent(RecordingComponentsRegistry.class, config -> recordings);
+
         registry.registerDecorator(CommandBus.class,
-                                   Integer.MAX_VALUE,
-                                   (config, name, delegate) -> new RecordingCommandBus(delegate));
+                                   DECORATION_ORDER,
+                                   (config, name, delegate) -> {
+                                       var recording = new RecordingCommandBus(delegate);
+                                       recordings.registerCommandBus(recording);
+                                       return recording;
+                                   });
+
         if (registry.hasComponent(EventStore.class)) {
             registry.registerDecorator(EventStore.class,
-                                       Integer.MAX_VALUE,
-                                       (config, name, delegate) -> new RecordingEventStore(delegate));
+                                       DECORATION_ORDER,
+                                       (config, name, delegate) -> {
+                                           var recording = new RecordingEventStore(delegate);
+                                           recordings.registerEventSink(recording);
+                                           return recording;
+                                       });
         } else {
             registry.registerDecorator(EventBus.class,
-                                       Integer.MAX_VALUE,
-                                       (config, name, delegate) -> new RecordingEventBus(delegate));
+                                       DECORATION_ORDER,
+                                       (config, name, delegate) -> {
+                                           var recording = new RecordingEventBus(delegate);
+                                           recordings.registerEventSink(recording);
+                                           return recording;
+                                       });
         }
     }
 

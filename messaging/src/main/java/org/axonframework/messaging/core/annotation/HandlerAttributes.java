@@ -104,6 +104,16 @@ public interface HandlerAttributes {
     String ALLOW_REPLAY = "AllowReplay.allowReplay";
 
     /**
+     * Attribute key referencing the sequencing policy type class for the handler.
+     */
+    String SEQUENCING_POLICY_TYPE = "SequencingPolicy.type";
+
+    /**
+     * Attribute key referencing the sequencing policy parameters for the handler.
+     */
+    String SEQUENCING_POLICY_PARAMETERS = "SequencingPolicy.parameters";
+
+    /**
      * Attribute key referencing the name of the {@link org.axonframework.deadline.DeadlineMessage} the handler can
      * handle.
      */

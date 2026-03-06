@@ -30,7 +30,7 @@ public class ChangeCourseCapacityConfiguration {
         var commandHandlingModule = CommandHandlingModule
                 .named("ChangeCourseCapacity")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new ChangeCourseCapacityCommandHandler());
+                .autodetectedCommandHandlingComponent(c -> new ChangeCourseCapacityCommandHandler());
 
         return configurer
                 .registerEntity(stateEntity)

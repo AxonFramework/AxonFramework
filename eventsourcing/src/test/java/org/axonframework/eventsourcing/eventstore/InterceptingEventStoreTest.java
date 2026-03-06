@@ -131,7 +131,18 @@ class InterceptingEventStoreTest {
         testSubject.transaction(new StubProcessingContext())
                    .source(testCondition);
 
-        verify(eventStoreTransaction).source(testCondition);
+        verify(eventStoreTransaction).source(testCondition, null);
+    }
+
+    @Test
+    void delegateTransactionSourceWithCallbackDirectly() {
+        SourcingCondition testCondition = SourcingCondition.conditionFor(EventCriteria.havingAnyTag());
+        Consumer<Position> resumePositionCallback = rp -> {};
+
+        testSubject.transaction(new StubProcessingContext())
+                   .source(testCondition, resumePositionCallback);
+
+        verify(eventStoreTransaction).source(testCondition, resumePositionCallback);
     }
 
     @Test
