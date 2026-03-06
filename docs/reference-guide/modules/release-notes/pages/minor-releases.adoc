@@ -10,68 +10,68 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 ==== Features
 
-- link:https://github.com/AxonFramework/AxonFramework/pull/4147[#4147] Introduce auto-configuration for Dropwizard and Micrometer metrics
-- link:https://github.com/AxonFramework/AxonFramework/pull/4151[#4151] Remove @RoutingKey usages (link:https://github.com/AxonFramework/AxonFramework/issues/3804)[#3804])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4222[#4222] Allow TypeReference-based component lookup (link:https://github.com/AxonFramework/AxonFramework/issues/4172)[#4172])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4147[#4147] Introduce auto-configuration for Dropwizard and Micrometer metrics
+* link:https://github.com/AxonFramework/AxonFramework/pull/4151[#4151] Remove @RoutingKey usages (link:https://github.com/AxonFramework/AxonFramework/issues/3804)[#3804])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4222[#4222] Allow TypeReference-based component lookup (link:https://github.com/AxonFramework/AxonFramework/issues/4172)[#4172])
 
 ==== Enhancements
 
-- link:https://github.com/AxonFramework/AxonFramework/pull/4141[#4141] Make Interceptor and Monitor construction Component-aware
-- link:https://github.com/AxonFramework/AxonFramework/pull/4150[#4150] Remove Converter#canConvert methods (link:https://github.com/AxonFramework/AxonFramework/issues/3642)[#3642])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4159[#4159] Import axoniq/university-demo to examples
-- link:https://github.com/AxonFramework/AxonFramework/pull/4165[#4165] Align ProcessorDefinition naming with the EventProcessorModule
-- link:https://github.com/AxonFramework/AxonFramework/pull/4167[#4167] Add JDK25 build
-- link:https://github.com/AxonFramework/AxonFramework/pull/4173[#4173] Introduce local Command sequencing to avoid optimistic lock failures on concurrent command execution (link:https://github.com/AxonFramework/AxonFramework/issues/4155)[#4155])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4179[#4179] Refactor sequencing policies for general messaging usage
-- link:https://github.com/AxonFramework/AxonFramework/pull/4190[#4190] Update event publishing methods to accept lists of EventMessage subtypes
-- link:https://github.com/AxonFramework/AxonFramework/pull/4206[#4206] Provide JUnit extension for fixture lifecycle management (link:https://github.com/AxonFramework/AxonFramework/issues/4134)[#4134])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4212[#4212] Move JpaTransactionalExecutorProvider and JdbcTransactionalExecutorProvider to messaging module
-- link:https://github.com/AxonFramework/AxonFramework/pull/4219[#4219] Port axon-4.13.x into axon-5.0.x
-- link:https://github.com/AxonFramework/AxonFramework/pull/4231[#4231] Adjust ReplayToken context field type to byte[] (link:https://github.com/AxonFramework/AxonFramework/issues/4218)[#4218])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4238[#4238] EventAppender - add metadata-aware append overloads
-- link:https://github.com/AxonFramework/AxonFramework/pull/4250[#4250] Introduce TransactionalExecutor for persistent Token Stores (link:https://github.com/AxonFramework/AxonFramework/issues/4248)[#4248])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4141[#4141] Make Interceptor and Monitor construction Component-aware
+* link:https://github.com/AxonFramework/AxonFramework/pull/4150[#4150] Remove Converter#canConvert methods (link:https://github.com/AxonFramework/AxonFramework/issues/3642)[#3642])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4159[#4159] Import axoniq/university-demo to examples
+* link:https://github.com/AxonFramework/AxonFramework/pull/4165[#4165] Align ProcessorDefinition naming with the EventProcessorModule
+* link:https://github.com/AxonFramework/AxonFramework/pull/4167[#4167] Add JDK25 build
+* link:https://github.com/AxonFramework/AxonFramework/pull/4173[#4173] Introduce local Command sequencing to avoid optimistic lock failures on concurrent command execution (link:https://github.com/AxonFramework/AxonFramework/issues/4155)[#4155])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4179[#4179] Refactor sequencing policies for general messaging usage
+* link:https://github.com/AxonFramework/AxonFramework/pull/4190[#4190] Update event publishing methods to accept lists of EventMessage subtypes
+* link:https://github.com/AxonFramework/AxonFramework/pull/4206[#4206] Provide JUnit extension for fixture lifecycle management (link:https://github.com/AxonFramework/AxonFramework/issues/4134)[#4134])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4212[#4212] Move JpaTransactionalExecutorProvider and JdbcTransactionalExecutorProvider to messaging module
+* link:https://github.com/AxonFramework/AxonFramework/pull/4219[#4219] Port axon-4.13.x into axon-5.0.x
+* link:https://github.com/AxonFramework/AxonFramework/pull/4231[#4231] Adjust ReplayToken context field type to byte[] (link:https://github.com/AxonFramework/AxonFramework/issues/4218)[#4218])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4238[#4238] EventAppender: add metadata-aware append overloads
+* link:https://github.com/AxonFramework/AxonFramework/pull/4250[#4250] Introduce TransactionalExecutor for persistent Token Stores (link:https://github.com/AxonFramework/AxonFramework/issues/4248)[#4248])
 
 ==== Documentation
 
-- link:https://github.com/AxonFramework/AxonFramework/pull/4131[#4131] Migration path documentation for messages (link:https://github.com/AxonFramework/AxonFramework/issues/4082)[#4082])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4132[#4132] Migration path documentation for Aggregates (link:https://github.com/AxonFramework/AxonFramework/issues/4083)[#4083])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4135[#4135] Monitoring section rewrite (link:https://github.com/AxonFramework/AxonFramework/issues/4094)[#4094])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4137[#4137] Refer to Migration Paths section from Migration Guide main page
-- link:https://github.com/AxonFramework/AxonFramework/pull/4148[#4148] Minor Getting Started improvements - Refer to examples and folder rename
-- link:https://github.com/AxonFramework/AxonFramework/pull/4156[#4156] Migration paths documentation for Projectors and Event Processors (link:https://github.com/AxonFramework/AxonFramework/issues/4084)[#4084])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4197[#4197] Introduce the Event Store migration path (link:https://github.com/AxonFramework/AxonFramework/issues/4096)[#4096])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4208[#4208] Test Fixture migration documentation (link:https://github.com/AxonFramework/AxonFramework/issues/4085)[#4085])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4216[#4216] Fix EntityCreator sample code (link:https://github.com/AxonFramework/AxonFramework/issues/4205)[#4205])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4227[#4227] Migration paths documentation for serializer/converter (link:https://github.com/AxonFramework/AxonFramework/issues/4091)[#4091])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4256[#4256] Adjust Spring-Boot version support matrix
+* link:https://github.com/AxonFramework/AxonFramework/pull/4131[#4131] Migration path documentation for messages (link:https://github.com/AxonFramework/AxonFramework/issues/4082)[#4082])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4132[#4132] Migration path documentation for Aggregates (link:https://github.com/AxonFramework/AxonFramework/issues/4083)[#4083])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4135[#4135] Monitoring section rewrite (link:https://github.com/AxonFramework/AxonFramework/issues/4094)[#4094])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4137[#4137] Refer to Migration Paths section from Migration Guide main page
+* link:https://github.com/AxonFramework/AxonFramework/pull/4148[#4148] Minor Getting Started improvements: Refer to examples and folder rename
+* link:https://github.com/AxonFramework/AxonFramework/pull/4156[#4156] Migration paths documentation for Projectors and Event Processors (link:https://github.com/AxonFramework/AxonFramework/issues/4084)[#4084])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4197[#4197] Introduce the Event Store migration path (link:https://github.com/AxonFramework/AxonFramework/issues/4096)[#4096])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4208[#4208] Test Fixture migration documentation (link:https://github.com/AxonFramework/AxonFramework/issues/4085)[#4085])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4216[#4216] Fix EntityCreator sample code (link:https://github.com/AxonFramework/AxonFramework/issues/4205)[#4205])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4227[#4227] Migration paths documentation for serializer/converter (link:https://github.com/AxonFramework/AxonFramework/issues/4091)[#4091])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4256[#4256] Adjust Spring-Boot version support matrix
 
 ==== Bug fixes
 
-- link:https://github.com/AxonFramework/AxonFramework/pull/4149[#4149] Rename missing annotated to autodetected in configuration API
-- link:https://github.com/AxonFramework/AxonFramework/pull/4166[#4166] Ensure Event Handling Components are described correctly
-- link:https://github.com/AxonFramework/AxonFramework/pull/4168[#4168] Adjust build and SonarQube labels (link:https://github.com/AxonFramework/AxonFramework/issues/3875)[#3875])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4175[#4175] Ensure ResourceOverridingProcessingContext#resources() does not throw an UnsupportedOperationException
-- link:https://github.com/AxonFramework/AxonFramework/pull/4186[#4186] Fix integration test isolation for MonitoringPooledEventProcessingReportIT
-- link:https://github.com/AxonFramework/AxonFramework/pull/4187[#4187] Enabled Spring (Boot) tests and subsequent bug fixes (link:https://github.com/AxonFramework/AxonFramework/issues/3496)[#3496])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4192[#4192] WorkPackageTest - match TokenStore initialization contract
-- link:https://github.com/AxonFramework/AxonFramework/pull/4193[#4193] ResourceOverridingProcessingContext run lifecycle hooks with the overridden resources
-- link:https://github.com/AxonFramework/AxonFramework/pull/4217[#4217] Replay Handlers - Ensure only EventHandlingMembers are wrapped (link:https://github.com/AxonFramework/AxonFramework/issues/4214)[#4214])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4221[#4221] Add support for returning the resume position from a sourcing
-- link:https://github.com/AxonFramework/AxonFramework/pull/4228[#4228] Autoconfigure after should use names instead of classes in JpaEventStoreAutoConfiguration
-- link:https://github.com/AxonFramework/AxonFramework/pull/4229[#4229] Resolved some type reliance issues in handler wrappers
-- link:https://github.com/AxonFramework/AxonFramework/pull/4240[#4240] RecordingEventSink positioned before interceptors — interceptor message changes not reflected in recorded events (link:https://github.com/AxonFramework/AxonFramework/issues/4237)[#4237])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4255[#4255] Make routing with SequentialPolicy consistent across JVM restarts (link:https://github.com/AxonFramework/AxonFramework/issues/4253)[#4253])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4149[#4149] Rename missing annotated to autodetected in configuration API
+* link:https://github.com/AxonFramework/AxonFramework/pull/4166[#4166] Ensure Event Handling Components are described correctly
+* link:https://github.com/AxonFramework/AxonFramework/pull/4168[#4168] Adjust build and SonarQube labels (link:https://github.com/AxonFramework/AxonFramework/issues/3875)[#3875])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4175[#4175] Ensure ResourceOverridingProcessingContext#resources() does not throw an UnsupportedOperationException
+* link:https://github.com/AxonFramework/AxonFramework/pull/4186[#4186] Fix integration test isolation for MonitoringPooledEventProcessingReportIT
+* link:https://github.com/AxonFramework/AxonFramework/pull/4187[#4187] Enabled Spring (Boot) tests and subsequent bug fixes (link:https://github.com/AxonFramework/AxonFramework/issues/3496)[#3496])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4192[#4192] WorkPackageTest: match TokenStore initialization contract
+* link:https://github.com/AxonFramework/AxonFramework/pull/4193[#4193] ResourceOverridingProcessingContext run lifecycle hooks with the overridden resources
+* link:https://github.com/AxonFramework/AxonFramework/pull/4217[#4217] Replay Handlers: Ensure only EventHandlingMembers are wrapped (link:https://github.com/AxonFramework/AxonFramework/issues/4214)[#4214])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4221[#4221] Add support for returning the resume position from a sourcing
+* link:https://github.com/AxonFramework/AxonFramework/pull/4228[#4228] Autoconfigure after should use names instead of classes in JpaEventStoreAutoConfiguration
+* link:https://github.com/AxonFramework/AxonFramework/pull/4229[#4229] Resolved some type reliance issues in handler wrappers
+* link:https://github.com/AxonFramework/AxonFramework/pull/4240[#4240] RecordingEventSink positioned before interceptors — interceptor message changes not reflected in recorded events (link:https://github.com/AxonFramework/AxonFramework/issues/4237)[#4237])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4255[#4255] Make routing with SequentialPolicy consistent across JVM restarts (link:https://github.com/AxonFramework/AxonFramework/issues/4253)[#4253])
 
 ==== Contributors
 
 We'd like to thank all the contributors who worked on this release!
 
-- link:https://github.com/abuijze[abuijze]
-- link:https://github.com/hatzlj[hatzlj]
-- link:https://github.com/hjohn[hjohn]
-- link:https://github.com/jangalinski[jangalinski]
-- link:https://github.com/MateuszNaKodach[MateuszNaKodach]
-- link:https://github.com/smcvb[smcvb]
+* link:https://github.com/abuijze[abuijze]
+* link:https://github.com/hatzlj[hatzlj]
+* link:https://github.com/hjohn[hjohn]
+* link:https://github.com/jangalinski[jangalinski]
+* link:https://github.com/MateuszNaKodach[MateuszNaKodach]
+* link:https://github.com/smcvb[smcvb]
 
 === Release 5.0.2
 
@@ -127,13 +127,13 @@ We'd like to thank all the contributors who worked on this release!
 
 We'd like to thank all the contributors who worked on this release!
 
-- link:https://github.com/abuijze[@abuijze]
-- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
-- link:https://github.com/hjohn[@hjohn]
-- link:https://github.com/jangalinski[@jangalinski]
-- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
-- link:https://github.com/smcvb[@smcvb]
-- link:https://github.com/zambrovski[@zambrovski]
+* link:https://github.com/abuijze[@abuijze]
+* link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+* link:https://github.com/hjohn[@hjohn]
+* link:https://github.com/jangalinski[@jangalinski]
+* link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+* link:https://github.com/smcvb[@smcvb]
+* link:https://github.com/zambrovski[@zambrovski]
 
 === Release 5.0.1
 
@@ -159,9 +159,9 @@ We'd like to thank all the contributors who worked on this release!
 
 We'd like to thank all the contributors who worked on this release!
 
-- link:https://github.com/zambrovski[@zambrovski]
-- link:https://github.com/smcvb[@smcvb]
-- link:https://github.com/jangalinski[@jangalinski]
-- link:https://github.com/hjohn[@hjohn]
-- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
-- link:https://github.com/Sam-Kruglov[@Sam-Kruglov]
+* link:https://github.com/zambrovski[@zambrovski]
+* link:https://github.com/smcvb[@smcvb]
+* link:https://github.com/jangalinski[@jangalinski]
+* link:https://github.com/hjohn[@hjohn]
+* link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+* link:https://github.com/Sam-Kruglov[@Sam-Kruglov]
