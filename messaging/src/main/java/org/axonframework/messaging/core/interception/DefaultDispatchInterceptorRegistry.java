@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -101,10 +102,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         });
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull DispatchInterceptorFactory<Message> interceptorFactory
+            @NonNull DispatchInterceptorFactory<Message> interceptorFactory
     ) {
         registerCommandInterceptor(interceptorFactory);
         registerEventInterceptor(interceptorFactory);
@@ -122,10 +123,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
+            @NonNull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
         this.commandInterceptorFactories.add(interceptorFactory);
         return this;
@@ -140,10 +141,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
+            @NonNull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
         this.eventInterceptorFactories.add(interceptorFactory);
         return this;
@@ -158,10 +159,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
+            @NonNull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     ) {
         this.queryInterceptorFactories.add(interceptorFactory);
         return this;

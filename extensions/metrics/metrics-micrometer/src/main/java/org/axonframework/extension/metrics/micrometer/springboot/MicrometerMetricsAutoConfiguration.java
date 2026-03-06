@@ -18,7 +18,7 @@ package org.axonframework.extension.metrics.micrometer.springboot;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.extension.metrics.micrometer.MetricsConfigurationEnhancer;
@@ -100,7 +100,7 @@ public class MicrometerMetricsAutoConfiguration {
     public ConfigurationEnhancer disableMetricsConfigurationEnhancer() {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 registry.disableEnhancer(MetricsConfigurationEnhancer.class);
             }
 

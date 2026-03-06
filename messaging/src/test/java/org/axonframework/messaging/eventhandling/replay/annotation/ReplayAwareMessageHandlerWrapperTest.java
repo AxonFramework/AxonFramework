@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -118,27 +118,27 @@ class ReplayAwareMessageHandlerWrapperTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             return message instanceof EventMessage;
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
             return EventMessage.class.isAssignableFrom(messageType);
         }
 
         @SuppressWarnings("removal")
         @Override
         @Deprecated
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
+        public Object handleSync(@NonNull Message message,
+                                 @NonNull ProcessingContext context,
                                  @Nullable Object target) {
             throw new UnsupportedOperationException("Use handle() instead");
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message,
-                                       @Nonnull ProcessingContext context,
+        public MessageStream<?> handle(@NonNull Message message,
+                                       @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             invocationCount.incrementAndGet();
             return MessageStream.fromItems();
@@ -180,27 +180,27 @@ class ReplayAwareMessageHandlerWrapperTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             return message instanceof CommandMessage;
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
             return CommandMessage.class.isAssignableFrom(messageType);
         }
 
         @SuppressWarnings("removal")
         @Override
         @Deprecated
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
+        public Object handleSync(@NonNull Message message,
+                                 @NonNull ProcessingContext context,
                                  @Nullable Object target) {
             throw new UnsupportedOperationException("Use handle() instead");
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message,
-                                       @Nonnull ProcessingContext context,
+        public MessageStream<?> handle(@NonNull Message message,
+                                       @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             return MessageStream.fromItems();
         }

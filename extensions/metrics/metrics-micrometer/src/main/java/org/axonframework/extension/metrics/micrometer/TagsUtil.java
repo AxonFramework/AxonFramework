@@ -18,7 +18,7 @@ package org.axonframework.extension.metrics.micrometer;
 
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 
@@ -83,7 +83,7 @@ public class TagsUtil {
      * @return a function for creating a Micrometer {@link Tag} based on the given {@code processorName} only, using the
      * {@link #PROCESSOR_NAME_TAG} key
      */
-    public static Function<Message, Iterable<Tag>> processorNameTag(@Nonnull String processorName) {
+    public static Function<Message, Iterable<Tag>> processorNameTag(@NonNull String processorName) {
         return message -> Tags.of(PROCESSOR_NAME_TAG, processorName);
     }
 
@@ -95,7 +95,7 @@ public class TagsUtil {
      * @return a function for creating a Micrometer {@link Tag Tags} based on the given {@code processorName}, using the
      * {@link #PROCESSOR_NAME_TAG} key, and the {@link #MESSAGE_TYPE_TAGGER}
      */
-    public static Function<Message, Iterable<Tag>> processorTags(@Nonnull String processorName) {
+    public static Function<Message, Iterable<Tag>> processorTags(@NonNull String processorName) {
         return message -> Tags.of(PROCESSOR_NAME_TAG, processorName)
                               .and(MESSAGE_TYPE_TAGGER.apply(message));
     }

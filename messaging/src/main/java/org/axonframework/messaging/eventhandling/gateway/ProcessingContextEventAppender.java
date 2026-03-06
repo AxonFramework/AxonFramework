@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
@@ -75,7 +76,7 @@ public class ProcessingContextEventAppender implements EventAppender {
     }
 
     @Override
-    public void append(@Nonnull List<?> events, @Nonnull Metadata metadata) {
+    public void append(@NonNull List<?> events, @NonNull Metadata metadata) {
         Objects.requireNonNull(events, "Events may not be null");
         Objects.requireNonNull(metadata, "Metadata may not be null");
         List<EventMessage> eventMessages = events.stream()

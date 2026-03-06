@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.DelayedMessageStream;
@@ -63,7 +62,7 @@ public class CommandSequencingInterceptor<M extends CommandMessage> implements M
      * @param sequencingPolicy the {@link SequencingPolicy} to apply for retrieving the sequence identifier from the
      *                         {@link CommandMessage}.
      */
-    public CommandSequencingInterceptor(@Nonnull SequencingPolicy<? super CommandMessage> sequencingPolicy) {
+    public CommandSequencingInterceptor(@NonNull SequencingPolicy<? super CommandMessage> sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "The sequencingPolicy must not be null");
         this.sequencingPolicy = sequencingPolicy;
         this.inProgress = new ConcurrentHashMap<>();

@@ -16,6 +16,7 @@
 
 package org.axonframework.common.configuration;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.DescribableComponent;
@@ -106,8 +107,8 @@ public interface Configuration extends DescribableComponent {
      * @return The component registered for the given {@code typeReference}.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
-    @Nonnull
-    default <C> C getComponent(@Nonnull TypeReference<C> typeReference) {
+    @NonNull
+    default <C> C getComponent(@NonNull TypeReference<C> typeReference) {
         return getComponent(typeReference, null);
     }
 
@@ -130,8 +131,8 @@ public interface Configuration extends DescribableComponent {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code typeReference} and
      *                                    {@code name}.
      */
-    @Nonnull
-    default <C> C getComponent(@Nonnull TypeReference<C> typeReference,
+    @NonNull
+    default <C> C getComponent(@NonNull TypeReference<C> typeReference,
                                @Nullable String name) {
         return getOptionalComponent(typeReference, name)
                 .orElseThrow(() -> new ComponentNotFoundException(typeReference, name));
@@ -152,7 +153,7 @@ public interface Configuration extends DescribableComponent {
      * @return An {@code Optional} wrapping the component registered for the given {@code type}. Might be empty when
      * there is no component present for the given {@code typeReference}.
      */
-    default <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference) {
+    default <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference) {
         return getOptionalComponent(typeReference, null);
     }
 
@@ -174,7 +175,7 @@ public interface Configuration extends DescribableComponent {
      * @return An {@code Optional} wrapping the component registered for the given {@code type} and {@code name}. Might
      * be empty when there is no component present for the given {@code type} and {@code name}.
      */
-    <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference,
+    <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference,
                                          @Nullable String name);
 
     /**
@@ -213,7 +214,7 @@ public interface Configuration extends DescribableComponent {
      * @return {@code true} when there is a {@link Component} registered under the given {@code typeReference},
      * {@code false} otherwise.
      */
-    default boolean hasComponent(@Nonnull TypeReference<?> typeReference) {
+    default boolean hasComponent(@NonNull TypeReference<?> typeReference) {
         return hasComponent(typeReference, null);
     }
 
@@ -229,7 +230,7 @@ public interface Configuration extends DescribableComponent {
      * @return {@code true} when there is a {@link Component} registered under the given {@code typeReference} and
      * {@code name combination}, {@code false} otherwise.
      */
-    default boolean hasComponent(@Nonnull TypeReference<?> typeReference,
+    default boolean hasComponent(@NonNull TypeReference<?> typeReference,
                                  @Nullable String name) {
         return getOptionalComponent(typeReference, name).isPresent();
     }

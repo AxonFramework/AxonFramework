@@ -16,6 +16,7 @@
 
 package org.axonframework.common.configuration;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component.Identifier;
@@ -99,9 +100,9 @@ public class Components implements DescribableComponent {
      * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}.
      */
-    @Nonnull
+    @NonNull
     @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> getByTypeReference(@NonNull Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
                            List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier);

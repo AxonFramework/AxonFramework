@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -92,10 +93,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         });
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull HandlerInterceptorFactory<Message> interceptorFactory
+            @NonNull HandlerInterceptorFactory<Message> interceptorFactory
     ) {
         registerCommandInterceptor(interceptorFactory);
         registerEventInterceptor(interceptorFactory);
@@ -112,10 +113,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
+            @NonNull HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
         this.commandInterceptorFactories.add(interceptorFactory);
         return this;
@@ -130,10 +131,10 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super EventMessage> interceptorFactory
+            @NonNull HandlerInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
         this.eventInterceptorFactories.add(interceptorFactory);
         return this;

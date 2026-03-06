@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -74,5 +74,5 @@ public interface SequencingPolicy<M extends Message> {
      * @return a sequence identifier for the given message, or {@code Optional#empty()} if this policy cannot determine
      * a sequence identifier for the given message.
      */
-    Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context);
+    Optional<Object> sequenceIdentifierFor(@NonNull M message, @NonNull ProcessingContext context);
 }
