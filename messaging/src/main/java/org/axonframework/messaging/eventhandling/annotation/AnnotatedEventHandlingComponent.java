@@ -85,7 +85,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                                            EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
-                "AnnotatedEventHandlingComponent[%s]".formatted(annotatedEventHandler.getClass().getName())
+                annotatedEventHandler.getClass().getName()
         );
         @SuppressWarnings("unchecked")
         Class<T> clazz = (Class<T>) annotatedEventHandler.getClass();
