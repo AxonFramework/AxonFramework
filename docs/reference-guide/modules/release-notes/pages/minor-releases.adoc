@@ -18,7 +18,8 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 
 - link:https://github.com/AxonFramework/AxonFramework/pull/4141[#4141] Make Interceptor and Monitor construction Component-aware
 - link:https://github.com/AxonFramework/AxonFramework/pull/4150[#4150] Remove Converter#canConvert methods (link:https://github.com/AxonFramework/AxonFramework/issues/3642)[#3642])
-- link:https://github.com/AxonFramework/AxonFramework/pull/4159[#4159] Import axoniq/university-demo to examples - link:https://github.com/AxonFramework/AxonFramework/pull/4165[#4165] Align ProcessorDefinition naming with the EventProcessorModule
+- link:https://github.com/AxonFramework/AxonFramework/pull/4159[#4159] Import axoniq/university-demo to examples
+- link:https://github.com/AxonFramework/AxonFramework/pull/4165[#4165] Align ProcessorDefinition naming with the EventProcessorModule
 - link:https://github.com/AxonFramework/AxonFramework/pull/4167[#4167] Add JDK25 build
 - link:https://github.com/AxonFramework/AxonFramework/pull/4173[#4173] Introduce local Command sequencing to avoid optimistic lock failures on concurrent command execution (link:https://github.com/AxonFramework/AxonFramework/issues/4155)[#4155])
 - link:https://github.com/AxonFramework/AxonFramework/pull/4179[#4179] Refactor sequencing policies for general messaging usage
