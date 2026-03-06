@@ -59,7 +59,7 @@ Any patch release made for an Axon project is tailored towards resolving bugs. T
 * link:https://github.com/AxonFramework/AxonFramework/pull/4221[#4221] Add support for returning the resume position from a sourcing
 * link:https://github.com/AxonFramework/AxonFramework/pull/4228[#4228] Autoconfigure after should use names instead of classes in JpaEventStoreAutoConfiguration
 * link:https://github.com/AxonFramework/AxonFramework/pull/4229[#4229] Resolved some type reliance issues in handler wrappers
-* link:https://github.com/AxonFramework/AxonFramework/pull/4240[#4240] RecordingEventSink positioned before interceptors — interceptor message changes not reflected in recorded events (link:https://github.com/AxonFramework/AxonFramework/issues/4237)[#4237])
+* link:https://github.com/AxonFramework/AxonFramework/pull/4240[#4240] RecordingEventSink positioned before interceptors: interceptor message changes not reflected in recorded events (link:https://github.com/AxonFramework/AxonFramework/issues/4237)[#4237])
 * link:https://github.com/AxonFramework/AxonFramework/pull/4255[#4255] Make routing with SequentialPolicy consistent across JVM restarts (link:https://github.com/AxonFramework/AxonFramework/issues/4253)[#4253])
 
 ==== Contributors
