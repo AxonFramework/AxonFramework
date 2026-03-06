@@ -96,12 +96,12 @@ We'd like to thank all the contributors who worked on this release!
 * Minor `Matchers` and `AxonTestFixture` improvements by @smcvb in link:https://github.com/AxonFramework/AxonFramework/pull/4069[#4069]
 * Rename parameter in EntityManagerExecutor by @hjohn in link:https://github.com/AxonFramework/AxonFramework/pull/4080[#4080]
 * Adjustments to StorageEngineTestSuite for transactional executors by @hjohn in link:https://github.com/AxonFramework/AxonFramework/pull/4089[#4089]
-* Event Processor Config - Remove `MessageMonitor` and `SpanFactory` customization by @smcvb in https://github.com/AxonFramework/AxonFramework/pull/link:4087[#4087]
+* Event Processor Config: Remove `MessageMonitor` and `SpanFactory` customization by @smcvb in https://github.com/AxonFramework/AxonFramework/pull/link:4087[#4087]
 * Add JDBC transactional executor + Spring integration by @hjohn in link:https://github.com/AxonFramework/AxonFramework/pull/4101[#4101]
 * Remove the `ProcessingLifecycleHandlerRegistrar` by @smcvb in link:https://github.com/AxonFramework/AxonFramework/pull/4121[#4121]
 * [#4032] [git] .gitignore ignores .idea/ but it contains committed files
 * [#4032] cleanup gitignore/idea/ setup by @jangalinski in link:https://github.com/AxonFramework/AxonFramework/pull/4035[#4035]
-* [#3995] feat(test-fixture): AxonTestThenCommand - resultMessagePayload - convert payload before executing the check
+* [#3995] feat(test-fixture): AxonTestThenCommand: resultMessagePayload convert payload before executing the check
 * [#3994] Remove ProcessingLifecycleHandlerRegistrar and its usages
 
 ==== Documentation
@@ -139,21 +139,21 @@ We'd like to thank all the contributors who worked on this release!
 
 ==== Enhancements
 
-- Update the AF 5.0.1 branch with AF 4.12.2 link:https://github.com/AxonFramework/AxonFramework/pull/3973[#3973]
-- Feature/university example application link:https://github.com/AxonFramework/AxonFramework/pull/3969[#3969]
-- List all autoconfigurations in Meta-Inf, apply naming convention link:https://github.com/AxonFramework/AxonFramework/pull/3948[#3948]
-- Show failed message handler in logs link:https://github.com/AxonFramework/AxonFramework/pull/3913[#3913]
-- Adjust PSEP log levels link:https://github.com/AxonFramework/AxonFramework/pull/3896[#3896]
-- Default to the `AnnotationMessageTypeResolver` in annotation-specific components link:https://github.com/AxonFramework/AxonFramework/pull/3894[#3894]
+* Update the AF 5.0.1 branch with AF 4.12.2 link:https://github.com/AxonFramework/AxonFramework/pull/3973[#3973]
+* Feature/university example application link:https://github.com/AxonFramework/AxonFramework/pull/3969[#3969]
+* List all autoconfigurations in Meta-Inf, apply naming convention link:https://github.com/AxonFramework/AxonFramework/pull/3948[#3948]
+* Show failed message handler in logs link:https://github.com/AxonFramework/AxonFramework/pull/3913[#3913]
+* Adjust PSEP log levels link:https://github.com/AxonFramework/AxonFramework/pull/3896[#3896]
+* Default to the `AnnotationMessageTypeResolver` in annotation-specific components link:https://github.com/AxonFramework/AxonFramework/pull/3894[#3894]
 
 ==== Bug fixes
 
-- Align `UpdateChecker` fixes from 4.12.2 with 5.0.1 link:https://github.com/AxonFramework/AxonFramework/pull/3985[#3985]
-- [#3982] fix(test): `Event events(`@Nonnull` List<?>... events)` - invalid usage of varargs link:https://github.com/AxonFramework/AxonFramework/pull/3984[#3984]
-- When splitting and merging tokens, update both tokens involved link:https://github.com/AxonFramework/AxonFramework/pull/3978[#3978]
-- [#3938] Fix startup of application when axon server is not available link:https://github.com/AxonFramework/AxonFramework/pull/3966[#3966]
-- ApplicationContext doesn't start properly when AxonServer is not running link:https://github.com/AxonFramework/AxonFramework/issues/3938[#3938]
-- Prevent duplicate registration of all handlers when using subtypes link:https://github.com/AxonFramework/AxonFramework/pull/3933[#3933]
+* Align `UpdateChecker` fixes from 4.12.2 with 5.0.1 link:https://github.com/AxonFramework/AxonFramework/pull/3985[#3985]
+* [#3982] fix(test): `Event events(`@Nonnull` List<?>... events)`: invalid usage of varargs link:https://github.com/AxonFramework/AxonFramework/pull/3984[#3984]
+* When splitting and merging tokens, update both tokens involved link:https://github.com/AxonFramework/AxonFramework/pull/3978[#3978]
+* [#3938] Fix startup of application when axon server is not available link:https://github.com/AxonFramework/AxonFramework/pull/3966[#3966]
+* ApplicationContext doesn't start properly when AxonServer is not running link:https://github.com/AxonFramework/AxonFramework/issues/3938[#3938]
+* Prevent duplicate registration of all handlers when using subtypes link:https://github.com/AxonFramework/AxonFramework/pull/3933[#3933]
 
 ==== Contributors
 
