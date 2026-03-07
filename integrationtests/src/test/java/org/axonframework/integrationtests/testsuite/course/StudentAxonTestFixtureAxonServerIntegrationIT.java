@@ -108,4 +108,34 @@ class StudentAxonTestFixtureAxonServerIntegrationIT {
                .success()
                .events(new CourseCreated(courseId));
     }
+
+    @Test
+    void axonTestFixtureRecordsCommandWithNonSerializedPayload() {
+        var courseId = UUID.randomUUID().toString();
+        var command = new CreateCourse(courseId);
+
+        fixture.given()
+               .when()
+               .command(command)
+               .then()
+               .success()
+               .commands(command);
+    }
+
+    @Test
+    void axonTestFixtureRecordsCommandPayloadSatisfyingCustomAssertion() {
+        var courseId = UUID.randomUUID().toString();
+
+        fixture.given()
+               .when()
+               .command(new CreateCourse(courseId))
+               .then()
+               .success()
+               .commandsSatisfy(commands -> {
+                   Assertions.assertEquals(1, commands.size());
+                   var payload = commands.getFirst().payload();
+                   Assertions.assertInstanceOf(CreateCourse.class, payload);
+                   Assertions.assertEquals(courseId, ((CreateCourse) payload).courseId());
+               });
+    }
 }
