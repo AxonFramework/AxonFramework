@@ -29,7 +29,6 @@ class CreateCourseCommandHandler implements CommandHandler {
     }
 
     @Override
-    @NonNull
     public MessageStream.Single<CommandResultMessage> handle(
             @NonNull CommandMessage command,
             @NonNull ProcessingContext context

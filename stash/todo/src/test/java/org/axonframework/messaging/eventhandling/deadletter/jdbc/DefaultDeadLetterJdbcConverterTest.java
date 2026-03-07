@@ -18,7 +18,7 @@ package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;

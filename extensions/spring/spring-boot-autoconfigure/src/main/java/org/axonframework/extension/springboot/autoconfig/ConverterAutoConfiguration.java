@@ -16,8 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.conversion.ChainingContentTypeConverter;

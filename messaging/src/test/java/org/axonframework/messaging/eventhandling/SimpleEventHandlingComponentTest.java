@@ -26,7 +26,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
 

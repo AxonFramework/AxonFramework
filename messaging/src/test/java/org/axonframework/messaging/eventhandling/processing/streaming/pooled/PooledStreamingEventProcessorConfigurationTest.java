@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,9 @@ class PooledStreamingEventProcessorConfigurationTest {
     @Test
     void addSegmentChangeListenerAddsListenersWithoutOverriding() {
         // given
-        PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration();
+        PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration(
+                new EventProcessorConfiguration("test", null)
+        );
         AtomicInteger releaseInvocations = new AtomicInteger();
         testSubject.addSegmentChangeListener(SegmentChangeListener.runOnRelease(
                 segment -> releaseInvocations.incrementAndGet()

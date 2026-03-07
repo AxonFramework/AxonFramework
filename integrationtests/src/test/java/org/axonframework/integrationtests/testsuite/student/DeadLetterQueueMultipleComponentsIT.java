@@ -29,7 +29,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;

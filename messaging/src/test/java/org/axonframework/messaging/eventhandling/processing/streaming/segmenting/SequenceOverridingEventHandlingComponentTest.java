@@ -29,7 +29,6 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

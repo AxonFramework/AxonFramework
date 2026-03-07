@@ -131,7 +131,6 @@ class AnnotationRoutingStrategyTest {
 
         @NonNull
         @Override
-        @NonNull
         public String toString() {
             return target;
         }
