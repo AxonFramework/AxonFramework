@@ -102,13 +102,13 @@ public sealed class SealedProject {
         this.name = name;
     }
 
-    @EntityMember
+    @EntityMember(routingKey = "email")
     private Developer leadDeveloper;
 
-    @EntityMember
+    @EntityMember(routingKey = "email")
     private List<Developer> otherDevelopers = new ArrayList<>();
 
-    @EntityMember
+    @EntityMember(routingKey = "id")
     private List<Milestone> features = new ArrayList<>();
 
     @CommandHandler
