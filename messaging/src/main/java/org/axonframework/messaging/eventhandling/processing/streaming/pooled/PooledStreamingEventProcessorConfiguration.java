@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.conversion.Converter;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
@@ -113,6 +114,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
     private final List<SegmentChangeListener> segmentChangeListeners = new ArrayList<>();
+    private Converter converter;
     private UnaryOperator<DeadLetterQueueConfiguration> deadLetterQueueCustomization = UnaryOperator.identity();
 
     /**
@@ -199,6 +201,19 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public PooledStreamingEventProcessorConfiguration tokenStore(TokenStore tokenStore) {
         assertNonNull(tokenStore, "TokenStore may not be null");
         this.tokenStore = tokenStore;
+        return this;
+    }
+
+    /**
+     * Sets the {@link Converter} used to convert reset context objects to {@code byte[]} when creating
+     * {@link ReplayToken ReplayTokens}.
+     *
+     * @param converter The {@link Converter} to use for reset context serialization.
+     * @return The current instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration converter(Converter converter) {
+        assertNonNull(converter, "Converter may not be null");
+        this.converter = converter;
         return this;
     }
 
@@ -534,6 +549,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         super.validate();
         assertNonNull(eventSource, "The StreamableEventSource is a hard requirement and should be provided");
         assertNonNull(tokenStore, "The TokenStore is a hard requirement and should be provided");
+        assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(unitOfWorkFactory, "The UnitOfWorkFactory is a hard requirement and should be provided");
         assertNonNull(
                 coordinatorExecutor,
@@ -570,6 +586,15 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     public TokenStore tokenStore() {
         return tokenStore;
+    }
+
+    /**
+     * Returns the {@link Converter} used to convert reset context objects to {@code byte[]}.
+     *
+     * @return The {@link Converter} for reset context serialization.
+     */
+    public Converter converter() {
+        return converter;
     }
 
     /**

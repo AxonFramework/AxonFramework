@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.conversion.Converter;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
@@ -125,6 +126,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     Optional.ofNullable(configuration.coordinatorExecutor())
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
+                            if (configuration.converter() == null) {
+                                configuration.converter(cfg.getComponent(Converter.class));
+                            }
                             var dlqEnabled = configuration.deadLetterQueue().isEnabled();
                             if (dlqEnabled) {
                                 configuration.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {

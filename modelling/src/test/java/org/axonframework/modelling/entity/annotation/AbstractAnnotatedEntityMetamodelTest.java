@@ -150,7 +150,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
         }
 
         @Override
-        public void append(@Nonnull List<?> events, @Nonnull Metadata metadata) {
+        public void append(List<?> events, Metadata metadata) {
             publishedEvents.addAll(events);
             if (entityState == null) {
                 return;

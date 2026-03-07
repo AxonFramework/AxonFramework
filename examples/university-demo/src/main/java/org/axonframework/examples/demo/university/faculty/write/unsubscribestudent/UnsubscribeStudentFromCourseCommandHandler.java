@@ -4,7 +4,7 @@ import org.axonframework.examples.demo.university.faculty.FacultyTags;
 import org.axonframework.examples.demo.university.faculty.Ids;
 import org.axonframework.examples.demo.university.faculty.events.StudentSubscribedToCourse;
 import org.axonframework.examples.demo.university.faculty.events.StudentUnsubscribedFromCourse;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -74,8 +74,8 @@ class UnsubscribeStudentFromCourseCommandHandler {
     private static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
         @Override
-        @Nonnull
-        public SubscriptionId resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+        @NonNull
+        public SubscriptionId resolve(@NonNull Message command, @NonNull ProcessingContext context) {
             var converter = context.component(MessageConverter.class);
             UnsubscribeStudentFromCourse payload = command.payloadAs(UnsubscribeStudentFromCourse.class, converter);
             if (payload == null) {

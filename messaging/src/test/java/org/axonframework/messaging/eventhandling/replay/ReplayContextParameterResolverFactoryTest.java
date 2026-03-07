@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling.replay;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.TestConverter;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
@@ -61,7 +61,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class ReplayContextParameterResolverFactoryTest {
 
     private static final GlobalSequenceTrackingToken regularToken = new GlobalSequenceTrackingToken(1L);
+    private static final Converter jacksonConverter = TestConverter.JACKSON.getConverter();
     private static final MyResetContext resetContext = new MyResetContext(asList(2L, 3L));
+    private static final byte[] serializedResetContext = jacksonConverter.convert(resetContext, byte[].class);
 
     private SomeHandler handler;
     private EventHandlingComponent testSubject;
@@ -132,14 +134,14 @@ class ReplayContextParameterResolverFactoryTest {
             return ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(position + 1),
                     new GlobalSequenceTrackingToken(position),
-                    resetContext
+                    serializedResetContext
             );
         }
         return new GlobalSequenceTrackingToken(position);
     }
 
     private ProcessingContext contextWithToken(EventMessage event, TrackingToken token) {
-        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE)
+        return StubProcessingContext.withComponent(Converter.class, jacksonConverter)
                                     .withMessage(event)
                                     .withResource(TrackingToken.RESOURCE_KEY, token);
     }
@@ -171,12 +173,11 @@ class ReplayContextParameterResolverFactoryTest {
     @Nested
     class WithJacksonConverter {
 
-        private static final JacksonConverter jacksonConverter = new JacksonConverter();
-
         @Test
         void replayContextIsConvertedFromMapToRecord() {
             // given
             Map<String, Object> mapContext = Map.of("sequences", List.of(2L, 3L));
+            byte[] serializedMapContext = jacksonConverter.convert(mapContext, byte[].class);
             var handler = new SomeHandler();
             var testSubject = new AnnotatedEventHandlingComponent<>(
                     handler,
@@ -189,7 +190,7 @@ class ReplayContextParameterResolverFactoryTest {
             var replayToken = ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(3L),
                     new GlobalSequenceTrackingToken(2L),
-                    mapContext
+                    serializedMapContext
             );
 
             // when
@@ -205,7 +206,7 @@ class ReplayContextParameterResolverFactoryTest {
         @Test
         void conversionExceptionIsThrownWhenConversionFails() {
             // given
-            String incompatibleContext = "incompatible-string-context";
+            byte[] incompatibleContext = jacksonConverter.convert("incompatible-string-context", byte[].class);
             var replayToken = ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(3L),
                     new GlobalSequenceTrackingToken(2L),

@@ -18,7 +18,7 @@ package org.axonframework.extension.metrics.dropwizard;
 
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricRegistry;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -77,12 +77,12 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
      *
      * @param registry the {@link MetricRegistry} which will record the metrics
      */
-    public MetricsConfigurationEnhancer(@Nonnull MetricRegistry registry) {
+    public MetricsConfigurationEnhancer(@NonNull MetricRegistry registry) {
         this.registry = Objects.requireNonNull(registry, "The MetricRegistry must not be null.");
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(@NonNull ComponentRegistry registry) {
         registry.registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerCommandMonitor(

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -185,20 +184,20 @@ class ResourceOverridingProcessingContextTest {
         private final List<Consumer<ProcessingContext>> completionHandlers = new ArrayList<>();
 
         @Override
-        public ProcessingLifecycle on(@Nonnull ProcessingLifecycle.Phase phase,
-                                      @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+        public ProcessingLifecycle on(ProcessingLifecycle.Phase phase,
+                                      Function<ProcessingContext, CompletableFuture<?>> action) {
             phaseActions.computeIfAbsent(phase, p -> new ArrayList<>()).add(action);
             return this;
         }
 
         @Override
-        public ProcessingLifecycle onError(@Nonnull ProcessingLifecycle.ErrorHandler action) {
+        public ProcessingLifecycle onError(ProcessingLifecycle.ErrorHandler action) {
             errorHandlers.add(action);
             return this;
         }
 
         @Override
-        public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
+        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
             completionHandlers.add(action);
             return this;
         }

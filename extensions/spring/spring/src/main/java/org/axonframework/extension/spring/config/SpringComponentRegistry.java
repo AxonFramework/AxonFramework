@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.TypeReference;
@@ -640,19 +641,19 @@ public class SpringComponentRegistry implements
             }
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <C> C getComponent(@Nonnull TypeReference<C> typeReference) {
+        public <C> C getComponent(@NonNull TypeReference<C> typeReference) {
             return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
                               .stream()
                               .findFirst()
                               .orElseThrow(() -> new ComponentNotFoundException(typeReference, null));
         }
 
-        @Nonnull
+        @NonNull
         @Override
         @SuppressWarnings("unchecked,DataFlowIssue")
-        public <C> C getComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+        public <C> C getComponent(@NonNull TypeReference<C> typeReference, @Nullable String name) {
             Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
             try {
                 BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);
@@ -667,7 +668,7 @@ public class SpringComponentRegistry implements
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference) {
+        public <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference) {
             return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
                               .stream()
                               .findFirst();
@@ -675,7 +676,7 @@ public class SpringComponentRegistry implements
 
         @Override
         @SuppressWarnings("unchecked,DataFlowIssue")
-        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+        public <C> Optional<C> getOptionalComponent(@NonNull TypeReference<C> typeReference, @Nullable String name) {
             Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
             try {
                 BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);

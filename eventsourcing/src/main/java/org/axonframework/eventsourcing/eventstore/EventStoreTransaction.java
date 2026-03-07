@@ -16,7 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -55,7 +56,7 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing the event sequence complying to the
      * given {@code condition}.
      */
-    default MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+    default MessageStream<? extends EventMessage> source(@NonNull SourcingCondition condition) {
         return source(condition, null);
     }
 

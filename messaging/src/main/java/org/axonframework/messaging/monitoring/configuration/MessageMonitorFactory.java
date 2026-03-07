@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -47,8 +47,8 @@ public interface MessageMonitorFactory<M extends Message> {
      */
     @Nullable
     MessageMonitor<? super M> build(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            @NonNull Configuration config,
+            @NonNull Class<?> componentType,
             @Nullable String componentName
     );
 }

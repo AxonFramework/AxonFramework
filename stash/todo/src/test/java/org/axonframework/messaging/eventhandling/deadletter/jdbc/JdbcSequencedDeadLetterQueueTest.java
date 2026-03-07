@@ -21,7 +21,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.conversion.CachingSupplier;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;

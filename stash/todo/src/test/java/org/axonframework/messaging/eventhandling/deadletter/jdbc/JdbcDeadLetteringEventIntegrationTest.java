@@ -20,7 +20,7 @@ import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.conversion.CachingSupplier;
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;

@@ -45,7 +45,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -234,7 +235,9 @@ public abstract class DeadLetteringEventIntegrationTest {
         coordinatorExecutor = Executors.newSingleThreadScheduledExecutor();
         workerExecutor = Executors.newSingleThreadScheduledExecutor();
 
-        var configuration = new PooledStreamingEventProcessorConfiguration()
+        var configuration = new PooledStreamingEventProcessorConfiguration(
+                new EventProcessorConfiguration(PROCESSING_GROUP, null)
+        )
                 .eventSource(eventSource)
                 .unitOfWorkFactory(buildUnitOfWorkFactory())
                 .tokenStore(new InMemoryTokenStore())

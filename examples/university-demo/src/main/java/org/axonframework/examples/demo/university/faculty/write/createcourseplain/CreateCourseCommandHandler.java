@@ -3,7 +3,7 @@ package org.axonframework.examples.demo.university.faculty.write.createcoursepla
 import org.axonframework.examples.demo.university.faculty.Ids;
 import org.axonframework.examples.demo.university.faculty.events.CourseCreated;
 import org.axonframework.examples.demo.university.shared.slices.write.CommandResult;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -29,10 +29,9 @@ class CreateCourseCommandHandler implements CommandHandler {
     }
 
     @Override
-    @Nonnull
     public MessageStream.Single<CommandResultMessage> handle(
-            @Nonnull CommandMessage command,
-            @Nonnull ProcessingContext context
+            @NonNull CommandMessage command,
+            @NonNull ProcessingContext context
     ) {
         var eventAppender = EventAppender.forContext(context);
         var payload = command.payloadAs(CreateCourse.class, messageConverter);

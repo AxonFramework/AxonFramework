@@ -499,10 +499,11 @@ class JpaTokenStoreTest {
         var ctx = createProcessingContext();
         var converter = TestConverter.JACKSON.getConverter();
         var resetContext = new MyResetContext(List.of(1L, 2L, 3L));
+        byte[] serializedResetContext = converter.convert(resetContext, byte[].class);
         var replayToken = ReplayToken.createReplayToken(
                 new GlobalSequenceTrackingToken(10L),
                 new GlobalSequenceTrackingToken(5L),
-                resetContext
+                serializedResetContext
         );
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("replay-context-test", 1, null, ctx));
         newTransaction();

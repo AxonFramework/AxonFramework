@@ -18,8 +18,8 @@ package org.axonframework.conversion.jackson;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
 /**
@@ -35,13 +35,13 @@ import org.axonframework.conversion.ContentTypeConverter;
 public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<ObjectNode, JsonNode> {
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<ObjectNode> expectedSourceType() {
         return ObjectNode.class;
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }

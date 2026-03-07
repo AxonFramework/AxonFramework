@@ -17,9 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.data.domain.Page;

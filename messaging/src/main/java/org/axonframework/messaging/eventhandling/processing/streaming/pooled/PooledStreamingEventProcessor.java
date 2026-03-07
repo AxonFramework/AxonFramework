@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.conversion.Converter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
@@ -97,6 +98,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final EventCriteria eventCriteria;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final TokenStore tokenStore;
+    private final Converter converter;
     private final ScheduledExecutorService workerExecutor;
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
@@ -136,6 +138,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         configuration.validate();
         this.eventSource = configuration.eventSource();
         this.tokenStore = configuration.tokenStore();
+        this.converter = configuration.converter();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
         this.workerExecutor = configuration.workerExecutor();
 
@@ -338,9 +341,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
             R resetContext,
             ProcessingContext processingContext
     ) {
+        byte[] serializedContext = resetContext != null ? converter.convert(resetContext, byte[].class) : null;
         var storeFutures = segmentTokens.stream()
                                         .map(st -> tokenStore.storeToken(
-                                                ReplayToken.createReplayToken(st.token(), startPosition, resetContext),
+                                                ReplayToken.createReplayToken(st.token(), startPosition, serializedContext),
                                                 name,
                                                 st.segment().getSegmentId(),
                                                 processingContext

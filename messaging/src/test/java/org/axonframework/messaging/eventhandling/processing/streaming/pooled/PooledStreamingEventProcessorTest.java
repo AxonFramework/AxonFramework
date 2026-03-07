@@ -19,6 +19,8 @@ package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.util.DelegateScheduledExecutorService;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.TestConverter;
 import org.axonframework.common.util.MockException;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageStream;
@@ -106,6 +108,7 @@ class PooledStreamingEventProcessorTest {
     private ScheduledExecutorService workerExecutor;
     private SimpleEventHandlingComponent simpleEhc;
     private RecordingEventHandlingComponent defaultEventHandlingComponent;
+    private Converter converter;
 
     @BeforeEach
     void setUp() {
@@ -116,6 +119,7 @@ class PooledStreamingEventProcessorTest {
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));
+        converter = TestConverter.JACKSON.getConverter();
         simpleEhc = SimpleEventHandlingComponent.create("test");
         simpleEhc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
         defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(simpleEhc));
@@ -147,6 +151,7 @@ class PooledStreamingEventProcessorTest {
                 .tokenStore(tokenStore)
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)
+                .converter(converter)
                 .initialSegmentCount(8)
                 .claimExtensionThreshold(500);
         var customizedConfiguration = configOverride.apply(testDefaultConfiguration);
@@ -1458,7 +1463,9 @@ class PooledStreamingEventProcessorTest {
             TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
             String expectedContext = "my-context";
-            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
+            TrackingToken expectedToken = ReplayToken.createReplayToken(
+                    initialToken, initialToken, converter.convert(expectedContext, byte[].class)
+            );
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             simpleEhc.subscribe((resetContext, ctx) -> {
@@ -1632,8 +1639,8 @@ class PooledStreamingEventProcessorTest {
             assertThat(token1).isNotNull();
             assertTrue(ReplayToken.isReplay(token1));
             // Verify the reset context is stored in the ReplayToken
-            assertEquals(expectedContext, ((ReplayToken) token0).context());
-            assertEquals(expectedContext, ((ReplayToken) token1).context());
+            assertEquals(expectedContext, converter.convert(((ReplayToken) token0).resetContext(), String.class));
+            assertEquals(expectedContext, converter.convert(((ReplayToken) token1).resetContext(), String.class));
         }
     }
 

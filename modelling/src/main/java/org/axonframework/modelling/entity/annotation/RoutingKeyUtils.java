@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 
 import java.lang.reflect.AnnotatedElement;
