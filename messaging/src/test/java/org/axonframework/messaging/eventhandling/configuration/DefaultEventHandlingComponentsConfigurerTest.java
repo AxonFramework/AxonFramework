@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import org.jspecify.annotations.NonNull;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Test class validating the {@link DefaultEventHandlingComponentsConfigurer} functionality.
@@ -58,12 +60,13 @@ class DefaultEventHandlingComponentsConfigurerTest {
             };
 
             //when
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer().declarative(componentBuilder);
-            var components = componentsConfigurer.toList();
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative("component", componentBuilder);
+            var components = componentsConfigurer.toMap();
 
             //then
             assertThat(components).hasSize(1);
-            assertThat(components.getFirst()).isSameAs(componentBuilder);
+            assertThat(components).containsEntry("component", componentBuilder);
         }
     }
 
@@ -82,14 +85,32 @@ class DefaultEventHandlingComponentsConfigurerTest {
 
             //when
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative(componentBuilder1)
-                    .declarative(componentBuilder2)
-                    .declarative(componentBuilder3);
-            var components = componentsConfigurer.toList();
+                    .declarative("component1", componentBuilder1)
+                    .declarative("component2", componentBuilder2)
+                    .declarative("component3", componentBuilder3);
+            var components = componentsConfigurer.toMap();
 
             //then
             assertThat(components).hasSize(3);
-            assertThat(components).containsExactly(componentBuilder1, componentBuilder2, componentBuilder3);
+            assertThat(components.keySet()).containsExactly("component1", "component2", "component3");
+            assertThat(components.values()).containsExactly(componentBuilder1, componentBuilder2, componentBuilder3);
+        }
+    }
+
+    @Nested
+    class NameValidationTest {
+
+        @Test
+        void shouldFailWhenDuplicateNameIsConfigured() {
+            // given
+            var testSubject = new DefaultEventHandlingComponentsConfigurer();
+
+            // when / then
+            assertThatThrownBy(() -> testSubject
+                    .declarative("component", cfg -> SimpleEventHandlingComponent.create("component"))
+                    .declarative("component", cfg -> SimpleEventHandlingComponent.create("other")))
+                    .isInstanceOf(AxonConfigurationException.class)
+                    .hasMessageContaining("already registered");
         }
     }
 
@@ -105,12 +126,17 @@ class DefaultEventHandlingComponentsConfigurerTest {
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative(cfg -> component1)
-                    .declarative(cfg -> component2);
+                    .declarative("component1", cfg -> component1)
+                    .declarative("component2", cfg -> component2);
 
             //when
+            var configuration = MessagingConfigurer.create().build();
             var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
-            var decoratedComponents = decoratedConfigurer.build(MessagingConfigurer.create().build());
+            var decoratedComponents = decoratedConfigurer.toMap()
+                                                        .values()
+                                                        .stream()
+                                                        .map(builder -> builder.build(configuration))
+                                                        .toList();
 
             //then
             assertThat(decoratedComponents).hasSize(2);

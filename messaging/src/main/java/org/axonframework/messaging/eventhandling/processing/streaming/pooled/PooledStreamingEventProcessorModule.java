@@ -47,13 +47,13 @@ import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 /**
  * A configuration module for configuring and registering a single {@link PooledStreamingEventProcessor} component.
@@ -83,7 +83,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
+    private Map<String, ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     /**
@@ -131,9 +131,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                     var uow = configuration.unitOfWorkFactory().create();
                                     return uow.executeWithResult(context -> {
                                         // Invalidate cache for ALL event handling component DLQs
-                                        for (int idx = 0; idx < eventHandlingComponentBuilders.size(); idx++) {
+                                        for (String componentName : eventHandlingComponentBuilders.keySet()) {
                                             var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
-                                                                       processorComponentCachingDlqName(idx));
+                                                                       processorComponentCachingDlqName(componentName));
                                             dlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
                                         }
                                         return FutureUtils.emptyCompletedFuture();
@@ -162,9 +162,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @SuppressWarnings("unchecked")
     private void registerCachingDeadLetterQueues() {
-        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
-            final int componentIndex = i;
-            var cachingDlqName = processorComponentCachingDlqName(componentIndex);
+        for (String componentName : eventHandlingComponentBuilders.keySet()) {
+            var cachingDlqName = processorComponentCachingDlqName(componentName);
             componentRegistry(cr -> cr.registerComponent(
                     ComponentDefinition
                             .ofTypeAndName(CachingSequencedDeadLetterQueue.class, cachingDlqName)
@@ -175,7 +174,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                 if (dlqConfig.isEnabled()) {
                                     var underlyingDlq = cfg.getComponent(
                                             SequencedDeadLetterQueue.class,
-                                            processorComponentDlqName(componentIndex)
+                                            processorComponentDlqName(componentName)
                                     );
                                     return new CachingSequencedDeadLetterQueue<EventMessage>(
                                             underlyingDlq,
@@ -225,10 +224,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     private void registerEventHandlingComponents() {
-        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
-            final int componentIndex = i;
-            var componentBuilder = eventHandlingComponentBuilders.get(i);
-            var componentName = processorEventHandlingComponentName(i);
+        for (var componentBuilderEntry : eventHandlingComponentBuilders.entrySet()) {
+            var configuredComponentName = componentBuilderEntry.getKey();
+            var componentBuilder = componentBuilderEntry.getValue();
+            var componentName = processorEventHandlingComponentName(configuredComponentName);
             componentRegistry(cr -> {
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
@@ -255,7 +254,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                              return delegate;
                                          }
                                          // When DLQ is enabled, the component is required (not optional)
-                                         var cachingDlqName = processorComponentCachingDlqName(componentIndex);
+                                         var cachingDlqName = processorComponentCachingDlqName(configuredComponentName);
                                          var cachingDlq = config.getComponent(
                                                  CachingSequencedDeadLetterQueue.class,
                                                  cachingDlqName
@@ -284,24 +283,25 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
-        return IntStream.range(0, eventHandlingComponentBuilders.size())
-                        .mapToObj(i -> {
-                            String componentName = processorEventHandlingComponentName(i);
-                            return configuration.getComponent(EventHandlingComponent.class, componentName);
-                        })
+        return eventHandlingComponentBuilders.keySet()
+                        .stream()
+                        .map(componentName -> configuration.getComponent(
+                                EventHandlingComponent.class,
+                                processorEventHandlingComponentName(componentName)
+                        ))
                         .toList();
     }
 
-        private String processorEventHandlingComponentName(int index) {
-        return "EventHandlingComponent[" + processorName + "][" + index + "]";
+    private String processorEventHandlingComponentName(String componentName) {
+        return "EventHandlingComponent[" + processorName + "][" + componentName + "]";
     }
 
-        private String processorComponentDlqName(int index) {
-        return "DeadLetterQueue[" + processorName + "][" + index + "]";
+    private String processorComponentDlqName(String componentName) {
+        return "DeadLetterQueue[" + processorName + "][" + componentName + "]";
     }
 
-        private String processorComponentCachingDlqName(int index) {
-        return "CachingDeadLetterQueue[" + processorName + "][" + index + "]";
+    private String processorComponentCachingDlqName(String componentName) {
+        return "CachingDeadLetterQueue[" + processorName + "][" + componentName + "]";
     }
 
     private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
@@ -356,7 +356,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
-        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
+        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toMap();
         return this;
     }
 

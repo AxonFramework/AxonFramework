@@ -25,7 +25,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
-import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
@@ -63,22 +63,29 @@ public interface EventHandlingComponentsConfigurer {
         /**
          * Configures a single event handling component.
          *
+         * @param componentName           The unique component name.
          * @param handlingComponentBuilder The component to configure.
          * @return The complete phase for decoration and finalization.
          */
         AdditionalComponentPhase declarative(
+                String componentName,
                 ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
          * Configures an auto-detected event handling component.
          *
+         * @param componentName           The unique component name.
          * @param handlingComponentBuilder The component builder.
          * @return The additional component phase for further configuration.
          */
-                default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
+        default AdditionalComponentPhase autodetected(
+                String componentName,
+                ComponentBuilder<Object> handlingComponentBuilder
+        ) {
+            requireNonNull(componentName, "The component name cannot be null.");
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-            return declarative(c -> new AnnotatedEventHandlingComponent<>(
+            return declarative(componentName, c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
                     ClasspathHandlerDefinition.forClass(c.getClass()),
@@ -104,23 +111,10 @@ public interface EventHandlingComponentsConfigurer {
         );
 
         /**
-         * Returns the configured list of event handling components.
+         * Returns the configured map of event handling components.
          *
-         * @return The immutable list of configured components.
+         * @return The immutable map of configured component names to builders.
          */
-        List<ComponentBuilder<EventHandlingComponent>> toList();
-
-        /**
-         * Builds all configured components using the provided configuration.
-         *
-         * @param configuration The framework configuration.
-         * @return The list of built event handling components.
-         */
-        default List<EventHandlingComponent> build(Configuration configuration) {
-            return toList().stream()
-                           .map(builder -> builder.build(configuration))
-                           .toList();
-        }
+        Map<String, ComponentBuilder<EventHandlingComponent>> toMap();
     }
 }
-

@@ -73,8 +73,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         var processorModule = EventProcessorModule
                 .pooledStreaming(PROCESSOR_NAME)
                 .eventHandlingComponents(c -> c
-                        .declarative(cfg -> components[0])
-                        .declarative(cfg -> components[1]))
+                        .declarative("component0", cfg -> components[0])
+                        .declarative("component1", cfg -> components[1]))
                 .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.enabled()));
 
         return configurer.messaging(
@@ -267,10 +267,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
     @SuppressWarnings("unchecked")
     private CachingSequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
+        var componentName = "component" + componentIndex;
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
                                            CachingSequencedDeadLetterQueue.class,
-                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][" + componentIndex + "]"
+                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][" + componentName + "]"
                                    ))
                                    .orElseThrow(() -> new IllegalStateException(
                                            "DLQ not found for component " + componentIndex));
@@ -278,10 +279,11 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
 
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterProcessor<EventMessage> getDeadLetterProcessor(int componentIndex) {
+        var componentName = "component" + componentIndex;
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterProcessor.class,
-                                           "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentIndex + "]"
+                                           "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]"
                                    ))
                                    .orElseThrow(() -> new IllegalStateException(
                                            "DeadLetterProcessor not found for component " + componentIndex));

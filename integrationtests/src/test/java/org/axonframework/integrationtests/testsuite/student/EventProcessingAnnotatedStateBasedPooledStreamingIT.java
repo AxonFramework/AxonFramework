@@ -106,7 +106,9 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("student-courses-readmodel-processor")
-                .eventHandlingComponents(components -> components.declarative(cfg -> studentCoursesProjector()))
+                .eventHandlingComponents(
+                        components -> components.declarative("studentCoursesProjector", cfg -> studentCoursesProjector())
+                )
                 .notCustomized();
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(

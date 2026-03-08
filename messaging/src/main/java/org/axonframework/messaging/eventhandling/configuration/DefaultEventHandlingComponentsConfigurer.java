@@ -16,16 +16,19 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import static org.axonframework.common.BuilderUtils.assertNonBlank;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,7 +43,7 @@ public class DefaultEventHandlingComponentsConfigurer
         implements EventHandlingComponentsConfigurer.RequiredComponentPhase,
         EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
 
-    private List<ComponentBuilder<EventHandlingComponent>> componentBuilders = new ArrayList<>();
+    private Map<String, ComponentBuilder<EventHandlingComponent>> componentBuilders = new LinkedHashMap<>();
 
     /**
      * Creates a new empty configurer instance.
@@ -51,10 +54,16 @@ public class DefaultEventHandlingComponentsConfigurer
 
     @Override
     public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
+            String componentName,
             ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
+        assertNonBlank(componentName, "The component name cannot be null or blank.");
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-        componentBuilders.add(handlingComponentBuilder);
+        var existingBuilder = componentBuilders.putIfAbsent(componentName, handlingComponentBuilder);
+        if (existingBuilder != null) {
+            throw new AxonConfigurationException("Event handling component name [%s] is already registered."
+                                                         .formatted(componentName));
+        }
         return this;
     }
 
@@ -63,9 +72,10 @@ public class DefaultEventHandlingComponentsConfigurer
             BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
     ) {
         Objects.requireNonNull(decorator, "decorator may not be null");
-        var decoratedBuilders = new ArrayList<ComponentBuilder<EventHandlingComponent>>();
-        for (var builder : componentBuilders) {
-            decoratedBuilders.add(cfg -> {
+        var decoratedBuilders = new LinkedHashMap<String, ComponentBuilder<EventHandlingComponent>>();
+        for (var componentBuilder : componentBuilders.entrySet()) {
+            decoratedBuilders.put(componentBuilder.getKey(), cfg -> {
+                var builder = componentBuilder.getValue();
                 EventHandlingComponent component = builder.build(cfg);
                 return decorator.apply(cfg, component);
             });
@@ -75,7 +85,7 @@ public class DefaultEventHandlingComponentsConfigurer
     }
 
     @Override
-    public List<ComponentBuilder<EventHandlingComponent>> toList() {
-        return List.copyOf(componentBuilders);
+    public Map<String, ComponentBuilder<EventHandlingComponent>> toMap() {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(componentBuilders));
     }
 }
