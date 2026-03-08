@@ -81,7 +81,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private EventHandlingComponentsConfigurer.CompletePhase componentsConfigurer;
+    private List<String> componentNames;
+    private Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     private volatile Map<String, EventHandlingComponent> resolvedComponents;
@@ -114,7 +115,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         if (resolvedComponents == null) {
             synchronized (this) {
                 if (resolvedComponents == null) {
-                    resolvedComponents = componentsConfigurer.build(cfg);
+                    resolvedComponents = componentsFactory.apply(cfg);
                 }
             }
         }
@@ -140,7 +141,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                 configuration.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
                                     var uow = configuration.unitOfWorkFactory().create();
                                     return uow.executeWithResult(context -> {
-                                        for (var componentName : componentsConfigurer.componentNames()) {
+                                        for (var componentName : componentNames) {
                                             var dlq = cfg.getComponent(CachingSequencedDeadLetterQueue.class,
                                                                        cachingDlqRegistryName(componentName));
                                             dlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
@@ -162,7 +163,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @SuppressWarnings("unchecked")
     private void registerCachingDeadLetterQueues() {
-        for (var componentName : componentsConfigurer.componentNames()) {
+        for (var componentName : componentNames) {
             var cachingDlqName = cachingDlqRegistryName(componentName);
             componentRegistry(cr -> cr.registerComponent(
                     ComponentDefinition
@@ -204,7 +205,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     private void registerEventHandlingComponents() {
-        for (var componentName : componentsConfigurer.componentNames()) {
+        for (var componentName : componentNames) {
             var registryName = eventHandlingComponentRegistryName(componentName);
             componentRegistry(cr -> {
                 cr.registerComponent(EventHandlingComponent.class, registryName,
@@ -276,7 +277,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     }
 
     private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
-        return componentsConfigurer.componentNames().stream()
+        return componentNames.stream()
                                    .map(name -> configuration.getComponent(
                                            EventHandlingComponent.class,
                                            eventHandlingComponentRegistryName(name)
@@ -347,8 +348,9 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
-        var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
-        this.componentsConfigurer = configurerTask.apply(componentsConfigurer);
+        var completePhase = configurerTask.apply(new DefaultEventHandlingComponentsConfigurer());
+        this.componentNames = completePhase.componentNames();
+        this.componentsFactory = completePhase::build;
         return this;
     }
 

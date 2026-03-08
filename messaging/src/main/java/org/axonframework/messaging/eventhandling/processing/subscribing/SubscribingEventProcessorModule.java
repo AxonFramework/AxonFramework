@@ -66,7 +66,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private EventHandlingComponentsConfigurer.CompletePhase componentsConfigurer;
+    private List<String> componentNames;
+    private Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
     private org.axonframework.common.configuration.ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     private volatile Map<String, EventHandlingComponent> resolvedComponents;
@@ -96,7 +97,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         if (resolvedComponents == null) {
             synchronized (this) {
                 if (resolvedComponents == null) {
-                    resolvedComponents = componentsConfigurer.build(cfg);
+                    resolvedComponents = componentsFactory.apply(cfg);
                 }
             }
         }
@@ -128,7 +129,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private void registerEventHandlingComponents() {
-        for (var componentName : componentsConfigurer.componentNames()) {
+        for (var componentName : componentNames) {
             var registryName = eventHandlingComponentRegistryName(componentName);
             componentRegistry(cr -> {
                 cr.registerComponent(EventHandlingComponent.class, registryName,
@@ -152,7 +153,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
-        return componentsConfigurer.componentNames().stream()
+        return componentNames.stream()
                                    .map(name -> configuration.getComponent(
                                            EventHandlingComponent.class,
                                            eventHandlingComponentRegistryName(name)
@@ -212,8 +213,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
-        var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
-        this.componentsConfigurer = configurerTask.apply(componentsConfigurer);
+        var completePhase = configurerTask.apply(new DefaultEventHandlingComponentsConfigurer());
+        this.componentNames = completePhase.componentNames();
+        this.componentsFactory = completePhase::build;
         return this;
     }
 
