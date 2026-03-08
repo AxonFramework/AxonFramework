@@ -18,6 +18,8 @@ package org.axonframework.messaging.eventhandling.configuration;
 
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.NamedComponentBuilder;
+
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -60,16 +62,16 @@ public interface EventHandlingComponentsConfigurer {
     interface ComponentsPhase {
 
         /**
-         * Configures a single event handling component with an explicit name. The provided {@code name} will be used
-         * as the component's identity for registration and lookup.
+         * Configures a single event handling component with an explicit name. The provided {@code name} will be
+         * forwarded to the builder, allowing the component to use it during construction without duplicating it.
          *
          * @param name                     The explicit name for the component.
-         * @param handlingComponentBuilder The component to configure.
+         * @param handlingComponentBuilder The named component builder that receives the name and configuration.
          * @return The additional component phase for further configuration.
          */
         AdditionalComponentPhase declarative(
                 String name,
-                ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+                NamedComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -83,8 +85,8 @@ public interface EventHandlingComponentsConfigurer {
         default AdditionalComponentPhase autodetected(String name, ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(name, "The name cannot be null.");
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-            return declarative(name, c -> new AnnotatedEventHandlingComponent<>(
-                    name,
+            return declarative(name, (n, c) -> new AnnotatedEventHandlingComponent<>(
+                    n,
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
                     ClasspathHandlerDefinition.forClass(c.getClass()),

@@ -69,7 +69,7 @@ public class AxonTestFixtureStatelessEventHandlerTest {
                 EventProcessorModule
                         .pooledStreaming("test-given-event-then-command")
                         .eventHandlingComponents(c -> c.declarative("test",
-                                cfg -> SimpleEventHandlingComponent.create("test").subscribe(
+                                (name, cfg) -> SimpleEventHandlingComponent.create(name).subscribe(
                                         new QualifiedName(StudentNameChangedEvent.class),
                                         AxonTestFixtureStatelessEventHandlerTest::handleStudentNameChanged
                                 )

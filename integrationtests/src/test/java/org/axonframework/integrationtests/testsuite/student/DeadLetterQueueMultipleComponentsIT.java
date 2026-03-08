@@ -73,8 +73,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         var processorModule = EventProcessorModule
                 .pooledStreaming(PROCESSOR_NAME)
                 .eventHandlingComponents(c -> c
-                        .declarative("component0", cfg -> components[0])
-                        .declarative("component1", cfg -> components[1]))
+                        .declarative("component0", (name, cfg) -> components[0])
+                        .declarative("component1", (name, cfg) -> components[1]))
                 .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.enabled()));
 
         return configurer.messaging(

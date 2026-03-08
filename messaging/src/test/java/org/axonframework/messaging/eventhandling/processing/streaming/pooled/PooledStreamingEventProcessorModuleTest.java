@@ -86,7 +86,7 @@ class PooledStreamingEventProcessorModuleTest {
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative(
-                            "test", cfg -> SimpleEventHandlingComponent.create("test")
+                            "test", (name, cfg) -> SimpleEventHandlingComponent.create("test")
                     ))
                     .customized((cfg, c) -> c);
 
@@ -166,8 +166,8 @@ class PooledStreamingEventProcessorModuleTest {
                     ep -> ep.pooledStreaming(
                             ps -> ps.defaults(d -> d.eventSource(eventSource))
                                     .defaultProcessor("test-processor",
-                                                      components -> components.declarative(component1.name(), cfg -> component1)
-                                                                              .declarative(component2.name(), cfg -> component2)
+                                                      components -> components.declarative(component1.name(), (name, cfg) -> component1)
+                                                                              .declarative(component2.name(), (name, cfg) -> component2)
                                                                               .autodetected("component3", cfg -> component3)
                                     )
                     )
@@ -225,7 +225,7 @@ class PooledStreamingEventProcessorModuleTest {
             PooledStreamingEventProcessorModule psepModuleOne =
                     EventProcessorModule.pooledStreaming("processor-one")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(componentOne.name(), cfg -> componentOne)
+                                                components -> components.declarative(componentOne.name(), (name, cfg) -> componentOne)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorOne
@@ -234,7 +234,7 @@ class PooledStreamingEventProcessorModuleTest {
             PooledStreamingEventProcessorModule psepModuleTwo =
                     EventProcessorModule.pooledStreaming("processor-two")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(componentTwo.name(), cfg -> componentTwo)
+                                                components -> components.declarative(componentTwo.name(), (name, cfg) -> componentTwo)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorTwo
@@ -381,9 +381,9 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component1", cfg -> component1)
-                                                                     .declarative("component2", cfg -> component2)
-                                                                     .declarative("component3", cfg -> component3))
+                    .eventHandlingComponents(components -> components.declarative("component1", (name, cfg) -> component1)
+                                                                     .declarative("component2", (name, cfg) -> component2)
+                                                                     .declarative("component3", (name, cfg) -> component3))
                     .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
 
             var configurer = MessagingConfigurer.create();
@@ -425,7 +425,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .eventHandlingComponents(components -> components.declarative("component", (name, cfg) -> component))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
@@ -455,7 +455,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
+                    .eventHandlingComponents(components -> components.declarative("component0", (name, cfg) -> component0).declarative("component1", (name, cfg) -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
@@ -484,7 +484,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
+                    .eventHandlingComponents(components -> components.declarative("component0", (name, cfg) -> component0).declarative("component1", (name, cfg) -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
@@ -514,7 +514,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .eventHandlingComponents(components -> components.declarative("component", (name, cfg) -> component))
                     .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
 
             var configurer = MessagingConfigurer.create();
@@ -543,14 +543,14 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module1 = EventProcessorModule
                     .pooledStreaming(processor1Name)
-                    .eventHandlingComponents(components -> components.declarative("component1", cfg -> component1))
+                    .eventHandlingComponents(components -> components.declarative("component1", (name, cfg) -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var module2 = EventProcessorModule
                     .pooledStreaming(processor2Name)
-                    .eventHandlingComponents(components -> components.declarative("component2", cfg -> component2))
+                    .eventHandlingComponents(components -> components.declarative("component2", (name, cfg) -> component2))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
@@ -580,7 +580,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .eventHandlingComponents(components -> components.declarative("component", (name, cfg) -> component))
                     .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
 
             var configurer = MessagingConfigurer.create();
@@ -608,7 +608,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
+                    .eventHandlingComponents(components -> components.declarative("component0", (name, cfg) -> component0).declarative("component1", (name, cfg) -> component1))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
@@ -651,9 +651,9 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components
-                            .declarative("component0", cfg -> component0)
-                            .declarative("component1", cfg -> component1)
-                            .declarative("component2", cfg -> component2))
+                            .declarative("component0", (name, cfg) -> component0)
+                            .declarative("component1", (name, cfg) -> component1)
+                            .declarative("component2", (name, cfg) -> component2))
                     .customized((cfg, c) -> c
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(dlq -> dlq
@@ -712,8 +712,8 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components
-                            .declarative("component0", cfg -> component0)
-                            .declarative("component1", cfg -> component1))
+                            .declarative("component0", (name, cfg) -> component0)
+                            .declarative("component1", (name, cfg) -> component1))
                     .customized((cfg, c) -> c.deadLetterQueue(DeadLetterQueueConfiguration::enabled));
 
             var configurer = MessagingConfigurer.create();
@@ -773,12 +773,12 @@ class PooledStreamingEventProcessorModuleTest {
                     // Processor that keeps DLQ enabled (default from defaults)
                     .processor(EventProcessorModule
                                        .pooledStreaming(processorWithDlq)
-                                       .eventHandlingComponents(c -> c.declarative(dlqEnabledComponentName, cfg -> dlqEnabledComponent))
+                                       .eventHandlingComponents(c -> c.declarative(dlqEnabledComponentName, (name, cfg) -> dlqEnabledComponent))
                                        .notCustomized())
                     // Processor that explicitly disables DLQ
                     .processor(EventProcessorModule
                                        .pooledStreaming(processorWithoutDlq)
-                                       .eventHandlingComponents(c -> c.declarative(dlqDisabledComponentName, cfg -> dlqDisabledComponent))
+                                       .eventHandlingComponents(c -> c.declarative(dlqDisabledComponentName, (name, cfg) -> dlqDisabledComponent))
                                        .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.disabled())))
             ));
 
@@ -955,7 +955,7 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(ep -> ep.pooledStreaming(
                                                ps -> ps.processor(
                                                        processorName,
-                                                       p -> p.eventHandlingComponents(c -> c.declarative(testComponent.name(), cfg -> testComponent))
+                                                       p -> p.eventHandlingComponents(c -> c.declarative(testComponent.name(), (name, cfg) -> testComponent))
                                                              .notCustomized()
                                                )
                                        )
@@ -1082,7 +1082,7 @@ class PooledStreamingEventProcessorModuleTest {
             //  when
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents((components) -> components.declarative("test", cfg -> component))
+                    .eventHandlingComponents((components) -> components.declarative("test", (name, cfg) -> component))
                     .customized((cfg, processorConfig) -> processorConfig
                             .coordinatorExecutor(customCoordinator.updateAndGet(e -> Executors.newScheduledThreadPool(1)))
                             .workerExecutor(customWorker.updateAndGet(e -> Executors.newScheduledThreadPool(2))));
@@ -1130,7 +1130,7 @@ class PooledStreamingEventProcessorModuleTest {
         var name = "test-" + COMPONENT_COUNTER.getAndIncrement();
         var eventHandlingComponent = SimpleEventHandlingComponent.create(name);
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        return (components) -> components.declarative(name, cfg -> eventHandlingComponent);
+        return (components) -> components.declarative(name, (n, cfg) -> eventHandlingComponent);
     }
 
     private static void awaitProcessorIsStopped(AxonConfiguration configuration, String processorName) {

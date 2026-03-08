@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.configuration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.NamedComponentBuilder;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 
 import java.util.ArrayList;
@@ -55,11 +56,11 @@ public class DefaultEventHandlingComponentsConfigurer
     @Override
     public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
             String name,
-            ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+            NamedComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
         requireNonNull(name, "The name cannot be null.");
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-        componentBuilders.add(new NamedBuilder(name, handlingComponentBuilder));
+        componentBuilders.add(new NamedBuilder(name, cfg -> handlingComponentBuilder.build(name, cfg)));
         return this;
     }
 

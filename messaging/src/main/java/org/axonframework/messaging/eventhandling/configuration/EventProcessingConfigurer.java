@@ -65,8 +65,8 @@ import java.util.function.UnaryOperator;
  *     .eventProcessing(eventProcessing -> eventProcessing
  *         .defaults(config -> config.unitOfWorkFactory(new SimpleUnitOfWorkFactory()))
  *         .pooledStreaming(pooledStreaming ->
- *             pooledStreaming.processor("calendar-processor", components -> components.declarative("weekStarted", cfg -> weekStartedEventHandler))
- *                        .processor("astrologers-week-symbol-processor", components -> components.declarative("weekSymbol", cfg -> weekSymbolProclaimedEventHandler)))
+ *             pooledStreaming.processor("calendar-processor", components -> components.declarative("weekStarted", (name, cfg) -> weekStartedEventHandler))
+ *                        .processor("astrologers-week-symbol-processor", components -> components.declarative("weekSymbol", (name, cfg) -> weekSymbolProclaimedEventHandler)))
  *         .subscribing(subscribing ->
  *             subscribing.processor("creatures-dwelling-readmodel", components -> components.autodetected("dwellingHandler", cfg -> dwellingBuiltEventHandler)));
  * }</pre>

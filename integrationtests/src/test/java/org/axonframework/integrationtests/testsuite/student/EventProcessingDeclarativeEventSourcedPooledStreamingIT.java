@@ -145,7 +145,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
                         .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                         .eventHandlingComponents(components -> components.declarative(
                                 "whenStudentEnrolledToMaxCourses",
-                                cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
+                                (name, cfg) -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
                         )).notCustomized();
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(

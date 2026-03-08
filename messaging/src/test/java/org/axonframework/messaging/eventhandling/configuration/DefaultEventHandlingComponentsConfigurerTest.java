@@ -55,8 +55,8 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldBuildSingleComponent() {
             // given
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("my-component", cfg -> {
-                var component = SimpleEventHandlingComponent.create("my-component");
+            configurer.declarative("my-component", (name, cfg) -> {
+                var component = SimpleEventHandlingComponent.create(name);
                 component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
                 return component;
             });
@@ -73,7 +73,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldBuildSingleComponentWithExplicitName() {
             // given
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal-name"));
+            configurer.declarative("explicit-name", (name, cfg) -> SimpleEventHandlingComponent.create("internal-name"));
 
             // when
             var components = configurer.build(configuration);
@@ -91,9 +91,9 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldBuildMultipleComponentsPreservingOrder() {
             // given
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("component1", cfg -> SimpleEventHandlingComponent.create("component1"));
-            configurer.declarative("component2", cfg -> SimpleEventHandlingComponent.create("component2"));
-            configurer.declarative("component3", cfg -> SimpleEventHandlingComponent.create("component3"));
+            configurer.declarative("component1", (name, cfg) -> SimpleEventHandlingComponent.create(name));
+            configurer.declarative("component2", (name, cfg) -> SimpleEventHandlingComponent.create(name));
+            configurer.declarative("component3", (name, cfg) -> SimpleEventHandlingComponent.create(name));
 
             // when
             var components = configurer.build(configuration);
@@ -107,8 +107,8 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldRejectDuplicateComponentNames() {
             // given
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
-            configurer.declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
+            configurer.declarative("duplicate", (name, cfg) -> SimpleEventHandlingComponent.create(name));
+            configurer.declarative("duplicate", (name, cfg) -> SimpleEventHandlingComponent.create(name));
 
             // when / then
             assertThatThrownBy(() -> configurer.build(configuration))
@@ -129,8 +129,8 @@ class DefaultEventHandlingComponentsConfigurerTest {
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("component1", cfg -> component1);
-            configurer.declarative("component2", cfg -> component2);
+            configurer.declarative("component1", (name, cfg) -> component1);
+            configurer.declarative("component2", (name, cfg) -> component2);
 
             // when
             configurer.decorated((cfg, c) -> new SampleDecoration(c));
@@ -154,7 +154,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
         void shouldPreserveExplicitNameAfterDecoration() {
             // given
             var configurer = new DefaultEventHandlingComponentsConfigurer();
-            configurer.declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal"));
+            configurer.declarative("explicit-name", (name, cfg) -> SimpleEventHandlingComponent.create("internal"));
 
             // when
             configurer.decorated((cfg, c) -> new SampleDecoration(c));
