@@ -22,7 +22,10 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -40,7 +43,7 @@ public class DefaultEventHandlingComponentsConfigurer
         implements EventHandlingComponentsConfigurer.RequiredComponentPhase,
         EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
 
-    private List<ComponentBuilder<EventHandlingComponent>> componentBuilders = new ArrayList<>();
+    private List<NamedBuilder> componentBuilders = new ArrayList<>();
 
     /**
      * Creates a new empty configurer instance.
@@ -51,10 +54,12 @@ public class DefaultEventHandlingComponentsConfigurer
 
     @Override
     public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
+            String name,
             ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
+        requireNonNull(name, "The name cannot be null.");
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-        componentBuilders.add(handlingComponentBuilder);
+        componentBuilders.add(new NamedBuilder(name, handlingComponentBuilder));
         return this;
     }
 
@@ -63,19 +68,44 @@ public class DefaultEventHandlingComponentsConfigurer
             BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
     ) {
         Objects.requireNonNull(decorator, "decorator may not be null");
-        var decoratedBuilders = new ArrayList<ComponentBuilder<EventHandlingComponent>>();
-        for (var builder : componentBuilders) {
-            decoratedBuilders.add(cfg -> {
-                EventHandlingComponent component = builder.build(cfg);
-                return decorator.apply(cfg, component);
-            });
+        var decoratedBuilders = new ArrayList<NamedBuilder>();
+        for (var namedBuilder : componentBuilders) {
+            decoratedBuilders.add(new NamedBuilder(
+                    namedBuilder.name(),
+                    cfg -> {
+                        EventHandlingComponent component = namedBuilder.builder().build(cfg);
+                        return decorator.apply(cfg, component);
+                    }
+            ));
         }
         componentBuilders = decoratedBuilders;
         return this;
     }
 
     @Override
-    public List<ComponentBuilder<EventHandlingComponent>> toList() {
-        return List.copyOf(componentBuilders);
+    public List<String> componentNames() {
+        return componentBuilders.stream()
+                                .map(NamedBuilder::name)
+                                .toList();
+    }
+
+    @Override
+    public Map<String, EventHandlingComponent> build(Configuration configuration) {
+        var result = new LinkedHashMap<String, EventHandlingComponent>();
+        for (var entry : componentBuilders) {
+            var component = entry.builder().build(configuration);
+            var name = entry.name();
+            if (result.containsKey(name)) {
+                throw new IllegalStateException(
+                        "Duplicate EventHandlingComponent name '%s' within the same processor.".formatted(name)
+                );
+            }
+            result.put(name, component);
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private record NamedBuilder(String name, ComponentBuilder<EventHandlingComponent> builder) {
+
     }
 }

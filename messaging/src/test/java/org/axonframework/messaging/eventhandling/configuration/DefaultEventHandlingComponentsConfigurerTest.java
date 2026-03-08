@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import org.jspecify.annotations.NonNull;
-import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Test class validating the {@link DefaultEventHandlingComponentsConfigurer} functionality.
@@ -45,51 +46,74 @@ class DefaultEventHandlingComponentsConfigurerTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
 
+    private final Configuration configuration = MessagingConfigurer.create().build();
+
     @Nested
-    class SingleWithComponentTest {
+    class SingleComponentTest {
 
         @Test
-        void shouldCreateSingleComponentFromEventHandlingComponent() {
-            //given
-            ComponentBuilder<EventHandlingComponent> componentBuilder = cfg -> {
-                SimpleEventHandlingComponent handlingComponent = SimpleEventHandlingComponent.create("test");
-                handlingComponent.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
-                return handlingComponent;
-            };
+        void shouldBuildSingleComponent() {
+            // given
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative("my-component", cfg -> {
+                        var component = SimpleEventHandlingComponent.create("my-component");
+                        component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+                        return component;
+                    });
 
-            //when
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer().declarative(componentBuilder);
-            var components = componentsConfigurer.toList();
+            // when
+            var components = componentsConfigurer.build(configuration);
 
-            //then
+            // then
             assertThat(components).hasSize(1);
-            assertThat(components.getFirst()).isSameAs(componentBuilder);
+            assertThat(componentsConfigurer.componentNames()).containsExactly("my-component");
+        }
+
+        @Test
+        void shouldBuildSingleComponentWithExplicitName() {
+            // given
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal-name"));
+
+            // when
+            var components = componentsConfigurer.build(configuration);
+
+            // then
+            assertThat(components).hasSize(1);
+            assertThat(componentsConfigurer.componentNames()).containsExactly("explicit-name");
         }
     }
 
     @Nested
-    class ManyWithComponentsTest {
+    class MultipleComponentsTest {
 
         @Test
-        void shouldCreateManyComponentsFromEventHandlingComponents() {
-            //given
-            ComponentBuilder<EventHandlingComponent> componentBuilder1 =
-                    cfg -> SimpleEventHandlingComponent.create("component1");
-            ComponentBuilder<EventHandlingComponent> componentBuilder2 =
-                    cfg -> SimpleEventHandlingComponent.create("component2");
-            ComponentBuilder<EventHandlingComponent> componentBuilder3 =
-                    cfg -> SimpleEventHandlingComponent.create("component3");
-
-            //when
+        void shouldBuildMultipleComponentsPreservingOrder() {
+            // given
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative(componentBuilder1)
-                    .declarative(componentBuilder2)
-                    .declarative(componentBuilder3);
-            var components = componentsConfigurer.toList();
+                    .declarative("component1", cfg -> SimpleEventHandlingComponent.create("component1"))
+                    .declarative("component2", cfg -> SimpleEventHandlingComponent.create("component2"))
+                    .declarative("component3", cfg -> SimpleEventHandlingComponent.create("component3"));
 
-            //then
+            // when
+            var components = componentsConfigurer.build(configuration);
+
+            // then
             assertThat(components).hasSize(3);
-            assertThat(components).containsExactly(componentBuilder1, componentBuilder2, componentBuilder3);
+            assertThat(componentsConfigurer.componentNames()).containsExactly("component1", "component2", "component3");
+        }
+
+        @Test
+        void shouldRejectDuplicateComponentNames() {
+            // given
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"))
+                    .declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
+
+            // when / then
+            assertThatThrownBy(() -> componentsConfigurer.build(configuration))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Duplicate EventHandlingComponent name 'duplicate'");
         }
     }
 
@@ -98,25 +122,25 @@ class DefaultEventHandlingComponentsConfigurerTest {
 
         @Test
         void shouldDecorateAllComponents() {
-            //given
+            // given
             var component1 = SimpleEventHandlingComponent.create("component1");
             component1.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
             var component2 = SimpleEventHandlingComponent.create("component2");
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative(cfg -> component1)
-                    .declarative(cfg -> component2);
+                    .declarative("component1", cfg -> component1)
+                    .declarative("component2", cfg -> component2);
 
-            //when
+            // when
             var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
-            var decoratedComponents = decoratedConfigurer.build(MessagingConfigurer.create().build());
+            var decoratedComponents = decoratedConfigurer.build(configuration);
 
-            //then
+            // then
             assertThat(decoratedComponents).hasSize(2);
 
-            SampleDecoration decoration1 = (SampleDecoration) decoratedComponents.get(0);
-            SampleDecoration decoration2 = (SampleDecoration) decoratedComponents.get(1);
+            SampleDecoration decoration1 = (SampleDecoration) decoratedComponents.get("component1");
+            SampleDecoration decoration2 = (SampleDecoration) decoratedComponents.get("component2");
 
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
             decoration1.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
@@ -124,6 +148,20 @@ class DefaultEventHandlingComponentsConfigurerTest {
 
             assertThat(decoration1.invoked).isTrue();
             assertThat(decoration2.invoked).isTrue();
+        }
+
+        @Test
+        void shouldPreserveExplicitNameAfterDecoration() {
+            // given
+            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
+                    .declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal"));
+
+            // when
+            var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
+            var components = decoratedConfigurer.build(configuration);
+
+            // then
+            assertThat(components).containsKey("explicit-name");
         }
 
         static class SampleDecoration extends DelegatingEventHandlingComponent {

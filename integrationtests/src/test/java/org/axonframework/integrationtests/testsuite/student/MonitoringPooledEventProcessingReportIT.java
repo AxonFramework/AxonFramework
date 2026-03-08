@@ -128,7 +128,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                                         return MessageStream.empty();
                                                                     }
                                                             );
-                                                            return components.declarative(cfg -> handlingComponent);
+                                                            return components.declarative("monitoringComponent", cfg -> handlingComponent);
                                                         }
                                                 )
                                                 .customized((cfg, customization) -> customization.eventCriteria(

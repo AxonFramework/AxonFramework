@@ -99,7 +99,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
                 for (ProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = resultOfRegistration.autodetected(namedBeanDefinition.component());
+                    resultOfRegistration = resultOfRegistration.autodetected(
+                            namedBeanDefinition.beanName(), namedBeanDefinition.component()
+                    );
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };

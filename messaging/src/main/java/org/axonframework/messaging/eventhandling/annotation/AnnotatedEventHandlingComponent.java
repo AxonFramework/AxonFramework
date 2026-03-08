@@ -66,7 +66,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to an {@link EventSink} as an
-     * {@link EventHandlingComponent}.
+     * {@link EventHandlingComponent}. The component's {@link #name()} will be the fully qualified class name of the
+     * {@code annotatedEventHandler}.
      *
      * @param annotatedEventHandler    The object containing the
      *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler}
@@ -83,9 +84,34 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                                            HandlerDefinition handlerDefinition,
                                            MessageTypeResolver messageTypeResolver,
                                            EventConverter converter) {
+        this(annotatedEventHandler.getClass().getName(),
+             annotatedEventHandler, parameterResolverFactory, handlerDefinition, messageTypeResolver, converter);
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to an {@link EventSink} as an
+     * {@link EventHandlingComponent}, using the provided {@code name} as the component's {@link #name()}.
+     *
+     * @param name                     The name for this component, used as the component's {@link #name()} identity.
+     * @param annotatedEventHandler    The object containing the
+     *                                 {@link org.axonframework.messaging.eventhandling.annotation.EventHandler}
+     *                                 annotated methods.
+     * @param parameterResolverFactory The strategy for resolving handler method parameter values.
+     * @param handlerDefinition        The handler definition used to create concrete handlers.
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the {@link QualifiedName names} for
+     *                                 {@link EventMessage EventMessages}.
+     * @param converter                The converter to use for converting the payload of the event to the type expected
+     *                                 by the handling method.
+     */
+    public AnnotatedEventHandlingComponent(String name,
+                                           T annotatedEventHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition,
+                                           MessageTypeResolver messageTypeResolver,
+                                           EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
-                annotatedEventHandler.getClass().getName()
+                requireNonNull(name, "The name may not be null.")
         );
         @SuppressWarnings("unchecked")
         Class<T> clazz = (Class<T>) annotatedEventHandler.getClass();

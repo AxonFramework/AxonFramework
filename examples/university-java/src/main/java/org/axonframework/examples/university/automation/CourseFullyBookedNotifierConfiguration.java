@@ -37,7 +37,7 @@ public class CourseFullyBookedNotifierConfiguration {
         PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule
                 .pooledStreaming("Automation_WhenCourseFullyBookedThenSendNotification_Processor")
                 .eventHandlingComponents(
-                        c -> c.autodetected(cfg -> new WhenCourseFullyBookedThenSendNotification())
+                        c -> c.autodetected("courseFullyBookedNotifier", cfg -> new WhenCourseFullyBookedThenSendNotification())
                 )
                 // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
                 .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(

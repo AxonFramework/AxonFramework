@@ -26,6 +26,7 @@ import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandli
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
@@ -61,24 +62,31 @@ public interface EventHandlingComponentsConfigurer {
     interface ComponentsPhase {
 
         /**
-         * Configures a single event handling component.
+         * Configures a single event handling component with an explicit name. The provided {@code name} will be used
+         * as the component's identity for registration and lookup.
          *
+         * @param name                     The explicit name for the component.
          * @param handlingComponentBuilder The component to configure.
-         * @return The complete phase for decoration and finalization.
+         * @return The additional component phase for further configuration.
          */
         AdditionalComponentPhase declarative(
+                String name,
                 ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
-         * Configures an auto-detected event handling component.
+         * Configures an auto-detected event handling component with an explicit name. The provided {@code name} will
+         * be used as the component's identity for registration and lookup.
          *
-         * @param handlingComponentBuilder The component builder.
+         * @param name                     The explicit name for the component.
+         * @param handlingComponentBuilder The component builder providing the annotated event handler object.
          * @return The additional component phase for further configuration.
          */
-                default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
+        default AdditionalComponentPhase autodetected(String name, ComponentBuilder<Object> handlingComponentBuilder) {
+            requireNonNull(name, "The name cannot be null.");
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
-            return declarative(c -> new AnnotatedEventHandlingComponent<>(
+            return declarative(name, c -> new AnnotatedEventHandlingComponent<>(
+                    name,
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
                     ClasspathHandlerDefinition.forClass(c.getClass()),
@@ -104,23 +112,23 @@ public interface EventHandlingComponentsConfigurer {
         );
 
         /**
-         * Returns the configured list of event handling components.
+         * Returns the names of all configured components, in registration order.
+         * <p>
+         * These names are available at configuration time (before {@link Configuration} is built) and can be used
+         * for component registration in the {@link org.axonframework.common.configuration.ComponentRegistry}.
          *
-         * @return The immutable list of configured components.
+         * @return An unmodifiable list of component names in registration order.
          */
-        List<ComponentBuilder<EventHandlingComponent>> toList();
+        List<String> componentNames();
 
         /**
-         * Builds all configured components using the provided configuration.
+         * Builds all configured components using the provided configuration and returns them as an ordered map,
+         * keyed by the component name.
          *
          * @param configuration The framework configuration.
-         * @return The list of built event handling components.
+         * @return An ordered map of component name to built {@link EventHandlingComponent}.
+         * @throws IllegalStateException if duplicate component names are detected.
          */
-        default List<EventHandlingComponent> build(Configuration configuration) {
-            return toList().stream()
-                           .map(builder -> builder.build(configuration))
-                           .toList();
-        }
+        Map<String, EventHandlingComponent> build(Configuration configuration);
     }
 }
-
