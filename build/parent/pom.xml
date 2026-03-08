@@ -74,7 +74,7 @@
         <dropwizard.metrics.version>4.2.38</dropwizard.metrics.version>
         <micrometer.version>1.16.3</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.5</byte-buddy.version>
+        <byte-buddy.version>1.18.7</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
@@ -91,7 +91,7 @@
         <jackson.version>2.21.1</jackson.version>
         <!-- Scheduling -->
         <db-scheduler.version>16.7.1</db-scheduler.version>
-        <jobrunr.version>8.4.2</jobrunr.version>
+        <jobrunr.version>8.5.0</jobrunr.version>
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.16</spring.version>
@@ -110,8 +110,8 @@
         <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
 
         <!-- Maven plugins -->
-        <checkstyle-maven-plugin.version>3.3.0</checkstyle-maven-plugin.version>
-        <checkstyle.version>13.2.0</checkstyle.version>
+        <checkstyle-maven-plugin.version>3.6.0</checkstyle-maven-plugin.version>
+        <checkstyle.version>13.3.0</checkstyle.version>
     </properties>
 
     <dependencyManagement>
