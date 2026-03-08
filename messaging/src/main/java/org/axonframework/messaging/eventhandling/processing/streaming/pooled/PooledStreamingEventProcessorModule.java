@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.jspecify.annotations.Nullable;
+
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
@@ -81,11 +83,11 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
 
     private final String processorName;
-    private List<String> componentNames;
-    private Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
-    private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
+    private @Nullable List<String> componentNames;
+    private @Nullable Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
+    private @Nullable ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
-    private volatile Map<String, EventHandlingComponent> resolvedComponents;
+    private volatile @Nullable Map<String, EventHandlingComponent> resolvedComponents;
 
     /**
      * Constructs a module with the given processor name.

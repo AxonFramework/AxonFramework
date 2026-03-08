@@ -16,7 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
+import org.jspecify.annotations.Nullable;
+
 import org.axonframework.common.configuration.BaseModule;
+import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ModuleBuilder;
@@ -66,11 +69,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private List<String> componentNames;
-    private Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
-    private org.axonframework.common.configuration.ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
+    private @Nullable List<String> componentNames;
+    private @Nullable Function<Configuration, Map<String, EventHandlingComponent>> componentsFactory;
+    private @Nullable ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
-    private volatile Map<String, EventHandlingComponent> resolvedComponents;
+    private volatile @Nullable Map<String, EventHandlingComponent> resolvedComponents;
 
     /**
      * Constructs a module with the given processor name.
