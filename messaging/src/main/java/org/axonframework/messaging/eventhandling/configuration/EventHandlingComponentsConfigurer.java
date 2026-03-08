@@ -25,8 +25,6 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
-import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
@@ -97,7 +95,7 @@ public interface EventHandlingComponentsConfigurer {
     }
 
     /**
-     * Final phase for applying decorations and building the component list.
+     * Final phase for applying decorations to all configured components.
      */
     interface CompletePhase {
 
@@ -105,30 +103,10 @@ public interface EventHandlingComponentsConfigurer {
          * Applies a decorator to all components in the collection.
          *
          * @param decorator Function to decorate each component.
-         * @return This phase for further decoration or finalization.
+         * @return This phase for further decoration.
          */
         CompletePhase decorated(
                 BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
         );
-
-        /**
-         * Returns the names of all configured components, in registration order.
-         * <p>
-         * These names are available at configuration time (before {@link Configuration} is built) and can be used
-         * for component registration in the {@link org.axonframework.common.configuration.ComponentRegistry}.
-         *
-         * @return An unmodifiable list of component names in registration order.
-         */
-        List<String> componentNames();
-
-        /**
-         * Builds all configured components using the provided configuration and returns them as an ordered map,
-         * keyed by the component name.
-         *
-         * @param configuration The framework configuration.
-         * @return An ordered map of component name to built {@link EventHandlingComponent}.
-         * @throws IllegalStateException if duplicate component names are detected.
-         */
-        Map<String, EventHandlingComponent> build(Configuration configuration);
     }
 }

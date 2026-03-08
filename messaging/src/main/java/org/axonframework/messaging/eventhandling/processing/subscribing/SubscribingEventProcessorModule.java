@@ -216,9 +216,10 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
-        var completePhase = configurerTask.apply(new DefaultEventHandlingComponentsConfigurer());
-        this.componentNames = completePhase.componentNames();
-        this.componentsFactory = completePhase::build;
+        var configurer = new DefaultEventHandlingComponentsConfigurer();
+        configurerTask.apply(configurer);
+        this.componentNames = configurer.componentNames();
+        this.componentsFactory = configurer::build;
         return this;
     }
 

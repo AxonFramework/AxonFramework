@@ -54,33 +54,33 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldBuildSingleComponent() {
             // given
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("my-component", cfg -> {
-                        var component = SimpleEventHandlingComponent.create("my-component");
-                        component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
-                        return component;
-                    });
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("my-component", cfg -> {
+                var component = SimpleEventHandlingComponent.create("my-component");
+                component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+                return component;
+            });
 
             // when
-            var components = componentsConfigurer.build(configuration);
+            var components = configurer.build(configuration);
 
             // then
             assertThat(components).hasSize(1);
-            assertThat(componentsConfigurer.componentNames()).containsExactly("my-component");
+            assertThat(configurer.componentNames()).containsExactly("my-component");
         }
 
         @Test
         void shouldBuildSingleComponentWithExplicitName() {
             // given
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal-name"));
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal-name"));
 
             // when
-            var components = componentsConfigurer.build(configuration);
+            var components = configurer.build(configuration);
 
             // then
             assertThat(components).hasSize(1);
-            assertThat(componentsConfigurer.componentNames()).containsExactly("explicit-name");
+            assertThat(configurer.componentNames()).containsExactly("explicit-name");
         }
     }
 
@@ -90,28 +90,28 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldBuildMultipleComponentsPreservingOrder() {
             // given
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("component1", cfg -> SimpleEventHandlingComponent.create("component1"))
-                    .declarative("component2", cfg -> SimpleEventHandlingComponent.create("component2"))
-                    .declarative("component3", cfg -> SimpleEventHandlingComponent.create("component3"));
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("component1", cfg -> SimpleEventHandlingComponent.create("component1"));
+            configurer.declarative("component2", cfg -> SimpleEventHandlingComponent.create("component2"));
+            configurer.declarative("component3", cfg -> SimpleEventHandlingComponent.create("component3"));
 
             // when
-            var components = componentsConfigurer.build(configuration);
+            var components = configurer.build(configuration);
 
             // then
             assertThat(components).hasSize(3);
-            assertThat(componentsConfigurer.componentNames()).containsExactly("component1", "component2", "component3");
+            assertThat(configurer.componentNames()).containsExactly("component1", "component2", "component3");
         }
 
         @Test
         void shouldRejectDuplicateComponentNames() {
             // given
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"))
-                    .declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
+            configurer.declarative("duplicate", cfg -> SimpleEventHandlingComponent.create("duplicate"));
 
             // when / then
-            assertThatThrownBy(() -> componentsConfigurer.build(configuration))
+            assertThatThrownBy(() -> configurer.build(configuration))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Duplicate EventHandlingComponent name 'duplicate'");
         }
@@ -128,13 +128,13 @@ class DefaultEventHandlingComponentsConfigurerTest {
             var component2 = SimpleEventHandlingComponent.create("component2");
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("component1", cfg -> component1)
-                    .declarative("component2", cfg -> component2);
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("component1", cfg -> component1);
+            configurer.declarative("component2", cfg -> component2);
 
             // when
-            var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
-            var decoratedComponents = decoratedConfigurer.build(configuration);
+            configurer.decorated((cfg, c) -> new SampleDecoration(c));
+            var decoratedComponents = configurer.build(configuration);
 
             // then
             assertThat(decoratedComponents).hasSize(2);
@@ -153,12 +153,12 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldPreserveExplicitNameAfterDecoration() {
             // given
-            var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer()
-                    .declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal"));
+            var configurer = new DefaultEventHandlingComponentsConfigurer();
+            configurer.declarative("explicit-name", cfg -> SimpleEventHandlingComponent.create("internal"));
 
             // when
-            var decoratedConfigurer = componentsConfigurer.decorated((cfg, c) -> new SampleDecoration(c));
-            var components = decoratedConfigurer.build(configuration);
+            configurer.decorated((cfg, c) -> new SampleDecoration(c));
+            var components = configurer.build(configuration);
 
             // then
             assertThat(components).containsKey("explicit-name");

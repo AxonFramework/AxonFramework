@@ -82,14 +82,25 @@ public class DefaultEventHandlingComponentsConfigurer
         return this;
     }
 
-    @Override
+    /**
+     * Returns the names of all configured components, in registration order.
+     *
+     * @return An unmodifiable list of component names in registration order.
+     */
     public List<String> componentNames() {
         return componentBuilders.stream()
                                 .map(NamedBuilder::name)
                                 .toList();
     }
 
-    @Override
+    /**
+     * Builds all configured components using the provided configuration and returns them as an ordered map,
+     * keyed by the component name.
+     *
+     * @param configuration The framework configuration.
+     * @return An ordered map of component name to built {@link EventHandlingComponent}.
+     * @throws IllegalStateException if duplicate component names are detected.
+     */
     public Map<String, EventHandlingComponent> build(Configuration configuration) {
         var result = new LinkedHashMap<String, EventHandlingComponent>();
         for (var entry : componentBuilders) {
