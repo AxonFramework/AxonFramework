@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
@@ -37,6 +35,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
+import org.jspecify.annotations.Nullable;
 
 
 import java.util.ArrayList;

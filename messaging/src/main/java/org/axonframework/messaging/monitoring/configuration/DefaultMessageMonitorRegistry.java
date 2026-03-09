@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -33,7 +32,7 @@ import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
-
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

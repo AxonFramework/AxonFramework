@@ -46,13 +46,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Annotations -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Database -->
         <dependency>
             <groupId>jakarta.persistence</groupId>

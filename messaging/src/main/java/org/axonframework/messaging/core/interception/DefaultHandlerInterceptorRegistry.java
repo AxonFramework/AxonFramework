@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -30,6 +29,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

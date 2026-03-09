@@ -17,8 +17,9 @@
 package org.axonframework.test.extension;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.*;
 
@@ -34,7 +35,7 @@ public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCall
     private static final String FIXTURE_KEY = "axonTestFixture";
 
     @Override
-    public void beforeEach(@Nonnull ExtensionContext extensionContext) throws Exception {
+    public void beforeEach(@NonNull ExtensionContext extensionContext) throws Exception {
         Object testInstance = extensionContext.getRequiredTestInstance();
         Class<?> testClass = extensionContext.getRequiredTestClass();
 
@@ -46,7 +47,7 @@ public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCall
     }
 
     @Override
-    public void afterEach(@Nonnull ExtensionContext extensionContext) {
+    public void afterEach(@NonNull ExtensionContext extensionContext) {
         AxonTestFixture fixture = extensionContext.getStore(NAMESPACE).get(FIXTURE_KEY, AxonTestFixture.class);
         if (fixture != null) {
             fixture.stop();
@@ -54,15 +55,15 @@ public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCall
     }
 
     @Override
-    public boolean supportsParameter(@Nonnull ParameterContext parameterContext,
-                                     @Nonnull ExtensionContext extensionContext)
+    public boolean supportsParameter(@NonNull ParameterContext parameterContext,
+                                     @NonNull ExtensionContext extensionContext)
             throws ParameterResolutionException {
         return AxonTestFixture.class.isAssignableFrom(parameterContext.getParameter().getType());
     }
 
     @Override
     public @Nullable Object resolveParameter(@Nonnull ParameterContext parameterContext,
-                                             @Nonnull ExtensionContext extensionContext)
+                                             @NonNull ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Object fixture = extensionContext.getStore(NAMESPACE).get(FIXTURE_KEY, AxonTestFixture.class);
         if (fixture == null) {

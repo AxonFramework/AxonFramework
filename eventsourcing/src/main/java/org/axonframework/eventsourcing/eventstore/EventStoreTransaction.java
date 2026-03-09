@@ -16,11 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;

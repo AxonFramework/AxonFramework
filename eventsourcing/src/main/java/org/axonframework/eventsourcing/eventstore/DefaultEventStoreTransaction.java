@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
