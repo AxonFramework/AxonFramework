@@ -37,6 +37,7 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
