@@ -18,7 +18,6 @@
  * This is part of a stashed module that is not actively maintained and just kept for reference.
  */
 @NullMarked
-@Deprecated(forRemoval = true, since = "5.0.0")
 package org.axonframework.springboot.util;
 
 import org.jspecify.annotations.NullMarked;
