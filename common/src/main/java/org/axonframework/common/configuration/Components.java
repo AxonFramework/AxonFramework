@@ -16,11 +16,11 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class Components implements DescribableComponent {
      * Note: Generic type parameters are not taken into account for retrieving components via this method.
      *
      * @param identifier the {@link Identifier} to retrieve a {@link Component} for
-     * @param <C>  the type of the component to retrieve
+     * @param <C>        the type of the component to retrieve
      * @return an {@link Optional} on the {@link Component} registered under the given {@code identifier}
      * @throws AmbiguousComponentMatchException when multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}
@@ -99,9 +99,8 @@ public class Components implements DescribableComponent {
      * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}.
      */
-    @Nonnull
     @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> getByTypeReference(Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
                            List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier);

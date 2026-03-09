@@ -22,7 +22,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
-
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -55,7 +54,7 @@ public interface EventStoreTransaction {
      * @return The {@link MessageStream} of type {@link EventMessage} containing the event sequence complying to the
      * given {@code condition}.
      */
-    default MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+    default MessageStream<? extends EventMessage> source(SourcingCondition condition) {
         return source(condition, null);
     }
 

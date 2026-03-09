@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -25,14 +24,11 @@ import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.annotation.EventHandlingMember;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandlingMember;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -74,13 +70,11 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
     private static class ReplayBlockingMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T> {
 
-        private final EventHandlingMember<T> delegate;
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         public static final Optional<Boolean> NO_REPLAY = Optional.of(Boolean.FALSE);
 
         public ReplayBlockingMessageHandlingMember(MessageHandlingMember<T> original) {
             super(original);
-            this.delegate = original;
         }
 
         @Override

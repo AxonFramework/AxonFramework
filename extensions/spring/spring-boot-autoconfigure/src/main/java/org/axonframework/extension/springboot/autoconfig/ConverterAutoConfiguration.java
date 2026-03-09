@@ -16,8 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.conversion.ChainingContentTypeConverter;
@@ -143,7 +141,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         return new DelegatingEventConverter(buildConverter(eventsConverterType));
     }
 
-        private Converter buildConverter(ConverterProperties.ConverterType converterType) {
+    private Converter buildConverter(ConverterProperties.ConverterType converterType) {
         switch (converterType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans =

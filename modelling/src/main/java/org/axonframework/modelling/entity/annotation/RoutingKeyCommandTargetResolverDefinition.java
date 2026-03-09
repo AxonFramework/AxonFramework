@@ -16,10 +16,8 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
-
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;

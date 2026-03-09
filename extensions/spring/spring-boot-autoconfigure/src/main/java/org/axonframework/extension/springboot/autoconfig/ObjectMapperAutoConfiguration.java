@@ -16,13 +16,8 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
-import org.springframework.data.domain.Page;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -33,8 +28,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.data.domain.Page;
+import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
@@ -84,7 +82,7 @@ public class ObjectMapperAutoConfiguration {
     @Bean
     @ConditionalOnClass(Page.class)
     @Conditional(JacksonConfiguredCondition.class)
-    public Module springDataPageJacksonModule() {
+    public JacksonModule springDataPageJacksonModule() {
         return new SimpleModule()
                 .addDeserializer(Page.class, new JacksonPageDeserializer());
     }

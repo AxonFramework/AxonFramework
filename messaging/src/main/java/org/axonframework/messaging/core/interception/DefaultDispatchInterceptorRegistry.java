@@ -101,10 +101,9 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         });
     }
 
-    @Nonnull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull DispatchInterceptorFactory<Message> interceptorFactory
+            DispatchInterceptorFactory<Message> interceptorFactory
     ) {
         registerCommandInterceptor(interceptorFactory);
         registerEventInterceptor(interceptorFactory);
@@ -122,10 +121,9 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
+            DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
         this.commandInterceptorFactories.add(interceptorFactory);
         return this;
@@ -140,10 +138,9 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
+            DispatchInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
         this.eventInterceptorFactories.add(interceptorFactory);
         return this;
@@ -158,10 +155,9 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
         return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
+            DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     ) {
         this.queryInterceptorFactories.add(interceptorFactory);
         return this;

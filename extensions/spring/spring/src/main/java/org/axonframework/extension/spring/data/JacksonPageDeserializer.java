@@ -16,24 +16,23 @@
 
 package org.axonframework.extension.spring.data;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Custom Jackson deserializer for the Spring Data {@link Page} interface.
  * <p>
- * This deserializer converts JSON representations of paginated data into {@link PageImpl} instances. It extracts
- * the {@code content} array, {@code number} (page number), {@code size} (page size), and {@code totalElements}
- * from the JSON structure.
+ * This deserializer converts JSON representations of paginated data into {@link PageImpl} instances. It extracts the
+ * {@code content} array, {@code number} (page number), {@code size} (page size), and {@code totalElements} from the
+ * JSON structure.
  * <p>
  * The deserializer handles missing fields gracefully by applying sensible defaults:
  * <ul>
@@ -45,11 +44,11 @@ import java.util.List;
  * @author Theo Emanuelsson
  * @since 5.1.0
  */
-public class JacksonPageDeserializer extends JsonDeserializer<Page<?>> {
+public class JacksonPageDeserializer extends ValueDeserializer<Page<?>> {
 
     @Override
-    public Page<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        JsonNode node = p.getCodec().readTree(p);
+    public Page<?> deserialize(JsonParser p, DeserializationContext ctxt) {
+        JsonNode node = p.objectReadContext().readTree(p);
 
         List<Object> content = new ArrayList<>();
         JsonNode contentNode = node.get("content");

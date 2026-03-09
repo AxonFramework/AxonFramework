@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -34,8 +33,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Repl
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
-
 
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
@@ -502,7 +501,7 @@ class JpaTokenStoreTest {
         var replayToken = ReplayToken.createReplayToken(
                 new GlobalSequenceTrackingToken(10L),
                 new GlobalSequenceTrackingToken(5L),
-                resetContext
+                converter.convert(resetContext, byte[].class)
         );
         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("replay-context-test", 1, null, ctx));
         newTransaction();

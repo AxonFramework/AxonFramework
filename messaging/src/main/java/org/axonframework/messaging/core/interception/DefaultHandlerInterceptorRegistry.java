@@ -31,7 +31,6 @@ import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,10 +91,9 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         });
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull HandlerInterceptorFactory<Message> interceptorFactory
+            HandlerInterceptorFactory<Message> interceptorFactory
     ) {
         registerCommandInterceptor(interceptorFactory);
         registerEventInterceptor(interceptorFactory);
@@ -112,10 +110,9 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
+            HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
         this.commandInterceptorFactories.add(interceptorFactory);
         return this;
@@ -130,10 +127,9 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super EventMessage> interceptorFactory
+            HandlerInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
         this.eventInterceptorFactories.add(interceptorFactory);
         return this;

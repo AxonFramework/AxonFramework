@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 
 /**
  * Utility class for the {@link EventGateway} and {@link EventAppender} implementations.
@@ -70,7 +70,8 @@ class EventPublishingUtils {
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      * @return The event as an {@link EventMessage} with the given metadata applied.
      */
-    static EventMessage asEventMessage(@Nonnull Object event, @Nonnull Metadata metadata,
+    static EventMessage asEventMessage(Object event,
+                                       Metadata metadata,
                                        MessageTypeResolver messageTypeResolver) {
         if (event instanceof EventMessage e) {
             return e.andMetadata(metadata);

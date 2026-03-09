@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
@@ -38,6 +37,7 @@ import org.axonframework.common.configuration.Module;
 import org.axonframework.common.configuration.OverridePolicy;
 import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -122,15 +122,15 @@ public class SpringComponentRegistry implements
     private ConfigurableListableBeanFactory beanFactory;
 
     /**
-     * Creates a new default registry. This will include the same enhancers, disabled
-     * enhancers and decorator definitions as the original.
-     * The enhancerScanning flag is set to false.
+     * Creates a new default registry. This will include the same enhancers, disabled enhancers and decorator
+     * definitions as the original. The enhancerScanning flag is set to false.
      *
      * @return A new registry used for modules.
      */
     DefaultComponentRegistry copyWithDecoratorsAndEnhancers() {
         return create(this.decorators, this.enhancers.values(), this.disabledEnhancers);
     }
+
     /**
      * Constructs a {@code SpringComponentRegistry} with the given {@code listableBeanFactory}. The
      * {@code listableBeanFactory} is used to discover all beans of type {@link ConfigurationEnhancer}.
@@ -142,7 +142,8 @@ public class SpringComponentRegistry implements
     @Internal
     public SpringComponentRegistry(ListableBeanFactory listableBeanFactory,
                                    SpringLifecycleRegistry lifecycleRegistry) {
-        this.listableBeanFactory = Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
+        this.listableBeanFactory =
+                Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
         this.lifecycleRegistry =
                 Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
@@ -215,7 +216,6 @@ public class SpringComponentRegistry implements
             logger.warn("Duplicate Configuration Enhancer registration detected. Replaced enhancer of type [{}].",
                         enhancer.getClass().getSimpleName());
         }
-
     }
 
     @Override
@@ -267,7 +267,10 @@ public class SpringComponentRegistry implements
             //noinspection unchecked
             return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
         } catch (ClassNotFoundException e) {
-            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+            logger.warn(
+                    "Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.",
+                    fullyQualifiedClassName
+            );
         }
         return this;
     }
@@ -448,9 +451,9 @@ public class SpringComponentRegistry implements
      * stream operation, that update is lost.
      * <p>
      * This method supports dynamic enhancer registration - if an enhancer registers another enhancer during its
-     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed
-     * in the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed
-     * enhancers. Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
+     * {@link ConfigurationEnhancer#enhance(ComponentRegistry)} call, the newly registered enhancer will be processed in
+     * the correct order based on its {@link ConfigurationEnhancer#order()} value relative to all unprocessed enhancers.
+     * Each enhancer is processed one at a time to ensure proper ordering when new enhancers are registered
      * dynamically.
      */
     private void invokeEnhancers() {
@@ -462,9 +465,9 @@ public class SpringComponentRegistry implements
             // Find the next unprocessed enhancer with the lowest order value
             Optional<Map.Entry<String, ConfigurationEnhancer>> nextEnhancer =
                     enhancers.entrySet()
-                        .stream()
-                        .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
-                        .min(Comparator.comparingInt(entry -> entry.getValue().order()));
+                             .stream()
+                             .filter(entry -> !processedEnhancerKeys.contains(entry.getKey()))
+                             .min(Comparator.comparingInt(entry -> entry.getValue().order()));
 
             if (nextEnhancer.isEmpty()) {
                 break; // No more enhancers to process
@@ -640,19 +643,17 @@ public class SpringComponentRegistry implements
             }
         }
 
-        @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull TypeReference<C> typeReference) {
+        public <C> C getComponent(TypeReference<C> typeReference) {
             return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
                               .stream()
                               .findFirst()
                               .orElseThrow(() -> new ComponentNotFoundException(typeReference, null));
         }
 
-        @Nonnull
         @Override
         @SuppressWarnings("unchecked,DataFlowIssue")
-        public <C> C getComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+        public <C> C getComponent(TypeReference<C> typeReference, @Nullable String name) {
             Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
             try {
                 BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);
@@ -667,7 +668,7 @@ public class SpringComponentRegistry implements
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference) {
+        public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference) {
             return beanFactory.<C>getBeanProvider(ResolvableType.forType(typeReference.getType()))
                               .stream()
                               .findFirst();
@@ -675,7 +676,7 @@ public class SpringComponentRegistry implements
 
         @Override
         @SuppressWarnings("unchecked,DataFlowIssue")
-        public <C> Optional<C> getOptionalComponent(@Nonnull TypeReference<C> typeReference, @Nullable String name) {
+        public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference, @Nullable String name) {
             Assert.notNull(name, () -> "Spring does not allow the use of null names for component retrieval.");
             try {
                 BeanDefinition beanDefinition = beanFactory.getBeanDefinition(name);

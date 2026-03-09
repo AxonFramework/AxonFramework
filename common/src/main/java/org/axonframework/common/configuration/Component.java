@@ -16,10 +16,10 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -190,7 +190,7 @@ public interface Component<C> extends DescribableComponent {
          * {@link TypeReference#isAssignableFrom(TypeReference) assignable from} the {@code other} type, {@code false}
          * otherwise.
          */
-        public boolean matchesTypeByTypeRef(@Nonnull Identifier<?> other) {
+        public boolean matchesTypeByTypeRef(Identifier<?> other) {
             return type.isAssignableFrom(other.type());
         }
 

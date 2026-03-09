@@ -95,9 +95,10 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param startPosition the position where the token should be reset to and start replaying from
      * @return a token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
+    @Nullable
     public static TrackingToken createReplayToken(@Nullable TrackingToken tokenAtReset,
                                                   @Nullable TrackingToken startPosition) {
-        return createReplayToken(tokenAtReset, startPosition, null);
+        return createReplayToken(tokenAtReset, startPosition, new byte[]{});
     }
 
     /**
@@ -110,10 +111,11 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param resetContext  the context given to the reset, may be null
      * @return a token that represents a reset to the {@code startPosition} until the provided {@code tokenAtReset}
      */
+    @Nullable
     public static TrackingToken createReplayToken(
             @Nullable TrackingToken tokenAtReset,
             @Nullable TrackingToken startPosition,
-            @Nullable byte[] resetContext
+            byte[] resetContext
     ) {
         if (tokenAtReset == null) {
             return startPosition;
@@ -329,7 +331,6 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @return the context, null if none was provided during reset
      */
     @JsonGetter
-    @Nullable
     public byte[] resetContext() {
         return resetContext;
     }

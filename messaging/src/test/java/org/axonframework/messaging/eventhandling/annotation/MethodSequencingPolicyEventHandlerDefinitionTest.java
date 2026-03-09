@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageStream;
@@ -34,18 +33,12 @@ import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
-
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -388,7 +381,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class with class-level SequencingPolicy and a ResetHandler - the ResetHandler should NOT be wrapped
     @SuppressWarnings("DefaultAnnotationParam")
-    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class ClassWithResetHandler {
 
         @SuppressWarnings("unused")
@@ -407,7 +400,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
         @SuppressWarnings({"unused", "DefaultAnnotationParam"})
         @ResetHandler
-        @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+        @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
         void onReset() {
         }
     }
@@ -421,7 +414,7 @@ class MethodSequencingPolicyEventHandlerDefinitionTest {
 
     // Test class with custom meta-annotation and class-level SequencingPolicy
     @SuppressWarnings("DefaultAnnotationParam")
-    @org.axonframework.messaging.eventhandling.annotation.SequencingPolicy(type = SequentialPolicy.class)
+    @org.axonframework.messaging.core.annotation.SequencingPolicy(type = SequentialPolicy.class)
     static class CustomEventHandlerWithClassPolicy {
 
         @SuppressWarnings("unused")

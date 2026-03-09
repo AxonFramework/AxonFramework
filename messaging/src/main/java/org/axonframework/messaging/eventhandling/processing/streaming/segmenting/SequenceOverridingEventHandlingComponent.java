@@ -26,7 +26,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
 import java.util.Optional;
 import java.util.Set;
