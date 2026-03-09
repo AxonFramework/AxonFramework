@@ -130,7 +130,6 @@ class AnnotationRoutingStrategyTest {
     public record SomeObject(String target) {
 
         @Override
-        @NonNull
         public String toString() {
             return target;
         }
