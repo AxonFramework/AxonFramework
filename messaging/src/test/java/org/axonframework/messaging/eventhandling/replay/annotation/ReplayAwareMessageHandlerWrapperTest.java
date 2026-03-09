@@ -571,6 +571,7 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then - Handler should be invoked with regular token
             assertThat(original.invocationCount.get()).isEqualTo(1);
             // Stream should be completed normally without errors
+            assertThat(result.next()).isEmpty();
             assertThat(result.isCompleted()).isTrue();
             assertThat(result.error()).isEmpty();
         }
@@ -589,6 +590,7 @@ class ReplayAwareMessageHandlerWrapperTest {
             // then - Handler should be invoked when no token present
             assertThat(original.invocationCount.get()).isEqualTo(1);
             // Stream should be completed normally without errors
+            assertThat(result.next()).isEmpty();
             assertThat(result.isCompleted()).isTrue();
             assertThat(result.error()).isEmpty();
         }
