@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.core.MessageType;
@@ -130,7 +129,6 @@ class AnnotationRoutingStrategyTest {
 
     public record SomeObject(String target) {
 
-        @Nonnull
         @Override
         @NonNull
         public String toString() {

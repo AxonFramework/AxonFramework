@@ -16,11 +16,9 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,10 +29,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases.COMMIT;
-import static org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases.INVOCATION;
-import static org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases.PRE_INVOCATION;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases.*;
 
 /**
  * Test class validating the {@link ResourceOverridingProcessingContext}.
@@ -184,21 +180,24 @@ class ResourceOverridingProcessingContextTest {
         private final List<ProcessingLifecycle.ErrorHandler> errorHandlers = new ArrayList<>();
         private final List<Consumer<ProcessingContext>> completionHandlers = new ArrayList<>();
 
+        @NonNull
         @Override
-        public ProcessingLifecycle on(@Nonnull ProcessingLifecycle.Phase phase,
-                                      @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
+        public ProcessingLifecycle on(ProcessingLifecycle.@NonNull Phase phase,
+                                      @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
             phaseActions.computeIfAbsent(phase, p -> new ArrayList<>()).add(action);
             return this;
         }
 
+        @NonNull
         @Override
-        public ProcessingLifecycle onError(@Nonnull ProcessingLifecycle.ErrorHandler action) {
+        public ProcessingLifecycle onError(ProcessingLifecycle.@NonNull ErrorHandler action) {
             errorHandlers.add(action);
             return this;
         }
 
+        @NonNull
         @Override
-        public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
+        public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
             completionHandlers.add(action);
             return this;
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -89,7 +88,7 @@ class SequenceOverridingEventHandlingComponentTest {
                 return delegateSequenceId;
             }
 
-            @Nonnull
+            @NonNull
             @Override
             public Set<QualifiedName> supportedEvents() {
                 return Set.of();

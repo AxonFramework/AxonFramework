@@ -1,9 +1,24 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.examples.demo.university.faculty.write.createcourseplain;
 
 import org.axonframework.examples.demo.university.faculty.Ids;
 import org.axonframework.examples.demo.university.faculty.events.CourseCreated;
 import org.axonframework.examples.demo.university.shared.slices.write.CommandResult;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -14,6 +29,7 @@ import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,10 +45,9 @@ class CreateCourseCommandHandler implements CommandHandler {
     }
 
     @Override
-    @Nonnull
-    public MessageStream.Single<CommandResultMessage> handle(
-            @Nonnull CommandMessage command,
-            @Nonnull ProcessingContext context
+    public MessageStream.@NonNull Single<CommandResultMessage> handle(
+            @NonNull CommandMessage command,
+            @NonNull ProcessingContext context
     ) {
         var eventAppender = EventAppender.forContext(context);
         var payload = command.payloadAs(CreateCourse.class, messageConverter);
@@ -42,7 +57,7 @@ class CreateCourseCommandHandler implements CommandHandler {
                 .thenApply(entity -> decide(payload, entity))
                 .thenAccept(eventAppender::append)
                 .thenApply(r -> new GenericCommandResultMessage(messageTypeResolver.resolveOrThrow(CommandResult.class),
-                                                                  new CommandResult(payload.courseId().toString())));
+                                                                new CommandResult(payload.courseId().toString())));
         return MessageStream.fromFuture(decideFuture);
     }
 

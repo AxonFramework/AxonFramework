@@ -16,7 +16,6 @@
 
 package org.axonframework.test.extension;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -43,7 +42,7 @@ public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCall
                                                   testClass,
                                                   extensionContext.getRequiredTestMethod())
                                     .ifPresent(provider -> extensionContext.getStore(NAMESPACE)
-                                                                  .put(FIXTURE_KEY, provider.get()));
+                                                                           .put(FIXTURE_KEY, provider.get()));
     }
 
     @Override
@@ -62,7 +61,7 @@ public class AxonFrameworkExtension implements BeforeEachCallback, AfterEachCall
     }
 
     @Override
-    public @Nullable Object resolveParameter(@Nonnull ParameterContext parameterContext,
+    public @Nullable Object resolveParameter(@NonNull ParameterContext parameterContext,
                                              @NonNull ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Object fixture = extensionContext.getStore(NAMESPACE).get(FIXTURE_KEY, AxonTestFixture.class);

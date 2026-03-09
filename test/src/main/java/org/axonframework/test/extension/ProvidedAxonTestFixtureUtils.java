@@ -16,7 +16,6 @@
 
 package org.axonframework.test.extension;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
@@ -86,7 +85,7 @@ import java.util.Optional;
         }
     }
 
-    private static AxonTestFixtureProvider instantiate(@Nonnull Class<? extends AxonTestFixtureProvider> clazz) {
+    private static AxonTestFixtureProvider instantiate(Class<? extends AxonTestFixtureProvider> clazz) {
         try {
             var constructor = ReflectionUtils.ensureAccessible(clazz.getDeclaredConstructor());
             return constructor.newInstance();
@@ -95,7 +94,6 @@ import java.util.Optional;
         }
     }
 
-    @Nonnull
     private static Optional<AxonTestFixtureProvider> getAxonTestFixtureProvider(Object testInstance,
                                                                                 Class<?> testClass) {
         Optional<AxonTestFixtureProvider> onFields = findOnFields(testInstance, testClass);
