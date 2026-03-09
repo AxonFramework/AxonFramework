@@ -18,6 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -57,13 +58,17 @@ public class ObjectMapperAutoConfiguration {
      * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
      * {@code ConverterType}.
      *
+     * @param modules An {@link ObjectProvider} of {@link JacksonModule} beans to register with the
+     *                {@link ObjectMapper}.
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
     @Bean("defaultAxonObjectMapper")
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
-    public ObjectMapper defaultAxonObjectMapper() {
-        return JsonMapper.builder().findAndAddModules().build();
+    public ObjectMapper defaultAxonObjectMapper(ObjectProvider<JacksonModule> modules) {
+        JsonMapper.Builder builder = JsonMapper.builder().findAndAddModules();
+        modules.orderedStream().forEach(builder::addModule);
+        return builder.build();
     }
 
     /**
