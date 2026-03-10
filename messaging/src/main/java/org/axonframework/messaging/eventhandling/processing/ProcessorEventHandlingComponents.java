@@ -18,6 +18,8 @@ package org.axonframework.messaging.eventhandling.processing;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
@@ -28,6 +30,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
+
 
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +55,7 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 @Internal
-public class ProcessorEventHandlingComponents {
+public class ProcessorEventHandlingComponents implements DescribableComponent {
 
     private final List<? extends EventHandlingComponent> components;
 
@@ -86,7 +89,7 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the event messages are processed.
      * @return A stream of messages resulting from the processing of the event messages.
      */
-        public MessageStream.Empty<Message> handle(
+    public MessageStream.Empty<Message> handle(
             List<? extends EventMessage> events,
             ProcessingContext context
     ) {
@@ -99,7 +102,7 @@ public class ProcessorEventHandlingComponents {
                           .cast();
     }
 
-        private MessageStream.Empty<Message> handle(
+    private MessageStream.Empty<Message> handle(
             EventMessage event,
             ProcessingContext context
     ) {
@@ -189,5 +192,10 @@ public class ProcessorEventHandlingComponents {
     public boolean supportsReset() {
         return components.stream()
                          .anyMatch(EventHandlingComponent::supportsReset);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeProperty("components", components);
     }
 }

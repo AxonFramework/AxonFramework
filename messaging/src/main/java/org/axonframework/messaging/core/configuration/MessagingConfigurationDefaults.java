@@ -20,7 +20,7 @@ import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandPriorityCalculator;
@@ -30,6 +30,7 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingS
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.commandhandling.interception.CommandSequencingInterceptor;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
@@ -49,16 +50,21 @@ import org.axonframework.messaging.core.interception.DefaultDispatchInterceptorR
 import org.axonframework.messaging.core.interception.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.RoutingKeySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.DefaultMessageMonitorRegistry;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
@@ -79,9 +85,8 @@ import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 
+
 import java.util.List;
-import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
@@ -93,6 +98,7 @@ import java.util.function.UnaryOperator;
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DefaultCorrelationDataProviderRegistry} for class {@link CorrelationDataProviderRegistry} containing the {@link MessageOriginProvider}.</li>
+ *     <li>Registers a {@link RoutingKeySequencingPolicy} for class {@link SequencingPolicy}</li>
  *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
@@ -140,6 +146,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
      * applied.
      */
     public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
+    /**
+     * The component name for the default command sequencing policy.
+     */
+    public static final String COMMAND_SEQUENCING_POLICY = "commandSequencingPolicy";
 
     @Override
     public int order() {
@@ -161,6 +171,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CorrelationDataProviderRegistry.class,
                                       MessagingConfigurationDefaults::defaultCorrelationDataProviderRegistry)
+                .registerIfNotPresent(SequencingPolicy.class,
+                                      COMMAND_SEQUENCING_POLICY,
+                                      MessagingConfigurationDefaults::defaultCommandSequencingPolicy)
                 .registerIfNotPresent(DispatchInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
                 .registerIfNotPresent(HandlerInterceptorRegistry.class,
@@ -211,15 +224,50 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultCorrelationDataProviderRegistry().registerProvider(c -> new MessageOriginProvider());
     }
 
+    private static SequencingPolicy<? super CommandMessage> defaultCommandSequencingPolicy(Configuration config) {
+        return RoutingKeySequencingPolicy.INSTANCE;
+    }
+
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {
         DispatchInterceptorRegistry dispatchInterceptorRegistry = new DefaultDispatchInterceptorRegistry();
-
         dispatchInterceptorRegistry = registerMonitoringDispatchInterceptors(dispatchInterceptorRegistry, config);
+        dispatchInterceptorRegistry = registerCorrelationInterceptor(config, dispatchInterceptorRegistry);
+        return dispatchInterceptorRegistry;
+    }
 
+    private static DispatchInterceptorRegistry registerMonitoringDispatchInterceptors(
+            DispatchInterceptorRegistry dispatchInterceptorRegistry,
+            Configuration config
+    ) {
+        var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
+        return dispatchInterceptorRegistry.registerEventInterceptor(
+                (c, componentType, componentName) -> {
+                    MessageMonitor<? super EventMessage> monitor =
+                            messageMonitorRegistry.eventMonitor(c, componentType, componentName);
+                    if (NoOpMessageMonitor.INSTANCE.equals(monitor)) {
+                        return null;
+                    }
+                    return new MonitoringEventDispatchInterceptor(monitor);
+                }
+        ).registerSubscriptionQueryUpdateInterceptor(
+                (c, componentType, componentName) -> {
+                    MessageMonitor<? super SubscriptionQueryUpdateMessage> monitor =
+                            messageMonitorRegistry.subscriptionQueryUpdateMonitor(c, componentType, componentName);
+                    if (NoOpMessageMonitor.INSTANCE.equals(monitor)) {
+                        return null;
+                    }
+                    return new MonitoringSubscriptionQueryUpdateDispatchInterceptor(monitor);
+                }
+        );
+    }
+
+    private static DispatchInterceptorRegistry registerCorrelationInterceptor(
+            Configuration config,
+            DispatchInterceptorRegistry dispatchInterceptorRegistry
+    ) {
         List<CorrelationDataProvider> providers = config
                 .getComponent(CorrelationDataProviderRegistry.class)
                 .correlationDataProviders(config);
-
         if (!providers.isEmpty()) {
             dispatchInterceptorRegistry = dispatchInterceptorRegistry
                     .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
@@ -229,18 +277,65 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static HandlerInterceptorRegistry defaultHandlerInterceptorRegistry(Configuration config) {
         HandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
-
         handlerInterceptorRegistry = registerMonitoringHandlerInterceptors(handlerInterceptorRegistry, config);
+        handlerInterceptorRegistry = registerCorrelationDataInterceptor(config, handlerInterceptorRegistry);
+        return handlerInterceptorRegistry;
+    }
 
+    private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(
+            HandlerInterceptorRegistry handlerInterceptorRegistry,
+            Configuration config
+    ) {
+        final var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
+        return handlerInterceptorRegistry.registerCommandInterceptor(
+                (c, componentType, componentName) -> {
+                    MessageMonitor<? super CommandMessage> monitor =
+                            messageMonitorRegistry.commandMonitor(c, componentType, componentName);
+                    if (NoOpMessageMonitor.INSTANCE.equals(monitor)) {
+                        return null;
+                    }
+                    return new MonitoringCommandHandlerInterceptor(monitor);
+                }
+        ).registerEventInterceptor(
+                (c, componentType, componentName) -> {
+                    MessageMonitor<? super EventMessage> monitor =
+                            messageMonitorRegistry.eventMonitor(c, componentType, componentName);
+                    if (NoOpMessageMonitor.INSTANCE.equals(monitor)) {
+                        return null;
+                    }
+                    return new MonitoringEventHandlerInterceptor(monitor);
+                }
+        ).registerQueryInterceptor(
+                (c, componentType, componentName) -> {
+                    MessageMonitor<? super QueryMessage> monitor =
+                            messageMonitorRegistry.queryMonitor(c, componentType, componentName);
+                    if (NoOpMessageMonitor.INSTANCE.equals(monitor)) {
+                        return null;
+                    }
+                    return new MonitoringQueryHandlerInterceptor(monitor);
+                }
+        );
+    }
+
+    private static HandlerInterceptorRegistry registerCorrelationDataInterceptor(
+            Configuration config,
+            HandlerInterceptorRegistry handlerInterceptorRegistry
+    ) {
         List<CorrelationDataProvider> providers = config
                 .getComponent(CorrelationDataProviderRegistry.class)
                 .correlationDataProviders(config);
-
         if (!providers.isEmpty()) {
             handlerInterceptorRegistry = handlerInterceptorRegistry
                     .registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
         }
 
+        @SuppressWarnings("unchecked")
+        SequencingPolicy<? super CommandMessage> commandSequencingPolicy = config.getComponent(SequencingPolicy.class,
+                                                                                               COMMAND_SEQUENCING_POLICY);
+        if (!(commandSequencingPolicy instanceof NoOpSequencingPolicy)) {
+            handlerInterceptorRegistry = handlerInterceptorRegistry
+                    .registerCommandInterceptor(c -> new CommandSequencingInterceptor<>(commandSequencingPolicy));
+        }
         return handlerInterceptorRegistry;
     }
 
@@ -299,9 +394,12 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 InterceptingCommandBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors =
-                            config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
+                            config.getComponent(HandlerInterceptorRegistry.class)
+                                  .commandInterceptors(config, CommandBus.class, name);
                     List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).commandInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .commandInterceptors(config, CommandBus.class, name);
+
                     return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
@@ -312,12 +410,15 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 InterceptingQueryBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageHandlerInterceptor<? super QueryMessage>> handlerInterceptors =
-                            config.getComponent(HandlerInterceptorRegistry.class).queryInterceptors(config);
+                            config.getComponent(HandlerInterceptorRegistry.class)
+                                  .queryInterceptors(config, QueryBus.class, name);
                     List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).queryInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .queryInterceptors(config, QueryBus.class, name);
                     List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> updateDispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).subscriptionQueryUpdateInterceptors(
-                                    config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .subscriptionQueryUpdateInterceptors(config, QueryBus.class, name);
+
                     return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
                             && updateDispatchInterceptors.isEmpty()
                             ? delegate
@@ -327,52 +428,5 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                                        updateDispatchInterceptors);
                 }
         );
-    }
-
-    private static DispatchInterceptorRegistry registerMonitoringDispatchInterceptors(
-            DispatchInterceptorRegistry dispatchInterceptorRegistry, Configuration config
-    ) {
-        var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
-        var eventDispatcher = Optional.of(messageMonitorRegistry.eventMonitor(config))
-                                      .filter(it -> NoOpMessageMonitor.INSTANCE != it)
-                                      .map(MonitoringEventDispatchInterceptor::new)
-                                      .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerEventInterceptor(
-                                              c -> it))
-                                      .orElse(UnaryOperator.identity());
-        var subscriptionQueryUpdateDispatcher = Optional.of(messageMonitorRegistry.subscriptionQueryUpdateMonitor(config))
-                                                        .filter(it -> NoOpMessageMonitor.INSTANCE != it)
-                                                        .map(MonitoringSubscriptionQueryUpdateDispatchInterceptor::new)
-                                                        .map(it -> (UnaryOperator<DispatchInterceptorRegistry>) r -> r.registerSubscriptionQueryUpdateInterceptor(
-                                                                c -> it))
-                                                        .orElse(UnaryOperator.identity());
-
-        return eventDispatcher.andThen(subscriptionQueryUpdateDispatcher).apply(dispatchInterceptorRegistry);
-    }
-
-    private static HandlerInterceptorRegistry registerMonitoringHandlerInterceptors(
-            HandlerInterceptorRegistry handlerInterceptorRegistry,
-            Configuration config
-    ) {
-        final var messageMonitorRegistry = config.getComponent(MessageMonitorRegistry.class);
-        var commandDispatcher = Optional.of(messageMonitorRegistry.commandMonitor(config))
-                                        .filter(it -> NoOpMessageMonitor.INSTANCE != it)
-                                        .map(MonitoringCommandHandlerInterceptor::new)
-                                        .map(it -> (UnaryOperator<HandlerInterceptorRegistry>) r -> r.registerCommandInterceptor(
-                                                c -> it))
-                                        .orElse(UnaryOperator.identity());
-        var eventDispatcher = Optional.of(messageMonitorRegistry.eventMonitor(config))
-                                      .filter(it -> NoOpMessageMonitor.INSTANCE != it)
-                                      .map(MonitoringEventHandlerInterceptor::new)
-                                      .map(it -> (UnaryOperator<HandlerInterceptorRegistry>) r -> r.registerEventInterceptor(
-                                              c -> it))
-                                      .orElse(UnaryOperator.identity());
-        var queryDispatcher = Optional.of(messageMonitorRegistry.queryMonitor(config))
-                                      .filter(it -> NoOpMessageMonitor.INSTANCE != it)
-                                      .map(MonitoringQueryHandlerInterceptor::new)
-                                      .map(it -> (UnaryOperator<HandlerInterceptorRegistry>) r -> r.registerQueryInterceptor(
-                                              c -> it))
-                                      .orElse(UnaryOperator.identity());
-
-        return commandDispatcher.andThen(eventDispatcher).andThen(queryDispatcher).apply(handlerInterceptorRegistry);
     }
 }

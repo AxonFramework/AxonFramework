@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to micrometer.
+ * Part of the Axon Extension module. Contains classes related to Micrometer.
  */
 @NullMarked
 package org.axonframework.extension.metrics.micrometer;

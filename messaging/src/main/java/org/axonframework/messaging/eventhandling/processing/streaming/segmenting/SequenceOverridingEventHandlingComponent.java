@@ -21,11 +21,11 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +50,7 @@ import static java.util.Objects.requireNonNull;
 @Internal
 public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final EventHandlingComponent delegate;
 
 
@@ -61,7 +61,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequenceOverridingEventHandlingComponent(SequencingPolicy sequencingPolicy,
+    public SequenceOverridingEventHandlingComponent(SequencingPolicy<? super EventMessage> sequencingPolicy,
                                                     EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
@@ -70,7 +70,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     @Override
     public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
-        return sequencingPolicy.getSequenceIdentifierFor(event, context)
+        return sequencingPolicy.sequenceIdentifierFor(event, context)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -25,9 +24,11 @@ import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandlingMember;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -48,6 +49,10 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        // Only wrap event handlers - check message type to work through any existing wrappers
+        if (!original.canHandleMessageType(EventMessage.class)) {
+            return original;
+        }
         boolean isReplayAllowed = (boolean) original
                 .attribute(HandlerAttributes.ALLOW_REPLAY)
                 .orElseGet(() -> original.unwrap(Member.class)
@@ -56,28 +61,20 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
                                                                   .orElse(DEFAULT_SETTING))
                                          .orElse(DEFAULT_SETTING).get("allowReplay")
                 );
-        if (!isReplayAllowed && original instanceof EventHandlingMember<T> eventHandlingMember) {
-            return new ReplayBlockingMessageHandlingMember<>(eventHandlingMember);
+        if (!isReplayAllowed) {
+            return new ReplayBlockingMessageHandlingMember<>(original);
         }
         return original;
     }
 
     private static class ReplayBlockingMessageHandlingMember<T>
-            extends WrappedMessageHandlingMember<T>
-            implements EventHandlingMember<T> {
+            extends WrappedMessageHandlingMember<T> {
 
-        private final EventHandlingMember<T> delegate;
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         public static final Optional<Boolean> NO_REPLAY = Optional.of(Boolean.FALSE);
 
-        public ReplayBlockingMessageHandlingMember(EventHandlingMember<T> original) {
+        public ReplayBlockingMessageHandlingMember(MessageHandlingMember<T> original) {
             super(original);
-            this.delegate = original;
-        }
-
-        @Override
-        public String eventName() {
-            return delegate.eventName();
         }
 
         @Override

@@ -16,13 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
-import org.springframework.data.domain.Page;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -33,10 +29,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.data.domain.Page;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
- * {@link JacksonConverter}.
+ * {@link org.axonframework.conversion.jackson.JacksonConverter}.
  *
  * @author Steven van Beelen
  * @author Theo Emanuelsson
@@ -45,7 +46,7 @@ import org.springframework.context.annotation.Conditional;
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
-@ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
+@ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
 
@@ -54,16 +55,20 @@ public class ObjectMapperAutoConfiguration {
      * <p>
      * This {@code ObjectMapper} bean is only created when there is no other {@code ObjectMapper} bean present
      * <b>and</b> whenever the user specified either the
-     * {@link ConverterProperties.ConverterType#DEFAULT} or
-     * {@link ConverterProperties.ConverterType#JACKSON} {@code ConverterType}.
+     * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
+     * {@code ConverterType}.
      *
+     * @param modules An {@link ObjectProvider} of {@link JacksonModule} beans to register with the
+     *                {@link ObjectMapper}.
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
     @Bean("defaultAxonObjectMapper")
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
-    public ObjectMapper defaultAxonObjectMapper() {
-        return new ObjectMapper().findAndRegisterModules();
+    public ObjectMapper defaultAxonObjectMapper(ObjectProvider<JacksonModule> modules) {
+        JsonMapper.Builder builder = JsonMapper.builder().findAndAddModules();
+        modules.orderedStream().forEach(builder::addModule);
+        return builder.build();
     }
 
     /**
@@ -75,14 +80,14 @@ public class ObjectMapperAutoConfiguration {
      * instances into {@link org.springframework.data.domain.PageImpl PageImpl} objects.
      *
      * @return A Jackson {@link Module} that deserializes {@link Page} into
-     *         {@link org.springframework.data.domain.PageImpl PageImpl}.
+     * {@link org.springframework.data.domain.PageImpl PageImpl}.
      * @see JacksonPageDeserializer
      * @since 5.1.0
      */
     @Bean
     @ConditionalOnClass(Page.class)
     @Conditional(JacksonConfiguredCondition.class)
-    public Module springDataPageJacksonModule() {
+    public JacksonModule springDataPageJacksonModule() {
         return new SimpleModule()
                 .addDeserializer(Page.class, new JacksonPageDeserializer());
     }

@@ -45,7 +45,7 @@ class SealedClassCourseIT extends AbstractAxonServerIT {
 
         final var commandHandlingModule = CommandHandlingModule.named("SealedClassCommandHandlers")
                                                                .commandHandlers()
-                                                               .annotatedCommandHandlingComponent(c -> new SealedClassCourseCommandHandlers())
+                                                               .autodetectedCommandHandlingComponent(c -> new SealedClassCourseCommandHandlers())
                                                                .build();
 
         return configurer.registerEntity(courseEntity)

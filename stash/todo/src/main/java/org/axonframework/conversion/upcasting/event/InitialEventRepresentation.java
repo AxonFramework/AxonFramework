@@ -16,18 +16,19 @@
 
 package org.axonframework.conversion.upcasting.event;
 
-import org.axonframework.messaging.eventhandling.DomainEventData;
-import org.axonframework.messaging.eventhandling.EventData;
-import org.axonframework.messaging.eventhandling.TrackedEventData;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.core.Metadata;
 import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.LazyDeserializingObject;
 import org.axonframework.conversion.SerializedObject;
 import org.axonframework.conversion.SerializedType;
 import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.SimpleSerializedObject;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.eventhandling.DomainEventData;
+import org.axonframework.messaging.eventhandling.EventData;
+import org.axonframework.messaging.eventhandling.TrackedEventData;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -164,6 +165,11 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     @Override
     public boolean canConvertDataTo(Class<?> requiredType) {
-        return serializer.getConverter().canConvert(data.getContentType(), requiredType);
+        Converter converter = serializer.getConverter();
+        if (converter instanceof ChainingContentTypeConverter chainingConverter) {
+            return chainingConverter.canConvert(data.getContentType(), requiredType);
+        } else {
+            return false;
+        }
     }
 }

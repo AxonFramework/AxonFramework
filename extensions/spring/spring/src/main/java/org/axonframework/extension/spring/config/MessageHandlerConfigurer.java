@@ -38,6 +38,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +99,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
-        Set<ProcessorDefinition.EventHandlerDescriptor> handlers =
+        Set<EventProcessorDefinition.EventHandlerDescriptor> handlers =
                 handlerBeansRefs.stream()
                                 .map(name -> new SimpleEventHandlerDescriptor(name, beanFactory))
                                 .collect(Collectors.toSet());
@@ -113,7 +114,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             var queryHandlingModuleBuilder = QueryHandlingModule
                     .named(moduleName)
                     .queryHandlers();
-            beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.annotatedQueryHandlingComponent(
+            beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.autodetectedQueryHandlingComponent(
                     this.asComponent(namedBeanDefinition.name())
             ));
             registry.registerModule(queryHandlingModuleBuilder.build());
@@ -127,7 +128,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                     .named(moduleName)
                     .commandHandlers();
             beanDefs.forEach(namedBeanDefinition -> commandHandlingModuleBuilder
-                    .annotatedCommandHandlingComponent(this.asComponent(namedBeanDefinition.name())));
+                    .autodetectedCommandHandlingComponent(this.asComponent(namedBeanDefinition.name())));
             registry.registerModule(commandHandlingModuleBuilder.build());
         });
     }
@@ -198,8 +199,10 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
     }
 
-    private record SimpleEventHandlerDescriptor(String beanName, ConfigurableListableBeanFactory beanFactory)
-            implements ProcessorDefinition.EventHandlerDescriptor {
+    private record SimpleEventHandlerDescriptor(
+            String beanName,
+            ConfigurableListableBeanFactory beanFactory
+    ) implements EventProcessorDefinition.EventHandlerDescriptor {
 
         @Override
         public BeanDefinition beanDefinition() {
@@ -213,7 +216,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-                public Object resolveBean() {
+        public Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 

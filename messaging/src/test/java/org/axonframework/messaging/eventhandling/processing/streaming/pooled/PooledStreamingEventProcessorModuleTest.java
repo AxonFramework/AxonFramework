@@ -37,6 +37,7 @@ import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
@@ -874,14 +875,11 @@ class PooledStreamingEventProcessorModuleTest {
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
-            configurer.eventProcessing(ep ->
-                                               ep.pooledStreaming(ps -> ps.defaults(
-                                                                          d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                                                .eventSource(typeEventSource)
-                                                                                .initialSegmentCount(typeSegmentCount)
-                                                                  )
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeEventSource)
+                          .initialSegmentCount(typeSegmentCount)
+            )));
 
             // and - instance-specific customization
             int instanceSegmentCount = 4;
@@ -889,10 +887,12 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration()
-                            .eventSource(p.eventSource())
-                            .tokenStore(instanceTokenStore)
-                            .initialSegmentCount(instanceSegmentCount));
+                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .tokenStore(instanceTokenStore)
+                                 .initialSegmentCount(instanceSegmentCount)
+                    );
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
 
             // when

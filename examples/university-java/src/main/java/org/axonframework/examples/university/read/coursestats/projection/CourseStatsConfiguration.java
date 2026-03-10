@@ -42,9 +42,9 @@ public class CourseStatsConfiguration {
 
         QueryHandlingModule queryModule = QueryHandlingModule.named("Stats-Handler")
                 .queryHandlers()
-                .annotatedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
-                .annotatedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
                 .build();
 

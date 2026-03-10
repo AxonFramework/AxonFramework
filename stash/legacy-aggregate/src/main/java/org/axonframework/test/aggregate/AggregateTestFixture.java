@@ -1085,7 +1085,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               List<EventMessage> events) {
+                                               List<? extends EventMessage> events) {
             return null;
         }
 

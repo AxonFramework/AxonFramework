@@ -50,13 +50,16 @@
             <artifactId>axon-conversion</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <optional>true</optional>
         </dependency>
-
         <!-- Caching -->
         <dependency>
             <groupId>javax.cache</groupId>
@@ -69,13 +72,7 @@
             <optional>true</optional>
         </dependency>
 
-
         <!-- Jakarta -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
@@ -149,6 +146,11 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>

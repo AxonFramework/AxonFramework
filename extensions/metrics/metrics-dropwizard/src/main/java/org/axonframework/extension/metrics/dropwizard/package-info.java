@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to dropwizard.
+ * Part of the Axon Extension module. Contains classes related to Dropwizard.
  */
 @NullMarked
 package org.axonframework.extension.metrics.dropwizard;

@@ -63,7 +63,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -77,7 +77,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -90,7 +90,7 @@ class AxonTestFixtureMessagingTest {
             fixture.when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -907,7 +907,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "another-name", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "another-name", 1));
         }
     }
 

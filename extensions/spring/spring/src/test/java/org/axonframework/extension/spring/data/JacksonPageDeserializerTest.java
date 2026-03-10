@@ -16,12 +16,13 @@
 
 package org.axonframework.extension.spring.data;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import java.util.List;
 
@@ -38,14 +39,13 @@ class JacksonPageDeserializerTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Page.class, new JacksonPageDeserializer());
-        objectMapper.registerModule(module);
+        objectMapper = JsonMapper.builder().addModule(module).build();
     }
 
     @Test
-    void deserializerWorksCorrectly() throws Exception {
+    void deserializerWorksCorrectly() {
         String json = "{"
                 + "\"content\":[\"item1\",\"item2\",\"item3\"],"
                 + "\"number\":0,"
@@ -63,7 +63,7 @@ class JacksonPageDeserializerTest {
     }
 
     @Test
-    void deserializerHandlesEmptyContent() throws Exception {
+    void deserializerHandlesEmptyContent() {
         String json = "{"
                 + "\"content\":[],"
                 + "\"number\":0,"
@@ -81,7 +81,7 @@ class JacksonPageDeserializerTest {
     }
 
     @Test
-    void deserializerHandlesMissingFields() throws Exception {
+    void deserializerHandlesMissingFields() {
         String json = "{\"content\":[\"item1\",\"item2\"]}";
 
         Page<?> page = objectMapper.readValue(json, Page.class);
@@ -94,7 +94,7 @@ class JacksonPageDeserializerTest {
     }
 
     @Test
-    void serializationRoundTrip() throws Exception {
+    void serializationRoundTrip() {
         Page<String> originalPage = new PageImpl<>(
                 List.of("item1", "item2", "item3"),
                 PageRequest.of(0, 3),

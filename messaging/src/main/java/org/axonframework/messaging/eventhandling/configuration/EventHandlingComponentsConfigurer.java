@@ -20,6 +20,7 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
@@ -88,7 +89,8 @@ public interface EventHandlingComponentsConfigurer {
             return declarative(componentName, c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
-                    ClasspathHandlerDefinition.forClass(c.getClass()),
+                    c.getOptionalComponent(HandlerDefinition.class)
+                     .orElse(ClasspathHandlerDefinition.forClass(c.getClass())),
                     c.getComponent(MessageTypeResolver.class),
                     c.getComponent(EventConverter.class)
             ));

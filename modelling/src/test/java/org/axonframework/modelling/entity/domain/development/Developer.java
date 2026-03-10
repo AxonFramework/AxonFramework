@@ -17,21 +17,19 @@
 package org.axonframework.modelling.entity.domain.development;
 
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.domain.development.commands.ChangeDeveloperGithubUsername;
 import org.axonframework.modelling.entity.domain.development.events.DeveloperGithubUsernameChanged;
 
 public record Developer(
-        @RoutingKey
         String email,
         String githubUsername
 ) {
 
     @CommandHandler
     public void handle(ChangeDeveloperGithubUsername command, EventAppender appender) {
-        if(githubUsername.equals(command.githubUsername())) {
+        if (githubUsername.equals(command.githubUsername())) {
             return;
         }
         appender.append(new DeveloperGithubUsernameChanged(
