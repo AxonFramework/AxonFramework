@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.Message;
@@ -110,9 +109,8 @@ public class InterceptorChainParameterResolverFactory
         return (MessageHandlerInterceptorChain<M>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(ProcessingContext context) {
         // TODO #3485 - The MessageHandlerInterceptorChain should be registered as a resource to the ProcessingContext
         //  and retrieved from the given context here upon resolution i.o. using a thread local.
         MessageHandlerInterceptorChain<?> interceptorChain =
@@ -127,15 +125,15 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return CURRENT.get() != null
                 || (context != null && context.containsResource(INTERCEPTOR_CHAIN_KEY));
     }
 
     @Nullable
     @Override
-    public ParameterResolver<MessageHandlerInterceptorChain<?>> createInstance(@Nonnull Executable executable,
-                                                                               @Nonnull Parameter[] parameters,
+    public ParameterResolver<MessageHandlerInterceptorChain<?>> createInstance(Executable executable,
+                                                                               Parameter[] parameters,
                                                                                int parameterIndex) {
         if (MessageHandlerInterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;

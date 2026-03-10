@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -46,8 +45,8 @@ public interface EventHandlerRegistry<S extends EventHandlerRegistry<S>> {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@Nonnull Set<QualifiedName> names,
-                        @Nonnull EventHandler eventHandler) {
+    default S subscribe(Set<QualifiedName> names,
+                        EventHandler eventHandler) {
         names.forEach(name -> subscribe(name, eventHandler));
         //noinspection unchecked
         return (S) this;
@@ -64,8 +63,8 @@ public interface EventHandlerRegistry<S extends EventHandlerRegistry<S>> {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given name.
      * @return This registry for fluent interfacing.
      */
-    S subscribe(@Nonnull QualifiedName name,
-                @Nonnull EventHandler eventHandler);
+    S subscribe(QualifiedName name,
+                EventHandler eventHandler);
 
     /**
      * Subscribe the given {@code handlingComponent} with this registry.
@@ -77,7 +76,7 @@ public interface EventHandlerRegistry<S extends EventHandlerRegistry<S>> {
      * @param handlingComponent The event handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+    default S subscribe(EventHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedEvents(), handlingComponent);
     }
 }

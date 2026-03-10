@@ -24,14 +24,13 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class DefaultEntityRegistrar implements ImportBeanDefinitionRegistrar {
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
-                                        @Nonnull BeanDefinitionRegistry registry) {
+                                        BeanDefinitionRegistry registry) {
         Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes(
                 "org.axonframework.extension.springboot.util.RegisterDefaultEntities");
         String[] packages = (String[]) attributes.get("packages");

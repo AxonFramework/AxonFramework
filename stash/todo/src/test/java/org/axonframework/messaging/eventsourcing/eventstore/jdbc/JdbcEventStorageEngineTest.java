@@ -30,6 +30,7 @@ import org.axonframework.messaging.eventsourcing.eventstore.jdbc.statements.Read
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Container;
@@ -54,7 +55,6 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.messaging.eventhandling.DomainEventTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -88,8 +88,8 @@ class JdbcEventStorageEngineTest
         //noinspection Convert2Lambda,Anonymous2MethodRef
         readForAggregateStatementBuilder = spy(new ReadEventDataForAggregateStatementBuilder() {
             @Override
-            public PreparedStatement build(Connection connection, EventSchema schema, String identifier,
-                                           long firstSequenceNumber, int batchSize) throws SQLException {
+            public @NonNull PreparedStatement build(@NonNull Connection connection, @NonNull EventSchema schema,
+                                                    @NonNull  String identifier, long firstSequenceNumber, int batchSize) throws SQLException {
                 return JdbcEventStorageEngineStatements.readEventDataForAggregate(connection,
                                                                                   schema,
                                                                                   identifier,
@@ -146,7 +146,7 @@ class JdbcEventStorageEngineTest
                 engineBuilder -> engineBuilder.schema(testSchema).dataType(String.class),
                 new HsqlEventTableFactory() {
                     @Override
-                    protected String payloadType() {
+                    protected @NonNull String payloadType() {
                         return "LONGVARCHAR";
                     }
                 }
@@ -160,7 +160,7 @@ class JdbcEventStorageEngineTest
     void customSchemaConfigTimestampColumn() {
         setTestSubject(testSubject = createTimestampEngine(new HsqlEventTableFactory() {
             @Override
-            protected String timestampType() {
+            protected @NonNull String timestampType() {
                 return "timestamp";
             }
         }));
@@ -462,13 +462,13 @@ class JdbcEventStorageEngineTest
 
         LegacyJdbcEventStorageEngine result = new LegacyJdbcEventStorageEngine(builder) {
             @Override
-            protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
+            protected @NonNull Object readTimeStamp(@NonNull ResultSet resultSet, @NonNull String columnName) throws SQLException {
                 Timestamp ts = resultSet.getTimestamp(columnName);
                 return ts.toInstant();
             }
 
             @Override
-            protected void writeTimestamp(PreparedStatement preparedStatement, int position, Instant timestamp)
+            protected void writeTimestamp(@NonNull PreparedStatement preparedStatement, int position, @NonNull Instant timestamp)
                     throws SQLException {
                 preparedStatement.setTimestamp(position, new Timestamp(timestamp.toEpochMilli()));
             }

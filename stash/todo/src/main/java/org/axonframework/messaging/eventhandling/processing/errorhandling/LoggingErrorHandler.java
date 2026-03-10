@@ -21,7 +21,6 @@ import org.axonframework.messaging.eventhandling.EventMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of a {@link ListenerInvocationErrorHandler} that logs exceptions as errors but otherwise does nothing
@@ -50,8 +49,8 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
     }
 
     @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
-                        @Nonnull EventMessageHandler eventHandler) {
+    public void onError(Exception exception, EventMessage event,
+                        EventMessageHandler eventHandler) {
         logger.error("EventListener [{}] failed to handle event [{}] ({}). " +
                              "Continuing processing with next listener",
                      eventHandler.getTargetType().getSimpleName(),

@@ -31,8 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static org.axonframework.common.FutureUtils.unwrap;
 
@@ -61,10 +60,10 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
     }
 
     @Override
-    public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(@Nonnull M message,
-                                                                                       @Nullable ProcessingContext processingContext,
-                                                                                       @Nonnull Throwable cause,
-                                                                                       @Nonnull Dispatcher<M, R> dispatcher) {
+    public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(M message,
+                                                                                 @Nullable ProcessingContext processingContext,
+                                                                                 Throwable cause,
+                                                                                 Dispatcher<M, R> dispatcher) {
         RetryPolicy.Outcome outcome = retryPolicy.defineFor(message, cause, Collections.emptyList());
         if (!outcome.shouldReschedule()) {
             return MessageStream.failed(cause);
@@ -77,7 +76,7 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("retryPolicy", this.retryPolicy);
         descriptor.describeProperty("executor", this.executor);
     }
@@ -118,7 +117,7 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
         @Override
         public void run() {
             AtomicBoolean entrySeen = new AtomicBoolean(false);
-            AtomicReference<MessageStream<T>> retryResult = new AtomicReference<>();
+            AtomicReference<@Nullable MessageStream<T>> retryResult = new AtomicReference<>();
             finalResult.complete(
                     dispatcher.get()
                               .onNext(entry -> entrySeen.set(true))

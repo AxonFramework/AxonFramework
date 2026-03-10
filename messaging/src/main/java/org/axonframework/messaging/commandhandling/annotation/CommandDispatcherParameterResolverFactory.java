@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -43,22 +42,21 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
 
     @Nullable
     @Override
-    public ParameterResolver<CommandDispatcher> createInstance(@Nonnull Executable executable,
-                                                               @Nonnull Parameter[] parameters,
+    public ParameterResolver<CommandDispatcher> createInstance(Executable executable,
+                                                               Parameter[] parameters,
                                                                int parameterIndex) {
         if (!CommandDispatcher.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return null;
         }
 
         return new ParameterResolver<>() {
-            @Nonnull
             @Override
-            public CompletableFuture<CommandDispatcher> resolveParameterValue(@Nonnull ProcessingContext context) {
+            public CompletableFuture<CommandDispatcher> resolveParameterValue(ProcessingContext context) {
                 return CompletableFuture.completedFuture(CommandDispatcher.forContext(context));
             }
 
             @Override
-            public boolean matches(@Nonnull ProcessingContext context) {
+            public boolean matches(ProcessingContext context) {
                 return true;
             }
         };

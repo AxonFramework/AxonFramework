@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.LockModeType;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
@@ -39,9 +38,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 5.0.0
  */
 public record JpaTokenStoreConfiguration(
-        @Nonnull LockModeType loadingLockMode,
-        @Nonnull TemporalAmount claimTimeout,
-        @Nonnull String nodeId
+        LockModeType loadingLockMode,
+        TemporalAmount claimTimeout,
+        String nodeId
 ) {
 
     /**

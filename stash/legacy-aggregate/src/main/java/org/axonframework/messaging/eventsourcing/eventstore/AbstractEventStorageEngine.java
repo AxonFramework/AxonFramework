@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
@@ -79,14 +78,14 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     }
 
     @Override
-    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
         return null;
 //        return upcastAndDeserializeDomainEvents(input, getEventSerializer(), upcasterChain);
     }
 
     @Override
-    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(String aggregateIdentifier) {
         return Optional.empty();
 //        return readSnapshotData(aggregateIdentifier)
 //                .filter(snapshotFilter::allow)
@@ -100,12 +99,12 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
+    public void appendEvents(List<? extends EventMessage> events) {
         appendEvents(events, getEventSerializer());
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
+    public void storeSnapshot(DomainEventMessage snapshot) {
         storeSnapshot(snapshot, getSnapshotSerializer());
     }
 

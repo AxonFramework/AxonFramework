@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.util.ExecutorServiceFactory;
 
@@ -50,13 +49,13 @@ public final class DistributedQueryBusConfiguration {
                     queue,
                     new AxonThreadFactory("QueryProcessor")
             );
-    @Nonnull private final ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory;
+    private final ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory;
     private final Supplier<BlockingQueue<Runnable>> queue;
     private final boolean preferLocalQueryHandler;
 
     private DistributedQueryBusConfiguration(
-            @Nonnull ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory,
-            @Nonnull Supplier<BlockingQueue<Runnable>> queue,
+            ExecutorServiceFactory<DistributedQueryBusConfiguration> queryExecutorServiceFactory,
+            Supplier<BlockingQueue<Runnable>> queue,
             boolean preferLocalQueryHandler) {
         this.queryExecutorServiceFactory = queryExecutorServiceFactory;
         this.queue = queue;
@@ -114,7 +113,7 @@ public final class DistributedQueryBusConfiguration {
      * @param executorService the {@link ExecutorService} to use for querying in the distributed query bus
      * @return the configuration itself, for fluent API usage
      */
-    public DistributedQueryBusConfiguration queryExecutorService(@Nonnull ExecutorService executorService) {
+    public DistributedQueryBusConfiguration queryExecutorService(ExecutorService executorService) {
         Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
         return new DistributedQueryBusConfiguration((config, queue) -> executorService,
                                                     queue,

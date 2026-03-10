@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -44,21 +43,20 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
      * @param evolver the evolver to evolve the parent entity based on the child entity.
      */
     public GetterEvolverChildEntityFieldDefinition(
-            @Nonnull Function<P, F> getter,
-            @Nonnull BiFunction<P, F, P> evolver
+            Function<P, F> getter,
+            BiFunction<P, F, P> evolver
     ) {
         this.getter = Objects.requireNonNull(getter, "The getter may not be null.");
         this.evolver = Objects.requireNonNull(evolver, "The evolver may not be null.");
     }
 
-    @Nonnull
     @Override
-    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+    public P evolveParentBasedOnChildInput(P parentEntity, F childInput) {
         return evolver.apply(parentEntity, childInput);
     }
 
     @Override
-    public F getChildValue(@Nonnull P parentEntity) {
+    public F getChildValue(P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

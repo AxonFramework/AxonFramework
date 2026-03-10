@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventsourcing.AbstractAggregateFactory;
@@ -125,12 +124,12 @@ public class SpringPrototypeAggregateFactory<T>
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
+    public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
     @Override
-    public void setBeanName(@Nonnull String beanName) {
+    public void setBeanName(String beanName) {
         this.beanName = beanName;
     }
 

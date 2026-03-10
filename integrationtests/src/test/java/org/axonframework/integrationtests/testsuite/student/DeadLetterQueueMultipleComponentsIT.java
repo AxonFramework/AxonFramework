@@ -16,20 +16,20 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -323,9 +323,9 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
             return MessageStream.<Message>empty().cast();
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             var converter = context.component(Converter.class);
             var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
             return payload.studentId();

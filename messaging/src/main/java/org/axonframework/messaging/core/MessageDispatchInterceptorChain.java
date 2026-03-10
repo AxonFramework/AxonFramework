@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -44,6 +43,5 @@ public interface MessageDispatchInterceptorChain<M extends Message> {
      * @param context The active processing context, if any. Can be used to (e.g.) validate correlation data.
      * @return A {@link MessageStream} containing the result of processing the given {@code message}.
      */
-    @Nonnull
-    MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context);
+    MessageStream<?> proceed(M message, @Nullable ProcessingContext context);
 }

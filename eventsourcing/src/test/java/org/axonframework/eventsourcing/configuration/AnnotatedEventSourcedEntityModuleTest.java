@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.StubLifecycleRegistry;
@@ -202,9 +202,9 @@ class AnnotatedEventSourcedEntityModuleTest {
     static class CustomCriteriaResolverDefinition implements CriteriaResolverDefinition {
 
         @Override
-        public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(@Nonnull Class<E> entityType,
-                                                                        @Nonnull Class<ID> idType,
-                                                                        @Nonnull Configuration configuration) {
+        public <E, ID> @NonNull CriteriaResolver<ID> createEventCriteriaResolver(@NonNull Class<E> entityType,
+                                                                                 @NonNull Class<ID> idType,
+                                                                                 @NonNull Configuration configuration) {
             assertInstanceOf(Configuration.class, configuration);
             return new CustomCriteriaResolver<>();
         }
@@ -212,9 +212,9 @@ class AnnotatedEventSourcedEntityModuleTest {
 
     private static class CustomCriteriaResolver<ID> implements CriteriaResolver<ID> {
 
-        @Nonnull
+        @NonNull
         @Override
-        public EventCriteria resolve(@Nonnull ID id, @Nonnull ProcessingContext context) {
+        public EventCriteria resolve(@NonNull ID id, @NonNull ProcessingContext context) {
             return EventCriteria.havingAnyTag();
         }
     }
@@ -228,11 +228,11 @@ class AnnotatedEventSourcedEntityModuleTest {
             implements EventSourcedEntityFactoryDefinition<CustomEntityFactoryCourse, CourseId> {
 
         @Override
-        public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
-                @Nonnull Class<CustomEntityFactoryCourse> entityType,
-                @Nonnull Set<Class<? extends CustomEntityFactoryCourse>> entitySubTypes,
-                @Nonnull Class<CourseId> idType,
-                @Nonnull Configuration configuration
+        public @NonNull EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
+                @NonNull Class<CustomEntityFactoryCourse> entityType,
+                @NonNull Set<Class<? extends CustomEntityFactoryCourse>> entitySubTypes,
+                @NonNull Class<CourseId> idType,
+                @NonNull Configuration configuration
         ) {
             return new CustomEventSourcedEntityFactory();
         }
@@ -243,8 +243,8 @@ class AnnotatedEventSourcedEntityModuleTest {
 
         @Override
         public @Nullable CustomEntityFactoryCourse create(
-                @Nonnull CourseId courseId,
-                @Nullable EventMessage firstEventMessage, @Nonnull ProcessingContext context) {
+                @NonNull CourseId courseId,
+                @Nullable EventMessage firstEventMessage, @NonNull ProcessingContext context) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

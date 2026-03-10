@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.core.configuration.reflection.ParameterResolverFactoryUtils;
@@ -31,7 +30,7 @@ import org.axonframework.messaging.core.configuration.reflection.ParameterResolv
 public class InjectEntityParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
                 componentRegistry,
                 InjectEntityParameterResolverFactory::new

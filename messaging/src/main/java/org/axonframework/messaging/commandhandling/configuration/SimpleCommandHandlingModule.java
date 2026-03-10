@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
@@ -54,7 +53,7 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
     private final Map<QualifiedName, ComponentBuilder<CommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
-    SimpleCommandHandlingModule(@Nonnull String moduleName) {
+    SimpleCommandHandlingModule(String moduleName) {
         super(requireNonNull(moduleName, "The module name cannot be null."));
         this.commandHandlingComponentName = "CommandHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
@@ -67,8 +66,8 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
     }
 
     @Override
-    public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                              @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder) {
+    public CommandHandlerPhase commandHandler(QualifiedName commandName,
+                                              ComponentBuilder<CommandHandler> commandHandlerBuilder) {
         handlerBuilders.put(requireNonNull(commandName, "The command name cannot be null."),
                             requireNonNull(commandHandlerBuilder, "The command handler builder cannot be null."));
         return this;
@@ -76,7 +75,7 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
 
     @Override
     public CommandHandlerPhase commandHandlingComponent(
-            @Nonnull ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
+            ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
     ) {
         handlingComponentBuilders.add(
                 requireNonNull(handlingComponentBuilder, "The command handling component builder cannot be null.")

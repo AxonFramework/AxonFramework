@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.util.PriorityRunnable;
@@ -69,9 +68,9 @@ public class DistributedCommandBus implements CommandBus {
      * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor and the
      *                      {@code ExecutorServiceFactory} for this bus.
      */
-    public DistributedCommandBus(@Nonnull CommandBus localSegment,
-                                 @Nonnull CommandBusConnector connector,
-                                 @Nonnull DistributedCommandBusConfiguration configuration) {
+    public DistributedCommandBus(CommandBus localSegment,
+                                 CommandBusConnector connector,
+                                 DistributedCommandBusConfiguration configuration) {
         this.localSegment = Objects.requireNonNull(localSegment, "The given CommandBus localSegment cannot be null.");
         this.connector = Objects.requireNonNull(connector, "The given Connector cannot be null.");
         this.loadFactor = configuration.loadFactor();
@@ -81,8 +80,8 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public DistributedCommandBus subscribe(@Nonnull QualifiedName name,
-                                           @Nonnull CommandHandler handler) {
+    public DistributedCommandBus subscribe(QualifiedName name,
+                                           CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "The given handler cannot be null.");
         localSegment.subscribe(name, commandHandler);
         FutureUtils.joinAndUnwrap(connector.subscribe(name, loadFactor));
@@ -90,13 +89,13 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return connector.dispatch(command, processingContext);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(localSegment);
         descriptor.describeProperty("connector", connector);
     }
@@ -106,8 +105,8 @@ public class DistributedCommandBus implements CommandBus {
         private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public void handle(@Nonnull CommandMessage commandMessage,
-                           @Nonnull CommandBusConnector.ResultCallback callback) {
+        public void handle(CommandMessage commandMessage,
+                           CommandBusConnector.ResultCallback callback) {
             int priority = commandMessage.priority().orElse(0);
             if (logger.isDebugEnabled()) {
                 logger.debug("Received command [{}] for processing with priority [{}] and routing key [{}]",

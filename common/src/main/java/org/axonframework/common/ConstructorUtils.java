@@ -16,8 +16,6 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nonnull;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -44,7 +42,7 @@ public final class ConstructorUtils {
      * @param <T>  The type of object to construct.
      * @return A function that constructs an instance of the given type using the zero-argument constructor.
      */
-    public static <T> Supplier<T> getConstructorFunctionWithZeroArguments(@Nonnull Class<T> type) {
+    public static <T> Supplier<T> getConstructorFunctionWithZeroArguments(Class<T> type) {
         try {
             Constructor<T> constructor = type.getDeclaredConstructor();
             ReflectionUtils.ensureAccessible(constructor);
@@ -70,15 +68,15 @@ public final class ConstructorUtils {
      * of the given class, or alternatively using a zero-argument constructor.
      */
     public static <T, A> Function<A, T> factoryForTypeWithOptionalArgument(
-            @Nonnull Class<T> type,
-            @Nonnull Class<? extends A> argumentClass) {
+            Class<T> type,
+            Class<? extends A> argumentClass) {
         Constructor<T> constructor = getConstructorWithOptionalArgumentOfType(type, argumentClass);
         return arg -> doConstructionWithOptionalArgument(type, arg, constructor);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Constructor<T> getConstructorWithOptionalArgumentOfType(@Nonnull Class<T> type,
-                                                                               @Nonnull Class<?> argument) {
+    private static <T> Constructor<T> getConstructorWithOptionalArgumentOfType(Class<T> type,
+                                                                               Class<?> argument) {
         return (Constructor<T>) Arrays
                 .stream(type.getDeclaredConstructors())
                 .filter(constructor -> constructorHasZeroOrExactlyThisArgument(constructor, argument))
@@ -88,8 +86,8 @@ public final class ConstructorUtils {
                                 .formatted(type.getName(), argument.getName())));
     }
 
-    private static boolean constructorHasZeroOrExactlyThisArgument(@Nonnull Constructor<?> constructor,
-                                                                   @Nonnull Class<?> argument) {
+    private static boolean constructorHasZeroOrExactlyThisArgument(Constructor<?> constructor,
+                                                                   Class<?> argument) {
         if (constructor.getParameterCount() == 0) {
             return true;
         }

@@ -16,9 +16,14 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.sequencing.FullConcurrencyPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.sequencing.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +43,7 @@ import static java.lang.String.format;
  * @since 4.10.0
  */
 public class PersistentStreamSequencingPolicyProvider
-        implements Function<Configuration, SequencingPolicy> {
+        implements Function<Configuration, SequencingPolicy<? super EventMessage>> {
 
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
@@ -95,11 +100,11 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     @Override
-    public SequencingPolicy apply(Configuration configuration) {
+    public SequencingPolicy<? super EventMessage> apply(Configuration configuration) {
         return (event, context) -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
-    private Object sequencingIdentifier(EventMessage event) {
+    private Object sequencingIdentifier(Message event) {
         if (SEQUENTIAL_PER_AGGREGATE_POLICY.equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage) event).getAggregateIdentifier();

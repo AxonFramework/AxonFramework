@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -65,9 +64,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * with a {@link DeadLetterQueueOverflowException} when this queue
      * {@link #isFull(Object, ProcessingContext) is full}.
      */
-    @Nonnull
-    CompletableFuture<Void> enqueue(@Nonnull Object sequenceIdentifier,
-                                    @Nonnull DeadLetter<? extends M> letter,
+    CompletableFuture<Void> enqueue(Object sequenceIdentifier,
+                                    DeadLetter<? extends M> letter,
                                     @Nullable ProcessingContext context);
 
     /**
@@ -85,10 +83,9 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * completes with {@code false}. The future completes exceptionally with a {@link DeadLetterQueueOverflowException}
      * when this queue is {@link #isFull(Object, ProcessingContext)} for the given {@code sequenceIdentifier}.
      */
-    @Nonnull
     default CompletableFuture<Boolean> enqueueIfPresent(
-            @Nonnull Object sequenceIdentifier,
-            @Nonnull Supplier<DeadLetter<? extends M>> letterBuilder,
+            Object sequenceIdentifier,
+            Supplier<DeadLetter<? extends M>> letterBuilder,
             @Nullable ProcessingContext context
     ) {
         return contains(sequenceIdentifier, context)
@@ -109,8 +106,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param context the processing context within which to evict the given {@code letter}
      * @return A {@link CompletableFuture} that completes when the eviction is done.
      */
-    @Nonnull
-    CompletableFuture<Void> evict(@Nonnull DeadLetter<? extends M> letter,
+    CompletableFuture<Void> evict(DeadLetter<? extends M> letter,
                                   @Nullable ProcessingContext context);
 
     /**
@@ -129,9 +125,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} that completes when the requeue is done. The future completes exceptionally
      * with a {@link NoSuchDeadLetterException} if the given {@code letter} does not exist in the queue.
      */
-    @Nonnull
-    CompletableFuture<Void> requeue(@Nonnull DeadLetter<? extends M> letter,
-                                    @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater,
+    CompletableFuture<Void> requeue(DeadLetter<? extends M> letter,
+                                    UnaryOperator<DeadLetter<? extends M>> letterUpdater,
                                     @Nullable ProcessingContext context);
 
     /**
@@ -143,8 +138,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} with {@code true} if there are {@link DeadLetter dead letters} present for
      * the given {@code sequenceIdentifier}, {@code false} otherwise.
      */
-    @Nonnull
-    CompletableFuture<Boolean> contains(@Nonnull Object sequenceIdentifier,
+    CompletableFuture<Boolean> contains(Object sequenceIdentifier,
                                         @Nullable ProcessingContext context);
 
     /**
@@ -155,8 +149,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} with all the {@link DeadLetter dead letters} for the given
      * {@code sequenceIdentifier} in insert order.
      */
-    @Nonnull
-    CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(@Nonnull Object sequenceIdentifier,
+    CompletableFuture<Iterable<DeadLetter<? extends M>>> deadLetterSequence(Object sequenceIdentifier,
                                                                             @Nullable ProcessingContext context);
 
     /**
@@ -166,7 +159,6 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with all {@link DeadLetter dead letter} sequences held by this queue.
      */
-    @Nonnull
     CompletableFuture<Iterable<Iterable<DeadLetter<? extends M>>>> deadLetters(@Nullable ProcessingContext context);
 
     /**
@@ -180,8 +172,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} with {@code true} either when the limit of this queue is reached. Contains
      * {@code false} otherwise.
      */
-    @Nonnull
-    CompletableFuture<Boolean> isFull(@Nonnull Object sequenceIdentifier,
+    CompletableFuture<Boolean> isFull(Object sequenceIdentifier,
                                       @Nullable ProcessingContext context);
 
     /**
@@ -190,7 +181,6 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with the number of dead letters contained in this queue.
      */
-    @Nonnull
     CompletableFuture<Long> size(@Nullable ProcessingContext context);
 
     /**
@@ -205,8 +195,7 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @return A {@link CompletableFuture} with the number of dead letters for the sequence matching the given
      * {@code sequenceIdentifier}.
      */
-    @Nonnull
-    CompletableFuture<Long> sequenceSize(@Nonnull Object sequenceIdentifier,
+    CompletableFuture<Long> sequenceSize(Object sequenceIdentifier,
                                          @Nullable ProcessingContext context);
 
     /**
@@ -218,7 +207,6 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} with the number of unique sequences contained in this queue.
      */
-    @Nonnull
     CompletableFuture<Long> amountOfSequences(@Nullable ProcessingContext context);
 
     /**
@@ -249,10 +237,9 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * was processed successfully, {@code false} otherwise. This means the {@code processingTask} processed all
      * {@link DeadLetter dead letters} of a sequence and the outcome was to evict each instance.
      */
-    @Nonnull
     CompletableFuture<Boolean> process(
-            @Nonnull Predicate<DeadLetter<? extends M>> sequenceFilter,
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            Predicate<DeadLetter<? extends M>> sequenceFilter,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context);
 
     /**
@@ -280,9 +267,8 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * was processed successfully, {@code false} otherwise. This means the {@code processingTask} processed all
      * {@link DeadLetter dead letters} of a sequence and the outcome was to evict each instance.
      */
-    @Nonnull
     default CompletableFuture<Boolean> process(
-            @Nonnull Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> processingTask,
             @Nullable ProcessingContext context
     ) {
         return process(letter -> true, processingTask, context);
@@ -294,6 +280,5 @@ public interface SequencedDeadLetterQueue<M extends Message> {
      * @param context the {@link ProcessingContext} wherein <b>this</b> operation is invoked, if any
      * @return A {@link CompletableFuture} that completes when all dead letters have been cleared.
      */
-    @Nonnull
     CompletableFuture<Void> clear(@Nullable ProcessingContext context);
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
 
@@ -36,5 +35,5 @@ public interface ForwardingCommandHandlingMember<T> extends CommandHandlingMembe
      * @param target  The target to forward the command message.
      * @return {@code true} if this handler can forward command to target entity, {@code false} otherwise.
      */
-    boolean canForward(@Nonnull CommandMessage message, @Nonnull T target);
+    boolean canForward(CommandMessage message, T target);
 }

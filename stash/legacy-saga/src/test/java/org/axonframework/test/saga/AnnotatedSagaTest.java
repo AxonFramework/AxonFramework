@@ -25,8 +25,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.*;
-import static org.hamcrest.CoreMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

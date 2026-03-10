@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.common.annotation.Internal;
@@ -48,7 +47,7 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
     public static final int DISTRIBUTED_COMMAND_BUS_ORDER = InterceptingCommandBus.DECORATION_ORDER - 50;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         if (componentRegistry.hasComponent(CommandBusConnector.class)) {
             componentRegistry
                     .registerIfNotPresent(

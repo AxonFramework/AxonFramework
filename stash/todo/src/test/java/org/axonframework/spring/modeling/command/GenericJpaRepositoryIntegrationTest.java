@@ -18,31 +18,31 @@ package org.axonframework.spring.modeling.command;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;
 import org.axonframework.messaging.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -65,6 +65,7 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -91,7 +92,9 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         eventProcessor = new SubscribingEventProcessor(
                 "test",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                new SubscribingEventProcessorConfiguration().eventSource(eventBus)
+                new SubscribingEventProcessorConfiguration(
+                        new EventProcessorConfiguration("test", null)
+                ).eventSource(eventBus)
         );
         FutureUtils.joinAndUnwrap(eventProcessor.start());
     }
@@ -165,7 +168,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public @NonNull Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
         this.capturedEvents.add(event);
         return null;
     }
@@ -234,7 +237,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
         @Bean("mockEventBus")
         public EventBus mockEventBus() {
-            return Mockito.mock(EventBus.class);
+            return mock(EventBus.class);
         }
 
         @Bean

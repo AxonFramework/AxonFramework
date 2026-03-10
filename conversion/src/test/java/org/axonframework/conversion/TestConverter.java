@@ -21,8 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.conversion.jackson2.Jackson2Converter;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 import java.beans.ConstructorProperties;
 import java.util.Collection;
@@ -46,19 +47,26 @@ public enum TestConverter {
     },
     CBOR {
         private final Converter converter = new JacksonConverter(
-                CBORMapper
-                        .builder()
-                        .findAndAddModules()
-                        .build());
+                CBORMapper.builder().findAndAddModules().build()
+        );
 
         @Override
         public Converter getConverter() {
             return converter;
         }
     },
-    JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS {
-        private final Converter converter =
-                new JacksonConverter(OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper()));
+    JACKSON2 {
+        private final Converter converter = new Jackson2Converter();
+
+        @Override
+        public Converter getConverter() {
+            return converter;
+        }
+    },
+    JACKSON2_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS {
+        private final Converter converter = new Jackson2Converter(
+                OnlyAcceptConstructorPropertiesAnnotation.attachTo(new ObjectMapper())
+        );
 
         @Override
         public Converter getConverter() {

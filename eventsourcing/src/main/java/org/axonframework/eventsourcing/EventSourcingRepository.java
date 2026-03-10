@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import  jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -76,12 +75,12 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      *                         stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
-    public EventSourcingRepository(@Nonnull Class<ID> idType,
-                                   @Nonnull Class<E> entityType,
-                                   @Nonnull EventStore eventStore,
-                                   @Nonnull EventSourcedEntityFactory<ID, E> entityFactory,
-                                   @Nonnull CriteriaResolver<ID> criteriaResolver,
-                                   @Nonnull EntityEvolver<E> entityEvolver) {
+    public EventSourcingRepository(Class<ID> idType,
+                                   Class<E> entityType,
+                                   EventStore eventStore,
+                                   EventSourcedEntityFactory<ID, E> entityFactory,
+                                   CriteriaResolver<ID> criteriaResolver,
+                                   EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
@@ -91,8 +90,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity,
-                                       @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity,
+                                       ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -105,21 +104,19 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         ).resultNow();
     }
 
-    @Nonnull
     @Override
     public Class<E> entityType() {
         return entityType;
     }
 
-    @Nonnull
     @Override
     public Class<ID> idType() {
         return idType;
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                        ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -130,8 +127,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                                ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -167,9 +164,9 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@Nonnull ID identifier,
-                                        @Nonnull E entity,
-                                        @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(ID identifier,
+                                        E entity,
+                                        ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(identifier, id -> {
@@ -208,7 +205,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("idType", idType);
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);

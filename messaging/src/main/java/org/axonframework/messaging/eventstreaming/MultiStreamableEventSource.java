@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
+import org.axonframework.messaging.core.DelegatingMessageStream;
 import org.axonframework.messaging.core.MergedMessageStream;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -101,12 +101,12 @@ public class MultiStreamableEventSource implements StreamableEventSource {
      * @param source     The first event source to include.
      * @return A SourceCollector for adding more sources and configuring the comparator.
      */
-    public static SourceCollector combining(@Nonnull String sourceName, @Nonnull StreamableEventSource source) {
+    public static SourceCollector combining(String sourceName, StreamableEventSource source) {
         return new SourceCollectorImpl(sourceName, source);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+    public MessageStream<EventMessage> open(StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken == null) {
@@ -160,7 +160,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return createToken(s -> s.tokenAt(at, context)).thenApply(t -> t);
     }
 
@@ -199,7 +199,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
          * @return This SourceCollector for fluent chaining.
          * @throws IllegalArgumentException if the sourceName is already used.
          */
-        SourceCollector and(@Nonnull String sourceName, @Nonnull StreamableEventSource source);
+        SourceCollector and(String sourceName, StreamableEventSource source);
 
         /**
          * Creates a MultiStreamableEventSource using timestamp-based comparison (oldest event first). This is the
@@ -217,7 +217,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
          *                   is consumed first.
          * @return A configured MultiStreamableEventSource instance.
          */
-        MultiStreamableEventSource comparingUsing(@Nonnull Comparator<MessageStream.Entry<EventMessage>> comparator);
+        MultiStreamableEventSource comparingUsing(Comparator<MessageStream.Entry<EventMessage>> comparator);
     }
 
     /**
@@ -239,7 +239,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         }
 
         @Override
-        public SourceCollector and(@Nonnull String sourceName, @Nonnull StreamableEventSource source) {
+        public SourceCollector and(String sourceName, StreamableEventSource source) {
             addSource(sourceName, source);
             return this;
         }
@@ -259,26 +259,25 @@ public class MultiStreamableEventSource implements StreamableEventSource {
 
         @Override
         public MultiStreamableEventSource comparingUsing(
-                @Nonnull Comparator<MessageStream.Entry<EventMessage>> comparator) {
+                Comparator<MessageStream.Entry<EventMessage>> comparator) {
             Objects.requireNonNull(comparator, "comparator must not be null");
             return new MultiStreamableEventSource(eventSourceMap, comparator);
         }
     }
 
-    private class MultiStreamEventStream implements MessageStream<EventMessage> {
+    private class MultiStreamEventStream extends DelegatingMessageStream<EventMessage, EventMessage> {
 
         private final AtomicReference<MultiSourceTrackingToken> currentToken;
-        private final MessageStream<EventMessage> delegate;
 
         public MultiStreamEventStream(
                 MultiSourceTrackingToken token, MessageStream<EventMessage> delegate) {
+            super(delegate);
             this.currentToken = new AtomicReference<>(token);
-            this.delegate = delegate;
         }
 
         @Override
         public Optional<Entry<EventMessage>> next() {
-            return delegate.next().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
+            return delegate().next().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
                                                            currentToken.updateAndGet(t -> t.advancedTo(e.getResource(
                                                                                                                SOURCE_ID_RESOURCE),
                                                                                                        e.getResource(
@@ -287,35 +286,10 @@ public class MultiStreamableEventSource implements StreamableEventSource {
 
         @Override
         public Optional<Entry<EventMessage>> peek() {
-            return delegate.peek().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
+            return delegate().peek().map(e -> e.withResource(TrackingToken.RESOURCE_KEY,
                                                            currentToken.get()
                                                                        .advancedTo(e.getResource(SOURCE_ID_RESOURCE),
                                                                                    e.getResource(TrackingToken.RESOURCE_KEY))));
-        }
-
-        @Override
-        public void setCallback(@Nonnull Runnable callback) {
-            delegate.setCallback(callback);
-        }
-
-        @Override
-        public Optional<Throwable> error() {
-            return delegate.error();
-        }
-
-        @Override
-        public boolean isCompleted() {
-            return delegate.isCompleted();
-        }
-
-        @Override
-        public boolean hasNextAvailable() {
-            return delegate.hasNextAvailable();
-        }
-
-        @Override
-        public void close() {
-            delegate.close();
         }
     }
 }

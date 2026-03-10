@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 
@@ -44,7 +43,7 @@ public class HierarchicalStateManagerConfigurationEnhancer implements Configurat
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         componentRegistry.registerDecorator(
                 StateManager.class,
                 Integer.MAX_VALUE,

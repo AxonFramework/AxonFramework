@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -81,10 +80,10 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      * @param context             The {@code ProcessingContext} within which update are emitted, subscription query are
      *                            completed, and subscription queries are completed exceptionally in.
      */
-    public SimpleQueryUpdateEmitter(@Nonnull QueryBus queryBus,
-                                    @Nonnull MessageTypeResolver messageTypeResolver,
-                                    @Nonnull MessageConverter converter,
-                                    @Nonnull ProcessingContext context) {
+    public SimpleQueryUpdateEmitter(QueryBus queryBus,
+                                    MessageTypeResolver messageTypeResolver,
+                                    MessageConverter converter,
+                                    ProcessingContext context) {
         this.queryBus = requireNonNull(queryBus, "The QueryBus must not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
         this.converter = requireNonNull(converter, "The MessageConverter must not be null.");
@@ -92,9 +91,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <Q> void emit(@Nonnull Class<Q> queryType,
-                         @Nonnull Predicate<? super Q> filter,
-                         @Nonnull Supplier<Object> updateSupplier) {
+    public <Q> void emit(Class<Q> queryType,
+                         Predicate<? super Q> filter,
+                         Supplier<Object> updateSupplier) {
         if (logger.isDebugEnabled()) {
             logger.debug("Emitting an update to queries matching type [{}] and a given filter.", queryType);
         }
@@ -103,9 +102,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void emit(@Nonnull QualifiedName queryName,
-                     @Nonnull Predicate<Object> filter,
-                     @Nonnull Supplier<Object> updateSupplier) {
+    public void emit(QualifiedName queryName,
+                     Predicate<Object> filter,
+                     Supplier<Object> updateSupplier) {
         if (logger.isDebugEnabled()) {
             logger.debug("Emitting an update to queries matching name [{}] and a given filter.", queryName);
         }
@@ -123,7 +122,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
+    public <Q> void complete(Class<Q> queryType, Predicate<? super Q> filter) {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}].", queryType);
         }
@@ -132,7 +131,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void complete(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter) {
+    public void complete(QualifiedName queryName, Predicate<Object> filter) {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries with name [{}].", queryName);
         }
@@ -141,9 +140,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
-                                          @Nonnull Predicate<? super Q> filter,
-                                          @Nonnull Throwable cause) {
+    public <Q> void completeExceptionally(Class<Q> queryType,
+                                          Predicate<? super Q> filter,
+                                          Throwable cause) {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}] exceptionally.", queryType, cause);
         }
@@ -152,9 +151,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void completeExceptionally(@Nonnull QualifiedName queryName,
-                                      @Nonnull Predicate<Object> filter,
-                                      @Nonnull Throwable cause) {
+    public void completeExceptionally(QualifiedName queryName,
+                                      Predicate<Object> filter,
+                                      Throwable cause) {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries with name [{}] exceptionally.", queryName, cause);
         }
@@ -162,15 +161,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                 .join();
     }
 
-    @Nonnull
-    private static Predicate<QueryMessage> queryNameFilter(@Nonnull QualifiedName queryName,
-                                                           @Nonnull Predicate<Object> filter) {
+        private static Predicate<QueryMessage> queryNameFilter(QualifiedName queryName,
+                                                           Predicate<Object> filter) {
         return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
     }
 
-    @Nonnull
-    private <Q> Predicate<QueryMessage> queryTypeFilter(@Nonnull Class<Q> queryType,
-                                                        @Nonnull Predicate<? super Q> filter) {
+    private <Q> Predicate<QueryMessage> queryTypeFilter(Class<Q> queryType,
+                                                        Predicate<? super Q> filter) {
         return message -> {
             QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
             return queryName.equals(message.type().qualifiedName())
@@ -179,7 +176,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("queryBus", queryBus);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
         descriptor.describeProperty("converter", converter);

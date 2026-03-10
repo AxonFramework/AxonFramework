@@ -16,9 +16,10 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,8 +51,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
      * @param key      The {@link ResourceKey} to override in the {@code delegate} {@link ProcessingContext}.
      * @param resource The resource of type {@code R} that's overridden with the given {@code key}.
      */
-    public ResourceOverridingProcessingContext(@Nonnull ProcessingContext delegate,
-                                               @Nonnull ResourceKey<R> key, R resource) {
+    public ResourceOverridingProcessingContext(ProcessingContext delegate,
+                                               ResourceKey<R> key, R resource) {
         this.delegate = delegate;
         this.key = key;
         this.resource = new AtomicReference<>(resource);
@@ -78,111 +79,129 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public ProcessingLifecycle on(@Nonnull Phase phase, @Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.on(phase, action);
+    public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.on(phase, ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOn(@Nonnull Phase phase, @Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOn(phase, action);
+    public ProcessingLifecycle runOn(Phase phase, Consumer<ProcessingContext> action) {
+        delegate.runOn(phase, ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onPreInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPreInvocation(action);
+    public ProcessingLifecycle onPreInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onPreInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnPreInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPreInvocation(action);
+    public ProcessingLifecycle runOnPreInvocation(Consumer<ProcessingContext> action) {
+        delegate.runOnPreInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onInvocation(action);
+    public ProcessingLifecycle onInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnInvocation(action);
+    public ProcessingLifecycle runOnInvocation(Consumer<ProcessingContext> action) {
+        delegate.runOnInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onPostInvocation(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPostInvocation(action);
+    public ProcessingLifecycle onPostInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onPostInvocation(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnPostInvocation(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPostInvocation(action);
+    public ProcessingLifecycle runOnPostInvocation(Consumer<ProcessingContext> action) {
+        delegate.runOnPostInvocation(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onPrepareCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onPrepareCommit(action);
+    public ProcessingLifecycle onPrepareCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onPrepareCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnPrepareCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnPrepareCommit(action);
+    public ProcessingLifecycle runOnPrepareCommit(Consumer<ProcessingContext> action) {
+        delegate.runOnPrepareCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onCommit(action);
+    public ProcessingLifecycle onCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnCommit(action);
+    public ProcessingLifecycle runOnCommit(Consumer<ProcessingContext> action) {
+        delegate.runOnCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onAfterCommit(@Nonnull Function<ProcessingContext, CompletableFuture<?>> action) {
-        return delegate.onAfterCommit(action);
+    public ProcessingLifecycle onAfterCommit(Function<ProcessingContext, CompletableFuture<?>> action) {
+        delegate.onAfterCommit(ignoredContext -> action.apply(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle runOnAfterCommit(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.runOnAfterCommit(action);
+    public ProcessingLifecycle runOnAfterCommit(Consumer<ProcessingContext> action) {
+        delegate.runOnAfterCommit(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle onError(@Nonnull ErrorHandler action) {
-        return delegate.onError(action);
+    public ProcessingLifecycle onError(ErrorHandler action) {
+        delegate.onError((ignoredContext, phase, error) -> action.handle(this, phase, error));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.whenComplete(action);
+    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+        delegate.whenComplete(ignoredContext -> action.accept(this));
+        return this;
     }
 
     @Override
-    public ProcessingLifecycle doFinally(@Nonnull Consumer<ProcessingContext> action) {
-        return delegate.doFinally(action);
+    public ProcessingLifecycle doFinally(Consumer<ProcessingContext> action) {
+        onError((context, phase, error) -> action.accept(context));
+        whenComplete(action);
+        return this;
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(ResourceKey<?> key) {
         return this.key.equals(key) || delegate.containsResource(key);
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(ResourceKey<T> key) {
         //noinspection unchecked
         return this.key.equals(key) ? (T) resource.get() : delegate.getResource(key);
     }
 
     @Override
     public Map<ResourceKey<?>, Object> resources() {
-        var allResources = delegate.resources();
-        allResources.put(key, resource.get());
-        return allResources;
+        Map<ResourceKey<?>, Object> all = new HashMap<>(delegate.resources());
+        all.put(key, resource.get());
+        return Map.copyOf(all);
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key,
-                             @Nonnull T resource) {
+    public <T> T putResource(ResourceKey<T> key,
+                             T resource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) this.resource.getAndSet((R) resource)
@@ -190,8 +209,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key,
-                                @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(ResourceKey<T> key,
+                                UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? (T) resource.updateAndGet((UnaryOperator<R>) resourceUpdater)
@@ -199,8 +218,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                         @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(ResourceKey<T> key,
+                                         Supplier<T> resourceSupplier) {
         if (this.key.equals(key)) {
             //noinspection unchecked
             return (T) resource.updateAndGet(current -> current == null ? (R) resourceSupplier.get() : current);
@@ -209,8 +228,8 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                     @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(ResourceKey<T> key,
+                                     T resource) {
         if (this.key.equals(key)) {
             //noinspection unchecked
             return (T) this.resource.getAndUpdate(current -> current == null ? (R) resource : current);
@@ -219,7 +238,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+    public <T> T removeResource(ResourceKey<T> key) {
         if (!this.key.equals(key)) {
             return delegate.removeResource(key);
         }
@@ -228,23 +247,28 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nonnull T expectedResource) {
+    public <T> boolean removeResource(ResourceKey<T> key,
+                                      T expectedResource) {
         //noinspection unchecked
         return this.key.equals(key)
                 ? resource.compareAndSet((R) expectedResource, null)
                 : delegate.removeResource(key, expectedResource);
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type) {
+    public <C> C component(Class<C> type) {
         return delegate.component(type);
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         return delegate.component(type, name);
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceOverridingProcessingContext{"
+                + "delegate=" + delegate
+                + '}';
     }
 }

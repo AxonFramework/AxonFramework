@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -32,7 +31,7 @@ import org.axonframework.messaging.core.configuration.reflection.ParameterResolv
 public class CommandDispatcherParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
                 registry, config -> new CommandDispatcherParameterResolverFactory()
         );

@@ -16,7 +16,8 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.lifecycle.LifecycleHandlerInvocationException;
 import org.junit.jupiter.api.*;
@@ -164,6 +165,26 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
+    protected static class GenericTestComponent<T> {
+
+        private final T state;
+
+        protected GenericTestComponent(T state) {
+            this.state = state;
+        }
+
+        public T getState() {
+            return state;
+        }
+    }
+
+    protected static class StringTestComponent extends GenericTestComponent<String> {
+
+        protected StringTestComponent(String state) {
+            super(state);
+        }
+    }
+
     protected static class TestModule extends BaseModule<TestModule> {
 
         protected TestModule(String name) {
@@ -191,16 +212,16 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             this.shutdownInvoked = shutdownInvoked;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Class<TestComponent> forType() {
             return TestComponent.class;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Optional<Component<TestComponent>> construct(@Nonnull String name,
-                                                            @Nonnull Configuration config) {
+        public Optional<Component<TestComponent>> construct(@NonNull String name,
+                                                            @NonNull Configuration config) {
             if (construct.get()) {
                 return Optional.of(new InstantiatedComponentDefinition<>(
                         new Component.Identifier<>(forType(), name),
@@ -212,12 +233,12 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Override
-        public void registerShutdownHandlers(@Nonnull LifecycleRegistry registry) {
+        public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
             registry.onShutdown(() -> shutdownInvoked.set(true));
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             // Nothing to do here
         }
     }
@@ -540,6 +561,166 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // then
             assertThrows(UnsupportedOperationException.class, () -> result.put("new", TEST_COMPONENT));
+        }
+
+        @Test
+        void getUnnamedComponentsByTypeRefReturnsMatchingGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<String>>() {
+                                       })
+                                       .withInstance(exInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance, config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+            }));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+            assertFalse(config.<GenericTestComponent<Double>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+        }
+
+        @Test
+        void getNamedComponentsByTypeRefReturnsMatchingGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            String exComponentName = "stringComponent";
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<String>>() {
+                                       }, exComponentName)
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<Integer>>() {
+                                       }, "integerComponent")
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance, config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+            }, exComponentName));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, "otherStringComponent"));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, exComponentName).isPresent());
+            assertFalse(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, "otherStringComponent").isPresent());
+        }
+
+        @Test
+        @Disabled("TODO #4224 - not supported yet by DefaultComponentRegistry")
+        void getUnnamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<StringTestComponent>() {
+                                       })
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<Integer>>() {
+                                       })
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<Double>>getComponent(new TypeReference<>() {
+                         }));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+        }
+
+        @Test
+        @Disabled("TODO #4224 - not supported yet by DefaultComponentRegistry")
+        void getNamedComponentsByTypeRefReturnsMatchingSubtypeWithGenerics() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            GenericTestComponent<Integer> exOtherInstance = new GenericTestComponent<>(1234);
+            String exComponentName = "stringComponent";
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<StringTestComponent>() {
+                                       }, exComponentName)
+                                       .withInstance(exInstance);
+            ComponentDefinition<GenericTestComponent<Integer>> exOtherComponentDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericTestComponent<Integer>>() {
+                                       }, "integerComponent")
+                                       .withInstance(exOtherInstance);
+
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+            testSubject.componentRegistry(cr -> cr.registerComponent(exOtherComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }));
+            assertEquals(exInstance,
+                         config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, exComponentName));
+            assertThrows(ComponentNotFoundException.class,
+                         () -> config.<GenericTestComponent<String>>getComponent(new TypeReference<>() {
+                         }, "otherStringComponent"));
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }).isPresent());
+            assertTrue(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, exComponentName).isPresent());
+            assertFalse(config.<GenericTestComponent<String>>getOptionalComponent(new TypeReference<>() {
+            }, "otherStringComponent").isPresent());
+        }
+
+        @Test
+        void getComponentsByTypeRefDoesNotReturnDifferentGenericType() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<GenericTestComponent<String>> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericTestComponent<String>>() {
+                                       })
+                                       .withInstance(exInstance);
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+            assertThrows(
+                    ComponentNotFoundException.class,
+                    () -> config.getComponent(new TypeReference<GenericTestComponent<Double>>() {
+                    }));
+        }
+
+        @Test
+        void getComponentsByTypeRefDoesNotReturnDifferentGenericSubtype() {
+            // given
+            StringTestComponent exInstance = new StringTestComponent("state-abc");
+            ComponentDefinition<StringTestComponent> exComponentDef =
+                    ComponentDefinition.ofType(new TypeReference<StringTestComponent>() {
+                                       })
+                                       .withInstance(exInstance);
+            testSubject.componentRegistry(cr -> cr.registerComponent(exComponentDef));
+
+            // when / then
+            Configuration config = buildConfiguration();
+            assertThrows(
+                    ComponentNotFoundException.class,
+                    () -> config.getComponent(new TypeReference<GenericTestComponent<Double>>() {
+                    }));
         }
     }
 
@@ -1030,14 +1211,14 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerOne = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurationEnhancer enhancerTwo = spy(new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -1045,7 +1226,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerThree = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -1065,7 +1246,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
 
@@ -1078,7 +1259,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -1086,7 +1267,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
 
@@ -1229,7 +1410,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             ConfigurationEnhancer enhancerC = new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     enhancerCOrder.set(executionOrder.getAndIncrement());
                     registry.registerComponent(TestComponent.class, "C", c -> new TestComponent("C"));
                 }
@@ -1242,7 +1423,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             ConfigurationEnhancer enhancerB = new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     enhancerBOrder.set(executionOrder.getAndIncrement());
                     registry.registerComponent(TestComponent.class, "B", c -> new TestComponent("B"));
                 }
@@ -1255,7 +1436,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             ConfigurationEnhancer enhancerA = new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     enhancerAOrder.set(executionOrder.getAndIncrement());
                     registry.registerComponent(TestComponent.class, "A", c -> new TestComponent("A"));
                     // Register enhancerC with order=5, which should be invoked before enhancerB (order=10)
@@ -1294,7 +1475,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             ConfigurationEnhancer childEnhancer = new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     childEnhancerOrder.set(executionOrder.getAndIncrement());
                     registry.registerComponent(TestComponent.class, "child", c -> new TestComponent("child"));
                 }
@@ -1307,7 +1488,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             ConfigurationEnhancer parentEnhancer = new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     parentEnhancerOrder.set(executionOrder.getAndIncrement());
                     registry.registerComponent(TestComponent.class, "parent", c -> new TestComponent("parent"));
                     // Register child with order=5, which is lower than parent's order=10
@@ -1350,7 +1531,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class SecondEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         secondEnhancerInvoked.set(true);
                         registry.registerComponent(TestComponent.class, "second", c -> new TestComponent("second"));
                     }
@@ -1364,7 +1545,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class FirstEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         firstEnhancerInvoked.set(true);
                         registry.registerComponent(TestComponent.class, "first", c -> new TestComponent("first"));
                         // Disable SecondEnhancer which hasn't executed yet
@@ -1398,7 +1579,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class TargetEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         targetEnhancerInvoked.set(true);
                         registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
                     }
@@ -1443,7 +1624,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class HighOrderEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
                         registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
                     }
@@ -1457,7 +1638,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class LowOrderEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
                         registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
                         // Disable an enhancer that hasn't executed yet
@@ -1498,7 +1679,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class LowOrderEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         lowOrderEnhancerOrder.set(executionOrder.getAndIncrement());
                         registry.registerComponent(TestComponent.class, "low", c -> new TestComponent("low"));
                     }
@@ -1512,7 +1693,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class HighOrderEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         highOrderEnhancerOrder.set(executionOrder.getAndIncrement());
                         registry.registerComponent(TestComponent.class, "high", c -> new TestComponent("high"));
                         // Try to disable an enhancer that already executed
@@ -1553,7 +1734,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 class TargetEnhancer implements ConfigurationEnhancer {
 
                     @Override
-                    public void enhance(@Nonnull ComponentRegistry registry) {
+                    public void enhance(@NonNull ComponentRegistry registry) {
                         targetEnhancerInvoked.set(true);
                         registry.registerComponent(TestComponent.class, "target", c -> new TestComponent("target"));
                     }
@@ -1639,7 +1820,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
 
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 invoked.set(true);
             }
         }

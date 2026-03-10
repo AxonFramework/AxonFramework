@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QueueMessageStream;
 import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -39,7 +39,7 @@ class FlowControlledResponseSenderTest {
     private ReplyChannel<QueryResponse> stubDownstream;
     private FlowControlledResponseSender testSubject;
 
-    private static @NotNull GenericQueryResponseMessage newMessage() {
+    private static @NonNull GenericQueryResponseMessage newMessage() {
         return new GenericQueryResponseMessage(new MessageType(String.class), PAYLOAD);
     }
 

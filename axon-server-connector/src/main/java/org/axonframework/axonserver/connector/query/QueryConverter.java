@@ -26,8 +26,7 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
@@ -74,8 +73,7 @@ public final class QueryConverter {
      * the extracted payload, metadata, and expected response type.
      * @throws NullPointerException if the provided {@link QueryRequest} is null.
      */
-    @Nonnull
-    public static QueryMessage convertQueryRequest(@Nonnull QueryRequest queryRequest) {
+    static QueryMessage convertQueryRequest(QueryRequest queryRequest) {
         var payload = queryRequest.getPayload();
         Integer priority = ProcessingInstructionUtils.priority(queryRequest.getProcessingInstructionsList());
 
@@ -105,9 +103,9 @@ public final class QueryConverter {
      * metadata, payload, and other specific configurations from the original message.
      * @throws IllegalArgumentException if the payload of the {@link QueryMessage} is not of type {@code byte[]}.
      */
-    public static QueryRequest convertQueryMessage(@Nonnull QueryMessage query,
-                                                   @Nonnull String clientId,
-                                                   @Nonnull String componentName) {
+    public static QueryRequest convertQueryMessage(QueryMessage query,
+                                                   String clientId,
+                                                   String componentName) {
         Object payload = query.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -154,7 +152,7 @@ public final class QueryConverter {
      *                                  {@link ExceptionConverter#convertToAxonException(String, ErrorMessage,
      *                                  SerializedObject)}.
      */
-    public static QueryResponseMessage convertQueryResponse(@Nonnull QueryResponse queryResponse) {
+    public static QueryResponseMessage convertQueryResponse(QueryResponse queryResponse) {
         if (queryResponse.hasErrorMessage()) {
             throw new IllegalArgumentException("Query Response contained an error.");
         }
@@ -183,8 +181,8 @@ public final class QueryConverter {
      * @return A {@link QueryResponse} representation of the provided {@link QueryResponseMessage}. It includes the
      * identifier, metadata, and the serialized payload.
      */
-    public static QueryResponse convertQueryResponseMessage(@Nonnull String requestId,
-                                                            @Nonnull QueryResponseMessage queryResponseMessage) {
+    public static QueryResponse convertQueryResponseMessage(String requestId,
+                                                            QueryResponseMessage queryResponseMessage) {
         byte[] payload = Objects.requireNonNullElseGet(queryResponseMessage.payloadAs(byte[].class), () -> new byte[0]);
         return QueryResponse.newBuilder()
                             .setMessageIdentifier(queryResponseMessage.identifier())
@@ -210,7 +208,7 @@ public final class QueryConverter {
      * the processed payload, metadata, and response type.
      * @throws NullPointerException if the provided {@link SubscriptionQuery} is null.
      */
-    public static QueryMessage convertSubscriptionQueryMessage(@Nonnull SubscriptionQuery query) {
+    public static QueryMessage convertSubscriptionQueryMessage(SubscriptionQuery query) {
         SerializedObject responsePayload = query.getQueryRequest().getPayload();
         var message = new GenericMessage(
                 query.getSubscriptionIdentifier(),
@@ -234,7 +232,7 @@ public final class QueryConverter {
      * extracted payload, metadata, and other necessary information.
      * @throws NullPointerException if the provided {@link SubscriptionQueryUpdateMessage} is null.
      */
-    public static QueryUpdate convertQueryUpdate(@Nonnull SubscriptionQueryUpdateMessage update) {
+    public static QueryUpdate convertQueryUpdate(SubscriptionQueryUpdateMessage update) {
         byte[] payload = Objects.requireNonNullElseGet(update.payloadAs(byte[].class), () -> new byte[0]);
         return QueryUpdate.newBuilder()
                           .setMessageIdentifier(update.identifier())
@@ -253,7 +251,7 @@ public final class QueryConverter {
      * @param queryUpdate The {@link QueryUpdate} object to be converted; must not be null.
      * @return A {@link SubscriptionQueryUpdateMessage} created from the provided {@link QueryUpdate}.
      */
-    public static SubscriptionQueryUpdateMessage convertQueryUpdate(@Nonnull QueryUpdate queryUpdate) {
+    public static SubscriptionQueryUpdateMessage convertQueryUpdate(QueryUpdate queryUpdate) {
         SerializedObject payload = queryUpdate.getPayload();
         var message = new GenericMessage(
                 queryUpdate.getMessageIdentifier(),

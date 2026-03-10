@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventMessageHandler;
 
@@ -43,7 +42,7 @@ public interface ListenerInvocationErrorHandler {
      * @param eventHandler The listener that failed to handle given event
      * @throws Exception To stop further handling of the event
      */
-    void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
-                 @Nonnull EventMessageHandler eventHandler) throws Exception;
+    void onError(Exception exception, EventMessage event,
+                 EventMessageHandler eventHandler) throws Exception;
 
 }

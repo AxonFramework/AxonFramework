@@ -27,7 +27,6 @@ import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
  * Enhances message handlers with the provided {@link SpanFactory}, wrapping handling of the message in a {@link Span}
@@ -68,7 +67,7 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         if (!showEventSourcingHandlers && isEventSourcingHandler(original)) {
             return original;
         }
@@ -80,7 +79,7 @@ public class TracingHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
         String signature = toMethodSignature(unwrap.get());
         return new WrappedMessageHandlingMember<>(original) {
             @Override
-            public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
+            public Object handleSync(Message message, ProcessingContext context, T target)
                     throws Exception {
                 return spanFactory.createInternalSpan(() -> getSpanName(target, signature))
                                   .runCallable(() -> super.handleSync(message, context, target));

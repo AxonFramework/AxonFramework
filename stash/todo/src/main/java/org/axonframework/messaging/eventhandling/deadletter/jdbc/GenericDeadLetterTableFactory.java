@@ -56,8 +56,6 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.timestampColumn() + " " + timestampType() + " NOT NULL,\n" +
-                schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadColumn() + " " + serializedDataType() + " NOT NULL,\n" +
                 schema.metadataColumn() + " " + serializedDataType() + ",\n" +
                 schema.aggregateTypeColumn() + " VARCHAR(255),\n" +

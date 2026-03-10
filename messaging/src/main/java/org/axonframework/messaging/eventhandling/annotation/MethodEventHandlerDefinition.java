@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
@@ -45,7 +44,7 @@ import java.util.Optional;
 public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<String> optionalEventName = original.attribute(HandlerAttributes.EVENT_NAME);
         return original.unwrap(Method.class)
                        .filter(method -> AnnotationUtils.isAnnotationPresent(method, EventHandler.class))
@@ -83,7 +82,7 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return super.canHandle(message, context) && message instanceof EventMessage;
         }
 

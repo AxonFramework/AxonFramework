@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -37,5 +36,5 @@ public interface TagResolver {
      * @param event The event to resolve a {@link Set} of {@link Tag Tags} for.
      * @return A {@link Set} of {@link Tag Tags} for the given {@code event}.
      */
-    Set<Tag> resolve(@Nonnull EventMessage event);
+    Set<Tag> resolve(EventMessage event);
 }

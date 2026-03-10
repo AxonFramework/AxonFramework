@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.function.Function;
@@ -49,8 +48,7 @@ public interface MessageDispatchInterceptor<M extends Message> {
      * @return The resulting message stream from
      * {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}.
      */
-    @Nonnull
-    MessageStream<?> interceptOnDispatch(@Nonnull M message,
+    MessageStream<?> interceptOnDispatch(M message,
                                          @Nullable ProcessingContext context,
-                                         @Nonnull MessageDispatchInterceptorChain<M> interceptorChain);
+                                         MessageDispatchInterceptorChain<M> interceptorChain);
 }

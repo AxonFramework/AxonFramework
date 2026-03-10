@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -70,9 +70,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link Tag Tags}, before it is added to the
      *                           transaction.
      */
-    public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext,
-                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
+    public DefaultEventStoreTransaction(EventStorageEngine eventStorageEngine,
+                                        ProcessingContext processingContext,
+                                        Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
@@ -84,7 +84,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<? extends EventMessage> source(
+        SourcingCondition condition,
+        @Nullable Consumer<Position> resumePositionCallback
+    ) {
         var appendCondition = processingContext.updateResource(
                 appendConditionKey,
                 ac -> ac == null
@@ -104,7 +107,15 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                          }
                      })
                      .filter(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
-                     .onComplete(() -> updateAppendPosition(markerReference));
+                     .onComplete(() -> {
+                         ConsistencyMarker marker = markerReference.get();
+
+                         updateAppendPosition(marker);
+
+                         if (resumePositionCallback != null) {
+                             resumePositionCallback.accept(marker.position());
+                         }
+                     });
     }
 
     /**
@@ -112,21 +123,21 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * multiple times, the lowest consistency marker that we received from those streams (usually the first), is the
      * safest one to use.
      */
-    private void updateAppendPosition(AtomicReference<ConsistencyMarker> markerReference) {
+    private void updateAppendPosition(ConsistencyMarker marker) {
         processingContext.updateResource(
                 appendPositionKey,
                 current -> {
                     if (current == null || current == ConsistencyMarker.ORIGIN) {
                         // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
-                        return markerReference.get();
+                        return marker;
                     }
                     // We received a stream of events, while we already sourced before. The lowest of the two is the safest to use.
-                    return current.lowerBound(markerReference.get());
+                    return current.lowerBound(marker);
                 });
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage eventMessage) {
+    public void appendEvent(EventMessage eventMessage) {
         List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
@@ -178,7 +189,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void onAppend(@Nonnull Consumer<EventMessage> callback) {
+    public void onAppend(Consumer<EventMessage> callback) {
         callbacks.add(callback);
     }
 

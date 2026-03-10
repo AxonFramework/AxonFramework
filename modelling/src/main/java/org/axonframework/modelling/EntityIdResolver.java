@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -45,6 +44,5 @@ public interface EntityIdResolver<ID> {
      * @return The id of the entity.
      * @throws EntityIdResolutionException When the id could not be resolved.
      */
-    @Nonnull
-    ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException;
+    ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException;
 }

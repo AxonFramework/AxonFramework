@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.StringUtils;
 
@@ -41,7 +40,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String version) {
+public record MessageType(QualifiedName qualifiedName, String version) {
 
     /**
      * The default version of a {@code MessageType} when none is given. Set to {@code 0.0.1}.
@@ -73,7 +72,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      *
      * @param name The {@code QualifiedName} of this {@code MessageType}.
      */
-    public MessageType(@Nonnull QualifiedName name) {
+    public MessageType(QualifiedName name) {
         this(name, DEFAULT_VERSION);
     }
 
@@ -84,7 +83,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      * @param qualifiedName The qualifiedName for the {@link QualifiedName#QualifiedName(String) QualifiedName} for the
      *                      {@code MessageType} under construction.
      */
-    public MessageType(@Nonnull String qualifiedName) {
+    public MessageType(String qualifiedName) {
         this(new QualifiedName(qualifiedName), DEFAULT_VERSION);
     }
 
@@ -97,8 +96,8 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      *                      constructor for the {@code MessageType} under construction.
      * @param version       The version for the {@code MessageType} under construction.
      */
-    public MessageType(@Nonnull String qualifiedName,
-                       @Nonnull String version) {
+    public MessageType(String qualifiedName,
+                       String version) {
         this(new QualifiedName(qualifiedName), version);
     }
 
@@ -114,8 +113,8 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      * @param version   The version for the {@code MessageType} under construction.
      */
     public MessageType(String namespace,
-                       @Nonnull String localName,
-                       @Nonnull String version) {
+                       String localName,
+                       String version) {
         this(new QualifiedName(namespace, localName), version);
     }
 
@@ -128,8 +127,8 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      *                {@code MessageType} under construction.
      * @param version The version for the {@code MessageType} under construction.
      */
-    public MessageType(@Nonnull Class<?> clazz,
-                       @Nonnull String version) {
+    public MessageType(Class<?> clazz,
+                       String version) {
         this(new QualifiedName(clazz), version);
     }
 
@@ -141,7 +140,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      * @param clazz The {@code Class} used to invoke {@link QualifiedName#QualifiedName(Class)} constructor for the
      *              {@code MessageType} under construction.
      */
-    public MessageType(@Nonnull Class<?> clazz) {
+    public MessageType(Class<?> clazz) {
         this(clazz, DEFAULT_VERSION);
     }
 
@@ -168,7 +167,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String 
      *                          {@code MessageType}.
      * @return A reconstructed {@code MessageType} based on the expected output of {@link MessageType#toString()}.
      */
-    public static MessageType fromString(@Nonnull String messageTypeString) {
+    public static MessageType fromString(String messageTypeString) {
         Matcher matcher = DEBUG_STRING_PATTERN.matcher(Objects.requireNonNull(
                 messageTypeString,
                 "Cannot construct a MessageType based on a null or empty String."

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -49,7 +49,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.axonframework.messaging.core.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -854,8 +854,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
+        private @NonNull static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
                 eventHandler,
                 ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
@@ -865,8 +864,7 @@ class AnnotatedEventHandlingComponentTest {
         );
     }
 
-    @Nonnull
-    private static ProcessingContext messageProcessingContext(EventMessage event) {
+    static @NonNull ProcessingContext messageProcessingContext(EventMessage event) {
         var payload = event.payloadAs(Integer.class);
         return StubProcessingContext
                 .withComponent(Converter.class, PassThroughConverter.INSTANCE)

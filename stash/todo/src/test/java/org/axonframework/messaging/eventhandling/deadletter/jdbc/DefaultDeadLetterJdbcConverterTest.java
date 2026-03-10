@@ -18,18 +18,19 @@ package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.conversion.json.JacksonSerializer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
 import java.sql.ResultSet;
@@ -56,123 +57,116 @@ class DefaultDeadLetterJdbcConverterTest {
     private static final String CAUSE_MESSAGE = "causeMessage";
 
     private DeadLetterSchema schema;
-    private Serializer genericSerializer;
-    private Serializer eventSerializer;
+    private Converter genericConverter;
+    private EventConverter eventConverter;
 
     private DefaultDeadLetterJdbcConverter<?> testSubject;
 
     @BeforeEach
     void setUp() {
         schema = DeadLetterSchema.defaultSchema();
-        genericSerializer = JacksonSerializer.defaultSerializer();
-        eventSerializer = genericSerializer;
+        genericConverter = new JacksonConverter();
+        eventConverter = new DelegatingEventConverter(genericConverter);
 
         testSubject = DefaultDeadLetterJdbcConverter.builder()
                                                     .schema(schema)
-                                                    .genericSerializer(genericSerializer)
-                                                    .eventSerializer(eventSerializer)
+                                                    .genericConverter(genericConverter)
+                                                    .eventConverter(eventConverter)
                                                     .build();
     }
 
-    @Test
-    void convertToLetterConstructsGenericTrackedDomainEventMessage() throws SQLException {
-        boolean withToken = true;
-        boolean isDomainEvent = true;
-        boolean withCause = true;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+    @Nested
+    class ConvertToLetter {
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+        @Test
+        void constructsGenericEventMessageWithTrackingTokenAndAggregateInfoInContext() throws SQLException {
+            ResultSet resultSet = mockedResultSet(true, true, true);
 
-        EventMessage resultMessage = result.message();
-        assertTrue(resultMessage instanceof GenericTrackedDomainEventMessage);
-        GenericTrackedDomainEventMessage castedResultMessage = (GenericTrackedDomainEventMessage) resultMessage;
-        TrackingToken resultToken = castedResultMessage.trackingToken();
-        assertEquals(TRACKING_TOKEN, resultToken);
-        assertEquals(AGGREGATE_ID, castedResultMessage.getAggregateIdentifier());
-        assertEquals(AGGREGATE_TYPE, castedResultMessage.getType());
-        assertEquals(SEQ_NO, castedResultMessage.getSequenceNumber());
-    }
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-    @Test
-    void convertToLetterConstructsGenericTrackedEventMessage() throws SQLException {
-        boolean withToken = true;
-        boolean isDomainEvent = false;
-        boolean withCause = true;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+            EventMessage resultMessage = result.message();
+            assertInstanceOf(GenericEventMessage.class, resultMessage);
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+            Context context = result.context();
+            assertNotNull(context);
+            TrackingToken restoredToken = context.getResource(TrackingToken.RESOURCE_KEY);
+            assertEquals(TRACKING_TOKEN, restoredToken);
+            assertEquals(AGGREGATE_ID, context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+            assertEquals(AGGREGATE_TYPE, context.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
+            assertEquals(SEQ_NO, context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
+        }
 
-        EventMessage resultMessage = result.message();
-        assertTrue(resultMessage instanceof GenericTrackedEventMessage);
-        assertEquals(TRACKING_TOKEN, ((GenericTrackedEventMessage) resultMessage).trackingToken());
-    }
+        @Test
+        void constructsGenericEventMessageWithTrackingTokenOnlyInContext() throws SQLException {
+            ResultSet resultSet = mockedResultSet(true, false, true);
 
-    @Test
-    void convertToLetterConstructsGenericDomainEventMessage() throws SQLException {
-        boolean withToken = false;
-        boolean isDomainEvent = true;
-        boolean withCause = true;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+            assertInstanceOf(GenericEventMessage.class, result.message());
 
-        EventMessage resultMessage = result.message();
-        assertTrue(resultMessage instanceof GenericDomainEventMessage);
-        GenericDomainEventMessage castedResultMessage = (GenericDomainEventMessage) resultMessage;
-        assertEquals(AGGREGATE_ID, castedResultMessage.getAggregateIdentifier());
-        assertEquals(AGGREGATE_TYPE, castedResultMessage.getType());
-        assertEquals(SEQ_NO, castedResultMessage.getSequenceNumber());
-    }
+            Context context = result.context();
+            assertNotNull(context);
+            TrackingToken restoredToken = context.getResource(TrackingToken.RESOURCE_KEY);
+            assertEquals(TRACKING_TOKEN, restoredToken);
+            assertNull(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+        }
 
-    @Test
-    void convertToLetterConstructsGenericEventMessage() throws SQLException {
-        boolean withToken = false;
-        boolean isDomainEvent = false;
-        boolean withCause = true;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+        @Test
+        void constructsGenericEventMessageWithAggregateInfoOnlyInContext() throws SQLException {
+            ResultSet resultSet = mockedResultSet(false, true, true);
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-        assertTrue(result.message() instanceof GenericEventMessage);
-    }
+            assertInstanceOf(GenericEventMessage.class, result.message());
 
-    @Test
-    void convertToLetterConstructsWithCause() throws SQLException {
-        boolean withToken = true;
-        boolean isDomainEvent = true;
-        boolean withCause = true;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+            Context context = result.context();
+            assertNotNull(context);
+            assertNull(context.getResource(TrackingToken.RESOURCE_KEY));
+            assertEquals(AGGREGATE_ID, context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+            assertEquals(AGGREGATE_TYPE, context.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
+            assertEquals(SEQ_NO, context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
+        }
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+        @Test
+        void constructsGenericEventMessageWithEmptyContext() throws SQLException {
+            ResultSet resultSet = mockedResultSet(false, false, true);
 
-        Optional<Cause> optionalCause = result.cause();
-        assertTrue(optionalCause.isPresent());
-        Cause resultCause = optionalCause.get();
-        assertEquals(CAUSE_TYPE, resultCause.type());
-        assertEquals(CAUSE_MESSAGE, resultCause.message());
-    }
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-    @Test
-    void convertToLetterConstructsWithoutCause() throws SQLException {
-        boolean withToken = true;
-        boolean isDomainEvent = true;
-        boolean withCause = false;
-        ResultSet resultSet = mockedResultSet(withToken, isDomainEvent, withCause);
+            assertInstanceOf(GenericEventMessage.class, result.message());
+        }
 
-        JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+        @Test
+        void constructsWithCause() throws SQLException {
+            ResultSet resultSet = mockedResultSet(true, true, true);
 
-        assertFalse(result.cause().isPresent());
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+
+            Optional<Cause> optionalCause = result.cause();
+            assertTrue(optionalCause.isPresent());
+            Cause resultCause = optionalCause.get();
+            assertEquals(CAUSE_TYPE, resultCause.type());
+            assertEquals(CAUSE_MESSAGE, resultCause.message());
+        }
+
+        @Test
+        void constructsWithoutCause() throws SQLException {
+            ResultSet resultSet = mockedResultSet(true, true, false);
+
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+
+            assertFalse(result.cause().isPresent());
+        }
     }
 
     private ResultSet mockedResultSet(boolean withToken, boolean isDomainEvent, boolean withCause) throws SQLException {
         ResultSet mock = mock(ResultSet.class);
         String timestamp = DateTimeUtils.formatInstant(Instant.now());
-        byte[] serializedPayload = eventSerializer.serialize("some-payload", byte[].class).getData();
-        byte[] serializedMetadata = eventSerializer.serialize(Metadata.emptyInstance(), byte[].class).getData();
+        byte[] serializedPayload = eventConverter.convert("some-payload", byte[].class);
+        byte[] serializedMetadata = eventConverter.convert(Metadata.emptyInstance(), byte[].class);
 
         // Payload mocking
         when(mock.getBytes(schema.payloadColumn())).thenReturn(serializedPayload);
-        when(mock.getString(schema.payloadTypeColumn())).thenReturn(String.class.getName());
         // Metadata mocking
         when(mock.getBytes(schema.metadataColumn())).thenReturn(serializedMetadata);
         // Event Message mocking
@@ -184,7 +178,7 @@ class DefaultDeadLetterJdbcConverterTest {
         if (withToken) {
             when(mock.getString(schema.tokenTypeColumn())).thenReturn(GlobalSequenceTrackingToken.class.getName());
             when(mock.getBytes(schema.tokenColumn()))
-                    .thenReturn(genericSerializer.serialize(TRACKING_TOKEN, byte[].class).getData());
+                    .thenReturn(genericConverter.convert(TRACKING_TOKEN, byte[].class));
         } else {
             when(mock.getString(schema.tokenTypeColumn())).thenReturn(null);
         }
@@ -214,42 +208,46 @@ class DefaultDeadLetterJdbcConverterTest {
         return mock;
     }
 
-    @Test
-    void buildWithNullSchemaThrowsAxonConfigurationException() {
-        DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
+    @Nested
+    class BuilderValidation {
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.schema(null));
-    }
+        @Test
+        void buildWithNullSchemaThrowsAxonConfigurationException() {
+            DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
 
-    @Test
-    void buildWithNullGenericSerializerThrowsAxonConfigurationException() {
-        DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
+            assertThrows(AxonConfigurationException.class, () -> testBuilder.schema(null));
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.genericSerializer(null));
-    }
+        @Test
+        void buildWithNullGenericConverterThrowsAxonConfigurationException() {
+            DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
 
-    @Test
-    void buildWithNullEventSerializerThrowsAxonConfigurationException() {
-        DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
+            assertThrows(AxonConfigurationException.class, () -> testBuilder.genericConverter(null));
+        }
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.eventSerializer(null));
-    }
+        @Test
+        void buildWithNullEventConverterThrowsAxonConfigurationException() {
+            DefaultDeadLetterJdbcConverter.Builder<?> testBuilder = DefaultDeadLetterJdbcConverter.builder();
 
-    @Test
-    void buildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
-        DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
-                DefaultDeadLetterJdbcConverter.builder()
-                                              .eventSerializer(JacksonSerializer.defaultSerializer());
+            assertThrows(AxonConfigurationException.class, () -> testBuilder.eventConverter(null));
+        }
 
-        assertThrows(AxonConfigurationException.class, testBuilder::build);
-    }
+        @Test
+        void buildWithoutTheGenericConverterThrowsAxonConfigurationException() {
+            DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
+                    DefaultDeadLetterJdbcConverter.builder()
+                                                  .eventConverter(eventConverter);
 
-    @Test
-    void buildWithoutTheEventSerializerThrowsAxonConfigurationException() {
-        DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
-                DefaultDeadLetterJdbcConverter.builder()
-                                              .genericSerializer(JacksonSerializer.defaultSerializer());
+            assertThrows(AxonConfigurationException.class, testBuilder::build);
+        }
 
-        assertThrows(AxonConfigurationException.class, testBuilder::build);
+        @Test
+        void buildWithoutTheEventConverterThrowsAxonConfigurationException() {
+            DefaultDeadLetterJdbcConverter.Builder<?> testBuilder =
+                    DefaultDeadLetterJdbcConverter.builder()
+                                                  .genericConverter(genericConverter);
+
+            assertThrows(AxonConfigurationException.class, testBuilder::build);
+        }
     }
 }

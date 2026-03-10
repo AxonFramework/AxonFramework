@@ -19,7 +19,6 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.event.dcb.SequencedEvent;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
@@ -61,8 +60,8 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage> 
      * @param converter The {@code EventConverter} used to convert {@code StreamEventsResponses} into
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
-    public StreamingEventMessageStream(@Nonnull ResultStream<StreamEventsResponse> stream,
-                                       @Nonnull TaggedEventConverter converter) {
+    public StreamingEventMessageStream(ResultStream<StreamEventsResponse> stream,
+                                       TaggedEventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }
@@ -95,7 +94,7 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage> 
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(Runnable callback) {
         stream.onAvailable(callback);
     }
 

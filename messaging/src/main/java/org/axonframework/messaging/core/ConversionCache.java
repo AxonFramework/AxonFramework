@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.conversion.Converter;
 
@@ -80,8 +79,8 @@ class ConversionCache {
      * {@link Converter#convert(Object, Type) converting}.
      */
     @Nullable
-    <T> T convertIfAbsent(@Nonnull Type targetType,
-                          @Nonnull Converter converter) {
+    <T> T convertIfAbsent(Type targetType,
+                          Converter converter) {
         if (conversionEnabled) {
             //noinspection unchecked
             return (T) unwrapNull(conversionCache.computeIfAbsent(
@@ -93,13 +92,12 @@ class ConversionCache {
         return converter.convert(original, targetType);
     }
 
-    @Nonnull
-    private Object wrapNull(@Nullable Object obj) {
+        private Object wrapNull(@Nullable Object obj) {
         return obj == null ? NULL : obj;
     }
 
     @Nullable
-    private Object unwrapNull(@Nonnull Object wrapped) {
+    private Object unwrapNull(Object wrapped) {
         return wrapped == NULL ? null : wrapped;
     }
 

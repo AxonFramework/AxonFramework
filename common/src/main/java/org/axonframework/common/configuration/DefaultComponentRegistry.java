@@ -16,11 +16,11 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.annotation.RegistrationScope;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
@@ -74,8 +74,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
-    private final AtomicReference<Configuration> parentConfig = new AtomicReference<>();
-    private final AtomicReference<Configuration> initializedConfiguration = new AtomicReference<>();
+    private final AtomicReference<@Nullable Configuration> parentConfig = new AtomicReference<>();
+    private final AtomicReference<@Nullable Configuration> initializedConfiguration = new AtomicReference<>();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
     /**
@@ -103,9 +103,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     @Internal
     public static DefaultComponentRegistry create(
-            @Nonnull Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions,
-            @Nonnull Collection<ConfigurationEnhancer> enhancers,
-            @Nonnull Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
+            Collection<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions,
+            Collection<ConfigurationEnhancer> enhancers,
+            Collection<Class<? extends ConfigurationEnhancer>> disabledEnhancers) {
         var registry = new DefaultComponentRegistry().disableEnhancerScanning();
         var shouldRegisterForChildRegistry = not(
                 isTypeAnnotatedWithHavingAttributeValue(
@@ -134,7 +134,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
 
     @Override
-    public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
+    public <C> ComponentRegistry registerComponent(ComponentDefinition<? extends C> definition) {
         requireNonNull(definition, "The ComponentDefinition must not be null.");
         if (!(definition instanceof ComponentDefinition.ComponentCreator<? extends C> creator)) {
             // The compiler should avoid this from happening.
@@ -158,7 +158,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> definition) {
+    public <C> ComponentRegistry registerDecorator(DecoratorDefinition<C, ? extends C> definition) {
         requireNonNull(definition, "The decorator definition must not be null.");
         if (!(definition instanceof DecoratorDefinition.CompletedDecoratorDefinition<C, ? extends C> decoratorRegistration)) {
             // The compiler should avoid this from happening.
@@ -171,9 +171,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public boolean hasComponent(@Nonnull Class<?> type,
+    public boolean hasComponent(Class<?> type,
                                 @Nullable String name,
-                                @Nonnull SearchScope searchScope) {
+                                SearchScope searchScope) {
         return switch (searchScope) {
             case ALL -> components.contains(new Identifier<>(type, name)) || parentHasComponent(type, name);
             case CURRENT -> components.contains(new Identifier<>(type, name));
@@ -181,13 +181,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         };
     }
 
-    private Boolean parentHasComponent(Class<?> type, String name) {
+    private Boolean parentHasComponent(Class<?> type, @Nullable String name) {
         return Optional.ofNullable(parentConfig.get())
                        .map(parent -> parent.hasComponent(type, name)).orElse(false);
     }
 
     @Override
-    public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
+    public ComponentRegistry registerEnhancer(ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
         if (previous != null) {
@@ -198,7 +198,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public ComponentRegistry registerModule(@Nonnull Module module) {
+    public ComponentRegistry registerModule(Module module) {
         if (logger.isDebugEnabled()) {
             logger.debug("Registering module [{}].", module.name());
         }
@@ -210,7 +210,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public <C> ComponentRegistry registerFactory(@Nonnull ComponentFactory<C> factory) {
+    public <C> ComponentRegistry registerFactory(ComponentFactory<C> factory) {
         if (logger.isDebugEnabled()) {
             logger.debug("Registering component factory [{}].", factory.getClass().getSimpleName());
         }
@@ -226,7 +226,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public Configuration build(@Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(LifecycleRegistry lifecycleRegistry) {
         return doBuild(null, lifecycleRegistry);
     }
 
@@ -241,13 +241,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public Configuration buildNested(@Nonnull Configuration parent,
-                                     @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration buildNested(Configuration parent,
+                                     LifecycleRegistry lifecycleRegistry) {
         return doBuild(requireNonNull(parent), requireNonNull(lifecycleRegistry));
     }
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
-                                  @Nonnull LifecycleRegistry lifecycleRegistry) {
+                                  LifecycleRegistry lifecycleRegistry) {
         Configuration configuration = initializedConfiguration.get();
         if (configuration != null) {
             return configuration;
@@ -382,13 +382,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
+    public DefaultComponentRegistry setOverridePolicy(OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
         return this;
     }
 
     @Override
-    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+    public ComponentRegistry disableEnhancer(String fullyQualifiedClassName) {
         Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
         try {
             var enhancerClass = Class.forName(fullyQualifiedClassName);
@@ -457,7 +457,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialized", initializedConfiguration.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
@@ -468,6 +468,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private class LocalConfiguration implements Configuration {
 
+        @Nullable
         private final Configuration parent;
 
         /**
@@ -484,13 +485,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         @Override
-        public Configuration getParent() {
+        public @Nullable Configuration getParent() {
             return parent;
         }
 
-        @Nonnull
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+        public <C> Optional<C> getOptionalComponent(Class<C> type,
                                                     @Nullable String name) {
             return components.get(new Identifier<>(type, name))
                              .map(c -> c.resolve(this))
@@ -505,11 +505,18 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
-        @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull Class<C> type,
+        public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference,
+                                                    @Nullable String name) {
+            return components.getByTypeReference(new Identifier<>(typeReference, name))
+                             .map(c -> c.resolve(this))
+                             .or(() -> Optional.ofNullable(fromParent(typeReference, name, () -> null)));
+        }
+
+        @Override
+        public <C> C getComponent(Class<C> type,
                                   @Nullable String name,
-                                  @Nonnull Supplier<C> defaultImpl) {
+                                  Supplier<C> defaultImpl) {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                                                  identifier,
@@ -524,7 +531,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             return type.cast(component);
         }
 
-        private <C> Optional<Component<C>> fromFactory(Class<C> type, String name) {
+        private <C> Optional<Component<C>> fromFactory(Class<C> type, @Nullable String name) {
             if (name == null) {
                 // The ComponentFactory requires a non-null name at all times.
                 return Optional.empty();
@@ -549,38 +556,44 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                     : defaultSupplier.get();
         }
 
+        private <C> C fromParent(TypeReference<C> typeReference, String name, Supplier<C> defaultSupplier) {
+            return parent != null
+                    ? parent.getOptionalComponent(typeReference, name).orElseGet(defaultSupplier)
+                    : defaultSupplier.get();
+        }
+
+
         @Override
         public List<Configuration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations.values());
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", components);
             descriptor.describeProperty("modules", moduleConfigurations.values());
         }
 
 
         @Override
-        public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
+        public Optional<Configuration> getModuleConfiguration(String name) {
             Assert.nonEmpty(name, "The name must not be null.");
             return Optional.ofNullable(moduleConfigurations.get(name));
         }
 
-        @Nonnull
         @Override
-        public <C> Map<String, C> getComponents(@Nonnull Class<C> type) {
+        @SuppressWarnings("unchecked")
+        public <C> Map<String, C> getComponents(Class<C> type) {
             Map<String, C> result = new LinkedHashMap<>();
 
             // 1. Collect from current configuration's components
-            for (Identifier<?> identifier : components.identifiers()) {
-                if (type.isAssignableFrom(identifier.typeAsClass())) {
-                    @SuppressWarnings("unchecked")
-                    Optional<Component<C>> component = (Optional<Component<C>>) components.get((Identifier<C>) identifier);
-                    component.ifPresent(c -> result.put(identifier.name(), c.resolve(this)));
-                }
-            }
-
+            components.identifiers().stream()
+                      .filter(identifier -> type.isAssignableFrom(identifier.typeAsClass()))
+                      .map(identifier -> (Identifier<C>) identifier)
+                      .forEach(identifier -> {
+                          components.get(identifier)
+                                    .ifPresent(component -> result.put(identifier.name(), component.resolve(this)));
+                      });
             // 2. Collect from all module configurations (recursively)
             for (Configuration moduleConfig : getModuleConfigurations()) {
                 Map<String, C> moduleComponents = moduleConfig.getComponents(type);

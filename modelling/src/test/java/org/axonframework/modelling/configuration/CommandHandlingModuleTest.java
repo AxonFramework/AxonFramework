@@ -16,19 +16,22 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.StubLifecycleRegistry;
+import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandler;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.*;
 
@@ -74,12 +77,16 @@ class CommandHandlingModuleTest {
                                               .build())
                                       .entityIdResolver(config -> (message, context) -> "1");
 
-        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor
+        // Registers NoOpSequencingPolicy, thus removing the CommandSequencingInterceptor
         // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         AxonConfiguration configuration = ModellingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
                                                               c -> new DefaultCorrelationDataProviderRegistry()))
+                .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                              MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                              c -> NoOpSequencingPolicy.INSTANCE))
                 .componentRegistry(cr -> cr.registerModule(entityModule))
                 .componentRegistry(cr -> cr.registerModule(
                         setupPhase.commandHandlers()
@@ -116,7 +123,7 @@ class CommandHandlingModuleTest {
 
         Configuration resultConfig =
                 setupPhase.commandHandlers()
-                          .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                          .autodetectedCommandHandlingComponent(c -> myCommandHandlingObject)
                           .build()
                           .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
 
@@ -139,7 +146,7 @@ class CommandHandlingModuleTest {
                 ModellingConfigurer.create()
                                    .registerCommandHandlingModule(
                                            setupPhase.commandHandlers()
-                                                     .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                                                     .autodetectedCommandHandlingComponent(c -> myCommandHandlingObject)
                                                      .build()
                                    ).build();
 
@@ -210,7 +217,7 @@ class CommandHandlingModuleTest {
     @Test
     void annotatedCommandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> commandHandlerPhase.annotatedCommandHandlingComponent(null));
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.autodetectedCommandHandlingComponent(null));
     }
 
     @Test

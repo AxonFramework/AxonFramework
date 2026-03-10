@@ -18,7 +18,6 @@ package org.axonframework.common;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import jakarta.annotation.Nonnull;
 
 /**
  * Thread factory that created threads in a given group.
@@ -70,7 +69,7 @@ public class AxonThreadFactory implements ThreadFactory {
     }
 
     @Override
-    public Thread newThread(@Nonnull Runnable r) {
+    public Thread newThread(Runnable r) {
         Thread thread = new Thread(threadGroup, r, threadGroup.getName() + "-" + nextThreadNumber());
         thread.setPriority(priority);
         return thread;

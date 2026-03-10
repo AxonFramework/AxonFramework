@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
@@ -45,18 +44,18 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
 
     @Deprecated
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+    public Object handleSync(Message message,
+                             ProcessingContext context,
+                             T target,
+                             MessageHandlingMember<? super T> handler) throws Exception {
         return handler.handleSync(message, context, target);
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message,
-                                   @Nonnull ProcessingContext context,
-                                   @Nonnull T target,
-                                   @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<?> handle(Message message,
+                                   ProcessingContext context,
+                                   T target,
+                                   MessageHandlingMember<? super T> handler) {
         return handler.handle(message, context, target);
     }
 }

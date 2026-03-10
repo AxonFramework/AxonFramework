@@ -16,12 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-
 final class StartPosition implements Position {
-    @Nonnull
     @Override
-    public Position min(@Nonnull Position other) {
+    public Position min(Position other) {
         return START;
     }
 }

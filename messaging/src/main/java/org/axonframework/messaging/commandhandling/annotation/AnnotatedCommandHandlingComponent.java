@@ -17,7 +17,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandBus;
@@ -75,11 +74,11 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
      * @param converter                The converter to use for converting the payload of the command to the type
      *                                 expected by the handling method.
      */
-    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
-                                             @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                             @Nonnull HandlerDefinition handlerDefinition,
-                                             @Nonnull MessageTypeResolver messageTypeResolver,
-                                             @Nonnull MessageConverter converter) {
+    public AnnotatedCommandHandlingComponent(T annotatedCommandHandler,
+                                             ParameterResolverFactory parameterResolverFactory,
+                                             HandlerDefinition handlerDefinition,
+                                             MessageTypeResolver messageTypeResolver,
+                                             MessageConverter converter) {
         this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
         this.handlingComponent = SimpleCommandHandlingComponent.create(
                 "AnnotatedCommandHandlingComponent[%s]".formatted(annotatedCommandHandler.getClass().getName())
@@ -127,16 +126,15 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     }
 
 
-    private CommandResultMessage asCommandResultMessage(@Nonnull Message commandResult) {
+    private CommandResultMessage asCommandResultMessage(Message commandResult) {
         return commandResult instanceof CommandResultMessage
                 ? (CommandResultMessage) commandResult
                 : new GenericCommandResultMessage(commandResult);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                             @Nonnull ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                                      ProcessingContext processingContext) {
         return handlingComponent.handle(command, processingContext);
     }
 
@@ -146,7 +144,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

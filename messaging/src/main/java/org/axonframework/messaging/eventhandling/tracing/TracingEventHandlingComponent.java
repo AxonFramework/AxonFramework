@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.tracing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -53,17 +52,16 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
      * @param spanProvider The provider of {@link Span} to track the event handling.
      */
     public TracingEventHandlingComponent(
-            @Nonnull Function<EventMessage, Span> spanProvider,
-            @Nonnull EventHandlingComponent delegate
+            Function<EventMessage, Span> spanProvider,
+            EventHandlingComponent delegate
     ) {
         super(delegate);
         this.spanProvider = Objects.requireNonNull(spanProvider, "Span provider may not be null");
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         Span span = spanProvider.apply(event);
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads

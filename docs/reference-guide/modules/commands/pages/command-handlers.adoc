@@ -96,6 +96,7 @@ Stateless handlers are useful for:
 * Commands that perform operations using state from external services or repositories.
 * Commands that don't require building up and maintaining state within the handler itself.
 
+[#stateful-command-handlers]
 == Stateful command handlers
 
 Stateful command handlers maintain state in the handler itself across command invocations.
@@ -379,7 +380,6 @@ When the `@EntityCreator` annotation is placed on a no-arg constructor, Axon Fra
 public class GiftCard {
 
     private String id;
-    private boolean created = false;
     private int remainingValue;
 
     @EntityCreator // <1>
@@ -388,16 +388,12 @@ public class GiftCard {
 
     @CommandHandler // <2>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
         this.id = event.id();
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }
@@ -420,26 +416,20 @@ The entity identifier is required to be annotated with `@InjectEntityId`, as sho
 public class GiftCard {
 
     private String id;
-    private boolean created;
     private int remainingValue;
 
     @EntityCreator // <1>
     public GiftCard(@InjectEntityId String id) { // <2>
         this.id = id;
-        this.created = false;
     }
 
     @CommandHandler // <3>
     public static void handle(IssueCardCommand cmd, EventAppender eventAppender) {
-        if (created) {
-            throw new IllegalStateException("Card already issued");
-        }
         eventAppender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount()));
     }
 
     @EventSourcingHandler
     private void on(CardIssuedEvent event) {
-        this.created = true;
         this.remainingValue = event.amount();
     }
 }

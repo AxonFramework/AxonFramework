@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 
@@ -43,27 +42,24 @@ public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream
      * @param stream the {@link ResultStream} of {@link QueryUpdate} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
      */
-    public QueryUpdateMessageStream(@Nonnull ResultStream<QueryUpdate> stream) {
+    public QueryUpdateMessageStream(ResultStream<QueryUpdate> stream) {
         super(stream);
     }
 
-    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryUpdate queryUpdate) {
+    protected QueryResponseMessage buildResponseMessage(QueryUpdate queryUpdate) {
         return convertQueryUpdate(queryUpdate);
     }
 
-
-    @Nonnull
     @Override
-    protected AxonException createAxonException(@Nonnull QueryUpdate queryUpdate) {
+    protected AxonException createAxonException(QueryUpdate queryUpdate) {
         return convertToAxonException(queryUpdate.getErrorCode(),
                                       queryUpdate.getErrorMessage(),
                                       queryUpdate.getPayload());
     }
 
     @Override
-    protected boolean isError(@Nonnull QueryUpdate queryUpdate) {
+    protected boolean isError(QueryUpdate queryUpdate) {
         return queryUpdate.hasErrorMessage();
     }
 }

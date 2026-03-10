@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing the mechanism for triggering Snapshots. The SnapshotTriggerDefinition creates specific trigger
@@ -43,7 +42,7 @@ public interface SnapshotTriggerDefinition {
      * @param aggregateType The type of aggregate for which to create a trigger
      * @return the trigger instance for an aggregate
      */
-    SnapshotTrigger prepareTrigger(@Nonnull Class<?> aggregateType);
+    SnapshotTrigger prepareTrigger(Class<?> aggregateType);
 
     /**
      * Reconfigure the necessary infrastructure components in the given {@code trigger instance}, which may have been
@@ -59,7 +58,7 @@ public interface SnapshotTriggerDefinition {
      * @param trigger       The trigger instance formerly created using {@link #prepareTrigger(Class)}
      * @return a fully (re)configured trigger instance, may be the same {@code trigger} instance.
      */
-    default SnapshotTrigger reconfigure(@Nonnull Class<?> aggregateType, @Nonnull SnapshotTrigger trigger) {
+    default SnapshotTrigger reconfigure(Class<?> aggregateType, SnapshotTrigger trigger) {
         return trigger;
     }
 }

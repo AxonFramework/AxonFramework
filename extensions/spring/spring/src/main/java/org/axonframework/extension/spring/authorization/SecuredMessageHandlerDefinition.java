@@ -16,8 +16,7 @@
 
 package org.axonframework.extension.spring.authorization;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -43,7 +42,7 @@ import java.util.Set;
 public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.unwrap(Executable.class)
                        .map(executable -> AnnotationUtils.findAnnotationAttributes(executable, Secured.class)
                                                          .orElse(Map.of()))
@@ -66,8 +65,8 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message,
-                                       @Nonnull ProcessingContext context,
+        public MessageStream<?> handle(Message message,
+                                       ProcessingContext context,
                                        @Nullable T target) {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
@@ -77,7 +76,7 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
             return super.handle(message, context, target);
         }
 
-        private boolean hasRequiredRoles(@Nonnull Message message) {
+        private boolean hasRequiredRoles(Message message) {
             Set<String> authorities = new HashSet<>();
             if (message.metadata().containsKey("authorities")) {
                 authorities.addAll(Arrays.asList(message.metadata().get("authorities").split(",")));

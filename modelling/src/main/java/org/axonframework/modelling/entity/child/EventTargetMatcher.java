@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -46,9 +45,9 @@ public interface EventTargetMatcher<E> {
      * @param processingContext The {@link ProcessingContext} in which the message is being processed.
      * @return {@code true} if the entity should be invoked for the message, {@code false} otherwise.
      */
-    boolean matches(@Nonnull E targetEntity,
-                    @Nonnull EventMessage message,
-                    @Nonnull ProcessingContext processingContext);
+    boolean matches(E targetEntity,
+                    EventMessage message,
+                    ProcessingContext processingContext);
 
 
     /**

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -44,14 +43,13 @@ public class PayloadParameterResolver implements ParameterResolver<Object> {
         this.payloadType = payloadType;
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
         return CompletableFuture.completedFuture(Message.fromContext(context).payload());
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return Optional.ofNullable(Message.fromContext(context))
                        .map(Message::payloadType)
                        .map(payloadType::isAssignableFrom)

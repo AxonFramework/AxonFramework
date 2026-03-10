@@ -18,7 +18,6 @@ package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -49,8 +48,7 @@ final class EventProcessorInfoUtils {
      * @param streamingProcessor The {@link StreamingEventProcessor} to base an {@link EventProcessorInfo} on.
      * @return An {@link EventProcessorInfo} based on the given {@code streamingProcessor}.
      */
-    @Nonnull
-    public static EventProcessorInfo describeStreaming(@Nonnull StreamingEventProcessor streamingProcessor) {
+    static EventProcessorInfo describeStreaming(StreamingEventProcessor streamingProcessor) {
         List<SegmentStatus> segmentStatuses = streamingProcessor.processingStatus()
                                                                 .values()
                                                                 .stream()
@@ -101,8 +99,7 @@ final class EventProcessorInfoUtils {
      * @param subscribingProcessor The {@link SubscribingEventProcessor} to base an {@link EventProcessorInfo} on.
      * @return An {@link EventProcessorInfo} based on the given {@code subscribingProcessor}.
      */
-    @Nonnull
-    public static EventProcessorInfo describeSubscribing(@Nonnull SubscribingEventProcessor subscribingProcessor) {
+    static EventProcessorInfo describeSubscribing(SubscribingEventProcessor subscribingProcessor) {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(subscribingProcessor.name())
                                  .setMode(SUBSCRIBING)
@@ -116,8 +113,7 @@ final class EventProcessorInfoUtils {
      * @param unknownProcessor The unknown {@link EventProcessor} type to base an {@link EventProcessorInfo} on.
      * @return An {@link EventProcessorInfo} based on the given {@code unknownProcessor}.
      */
-    @Nonnull
-    public static EventProcessorInfo describeUnknown(@Nonnull EventProcessor unknownProcessor) {
+    static EventProcessorInfo describeUnknown(EventProcessor unknownProcessor) {
         return EventProcessorInfo.newBuilder()
                                  .setProcessorName(unknownProcessor.name())
                                  .setMode(UNKNOWN)

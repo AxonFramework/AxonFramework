@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -94,7 +93,7 @@ public class EventProcessingConfigurer {
      * @param parent The {@code MessagingConfigurer} to enhance with configuration of event processing components.
      */
     @Internal
-    public EventProcessingConfigurer(@Nonnull MessagingConfigurer parent) {
+    public EventProcessingConfigurer(MessagingConfigurer parent) {
         this.parent = Objects.requireNonNull(parent, "parent may not be null");
         this.pooledStreamingEventProcessors = new PooledStreamingEventProcessorsConfigurer(this);
         this.subscribingEventProcessors = new SubscribingEventProcessorsConfigurer(this);
@@ -136,7 +135,7 @@ public class EventProcessingConfigurer {
      * @return This module instance for method chaining.
      */
     public EventProcessingConfigurer defaults(
-            @Nonnull BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
+            BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
@@ -152,7 +151,7 @@ public class EventProcessingConfigurer {
      * @param configureDefaults A function that modifies the {@link EventProcessorConfiguration} with desired defaults.
      * @return This module instance for method chaining.
      */
-    public EventProcessingConfigurer defaults(@Nonnull UnaryOperator<EventProcessorConfiguration> configureDefaults) {
+    public EventProcessingConfigurer defaults(UnaryOperator<EventProcessorConfiguration> configureDefaults) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
@@ -173,7 +172,7 @@ public class EventProcessingConfigurer {
      * @return This module instance for method chaining.
      */
     public EventProcessingConfigurer pooledStreaming(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorsConfigurer> processorsModuleTask
+            UnaryOperator<PooledStreamingEventProcessorsConfigurer> processorsModuleTask
     ) {
         Objects.requireNonNull(processorsModuleTask, "processorsModuleTask may not be null");
         processorsModuleTask.apply(pooledStreamingEventProcessors);
@@ -193,7 +192,7 @@ public class EventProcessingConfigurer {
      * @return This module instance for method chaining.
      */
     public EventProcessingConfigurer subscribing(
-            @Nonnull UnaryOperator<SubscribingEventProcessorsConfigurer> processorsModuleTask
+            UnaryOperator<SubscribingEventProcessorsConfigurer> processorsModuleTask
     ) {
         Objects.requireNonNull(processorsModuleTask, "processorsModuleTask may not be null");
         processorsModuleTask.apply(subscribingEventProcessors);
@@ -207,7 +206,7 @@ public class EventProcessingConfigurer {
      * @param componentRegistrar The actions to take on the component registry.
      * @return This {@code EventProcessingConfigurer} for a fluent API.
      */
-    public EventProcessingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public EventProcessingConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
         Objects.requireNonNull(componentRegistrar, "componentRegistrar may not be null");
         parent.componentRegistry(componentRegistrar);
         return this;

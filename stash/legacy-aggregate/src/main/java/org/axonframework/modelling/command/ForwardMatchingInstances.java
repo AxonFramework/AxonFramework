@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
@@ -53,7 +52,7 @@ public class ForwardMatchingInstances<T extends Message> implements ForwardingMo
     private EntityModel childEntity;
 
     @Override
-    public void initialize(@Nonnull Member member, @Nonnull EntityModel childEntity) {
+    public void initialize(Member member, EntityModel childEntity) {
         this.childEntity = childEntity;
         this.routingKey = findAnnotationAttributes((AnnotatedElement) member, AggregateMember.class)
                 .map(map -> (String) map.get("routingKey"))
@@ -64,7 +63,7 @@ public class ForwardMatchingInstances<T extends Message> implements ForwardingMo
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
         Property routingProperty = routingProperties.computeIfAbsent(message.payloadType(),
                                                                      this::resolveProperty);
 

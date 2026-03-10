@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
@@ -240,19 +239,19 @@ public class LegacyEventSourcingRepository<T> extends LockingRepository<T, Event
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }
 
         @Override
-        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
@@ -268,13 +267,13 @@ public class LegacyEventSourcingRepository<T> extends LockingRepository<T, Event
         }
 
         @Override
-        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+        public Builder<T> subtypes(Set<Class<? extends T>> subtypes) {
             super.subtypes(subtypes);
             return this;
         }
 
         @Override
-        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+        public Builder<T> subtype(Class<? extends T> subtype) {
             super.subtype(subtype);
             return this;
         }

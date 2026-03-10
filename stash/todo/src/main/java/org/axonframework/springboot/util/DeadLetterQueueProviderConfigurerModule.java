@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.util;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -61,7 +60,7 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurationEnh
     }
 
 //    @Override
-//    public void configureModule(@Nonnull LegacyConfigurer configurer) {
+//    public void configureModule(LegacyConfigurer configurer) {
 //        configurer.eventProcessing().registerDeadLetterQueueProvider(
 //                processingGroup -> dlqEnabled(processingGroup)
 //                        ? deadLetterQueueProvider.apply(processingGroup)
@@ -70,7 +69,7 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurationEnh
 //    }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         // TODO #3517 Implement as part of referred to issue.
     }
 

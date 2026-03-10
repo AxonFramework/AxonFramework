@@ -21,7 +21,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,17 +43,17 @@ class RecordingMessageMonitorTest {
 
         var monitor = new RecordingMessageMonitor() {
             @Override
-            protected void onReportSuccess(@NotNull Message message) {
+            protected void onReportSuccess(@NonNull Message message) {
                 success.set(message);
             }
 
             @Override
-            protected void onReportFailure(@NotNull Message message, @NotNull Throwable cause) {
+            protected void onReportFailure(@NonNull Message message, @NonNull Throwable cause) {
                 failure.set(Pair.of(message, cause));
             }
 
             @Override
-            protected void onReportIgnored(@NotNull Message message) {
+            protected void onReportIgnored(@NonNull Message message) {
                 ignore.set(message);
             }
         };

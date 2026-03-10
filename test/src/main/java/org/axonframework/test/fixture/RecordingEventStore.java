@@ -16,8 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -28,7 +27,6 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.List;
@@ -56,23 +54,23 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
      *
      * @param delegate The {@link EventStore} to which events will be published.
      */
-    public RecordingEventStore(@Nonnull EventStore delegate) {
+    public RecordingEventStore(EventStore delegate) {
         super(Objects.requireNonNull(delegate, "The delegate EventStore may not be null"));
         this.eventStore = delegate;
     }
 
     @Override
-    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
+    public EventStoreTransaction transaction(ProcessingContext processingContext) {
         return eventStore.transaction(processingContext);
     }
 
     @Override
-    public void describeTo(@NotNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+    public MessageStream<EventMessage> open(StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         return eventStore.open(condition, context);
     }
@@ -88,13 +86,13 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return eventStore.tokenAt(at, context);
     }
 
     @Override
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return eventStore.subscribe(eventsBatchConsumer);
     }
 }

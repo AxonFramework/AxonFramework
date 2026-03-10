@@ -26,8 +26,7 @@ import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
-import jakarta.annotation.Nonnull;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -69,11 +68,10 @@ class FixtureMessageHandlerInterceptorTest {
             this.value = value;
         }
 
-        @Nonnull
         @Override
-        public @NotNull MessageStream<?> interceptOnHandle(@NotNull EventMessage message,
-                                                           @NotNull ProcessingContext context,
-                                                           @NotNull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull EventMessage message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
             return interceptorChain.proceed(message.withMetadata(Metadata.with(METADATA_KEY, value)), context);
         }
     }

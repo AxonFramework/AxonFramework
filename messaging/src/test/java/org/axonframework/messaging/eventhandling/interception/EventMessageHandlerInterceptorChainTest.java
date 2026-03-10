@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.FluxUtils;
@@ -84,20 +84,20 @@ class EventMessageHandlerInterceptorChainTest {
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<EventMessage> interceptorOne = spy(new MessageHandlerInterceptor<EventMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<EventMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull EventMessage message, @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<EventMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<EventMessage> interceptorTwo = spy(new MessageHandlerInterceptor<EventMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<EventMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull EventMessage message, @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<EventMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }

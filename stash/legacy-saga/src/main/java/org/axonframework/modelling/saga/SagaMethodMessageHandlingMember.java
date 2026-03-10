@@ -22,8 +22,6 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import jakarta.annotation.Nonnull;
-
 /**
  * A data holder containing information of {@link SagaEventHandler} annotated methods.
  *
@@ -77,7 +75,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
+    public Object handleSync(Message message, ProcessingContext context, T target)
             throws Exception {
         return delegate.handleSync(message, context, target);
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
@@ -49,9 +48,8 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
         this.headerNames = Arrays.copyOf(metadataKeys, metadataKeys.length);
     }
 
-    @Nonnull
     @Override
-    public Map<String, String> correlationDataFor(@Nonnull Message message) {
+    public Map<String, String> correlationDataFor(Message message) {
         if (headerNames.length == 0) {
             return Collections.emptyMap();
         }

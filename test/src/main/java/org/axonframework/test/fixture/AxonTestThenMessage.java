@@ -16,16 +16,13 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.awaitility.Awaitility;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.MapStringEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -60,43 +57,37 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     protected final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
-    private final RecordingEventSink eventSink;
-    private final RecordingCommandBus commandBus;
+    private final RecordingComponentsRegistry recordings;
 
     private final CommandValidator commandValidator;
-    protected final Throwable actualException;
+    protected final @Nullable Throwable actualException;
 
     /**
      * Constructs an {@code AxonTestThenMessage} for the given parameters.
      *
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
-     * @param commandBus      The recording {@link CommandBus}, used to capture and
-     *                        validate any commands that have been sent.
-     * @param eventSink       The recording {@link EventSink}, used to capture and
-     *                        validate any events that have been sent.
+     * @param recordings      The registry holding recording components for assertions.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenMessage(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingComponentsRegistry recordings,
             @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
         this.customization = customization;
-        this.commandBus = commandBus;
-        this.eventSink = eventSink;
+        this.recordings = recordings;
         this.actualException = actualException;
-        this.commandValidator = new CommandValidator(commandBus::recordedCommands,
-                                                     commandBus::reset,
+        this.commandValidator = new CommandValidator(recordings.commandBus()::recordedCommands,
+                                                     recordings.commandBus()::reset,
                                                      new MatchAllFieldFilter(customization.fieldFilters()));
     }
 
     @Override
-    public T events(@Nonnull Object... expectedEvents) {
-        var publishedEvents = eventSink.recorded();
+    public T events(Object... expectedEvents) {
+        var publishedEvents = recordings.eventSink().recorded();
 
         if (expectedEvents.length != publishedEvents.size()) {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
@@ -113,10 +104,10 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull EventMessage... expectedEvents) {
+    public T events(EventMessage... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(Message::payload).toArray());
 
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = recordings.eventSink().recorded();
         Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
@@ -130,9 +121,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
+    public T eventsSatisfy(Consumer<List<EventMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = recordings.eventSink().recorded();
         try {
             consumer.accept(publishedEvents);
         } catch (AssertionError e) {
@@ -142,9 +133,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
+    public T eventsMatch(Predicate<List<EventMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
-        var publishedEvents = eventSink.recorded();
+        var publishedEvents = recordings.eventSink().recorded();
         var result = predicate.test(publishedEvents);
         if (!result) {
             throw new AxonAssertionError("Events does not satisfy the predicate");
@@ -153,13 +144,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Object... expectedCommands) {
+    public T commands(Object... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(expectedCommands);
         return self();
     }
 
     @Override
-    public T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout) {
+    public T await(Consumer<T> assertion, Duration timeout) {
         Objects.requireNonNull(assertion, "The assertion may not be null.");
         Objects.requireNonNull(timeout, "The timeout may not be null.");
         Awaitility.waitAtMost(timeout)
@@ -169,15 +160,15 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull CommandMessage... expectedCommands) {
+    public T commands(CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
     }
 
     @Override
-    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer) {
+    public T commandsSatisfy(Consumer<List<CommandMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
-        var dispatchedCommands = commandBus.recordedCommands();
+        var dispatchedCommands = recordings.commandBus().recordedCommands();
         try {
             consumer.accept(dispatchedCommands);
         } catch (AssertionError e) {
@@ -187,9 +178,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate) {
+    public T commandsMatch(Predicate<List<CommandMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
-        var dispatchedCommands = commandBus.recordedCommands();
+        var dispatchedCommands = recordings.commandBus().recordedCommands();
         var result = predicate.test(dispatchedCommands);
         if (!result) {
             throw new AxonAssertionError("Events does not satisfy the predicate");
@@ -204,7 +195,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+    public T exceptionSatisfies(Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         try {
             consumer.accept(actualException);
@@ -215,7 +206,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+    public T exception(Class<? extends Throwable> type, String message) {
         Objects.requireNonNull(type, "The type may not be null.");
         Objects.requireNonNull(message, "The message may not be null.");
         if (actualException == null) {
@@ -230,7 +221,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type) {
+    public T exception(Class<? extends Throwable> type) {
         Objects.requireNonNull(type, "The type may not be null.");
         if (actualException == null) {
             throw new AxonAssertionError(
@@ -244,7 +235,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+    protected boolean verifyPayloadEquality(@Nullable Object expectedPayload, @Nullable Object actualPayload) {
         if (Objects.equals(expectedPayload, actualPayload)) {
             return true;
         }
@@ -266,8 +257,8 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean verifyMetadataEquality(Class<?> eventType,
-                                             Map<String, String> expectedMetadata,
-                                             Map<String, String> actualMetadata) {
+                                             Map<String, @Nullable String> expectedMetadata,
+                                             Map<String, @Nullable String> actualMetadata) {
         MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
         if (!matcher.matches(actualMetadata)) {
             reporter.reportDifferentMetadata(eventType,
@@ -283,14 +274,14 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T expect(@Nonnull Consumer<Configuration> function) {
+    public T expect(Consumer<Configuration> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.accept(configuration);
         return self();
     }
 
     @Override
-    public T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+    public T expectAsync(Function<Configuration, CompletableFuture<?>> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.apply(configuration).join();
         return self();

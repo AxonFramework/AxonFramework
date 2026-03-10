@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
-
 /**
  * Interface describing a mechanism that generates a routing key for a given command.
  * <p>
@@ -36,5 +34,5 @@ public interface RoutingStrategy {
      * @param command The command to create a routing key for.
      * @return The routing key for the command.
      */
-    String getRoutingKey(@Nonnull CommandMessage command);
+    String getRoutingKey(CommandMessage command);
 }

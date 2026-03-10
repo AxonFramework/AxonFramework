@@ -19,9 +19,9 @@ package org.axonframework.extension.tracing.opentelemetry;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import org.axonframework.messaging.core.Message;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.tracing.SpanFactory;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This {@link TextMapGetter} implementation is able to extract the parent OpenTelemetry span context from a
@@ -51,10 +51,11 @@ public class MetadataContextGetter implements TextMapGetter<Message> {
     }
 
     @Override
-    public String get(Message message, @Nonnull String key) {
+    @Nullable
+    public String get(@Nullable Message message, String key) {
         if (message == null) {
             return null;
         }
-        return (String) message.metadata().get(key);
+        return message.metadata().get(key);
     }
 }

@@ -42,6 +42,7 @@ import org.axonframework.common.util.SecondStubEvent;
 import org.axonframework.common.util.StubDomainEvent;
 import org.axonframework.util.TestDomainEventEntry;
 import org.axonframework.common.util.ThirdStubEvent;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -235,7 +236,7 @@ class EventMultiUpcasterTest {
         }
 
         @Override
-        protected Stream<IntermediateEventRepresentation> doUpcast(IntermediateEventRepresentation ir) {
+        protected @NonNull Stream<IntermediateEventRepresentation> doUpcast(@NonNull IntermediateEventRepresentation ir) {
             return Stream.of(
                     ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"),
                                      JsonNode.class,

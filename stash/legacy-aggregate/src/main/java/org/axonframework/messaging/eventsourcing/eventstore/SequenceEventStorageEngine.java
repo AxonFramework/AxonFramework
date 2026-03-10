@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
@@ -73,12 +72,12 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
+    public void appendEvents(List<? extends EventMessage> events) {
         activeStorage.appendEvents(events);
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
+    public void storeSnapshot(DomainEventMessage snapshot) {
         activeStorage.storeSnapshot(snapshot);
     }
 
@@ -96,14 +95,14 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
     }
 
     @Override
-    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         DomainEventStream historic = historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber);
         return new ConcatenatingDomainEventStream(historic, aggregateIdentifier, firstSequenceNumber,
                                                   (id, seq) -> activeStorage.readEvents(aggregateIdentifier, seq));
     }
 
     @Override
-    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(String aggregateIdentifier) {
         Optional<DomainEventMessage> optionalDomainEventMessage = activeStorage.readSnapshot(aggregateIdentifier);
         return optionalDomainEventMessage.isPresent()
                 ? optionalDomainEventMessage
@@ -111,7 +110,7 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         Optional<Long> result = activeStorage.lastSequenceNumberFor(aggregateIdentifier);
         if (result.isPresent()) {
             return result;
@@ -130,7 +129,7 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
+    public TrackingToken createTokenAt(Instant dateTime) {
         TrackingToken tokenFromActiveStorage = activeStorage.createTokenAt(dateTime);
         if (tokenFromActiveStorage == null) {
             return historicStorage.createTokenAt(dateTime);

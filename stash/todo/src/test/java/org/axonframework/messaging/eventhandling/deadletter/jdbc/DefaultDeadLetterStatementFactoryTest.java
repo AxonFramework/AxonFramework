@@ -17,7 +17,8 @@
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.conversion.json.JacksonSerializer;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,33 +38,34 @@ class DefaultDeadLetterStatementFactoryTest {
     }
 
     @Test
-    void buildWithNullGenericSerializerThrowsAxonConfigurationException() {
+    void buildWithNullGenericConverterThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder = DefaultDeadLetterStatementFactory.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.genericSerializer(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.genericConverter(null));
     }
 
     @Test
-    void buildWithNullEventSerializerThrowsAxonConfigurationException() {
+    void buildWithNullEventConverterThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder = DefaultDeadLetterStatementFactory.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.eventSerializer(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.eventConverter(null));
     }
 
     @Test
-    void buildWithoutTheGenericSerializerThrowsAxonConfigurationException() {
+    void buildWithoutTheGenericConverterThrowsAxonConfigurationException() {
+        JacksonConverter jacksonConverter = new JacksonConverter();
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
-                                                 .eventSerializer(JacksonSerializer.defaultSerializer());
+                                                 .eventConverter(new DelegatingEventConverter(jacksonConverter));
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }
 
     @Test
-    void buildWithoutTheEventSerializerThrowsAxonConfigurationException() {
+    void buildWithoutTheEventConverterThrowsAxonConfigurationException() {
         DefaultDeadLetterStatementFactory.Builder<?> testBuilder =
                 DefaultDeadLetterStatementFactory.builder()
-                                                 .genericSerializer(JacksonSerializer.defaultSerializer());
+                                                 .genericConverter(new JacksonConverter());
 
         assertThrows(AxonConfigurationException.class, testBuilder::build);
     }

@@ -16,8 +16,7 @@
 
 package org.axonframework.deadline.jobrunr;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.core.Message;
@@ -65,14 +64,14 @@ public class DeadlineDetails {
      * @param metadata             The {@link String} containing the metadata about the deadline.
      */
     @SuppressWarnings("squid:S107")
-    DeadlineDetails(@Nonnull String deadlineName,
-                    @Nonnull String type,
-                    @Nonnull String scopeDescriptor,
-                    @Nonnull String scopeDescriptorClass,
+    DeadlineDetails(String deadlineName,
+                    String type,
+                    String scopeDescriptor,
+                    String scopeDescriptorClass,
                     @Nullable String payload,
                     @Nullable String payloadClass,
                     @Nullable String payloadRevision,
-                    @Nonnull String metadata) {
+                    String metadata) {
         this.deadlineName = deadlineName;
         this.type = type;
         this.scopeDescriptor = scopeDescriptor;
@@ -96,10 +95,10 @@ public class DeadlineDetails {
      *                     {@code metadata}, as well as the whole {@link DeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    static String serialized(@Nonnull String deadlineName,
-                             @Nonnull ScopeDescriptor descriptor,
-                             @Nonnull DeadlineMessage message,
-                             @Nonnull Serializer serializer) {
+    static String serialized(String deadlineName,
+                             ScopeDescriptor descriptor,
+                             DeadlineMessage message,
+                             Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
         SerializedObject<String> serializedMetadata = serializer.serialize(message.metadata(), String.class);

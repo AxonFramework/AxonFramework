@@ -16,20 +16,18 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.messaging.core.NoScopeDescriptor;
-import org.axonframework.messaging.core.Scope;
-import org.axonframework.messaging.core.ScopeDescriptor;
-import org.axonframework.messaging.core.annotation.ParameterResolver;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import static org.axonframework.messaging.core.NoScopeDescriptor.INSTANCE;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.messaging.core.NoScopeDescriptor.INSTANCE;
+
+import org.jspecify.annotations.Nullable;
+import org.axonframework.messaging.core.NoScopeDescriptor;
+import org.axonframework.messaging.core.Scope;
+import org.axonframework.messaging.core.ScopeDescriptor;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Factory for a {@link ScopeDescriptor} {@link ParameterResolver}. Will return the result of
@@ -43,8 +41,8 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     @Nullable
     @Override
-    public ParameterResolver<ScopeDescriptor> createInstance(@Nonnull Executable executable,
-                                                             @Nonnull Parameter[] parameters,
+    public ParameterResolver<ScopeDescriptor> createInstance(Executable executable,
+                                                             Parameter[] parameters,
                                                              int parameterIndex) {
         return ScopeDescriptor.class.isAssignableFrom(parameters[parameterIndex].getType())
                 ? new ScopeDescriptorParameterResolver() : null;
@@ -52,9 +50,8 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<ScopeDescriptor> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<ScopeDescriptor> resolveParameterValue(ProcessingContext context) {
             try {
                 var scope = Scope.describeCurrentScope();
                 return CompletableFuture.completedFuture(scope);
@@ -64,7 +61,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

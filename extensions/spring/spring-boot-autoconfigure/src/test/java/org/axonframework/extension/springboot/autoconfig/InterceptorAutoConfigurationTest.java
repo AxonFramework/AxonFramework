@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
@@ -35,8 +35,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -536,10 +535,10 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            @Nonnull
-            public MessageStream<?> interceptOnHandle(@Nonnull T message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
+            @NonNull
+            public MessageStream<?> interceptOnHandle(@NonNull T message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<T> interceptorChain) {
                 interceptMessage(message);
                 return interceptorChain.proceed(message, context);
             }
@@ -563,9 +562,9 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            public @NotNull MessageStream<?> interceptOnDispatch(@NotNull T message,
+            public @NonNull MessageStream<?> interceptOnDispatch(@NonNull T message,
                                                                  @Nullable ProcessingContext context,
-                                                                 @NotNull MessageDispatchInterceptorChain<T> interceptorChain) {
+                                                                 @NonNull MessageDispatchInterceptorChain<T> interceptorChain) {
                 invocation.countDown();
                 handlingOutcome.add(name + ": " + message);
                 return interceptorChain.proceed(message, context);
@@ -600,9 +599,9 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            public @NotNull MessageStream<?> interceptOnDispatch(@NotNull T message,
+            public @NonNull MessageStream<?> interceptOnDispatch(@NonNull T message,
                                                                  @Nullable ProcessingContext context,
-                                                                 @NotNull MessageDispatchInterceptorChain<T> interceptorChain) {
+                                                                 @NonNull MessageDispatchInterceptorChain<T> interceptorChain) {
                 if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -644,10 +643,10 @@ class InterceptorAutoConfigurationTest {
             }
 
             @Override
-            @Nonnull
-            public MessageStream<?> interceptOnHandle(@Nonnull Message message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<Message> interceptorChain) {
+            @NonNull
+            public MessageStream<?> interceptOnHandle(@NonNull Message message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<Message> interceptorChain) {
                 if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -698,11 +697,10 @@ class InterceptorAutoConfigurationTest {
 
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
-            @Nonnull
             @Override
-            public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage message,
-                                                               @NotNull ProcessingContext context,
-                                                               @NotNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain) {
+            public @NonNull MessageStream<?> interceptOnHandle(@NonNull CommandMessage message,
+                                                               @NonNull ProcessingContext context,
+                                                               @NonNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain) {
                 return interceptorChain.proceed(message, context);
             }
         }

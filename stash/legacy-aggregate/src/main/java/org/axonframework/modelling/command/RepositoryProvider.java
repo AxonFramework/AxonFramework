@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Provides a repository for given aggregate type.
@@ -34,5 +33,5 @@ public interface RepositoryProvider {
      * @param <T>           type of the aggregate
      * @return repository given for aggregate type
      */
-    <T> Repository<T> repositoryFor(@Nonnull Class<T> aggregateType);
+    <T> Repository<T> repositoryFor(Class<T> aggregateType);
 }

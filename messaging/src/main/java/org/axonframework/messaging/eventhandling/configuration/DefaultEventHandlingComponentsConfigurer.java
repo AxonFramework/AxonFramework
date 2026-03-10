@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -50,20 +49,18 @@ public class DefaultEventHandlingComponentsConfigurer
         // Default constructor for empty configuration
     }
 
-    @Nonnull
     @Override
     public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
-            @Nonnull ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+            ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
         componentBuilders.add(handlingComponentBuilder);
         return this;
     }
 
-    @Nonnull
     @Override
     public EventHandlingComponentsConfigurer.CompletePhase decorated(
-            @Nonnull BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
+            BiFunction<Configuration, EventHandlingComponent, EventHandlingComponent> decorator
     ) {
         Objects.requireNonNull(decorator, "decorator may not be null");
         var decoratedBuilders = new ArrayList<ComponentBuilder<EventHandlingComponent>>();
@@ -77,7 +74,6 @@ public class DefaultEventHandlingComponentsConfigurer
         return this;
     }
 
-    @Nonnull
     @Override
     public List<ComponentBuilder<EventHandlingComponent>> toList() {
         return List.copyOf(componentBuilders);

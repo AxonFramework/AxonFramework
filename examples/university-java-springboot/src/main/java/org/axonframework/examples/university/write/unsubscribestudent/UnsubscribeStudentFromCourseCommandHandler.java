@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.university.write.unsubscribestudent;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
@@ -91,8 +91,7 @@ class UnsubscribeStudentFromCourseCommandHandler {
     private static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
         @Override
-        @Nonnull
-        public SubscriptionId resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+        public @NonNull SubscriptionId resolve(@NonNull Message command, @NonNull ProcessingContext context) {
             var converter = context.component(MessageConverter.class);
             UnsubscribeStudentFromCourse payload = command.payloadAs(UnsubscribeStudentFromCourse.class, converter);
             if (payload == null) {

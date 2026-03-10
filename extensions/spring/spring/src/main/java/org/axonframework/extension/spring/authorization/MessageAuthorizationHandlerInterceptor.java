@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.authorization;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -51,10 +50,9 @@ public class MessageAuthorizationHandlerInterceptor<M extends Message> implement
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationHandlerInterceptor.class);
 
     @Override
-    @Nonnull
-    public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                              @Nonnull ProcessingContext context,
-                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(M message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<M> interceptorChain) {
         if (!AnnotationUtils.isAnnotationPresent(message.payloadType(), Secured.class)) {
             return interceptorChain.proceed(message, context);
         }

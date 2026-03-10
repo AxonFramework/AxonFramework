@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of ScheduledExecutorService that delegates to another ScheduledExecutorService, while keeping track
@@ -42,28 +42,28 @@ public class ResultStoringScheduledExecutorService implements ScheduledExecutorS
     }
 
     @Override
-    public ScheduledFuture<?> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    public @NonNull ScheduledFuture<?> schedule(@NonNull Runnable command, long delay, @NonNull TimeUnit unit) {
         ScheduledFuture<?> future = delegate.schedule(command, delay, unit);
         results.add(future);
         return future;
     }
 
     @Override
-    public <V> ScheduledFuture<V> schedule(@Nonnull Callable<V> callable, long delay, @Nonnull TimeUnit unit) {
+    public @NonNull <V> ScheduledFuture<V> schedule(@NonNull Callable<V> callable, long delay, @NonNull TimeUnit unit) {
         ScheduledFuture<V> future = delegate.schedule(callable, delay, unit);
         results.add(future);
         return future;
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(@Nonnull Runnable command, long initialDelay, long period,
-                                                  @Nonnull TimeUnit unit) {
+    public @NonNull ScheduledFuture<?> scheduleAtFixedRate(@NonNull Runnable command, long initialDelay, long period,
+                                                  @NonNull TimeUnit unit) {
         return delegate.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(@Nonnull Runnable command, long initialDelay, long delay,
-                                                     @Nonnull TimeUnit unit) {
+    public @NonNull ScheduledFuture<?> scheduleWithFixedDelay(@NonNull Runnable command, long initialDelay, long delay,
+                                                     @NonNull TimeUnit unit) {
         ScheduledFuture<?> future = delegate.scheduleWithFixedDelay(command, initialDelay, delay, unit);
         results.add(future);
         return future;
@@ -75,7 +75,7 @@ public class ResultStoringScheduledExecutorService implements ScheduledExecutorS
     }
 
     @Override
-    public List<Runnable> shutdownNow() {
+    public @NonNull List<Runnable> shutdownNow() {
         return delegate.shutdownNow();
     }
 
@@ -90,41 +90,41 @@ public class ResultStoringScheduledExecutorService implements ScheduledExecutorS
     }
 
     @Override
-    public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, @NonNull TimeUnit unit) throws InterruptedException {
         return delegate.awaitTermination(timeout, unit);
     }
 
     @Override
-    public <T> Future<T> submit(@Nonnull Callable<T> task) {
+    public @NonNull <T> Future<T> submit(@NonNull Callable<T> task) {
         Future<T> future = delegate.submit(task);
         results.add(future);
         return future;
     }
 
     @Override
-    public <T> Future<T> submit(@Nonnull Runnable task, T result) {
+    public @NonNull <T> Future<T> submit(@NonNull Runnable task, T result) {
         Future<T> future = delegate.submit(task, result);
         results.add(future);
         return future;
     }
 
     @Override
-    public Future<?> submit(@Nonnull Runnable task) {
+    public @NonNull Future<?> submit(@NonNull Runnable task) {
         Future<?> future = delegate.submit(task);
         results.add(future);
         return future;
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public @NonNull <T> List<Future<T>> invokeAll(@NonNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
         List<Future<T>> futures = delegate.invokeAll(tasks);
         results.addAll(futures);
         return futures;
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
-                                         @Nonnull TimeUnit unit)
+    public @NonNull <T> List<Future<T>> invokeAll(@NonNull Collection<? extends Callable<T>> tasks, long timeout,
+                                                  @NonNull TimeUnit unit)
             throws InterruptedException {
         List<Future<T>> futures = delegate.invokeAll(tasks, timeout, unit);
         results.addAll(futures);
@@ -132,17 +132,17 @@ public class ResultStoringScheduledExecutorService implements ScheduledExecutorS
     }
 
     @Override
-    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
+    public @NonNull <T> T invokeAny(@NonNull Collection<? extends Callable<T>> tasks) {
         throw new UnsupportedOperationException("This operation is not supported");
     }
 
     @Override
-    public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit) {
+    public @NonNull <T> T invokeAny(@NonNull Collection<? extends Callable<T>> tasks, long timeout, @NonNull TimeUnit unit) {
         throw new UnsupportedOperationException("This operation is not supported");
     }
 
     @Override
-    public void execute(@Nonnull Runnable command) {
+    public void execute(@NonNull Runnable command) {
         throw new UnsupportedOperationException("This operation is not supported");
     }
 

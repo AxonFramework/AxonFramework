@@ -21,7 +21,6 @@ import org.axonframework.messaging.tracing.SpanAttributesProvider;
 
 import java.util.Collections;
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 
 /**
  * Adds the message type (simple class name) to the Span.
@@ -32,7 +31,7 @@ import jakarta.annotation.Nonnull;
 public class MessageTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
+    public Map<String, String> provideForMessage(Message message) {
         return Collections.singletonMap("axon_message_type", message.getClass().getSimpleName());
     }
 }

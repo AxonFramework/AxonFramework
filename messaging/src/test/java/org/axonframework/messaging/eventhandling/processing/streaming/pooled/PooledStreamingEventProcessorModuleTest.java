@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -37,6 +37,7 @@ import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
@@ -874,14 +875,11 @@ class PooledStreamingEventProcessorModuleTest {
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
-            configurer.eventProcessing(ep ->
-                                               ep.pooledStreaming(ps -> ps.defaults(
-                                                                          d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                                                .eventSource(typeEventSource)
-                                                                                .initialSegmentCount(typeSegmentCount)
-                                                                  )
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeEventSource)
+                          .initialSegmentCount(typeSegmentCount)
+            )));
 
             // and - instance-specific customization
             int instanceSegmentCount = 4;
@@ -889,10 +887,12 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration()
-                            .eventSource(p.eventSource())
-                            .tokenStore(instanceTokenStore)
-                            .initialSegmentCount(instanceSegmentCount));
+                    .customized((__, p) -> new PooledStreamingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .tokenStore(instanceTokenStore)
+                                 .initialSegmentCount(instanceSegmentCount)
+                    );
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
 
             // when
@@ -1100,7 +1100,7 @@ class PooledStreamingEventProcessorModuleTest {
     }
 
     private static RecordingEventHandlingComponent simpleRecordingTestComponent(
-            @Nonnull QualifiedName supportedEventName
+            @NonNull QualifiedName supportedEventName
     ) {
         return new RecordingEventHandlingComponent(
                 SimpleEventHandlingComponent.create("test")
@@ -1116,8 +1116,7 @@ class PooledStreamingEventProcessorModuleTest {
                                                          .orElse(new AsyncInMemoryStreamableEventSource())));
     }
 
-    @Nonnull
-    private static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
+        private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
         var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         return (components) -> components.declarative(cfg -> eventHandlingComponent);
@@ -1135,8 +1134,7 @@ class PooledStreamingEventProcessorModuleTest {
                                               processorName).ifPresent(p -> assertThat(p.isRunning()).isTrue()));
     }
 
-    @Nonnull
-    private static Optional<PooledStreamingEventProcessor> processor(
+        private @NonNull static Optional<PooledStreamingEventProcessor> processor(
             AxonConfiguration configuration,
             String processorName
     ) {
@@ -1159,8 +1157,7 @@ class PooledStreamingEventProcessorModuleTest {
         }).orElse(null);
     }
 
-    @Nonnull
-    private static TransactionalUnitOfWorkFactory aTransactionalUnitOfWork() {
+    static @NonNull TransactionalUnitOfWorkFactory aTransactionalUnitOfWork() {
         return UnitOfWorkTestUtils.transactionalUnitOfWorkFactory(new NoOpTransactionManager());
     }
 }

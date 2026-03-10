@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -56,7 +55,7 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      *
      * @param delegate The {@link EventHandlingComponent} to delegate calls to.
      */
-    public ReplayBlockingEventHandlingComponent(@Nonnull E delegate) {
+    public ReplayBlockingEventHandlingComponent(E delegate) {
         super(delegate);
         this.delegateComponentAndRegistry = delegate;
     }
@@ -71,9 +70,8 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      * @param context The processing context containing the tracking token.
      * @return An empty {@link MessageStream} if replaying, otherwise the result from the delegate.
      */
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event, ProcessingContext context) {
         Optional<TrackingToken> token = TrackingToken.fromContext(context);
         if (token.isPresent() && ReplayToken.isReplay(token.get())) {
             return MessageStream.empty();
@@ -89,9 +87,8 @@ public class ReplayBlockingEventHandlingComponent<E extends EventHandlingCompone
      * @param resetHandler The reset handler to subscribe.
      * @return A {@link ResetHandlerRegistry} for managing the subscription.
      */
-    @Nonnull
     @Override
-    public ReplayBlockingEventHandlingComponent<E> subscribe(@Nonnull ResetHandler resetHandler) {
+    public ReplayBlockingEventHandlingComponent<E> subscribe(ResetHandler resetHandler) {
         hasResetHandler.set(true);
         delegateComponentAndRegistry.subscribe(resetHandler);
         return this;

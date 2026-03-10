@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
@@ -61,7 +61,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();
@@ -123,7 +123,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
     @Test
     void canHandleCommandThatTargetsMultipleOfTheSameModelInSameAnnotatedCommandHandler() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();
@@ -182,8 +182,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
         public static class MentorIdResolver implements EntityIdResolver<String> {
 
             @Override
-            @Nonnull
-            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
+            public @NonNull String resolve(@NonNull Message command, @NonNull ProcessingContext context) throws EntityIdResolutionException {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;

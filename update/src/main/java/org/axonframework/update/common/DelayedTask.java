@@ -16,7 +16,6 @@
 
 package org.axonframework.update.common;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Objects;
@@ -42,7 +41,7 @@ public class DelayedTask {
     private Exception failureCause = null;
     private final Thread thread;
 
-    private DelayedTask(@Nonnull Runnable runnable, long delay) {
+    private DelayedTask(Runnable runnable, long delay) {
         if (delay < 0) {
             throw new IllegalArgumentException("Delay must be non-negative.");
         }
@@ -73,7 +72,7 @@ public class DelayedTask {
      * @return A new instance of {@code DelayedTask} that will run the given {@code runnable} after the specified
      * {@code delay}.
      */
-    public static DelayedTask of(@Nonnull Runnable runnable, long delay) {
+    public static DelayedTask of(Runnable runnable, long delay) {
         return new DelayedTask(runnable, delay);
     }
 

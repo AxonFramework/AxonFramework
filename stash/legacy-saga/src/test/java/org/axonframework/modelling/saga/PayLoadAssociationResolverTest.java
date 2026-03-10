@@ -24,8 +24,8 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.util.ConcurrencyUtils.testConcurrent;
@@ -72,7 +72,7 @@ class PayloadAssociationResolverTest {
     private static class TestHandlingMember implements MessageHandlingMember<Object> {
 
         @Override
-        public Class<?> payloadType() {
+        public @NonNull Class<?> payloadType() {
             try {
                 Thread.sleep(10L);
             } catch (InterruptedException e) {
@@ -87,23 +87,23 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable Object target) {
+        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, @Nullable Object target) {
             return null;
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             return MessageStream.empty();
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
             return true;
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             return true;
         }
     }

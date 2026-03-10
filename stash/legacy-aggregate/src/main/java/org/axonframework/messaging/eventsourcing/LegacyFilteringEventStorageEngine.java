@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of EventStorageEngine that delegates to another implementation, while filtering
@@ -62,17 +61,17 @@ public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngi
     }
 
     @Override
-    public void appendEvents(@Nonnull EventMessage... events) {
+    public void appendEvents(EventMessage... events) {
         delegate.appendEvents(Arrays.stream(events).filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
+    public void appendEvents(List<? extends EventMessage> events) {
         delegate.appendEvents(events.stream().filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
+    public void storeSnapshot(DomainEventMessage snapshot) {
         delegate.storeSnapshot(snapshot);
     }
 
@@ -82,22 +81,22 @@ public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngi
     }
 
     @Override
-    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
+    public DomainEventStream readEvents(String aggregateIdentifier) {
         return delegate.readEvents(aggregateIdentifier);
     }
 
     @Override
-    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         return delegate.readEvents(aggregateIdentifier, firstSequenceNumber);
     }
 
     @Override
-    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(String aggregateIdentifier) {
         return delegate.readSnapshot(aggregateIdentifier);
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return delegate.lastSequenceNumberFor(aggregateIdentifier);
     }
 
@@ -112,7 +111,7 @@ public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngi
     }
 
     @Override
-    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
+    public TrackingToken createTokenAt(Instant dateTime) {
         return delegate.createTokenAt(dateTime);
     }
 }

@@ -18,7 +18,7 @@ package org.axonframework.deadline.dbscheduler;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Default supplier for an {@link DbSchedulerDeadlineManager}. This makes it easier to use in context without more
@@ -31,7 +31,7 @@ import jakarta.annotation.Nonnull;
  */
 public class DbSchedulerDeadlineManagerSupplier implements Supplier<DbSchedulerDeadlineManager> {
 
-    private final AtomicReference<DbSchedulerDeadlineManager> deadlineManager = new AtomicReference<>();
+    private final AtomicReference<@Nullable DbSchedulerDeadlineManager> deadlineManager = new AtomicReference<>();
 
     /**
      * Returns the set {@link DbSchedulerDeadlineManager}, or {@code null} if it hasn't been set yet.
@@ -49,7 +49,7 @@ public class DbSchedulerDeadlineManagerSupplier implements Supplier<DbSchedulerD
      * @param deadlineManager the {@link DbSchedulerDeadlineManager}
      */
     public void set(
-            @Nonnull DbSchedulerDeadlineManager deadlineManager
+            DbSchedulerDeadlineManager deadlineManager
     ) {
         this.deadlineManager.set(deadlineManager);
     }

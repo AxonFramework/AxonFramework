@@ -24,9 +24,9 @@ import org.axonframework.examples.university.event.StudentUnsubscribedFromCourse
 import org.axonframework.examples.university.read.coursestats.api.CoursesQueryResult;
 import org.axonframework.examples.university.read.coursestats.api.FindAllCourses;
 import org.axonframework.examples.university.read.coursestats.api.GetCourseStatsById;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

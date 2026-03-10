@@ -15,6 +15,9 @@
  */
 
 /**
- * Classes related to message processing in Axon Framework.
+ * Classes related to message conversion in Axon Framework.
  */
+@NullMarked
 package org.axonframework.conversion;
+
+import org.jspecify.annotations.NullMarked;

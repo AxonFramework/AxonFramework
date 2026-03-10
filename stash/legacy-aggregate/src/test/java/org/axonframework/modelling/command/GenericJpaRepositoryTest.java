@@ -16,8 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
 import jakarta.persistence.LockModeType;
@@ -346,7 +345,7 @@ class GenericJpaRepositoryTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<EventMessage> events) {
+                                               List<? extends EventMessage> events) {
             publishedEvents.addAll(events);
             return super.publish(context, events);
         }
@@ -366,7 +365,7 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
 
         }
     }

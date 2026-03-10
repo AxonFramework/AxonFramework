@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -35,7 +34,7 @@ public class EntityMissingForInstanceCommandHandlerException extends RuntimeExce
      *
      * @param command The {@link CommandMessage} that was handled.
      */
-    public EntityMissingForInstanceCommandHandlerException(@Nonnull CommandMessage command) {
+    public EntityMissingForInstanceCommandHandlerException(CommandMessage command) {
         super(String.format(
                 "Entity was missing for instance command handler for command [%s]",
                 command.type()

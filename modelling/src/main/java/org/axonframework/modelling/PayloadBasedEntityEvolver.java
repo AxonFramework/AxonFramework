@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -50,16 +49,16 @@ public class PayloadBasedEntityEvolver<P, E> implements EntityEvolver<E> {
      * @param payloadType The payload type to check against.
      * @param evolver     The function to evolve the entity with.
      */
-    public PayloadBasedEntityEvolver(@Nonnull Class<P> payloadType,
-                                     @Nonnull BiFunction<E, P, E> evolver) {
+    public PayloadBasedEntityEvolver(Class<P> payloadType,
+                                     BiFunction<E, P, E> evolver) {
         this.payloadType = requireNonNull(payloadType, "The payload type must not be null.");
         this.evolver = requireNonNull(evolver, "The evolver must not be null.");
     }
 
     @Override
-    public E evolve(@Nonnull E entity,
-                    @Nonnull EventMessage event,
-                    @Nonnull ProcessingContext context) {
+    public E evolve(E entity,
+                    EventMessage event,
+                    ProcessingContext context) {
         P payload = payloadType.cast(requireNonNull(event, "The event must not be null.").payload());
         return evolver.apply(requireNonNull(entity, "The entity must not be null."), payload);
     }

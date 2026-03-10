@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -48,21 +47,19 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
      *
      * @param delegate The {@link QueryBusConnector} to delegate all calls to.
      */
-    protected DelegatingQueryBusConnector(@Nonnull QueryBusConnector delegate) {
+    protected DelegatingQueryBusConnector(QueryBusConnector delegate) {
         this.delegate = requireNonNull(delegate, "The delegate must not be null.");
     }
 
     // region [QueryBus]
 
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context) {
         return delegate.query(query, context);
     }
 
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return delegate.subscriptionQuery(query, context, updateBufferSize);
@@ -74,23 +71,23 @@ public abstract class DelegatingQueryBusConnector implements QueryBusConnector {
     // region [Connector]
 
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+    public CompletableFuture<Void> subscribe(QualifiedName name) {
         return delegate.subscribe(name);
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName name) {
+    public boolean unsubscribe(QualifiedName name) {
         return delegate.unsubscribe(name);
     }
 
     @Override
-    public void onIncomingQuery(@Nonnull Handler handler) {
+    public void onIncomingQuery(Handler handler) {
         delegate.onIncomingQuery(handler);
     }
     // endregion
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 }

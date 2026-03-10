@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -40,7 +39,7 @@ public class MultiTagResolver implements TagResolver {
      *
      * @param tagResolvers The resolvers to delegate to.
      */
-    public MultiTagResolver(@Nonnull List<? extends TagResolver> tagResolvers) {
+    public MultiTagResolver(List<? extends TagResolver> tagResolvers) {
         this.delegates = List.copyOf(tagResolvers);
     }
 
@@ -49,13 +48,12 @@ public class MultiTagResolver implements TagResolver {
      *
      * @param tagResolvers The resolvers to delegate to.
      */
-    public MultiTagResolver(@Nonnull TagResolver... tagResolvers) {
+    public MultiTagResolver(TagResolver... tagResolvers) {
         this.delegates = List.of(tagResolvers);
     }
 
-    @Nonnull
     @Override
-    public Set<Tag> resolve(@Nonnull EventMessage event) {
+    public Set<Tag> resolve(EventMessage event) {
         Set<Tag> tags = new HashSet<>();
         for (TagResolver delegate : delegates) {
             tags.addAll(delegate.resolve(event));

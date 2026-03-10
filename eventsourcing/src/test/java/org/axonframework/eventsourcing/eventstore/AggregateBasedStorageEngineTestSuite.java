@@ -16,17 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.TerminalEventMessage;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
@@ -34,7 +26,15 @@ import org.axonframework.messaging.core.MessageStream.Entry;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.TerminalEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
@@ -581,8 +581,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         ConsistencyMarker marker1 = tx1.join();
         ConsistencyMarker marker2 = tx2.join();
 
-        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(0);
-        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(0);
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker1.position())).isEqualTo(1);
+        assertThat(AggregateSequenceNumberPosition.toSequenceNumber(marker2.position())).isEqualTo(1);
     }
 
     @Test
@@ -717,7 +717,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         );
     }
 
-    private @Nonnull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
+    private @NonNull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
                                                                                int expectedSequence) {
         return e -> expectedPayload.equals(convertPayload(e.message()).payload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))

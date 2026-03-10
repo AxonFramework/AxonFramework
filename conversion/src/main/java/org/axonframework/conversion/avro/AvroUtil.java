@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.InvalidAvroMagicException;
 import org.apache.avro.InvalidNumberEncodingException;
@@ -93,7 +92,7 @@ public class AvroUtil {
      * @return fingerprint of the schema.
      * @throws AvroRuntimeException if fingerprint can not be read from input bytes.
      */
-    public static long fingerprint(@Nonnull byte[] singleObjectEncodedBytes) {
+    public static long fingerprint(byte [] singleObjectEncodedBytes) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(singleObjectEncodedBytes)) {
             int magicByte = bis.read();
             int versionByte = bis.read();
@@ -124,7 +123,7 @@ public class AvroUtil {
      * @return payload bytes.
      * @throws AvroRuntimeException if payload bytes can not be read from input bytes.
      */
-    public static byte[] payload(@Nonnull byte[] singleObjectEncodedBytes) {
+    public static byte[] payload(byte [] singleObjectEncodedBytes) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(singleObjectEncodedBytes)) {
             if (AVRO_HEADER_LENGTH != bis.skip(AVRO_HEADER_LENGTH)) {
                 throw new BadHeaderException("Could not read header bytes, end of stream reached.");
@@ -158,8 +157,7 @@ public class AvroUtil {
      * @return schema.
      * @throws AvroRuntimeException on any errors.
      */
-    @Nonnull
-    public static Schema getClassSchemaChecked(@Nonnull Class<SpecificRecordBase> specificRecordBaseClass) {
+    public static Schema getClassSchemaChecked(Class<SpecificRecordBase> specificRecordBaseClass) {
         try {
             return getClassSchema(specificRecordBaseClass);
         } catch (Exception e) {
@@ -177,8 +175,7 @@ public class AvroUtil {
      * @throws InvocationTargetException on wrong class structure.
      * @throws IllegalAccessException    on wrong class structure.
      */
-    @Nonnull
-    public static Schema getClassSchema(@Nonnull Class<SpecificRecordBase> clazz)
+    static Schema getClassSchema(Class<SpecificRecordBase> clazz)
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         return (Schema) clazz.getMethod("getClassSchema").invoke(null); // invoke static method
     }
@@ -190,7 +187,7 @@ public class AvroUtil {
      * @param schema A {@link Schema} to return the fingerprint for.
      * @return The fingerprint for the given {@code schema}.
      */
-    public static long fingerprint(@Nonnull Schema schema) {
+    public static long fingerprint(Schema schema) {
         return SchemaNormalization.parsingFingerprint64(schema);
     }
 
@@ -202,8 +199,8 @@ public class AvroUtil {
      * @return list of incompatibilities if any, or empty list if schemas are compatible.
      */
     public static List<SchemaCompatibility.Incompatibility> checkCompatibility(
-            @Nonnull Schema readerSchema,
-            @Nonnull Schema writerSchema
+            Schema readerSchema,
+            Schema writerSchema
     ) {
         SchemaCompatibility.SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
                 readerSchema,
@@ -230,10 +227,9 @@ public class AvroUtil {
      * @param includeSchemasInStackTraces A flag controlling if the stacktrace should include reader and writer schema.
      * @return conversion exception.
      */
-    @Nonnull
-    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                         @Nonnull Schema readerSchema,
-                                                                         @Nonnull Schema writerSchema,
+    static ConversionException createExceptionFailedToDeserialize(Class<?> readerType,
+                                                                         Schema readerSchema,
+                                                                         Schema writerSchema,
                                                                          Exception cause,
                                                                          boolean includeSchemasInStackTraces
     ) {
@@ -257,9 +253,9 @@ public class AvroUtil {
      * @param includeSchemasInStackTraces A flag controlling if the stacktrace should contain reader and writer schema.
      * @return conversion exception.
      */
-    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                         @Nonnull Schema readerSchema,
-                                                                         @Nonnull Schema writerSchema,
+    public static ConversionException createExceptionFailedToDeserialize(Class<?> readerType,
+                                                                         Schema readerSchema,
+                                                                         Schema writerSchema,
                                                                          String message,
                                                                          boolean includeSchemasInStackTraces
     ) {
@@ -281,7 +277,7 @@ public class AvroUtil {
      * @param incompatibility incompatibility to display.
      * @return string representation.
      */
-    public static String incompatibilityPrinter(@Nonnull SchemaCompatibility.Incompatibility incompatibility) {
+    public static String incompatibilityPrinter(SchemaCompatibility.Incompatibility incompatibility) {
         return String.format("%s located at \"%s\" with value \"%s\"",
                              incompatibility.getType(),
                              incompatibility.getLocation(),
@@ -296,7 +292,7 @@ public class AvroUtil {
      * @return exception to throw.
      */
     public static ConversionException createExceptionNoSchemaFound(
-            @Nonnull Class<?> readerType,
+            Class<?> readerType,
             long fingerprint
     ) {
         return new ConversionException(

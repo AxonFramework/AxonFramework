@@ -16,22 +16,24 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentChangeListener;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 class PooledStreamingEventProcessorConfigurationTest {
 
     @Test
     void addSegmentChangeListenerAddsListenersWithoutOverriding() {
         // given
-        PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration();
+        PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration(
+                new EventProcessorConfiguration("processorName", null)
+        );
         AtomicInteger releaseInvocations = new AtomicInteger();
         testSubject.addSegmentChangeListener(SegmentChangeListener.runOnRelease(
                 segment -> releaseInvocations.incrementAndGet()
@@ -46,5 +48,4 @@ class PooledStreamingEventProcessorConfigurationTest {
         // then
         assertThat(releaseInvocations).hasValue(2);
     }
-
 }

@@ -16,6 +16,7 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
-    public <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+    public <T> Property<T> propertyFor(Class<? extends T> targetClass, @Nullable String property) {
         String methodName = getterName(property);
         Optional<Method> method = getMethod(targetClass, methodName);
         if (!method.isPresent()) {

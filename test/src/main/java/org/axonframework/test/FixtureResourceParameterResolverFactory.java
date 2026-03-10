@@ -16,18 +16,16 @@
 
 package org.axonframework.test;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.common.Priority;
-import org.axonframework.messaging.core.annotation.ParameterResolver;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import static org.axonframework.common.Priority.LAST;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.Priority.LAST;
+import org.axonframework.common.Priority;
+import org.axonframework.messaging.core.annotation.ParameterResolver;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * ParameterResolverFactory implementation for use in test cases that prevent that all declared resources on message
@@ -44,8 +42,8 @@ import static org.axonframework.common.Priority.LAST;
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver<Object> createInstance(@Nonnull Executable executable,
-                                                    @Nonnull Parameter[] parameters,
+    public ParameterResolver<Object> createInstance(Executable executable,
+                                                    Parameter[] parameters,
                                                     int parameterIndex) {
         return new FailingParameterResolver(parameters[parameterIndex].getType());
     }
@@ -58,9 +56,8 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
             this.parameterType = parameterType;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             throw new FixtureExecutionException(
                     "No resource of type [" + parameterType.getName()
                             + "] has been registered. It is required for one of the handlers being executed."
@@ -68,7 +65,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

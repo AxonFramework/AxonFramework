@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -66,7 +65,7 @@ public interface MessageHandlingMember<T> {
      * @param context The context in which the message is being handled.
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise.
      */
-    boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context);
+    boolean canHandle(Message message, ProcessingContext context);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
@@ -74,7 +73,7 @@ public interface MessageHandlingMember<T> {
      * @param payloadType The payloadType of a message that is to be handled
      * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise.
      */
-    default boolean canHandleType(@Nonnull Class<?> payloadType) {
+    default boolean canHandleType(Class<?> payloadType) {
         return true;
     }
 
@@ -88,7 +87,7 @@ public interface MessageHandlingMember<T> {
      * @param messageType The {@link Message}'s type to check if it can be handled by this handler.
      * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise.
      */
-    boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType);
+    boolean canHandleMessageType(Class<? extends Message> messageType);
 
     /**
      * Handles the given {@code message} by invoking the appropriate method on given {@code target}. This may result in
@@ -106,8 +105,8 @@ public interface MessageHandlingMember<T> {
     // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Internal
     @Deprecated(forRemoval = true, since = "5.2.0")
-    Object handleSync(@Nonnull Message message,
-                      @Nonnull ProcessingContext context,
+    Object handleSync(Message message,
+                      ProcessingContext context,
                       @Nullable T target) throws Exception;
 
     /**
@@ -123,7 +122,7 @@ public interface MessageHandlingMember<T> {
      * @param target  The target to handle the message.
      * @return The {@code MessageStream} containing the response(s), if any, from handling the given {@code message}.
      */
-    MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target);
+    MessageStream<?> handle(Message message, ProcessingContext context, @Nullable T target);
 
     /**
      * Returns the wrapped handler object if its type is an instance of the given {@code handlerType}. For instance, if

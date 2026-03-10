@@ -16,7 +16,6 @@
 
 package org.axonframework.update.api;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 import java.net.URLEncoder;
@@ -44,15 +43,15 @@ import java.util.List;
  */
 @Internal
 public record UpdateCheckRequest(
-        @Nonnull String machineId,
-        @Nonnull String instanceId,
-        @Nonnull String osName,
-        @Nonnull String osVersion,
-        @Nonnull String osArch,
-        @Nonnull String jvmVersion,
-        @Nonnull String jvmVendor,
-        @Nonnull String kotlinVersion,
-        @Nonnull List<Artifact> libraries
+        String machineId,
+        String instanceId,
+        String osName,
+        String osVersion,
+        String osArch,
+        String jvmVersion,
+        String jvmVendor,
+        String kotlinVersion,
+        List<Artifact> libraries
 ) {
     /**
      * Converts the usage request into a query string format suitable for HTTP requests.
@@ -89,8 +88,7 @@ public record UpdateCheckRequest(
         );
     }
 
-    @Nonnull
-    private String getAxonBaseVersion() {
+        private String getAxonBaseVersion() {
         return libraries.stream()
                         .filter(a -> a.groupId().equals("org.axonframework"))
                         .filter(a -> a.artifactId().equals("axon-messaging"))

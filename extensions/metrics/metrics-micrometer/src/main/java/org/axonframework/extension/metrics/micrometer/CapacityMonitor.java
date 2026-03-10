@@ -20,7 +20,6 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import jakarta.annotation.Nonnull;
 import org.axonframework.extension.metrics.micrometer.reservoir.SlidingTimeWindowReservoir;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -182,7 +181,7 @@ public class CapacityMonitor implements MessageMonitor<Message> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final Iterable<Tag> tags = tagsBuilder.apply(message);
         final SlidingTimeWindowReservoir timeWindowedDurationMeasurements = createIfAbsent(meterNamePrefix,
                                                                                            Tags.of(tags),

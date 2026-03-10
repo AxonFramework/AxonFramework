@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -57,19 +56,18 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
      * @param converter The {@link MessageConverter} to use.
      * @param delegate  The {@link EntityIdResolver} to use on the message after conversion.
      */
-    public AnnotatedEntityIdResolver(@Nonnull AnnotatedEntityMetamodel<?> metamodel,
-                                     @Nonnull Class<ID> idType,
-                                     @Nonnull MessageConverter converter,
-                                     @Nonnull EntityIdResolver<ID> delegate) {
+    public AnnotatedEntityIdResolver(AnnotatedEntityMetamodel<?> metamodel,
+                                     Class<ID> idType,
+                                     MessageConverter converter,
+                                     EntityIdResolver<ID> delegate) {
         this.idType = Objects.requireNonNull(idType, "The idType should not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel should not be null,");
         this.converter = Objects.requireNonNull(converter, "The converter should not be null.");
         this.delegate = Objects.requireNonNull(delegate, "The delegate should not be null.");
     }
 
-    @Nonnull
     @Override
-    public ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException {
+    public ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (expectedRepresentation != null) {
             return delegate.resolve(message.withConvertedPayload(expectedRepresentation, converter), context);
@@ -80,7 +78,7 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("idType", idType);

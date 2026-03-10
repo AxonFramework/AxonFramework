@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 /**
  * Generic implementation of the {@link DeadLetter dead letter} allowing any type of {@link Message} to be dead
@@ -170,7 +169,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> withCause(@Nonnull Throwable requeueCause) {
+    public DeadLetter<M> withCause(Throwable requeueCause) {
         return new GenericDeadLetter<>(this, requeueCause);
     }
 

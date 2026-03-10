@@ -16,7 +16,8 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -44,22 +45,21 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
      * @param setter the setter to set the evolved child entity on the parent entity.
      */
     public GetterSetterChildEntityFieldDefinition(
-            @Nonnull Function<P, F> getter,
-            @Nonnull BiConsumer<P, F> setter
+            Function<P, F> getter,
+            BiConsumer<P, F> setter
     ) {
         this.getter = Objects.requireNonNull(getter, "The getter may not be null.");
         this.setter = Objects.requireNonNull(setter, "The setter may not be null.");
     }
 
-    @Nonnull
     @Override
-    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+    public P evolveParentBasedOnChildInput(P parentEntity, @Nullable F childInput) {
         setter.accept(parentEntity, childInput);
         return parentEntity;
     }
 
     @Override
-    public F getChildValue(@Nonnull P parentEntity) {
+    public F getChildValue(P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

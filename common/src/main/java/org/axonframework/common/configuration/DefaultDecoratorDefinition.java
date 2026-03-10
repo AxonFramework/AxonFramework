@@ -16,8 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
@@ -51,8 +49,8 @@ class DefaultDecoratorDefinition<C, D extends C>
      * @param selector  The predicate defining which components to decorate.
      * @param decorator The decorator function to apply to matching components.
      */
-    public DefaultDecoratorDefinition(@Nonnull Predicate<Component.Identifier<?>> selector,
-                                      @Nonnull ComponentDecorator<C, D> decorator) {
+    public DefaultDecoratorDefinition(Predicate<Component.Identifier<?>> selector,
+                                      ComponentDecorator<C, D> decorator) {
         this.selector = requireNonNull(selector, "The selector must not be null.");
         this.decorator = requireNonNull(decorator, "The decorator must not be null.");
     }
@@ -64,13 +62,13 @@ class DefaultDecoratorDefinition<C, D extends C>
     }
 
     @Override
-    public DecoratorDefinition<C, D> onStart(int phase, @Nonnull ComponentLifecycleHandler<D> handler) {
+    public DecoratorDefinition<C, D> onStart(int phase, ComponentLifecycleHandler<D> handler) {
         startHandlers.add(new AbstractComponent.HandlerRegistration<>(phase, handler));
         return this;
     }
 
     @Override
-    public DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<D> handler) {
+    public DecoratorDefinition<C, D> onShutdown(int phase, ComponentLifecycleHandler<D> handler) {
         shutdownHandlers.add(new AbstractComponent.HandlerRegistration<>(phase, handler));
         return this;
     }
@@ -81,12 +79,12 @@ class DefaultDecoratorDefinition<C, D extends C>
     }
 
     @Override
-    public Component<C> decorate(@Nonnull Component<C> delegate) {
+    public Component<C> decorate(Component<C> delegate) {
         return new DecoratedComponent<>(delegate, decorator, startHandlers, shutdownHandlers);
     }
 
     @Override
-    public boolean matches(@Nonnull Component.Identifier<?> id) {
+    public boolean matches(Component.Identifier<?> id) {
         return selector.test(id);
     }
 }

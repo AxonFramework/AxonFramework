@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Collections;
@@ -49,7 +48,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
     }
 
     @Override
-    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return true;
     }
 
@@ -75,7 +74,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
     }
 
     @Override
-    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(Set<QualifiedName> types) {
         Objects.requireNonNull(types, "The provided types should not be null");
         return new TagAndTypeFilteredEventCriteria(types, Collections.emptySet());
     }

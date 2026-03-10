@@ -16,6 +16,7 @@
 
 package org.axonframework.common.util;
 
+import org.jspecify.annotations.NonNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -52,7 +53,7 @@ public class DelegateScheduledExecutorService implements ScheduledExecutorServic
     }
 
     @Override
-    public List<Runnable> shutdownNow() {
+    public @NonNull List<Runnable> shutdownNow() {
         return delegate.shutdownNow();
     }
 
@@ -67,34 +68,34 @@ public class DelegateScheduledExecutorService implements ScheduledExecutorServic
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, @NonNull TimeUnit unit) throws InterruptedException {
         return delegate.awaitTermination(timeout, unit);
     }
 
     @Override
-    public <T> Future<T> submit(Callable<T> task) {
+    public @NonNull <T> Future<T> submit(@NonNull Callable<T> task) {
         return delegate.submit(task);
     }
 
     @Override
-    public <T> Future<T> submit(Runnable task, T result) {
+    public @NonNull <T> Future<T> submit(@NonNull Runnable task, T result) {
         return delegate.submit(task, result);
     }
 
     @Override
-    public Future<?> submit(Runnable task) {
+    public @NonNull Future<?> submit(@NonNull Runnable task) {
         return delegate.submit(task);
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public @NonNull <T> List<Future<T>> invokeAll(@NonNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
         return delegate.invokeAll(tasks);
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+    public @NonNull <T> List<Future<T>> invokeAll(@NonNull Collection<? extends Callable<T>> tasks,
                                          long timeout,
-                                         TimeUnit unit) throws InterruptedException {
+                                                  @NonNull TimeUnit unit) throws InterruptedException {
         return delegate.invokeAll(tasks, timeout, unit);
     }
 
@@ -126,12 +127,12 @@ public class DelegateScheduledExecutorService implements ScheduledExecutorServic
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+    public @NonNull ScheduledFuture<?> scheduleAtFixedRate(@NonNull Runnable command, long initialDelay, long period, TimeUnit unit) {
         return delegate.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    public @NonNull ScheduledFuture<?> scheduleWithFixedDelay(@NonNull Runnable command, long initialDelay, long delay, TimeUnit unit) {
         return delegate.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 }

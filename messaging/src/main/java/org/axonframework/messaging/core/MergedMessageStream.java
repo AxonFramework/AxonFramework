@@ -16,11 +16,14 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A {@link MessageStream} implementation that merges two underlying message streams into a single stream. Messages
@@ -47,6 +50,11 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     private final MessageStream<M> second;
     private final Comparator<Entry<M>> comparator;
 
+    private final AtomicReference<@Nullable Runnable> callbackRef = new AtomicReference<>();
+    private final AtomicBoolean callbackRunning = new AtomicBoolean(false);
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
+
+
     /**
      * Constructs a {@code MergedMessageStream} that merges two message streams based on the given comparator.
      *
@@ -55,9 +63,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
      * @param first      The first message stream to merge.
      * @param second     The second message stream to merge.
      */
-    public MergedMessageStream(@NonNull Comparator<Entry<M>> comparator,
-                               @NonNull MessageStream<M> first,
-                               @NonNull MessageStream<M> second) {
+    public MergedMessageStream(Comparator<Entry<M>> comparator,
+                               MessageStream<M> first,
+                               MessageStream<M> second) {
         this.comparator = Objects.requireNonNull(comparator, "comparator must not be null");
         this.first = Objects.requireNonNull(first, "first must not be null");
         this.second = Objects.requireNonNull(second, "second must not be null");
@@ -65,6 +73,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> next() {
+        if (error.get() != null) {
+            return Optional.empty();
+        }
         Optional<Entry<M>> firstPeek = first.peek();
         Optional<Entry<M>> secondPeek = second.peek();
         if (firstPeek.isEmpty() && !second.isCompleted()) {
@@ -78,6 +89,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> peek() {
+        if (error.get() != null) {
+            return Optional.empty();
+        }
         Optional<Entry<M>> firstPeek = first.peek();
         Optional<Entry<M>> secondPeek = second.peek();
         if (firstPeek.isEmpty() && !second.isCompleted()) {
@@ -90,24 +104,45 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
-        first.setCallback(callback);
-        second.setCallback(callback);
+    public void setCallback(Runnable callback) {
+        callbackRef.set(callback);
+        Runnable delegating = () -> {
+            if (hasNextAvailable() || isCompleted() || error().isPresent()) {
+                invokeCallbackIfNeeded();
+            }
+        };
+        first.setCallback(delegating);
+        second.setCallback(delegating);
+        delegating.run();
+    }
+
+    private void invokeCallbackIfNeeded() {
+        Runnable callback = callbackRef.get();
+        if (callback == null || !callbackRunning.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            callback.run();
+        } catch (Throwable e) {
+            this.error.set(e);
+        } finally {
+            callbackRunning.set(false);
+        }
     }
 
     @Override
     public Optional<Throwable> error() {
-        return first.error().or(second::error);
+        return Optional.ofNullable(this.error.get()).or(first::error).or(second::error);
     }
 
     @Override
     public boolean isCompleted() {
-        return first.isCompleted() && second.isCompleted();
+        return error.get() != null || (!hasNextAvailable() && first.isCompleted() && second.isCompleted());
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return first.hasNextAvailable() || second.hasNextAvailable();
+        return error.get() == null && (first.hasNextAvailable() || second.hasNextAvailable());
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
 import static java.util.Objects.requireNonNull;
@@ -31,8 +30,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        @Nonnull ConsistencyMarker consistencyMarker,
-        @Nonnull EventCriteria criteria
+        ConsistencyMarker consistencyMarker,
+        EventCriteria criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {

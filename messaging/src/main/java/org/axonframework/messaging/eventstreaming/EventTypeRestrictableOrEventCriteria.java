@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -54,7 +53,7 @@ final class EventTypeRestrictableOrEventCriteria extends OrEventCriteria impleme
     }
 
     @Override
-    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(Set<QualifiedName> types) {
         EventCriteria builtEventCriteria = buildingCriteria.andBeingOneOfTypes(types);
         return otherCriteria.or(builtEventCriteria);
     }

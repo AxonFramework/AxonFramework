@@ -16,17 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +50,7 @@ import static java.util.Objects.requireNonNull;
 @Internal
 public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final EventHandlingComponent delegate;
 
 
@@ -62,17 +61,16 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
-                                                    @Nonnull EventHandlingComponent delegate) {
+    public SequenceOverridingEventHandlingComponent(SequencingPolicy<? super EventMessage> sequencingPolicy,
+                                                    EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
-        return sequencingPolicy.getSequenceIdentifierFor(event, context)
+        return sequencingPolicy.sequenceIdentifierFor(event, context)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 
@@ -82,14 +80,13 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
@@ -98,15 +95,14 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
         return delegate.supportsReset();
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                               ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }

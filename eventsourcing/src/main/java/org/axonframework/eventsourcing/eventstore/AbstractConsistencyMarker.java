@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.Objects;
 
 /**
@@ -37,7 +35,7 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * @throws ClassCastException when the given marker is not of the expected type.
      */
     @Override
-    public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+    public ConsistencyMarker lowerBound(ConsistencyMarker other) {
         Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.lowerBound(this);
@@ -50,7 +48,7 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * @throws ClassCastException when the given marker is not of the expected type
      */
     @Override
-    public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+    public ConsistencyMarker upperBound(ConsistencyMarker other) {
         Objects.requireNonNull(other, "The other consistency marker cannot be null.");
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.upperBound(this);

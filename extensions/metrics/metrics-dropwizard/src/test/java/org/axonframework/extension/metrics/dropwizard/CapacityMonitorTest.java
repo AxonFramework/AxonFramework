@@ -16,12 +16,13 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -31,9 +32,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("unchecked")
 class CapacityMonitorTest {
 
+    @SuppressWarnings("unchecked")
     @Test
     void singleThreadedCapacity() {
         TestClock testClock = new TestClock();
@@ -42,11 +43,12 @@ class CapacityMonitorTest {
         testClock.increase(1000);
         monitorCallback.reportSuccess();
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get(MetricName.build("capacity"));
         assertEquals(1, capacityGauge.getValue(), 0);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void multithreadedCapacity() {
         TestClock testClock = new TestClock();
@@ -59,17 +61,18 @@ class CapacityMonitorTest {
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
 
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get(MetricName.build("capacity"));
         assertEquals(2, capacityGauge.getValue(), 0);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void emptyCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
-        Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
+        Map<MetricName, Metric> metricSet = testSubject.getMetrics();
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get(MetricName.build("capacity"));
         assertEquals(0, capacityGauge.getValue(), 0);
     }
 

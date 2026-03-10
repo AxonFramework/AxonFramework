@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -67,8 +66,7 @@ public interface Message {
      * @param message The {@code Message} to add to the {@code context}.
      * @return The updated {@link ProcessingContext} with the {@code message} added under the {@link #RESOURCE_KEY}.
      */
-    @Nonnull
-    static ProcessingContext addToContext(@Nonnull ProcessingContext context, @Nonnull Message message) {
+        static ProcessingContext addToContext(ProcessingContext context, Message message) {
         return context.withResource(RESOURCE_KEY, message);
     }
 
@@ -79,8 +77,7 @@ public interface Message {
      * @return The {@code Message} stored in the {@code context} under the {@link #RESOURCE_KEY}, or {@code null} if not
      * found.
      */
-    @Nullable
-    static Message fromContext(@Nonnull ProcessingContext context) {
+    static @Nullable Message fromContext(ProcessingContext context) {
         return context.getResource(RESOURCE_KEY);
     }
 
@@ -93,7 +90,6 @@ public interface Message {
      *
      * @return The unique identifier of this {@code Message}.
      */
-    @Nonnull
     String identifier();
 
     /**
@@ -101,7 +97,6 @@ public interface Message {
      *
      * @return The message {@link MessageType type} of this {@code Message}.
      */
-    @Nonnull
     MessageType type();
 
     /**
@@ -132,7 +127,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    default <T> T payloadAs(@Nonnull Class<T> type, @Nullable Converter converter) {
+    default <T> T payloadAs(Class<T> type, @Nullable Converter converter) {
         return payloadType().isAssignableFrom(type) ? type.cast(payload()) : payloadAs((Type) type, converter);
     }
 
@@ -147,7 +142,7 @@ public interface Message {
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
     @Nullable
-    default <T> T payloadAs(@Nonnull Class<T> type) {
+    default <T> T payloadAs(Class<T> type) {
         return payloadAs(type, null);
     }
 
@@ -169,7 +164,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    default <T> T payloadAs(@Nonnull TypeReference<T> type, @Nullable Converter converter) {
+    default <T> T payloadAs(TypeReference<T> type, @Nullable Converter converter) {
         return payloadAs(type.getType(), converter);
     }
 
@@ -184,7 +179,7 @@ public interface Message {
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
     @Nullable
-    default <T> T payloadAs(@Nonnull TypeReference<T> type) {
+    default <T> T payloadAs(TypeReference<T> type) {
         return payloadAs(type.getTypeAsClass());
     }
 
@@ -207,7 +202,7 @@ public interface Message {
      *                             {@code converter} is given.
      */
     @Nullable
-    <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter);
+    <T> T payloadAs(Type type, @Nullable Converter converter);
 
     /**
      * Returns the type of the payload.
@@ -217,7 +212,6 @@ public interface Message {
      *
      * @return The type of payload.
      */
-    @Nonnull
     Class<?> payloadType();
 
     /**
@@ -227,7 +221,6 @@ public interface Message {
      *
      * @return The {@link Metadata} for this {@code Message}.
      */
-    @Nonnull
     Metadata metadata();
 
     /**
@@ -241,8 +234,7 @@ public interface Message {
      * @param metadata The new metadata for the {@code Message}.
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
-    @Nonnull
-    Message withMetadata(@Nonnull Map<String, String> metadata);
+    Message withMetadata(Map<String, String> metadata);
 
     /**
      * Returns a copy of this {@code Message} (implementation) with its {@link Message#metadata() metadata} merged with
@@ -253,8 +245,7 @@ public interface Message {
      * @param metadata The metadata to merge with.
      * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
-    @Nonnull
-    Message andMetadata(@Nonnull Map<String, String> metadata);
+    Message andMetadata(Map<String, @Nullable String> metadata);
 
     /**
      * Returns a <b>new</b> {@code Message} implementation with its {@link #payload()} converted to the given
@@ -271,8 +262,7 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-    @Nonnull
-    default Message withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default Message withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
@@ -291,8 +281,7 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-    @Nonnull
-    default Message withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default Message withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
@@ -311,6 +300,5 @@ public interface Message {
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
      */
-    @Nonnull
-    Message withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    Message withConvertedPayload(Type type, Converter converter);
 }

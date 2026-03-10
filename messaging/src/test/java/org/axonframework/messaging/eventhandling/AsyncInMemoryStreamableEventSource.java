@@ -16,19 +16,19 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.SimpleEntry;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -44,6 +44,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
@@ -116,7 +118,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition,
+    public @NonNull MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
@@ -125,7 +127,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
@@ -134,12 +136,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
@@ -224,8 +226,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     private class AsyncMessageStream implements MessageStream<EventMessage> {
 
         private final AtomicLong currentPosition;
-        private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-        });
+        private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
         private final StreamingCondition condition;
         private volatile boolean closed = false;
 
@@ -251,7 +252,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> next() {
+        public @NonNull Optional<Entry<EventMessage>> next() {
             if (closed) {
                 return Optional.empty();
             }
@@ -283,7 +284,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> peek() {
+        public @NonNull Optional<Entry<EventMessage>> peek() {
             if (closed) {
                 return Optional.empty();
             }
@@ -330,7 +331,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public void setCallback(@Nonnull Runnable callback) {
+        public void setCallback(@NonNull Runnable callback) {
             this.callback.set(callback);
             if (streamCallbackSupported && hasNextAvailable()) {
                 callback.run();
@@ -338,7 +339,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Throwable> error() {
+        public @NonNull Optional<Throwable> error() {
             return Optional.empty();
         }
 

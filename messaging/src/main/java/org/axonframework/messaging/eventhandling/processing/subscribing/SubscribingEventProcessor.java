@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -81,9 +80,9 @@ public class SubscribingEventProcessor implements EventProcessor {
      *                                {@code SubscribingEventProcessor} instance.
      */
     public SubscribingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull SubscribingEventProcessorConfiguration configuration
+            String name,
+            List<EventHandlingComponent> eventHandlingComponents,
+            SubscribingEventProcessorConfiguration configuration
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
@@ -138,7 +137,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      *
      * @param eventMessages The messages to process
      */
-    protected void process(@Nonnull List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
+    protected void process(List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
         try {
             if (context != null) { // if ProcessingContext is provided from the outside, the events will be processed in that context
                 FutureUtils.joinAndUnwrap(processWithErrorHandling(eventMessages, context).asCompletableFuture());
@@ -200,7 +199,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "subscribing");
         descriptor.describeProperty("running", isRunning());

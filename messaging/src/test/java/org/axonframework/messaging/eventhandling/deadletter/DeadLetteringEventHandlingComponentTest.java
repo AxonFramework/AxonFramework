@@ -41,7 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -334,9 +334,9 @@ class DeadLetteringEventHandlingComponentTest {
 
             // Create delegate that returns different sequence IDs based on event
             delegate = new StubEventHandlingComponent(TEST_SEQUENCE_ID) {
-                @Nonnull
+                @NonNull
                 @Override
-                public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+                public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
                     if (event.payload().toString().contains("payload-1")) {
                         return TEST_SEQUENCE_ID;
                     }
@@ -948,9 +948,8 @@ class DeadLetteringEventHandlingComponentTest {
             return handledEvent.get();
         }
 
-        @Nonnull
         @Override
-        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             handledEvent.set(event);
             if (failWith != null) {
                 return MessageStream.failed(failWith).ignoreEntries();
@@ -958,27 +957,26 @@ class DeadLetteringEventHandlingComponentTest {
             return MessageStream.empty();
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return sequenceId;
         }
 
-        @Nonnull
         @Override
-        public MessageStream.Empty<Message> handle(@Nonnull ResetContext resetContext,
-                                                   @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                            @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Set<QualifiedName> supportedEvents() {
             return Collections.emptySet();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             // not needed
         }
     }

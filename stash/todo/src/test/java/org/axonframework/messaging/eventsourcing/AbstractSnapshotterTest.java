@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventsourcing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
@@ -238,9 +238,9 @@ class AbstractSnapshotterTest {
         }
 
         @Override
-        protected DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                    String aggregateIdentifier,
-                                                    DomainEventStream eventStream) {
+        protected @NonNull DomainEventMessage createSnapshot(@NonNull Class<?> aggregateType,
+                                                             @NonNull String aggregateIdentifier,
+                                                             @NonNull DomainEventStream eventStream) {
             long lastIdentifier = getLastIdentifierFrom(eventStream);
             if (lastIdentifier <= 0) {
                 return null;
@@ -260,25 +260,25 @@ class AbstractSnapshotterTest {
         private static class Builder extends AbstractSnapshotter.Builder {
 
             @Override
-            public Builder eventStore(EventStore eventStore) {
+            public @NonNull Builder eventStore(EventStore eventStore) {
                 super.eventStore(eventStore);
                 return this;
             }
 
             @Override
-            public Builder executor(Executor executor) {
+            public @NonNull Builder executor(Executor executor) {
                 super.executor(executor);
                 return this;
             }
 
             @Override
-            public Builder transactionManager(TransactionManager transactionManager) {
+            public @NonNull Builder transactionManager(TransactionManager transactionManager) {
                 super.transactionManager(transactionManager);
                 return this;
             }
 
             @Override
-            public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
+            public @NonNull Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
             }
@@ -298,7 +298,7 @@ class AbstractSnapshotterTest {
         }
 
         @Override
-        public Transaction startTransaction() {
+        public @NonNull Transaction startTransaction() {
             return transaction;
         }
     }
@@ -308,7 +308,7 @@ class AbstractSnapshotterTest {
         private final Queue<Runnable> tasks = new LinkedList<>();
 
         @Override
-        public void execute(@Nonnull Runnable runnable) {
+        public void execute(@NonNull Runnable runnable) {
             tasks.add(runnable);
         }
 

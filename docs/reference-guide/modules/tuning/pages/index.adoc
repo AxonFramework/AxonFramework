@@ -13,6 +13,6 @@ A summary of the various subsections is given below:
 
 |xref:event-snapshots.adoc[Event Snapshots] |Axon Framework provided capabilities to create event snapshots for optimizing Aggregate loading
 |xref:event-processing.adoc[Event Processing] |Axon Framework provided capabilities for tuning batching and parallel processing of events
-|xref:command-processing.adoc[Command Processing] |Axon Framework provided capabilities for Command message processing
+|xref:command-processing.adoc[Command Processing] |Capabilities for tuning command processing including duplicate handler resolution and command sequencing
 |xref:rdbms-tuning.adoc[Relational Database Tuning] |Tuning suggestions when using Axon Framework together with a Relation Database
 |===

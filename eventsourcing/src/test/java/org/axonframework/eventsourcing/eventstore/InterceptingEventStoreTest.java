@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -132,7 +131,18 @@ class InterceptingEventStoreTest {
         testSubject.transaction(new StubProcessingContext())
                    .source(testCondition);
 
-        verify(eventStoreTransaction).source(testCondition);
+        verify(eventStoreTransaction).source(testCondition, null);
+    }
+
+    @Test
+    void delegateTransactionSourceWithCallbackDirectly() {
+        SourcingCondition testCondition = SourcingCondition.conditionFor(EventCriteria.havingAnyTag());
+        Consumer<Position> resumePositionCallback = rp -> {};
+
+        testSubject.transaction(new StubProcessingContext())
+                   .source(testCondition, resumePositionCallback);
+
+        verify(eventStoreTransaction).source(testCondition, resumePositionCallback);
     }
 
     @Test

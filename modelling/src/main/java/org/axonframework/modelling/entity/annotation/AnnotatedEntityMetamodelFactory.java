@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 /**
@@ -38,6 +37,5 @@ public interface AnnotatedEntityMetamodelFactory {
      * @param <C>        The type of the entity.
      * @return An {@link AnnotatedEntityMetamodel} for the given entity type.
      */
-    @Nonnull
-    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(@Nonnull Class<C> entityType);
+    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(Class<C> entityType);
 }

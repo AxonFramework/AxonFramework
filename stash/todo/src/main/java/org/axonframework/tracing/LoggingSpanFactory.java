@@ -24,6 +24,7 @@ import org.axonframework.messaging.tracing.SpanFactory;
 import org.axonframework.messaging.tracing.SpanScope;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ public class LoggingSpanFactory implements SpanFactory {
 
     @Override
     public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
-                                   Message... linkedSiblings) {
+                                            Message @Nullable ... linkedSiblings) {
         return new Slf4jSpan(operationNameSupplier, () -> getSpanMessage("Dispatch", parentMessage));
     }
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -54,7 +54,7 @@ public final class StringUtils {
      * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
      * otherwise.
      */
-    public static boolean emptyOrNull(String s) {
+    public static boolean emptyOrNull(@Nullable String s) {
         return Objects.isNull(s) || EMPTY_STRING.equals(s);
     }
 

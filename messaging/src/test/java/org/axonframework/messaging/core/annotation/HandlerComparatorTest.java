@@ -16,13 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nullable;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.annotation.HandlerComparator;
-import org.axonframework.messaging.core.annotation.MessageHandlingMember;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,9 +25,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import jakarta.annotation.Nonnull;
 
-import static org.junit.jupiter.api.Assertions.*;
+
+import org.jspecify.annotations.Nullable;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link HandlerComparator}.
@@ -153,38 +152,38 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
             throw new UnsupportedOperationException("Not implemented (yet)");
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, Object target) {
+        public Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        public @NonNull <HT> Optional<HT> unwrap(@NonNull Class<HT> handlerType) {
             return Optional.empty();
         }
 
         @Override
-        public <R> Optional<R> attribute(String attributeKey) {
+        public @NonNull <R> Optional<R> attribute(@NonNull String attributeKey) {
             return Optional.empty();
         }
 
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "Handler {" +
                     payloadType +
                     ", p=" + priority +
@@ -196,33 +195,33 @@ class HandlerComparatorTest {
             implements MessageHandlingMember<Object> {
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+        public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
             throw new UnsupportedOperationException("Not implemented (yet)");
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, Object target) {
+        public @NonNull Object handleSync(@NonNull Message message, @NonNull ProcessingContext context, Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context,
+        public @NonNull MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context,
                                        @Nullable Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        public @NonNull <HT> Optional<HT> unwrap(@NonNull Class<HT> handlerType) {
             return Optional.empty();
         }
 
         @Override
-        public <R> Optional<R> attribute(String attributeKey) {
+        public @NonNull <R> Optional<R> attribute(@NonNull String attributeKey) {
             //noinspection unchecked
             return "ResultHandler.resultType".equals(attributeKey) ? Optional.of((R) Object.class) : Optional.empty();
         }

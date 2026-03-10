@@ -16,7 +16,6 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Component;
 
 /**
@@ -62,5 +61,5 @@ public interface DescribableComponent {
      *
      * @param descriptor The component descriptor to describe {@code this DescribableComponent}n its properties in.
      */
-    void describeTo(@Nonnull ComponentDescriptor descriptor);
+    void describeTo(ComponentDescriptor descriptor);
 }

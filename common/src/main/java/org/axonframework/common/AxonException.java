@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Base exception for all Axon Framework related exceptions.
  *
@@ -39,7 +41,7 @@ public abstract class AxonException extends RuntimeException {
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception
      */
-    public AxonException(String message, Throwable cause) {
+    public AxonException(String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 
@@ -50,7 +52,7 @@ public abstract class AxonException extends RuntimeException {
      * @param cause              The underlying cause of the exception
      * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
      */
-    public AxonException(String message, Throwable cause, boolean writableStackTrace) {
+    public AxonException(String message, @Nullable Throwable cause, boolean writableStackTrace) {
         super(message, cause, true, writableStackTrace);
     }
 }

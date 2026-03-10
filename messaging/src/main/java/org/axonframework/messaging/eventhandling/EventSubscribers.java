@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -60,7 +59,7 @@ class EventSubscribers implements DescribableComponent {
      * @return A {@link Registration} that can be used to unsubscribe the consumer.
      */
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         if (this.subscribers.add(eventsBatchConsumer)) {
             if (logger.isDebugEnabled()) {
@@ -92,7 +91,7 @@ class EventSubscribers implements DescribableComponent {
      * @return A {@link CompletableFuture} that completes when all subscriber futures have completed.
      */
     public CompletableFuture<Void> notifySubscribers(
-            @Nonnull List<? extends EventMessage> events,
+            List<? extends EventMessage> events,
             @Nullable ProcessingContext context
     ) {
         var consumeFutures = subscribers.stream()
@@ -103,7 +102,7 @@ class EventSubscribers implements DescribableComponent {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("subscribers", subscribers);
     }
 }

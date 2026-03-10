@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
@@ -47,6 +48,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
     private final Cause cause;
     private final Metadata diagnostics;
     private final E message;
+    private final Context context;
 
     /**
      * Constructs a new {@link JdbcDeadLetter} with all possible parameters.
@@ -60,6 +62,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
      *                           in the same sequence (based on the {@code sequenceIdentifier}).
      * @param diagnostics        The diagnostics provided during enqueueing.
      * @param message            The message that was enqueued.
+     * @param context            The context containing restored resources such as tracking token and domain info.
      */
     public JdbcDeadLetter(String identifier,
                           long index,
@@ -68,7 +71,8 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                           Instant lastTouched,
                           Cause cause,
                           Metadata diagnostics,
-                          E message) {
+                          E message,
+                          Context context) {
         this.identifier = identifier;
         this.sequenceIndex = index;
         this.sequenceIdentifier = sequenceIdentifier;
@@ -77,6 +81,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
         this.cause = cause;
         this.diagnostics = diagnostics;
         this.message = message;
+        this.context = context;
     }
 
     @Override
@@ -133,6 +138,16 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
         return sequenceIdentifier;
     }
 
+    /**
+     * Returns the context associated with this dead letter, containing restored resources such as tracking token and
+     * domain info (aggregate identifier, type, sequence number).
+     *
+     * @return The context with restored resources, or an empty context if no resources were stored.
+     */
+    public Context context() {
+        return context != null ? context : Context.empty();
+    }
+
     @Override
     public DeadLetter<E> markTouched() {
         return new JdbcDeadLetter<>(identifier,
@@ -142,7 +157,8 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                                     GenericDeadLetter.clock.instant(),
                                     cause,
                                     diagnostics,
-                                    message);
+                                    message,
+                                    context);
     }
 
     @Override
@@ -152,9 +168,10 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                                     sequenceIdentifier,
                                     enqueuedAt,
                                     GenericDeadLetter.clock.instant(),
-                                    requeueCause != null ? new ThrowableCause(requeueCause) : cause,
+                                    requeueCause != null ? ThrowableCause.asCause(requeueCause) : cause,
                                     diagnostics,
-                                    message);
+                                    message,
+                                    context);
     }
 
     @Override
@@ -166,7 +183,8 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                                     GenericDeadLetter.clock.instant(),
                                     cause,
                                     diagnostics,
-                                    message);
+                                    message,
+                                    context);
     }
 
     @Override
@@ -185,7 +203,8 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                 && Objects.equals(lastTouched, that.lastTouched)
                 && Objects.equals(cause, that.cause)
                 && Objects.equals(diagnostics, that.diagnostics)
-                && Objects.equals(message, that.message);
+                && Objects.equals(message, that.message)
+                && Objects.equals(context, that.context);
     }
 
     @Override
@@ -197,7 +216,8 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                             lastTouched,
                             cause,
                             diagnostics,
-                            message);
+                            message,
+                            context);
     }
 
     @Override
@@ -211,6 +231,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                 ", cause=" + cause +
                 ", diagnostics=" + diagnostics +
                 ", message=" + message +
+                ", context=" + context +
                 '}';
     }
 }

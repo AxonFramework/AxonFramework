@@ -16,10 +16,9 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.core.Message;
-
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
+
+
 import org.axonframework.messaging.core.Message;
 
 /**
@@ -32,7 +31,7 @@ import org.axonframework.messaging.core.Message;
 public class ForwardNone<T extends Message> implements ForwardingMode<T> {
 
     @Override
-    public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
         return Stream.empty();
     }
 }

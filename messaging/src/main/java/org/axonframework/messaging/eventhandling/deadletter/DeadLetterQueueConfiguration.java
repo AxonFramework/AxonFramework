@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -144,7 +143,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * @param enqueuePolicy The {@link EnqueuePolicy} to use.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration enqueuePolicy(@Nonnull EnqueuePolicy<EventMessage> enqueuePolicy) {
+    public DeadLetterQueueConfiguration enqueuePolicy(EnqueuePolicy<EventMessage> enqueuePolicy) {
         assertNonNull(enqueuePolicy, "Enqueue policy may not be null");
         this.enqueuePolicy = enqueuePolicy;
         return this;
@@ -201,7 +200,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * @return This configuration instance for fluent chaining.
      */
     public DeadLetterQueueConfiguration factory(
-            @Nonnull Function<String, SequencedDeadLetterQueue<EventMessage>> factory
+            Function<String, SequencedDeadLetterQueue<EventMessage>> factory
     ) {
         assertNonNull(factory, "Factory function may not be null");
         this.factory = factory;
@@ -254,7 +253,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("enabled", enabled);
         descriptor.describeProperty("clearOnReset", clearOnReset);
         descriptor.describeProperty("cacheMaxSize", cacheMaxSize);

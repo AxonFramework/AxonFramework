@@ -16,8 +16,7 @@
 
 package org.axonframework.conversion.converter;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 
 import java.nio.charset.StandardCharsets;
@@ -33,20 +32,17 @@ import java.nio.charset.StandardCharsets;
 public class ByteArrayToStringConverter implements ContentTypeConverter<byte[], String> {
 
     @Override
-    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @Nonnull
     public Class<String> targetType() {
         return String.class;
     }
 
     @Override
-    @Nullable
-    public String convert(@Nullable byte[] input) {
+    public String convert(byte @Nullable[] input) {
         return input != null ? new String(input, StandardCharsets.UTF_8) : null;
     }
 }

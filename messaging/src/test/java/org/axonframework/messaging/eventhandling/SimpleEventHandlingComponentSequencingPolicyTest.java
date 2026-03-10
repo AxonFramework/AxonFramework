@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -25,20 +25,20 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.FullConcurrencyPolicy;
+import org.axonframework.messaging.core.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.MetadataSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.sequencing.FullConcurrencyPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.MetadataSequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.axonframework.messaging.core.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 
 /**
  * Test class validating the {@link SimpleEventHandlingComponent} sequencing policy behavior. Verifies that
@@ -122,7 +122,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
             // given
             var component = SimpleEventHandlingComponent.create(
                     "test",
-                    new HierarchicalSequencingPolicy(
+                    new HierarchicalSequencingPolicy<>(
                             new MetadataSequencingPolicy("userId"),
                             (e, ctx) -> Optional.of(e.identifier())
                     )
@@ -158,7 +158,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         @Test
         void should_use_sequential_per_aggregate_policy_when_set_on_component() {
             // given
-            var component = SimpleEventHandlingComponent.create("test", SequentialPerAggregatePolicy.instance());
+            var component = SimpleEventHandlingComponent.create("test", SequentialPerAggregatePolicy.INSTANCE);
             var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
@@ -248,9 +248,8 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
 
     private static class PlainEventHandler implements EventHandler {
 
-        @Nonnull
         @Override
-        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }
     }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -86,14 +86,14 @@ class ParameterResolverAsyncTest {
             this.value = value;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
             return CompletableFuture.completedFuture(value);
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return true;
         }
     }
@@ -106,14 +106,14 @@ class ParameterResolverAsyncTest {
             this.future = future;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(@NonNull ProcessingContext context) {
             return future;
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(@NonNull ProcessingContext context) {
             return true;
         }
     }

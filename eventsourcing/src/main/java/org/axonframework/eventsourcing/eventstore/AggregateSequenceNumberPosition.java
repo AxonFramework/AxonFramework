@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * An implementation of {@link Position} based on aggregate sequence numbers.
@@ -36,7 +35,7 @@ public final class AggregateSequenceNumberPosition implements Position {
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position could not be converted.
      */
-    public static long toSequenceNumber(@Nonnull Position position) {
+    public static long toSequenceNumber(Position position) {
         return switch (position) {
             case AggregateSequenceNumberPosition gip -> gip.sequenceNumber;
             case Position p when p == Position.START -> MINIMUM_SEQUENCE_NUMBER;
@@ -54,9 +53,8 @@ public final class AggregateSequenceNumberPosition implements Position {
         this.sequenceNumber = sequenceNumber;
     }
 
-    @Nonnull
     @Override
-    public Position min(@Nonnull Position other) {
+    public Position min(Position other) {
         return switch (other) {
             case Position p when p == Position.START -> Position.START;
             case AggregateSequenceNumberPosition asnp -> sequenceNumber < asnp.sequenceNumber ? this : asnp;

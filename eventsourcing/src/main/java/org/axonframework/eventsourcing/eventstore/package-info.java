@@ -18,4 +18,7 @@
  * Definitions and implementations of the Event store, the mechanism that can load event streams and append events to
  * them.
  */
+@NullMarked
 package org.axonframework.eventsourcing.eventstore;
+
+import org.jspecify.annotations.NullMarked;

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
@@ -91,16 +90,14 @@ public class GenericTrackedDomainEventMessage
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public GenericTrackedDomainEventMessage withMetadata(Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().withMetadata(metadata),
                                                       timestamp());
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public GenericTrackedDomainEventMessage andMetadata(Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().andMetadata(metadata),
                                                       timestamp());

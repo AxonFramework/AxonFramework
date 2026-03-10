@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
@@ -109,26 +108,12 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
-    private Consumer<? super EventMessage> ignoredMessageHandler =
-            eventMessage -> messageMonitor.onMessageIngested(eventMessage).reportIgnored();
+    private List<MessageHandlerInterceptor<? super EventMessage>> psepInterceptors;
+    private Consumer<? super EventMessage> ignoredMessageHandler;
     private Supplier<ProcessingContext> schedulingProcessingContextProvider =
             () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
     private final List<SegmentChangeListener> segmentChangeListeners = new ArrayList<>();
     private UnaryOperator<DeadLetterQueueConfiguration> deadLetterQueueCustomization = UnaryOperator.identity();
-
-    /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
-     * global default values.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public PooledStreamingEventProcessorConfiguration() {
-        super();
-    }
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} copying properties from the given
@@ -137,7 +122,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
     @Internal
-    public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+    public PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration base) {
         super(base);
     }
 
@@ -151,8 +136,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     @Internal
     public PooledStreamingEventProcessorConfiguration(
-            @Nonnull EventProcessorConfiguration base,
-            @Nonnull Configuration configuration
+            EventProcessorConfiguration base,
+            Configuration configuration
     ) {
         super(base);
         this.schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(
@@ -161,14 +146,14 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     @Override
-    public PooledStreamingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public PooledStreamingEventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
         super.errorHandler(errorHandler);
         return this;
     }
 
     @Override
     public PooledStreamingEventProcessorConfiguration unitOfWorkFactory(
-            @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+            UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
         return this;
     }
@@ -182,7 +167,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventSource(
-            @Nonnull StreamableEventSource eventSource) {
+            StreamableEventSource eventSource) {
         assertNonNull(eventSource, "StreamableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
@@ -196,12 +181,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *                    {@link PooledStreamingEventProcessor} under construction.
      * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorConfiguration withInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
+        public PooledStreamingEventProcessorConfiguration withInterceptor(
+            MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
-        //noinspection unchecked | Casting to EventMessage is safe.
-        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
+        this.interceptors.add(interceptor);
         return this;
     }
 
@@ -213,7 +196,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *                   {@link EventProcessor} to track its progress.
      * @return The current instance, for fluent interfacing.
      */
-    public PooledStreamingEventProcessorConfiguration tokenStore(@Nonnull TokenStore tokenStore) {
+    public PooledStreamingEventProcessorConfiguration tokenStore(TokenStore tokenStore) {
         assertNonNull(tokenStore, "TokenStore may not be null");
         this.tokenStore = tokenStore;
         return this;
@@ -228,7 +211,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
-            @Nonnull ScheduledExecutorService coordinatorExecutor
+            ScheduledExecutorService coordinatorExecutor
     ) {
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinatorExecutor = () -> coordinatorExecutor;
@@ -244,7 +227,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration coordinatorExecutor(
-            @Nonnull Supplier<ScheduledExecutorService> coordinatorExecutor
+            Supplier<ScheduledExecutorService> coordinatorExecutor
     ) {
         assertNonNull(coordinatorExecutor, "The Coordinator's ScheduledExecutorService may not be null");
         this.coordinatorExecutor = ObjectUtils.sameInstanceSupplier(coordinatorExecutor);
@@ -255,15 +238,15 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * Specifies the {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by this
      * {@link PooledStreamingEventProcessor}.
      * </p>
-     * Note that {@link #workerExecutor(Supplier)} is favored over this method, as it avoids eager initialization of
-     * an executor that may be overridden by other components.
+     * Note that {@link #workerExecutor(Supplier)} is favored over this method, as it avoids eager initialization of an
+     * executor that may be overridden by other components.
      *
      * @param workerExecutor The {@link ScheduledExecutorService} to be provided to the {@link WorkPackage}s created by
      *                       this {@link PooledStreamingEventProcessor}.
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
-            @Nonnull ScheduledExecutorService workerExecutor
+            ScheduledExecutorService workerExecutor
     ) {
         assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
         this.workerExecutor = () -> workerExecutor;
@@ -279,7 +262,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration workerExecutor(
-            @Nonnull Supplier<ScheduledExecutorService> workerExecutor
+            Supplier<ScheduledExecutorService> workerExecutor
     ) {
         assertNonNull(workerExecutor, "The Worker's ScheduledExecutorService may not be null");
         this.workerExecutor = ObjectUtils.sameInstanceSupplier(workerExecutor);
@@ -316,7 +299,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration initialToken(
-            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken
     ) {
         assertNonNull(initialToken, "The initial token builder Function may not be null");
         this.initialToken = initialToken;
@@ -357,7 +340,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration maxSegmentProvider(
-            @Nonnull MaxSegmentProvider maxSegmentProvider
+            MaxSegmentProvider maxSegmentProvider
     ) {
         assertNonNull(maxSegmentProvider,
                       "The max segment provider may not be null. "
@@ -408,7 +391,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @param clock The {@link Clock} used for time dependent operation by this {@link EventProcessor}.
      * @return The current instance, for fluent interfacing.
      */
-    public PooledStreamingEventProcessorConfiguration clock(@Nonnull Clock clock) {
+    public PooledStreamingEventProcessorConfiguration clock(Clock clock) {
         assertNonNull(clock, "Clock may not be null");
         this.clock = clock;
         return this;
@@ -470,7 +453,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventCriteria(
-            @Nonnull Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
+            Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider) {
         assertNonNull(eventCriteriaProvider, "EventCriteria builder function may not be null");
         this.eventCriteriaProvider = eventCriteriaProvider;
         return this;
@@ -487,7 +470,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current Builder instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration schedulingProcessingContextProvider(
-            @Nonnull Supplier<ProcessingContext> schedulingProcessingContextProvider
+            Supplier<ProcessingContext> schedulingProcessingContextProvider
     ) {
         Objects.requireNonNull(schedulingProcessingContextProvider,
                                "schedulingProcessingContextProvider may not be null.");
@@ -502,7 +485,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration addSegmentChangeListener(
-            @Nonnull SegmentChangeListener segmentChangeListener
+            SegmentChangeListener segmentChangeListener
     ) {
         assertNonNull(segmentChangeListener, "Segment change listener may not be null");
         this.segmentChangeListeners.add(segmentChangeListener);
@@ -538,7 +521,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @see CachingSequencedDeadLetterQueue
      */
     public PooledStreamingEventProcessorConfiguration deadLetterQueue(
-            @Nonnull UnaryOperator<DeadLetterQueueConfiguration> customization
+            UnaryOperator<DeadLetterQueueConfiguration> customization
     ) {
         assertNonNull(customization, "DLQ customization may not be null");
         var previous = this.deadLetterQueueCustomization;
@@ -689,11 +672,33 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link PooledStreamingEventProcessor} under construction with this configuration implementation.
+     *
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link PooledStreamingEventProcessor} under construction with this configuration implementation.
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+        if (psepInterceptors == null) {
+            psepInterceptors = new ArrayList<>();
+            psepInterceptors.addAll(super.interceptorBuilder.apply(PooledStreamingEventProcessor.class, processorName));
+            psepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(psepInterceptors);
+    }
+
+    /**
      * Returns the handler for ignored messages.
      *
      * @return The ignored message handler.
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(PooledStreamingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
         return ignoredMessageHandler;
     }
 
@@ -730,7 +735,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("eventSource", eventSource);
         descriptor.describeProperty("tokenStore", tokenStore);

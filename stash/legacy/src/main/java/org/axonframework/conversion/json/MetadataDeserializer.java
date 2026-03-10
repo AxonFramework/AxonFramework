@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JsonDeserializer implementation that deserializes Metadata instances.
+ * JsonDeserializer implementation for Jackson 2 that deserializes Metadata instances.
  *
  * @author Allard Buijze
  * @since 2.4.2

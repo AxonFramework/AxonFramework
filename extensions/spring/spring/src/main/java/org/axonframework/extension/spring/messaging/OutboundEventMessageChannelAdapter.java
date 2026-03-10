@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.messaging;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -53,8 +52,8 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param eventSource The event bus to subscribe to.
      * @param channel       The channel to send event messages to.
      */
-    public OutboundEventMessageChannelAdapter(@Nonnull SubscribableEventSource eventSource,
-                                              @Nonnull MessageChannel channel) {
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource eventSource,
+                                              MessageChannel channel) {
         this(eventSource, channel, m -> true);
     }
 
@@ -66,8 +65,8 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param channel       The channel to send event messages to.
      * @param filter        The filter that indicates which messages to forward.
      */
-    public OutboundEventMessageChannelAdapter(@Nonnull SubscribableEventSource eventSource,
-                                              @Nonnull MessageChannel channel, Predicate<? super EventMessage> filter) {
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource eventSource,
+                                              MessageChannel channel, Predicate<? super EventMessage> filter) {
         this(eventSource, channel, filter, new DefaultEventMessageConverter());
     }
 
@@ -80,9 +79,9 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param filter        The filter that indicates which messages to forward.
      * @param eventMessageConverter The converter to use to convert event message into Spring message
      */
-    public OutboundEventMessageChannelAdapter(@Nonnull SubscribableEventSource eventSource,
-                                              @Nonnull MessageChannel channel, Predicate<? super EventMessage> filter,
-                                              @Nonnull EventMessageConverter eventMessageConverter) {
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource eventSource,
+                                              MessageChannel channel, Predicate<? super EventMessage> filter,
+                                              EventMessageConverter eventMessageConverter) {
         this.channel = Objects.requireNonNull(channel, "MessageChannel may not be null.");
         this.eventSource = Objects.requireNonNull(eventSource, "SubscribableEventSource may not be null.");
         this.filter = Objects.requireNonNull(filter, "Filter may not be null.");

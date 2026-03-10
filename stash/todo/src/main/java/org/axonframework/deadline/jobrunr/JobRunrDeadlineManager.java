@@ -16,8 +16,7 @@
 
 package org.axonframework.deadline.jobrunr;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.*;
 import org.axonframework.messaging.core.unitofwork.transaction.NoTransactionManager;
@@ -121,9 +120,9 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
+    public String schedule(Instant triggerDateTime, String deadlineName,
                            @Nullable Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+                           ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.randomUUID();
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId.toString(), deadlineMessage);
@@ -149,7 +148,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(String deadlineName, String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
@@ -171,11 +170,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(String deadlineName) {
         throw new UnsupportedOperationException(String.format(NOT_SUPPORTED_MSG, "cancelAll"));
     }
 
-    private UUID toUuid(@Nonnull String scheduleId) {
+    private UUID toUuid(String scheduleId) {
         try {
             return UUID.fromString(scheduleId);
         } catch (IllegalArgumentException e) {
@@ -184,7 +183,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         throw new UnsupportedOperationException(String.format(NOT_SUPPORTED_MSG, "cancelAllWithinScope"));
     }
 
@@ -198,7 +197,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
      * @param deadlineId                The {@link UUID} of the deadline.
      */
     @SuppressWarnings("rawtypes")
-    public void execute(@Nonnull String serializedDeadlineDetails, String deadlineId) {
+    public void execute(String serializedDeadlineDetails, String deadlineId) {
         SimpleSerializedObject<String> serializedDeadlineMetadata = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
@@ -343,7 +342,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link DeadlineManagerSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

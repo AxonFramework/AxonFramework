@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -47,7 +46,7 @@ public interface EventConverter extends Converter {
      * given {@code targetType}.
      */
     @Nullable
-    default <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Class<T> targetType) {
+    default <E extends EventMessage, T> T convertPayload(E event, Class<T> targetType) {
         return convertPayload(event, (Type) targetType);
     }
 
@@ -63,7 +62,7 @@ public interface EventConverter extends Converter {
      * given {@code targetType}.
      */
     @Nullable
-    <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Type targetType);
+    <E extends EventMessage, T> T convertPayload(E event, Type targetType);
 
     /**
      * Converts the given {@code event's} {@link EventMessage#payload() payload} to the given {@code targetType},
@@ -76,8 +75,7 @@ public interface EventConverter extends Converter {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
-    @Nonnull
-    default <E extends EventMessage, T> E convertEvent(@Nonnull E event, @Nonnull Class<T> targetType) {
+    default <E extends EventMessage, T> E convertEvent(E event, Class<T> targetType) {
         return convertEvent(event, (Type) targetType);
     }
 
@@ -91,6 +89,5 @@ public interface EventConverter extends Converter {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
-    @Nonnull
-    <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType);
+    <E extends EventMessage> E convertEvent(E event, Type targetType);
 }

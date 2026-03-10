@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 import java.util.List;
@@ -41,10 +40,10 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
 
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildMetamodel(@Nonnull EntityMetamodel<C> metamodel,
-                                       @Nonnull ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
-                                       @Nonnull CommandTargetResolver<C> commandTargetMatcher,
-                                       @Nonnull EventTargetMatcher<C> eventTargetMatcher
+    private SingleEntityChildMetamodel(EntityMetamodel<C> metamodel,
+                                       ChildEntityFieldDefinition<P, C> childEntityFieldDefinition,
+                                       CommandTargetResolver<C> commandTargetMatcher,
+                                       EventTargetMatcher<C> eventTargetMatcher
     ) {
         super(
                 metamodel,
@@ -78,7 +77,6 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
         return childEntityFieldDefinition.evolveParentBasedOnChildInput(entity, evolvedChildEntities.getFirst());
     }
 
-    @Nonnull
     @Override
     public EntityMetamodel<C> entityMetamodel() {
         return metamodel;
@@ -100,8 +98,8 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
      * @param <P>         The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity metamodel.
      */
-    public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
-                                                      @Nonnull EntityMetamodel<C> metamodel) {
+    public static <C, P> Builder<C, P> forEntityModel(Class<P> parentClass,
+                                                      EntityMetamodel<C> metamodel) {
         return new Builder<>(parentClass, metamodel);
     }
 
@@ -125,8 +123,8 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
         private ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
         @SuppressWarnings("unused") // Uses for generics
-        private Builder(@Nonnull Class<P> parentClass,
-                        @Nonnull EntityMetamodel<C> childEntityMetamodel
+        private Builder(Class<P> parentClass,
+                        EntityMetamodel<C> childEntityMetamodel
         ) {
             super(parentClass, childEntityMetamodel);
             this.commandTargetResolver = CommandTargetResolver.MATCH_ANY();
@@ -141,7 +139,7 @@ public class SingleEntityChildMetamodel<C, P> extends AbstractEntityChildMetamod
          *                        the parent entity
          * @return This builder instance.
          */
-        public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, C> fieldDefinition) {
+        public Builder<C, P> childEntityFieldDefinition(ChildEntityFieldDefinition<P, C> fieldDefinition) {
             this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
                                                                      "The fieldDefinition may not be null.");
             return this;

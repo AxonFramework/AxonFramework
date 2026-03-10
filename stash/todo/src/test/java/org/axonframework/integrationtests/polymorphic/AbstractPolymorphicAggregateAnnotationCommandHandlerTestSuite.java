@@ -40,6 +40,7 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AggregateModellingException;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -283,7 +284,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         }
 
         @Override
-        public Transaction startTransaction() {
+        public @NonNull Transaction startTransaction() {
             EntityTransaction tx = em.getTransaction();
             if (tx.isActive()) {
                 return new Transaction() {

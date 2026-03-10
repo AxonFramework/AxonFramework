@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.GenericResultMessage;
 import org.axonframework.messaging.core.Message;
@@ -43,7 +42,7 @@ public interface LegacyMessageHandler<T extends Message, R extends Message> {
     // TODO Remove entirely once #3065, #3195, #3517, and #3728 have been resolved.
     @Deprecated
     @Internal
-    Object handleSync(@Nonnull T message, @Nonnull ProcessingContext context) throws Exception;
+    Object handleSync(T message, ProcessingContext context) throws Exception;
 
     /**
      * Handles the given {@code message} and returns a {@link MessageStream} containing the result of the processing.
@@ -52,7 +51,7 @@ public interface LegacyMessageHandler<T extends Message, R extends Message> {
      * @param context The {@code ProcessingContext} in which the reset is being prepared.
      * @return A {@link MessageStream} containing the result of the message processing.
      */
-    default MessageStream<R> handle(@Nonnull T message, @Nonnull ProcessingContext context) {
+    default MessageStream<R> handle(T message, ProcessingContext context) {
         try {
             var result = handleSync(message, context);
             if (result instanceof MessageStream<?> messageStream) {
@@ -71,7 +70,7 @@ public interface LegacyMessageHandler<T extends Message, R extends Message> {
      * @return {@code true} if this handler can handle the message, otherwise {@code false}
      */
     @Deprecated
-    default boolean canHandle(@Nonnull T message, @Nonnull ProcessingContext context) {
+    default boolean canHandle(T message, ProcessingContext context) {
         return true;
     }
 

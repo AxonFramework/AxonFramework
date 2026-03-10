@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
@@ -64,8 +63,8 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     private ComponentBuilder<EntityMetamodel<E>> entityModel;
     private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
 
-    SimpleEventSourcedEntityModule(@Nonnull Class<ID> idType,
-                                   @Nonnull Class<E> entityType) {
+    SimpleEventSourcedEntityModule(Class<ID> idType,
+                                   Class<E> entityType) {
         super("SimpleEventSourcedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
@@ -73,7 +72,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     @Override
     public EntityFactoryPhase<ID, E> messagingModel(
-            @Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
+            EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
         requireNonNull(metamodelFactory, "The metamodelFactory cannot be null.");
         this.entityModel = c -> metamodelFactory.build(c, EntityMetamodel.forEntityType(entityType));
         return this;
@@ -81,7 +80,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     @Override
     public CriteriaResolverPhase<ID, E> entityFactory(
-            @Nonnull ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
+            ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
     ) {
         this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
         return this;
@@ -89,7 +88,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     @Override
     public EntityIdResolverPhase<ID, E> criteriaResolver(
-            @Nonnull ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
+            ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
     ) {
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
         return this;
@@ -97,7 +96,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     @Override
     public EventSourcedEntityModule<ID, E> entityIdResolver(
-            @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
+            ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
         this.entityIdResolver = requireNonNull(entityIdResolver, "The entity ID resolver cannot be null.");
         return this;
     }
@@ -113,7 +112,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     }
 
     @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(Configuration parent, LifecycleRegistry lifecycleRegistry) {
         validate();
         registerComponents();
         return super.build(parent, lifecycleRegistry);

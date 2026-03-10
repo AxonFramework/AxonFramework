@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 
 import java.util.regex.Pattern;
-import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CommandHandlerInterceptor} annotated methods.
@@ -36,7 +35,7 @@ import jakarta.annotation.Nonnull;
 public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.<String>attribute(HandlerAttributes.COMMAND_NAME_PATTERN)
                        .map(commandNamePattern -> (MessageHandlingMember<T>)
                                new MethodCommandHandlerInterceptorHandlingMember<>(original, commandNamePattern)
@@ -60,7 +59,7 @@ public class MethodCommandHandlerInterceptorDefinition implements HandlerEnhance
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return super.canHandle(message, context)
                     && commandNamePattern.matcher(message.type().name())
                                          .matches();

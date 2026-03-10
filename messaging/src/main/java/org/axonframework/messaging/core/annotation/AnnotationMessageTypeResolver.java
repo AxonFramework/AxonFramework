@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -89,13 +88,13 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      *                      when resolving the {@link MessageType}
      */
     public AnnotationMessageTypeResolver(@Nullable MessageTypeResolver fallback,
-                                         @Nonnull AnnotationSpecification specification) {
+                                         AnnotationSpecification specification) {
         this.fallback = fallback;
         this.specification = Objects.requireNonNull(specification, "The annotation specification may not be null.");
     }
 
     @Override
-    public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         Map<String, Object> nameAttributes = attributesFor(payloadType, specification.nameAnnotation());
         Map<String, Object> versionAttributes = attributesFor(payloadType, specification.versionAnnotation());
         if (nameAttributes.isEmpty() || versionAttributes.isEmpty()) {
@@ -146,11 +145,11 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      *                            the {@link #nameAttribute()} is used on its own
      */
     public record AnnotationSpecification(
-            @Nonnull Class<? extends Annotation> nameAnnotation,
-            @Nonnull String nameAttribute,
-            @Nonnull Class<? extends Annotation> versionAnnotation,
-            @Nonnull String versionAttribute,
-            @Nonnull Class<? extends Annotation> namespaceAnnotation,
+            Class<? extends Annotation> nameAnnotation,
+            String nameAttribute,
+            Class<? extends Annotation> versionAnnotation,
+            String versionAttribute,
+            Class<? extends Annotation> namespaceAnnotation,
             @Nullable String namespaceAttribute
     ) {
 
@@ -178,9 +177,9 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
          * constructor that allows annotation configuration per resolvable attribute
          */
         @Deprecated(since = "5.1.0")
-        public AnnotationSpecification(@Nonnull Class<? extends Annotation> annotation,
-                                       @Nonnull String nameAttribute,
-                                       @Nonnull String versionAttribute,
+        public AnnotationSpecification(Class<? extends Annotation> annotation,
+                                       String nameAttribute,
+                                       String versionAttribute,
                                        @Nullable String namespaceAttribute) {
             this(annotation, nameAttribute, annotation, versionAttribute, annotation, namespaceAttribute);
         }

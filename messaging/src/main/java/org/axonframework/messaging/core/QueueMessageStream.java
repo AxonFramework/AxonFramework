@@ -16,13 +16,12 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TransferQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -32,15 +31,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class QueueMessageStream<M extends Message> implements MessageStream<M> {
-
-    private static final Runnable NO_OP_CALLBACK = () -> {
-    };
+public class QueueMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
     private final BlockingQueue<Entry<M>> queue;
-    private final AtomicReference<Runnable> onAvailableCallbackRef = new AtomicReference<>(NO_OP_CALLBACK);
-    private final AtomicBoolean completed = new AtomicBoolean(false);
-    private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final AtomicReference<Runnable> onConsumeCallback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
@@ -62,7 +55,7 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      *
      * @param queue The queue to use to store {@link Entry entries} in transit from producer to consumer.
      */
-    public QueueMessageStream(@Nonnull BlockingQueue<Entry<M>> queue) {
+    public QueueMessageStream(BlockingQueue<Entry<M>> queue) {
         this.queue = queue;
     }
 
@@ -77,9 +70,13 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * @param context The context to accompany the message.
      * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
-    public boolean offer(@Nonnull M message, @Nonnull Context context) {
-        if (!completed.get() && queue.offer(new SimpleEntry<>(message, context))) {
-            onAvailableCallbackRef.get().run();
+    public boolean offer(M message, Context context) {
+        if (!isClosed() && queue.offer(new SimpleEntry<>(message, context))) {
+            Throwable before = error().orElse(null);
+            invokeCallbackSafely();
+            if (error().isPresent() && before == null) {
+                queue.clear();
+            }
             return true;
         }
         return false;
@@ -93,25 +90,14 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * responsibility to ensure no {@link Message Messages} are {@link #offer(Message, Context) offered} after
      * completion.
      */
+    @Override
     public void complete() {
-        completed.set(true);
-        onAvailableCallbackRef.get().run();
+        super.complete();
     }
 
-    /**
-     * Marks the queue as completed exceptionally caused by given {@code error}, indicating to any consumer that no more
-     * messages will become available.
-     * <p>
-     * Note that there is no validation on offering items whether the stream is completed. It is the caller's
-     * responsibility to ensure no Messages are {@link #offer(Message, Context) offered} after completion.
-     *
-     * @param error The cause of the exceptional completion
-     */
-    public void completeExceptionally(@Nonnull Throwable error) {
-        if (!completed.getAndSet(true)) {
-            errorRef.updateAndGet(e -> e == null ? error : e);
-        }
-        onAvailableCallbackRef.get().run();
+    @Override
+    public void completeExceptionally(Throwable error) {
+        super.completeExceptionally(error);
     }
 
     /**
@@ -122,8 +108,17 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      *
      * @param callback The callback to invoke when {@link Entry entries} are consumed.
      */
-    public void onConsumeCallback(@Nonnull Runnable callback) {
+    public void onConsumeCallback(Runnable callback) {
         this.onConsumeCallback.set(callback);
+    }
+
+    @Override
+    public void setCallback(Runnable callback) {
+        Throwable before = error().orElse(null);
+        super.setCallback(callback);
+        if (error().isPresent() && before == null) {
+            queue.clear();
+        }
     }
 
     @Override
@@ -136,21 +131,13 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        onAvailableCallbackRef.set(callback);
-        if (!queue.isEmpty() || isCompleted()) {
-            callback.run();
-        }
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return Optional.ofNullable(errorRef.get());
+    public Optional<Entry<M>> peek() {
+        return Optional.ofNullable(queue.peek());
     }
 
     @Override
     public boolean isCompleted() {
-        return queue.isEmpty() && completed.get();
+        return queue.isEmpty() && super.isCompleted();
     }
 
     @Override
@@ -160,7 +147,7 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public void close() {
-        this.completed.set(true);
+        complete();
         onConsumeCallback.get().run();
     }
 
@@ -172,11 +159,6 @@ public class QueueMessageStream<M extends Message> implements MessageStream<M> {
      * @return {@code true} when closed or completed, otherwise {@code false}
      */
     public boolean isClosed() {
-        return completed.get();
-    }
-
-    @Override
-    public Optional<Entry<M>> peek() {
-        return Optional.ofNullable(queue.peek());
+        return super.isCompleted();
     }
 }

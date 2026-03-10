@@ -16,15 +16,9 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.configuration.*;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.common.configuration.ComponentDecorator;
-import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
 
@@ -67,7 +61,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
      */
-    public static ModellingConfigurer enhance(@Nonnull MessagingConfigurer messagingConfigurer) {
+    public static ModellingConfigurer enhance(MessagingConfigurer messagingConfigurer) {
         return new ModellingConfigurer(messagingConfigurer)
                 .componentRegistry(cr -> cr
                         .registerEnhancer(new ModellingConfigurationDefaults())
@@ -82,7 +76,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
-    public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
+    public ModellingConfigurer(MessagingConfigurer delegate) {
         Objects.requireNonNull(delegate, "The delegate MessagingConfigurer may not be null");
         this.delegate = delegate;
     }
@@ -99,9 +93,8 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    @Nonnull
-    public ModellingConfigurer registerCommandHandlingModule(
-            @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
+        public ModellingConfigurer registerCommandHandlingModule(
+            ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
         return messaging(messagingConfigurer -> messagingConfigurer.registerCommandHandlingModule(
                 moduleBuilder
@@ -120,9 +113,8 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    @Nonnull
-    public ModellingConfigurer registerQueryHandlingModule(
-            @Nonnull ModuleBuilder<QueryHandlingModule> moduleBuilder
+        public ModellingConfigurer registerQueryHandlingModule(
+            ModuleBuilder<QueryHandlingModule> moduleBuilder
     ) {
         return messaging(messagingConfigurer -> messagingConfigurer.registerQueryHandlingModule(
                 moduleBuilder
@@ -138,8 +130,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param <E>          The type of the entity being built.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    @Nonnull
-    public <I, E> ModellingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule) {
+    public <I, E> ModellingConfigurer registerEntity(EntityModule<I, E> entityModule) {
         Objects.requireNonNull(entityModule, "EntityModule may not be null");
         delegate.componentRegistry(cr -> cr.registerModule(entityModule));
         return this;
@@ -154,19 +145,19 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public ModellingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+    public ModellingConfigurer messaging(Consumer<MessagingConfigurer> configurerTask) {
         configurerTask.accept(delegate);
         return this;
     }
 
     @Override
-    public ModellingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public ModellingConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
         delegate.componentRegistry(componentRegistrar);
         return this;
     }
 
     @Override
-    public ModellingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public ModellingConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
         delegate.lifecycleRegistry(lifecycleRegistrar);
         return this;
     }

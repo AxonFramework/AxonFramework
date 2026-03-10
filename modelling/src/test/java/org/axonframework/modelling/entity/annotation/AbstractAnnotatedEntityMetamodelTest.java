@@ -16,30 +16,31 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
-import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.jspecify.annotations.NonNull;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -132,7 +133,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     private class EntityEvolvingEventAppender implements EventAppender {
 
         @Override
-        public void append(@Nonnull List<?> events) {
+        public void append(@NonNull List<?> events) {
             publishedEvents.addAll(events);
             if (entityState == null) {
                 return;
@@ -149,7 +150,26 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void append(@NonNull List<?> events, @NonNull Metadata metadata) {
+            publishedEvents.addAll(events);
+            if (entityState == null) {
+                return;
+            }
+            events.forEach(event -> {
+                EventMessage eventMessage;
+                if (event instanceof EventMessage e) {
+                    eventMessage = e.andMetadata(metadata);
+                } else {
+                    eventMessage = new GenericEventMessage(
+                            new MessageType(event.getClass()), event, metadata
+                    );
+                }
+                metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
+            });
+        }
+
+        @Override
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("Not required for testing");
         }
     }

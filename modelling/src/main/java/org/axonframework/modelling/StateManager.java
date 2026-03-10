@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -54,7 +53,7 @@ public interface StateManager {
      * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
      *                                              registered.
      */
-    <ID, T> StateManager register(@Nonnull Repository<ID, T> repository);
+    <ID, T> StateManager register(Repository<ID, T> repository);
 
     /**
      * Registers a load and save function for state type {@code T} with id of type {@code ID}. Creates a
@@ -70,10 +69,10 @@ public interface StateManager {
      * @throws RepositoryAlreadyRegisteredException if a repository with the same entity type and id type is already
      *                                              registered.
      */
-    default <ID, T> StateManager register(@Nonnull Class<ID> idType,
-                                          @Nonnull Class<T> entityType,
-                                          @Nonnull SimpleRepositoryEntityLoader<ID, T> loader,
-                                          @Nonnull SimpleRepositoryEntityPersister<ID, T> persister
+    default <ID, T> StateManager register(Class<ID> idType,
+                                          Class<T> entityType,
+                                          SimpleRepositoryEntityLoader<ID, T> loader,
+                                          SimpleRepositoryEntityPersister<ID, T> persister
     ) {
         return register(new SimpleRepository<>(idType, entityType, loader, persister));
     }
@@ -92,11 +91,10 @@ public interface StateManager {
      * @param <I>     The type of the identifier of the entity.
      * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
-    @Nonnull
     default <I, T> CompletableFuture<T> loadEntity(
-            @Nonnull Class<T> type,
-            @Nonnull I id,
-            @Nonnull ProcessingContext context
+            Class<T> type,
+            I id,
+            ProcessingContext context
     ) {
         return loadManagedEntity(type, id, context).thenApply(ManagedEntity::entity);
     }
@@ -113,9 +111,9 @@ public interface StateManager {
      * @return a {@link CompletableFuture} which resolves to the entity instance.
      */
     <ID, T> CompletableFuture<ManagedEntity<ID, T>> loadManagedEntity(
-            @Nonnull Class<T> type,
-            @Nonnull ID id,
-            @Nonnull ProcessingContext context);
+            Class<T> type,
+            ID id,
+            ProcessingContext context);
 
     /**
      * The types of entities that are registered with this {@code StateManager}.
@@ -131,7 +129,7 @@ public interface StateManager {
      * @return the types of identifiers that are registered with this {@code StateManager} for the given
      * {@code entityType}.
      */
-    Set<Class<?>> registeredIdsFor(@Nonnull Class<?> entityType);
+    Set<Class<?>> registeredIdsFor(Class<?> entityType);
 
     /**
      * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is registered
@@ -143,5 +141,5 @@ public interface StateManager {
      * @param idType     The type of the identifier of the entity.
      * @return The {@link Repository} for the given {@code idType} and {@code entityType}.
      */
-    <ID, T> Repository<ID, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<ID> idType);
+    <ID, T> Repository<ID, T> repository(Class<T> entityType, Class<ID> idType);
 }
