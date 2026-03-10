@@ -44,6 +44,7 @@ public class DefaultEventHandlingComponentsConfigurer
         EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
 
     private Map<String, ComponentBuilder<EventHandlingComponent>> componentBuilders = new LinkedHashMap<>();
+    private int componentIndex = 0;
 
     /**
      * Creates a new empty configurer instance.
@@ -53,12 +54,24 @@ public class DefaultEventHandlingComponentsConfigurer
     }
 
     @Override
+    @Deprecated(forRemoval = true)
+    public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
+            ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+    ) {
+        requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+        String generatedName = String.valueOf(componentIndex++);
+        componentBuilders.put(generatedName, handlingComponentBuilder);
+        return this;
+    }
+
+    @Override
     public EventHandlingComponentsConfigurer.AdditionalComponentPhase declarative(
             String componentName,
             ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
     ) {
         assertNonBlank(componentName, "The component name cannot be null or blank.");
         requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+        componentIndex++;
         var existingBuilder = componentBuilders.putIfAbsent(componentName, handlingComponentBuilder);
         if (existingBuilder != null) {
             throw new AxonConfigurationException("Event handling component name [%s] is already registered."
