@@ -66,7 +66,7 @@ public class AxonTestFixtureMonitoringTest {
             return configurer.registerEntity(entity)
                              .registerCommandHandlingModule(CommandHandlingModule.named("CreateCourse")
                                                                                  .commandHandlers()
-                                                                                 .annotatedCommandHandlingComponent(c -> new Domain.CourseCreatedCommandHandler()))
+                                                                                 .autodetectedCommandHandlingComponent(c -> new Domain.CourseCreatedCommandHandler()))
                     ;
         }
 

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -149,7 +149,7 @@ class EventMessageDeadLetterJpaConverterTest {
         assertEquals(expected.payload(), deserializedPayload);
 
         // In AF5, all restored messages are GenericEventMessage
-        assertTrue(actual instanceof GenericEventMessage);
+        assertInstanceOf(GenericEventMessage.class, actual);
     }
 
     private void assertContextRestored(Context originalContext, MessageStream.Entry<EventMessage> restoredEntry) {

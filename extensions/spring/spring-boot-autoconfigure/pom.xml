@@ -31,7 +31,6 @@
     </description>
 
     <dependencies>
-
         <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -47,22 +46,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-dropwizard</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
             <groupId>org.axonframework.extensions.tracing</groupId>
             <artifactId>axon-tracing-opentelemetry</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-micrometer</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -216,11 +201,6 @@
             <artifactId>jakarta.persistence-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -235,6 +215,17 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
             <optional>true</optional>
         </dependency>
@@ -277,7 +268,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>

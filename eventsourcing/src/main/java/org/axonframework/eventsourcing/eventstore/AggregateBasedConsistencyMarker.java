@@ -31,6 +31,11 @@ import java.util.Objects;
  */
 public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<AggregateBasedConsistencyMarker> {
 
+    /**
+     * This contains the consistency marker positions per aggregate. Note that <b>marker positions</b> are not the
+     * same as <b>sequence numbers</b>, but are closely related: marker positions are one higher than the corresponding
+     * sequence number.
+     */
     private final Map<String, Long> aggregatePositions;
 
     /**
@@ -40,7 +45,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
      * @param sequenceNumber      The sequence number of the last seen event of the aggregate.
      */
     public AggregateBasedConsistencyMarker(String aggregateIdentifier, long sequenceNumber) {
-        this(Map.of(aggregateIdentifier, sequenceNumber));
+        this(Map.of(aggregateIdentifier, sequenceNumber + 1));  // Convert to position by adding one to sequence number
     }
 
     private AggregateBasedConsistencyMarker(Map<String, Long> aggregatePositions) {
@@ -111,16 +116,17 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
      */
     private AggregateBasedConsistencyMarker forwarded(String aggregateIdentifier, long newSequence) {
         long current = aggregatePositions.getOrDefault(aggregateIdentifier, -1L);
+        long newPosition = newSequence + 1;  // convert to position by adding 1
 
-        if (current > newSequence) {
+        if (current > newPosition) {
             throw new IllegalArgumentException(
                     "Aggregate " + aggregateIdentifier + " is already beyond provided position. Current position: "
-                            + current + ", provided: " + newSequence);
-        } else if (current == newSequence) {
+                            + current + ", provided: " + newPosition);
+        } else if (current == newPosition) {
             // no forwarding required
             return this;
         }
-        Map<String, Long> newMap = CollectionUtils.mapWith(aggregatePositions, aggregateIdentifier, newSequence);
+        Map<String, Long> newMap = CollectionUtils.mapWith(aggregatePositions, aggregateIdentifier, newPosition);
         return new AggregateBasedConsistencyMarker(newMap);
     }
 
@@ -188,14 +194,15 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
          * @return The sequence number for the aggregate
          */
         public long incrementAndGetSequenceOf(String aggregateIdentifier) {
+        	    // Note that the position is one higher than the sequence number, so we can use the position as the next sequence number directly
             return aggregateSequences.compute(
                     aggregateIdentifier,
-                    (key, oldValue) -> oldValue == null ? positionOf(key) + 1 : oldValue + 1
+                    (key, oldValue) -> oldValue == null ? positionOf(key) : oldValue + 1
             );
         }
 
         private long positionOf(String aggregateIdentifier) {
-            return aggregatePositions.getOrDefault(aggregateIdentifier, -1L);
+            return aggregatePositions.getOrDefault(aggregateIdentifier, 0L);
         }
     }
 }

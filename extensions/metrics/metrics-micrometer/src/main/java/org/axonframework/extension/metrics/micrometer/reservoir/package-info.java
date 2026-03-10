@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains classes related to reservoir.
+ * Part of the Axon Extension module. Contains classes related to Micrometer reservoirs.
  */
 @NullMarked
 package org.axonframework.extension.metrics.micrometer.reservoir;

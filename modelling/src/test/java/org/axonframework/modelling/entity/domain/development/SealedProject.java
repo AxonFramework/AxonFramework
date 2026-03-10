@@ -56,14 +56,12 @@ import java.util.List;
 
 public sealed class SealedProject {
 
-
     public static final class SealedInternalProject extends SealedProject {
 
         public SealedInternalProject(String projectId, String name) {
             super(projectId, name);
         }
     }
-
 
     public static final class SealedOpenSourceProject extends SealedProject {
 
@@ -93,7 +91,6 @@ public sealed class SealedProject {
         }
     }
 
-
     private final String projectId;
     private String name;
 
@@ -102,13 +99,13 @@ public sealed class SealedProject {
         this.name = name;
     }
 
-    @EntityMember
+    @EntityMember(routingKey = "email")
     private Developer leadDeveloper;
 
-    @EntityMember
+    @EntityMember(routingKey = "email")
     private List<Developer> otherDevelopers = new ArrayList<>();
 
-    @EntityMember
+    @EntityMember(routingKey = "id")
     private List<Milestone> features = new ArrayList<>();
 
     @CommandHandler

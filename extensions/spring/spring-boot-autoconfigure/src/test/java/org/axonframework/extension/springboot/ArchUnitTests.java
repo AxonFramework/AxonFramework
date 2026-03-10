@@ -78,14 +78,11 @@ class ArchUnitTests {
 
     @Test
     void allClassesSuffixedWithAutoConfigurationAreAnnotated() {
-        classes()
-                .that()
-                .haveSimpleNameEndingWith("AutoConfiguration")
-                .and()
-                .areNotAssignableTo(MetricsProperties.AutoConfiguration.class)
-                .should()
-                .beAnnotatedWith(AutoConfiguration.class)
-                .check(importedClasses);
+        classes().that()
+                 .haveSimpleNameEndingWith("AutoConfiguration")
+                 .should()
+                 .beAnnotatedWith(AutoConfiguration.class)
+                 .check(importedClasses);
     }
 
     private static ArchCondition<JavaClass> listedInAutoConfigurationImports() {

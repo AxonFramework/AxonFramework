@@ -87,7 +87,7 @@ class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommand
 
     @Test
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new CompoundModelAnnotatedCommandHandler()
         ));
         startApp();

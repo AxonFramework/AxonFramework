@@ -20,23 +20,22 @@ import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.conversion.CachingSupplier;
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.GenericDeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 
-import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.jdbc.JdbcUtils.executeUpdate;
@@ -75,13 +75,13 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         executorProvider = new JdbcTransactionalExecutorProvider(dataSource);
 
         Converter genericConverter = jacksonConverter;
-        statementFactory = DefaultDeadLetterStatementFactory.<EventMessage>builder()
+        statementFactory = DefaultDeadLetterStatementFactory.builder()
                                                             .eventConverter(eventConverter)
                                                             .genericConverter(genericConverter)
                                                             .schema(schema)
                                                             .build();
 
-        jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.<EventMessage>builder()
+        jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.builder()
                                                           .processingGroup(TEST_PROCESSING_GROUP)
                                                           .transactionalExecutorProvider(executorProvider)
                                                           .schema(schema)

@@ -28,7 +28,7 @@ public class EnrollStudentInFacultyConfiguration {
                                                                       EnrollStudentInFacultyCommandHandler.Student.class))
                 .registerCommandHandlingModule(CommandHandlingModule.named("EnrollStudentInFaculty")
                                                                     .commandHandlers()
-                                                                    .annotatedCommandHandlingComponent(c -> new EnrollStudentInFacultyCommandHandler())
+                                                                    .autodetectedCommandHandlingComponent(c -> new EnrollStudentInFacultyCommandHandler())
                 );
     }
 

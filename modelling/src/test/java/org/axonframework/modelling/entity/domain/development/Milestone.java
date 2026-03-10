@@ -16,13 +16,12 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.modelling.entity.annotation.EntityMember;
 
 import java.util.List;
 
 public class Milestone {
-    @RoutingKey
+
     private String id;
 
     @EntityMember(routingKey = "issueId")

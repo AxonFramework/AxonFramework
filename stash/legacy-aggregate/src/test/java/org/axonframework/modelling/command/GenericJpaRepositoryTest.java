@@ -345,7 +345,7 @@ class GenericJpaRepositoryTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               List<EventMessage> events) {
+                                               List<? extends EventMessage> events) {
             publishedEvents.addAll(events);
             return super.publish(context, events);
         }

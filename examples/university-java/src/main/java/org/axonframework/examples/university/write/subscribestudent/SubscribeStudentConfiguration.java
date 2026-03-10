@@ -28,7 +28,7 @@ public class SubscribeStudentConfiguration {
         var commandHandlingModule = CommandHandlingModule
                 .named("SubscribeStudent")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
+                .autodetectedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
         return configurer
                 .registerEntity(stateEntity)
                 .registerCommandHandlingModule(commandHandlingModule);

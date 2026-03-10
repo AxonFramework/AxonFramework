@@ -19,5 +19,4 @@ package org.axonframework.integrationtests.testsuite.course.commands;
 import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record CreateCourse(@TargetEntityId String courseId) {
-
 }

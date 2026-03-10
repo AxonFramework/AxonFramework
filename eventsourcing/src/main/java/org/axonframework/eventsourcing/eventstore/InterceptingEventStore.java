@@ -144,7 +144,7 @@ public class InterceptingEventStore implements EventStore {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegateBus.publish(context, events);
     }
 
@@ -195,8 +195,11 @@ public class InterceptingEventStore implements EventStore {
         }
 
         @Override
-        public MessageStream<? extends EventMessage> source(SourcingCondition condition) {
-            return delegate.source(condition);
+        public MessageStream<? extends EventMessage> source(
+            SourcingCondition condition,
+            @Nullable Consumer<Position> resumePositionCallback
+        ) {
+            return delegate.source(condition, resumePositionCallback);
         }
 
         @Override

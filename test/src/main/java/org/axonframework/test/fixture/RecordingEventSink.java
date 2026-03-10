@@ -23,6 +23,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
+
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -54,7 +55,7 @@ public class RecordingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }

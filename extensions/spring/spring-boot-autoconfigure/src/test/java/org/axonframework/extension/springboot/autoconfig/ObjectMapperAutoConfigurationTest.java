@@ -16,8 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
@@ -29,6 +27,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import java.util.List;
 
@@ -45,37 +45,35 @@ class ObjectMapperAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
+        testContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled=false")
+                                                    .withUserConfiguration(TestContext.class);
     }
 
     @Test
     void springDataPageJacksonModuleIsRegisteredByDefault() {
         testContext.run(context -> {
             assertThat(context).hasBean("springDataPageJacksonModule");
-            Module module = context.getBean("springDataPageJacksonModule", Module.class);
+            SimpleModule module = context.getBean("springDataPageJacksonModule", SimpleModule.class);
             assertThat(module).isNotNull();
         });
     }
 
     @Test
     void springDataPageJacksonModuleIsRegisteredWhenJacksonIsGeneralConverter() {
-        testContext.withPropertyValues("axon.converter.general=jackson").run(context -> {
-            assertThat(context).hasBean("springDataPageJacksonModule");
-        });
+        testContext.withPropertyValues("axon.converter.general=jackson")
+                   .run(context -> assertThat(context).hasBean("springDataPageJacksonModule"));
     }
 
     @Test
     void springDataPageJacksonModuleIsRegisteredWhenJacksonIsMessagesConverter() {
-        testContext.withPropertyValues("axon.converter.messages=jackson").run(context -> {
-            assertThat(context).hasBean("springDataPageJacksonModule");
-        });
+        testContext.withPropertyValues("axon.converter.messages=jackson")
+                   .run(context -> assertThat(context).hasBean("springDataPageJacksonModule"));
     }
 
     @Test
     void springDataPageJacksonModuleIsRegisteredWhenJacksonIsEventsConverter() {
-        testContext.withPropertyValues("axon.converter.events=jackson").run(context -> {
-            assertThat(context).hasBean("springDataPageJacksonModule");
-        });
+        testContext.withPropertyValues("axon.converter.events=jackson")
+                   .run(context -> assertThat(context).hasBean("springDataPageJacksonModule"));
     }
 
     @Test
@@ -84,13 +82,11 @@ class ObjectMapperAutoConfigurationTest {
                 "axon.converter.general=cbor",
                 "axon.converter.messages=cbor",
                 "axon.converter.events=cbor"
-        ).run(context -> {
-            assertThat(context).doesNotHaveBean("springDataPageJacksonModule");
-        });
+        ).run(context -> assertThat(context).doesNotHaveBean("springDataPageJacksonModule"));
     }
 
     @Test
-    void springDataPageDeserializerWorksCorrectlyInContext() throws Exception {
+    void springDataPageDeserializerWorksCorrectlyInContext() {
         testContext.run(context -> {
             ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
 
@@ -112,7 +108,7 @@ class ObjectMapperAutoConfigurationTest {
     }
 
     @Test
-    void springDataPageSerializationRoundTripInContext() throws Exception {
+    void springDataPageSerializationRoundTripInContext() {
         testContext.run(context -> {
             ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
 

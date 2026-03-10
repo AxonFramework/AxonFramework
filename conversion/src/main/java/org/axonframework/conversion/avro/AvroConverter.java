@@ -38,9 +38,8 @@ import java.util.function.UnaryOperator;
  * <a href="https://avro.apache.org/docs/1.11.0/spec.html#single_object_encoding">Single Object Encoded binary
  * encoding</a>.
  * <p>
- * This converter is intended to work for classes, representing messages specified by Avro Schema.
- * It is limited to conversions specifying {@code Class} as a target type (and can not work on pure {@code Type})
- * definitions.
+ * This converter is intended to work for classes, representing messages specified by Avro Schema. It is limited to
+ * conversions specifying {@code Class} as a target type (and can not work on pure {@code Type}) definitions.
  * </p>
  * <p>
  * The conversion is delegated to the {@link AvroConverterStrategy} implementations. By default, the
@@ -109,25 +108,6 @@ public class AvroConverter implements Converter {
         }
         this.converter = chainingTypeConverter;
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(schemaStore));
-    }
-
-    @Override
-    public boolean canConvert(Type sourceType,
-                              Type targetType) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
-                         sourceType, targetType);
-        }
-        // no conversion needed
-        return sourceType.equals(targetType)
-                // e.g. bytes to generic record for upcaster
-                || converter.canConvert(sourceType, targetType)
-                // any type supported by the strategy to bytes and then by the chain -> conversion
-                || (strategyForType(sourceType) && converter.canConvert(byte[].class, targetType))
-                // chain to bytes and then to any type supported by a strategy -> deserialization
-                || (converter.canConvert(sourceType, byte[].class) && strategyForType(targetType))
-                // generic record to any type -> deserialization after upcaster
-                || (converter.canConvert(sourceType, GenericRecord.class) && strategyForType(targetType));
     }
 
     private boolean strategyForType(Type type) {

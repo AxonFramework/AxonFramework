@@ -25,35 +25,13 @@ import java.lang.reflect.Type;
  * Interface describing a mechanism that can convert data from one to another type.
  * <p>
  * Used when object are added/retrieved from a storage solution or put on/received from a network. Clear example of this
- * is the {@link org.axonframework.messaging.Message}.
+ * is the {@code org.axonframework.messaging.core.Message}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @since 3.0.0
  */
 public interface Converter extends DescribableComponent {
-
-    /**
-     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
-     * {@code targetType}.
-     *
-     * @param sourceType The type of data to convert from.
-     * @param targetType The type of data to convert to.
-     * @return {@code true} if conversion is possible, {@code false} otherwise.
-     */
-    default boolean canConvert(Class<?> sourceType, Class<?> targetType) {
-        return canConvert(sourceType, (Type) targetType);
-    }
-
-    /**
-     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
-     * {@code targetType}.
-     *
-     * @param sourceType The type of data to convert from.
-     * @param targetType The type of data to convert to.
-     * @return {@code true} if conversion is possible, {@code false} otherwise.
-     */
-    boolean canConvert(Type sourceType, Type targetType);
 
     /**
      * Converts the given {@code input} object into an object of the given {@code targetType}.
