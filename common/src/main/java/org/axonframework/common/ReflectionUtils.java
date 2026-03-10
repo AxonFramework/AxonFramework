@@ -619,8 +619,7 @@ public final class ReflectionUtils {
      * @param clazz the class to return enclosing classes for
      * @return an {@code Iterable} providing access to all enclosing classes, from innermost to outermost
      */
-    @Nonnull
-    public static Iterable<Class<?>> enclosingClassesOf(@Nonnull Class<?> clazz) {
+    public static Iterable<Class<?>> enclosingClassesOf(Class<?> clazz) {
         List<Class<?>> enclosingClasses = new LinkedList<>();
         Class<?> currentEnclosing = clazz.getEnclosingClass();
         while (currentEnclosing != null) {

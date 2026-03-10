@@ -230,11 +230,10 @@ public final class AnnotationUtils {
      * @return an optional containing the attributes map if the annotation was found and the predicate was satisfied,
      * or an empty optional if the annotation was not found at any level
      */
-    @Nonnull
     public static Optional<Map<String, Object>> findAnnotationAttributesOnType(
-            @Nonnull Class<?> type,
-            @Nonnull Class<? extends Annotation> annotationType,
-            @Nonnull Predicate<Map<String, Object>> expectedAttributes
+            Class<?> type,
+            Class<? extends Annotation> annotationType,
+            Predicate<Map<String, Object>> expectedAttributes
     ) {
         // Look at the type itself
         Optional<Map<String, Object>> attributes = findAnnotationAttributes(type, annotationType);

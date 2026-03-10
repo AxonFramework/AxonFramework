@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -24,6 +23,7 @@ import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -111,15 +111,15 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
         ));
     }
 
-    @Nonnull
-    private Map<String, Object> attributesFor(@Nonnull AnnotatedElement annotatedElement,
-                                              @Nonnull Class<? extends Annotation> annotation) {
+
+    private Map<String, Object> attributesFor(AnnotatedElement annotatedElement,
+                                              Class<? extends Annotation> annotation) {
         return AnnotationUtils.findAnnotationAttributes(annotatedElement, annotation)
                               .orElse(Collections.emptyMap());
     }
 
-    @Nonnull
-    private Map<String, Object> namespaceAttributesFor(@Nonnull Class<?> payloadType) {
+
+    private Map<String, Object> namespaceAttributesFor(Class<?> payloadType) {
         return AnnotationUtils.findAnnotationAttributesOnType(
                 payloadType,
                 specification.namespaceAnnotation(),
