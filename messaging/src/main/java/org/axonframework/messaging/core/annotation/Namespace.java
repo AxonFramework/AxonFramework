@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.eventhandling.annotation.Event;
@@ -64,6 +63,5 @@ public @interface Namespace {
      *
      * @return the namespace (or bounded context) defined by this annotation
      */
-    @Nonnull
     String value() default "";
 }
