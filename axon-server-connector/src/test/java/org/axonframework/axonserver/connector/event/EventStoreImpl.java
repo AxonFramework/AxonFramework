@@ -17,6 +17,7 @@
 package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.grpc.event.Confirmation;
+import io.axoniq.axonserver.grpc.event.ConfirmationWithConsistencyMarker;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventStoreGrpc;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
@@ -86,7 +87,7 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
     }
 
     @Override
-    public StreamObserver<Event> appendEvent(StreamObserver<Confirmation> responseObserver) {
+    public StreamObserver<Event> appendEvent(StreamObserver<ConfirmationWithConsistencyMarker> responseObserver) {
         return new StreamObserver<>() {
 
             private final List<Event> eventsInTx = new LinkedList<>();
@@ -104,7 +105,7 @@ public class EventStoreImpl extends EventStoreGrpc.EventStoreImplBase {
             @Override
             public void onCompleted() {
                 events.addAll(eventsInTx);
-                responseObserver.onNext(Confirmation.newBuilder().setSuccess(true).build());
+                responseObserver.onNext(ConfirmationWithConsistencyMarker.newBuilder().setSuccess(true).build());
                 responseObserver.onCompleted();
             }
         };
