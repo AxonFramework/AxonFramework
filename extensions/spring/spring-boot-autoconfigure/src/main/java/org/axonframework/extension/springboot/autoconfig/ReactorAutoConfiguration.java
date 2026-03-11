@@ -47,7 +47,10 @@ import java.util.Optional;
  */
 @AutoConfiguration
 @AutoConfigureAfter(AxonAutoConfiguration.class)
-@ConditionalOnClass(name = "reactor.core.publisher.Mono")
+@ConditionalOnClass(name = {
+        "reactor.core.publisher.Mono",
+        "org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor"
+})
 public class ReactorAutoConfiguration {
 
     /**
