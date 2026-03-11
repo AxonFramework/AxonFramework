@@ -57,7 +57,6 @@ public class ReactorAutoConfiguration {
      * Creates a {@link DecoratorDefinition} that registers all discovered {@link ReactorMessageDispatchInterceptor}
      * beans on the {@link ReactorDispatchInterceptorRegistry}.
      *
-     * @param interceptors        generic {@link Message} reactor dispatch interceptors
      * @param commandInterceptors {@link CommandMessage}-specific reactor dispatch interceptors
      * @param eventInterceptors   {@link EventMessage}-specific reactor dispatch interceptors
      * @param queryInterceptors   {@link QueryMessage}-specific reactor dispatch interceptors
@@ -67,15 +66,13 @@ public class ReactorAutoConfiguration {
     @ConditionalOnBean(ReactorMessageDispatchInterceptor.class)
     public DecoratorDefinition<ReactorDispatchInterceptorRegistry, ReactorDispatchInterceptorRegistry>
     reactorDispatchInterceptorEnhancer(
-            Optional<List<ReactorMessageDispatchInterceptor<Message>>> interceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<CommandMessage>>> commandInterceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<EventMessage>>> eventInterceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<QueryMessage>>> queryInterceptors
+            Optional<List<ReactorMessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
+            Optional<List<ReactorMessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
+            Optional<List<ReactorMessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
     ) {
         return DecoratorDefinition.forType(ReactorDispatchInterceptorRegistry.class)
                                   .with((config, name, delegate) -> registerInterceptors(
                                           delegate,
-                                          interceptors,
                                           commandInterceptors,
                                           eventInterceptors,
                                           queryInterceptors
@@ -84,31 +81,25 @@ public class ReactorAutoConfiguration {
 
     private static ReactorDispatchInterceptorRegistry registerInterceptors(
             ReactorDispatchInterceptorRegistry registry,
-            Optional<List<ReactorMessageDispatchInterceptor<Message>>> interceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<CommandMessage>>> commandInterceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<EventMessage>>> eventInterceptors,
-            Optional<List<ReactorMessageDispatchInterceptor<QueryMessage>>> queryInterceptors
+            Optional<List<ReactorMessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
+            Optional<List<ReactorMessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
+            Optional<List<ReactorMessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
     ) {
-        interceptors.ifPresent(list -> {
-            for (ReactorMessageDispatchInterceptor<Message> interceptor : list) {
-                registry.registerInterceptor(interceptor);
+        if (commandInterceptors.isPresent()) {
+            for (ReactorMessageDispatchInterceptor<? super CommandMessage> interceptor : commandInterceptors.get()) {
+                registry = registry.registerCommandInterceptor(c -> interceptor);
             }
-        });
-        commandInterceptors.ifPresent(list -> {
-            for (ReactorMessageDispatchInterceptor<CommandMessage> interceptor : list) {
-                registry.registerCommandInterceptor(interceptor);
+        }
+        if (eventInterceptors.isPresent()) {
+            for (ReactorMessageDispatchInterceptor<? super EventMessage> interceptor : eventInterceptors.get()) {
+                registry = registry.registerEventInterceptor(c -> interceptor);
             }
-        });
-        eventInterceptors.ifPresent(list -> {
-            for (ReactorMessageDispatchInterceptor<EventMessage> interceptor : list) {
-                registry.registerEventInterceptor(interceptor);
+        }
+        if (queryInterceptors.isPresent()) {
+            for (ReactorMessageDispatchInterceptor<? super QueryMessage> interceptor : queryInterceptors.get()) {
+                registry = registry.registerQueryInterceptor(c -> interceptor);
             }
-        });
-        queryInterceptors.ifPresent(list -> {
-            for (ReactorMessageDispatchInterceptor<QueryMessage> interceptor : list) {
-                registry.registerQueryInterceptor(interceptor);
-            }
-        });
+        }
         return registry;
     }
 }

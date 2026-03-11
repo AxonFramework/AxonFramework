@@ -16,13 +16,16 @@
 
 package org.axonframework.extension.reactor.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -31,10 +34,14 @@ import java.util.List;
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
  * {@link EventMessage}-specific, and {@link QueryMessage}-specific {@code ReactorMessageDispatchInterceptors}.
- * Registered interceptors can be retrieved through {@link #commandInterceptors()}, {@link #eventInterceptors()}, and
- * {@link #queryInterceptors()}.
+ * Registered interceptors can be retrieved through
+ * {@link #commandInterceptors(Configuration, Class, String)},
+ * {@link #eventInterceptors(Configuration, Class, String)}, and
+ * {@link #queryInterceptors(Configuration, Class, String)}.
  * <p>
- * Generic {@link Message} interceptors registered via {@link #registerInterceptor(ReactorMessageDispatchInterceptor)}
+ * Generic {@link Message} interceptors registered via
+ * {@link #registerInterceptor(ComponentBuilder)} or
+ * {@link #registerInterceptor(ReactorDispatchInterceptorFactory)}
  * are automatically applied to all message types.
  * <p>
  * This registry follows the same pattern as
@@ -44,80 +51,184 @@ import java.util.List;
  * @author Theo Emanuelsson
  * @since 5.1.0
  * @see ReactorMessageDispatchInterceptor
+ * @see ReactorDispatchInterceptorFactory
  */
 @Internal
-public interface ReactorDispatchInterceptorRegistry {
+public interface ReactorDispatchInterceptorRegistry extends DescribableComponent {
 
     /**
-     * Registers a generic {@link ReactorMessageDispatchInterceptor} for all message types.
+     * Registers the given {@code interceptorBuilder} for a generic {@link Message}
+     * {@link ReactorMessageDispatchInterceptor}.
      * <p>
-     * The interceptor will be applied to {@link CommandMessage}s, {@link EventMessage}s, and {@link QueryMessage}s.
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
      *
-     * @param interceptor the generic dispatch interceptor to register
+     * @param interceptorBuilder the generic {@link Message} {@link ReactorMessageDispatchInterceptor} builder to
+     *                           register
      * @return this registry, for fluent interfacing
      */
-    @NonNull
     ReactorDispatchInterceptorRegistry registerInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<Message> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<Message>> interceptorBuilder
     );
 
     /**
-     * Registers a {@link ReactorMessageDispatchInterceptor} for {@link CommandMessage}s.
+     * Registers the given component-aware {@code interceptorFactory} for a generic {@link Message}
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
+     * component-specific customization of the interceptor. Registering an interceptor per a
+     * {@link ReactorDispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the
+     * factory, ensuring uniqueness per given type and name. If the interceptor will be identical regardless of the
+     * given type or name, please use {@link #registerInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptor the command dispatch interceptor to register
+     * @param interceptorFactory the generic {@link Message} {@link ReactorMessageDispatchInterceptor} factory to
+     *                           register
      * @return this registry, for fluent interfacing
      */
-    @NonNull
+    ReactorDispatchInterceptorRegistry registerInterceptor(
+            ReactorDispatchInterceptorFactory<Message> interceptorFactory
+    );
+
+    /**
+     * Registers the given {@code interceptorBuilder} for a {@link CommandMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
+     *
+     * @param interceptorBuilder the {@link CommandMessage}-specific {@link ReactorMessageDispatchInterceptor} builder
+     *                           to register
+     * @return this registry, for fluent interfacing
+     */
     ReactorDispatchInterceptorRegistry registerCommandInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super CommandMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
-     * Registers a {@link ReactorMessageDispatchInterceptor} for {@link EventMessage}s.
+     * Registers the given component-aware {@code interceptorFactory} for a {@link CommandMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
+     * component-specific customization of the interceptor. Registering an interceptor per a
+     * {@link ReactorDispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the
+     * factory, ensuring uniqueness per given type and name. If the interceptor will be identical regardless of the
+     * given type or name, please use {@link #registerCommandInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptor the event dispatch interceptor to register
+     * @param interceptorFactory the {@link CommandMessage}-specific {@link ReactorMessageDispatchInterceptor} factory
+     *                           to register
      * @return this registry, for fluent interfacing
      */
-    @NonNull
+    ReactorDispatchInterceptorRegistry registerCommandInterceptor(
+            ReactorDispatchInterceptorFactory<? super CommandMessage> interceptorFactory
+    );
+
+    /**
+     * Registers the given {@code interceptorBuilder} for an {@link EventMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
+     *
+     * @param interceptorBuilder the {@link EventMessage}-specific {@link ReactorMessageDispatchInterceptor} builder to
+     *                           register
+     * @return this registry, for fluent interfacing
+     */
     ReactorDispatchInterceptorRegistry registerEventInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super EventMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
-     * Registers a {@link ReactorMessageDispatchInterceptor} for {@link QueryMessage}s.
+     * Registers the given component-aware {@code interceptorFactory} for an {@link EventMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
+     * component-specific customization of the interceptor. Registering an interceptor per a
+     * {@link ReactorDispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the
+     * factory, ensuring uniqueness per given type and name. If the interceptor will be identical regardless of the
+     * given type or name, please use {@link #registerEventInterceptor(ComponentBuilder)} instead.
      *
-     * @param interceptor the query dispatch interceptor to register
+     * @param interceptorFactory the {@link EventMessage}-specific {@link ReactorMessageDispatchInterceptor} factory to
+     *                           register
      * @return this registry, for fluent interfacing
      */
-    @NonNull
+    ReactorDispatchInterceptorRegistry registerEventInterceptor(
+            ReactorDispatchInterceptorFactory<? super EventMessage> interceptorFactory
+    );
+
+    /**
+     * Registers the given {@code interceptorBuilder} for a {@link QueryMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * Registering an interceptor per a {@link ComponentBuilder} ensures the interceptor is only built <b>once</b>.
+     *
+     * @param interceptorBuilder the {@link QueryMessage}-specific {@link ReactorMessageDispatchInterceptor} builder to
+     *                           register
+     * @return this registry, for fluent interfacing
+     */
     ReactorDispatchInterceptorRegistry registerQueryInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super QueryMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
+    );
+
+    /**
+     * Registers the given component-aware {@code interceptorFactory} for a {@link QueryMessage}-specific
+     * {@link ReactorMessageDispatchInterceptor}.
+     * <p>
+     * The factory will receive the component type and name when the interceptor is retrieved allowing for
+     * component-specific customization of the interceptor. Registering an interceptor per a
+     * {@link ReactorDispatchInterceptorFactory} enforces construction of the interceptor for every invocation of the
+     * factory, ensuring uniqueness per given type and name. If the interceptor will be identical regardless of the
+     * given type or name, please use {@link #registerQueryInterceptor(ComponentBuilder)} instead.
+     *
+     * @param interceptorFactory the {@link QueryMessage}-specific {@link ReactorMessageDispatchInterceptor} factory to
+     *                           register
+     * @return this registry, for fluent interfacing
+     */
+    ReactorDispatchInterceptorRegistry registerQueryInterceptor(
+            ReactorDispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     );
 
     /**
      * Returns the list of {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} registered for
-     * {@link CommandMessage}s.
+     * {@link CommandMessage CommandMessages} for a specific {@code componentType} and {@code componentName}.
      *
+     * @param config        the configuration to build all {@link CommandMessage}-specific
+     *                      {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} with
+     * @param componentType the type of the component being intercepted
+     * @param componentName the name of the component being intercepted
      * @return the list of command dispatch interceptors
      */
-    @NonNull
-    List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors();
+    List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    );
 
     /**
      * Returns the list of {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} registered for
-     * {@link EventMessage}s.
+     * {@link EventMessage EventMessages} for a specific {@code componentType} and {@code componentName}.
      *
+     * @param config        the configuration to build all {@link EventMessage}-specific
+     *                      {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} with
+     * @param componentType the type of the component being intercepted
+     * @param componentName the name of the component being intercepted
      * @return the list of event dispatch interceptors
      */
-    @NonNull
-    List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors();
+    List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    );
 
     /**
      * Returns the list of {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} registered for
-     * {@link QueryMessage}s.
+     * {@link QueryMessage QueryMessages} for a specific {@code componentType} and {@code componentName}.
      *
+     * @param config        the configuration to build all {@link QueryMessage}-specific
+     *                      {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors} with
+     * @param componentType the type of the component being intercepted
+     * @param componentName the name of the component being intercepted
      * @return the list of query dispatch interceptors
      */
-    @NonNull
-    List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors();
+    List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    );
 }

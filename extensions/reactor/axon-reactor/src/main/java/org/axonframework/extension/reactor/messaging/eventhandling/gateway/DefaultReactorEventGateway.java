@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.eventhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -54,7 +53,7 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
 
     private final EventGateway delegate;
     private final MessageTypeResolver messageTypeResolver;
-    private final List<ReactorMessageDispatchInterceptor<? super EventMessage>> interceptors;
+    private final ReactorMessageDispatchInterceptorChain<EventMessage> interceptorChain;
 
     /**
      * Instantiate a {@link DefaultReactorEventGateway}.
@@ -64,13 +63,13 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
      * @param dispatchInterceptors the list of {@link ReactorMessageDispatchInterceptor}s to apply to events
      */
     public DefaultReactorEventGateway(
-            @NonNull EventGateway eventGateway,
-            @NonNull MessageTypeResolver messageTypeResolver,
-            @NonNull List<ReactorMessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors
+            EventGateway eventGateway,
+            MessageTypeResolver messageTypeResolver,
+            List<ReactorMessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors
     ) {
         this.delegate = Objects.requireNonNull(eventGateway, "EventGateway may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        this.interceptors = List.copyOf(
+        this.interceptorChain = buildChain(
                 Objects.requireNonNull(dispatchInterceptors, "Dispatch interceptors may not be null")
         );
     }
@@ -82,15 +81,14 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
      * @param messageTypeResolver the {@link MessageTypeResolver} for resolving message types
      */
     public DefaultReactorEventGateway(
-            @NonNull EventGateway eventGateway,
-            @NonNull MessageTypeResolver messageTypeResolver
+            EventGateway eventGateway,
+            MessageTypeResolver messageTypeResolver
     ) {
         this(eventGateway, messageTypeResolver, List.of());
     }
 
-    @NonNull
     @Override
-    public Mono<Void> publish(@Nullable ProcessingContext context, @NonNull List<?> events) {
+    public Mono<Void> publish(@Nullable ProcessingContext context, List<?> events) {
         return Flux.fromIterable(events)
                    .map(this::asEventMessage)
                    .flatMap(eventMessage -> dispatchThroughChain(eventMessage, context))
@@ -116,10 +114,12 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
 
     @SuppressWarnings("unchecked")
     private Mono<EventMessage> dispatchThroughChain(EventMessage eventMessage, ProcessingContext context) {
-        return (Mono<EventMessage>) buildChain().proceed(eventMessage, context);
+        return (Mono<EventMessage>) interceptorChain.proceed(eventMessage, context);
     }
 
-    private ReactorMessageDispatchInterceptorChain<EventMessage> buildChain() {
+    private static ReactorMessageDispatchInterceptorChain<EventMessage> buildChain(
+            List<ReactorMessageDispatchInterceptor<? super EventMessage>> interceptors
+    ) {
         ReactorMessageDispatchInterceptorChain<EventMessage> chain = (message, ctx) -> Mono.just(message);
         for (int i = interceptors.size() - 1; i >= 0; i--) {
             // Safe cast: each interceptor in the list can handle EventMessage,

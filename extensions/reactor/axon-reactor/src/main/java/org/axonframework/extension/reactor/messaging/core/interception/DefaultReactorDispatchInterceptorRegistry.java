@@ -16,23 +16,31 @@
 
 package org.axonframework.extension.reactor.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LazyInitializedComponentDefinition;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
-import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Default implementation of the {@link ReactorDispatchInterceptorRegistry}, maintaining lists of
  * {@link CommandMessage}, {@link EventMessage}, and {@link QueryMessage}-specific
  * {@link ReactorMessageDispatchInterceptor ReactorMessageDispatchInterceptors}.
+ * <p>
+ * This implementation ensures given interceptor {@link ComponentBuilder builders} methods are only invoked <b>once</b>.
+ * Note that this does not apply to given {@link ReactorDispatchInterceptorFactory factories}!
  *
  * @author Theo Emanuelsson
  * @since 5.1.0
@@ -40,76 +48,179 @@ import java.util.Objects;
 @Internal
 public class DefaultReactorDispatchInterceptorRegistry implements ReactorDispatchInterceptorRegistry {
 
-    private final List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = new ArrayList<>();
-    private final List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = new ArrayList<>();
-    private final List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = new ArrayList<>();
+    private static final TypeReference<ReactorMessageDispatchInterceptor<Message>> INTERCEPTOR_TYPE_REF =
+            new TypeReference<>() {
+            };
+    private static final TypeReference<ReactorMessageDispatchInterceptor<? super CommandMessage>> COMMAND_INTERCEPTOR_TYPE_REF =
+            new TypeReference<>() {
+            };
+    private static final TypeReference<ReactorMessageDispatchInterceptor<? super EventMessage>> EVENT_INTERCEPTOR_TYPE_REF =
+            new TypeReference<>() {
+            };
+    private static final TypeReference<ReactorMessageDispatchInterceptor<? super QueryMessage>> QUERY_INTERCEPTOR_TYPE_REF =
+            new TypeReference<>() {
+            };
 
-    @NonNull
+    private final List<ReactorDispatchInterceptorFactory<? super CommandMessage>> commandInterceptorFactories =
+            new ArrayList<>();
+    private final List<ReactorDispatchInterceptorFactory<? super EventMessage>> eventInterceptorFactories =
+            new ArrayList<>();
+    private final List<ReactorDispatchInterceptorFactory<? super QueryMessage>> queryInterceptorFactories =
+            new ArrayList<>();
+
     @Override
     public ReactorDispatchInterceptorRegistry registerInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<Message> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<Message>> interceptorBuilder
     ) {
-        Objects.requireNonNull(interceptor, "Interceptor may not be null");
-        registerCommandInterceptor(
-                (message, context, chain) -> interceptor.interceptOnDispatch(
-                        message, context, (m, c) -> chain.proceed((CommandMessage) m, c)
-                )
-        );
-        registerEventInterceptor(
-                (message, context, chain) -> interceptor.interceptOnDispatch(
-                        message, context, (m, c) -> chain.proceed((EventMessage) m, c)
-                )
-        );
-        registerQueryInterceptor(
-                (message, context, chain) -> interceptor.interceptOnDispatch(
-                        message, context, (m, c) -> chain.proceed((QueryMessage) m, c)
-                )
-        );
+        GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
+        return registerCommandInterceptor(config -> {
+            ReactorMessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
+                    message, context, (m, c) -> chain.proceed((CommandMessage) m, c)
+            );
+        }).registerEventInterceptor(config -> {
+            ReactorMessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
+                    message, context, (m, c) -> chain.proceed((EventMessage) m, c)
+            );
+        }).registerQueryInterceptor(config -> {
+            ReactorMessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
+                    message, context, (m, c) -> chain.proceed((QueryMessage) m, c)
+            );
+        });
+    }
+
+    @Override
+    public ReactorDispatchInterceptorRegistry registerInterceptor(
+            ReactorDispatchInterceptorFactory<Message> interceptorFactory
+    ) {
+        registerCommandInterceptor(interceptorFactory);
+        registerEventInterceptor(interceptorFactory);
+        registerQueryInterceptor(interceptorFactory);
         return this;
     }
 
-    @NonNull
     @Override
     public ReactorDispatchInterceptorRegistry registerCommandInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super CommandMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
-        commandInterceptors.add(Objects.requireNonNull(interceptor, "Interceptor may not be null"));
+        ComponentDefinition<ReactorMessageDispatchInterceptor<? super CommandMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public ReactorDispatchInterceptorRegistry registerCommandInterceptor(
+            ReactorDispatchInterceptorFactory<? super CommandMessage> interceptorFactory
+    ) {
+        this.commandInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @NonNull
     @Override
     public ReactorDispatchInterceptorRegistry registerEventInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super EventMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     ) {
-        eventInterceptors.add(Objects.requireNonNull(interceptor, "Interceptor may not be null"));
+        ComponentDefinition<ReactorMessageDispatchInterceptor<? super EventMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public ReactorDispatchInterceptorRegistry registerEventInterceptor(
+            ReactorDispatchInterceptorFactory<? super EventMessage> interceptorFactory
+    ) {
+        this.eventInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @NonNull
     @Override
     public ReactorDispatchInterceptorRegistry registerQueryInterceptor(
-            @NonNull ReactorMessageDispatchInterceptor<? super QueryMessage> interceptor
+            ComponentBuilder<ReactorMessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
-        queryInterceptors.add(Objects.requireNonNull(interceptor, "Interceptor may not be null"));
+        ComponentDefinition<ReactorMessageDispatchInterceptor<? super QueryMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public ReactorDispatchInterceptorRegistry registerQueryInterceptor(
+            ReactorDispatchInterceptorFactory<? super QueryMessage> interceptorFactory
+    ) {
+        this.queryInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @NonNull
     @Override
-    public List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors() {
-        return List.copyOf(commandInterceptors);
+    public List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(commandInterceptorFactories, config, componentType, componentName);
     }
 
-    @NonNull
     @Override
-    public List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors() {
-        return List.copyOf(eventInterceptors);
+    public List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(eventInterceptorFactories, config, componentType, componentName);
     }
 
-    @NonNull
     @Override
-    public List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors() {
-        return List.copyOf(queryInterceptors);
+    public List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(queryInterceptorFactories, config, componentType, componentName);
+    }
+
+    private static <M extends Message> ReactorDispatchInterceptorFactory<M> factoryFromDefinition(
+            ComponentDefinition<ReactorMessageDispatchInterceptor<? super M>> interceptorDefinition
+    ) {
+        if (!(interceptorDefinition instanceof ComponentDefinition.ComponentCreator<ReactorMessageDispatchInterceptor<? super M>> creator)) {
+            // The compiler should avoid this from happening.
+            throw new IllegalArgumentException("Unsupported component definition type: " + interceptorDefinition);
+        }
+        return (config, componentType, componentName) -> creator.createComponent().resolve(config);
+    }
+
+    private static <T extends Message> List<ReactorMessageDispatchInterceptor<? super T>> resolveInterceptors(
+            List<ReactorDispatchInterceptorFactory<? super T>> factories,
+            Configuration config,
+            Class<?> componentType,
+            String componentName
+    ) {
+        List<ReactorMessageDispatchInterceptor<? super T>> dispatchInterceptors = new ArrayList<>();
+        for (ReactorDispatchInterceptorFactory<? super T> factory : factories) {
+            ReactorMessageDispatchInterceptor<? super T> interceptor =
+                    factory.build(config, componentType, componentName);
+            if (interceptor != null) {
+                dispatchInterceptors.add(interceptor);
+            }
+        }
+        return dispatchInterceptors;
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeProperty("commandDispatchInterceptorFactories", commandInterceptorFactories);
+        descriptor.describeProperty("eventDispatchInterceptorFactories", eventInterceptorFactories);
+        descriptor.describeProperty("queryDispatchInterceptorFactories", queryInterceptorFactories);
+    }
+
+    // Private class there to simplify use in registerInterceptor(...) only.
+    private static class GenericInterceptorDefinition extends
+            LazyInitializedComponentDefinition<ReactorMessageDispatchInterceptor<Message>, ReactorMessageDispatchInterceptor<Message>> {
+
+        public GenericInterceptorDefinition(
+                ComponentBuilder<ReactorMessageDispatchInterceptor<Message>> builder
+        ) {
+            super(new Component.Identifier<>(INTERCEPTOR_TYPE_REF, null), builder);
+        }
     }
 }

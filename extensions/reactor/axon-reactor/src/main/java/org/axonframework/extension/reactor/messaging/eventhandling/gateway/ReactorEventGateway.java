@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.eventhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -50,8 +49,7 @@ public interface ReactorEventGateway {
      * @param events  the events to publish
      * @return a {@link Mono} completing when the events have been published
      */
-    @NonNull
-    default Mono<Void> publish(@Nullable ProcessingContext context, @NonNull Object... events) {
+    default Mono<Void> publish(@Nullable ProcessingContext context, Object... events) {
         return publish(context, Arrays.asList(events));
     }
 
@@ -63,8 +61,7 @@ public interface ReactorEventGateway {
      * @param events  the events to publish
      * @return a {@link Mono} completing when the events have been published
      */
-    @NonNull
-    Mono<Void> publish(@Nullable ProcessingContext context, @NonNull List<?> events);
+    Mono<Void> publish(@Nullable ProcessingContext context, List<?> events);
 
     /**
      * Publishes the given {@code events} and returns a {@link Mono} that completes when publishing is done.
@@ -73,8 +70,7 @@ public interface ReactorEventGateway {
      * @return a {@link Mono} completing when the events have been published
      * @see #publish(ProcessingContext, List)
      */
-    @NonNull
-    default Mono<Void> publish(@NonNull Object... events) {
+    default Mono<Void> publish(Object... events) {
         return publish(null, Arrays.asList(events));
     }
 
@@ -85,8 +81,7 @@ public interface ReactorEventGateway {
      * @return a {@link Mono} completing when the events have been published
      * @see #publish(ProcessingContext, List)
      */
-    @NonNull
-    default Mono<Void> publish(@NonNull List<?> events) {
+    default Mono<Void> publish(List<?> events) {
         return publish(null, events);
     }
 

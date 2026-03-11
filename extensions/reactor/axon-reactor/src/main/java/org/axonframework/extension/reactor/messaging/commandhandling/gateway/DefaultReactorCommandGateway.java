@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.commandhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -59,7 +58,7 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
 
     private final CommandGateway delegate;
     private final MessageTypeResolver messageTypeResolver;
-    private final List<ReactorMessageDispatchInterceptor<? super CommandMessage>> interceptors;
+    private final ReactorMessageDispatchInterceptorChain<CommandMessage> interceptorChain;
 
     /**
      * Instantiate a {@link DefaultReactorCommandGateway}.
@@ -69,13 +68,13 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
      * @param dispatchInterceptors the list of {@link ReactorMessageDispatchInterceptor}s to apply to commands
      */
     public DefaultReactorCommandGateway(
-            @NonNull CommandGateway commandGateway,
-            @NonNull MessageTypeResolver messageTypeResolver,
-            @NonNull List<ReactorMessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
+            CommandGateway commandGateway,
+            MessageTypeResolver messageTypeResolver,
+            List<ReactorMessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = Objects.requireNonNull(commandGateway, "CommandGateway may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        this.interceptors = List.copyOf(
+        this.interceptorChain = buildChain(
                 Objects.requireNonNull(dispatchInterceptors, "Dispatch interceptors may not be null")
         );
     }
@@ -87,15 +86,14 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
      * @param messageTypeResolver the {@link MessageTypeResolver} for resolving message types
      */
     public DefaultReactorCommandGateway(
-            @NonNull CommandGateway commandGateway,
-            @NonNull MessageTypeResolver messageTypeResolver
+            CommandGateway commandGateway,
+            MessageTypeResolver messageTypeResolver
     ) {
         this(commandGateway, messageTypeResolver, List.of());
     }
 
-    @NonNull
     @Override
-    public <R> Mono<R> send(@NonNull Object command, @NonNull Class<R> resultType,
+    public <R> Mono<R> send(Object command, Class<R> resultType,
                             @Nullable ProcessingContext context) {
         return dispatchThroughChain(command, context)
                 .flatMap(enrichedMessage ->
@@ -103,9 +101,8 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
                 );
     }
 
-    @NonNull
     @Override
-    public Mono<Void> send(@NonNull Object command, @Nullable ProcessingContext context) {
+    public Mono<Void> send(Object command, @Nullable ProcessingContext context) {
         return dispatchThroughChain(command, context)
                 .flatMap(enrichedMessage ->
                         Mono.fromFuture(delegate.send(enrichedMessage, context).getResultMessage())
@@ -123,10 +120,12 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
         } else {
             commandMessage = new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command);
         }
-        return (Mono<CommandMessage>) buildChain().proceed(commandMessage, context);
+        return (Mono<CommandMessage>) interceptorChain.proceed(commandMessage, context);
     }
 
-    private ReactorMessageDispatchInterceptorChain<CommandMessage> buildChain() {
+    private static ReactorMessageDispatchInterceptorChain<CommandMessage> buildChain(
+            List<ReactorMessageDispatchInterceptor<? super CommandMessage>> interceptors
+    ) {
         ReactorMessageDispatchInterceptorChain<CommandMessage> chain = (message, ctx) -> Mono.just(message);
         for (int i = interceptors.size() - 1; i >= 0; i--) {
             // Safe cast: each interceptor in the list can handle CommandMessage,

@@ -446,35 +446,80 @@ When using the xref:axon-framework-reference:ROOT:modules.adoc#axon-reactor[Reac
 Unlike the standard `MessageDispatchInterceptor`, the reactor variant runs inside the Reactor subscription chain.
 This means interceptors can access Reactor context using `Mono.deferContextual()`, enabling integration with reactive context holders such as Spring Security's `ReactiveSecurityContextHolder`.
 
+The following example shows a reactor dispatch interceptor that extracts the authenticated user from Reactor context and attaches it as metadata:
+
 [source,java]
 ----
-@Bean // <1>
-ReactorMessageDispatchInterceptor<CommandMessage> securityInterceptor() {
-    return (message, context, chain) -> Mono.deferContextual(ctx -> { // <2>
-        SecurityContext secCtx = ctx.get(SecurityContext.class);
-        String userId = secCtx.getAuthentication().getName();
-        return chain.proceed( // <3>
-            message.andMetadata(Metadata.with("userId", userId)),
-            context
-        );
-    });
+public class SecurityReactorInterceptor
+        implements ReactorMessageDispatchInterceptor<CommandMessage> {
+
+    @Override
+    public Mono<?> interceptOnDispatch(
+            CommandMessage message,
+            ProcessingContext context, // <1>
+            ReactorMessageDispatchInterceptorChain<CommandMessage> chain
+    ) {
+        return Mono.deferContextual(ctx -> { // <2>
+            SecurityContext secCtx = ctx.get(SecurityContext.class);
+            String userId = secCtx.getAuthentication().getName();
+            return chain.proceed( // <3>
+                    message.andMetadata(Metadata.with("userId", userId)),
+                    context
+            );
+        });
+    }
 }
 ----
 
-<1> Declare the interceptor as a Spring bean.
-The Reactor auto-configuration discovers `ReactorMessageDispatchInterceptor` beans and registers them on the `ReactorDispatchInterceptorRegistry`.
+<1> The `ProcessingContext` is passed through from the gateway call.
 <2> `Mono.deferContextual()` accesses the Reactor context from the subscriber.
 In a Spring WebFlux application, this is where `ReactiveSecurityContextHolder` stores the authenticated user.
-<3> The interceptor enriches the message metadata and proceeds through the chain, passing along the `ProcessingContext`.
+<3> The interceptor enriches the message metadata and proceeds through the chain.
+
+Register the interceptor:
+
+[tabs]
+====
+Spring Boot::
++
+--
+Declare the interceptor as a Spring bean.
+The Reactor auto-configuration discovers `ReactorMessageDispatchInterceptor` beans and registers them on the `ReactorDispatchInterceptorRegistry`.
+
+[source,java]
+----
+@Bean
+ReactorMessageDispatchInterceptor<CommandMessage> securityInterceptor() {
+    return new SecurityReactorInterceptor();
+}
+----
+--
+
+Configuration API::
++
+--
+Decorate the `ReactorDispatchInterceptorRegistry` component to register interceptors:
+
+[source,java]
+----
+configurer.componentRegistry(cr -> cr.registerDecorator(
+        ReactorDispatchInterceptorRegistry.class,
+        0,
+        (config, name, registry) ->
+                registry.registerCommandInterceptor(c -> new SecurityReactorInterceptor())
+));
+----
+--
+====
 
 This pattern extracts context at the reactive gateway boundary and attaches it as message metadata.
-Handlers can then read it using `@MetaDataValue`:
+Handlers can then read it using `@MetadataValue`:
 
 [source,java]
 ----
 @CommandHandler
 public void handle(MyCommand command,
-                   @MetaDataValue(value = "userId", required = false) String userId) {
+                   @MetadataValue(value = "userId", required = false) String userId) {
     // userId was extracted from Reactor context by the dispatch interceptor
 }
 ----

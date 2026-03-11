@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.commandhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -49,8 +48,7 @@ public interface ReactorCommandGateway {
      * @param <R>        the result type
      * @return a {@link Mono} completing with the command result
      */
-    @NonNull
-    <R> Mono<R> send(@NonNull Object command, @NonNull Class<R> resultType, @Nullable ProcessingContext context);
+    <R> Mono<R> send(Object command, Class<R> resultType, @Nullable ProcessingContext context);
 
     /**
      * Sends the given {@code command} and returns a {@link Mono} with the typed result.
@@ -61,8 +59,7 @@ public interface ReactorCommandGateway {
      * @return a {@link Mono} completing with the command result
      * @see #send(Object, Class, ProcessingContext)
      */
-    @NonNull
-    default <R> Mono<R> send(@NonNull Object command, @NonNull Class<R> resultType) {
+    default <R> Mono<R> send(Object command, Class<R> resultType) {
         return send(command, resultType, null);
     }
 
@@ -74,8 +71,7 @@ public interface ReactorCommandGateway {
      * @param context the processing context, if any, to dispatch the given {@code command} in
      * @return a {@link Mono} completing when the command is handled
      */
-    @NonNull
-    Mono<Void> send(@NonNull Object command, @Nullable ProcessingContext context);
+    Mono<Void> send(Object command, @Nullable ProcessingContext context);
 
     /**
      * Sends the given {@code command} and returns a {@link Mono} that completes when the command is handled.
@@ -84,8 +80,7 @@ public interface ReactorCommandGateway {
      * @return a {@link Mono} completing when the command is handled
      * @see #send(Object, ProcessingContext)
      */
-    @NonNull
-    default Mono<Void> send(@NonNull Object command) {
+    default Mono<Void> send(Object command) {
         return send(command, (ProcessingContext) null);
     }
 

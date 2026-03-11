@@ -289,6 +289,36 @@ class DefaultReactorQueryGatewayTest {
         }
 
         @Test
+        void dispatchInterceptorsInvokedInOrder() {
+            // given — each interceptor records the current metadata size, proving execution order
+            ReactorMessageDispatchInterceptor<QueryMessage> first = (message, context, chain) -> {
+                var enriched = message.andMetadata(Metadata.with("first", "value-" + message.metadata().size()));
+                return chain.proceed(enriched, context);
+            };
+            ReactorMessageDispatchInterceptor<QueryMessage> second = (message, context, chain) -> {
+                var enriched = message.andMetadata(Metadata.with("second", "value-" + message.metadata().size()));
+                return chain.proceed(enriched, context);
+            };
+            testSubject = new DefaultReactorQueryGateway(
+                    mockQueryGateway, new ClassBasedMessageTypeResolver(), List.of(first, second)
+            );
+
+            when(mockQueryGateway.query(any(QueryMessage.class), eq(String.class), isNull()))
+                    .thenReturn(CompletableFuture.completedFuture("ok"));
+
+            // when
+            StepVerifier.create(testSubject.query(QUERY_PAYLOAD, String.class))
+                        .expectNext("ok")
+                        .verifyComplete();
+
+            // then — first ran with 0 existing metadata entries, second ran with 1
+            ArgumentCaptor<QueryMessage> captor = ArgumentCaptor.forClass(QueryMessage.class);
+            verify(mockQueryGateway).query(captor.capture(), eq(String.class), isNull());
+            assertThat(captor.getValue().metadata().get("first")).isEqualTo("value-0");
+            assertThat(captor.getValue().metadata().get("second")).isEqualTo("value-1");
+        }
+
+        @Test
         void interceptorCanRejectQuery() {
             // given
             ReactorMessageDispatchInterceptor<QueryMessage> rejecting = (message, context, chain) ->

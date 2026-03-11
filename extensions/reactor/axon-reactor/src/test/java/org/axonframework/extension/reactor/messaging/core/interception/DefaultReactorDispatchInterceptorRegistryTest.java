@@ -16,8 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.core.interception;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -25,13 +24,17 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the {@link DefaultReactorDispatchInterceptorRegistry}.
@@ -39,143 +42,332 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DefaultReactorDispatchInterceptorRegistryTest {
 
     private DefaultReactorDispatchInterceptorRegistry testSubject;
+    private Configuration mockConfig;
 
     @BeforeEach
     void setUp() {
         testSubject = new DefaultReactorDispatchInterceptorRegistry();
+        mockConfig = mock(Configuration.class);
     }
 
     @Test
     void registeredGenericInterceptorIsReturnedForAllTypes() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerInterceptor(new GenericReactorMessageDispatchInterceptor());
+                testSubject.registerInterceptor(c -> new GenericReactorMessageDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredGenericInterceptorsAreOnlyConstructedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        ReactorDispatchInterceptorRegistry result = testSubject.registerInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new GenericReactorMessageDispatchInterceptor();
+        });
+
+        result.commandInterceptors(mockConfig, Object.class, null);
+        result.commandInterceptors(mockConfig, Object.class, null);
+        result.eventInterceptors(mockConfig, Object.class, null);
+        result.eventInterceptors(mockConfig, Object.class, null);
+        result.queryInterceptors(mockConfig, Object.class, null);
+        result.queryInterceptors(mockConfig, Object.class, null);
+
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredGenericInterceptorFactoryIsReturnedForAllTypes() {
+        ReactorDispatchInterceptorRegistry result = testSubject.registerInterceptor(
+                (c, type, name) -> new GenericReactorMessageDispatchInterceptor()
+        );
+
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
+        assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void returningNullFromInterceptorFactoryRunsSafely() {
+        ReactorDispatchInterceptorRegistry result = testSubject.registerInterceptor((c, type, name) -> null);
+
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
+        assertThat(queryInterceptors).size().isEqualTo(0);
     }
 
     @Test
     void registeredCommandInterceptorIsReturnedFromCommandInterceptorsOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerCommandInterceptor(new CommandReactorDispatchInterceptor());
+                testSubject.registerCommandInterceptor(c -> new CommandReactorDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredCommandInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        ReactorDispatchInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new CommandReactorDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        commandInterceptors = result.commandInterceptors(mockConfig, Object.class, null);
+        commandInterceptors = result.commandInterceptors(mockConfig, Object.class, null);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredCommandInterceptorFactoryMayAdjustConstructionForGivenTypeAndName() {
+        Class<?> expectedType = Object.class;
+        String expectedName = "commandGatewayName";
+
+        AtomicReference<Class<?>> givenType = new AtomicReference<>();
+        AtomicReference<String> givenName = new AtomicReference<>();
+        ReactorDispatchInterceptorRegistry result = testSubject.registerCommandInterceptor(
+                (c, type, name) -> {
+                    givenType.set(type);
+                    givenName.set(name);
+                    return new CommandReactorDispatchInterceptor();
+                }
+        );
+
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, expectedType, expectedName);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        assertThat(givenType).hasValue(expectedType);
+        assertThat(givenName).hasValue(expectedName);
     }
 
     @Test
     void canRegisterGenericInterceptorForCommandsOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerCommandInterceptor(new GenericReactorMessageDispatchInterceptor());
+                testSubject.registerCommandInterceptor(c -> new GenericReactorMessageDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(0);
     }
 
     @Test
     void registeredEventInterceptorIsReturnedFromEventInterceptorsOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerEventInterceptor(new EventReactorDispatchInterceptor());
+                testSubject.registerEventInterceptor(c -> new EventReactorDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredEventInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        ReactorDispatchInterceptorRegistry result = testSubject.registerEventInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new EventReactorDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        eventInterceptors = result.eventInterceptors(mockConfig, Object.class, null);
+        eventInterceptors = result.eventInterceptors(mockConfig, Object.class, null);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredEventInterceptorFactoryMayAdjustConstructionForGivenTypeAndName() {
+        Class<?> expectedType = Object.class;
+        String expectedName = "eventGatewayName";
+
+        AtomicReference<Class<?>> givenType = new AtomicReference<>();
+        AtomicReference<String> givenName = new AtomicReference<>();
+        ReactorDispatchInterceptorRegistry result = testSubject.registerEventInterceptor(
+                (c, type, name) -> {
+                    givenType.set(type);
+                    givenName.set(name);
+                    return new EventReactorDispatchInterceptor();
+                }
+        );
+
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, expectedType, expectedName);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        assertThat(givenType).hasValue(expectedType);
+        assertThat(givenName).hasValue(expectedName);
     }
 
     @Test
     void canRegisterGenericInterceptorForEventsOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerEventInterceptor(new GenericReactorMessageDispatchInterceptor());
+                testSubject.registerEventInterceptor(c -> new GenericReactorMessageDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(1);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(0);
     }
 
     @Test
     void registeredQueryInterceptorIsReturnedFromQueryInterceptorsOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerQueryInterceptor(new QueryReactorDispatchInterceptor());
+                testSubject.registerQueryInterceptor(c -> new QueryReactorDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredQueryInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        ReactorDispatchInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new QueryReactorDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        queryInterceptors = result.queryInterceptors(mockConfig, Object.class, null);
+        queryInterceptors = result.queryInterceptors(mockConfig, Object.class, null);
+        assertThat(queryInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredQueryInterceptorFactoryMayAdjustConstructionForGivenTypeAndName() {
+        Class<?> expectedType = Object.class;
+        String expectedName = "queryGatewayName";
+
+        AtomicReference<Class<?>> givenType = new AtomicReference<>();
+        AtomicReference<String> givenName = new AtomicReference<>();
+        ReactorDispatchInterceptorRegistry result = testSubject.registerQueryInterceptor(
+                (c, type, name) -> {
+                    givenType.set(type);
+                    givenName.set(name);
+                    return new QueryReactorDispatchInterceptor();
+                }
+        );
+
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, expectedType, expectedName);
+        assertThat(queryInterceptors).size().isEqualTo(1);
+        assertThat(givenType).hasValue(expectedType);
+        assertThat(givenName).hasValue(expectedName);
     }
 
     @Test
     void canRegisterGenericInterceptorForQueriesOnly() {
         ReactorDispatchInterceptorRegistry result =
-                testSubject.registerQueryInterceptor(new GenericReactorMessageDispatchInterceptor());
+                testSubject.registerQueryInterceptor(c -> new GenericReactorMessageDispatchInterceptor());
 
-        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                result.commandInterceptors(mockConfig, Object.class, null);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                result.eventInterceptors(mockConfig, Object.class, null);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors();
+        List<ReactorMessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                result.queryInterceptors(mockConfig, Object.class, null);
         assertThat(queryInterceptors).size().isEqualTo(1);
     }
 
     static class GenericReactorMessageDispatchInterceptor implements ReactorMessageDispatchInterceptor<Message> {
 
-        @NonNull
         @Override
-        public Mono<?> interceptOnDispatch(@NonNull Message message,
+        public Mono<?> interceptOnDispatch(Message message,
                                            @Nullable ProcessingContext context,
-                                           @NonNull ReactorMessageDispatchInterceptorChain<Message> chain) {
+                                           ReactorMessageDispatchInterceptorChain<Message> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class CommandReactorDispatchInterceptor implements ReactorMessageDispatchInterceptor<CommandMessage> {
 
-        @NonNull
         @Override
-        public Mono<?> interceptOnDispatch(@NonNull CommandMessage message,
+        public Mono<?> interceptOnDispatch(CommandMessage message,
                                            @Nullable ProcessingContext context,
-                                           @NonNull ReactorMessageDispatchInterceptorChain<CommandMessage> chain) {
+                                           ReactorMessageDispatchInterceptorChain<CommandMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class EventReactorDispatchInterceptor implements ReactorMessageDispatchInterceptor<EventMessage> {
 
-        @NonNull
         @Override
-        public Mono<?> interceptOnDispatch(@NonNull EventMessage message,
+        public Mono<?> interceptOnDispatch(EventMessage message,
                                            @Nullable ProcessingContext context,
-                                           @NonNull ReactorMessageDispatchInterceptorChain<EventMessage> chain) {
+                                           ReactorMessageDispatchInterceptorChain<EventMessage> chain) {
             return chain.proceed(message, context);
         }
     }
 
     static class QueryReactorDispatchInterceptor implements ReactorMessageDispatchInterceptor<QueryMessage> {
 
-        @NonNull
         @Override
-        public Mono<?> interceptOnDispatch(@NonNull QueryMessage message,
+        public Mono<?> interceptOnDispatch(QueryMessage message,
                                            @Nullable ProcessingContext context,
-                                           @NonNull ReactorMessageDispatchInterceptorChain<QueryMessage> chain) {
+                                           ReactorMessageDispatchInterceptorChain<QueryMessage> chain) {
             return chain.proceed(message, context);
         }
     }

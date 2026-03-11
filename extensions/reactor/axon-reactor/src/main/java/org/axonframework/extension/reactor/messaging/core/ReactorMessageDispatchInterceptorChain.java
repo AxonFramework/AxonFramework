@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -43,6 +42,5 @@ public interface ReactorMessageDispatchInterceptorChain<M extends Message> {
      * @param context the active processing context, if any
      * @return a {@link Mono} that completes with the (possibly enriched) message
      */
-    @NonNull
-    Mono<?> proceed(@NonNull M message, @Nullable ProcessingContext context);
+    Mono<?> proceed(M message, @Nullable ProcessingContext context);
 }

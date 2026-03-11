@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.queryhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -48,7 +47,7 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
 
     private final QueryGateway delegate;
     private final MessageTypeResolver messageTypeResolver;
-    private final List<ReactorMessageDispatchInterceptor<? super QueryMessage>> interceptors;
+    private final ReactorMessageDispatchInterceptorChain<QueryMessage> interceptorChain;
 
     /**
      * Instantiate a {@link DefaultReactorQueryGateway}.
@@ -58,13 +57,13 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
      * @param dispatchInterceptors the list of {@link ReactorMessageDispatchInterceptor}s to apply to queries
      */
     public DefaultReactorQueryGateway(
-            @NonNull QueryGateway queryGateway,
-            @NonNull MessageTypeResolver messageTypeResolver,
-            @NonNull List<ReactorMessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors
+            QueryGateway queryGateway,
+            MessageTypeResolver messageTypeResolver,
+            List<ReactorMessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors
     ) {
         this.delegate = Objects.requireNonNull(queryGateway, "QueryGateway may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        this.interceptors = List.copyOf(
+        this.interceptorChain = buildChain(
                 Objects.requireNonNull(dispatchInterceptors, "Dispatch interceptors may not be null")
         );
     }
@@ -76,15 +75,14 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
      * @param messageTypeResolver the {@link MessageTypeResolver} for resolving message types
      */
     public DefaultReactorQueryGateway(
-            @NonNull QueryGateway queryGateway,
-            @NonNull MessageTypeResolver messageTypeResolver
+            QueryGateway queryGateway,
+            MessageTypeResolver messageTypeResolver
     ) {
         this(queryGateway, messageTypeResolver, List.of());
     }
 
-    @NonNull
     @Override
-    public <R> Mono<R> query(@NonNull Object query, @NonNull Class<R> responseType,
+    public <R> Mono<R> query(Object query, Class<R> responseType,
                              @Nullable ProcessingContext context) {
         return dispatchThroughChain(query, context)
                 .flatMap(enrichedMessage ->
@@ -92,9 +90,8 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
                 );
     }
 
-    @NonNull
     @Override
-    public <R> Mono<List<R>> queryMany(@NonNull Object query, @NonNull Class<R> responseType,
+    public <R> Mono<List<R>> queryMany(Object query, Class<R> responseType,
                                        @Nullable ProcessingContext context) {
         return dispatchThroughChain(query, context)
                 .flatMap(enrichedMessage ->
@@ -102,9 +99,8 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
                 );
     }
 
-    @NonNull
     @Override
-    public <R> Flux<R> streamingQuery(@NonNull Object query, @NonNull Class<R> responseType,
+    public <R> Flux<R> streamingQuery(Object query, Class<R> responseType,
                                       @Nullable ProcessingContext context) {
         return dispatchThroughChain(query, context)
                 .flatMapMany(enrichedMessage ->
@@ -112,9 +108,8 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
                 );
     }
 
-    @NonNull
     @Override
-    public <R> Flux<R> subscriptionQuery(@NonNull Object query, @NonNull Class<R> responseType,
+    public <R> Flux<R> subscriptionQuery(Object query, Class<R> responseType,
                                          @Nullable ProcessingContext context) {
         return dispatchThroughChain(query, context)
                 .flatMapMany(enrichedMessage ->
@@ -132,10 +127,12 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
         } else {
             queryMessage = new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query);
         }
-        return (Mono<QueryMessage>) buildChain().proceed(queryMessage, context);
+        return (Mono<QueryMessage>) interceptorChain.proceed(queryMessage, context);
     }
 
-    private ReactorMessageDispatchInterceptorChain<QueryMessage> buildChain() {
+    private static ReactorMessageDispatchInterceptorChain<QueryMessage> buildChain(
+            List<ReactorMessageDispatchInterceptor<? super QueryMessage>> interceptors
+    ) {
         ReactorMessageDispatchInterceptorChain<QueryMessage> chain = (message, ctx) -> Mono.just(message);
         for (int i = interceptors.size() - 1; i >= 0; i--) {
             // Safe cast: each interceptor in the list can handle QueryMessage,

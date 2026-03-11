@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.queryhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -52,8 +51,7 @@ public interface ReactorQueryGateway {
      * @param <R>          the response type
      * @return a {@link Mono} completing with the query result
      */
-    @NonNull
-    <R> Mono<R> query(@NonNull Object query, @NonNull Class<R> responseType, @Nullable ProcessingContext context);
+    <R> Mono<R> query(Object query, Class<R> responseType, @Nullable ProcessingContext context);
 
     /**
      * Sends the given {@code query} and returns a {@link Mono} with a single typed result.
@@ -64,8 +62,7 @@ public interface ReactorQueryGateway {
      * @return a {@link Mono} completing with the query result
      * @see #query(Object, Class, ProcessingContext)
      */
-    @NonNull
-    default <R> Mono<R> query(@NonNull Object query, @NonNull Class<R> responseType) {
+    default <R> Mono<R> query(Object query, Class<R> responseType) {
         return query(query, responseType, null);
     }
 
@@ -79,8 +76,7 @@ public interface ReactorQueryGateway {
      * @param <R>          the element type
      * @return a {@link Mono} completing with a list of query results
      */
-    @NonNull
-    <R> Mono<List<R>> queryMany(@NonNull Object query, @NonNull Class<R> responseType,
+    <R> Mono<List<R>> queryMany(Object query, Class<R> responseType,
                                 @Nullable ProcessingContext context);
 
     /**
@@ -92,8 +88,7 @@ public interface ReactorQueryGateway {
      * @return a {@link Mono} completing with a list of query results
      * @see #queryMany(Object, Class, ProcessingContext)
      */
-    @NonNull
-    default <R> Mono<List<R>> queryMany(@NonNull Object query, @NonNull Class<R> responseType) {
+    default <R> Mono<List<R>> queryMany(Object query, Class<R> responseType) {
         return queryMany(query, responseType, null);
     }
 
@@ -107,8 +102,7 @@ public interface ReactorQueryGateway {
      * @param <R>          the element type
      * @return a {@link Flux} streaming query results
      */
-    @NonNull
-    <R> Flux<R> streamingQuery(@NonNull Object query, @NonNull Class<R> responseType,
+    <R> Flux<R> streamingQuery(Object query, Class<R> responseType,
                                @Nullable ProcessingContext context);
 
     /**
@@ -120,8 +114,7 @@ public interface ReactorQueryGateway {
      * @return a {@link Flux} streaming query results
      * @see #streamingQuery(Object, Class, ProcessingContext)
      */
-    @NonNull
-    default <R> Flux<R> streamingQuery(@NonNull Object query, @NonNull Class<R> responseType) {
+    default <R> Flux<R> streamingQuery(Object query, Class<R> responseType) {
         return streamingQuery(query, responseType, null);
     }
 
@@ -135,8 +128,7 @@ public interface ReactorQueryGateway {
      * @param <R>          the response type
      * @return a {@link Flux} streaming the initial result followed by updates
      */
-    @NonNull
-    <R> Flux<R> subscriptionQuery(@NonNull Object query, @NonNull Class<R> responseType,
+    <R> Flux<R> subscriptionQuery(Object query, Class<R> responseType,
                                   @Nullable ProcessingContext context);
 
     /**
@@ -149,8 +141,7 @@ public interface ReactorQueryGateway {
      * @return a {@link Flux} streaming the initial result followed by updates
      * @see #subscriptionQuery(Object, Class, ProcessingContext)
      */
-    @NonNull
-    default <R> Flux<R> subscriptionQuery(@NonNull Object query, @NonNull Class<R> responseType) {
+    default <R> Flux<R> subscriptionQuery(Object query, Class<R> responseType) {
         return subscriptionQuery(query, responseType, null);
     }
 

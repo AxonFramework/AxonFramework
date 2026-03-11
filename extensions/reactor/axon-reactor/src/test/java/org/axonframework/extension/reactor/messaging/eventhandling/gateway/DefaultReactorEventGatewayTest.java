@@ -183,15 +183,14 @@ class DefaultReactorEventGatewayTest {
         }
 
         @Test
-        void interceptorsRunInRegistrationOrder() {
-            // given
+        void dispatchInterceptorsInvokedInOrder() {
+            // given — each interceptor records the current metadata size, proving execution order
             ReactorMessageDispatchInterceptor<EventMessage> first = (message, context, chain) -> {
-                var enriched = message.andMetadata(Metadata.with("order", "1"));
+                var enriched = message.andMetadata(Metadata.with("first", "value-" + message.metadata().size()));
                 return chain.proceed(enriched, context);
             };
             ReactorMessageDispatchInterceptor<EventMessage> second = (message, context, chain) -> {
-                // second interceptor sees "1" from first and overwrites with "2"
-                var enriched = message.andMetadata(Metadata.with("order", "2"));
+                var enriched = message.andMetadata(Metadata.with("second", "value-" + message.metadata().size()));
                 return chain.proceed(enriched, context);
             };
             testSubject = new DefaultReactorEventGateway(
@@ -206,8 +205,9 @@ class DefaultReactorEventGatewayTest {
             ArgumentCaptor<List<Object>> captor = ArgumentCaptor.forClass(List.class);
             verify(mockEventGateway).publish((ProcessingContext) isNull(), captor.capture());
             EventMessage published = (EventMessage) captor.getValue().getFirst();
-            // second interceptor ran last, so its value wins
-            assertThat(published.metadata().get("order")).isEqualTo("2");
+            // first ran with 0 existing metadata entries, second ran with 1
+            assertThat(published.metadata().get("first")).isEqualTo("value-0");
+            assertThat(published.metadata().get("second")).isEqualTo("value-1");
         }
 
         @Test

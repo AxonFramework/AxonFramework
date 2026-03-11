@@ -189,14 +189,14 @@ class DefaultReactorCommandGatewayTest {
     class Interceptors {
 
         @Test
-        void interceptorsRunInRegistrationOrderAndCanEnrichMetadata() {
-            // given
+        void dispatchInterceptorsInvokedInOrder() {
+            // given — each interceptor records the current metadata size, proving execution order
             ReactorMessageDispatchInterceptor<CommandMessage> first = (message, context, chain) -> {
-                var enriched = message.andMetadata(Metadata.with("key1", "value1"));
+                var enriched = message.andMetadata(Metadata.with("first", "value-" + message.metadata().size()));
                 return chain.proceed(enriched, context);
             };
             ReactorMessageDispatchInterceptor<CommandMessage> second = (message, context, chain) -> {
-                var enriched = message.andMetadata(Metadata.with("key2", "value2"));
+                var enriched = message.andMetadata(Metadata.with("second", "value-" + message.metadata().size()));
                 return chain.proceed(enriched, context);
             };
 
@@ -214,11 +214,11 @@ class DefaultReactorCommandGatewayTest {
                         .expectNext("ok")
                         .verifyComplete();
 
-            // then
+            // then — first ran with 0 existing metadata entries, second ran with 1
             ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
             verify(mockCommandGateway).send(captor.capture(), (ProcessingContext) isNull());
-            assertThat(captor.getValue().metadata().get("key1")).isEqualTo("value1");
-            assertThat(captor.getValue().metadata().get("key2")).isEqualTo("value2");
+            assertThat(captor.getValue().metadata().get("first")).isEqualTo("value-0");
+            assertThat(captor.getValue().metadata().get("second")).isEqualTo("value-1");
         }
 
         @Test

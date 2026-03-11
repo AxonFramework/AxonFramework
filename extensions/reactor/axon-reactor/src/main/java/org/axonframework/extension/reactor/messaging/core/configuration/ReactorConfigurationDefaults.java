@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.reactor.messaging.core.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -65,7 +64,7 @@ public class ReactorConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerIfNotPresent(
                         ReactorDispatchInterceptorRegistry.class,
                         config -> new DefaultReactorDispatchInterceptorRegistry()
@@ -79,7 +78,8 @@ public class ReactorConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultReactorCommandGateway(
                 config.getComponent(CommandGateway.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getComponent(ReactorDispatchInterceptorRegistry.class).commandInterceptors()
+                config.getComponent(ReactorDispatchInterceptorRegistry.class)
+                      .commandInterceptors(config, ReactorCommandGateway.class, null)
         );
     }
 
@@ -87,7 +87,8 @@ public class ReactorConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultReactorEventGateway(
                 config.getComponent(EventGateway.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getComponent(ReactorDispatchInterceptorRegistry.class).eventInterceptors()
+                config.getComponent(ReactorDispatchInterceptorRegistry.class)
+                      .eventInterceptors(config, ReactorEventGateway.class, null)
         );
     }
 
@@ -95,7 +96,8 @@ public class ReactorConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultReactorQueryGateway(
                 config.getComponent(QueryGateway.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getComponent(ReactorDispatchInterceptorRegistry.class).queryInterceptors()
+                config.getComponent(ReactorDispatchInterceptorRegistry.class)
+                      .queryInterceptors(config, ReactorQueryGateway.class, null)
         );
     }
 }

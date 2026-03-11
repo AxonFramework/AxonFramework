@@ -123,13 +123,14 @@ This extension contains the components needed to xref:axon-framework-reference:m
 ==== Axon Reactor
 
 This extension provides reactive gateways for Axon Framework's command, event, and query buses using https://projectreactor.io/[Project Reactor].
-It includes `ReactorCommandGateway`, `ReactorEventGateway`, and `ReactorQueryGateway` — reactor counterparts to Axon's standard gateways that return `Mono` and `Flux` instead of `CompletableFuture`.
+It includes `ReactorCommandGateway`, `ReactorEventGateway`, and `ReactorQueryGateway`, the reactor counterparts to Axon's standard gateways that return `Mono` and `Flux` instead of `CompletableFuture`.
 
 The key feature is that reactive dispatch interceptors run inside the Reactor subscription chain.
 This gives interceptors access to the Reactor context, enabling integration with reactive context holders such as Spring Security's `ReactiveSecurityContextHolder`.
 This is particularly useful in Spring WebFlux applications where thread-local context holders are not available.
 
-When using Spring Boot, the reactive gateways are auto-configured when `reactor-core` is on the classpath.
+The reactive gateways are auto-configured when the `axon-reactor` extension is on the classpath.
+In Spring Boot applications, reactor dispatch interceptors declared as Spring beans are automatically discovered and registered.
 
 To add the extension to your project:
 
