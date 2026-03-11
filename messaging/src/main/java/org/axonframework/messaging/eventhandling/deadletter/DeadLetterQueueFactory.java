@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
@@ -27,7 +28,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
  * <p>
  * Example:
  * <pre>{@code
- * DeadLetterQueueFactory myFactory = processingGroup ->
+ * DeadLetterQueueFactory myFactory = (processingGroup, configuration) ->
  *     new MySequencedDeadLetterQueue(processingGroup, storage);
  * }</pre>
  *
@@ -51,7 +52,10 @@ public interface DeadLetterQueueFactory {
      *
      * @param processingGroup The component-scoped identifier used to scope dead letters to a single event handling
      *                        component's queue, e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}.
+     * @param configuration   The {@link Configuration} providing access to framework components needed to build the
+     *                        queue (e.g., entity managers, converters). May be ignored when all dependencies are
+     *                        already wired externally (e.g., in a Spring context via bean injection).
      * @return A {@link SequencedDeadLetterQueue} scoped to the given processing group.
      */
-    SequencedDeadLetterQueue<EventMessage> create(String processingGroup);
+    SequencedDeadLetterQueue<EventMessage> create(String processingGroup, Configuration configuration);
 }

@@ -65,7 +65,9 @@ public class JpaDeadLetterQueueAutoConfiguration {
      * {@link JpaSequencedDeadLetterQueue} per event handling component.
      * <p>
      * The {@code processingGroup} passed to the factory is a component-scoped identifier following the pattern
-     * {@code "DeadLetterQueue[processorName][componentIndex]"}, used to scope dead letters in the database.
+     * {@code "DeadLetterQueue[processorName][componentName]"}, used to scope dead letters in the database.
+     * The {@code configuration} parameter is ignored in this Spring implementation since all dependencies are
+     * wired via Spring bean injection.
      *
      * @param entityManagerFactory The JPA {@link EntityManagerFactory} used for persistence.
      * @param eventConverter       The {@link EventConverter} used to convert event payloads and metadata.
@@ -78,11 +80,11 @@ public class JpaDeadLetterQueueAutoConfiguration {
                                                             EventConverter eventConverter,
                                                             Converter genericConverter) {
         var provider = new JpaTransactionalExecutorProvider(entityManagerFactory);
-        return processingGroup -> JpaSequencedDeadLetterQueue.builder()
-                                                             .processingGroup(processingGroup)
-                                                             .transactionalExecutorProvider(provider)
-                                                             .eventConverter(eventConverter)
-                                                             .genericConverter(genericConverter)
-                                                             .build();
+        return (processingGroup, configuration) -> JpaSequencedDeadLetterQueue.builder()
+                                                                               .processingGroup(processingGroup)
+                                                                               .transactionalExecutorProvider(provider)
+                                                                               .eventConverter(eventConverter)
+                                                                               .genericConverter(genericConverter)
+                                                                               .build();
     }
 }

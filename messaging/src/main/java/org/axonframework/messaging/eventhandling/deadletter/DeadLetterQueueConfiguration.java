@@ -71,7 +71,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     private EnqueuePolicy<EventMessage> enqueuePolicy = DEFAULT_ENQUEUE_POLICY;
     private boolean clearOnReset = true;
     private int cacheMaxSize = SequenceIdentifierCache.DEFAULT_MAX_SIZE;
-    private DeadLetterQueueFactory factory = ignored -> InMemorySequencedDeadLetterQueue.defaultQueue();
+    private DeadLetterQueueFactory factory = (processingGroup, configuration) -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
     /**
      * Creates a new {@code DeadLetterQueueConfiguration} with default settings.
