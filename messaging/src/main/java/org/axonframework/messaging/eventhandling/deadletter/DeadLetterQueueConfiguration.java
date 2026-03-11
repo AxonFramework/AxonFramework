@@ -23,6 +23,7 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
@@ -257,7 +258,9 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("enabled", enabled);
+        descriptor.describeProperty("enqueuePolicy", enqueuePolicy);
         descriptor.describeProperty("clearOnReset", clearOnReset);
         descriptor.describeProperty("cacheMaxSize", cacheMaxSize);
+        descriptor.describeProperty("factory", factory);
     }
 }

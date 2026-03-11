@@ -47,7 +47,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
@@ -621,13 +620,13 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
 
             // then
@@ -673,18 +672,18 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
             var dlq2 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component2]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component2]"
                                     ));
 
             // then - all DLQs are present
@@ -733,13 +732,13 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            CachingSequencedDeadLetterQueue.class,
-                                            "CachingDeadLetterQueue[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
 
             // then - all DLQs are present
@@ -782,16 +781,16 @@ class PooledStreamingEventProcessorModuleTest {
             // then - processorWithDlq should have DLQ
             var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
                                           .flatMap(m -> m.getOptionalComponent(
-                                                  CachingSequencedDeadLetterQueue.class,
-                                                  "CachingDeadLetterQueue[" + processorWithDlq + "][eventHandlingComponent]"
+                                                  SequencedDeadLetterQueue.class,
+                                                  "DeadLetterQueue[" + processorWithDlq + "][eventHandlingComponent]"
                                           ));
             assertThat(dlqEnabled).isPresent();
 
             // and - processorWithoutDlq should NOT have DLQ (disabled overrides enabled from defaults)
             var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
                                            .flatMap(m -> m.getOptionalComponent(
-                                                   CachingSequencedDeadLetterQueue.class,
-                                                   "CachingDeadLetterQueue[" + processorWithoutDlq + "][eventHandlingComponent]"
+                                                   SequencedDeadLetterQueue.class,
+                                                   "DeadLetterQueue[" + processorWithoutDlq + "][eventHandlingComponent]"
                                            ));
             assertThat(dlqDisabled).isEmpty();
         }

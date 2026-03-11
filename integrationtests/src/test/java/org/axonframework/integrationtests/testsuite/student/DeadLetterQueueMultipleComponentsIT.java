@@ -25,10 +25,10 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
@@ -266,12 +266,12 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     // --- Helper Methods ---
 
     @SuppressWarnings("unchecked")
-    private CachingSequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
+    private SequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         var componentName = "component" + componentIndex;
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
-                                           CachingSequencedDeadLetterQueue.class,
-                                           "CachingDeadLetterQueue[" + PROCESSOR_NAME + "][" + componentName + "]"
+                                           SequencedDeadLetterQueue.class,
+                                           "DeadLetterQueue[" + PROCESSOR_NAME + "][" + componentName + "]"
                                    ))
                                    .orElseThrow(() -> new IllegalStateException(
                                            "DLQ not found for component " + componentIndex));
