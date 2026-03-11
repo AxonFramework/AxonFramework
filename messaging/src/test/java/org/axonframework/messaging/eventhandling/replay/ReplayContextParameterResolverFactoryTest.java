@@ -19,7 +19,8 @@ package org.axonframework.messaging.eventhandling.replay;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.TestConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
@@ -64,17 +65,19 @@ class ReplayContextParameterResolverFactoryTest {
     private static final MyResetContext resetContext = new MyResetContext(asList(2L, 3L));
 
     private SomeHandler handler;
+    private Converter converter;
     private EventHandlingComponent testSubject;
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
+        converter = TestConverter.JACKSON.getConverter();
         testSubject = new AnnotatedEventHandlingComponent<>(
                 handler,
                 ClasspathParameterResolverFactory.forClass(SomeHandler.class),
                 ClasspathHandlerDefinition.forClass(SomeHandler.class),
                 new AnnotationMessageTypeResolver(),
-                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+                new DelegatingEventConverter(converter)
         );
     }
 
@@ -132,14 +135,14 @@ class ReplayContextParameterResolverFactoryTest {
             return ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(position + 1),
                     new GlobalSequenceTrackingToken(position),
-                    resetContext
+                    converter.convert(resetContext, byte[].class)
             );
         }
         return new GlobalSequenceTrackingToken(position);
     }
 
     private ProcessingContext contextWithToken(EventMessage event, TrackingToken token) {
-        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE)
+        return StubProcessingContext.withComponent(Converter.class, converter)
                                     .withMessage(event)
                                     .withResource(TrackingToken.RESOURCE_KEY, token);
     }
@@ -189,7 +192,7 @@ class ReplayContextParameterResolverFactoryTest {
             var replayToken = ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(3L),
                     new GlobalSequenceTrackingToken(2L),
-                    mapContext
+                    converter.convert(mapContext, byte[].class)
             );
 
             // when
@@ -209,7 +212,7 @@ class ReplayContextParameterResolverFactoryTest {
             var replayToken = ReplayToken.createReplayToken(
                     new GlobalSequenceTrackingToken(3L),
                     new GlobalSequenceTrackingToken(2L),
-                    incompatibleContext
+                    converter.convert(incompatibleContext, byte[].class)
             );
 
             // when/then

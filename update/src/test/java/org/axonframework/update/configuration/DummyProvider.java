@@ -16,6 +16,8 @@
 
 package org.axonframework.update.configuration;
 
+import org.jspecify.annotations.NonNull;
+
 class DummyProvider implements UsagePropertyProvider {
 
     private final Boolean disabled;
@@ -29,12 +31,12 @@ class DummyProvider implements UsagePropertyProvider {
     }
 
     @Override
-    public Boolean getDisabled() {
+    public @NonNull Boolean getDisabled() {
         return disabled;
     }
 
     @Override
-    public String getUrl() {
+    public @NonNull String getUrl() {
         return url;
     }
 

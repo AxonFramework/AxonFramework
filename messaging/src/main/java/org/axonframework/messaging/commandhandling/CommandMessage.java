@@ -16,10 +16,11 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
+
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -57,24 +58,24 @@ public interface CommandMessage extends Message {
     OptionalInt priority();
 
     @Override
-    @NonNull
-    CommandMessage withMetadata(@NonNull Map<String, String> metadata);
+    
+    CommandMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
-    CommandMessage andMetadata(@NonNull Map<String, String> metadata);
+    
+    CommandMessage andMetadata(Map<String, @Nullable String> metadata);
 
     @Override
-        default @NonNull CommandMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default CommandMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull CommandMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
+        default CommandMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @NonNull
-    CommandMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    
+    CommandMessage withConvertedPayload(Type type, Converter converter);
 }

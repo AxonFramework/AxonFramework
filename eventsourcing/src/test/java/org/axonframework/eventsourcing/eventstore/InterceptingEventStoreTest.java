@@ -16,22 +16,23 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
@@ -48,6 +49,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@ExtendWith(MockitoExtension.class)
 class InterceptingEventStoreTest {
 
     private static final MessageType TEST_EVENT_TYPE = new MessageType("event");
@@ -67,12 +69,6 @@ class InterceptingEventStoreTest {
         eventStoreTransaction = mock(EventStoreTransaction.class);
         eventStore = mock(EventStore.class);
         processingContext = mock(ProcessingContext.class);
-        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
-        //noinspection unchecked
-        when(eventStore.publish(any(), any(List.class)))
-                .thenReturn(FutureUtils.emptyCompletedFuture());
-        when(eventStore.publish(any(), any(EventMessage.class)))
-                .thenReturn(FutureUtils.emptyCompletedFuture());
 
         interceptorCounterOne = new AtomicInteger(0);
         interceptorOne = (message, context, chain) -> {
@@ -90,6 +86,8 @@ class InterceptingEventStoreTest {
 
     @Test
     void dispatchInterceptorsInvokedOnTransactionAppend() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
         EventMessage testEvent = new GenericEventMessage(TEST_EVENT_TYPE, "test");
         ProcessingContext testContext = StubProcessingContext.forMessage(testEvent);
 
@@ -108,6 +106,8 @@ class InterceptingEventStoreTest {
 
     @Test
     void dispatchInterceptorsAreInvokedForEveryEventOnTransactionAppend() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
         EventMessage firstEvent = new GenericEventMessage(TEST_EVENT_TYPE, "first");
         EventMessage secondEvent = new GenericEventMessage(TEST_EVENT_TYPE, "second");
         EventMessage thirdEvent = new GenericEventMessage(TEST_EVENT_TYPE, "third");
@@ -126,16 +126,33 @@ class InterceptingEventStoreTest {
 
     @Test
     void delegateTransactionSourceDirectly() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
         SourcingCondition testCondition = SourcingCondition.conditionFor(EventCriteria.havingAnyTag());
 
         testSubject.transaction(new StubProcessingContext())
                    .source(testCondition);
 
-        verify(eventStoreTransaction).source(testCondition);
+        verify(eventStoreTransaction).source(testCondition, null);
+    }
+
+    @Test
+    void delegateTransactionSourceWithCallbackDirectly() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
+        SourcingCondition testCondition = SourcingCondition.conditionFor(EventCriteria.havingAnyTag());
+        Consumer<Position> resumePositionCallback = rp -> {};
+
+        testSubject.transaction(new StubProcessingContext())
+                   .source(testCondition, resumePositionCallback);
+
+        verify(eventStoreTransaction).source(testCondition, resumePositionCallback);
     }
 
     @Test
     void delegateTransactionOnAppendDirectly() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
         Consumer<EventMessage> testOnAppend = (event) -> {
         };
 
@@ -147,6 +164,8 @@ class InterceptingEventStoreTest {
 
     @Test
     void delegateTransactionAppendPositionDirectly() {
+        when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
+
         testSubject.transaction(new StubProcessingContext())
                    .appendPosition();
 
@@ -154,16 +173,15 @@ class InterceptingEventStoreTest {
     }
 
     @Test
-    void dispatchInterceptorsInvokedOnPublish() {
+    void dispatchInterceptorsInvokedOnPublish(@Captor ArgumentCaptor<List<EventMessage>> publishedEvents) {
         EventMessage testEvent = new GenericEventMessage(TEST_EVENT_TYPE, "test");
 
         CompletableFuture<Void> result =
                 testSubject.publish(StubProcessingContext.forMessage(testEvent), testEvent);
 
-        ArgumentCaptor<EventMessage> publishedEvent = ArgumentCaptor.forClass(EventMessage.class);
-        verify(eventStore).publish(any(), publishedEvent.capture());
+        verify(eventStore).publish(any(), publishedEvents.capture());
 
-        assertThat(publishedEvent.getValue()).isEqualTo(testEvent);
+        assertThat(publishedEvents.getValue()).containsExactly(testEvent);
         assertThat(interceptorCounterOne).hasValue(1);
         assertThat(interceptorCounterTwo).hasValue(1);
         assertThat(result).isDone();
@@ -243,7 +261,7 @@ class InterceptingEventStoreTest {
         assertThat(describedProperties).containsKey("delegate");
         assertThat(describedProperties.get("delegate")).isEqualTo(eventStore);
         assertThat(describedProperties).containsKey("dispatchInterceptors");
-        //noinspection unchecked
+        @SuppressWarnings("unchecked")
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
                 (List<MessageDispatchInterceptor<? super Message>>) describedProperties.get("dispatchInterceptors");
         assertThat(dispatchInterceptors).containsExactly(interceptorOne, interceptorTwo);

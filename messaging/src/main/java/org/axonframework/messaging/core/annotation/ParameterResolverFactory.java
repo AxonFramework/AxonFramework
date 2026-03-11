@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 
@@ -56,7 +55,7 @@ public interface ParameterResolverFactory {
      * @return A suitable {@link ParameterResolver}, or {@code null} if none is found.
      */
     @Nullable
-    ParameterResolver<?> createInstance(@NonNull Executable executable,
-                                        @NonNull Parameter[] parameters,
+    ParameterResolver<?> createInstance(Executable executable,
+                                        Parameter[] parameters,
                                         int parameterIndex);
 }

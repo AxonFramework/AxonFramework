@@ -18,6 +18,7 @@ package org.axonframework.springboot.integration;
 
 import org.axonframework.conversion.upcasting.event.EventUpcaster;
 import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-@Disabled("TODO #3496")
+@Disabled("TODO #3597")
 class UpcasterOrderingTest {
 
     private ApplicationContextRunner testApplicationContext;
@@ -85,8 +86,8 @@ class UpcasterOrderingTest {
         public static class UnorderedUpcaster implements EventUpcaster {
 
             @Override
-            public Stream<IntermediateEventRepresentation> upcast(
-                    Stream<IntermediateEventRepresentation> intermediateRepresentations
+            public @NonNull Stream<IntermediateEventRepresentation> upcast(
+                    @NonNull Stream<IntermediateEventRepresentation> intermediateRepresentations
             ) {
                 intermediateRepresentations.map(ier -> ier);
                 return intermediateRepresentations;
@@ -99,8 +100,8 @@ class UpcasterOrderingTest {
         public static class FirstUpcaster implements EventUpcaster {
 
             @Override
-            public Stream<IntermediateEventRepresentation> upcast(
-                    Stream<IntermediateEventRepresentation> intermediateRepresentations
+            public @NonNull Stream<IntermediateEventRepresentation> upcast(
+                    @NonNull Stream<IntermediateEventRepresentation> intermediateRepresentations
             ) {
                 intermediateRepresentations.sorted();
                 return intermediateRepresentations;
@@ -117,8 +118,8 @@ class UpcasterOrderingTest {
         public static class SecondUpcaster implements EventUpcaster {
 
             @Override
-            public Stream<IntermediateEventRepresentation> upcast(
-                    Stream<IntermediateEventRepresentation> intermediateRepresentations
+            public @NonNull Stream<IntermediateEventRepresentation> upcast(
+                    @NonNull Stream<IntermediateEventRepresentation> intermediateRepresentations
             ) {
                 intermediateRepresentations.filter(ier -> true);
                 return intermediateRepresentations;
@@ -137,8 +138,8 @@ class UpcasterOrderingTest {
     private static class ThirdUpcaster implements EventUpcaster {
 
         @Override
-        public Stream<IntermediateEventRepresentation> upcast(
-                Stream<IntermediateEventRepresentation> intermediateRepresentations
+        public @NonNull Stream<IntermediateEventRepresentation> upcast(
+                @NonNull Stream<IntermediateEventRepresentation> intermediateRepresentations
         ) {
             intermediateRepresentations.distinct();
             return intermediateRepresentations;

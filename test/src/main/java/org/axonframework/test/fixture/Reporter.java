@@ -19,6 +19,8 @@ package org.axonframework.test.fixture;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Description;
+import org.jspecify.annotations.Nullable;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
@@ -52,7 +54,7 @@ public class Reporter {
      * @param probableCause  An optional exception that might be the reason for wrong events
      */
     public void reportWrongEvent(Collection<?> actualEvents, Collection<?> expectedEvents,
-                                 Throwable probableCause) {
+                                 @Nullable Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The published events do not match the expected events");
         appendEventOverview(sb, expectedEvents, actualEvents);
@@ -355,7 +357,7 @@ public class Reporter {
         }
     }
 
-    private void appendProbableCause(Throwable probableCause, StringBuilder sb) {
+    private void appendProbableCause(@Nullable Throwable probableCause, StringBuilder sb) {
         if (probableCause != null) {
             sb.append(NEWLINE);
             sb.append("A probable cause for the wrong chain of events is an "
@@ -457,7 +459,7 @@ public class Reporter {
     private String payloadContentType(Object event) {
         String simpleName;
         if (event instanceof EventMessage) {
-            simpleName = ((EventMessage) event).payload().getClass().getName();
+            simpleName = ((EventMessage) event).payloadType().getName();
         } else {
             simpleName = event.getClass().getName();
         }

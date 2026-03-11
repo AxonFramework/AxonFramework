@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -99,13 +98,13 @@ public class SimpleEventBus implements EventBus {
 
     @Override
     public Registration subscribe(
-            @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @NonNull List<EventMessage> events) {
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, List<? extends EventMessage> events) {
         if (context == null) {
             // No processing context, publish immediately
             eventSubscribers.notifySubscribers(events, context);
@@ -116,7 +115,7 @@ public class SimpleEventBus implements EventBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void registerEventPublishingHooks(@NonNull ProcessingContext context, @NonNull List<EventMessage> events) {
+    private void registerEventPublishingHooks(ProcessingContext context, List<? extends EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(
@@ -175,7 +174,7 @@ public class SimpleEventBus implements EventBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventsKey", eventsKey);
         descriptor.describeProperty("eventSubscribers", eventSubscribers);
     }

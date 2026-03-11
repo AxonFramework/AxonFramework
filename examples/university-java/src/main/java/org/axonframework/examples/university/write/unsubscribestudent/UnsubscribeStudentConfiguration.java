@@ -29,7 +29,7 @@ public class UnsubscribeStudentConfiguration {
         var commandHandlingModule = CommandHandlingModule
                 .named("UnsubscribeStudent")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new UnsubscribeStudentFromCourseCommandHandler());
+                .autodetectedCommandHandlingComponent(c -> new UnsubscribeStudentFromCourseCommandHandler());
 
         return configurer
                 .registerEntity(stateEntity)

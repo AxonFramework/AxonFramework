@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.commandhandling.CommandBus;
@@ -62,7 +61,7 @@ public interface CommandDispatcher extends DescribableComponent {
      * @param context The {@link ProcessingContext} to create the dispatcher for.
      * @return The command dispatcher specific for the given {@code context}.
      */
-    static CommandDispatcher forContext(@NonNull ProcessingContext context) {
+    static CommandDispatcher forContext(ProcessingContext context) {
         return context.computeResourceIfAbsent(
                 RESOURCE_KEY,
                 () -> new ContextAwareCommandDispatcher(context.component(CommandGateway.class), context)
@@ -92,8 +91,8 @@ public interface CommandDispatcher extends DescribableComponent {
      * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
-    default <R> CompletableFuture<R> send(@NonNull Object command,
-                                          @NonNull Class<R> expectedType) {
+    default <R> CompletableFuture<R> send(Object command,
+                                          Class<R> expectedType) {
         return send(command).resultAs(expectedType);
     }
 
@@ -119,7 +118,7 @@ public interface CommandDispatcher extends DescribableComponent {
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
-    CommandResult send(@NonNull Object command);
+    CommandResult send(Object command);
 
     /**
      * Sends the given {@code command} with the given {@code metadata} and returns a {@link CommandResult} immediately,
@@ -145,6 +144,6 @@ public interface CommandDispatcher extends DescribableComponent {
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
-    CommandResult send(@NonNull Object command,
-                       @NonNull Metadata metadata);
+    CommandResult send(Object command,
+                       Metadata metadata);
 }

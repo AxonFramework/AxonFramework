@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -95,7 +94,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     @Override
-    public E evolve(@NonNull E entity, @NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public E evolve(E entity, EventMessage event, ProcessingContext context) {
         var superTypeEvolvedEntity = superTypeMetamodel.evolve(entity, event, context);
         return metamodelFor(entity).evolve(superTypeEvolvedEntity, event, context);
     }
@@ -109,27 +108,24 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
         return (EntityMetamodel<T>) concreteMetamodels.get(entity.getClass());
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedCommands() {
         return Collections.unmodifiableSet(supportedCommandNames);
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedCreationalCommands() {
         return Collections.unmodifiableSet(supportedCreationalCommandNames);
     }
 
     @Override
-    @NonNull
     public Set<QualifiedName> supportedInstanceCommands() {
         return Collections.unmodifiableSet(supportedInstanceCommandNames);
     }
 
     @Override
-    public MessageStream.@NonNull Single<CommandResultMessage> handleCreate(@NonNull CommandMessage message,
-                                                                            @NonNull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleCreate(CommandMessage message,
+                                                                   ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
@@ -145,9 +141,9 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     @Override
-    public MessageStream.@NonNull Single<CommandResultMessage> handleInstance(@NonNull CommandMessage message,
-                                                                              @NonNull E entity,
-                                                                              @NonNull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleInstance(CommandMessage message,
+                                                                              E entity,
+                                                                              ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
             return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
         }
@@ -172,7 +168,6 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
                                                                             concreteMetamodel.entityType()));
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return superTypeMetamodel.entityType();
@@ -187,7 +182,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType());
         descriptor.describeProperty("superTypeMetamodel", superTypeMetamodel);
         descriptor.describeProperty("polymorphicMetamodels", concreteMetamodels);
@@ -213,31 +208,27 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
             this.superTypeBuilder = ConcreteEntityMetamodel.forEntityClass(entityType);
         }
 
-        @NonNull
         @Override
-        public Builder<E> instanceCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                 @NonNull EntityCommandHandler<E> messageHandler) {
+        public Builder<E> instanceCommandHandler(QualifiedName qualifiedName,
+                                                 EntityCommandHandler<E> messageHandler) {
             superTypeBuilder.instanceCommandHandler(qualifiedName, messageHandler);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder<E> creationalCommandHandler(@NonNull QualifiedName qualifiedName,
-                                                   @NonNull CommandHandler messageHandler) {
+        public Builder<E> creationalCommandHandler(QualifiedName qualifiedName,
+                                                   CommandHandler messageHandler) {
             superTypeBuilder.creationalCommandHandler(qualifiedName, messageHandler);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder<E> addChild(@NonNull EntityChildMetamodel<?, E> child) {
+        public Builder<E> addChild(EntityChildMetamodel<?, E> child) {
             superTypeBuilder.addChild(child);
             return this;
         }
 
 
-        @NonNull
         @Override
         public Builder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
             superTypeBuilder.entityEvolver(entityEvolver);
@@ -245,8 +236,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
         }
 
         @Override
-        @NonNull
-        public Builder<E> addConcreteType(@NonNull EntityMetamodel<? extends E> metamodel) {
+        public Builder<E> addConcreteType(EntityMetamodel<? extends E> metamodel) {
             Objects.requireNonNull(metamodel, "The metamodel may not be null.");
             if (polymorphicMetamodels.stream().anyMatch(p -> p.entityType()
                                                               .equals(metamodel.entityType()))) {
@@ -268,7 +258,6 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
         }
 
         @Override
-        @NonNull
         public EntityMetamodel<E> build() {
             EntityMetamodel<E> metamodel = superTypeBuilder.build();
             return new PolymorphicEntityMetamodel<>(metamodel, polymorphicMetamodels);

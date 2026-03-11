@@ -18,7 +18,6 @@ package org.axonframework.messaging.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.conversion.PassThroughConverter;
@@ -29,6 +28,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
@@ -42,16 +42,13 @@ import org.axonframework.messaging.eventhandling.AsyncInMemoryStreamableEventSou
 import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -72,15 +69,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.common.util.AssertUtils.assertWithin;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration test validating the combination of a {@link StreamingEventProcessor} containing a
@@ -177,10 +171,11 @@ public abstract class DeadLetteringEventIntegrationTest {
      * <p>
      * Returns a plain {@link SimpleUnitOfWorkFactory} by default. Subclasses that require resources in the
      * {@link ProcessingContext} (e.g. a JDBC connection supplier for
-     * {@link org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider})
-     * should override this to register the appropriate
-     * {@link UnitOfWorkConfiguration#registerProcessingLifecycleEnhancer processing lifecycle enhancer},
-     * similar to how
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider}) should
+     * override this to register the appropriate
+     * {@link
+     * org.axonframework.messaging.core.unitofwork.UnitOfWorkConfiguration#registerProcessingLifecycleEnhancer(Consumer)
+     * processing lifecycle enhancer}, similar to how
      * {@link org.axonframework.messaging.core.unitofwork.transaction.TransactionManager#attachToProcessingLifecycle}
      * populates resources in production.
      *
@@ -216,11 +211,12 @@ public abstract class DeadLetteringEventIntegrationTest {
         };
 
         // Create a SimpleEventHandlingComponent with custom sequencing policy
-        SequencingPolicy sequencingPolicy = (event, context) ->
+        SequencingPolicy<? super EventMessage> sequencingPolicy = (event, context) ->
                 Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class, eventConverter())
                                   .getAggregateIdentifier());
 
-        SimpleEventHandlingComponent simpleComponent = SimpleEventHandlingComponent.create("component", sequencingPolicy);
+        SimpleEventHandlingComponent simpleComponent =
+                SimpleEventHandlingComponent.create("component", sequencingPolicy);
         simpleComponent.subscribe(
                 new QualifiedName(DeadLetterableEvent.class),
                 eventHandler
@@ -235,14 +231,15 @@ public abstract class DeadLetteringEventIntegrationTest {
         coordinatorExecutor = Executors.newSingleThreadScheduledExecutor();
         workerExecutor = Executors.newSingleThreadScheduledExecutor();
 
-        var configuration = new PooledStreamingEventProcessorConfiguration()
-                .eventSource(eventSource)
-                .unitOfWorkFactory(buildUnitOfWorkFactory())
-                .tokenStore(new InMemoryTokenStore())
-                .coordinatorExecutor(coordinatorExecutor)
-                .workerExecutor(workerExecutor)
-                .initialSegmentCount(1)
-                .claimExtensionThreshold(1000);
+        var configuration = new PooledStreamingEventProcessorConfiguration(
+                new EventProcessorConfiguration(PROCESSING_GROUP, null)
+        ).eventSource(eventSource)
+         .unitOfWorkFactory(buildUnitOfWorkFactory())
+         .tokenStore(new InMemoryTokenStore())
+         .coordinatorExecutor(coordinatorExecutor)
+         .workerExecutor(workerExecutor)
+         .initialSegmentCount(1)
+         .claimExtensionThreshold(1000);
 
         streamingProcessor = new PooledStreamingEventProcessor(
                 PROCESSING_GROUP,
@@ -324,7 +321,8 @@ public abstract class DeadLetteringEventIntegrationTest {
             Iterator<DeadLetter<? extends EventMessage>> sequence =
                     deadLetterQueue.deadLetterSequence("failure", null).join().iterator();
             assertTrue(sequence.hasNext());
-            assertEquals(failedEvent.payload(), sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+            assertEquals(failedEvent.payload(),
+                         sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
             assertFalse(sequence.hasNext());
         }
 
@@ -367,11 +365,14 @@ public abstract class DeadLetteringEventIntegrationTest {
                 Iterator<DeadLetter<? extends EventMessage>> sequence =
                         deadLetterQueue.deadLetterSequence(aggregateId, null).join().iterator();
                 assertTrue(sequence.hasNext());
-                assertEquals(firstDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                assertEquals(firstDeadLetter,
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertTrue(sequence.hasNext());
-                assertEquals(secondDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                assertEquals(secondDeadLetter,
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertTrue(sequence.hasNext());
-                assertEquals(thirdDeadLetter, sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                assertEquals(thirdDeadLetter,
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertFalse(sequence.hasNext());
             });
         }
@@ -606,7 +607,8 @@ public abstract class DeadLetteringEventIntegrationTest {
             int failFirstAndThenSucceedPerAggregate = 4;
             int persistentFailingPerAggregate = 1;
             int expectedSuccessfulEvaluationCount = failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate;
-            int expectedOverallSuccessfulHandlingCount = immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
+            int expectedOverallSuccessfulHandlingCount =
+                    immediateSuccessesPerAggregate + expectedSuccessfulEvaluationCount;
 
             int publishingRuns = 40;
             int totalNumberOfEvents =
@@ -685,17 +687,21 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
 
         private void publishEventsFor(String aggregateId,
-                                       int immediateSuccessesPerAggregate,
-                                       int failFirstAndThenSucceedPerAggregate,
-                                       int persistentFailingPerAggregate) {
+                                      int immediateSuccessesPerAggregate,
+                                      int failFirstAndThenSucceedPerAggregate,
+                                      int persistentFailingPerAggregate) {
             for (int i = 0; i < immediateSuccessesPerAggregate; i++) {
                 eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
             }
             for (int i = 0; i < failFirstAndThenSucceedPerAggregate; i++) {
                 if (i == 0) {
-                    eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+                    eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId,
+                                                                                      FAIL,
+                                                                                      SUCCEED_RETRY)));
                 } else if (failFirstAndThenSucceedPerAggregate - persistentFailingPerAggregate == i) {
-                    eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, FAIL_RETRY)));
+                    eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId,
+                                                                                      SUCCEED,
+                                                                                      FAIL_RETRY)));
                 } else {
                     eventSource.publishMessage(
                             asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY))
@@ -776,7 +782,8 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
 
         @Override
-        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                            @NonNull ProcessingContext context) {
             DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();

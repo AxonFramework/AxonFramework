@@ -197,6 +197,8 @@ public Converter customJacksonConverter() {
 }
 ----
 
+TIP: If you have not migrated to Jackson 3 yet, Axon Framework also provides a `Jackson2Converter` in the `org.axonframework.conversion.jackson2` package. This converter uses the Jackson 2 library (`com.fasterxml.jackson`) and works identically to the `JacksonConverter`.
+
 ==== XML support
 
 If you need to serialize to XML format instead of JSON, you can configure the `JacksonConverter` with an `XmlMapper`:
@@ -216,7 +218,7 @@ You'll need to add the `jackson-dataformat-xml` dependency to your project:
 [source,xml]
 ----
 <dependency>
-    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <groupId>tools.jackson.dataformat</groupId>
     <artifactId>jackson-dataformat-xml</artifactId>
 </dependency>
 ----
@@ -289,7 +291,7 @@ To configure converters, use the `MessagingConfigurer` and register components t
 [source,java]
 ----
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -356,7 +358,7 @@ public class ConverterConfiguration {
 
 [source,properties]
 ----
-# Possible values: 'default', 'java', 'jackson'
+# Possible values: 'default', 'java', 'jackson', 'jackson2'
 # 'avro' can be used for 'events' and 'messages' only
 axon.converter.general=jackson
 axon.converter.messages=jackson
@@ -367,7 +369,7 @@ axon.converter.events=jackson
 
 [source,yaml]
 ----
-# Possible values: 'default', 'java', 'jackson'
+# Possible values: 'default', 'java', 'jackson', 'jackson2'
 # 'avro' can be used for 'events' and 'messages' only
 axon:
   converter:

@@ -27,6 +27,7 @@ import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.conversion.upcasting.event.ContextAwareEventMultiUpcaster;
 import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -209,9 +210,9 @@ class PooledStreamingEventProcessorIntegrationTest {
         }
 
         @Override
-        protected Stream<IntermediateEventRepresentation> doUpcast(
-                IntermediateEventRepresentation intermediateRepresentation,
-                Map<Object, Object> context
+        protected @NonNull Stream<IntermediateEventRepresentation> doUpcast(
+                @NonNull IntermediateEventRepresentation intermediateRepresentation,
+                @NonNull Map<Object, Object> context
         ) {
             return Stream.of(
                     intermediateRepresentation.upcastPayload(

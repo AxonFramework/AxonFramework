@@ -29,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 
-import org.jspecify.annotations.NonNull;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -82,9 +81,8 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
         this.eventMessageConverter = eventMessageConverter;
     }
 
-    @NonNull
     @Override
-    public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         messageProcessors.add(eventsBatchConsumer);
         return () -> messageProcessors.remove(eventsBatchConsumer);
     }
@@ -96,7 +94,7 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void handleMessage(@NonNull Message message) {
+    public void handleMessage(Message message) {
         List<? extends EventMessage> messages = singletonList(transformMessage(message));
         for (BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> messageProcessor : messageProcessors) {
             messageProcessor.apply(messages, null);

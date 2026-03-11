@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Provides a repository for given aggregate type.
@@ -34,5 +33,5 @@ public interface RepositoryProvider {
      * @param <T>           type of the aggregate
      * @return repository given for aggregate type
      */
-    <T> Repository<T> repositoryFor(@NonNull Class<T> aggregateType);
+    <T> Repository<T> repositoryFor(Class<T> aggregateType);
 }

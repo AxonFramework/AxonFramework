@@ -182,10 +182,10 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handleSync(@NonNull Message message,
-                                 @NonNull ProcessingContext context,
-                                 @NonNull TestSaga target,
-                                 @NonNull MessageHandlingMember<? super TestSaga> handler) throws Exception {
+        public @NonNull Object handleSync(@NonNull Message message,
+                                          @NonNull ProcessingContext context,
+                                          @NonNull TestSaga target,
+                                          @NonNull MessageHandlingMember<? super TestSaga> handler) throws Exception {
             counter.incrementAndGet();
             return handler.handleSync(message, context, target);
         }

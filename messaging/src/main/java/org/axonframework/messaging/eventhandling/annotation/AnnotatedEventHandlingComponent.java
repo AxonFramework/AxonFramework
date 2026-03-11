@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -38,7 +37,7 @@ import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -79,11 +78,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param converter                The converter to use for converting the payload of the event to the type expected
      *                                 by the handling method.
      */
-    public AnnotatedEventHandlingComponent(@NonNull T annotatedEventHandler,
-                                           @NonNull ParameterResolverFactory parameterResolverFactory,
-                                           @NonNull HandlerDefinition handlerDefinition,
-                                           @NonNull MessageTypeResolver messageTypeResolver,
-                                           @NonNull EventConverter converter) {
+    public AnnotatedEventHandlingComponent(T annotatedEventHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition,
+                                           MessageTypeResolver messageTypeResolver,
+                                           EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
                 "AnnotatedEventHandlingComponent[%s]".formatted(annotatedEventHandler.getClass().getName())
@@ -100,12 +99,20 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void initializeEventHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
-             .forEach(handler -> registerEventHandler((EventHandlingMember<? super T>) handler));
+             .forEach(handler -> {
+                 // Verify handler can handle EventMessage but don't unwrap - preserve wrapper chain
+                 if (!handler.canHandleMessageType(EventMessage.class)) {
+                     throw new IllegalStateException(
+                             "Handler declares EventMessage support but canHandleMessageType returns false"
+                     );
+                 }
+                 registerHandler(handler);
+             });
     }
 
-    private void registerEventHandler(EventHandlingMember<? super T> handler) {
+    private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
-        QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
+        QualifiedName qualifiedName = handler.unwrap(EventHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
                                              // Filter empty Strings to  fall back to the MessageTypeResolver
                                              .filter(StringUtils::nonEmpty)
@@ -117,7 +124,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private EventHandler constructEventHandlerFor(QualifiedName qualifiedName,
-                                                  EventHandlingMember<? super T> handler) {
+                                                  MessageHandlingMember<? super T> handler) {
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         EventHandler interceptedHandler =
                 (event, context) -> interceptorChain.handle(
@@ -149,8 +156,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }
 
@@ -159,9 +166,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return Set.copyOf(handlingComponent.supportedEvents());
     }
 
-    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
 
@@ -176,7 +182,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
     }
 
-        private @NonNull ResetHandler constructResetHandlerFor(
+        private ResetHandler constructResetHandlerFor(
             MessageHandlingMember<? super T> handler,
             MessageHandlerInterceptorMemberChain<T> interceptorChain
     ) {
@@ -205,14 +211,14 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                                        ProcessingContext context) {
         return handlingComponent.handle(resetContext, context);
     }
     // endregion
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

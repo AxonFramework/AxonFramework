@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+
 /**
- * Classes related to event sourcing. This includes repositories that use event stores to store and load events, as
- * well as the aggregates that support state reconstruction based on event streams.
+ * Root package for Axon Eventsourcing. Provides support for Event Sourcing,
+ * storing application state as a sequence of immutable events.
  */
+@NullMarked
 package org.axonframework.eventsourcing;
+
+import org.jspecify.annotations.NullMarked;

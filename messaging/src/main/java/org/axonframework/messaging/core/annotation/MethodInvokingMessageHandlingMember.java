@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.DelayedMessageStream;
@@ -103,7 +102,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
+    public boolean canHandle(Message message, ProcessingContext context) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.payloadType())
@@ -111,12 +110,12 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandleType(@NonNull Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         return this.payloadType.isAssignableFrom(payloadType);
     }
 
     @Override
-    public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
         return this.messageType.isAssignableFrom(messageType);
     }
 
@@ -150,8 +149,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@NonNull Message message,
-                             @NonNull ProcessingContext context,
+    public Object handleSync(Message message,
+                             ProcessingContext context,
                              @Nullable T target) throws Exception {
         try {
             MessageStream.Entry<?> resultEntry = handle(message, context, target).first()
@@ -168,8 +167,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<?> handle(@NonNull Message message,
-                                   @NonNull ProcessingContext context,
+    public MessageStream<?> handle(Message message,
+                                   ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         CompletableFuture<Object[]> parametersFuture = resolveParameterValues(contextWithMessage);
@@ -225,7 +224,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                       .toArray());
     }
 
-    @NonNull
     private CompletableFuture<?> tryResolveParameterValue(ParameterResolver<?> parameterResolver,
                                                           ProcessingContext context) {
         try {

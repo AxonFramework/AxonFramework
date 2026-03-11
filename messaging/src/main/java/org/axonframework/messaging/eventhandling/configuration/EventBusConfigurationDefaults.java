@@ -16,17 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 
 import java.util.List;
 
@@ -62,12 +61,12 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
     }
 
-    private static void registerComponents(@NonNull ComponentRegistry registry) {
+    private static void registerComponents(ComponentRegistry registry) {
         registry.registerIfNotPresent(EventBus.class, EventBusConfigurationDefaults::defaultEventBus);
     }
 
@@ -75,13 +74,15 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
         return new SimpleEventBus();
     }
 
-    private static void registerDecorators(@NonNull ComponentRegistry registry) {
+    private static void registerDecorators(ComponentRegistry registry) {
         registry.registerDecorator(
                 EventBus.class,
                 InterceptingEventBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .eventInterceptors(config, EventBus.class, name);
+
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventBus(delegate, dispatchInterceptors);

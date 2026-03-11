@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
@@ -62,8 +61,8 @@ class SimpleStateBasedEntityModule<ID, E>
     private ComponentBuilder<EntityMetamodel<E>> entityModel;
     private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
 
-    SimpleStateBasedEntityModule(@NonNull Class<ID> idType,
-                                 @NonNull Class<E> entityType) {
+    SimpleStateBasedEntityModule(Class<ID> idType,
+                                 Class<E> entityType) {
         super("SimpleStateBasedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
@@ -71,21 +70,21 @@ class SimpleStateBasedEntityModule<ID, E>
 
     @Override
     public MessagingMetamodelPhase<ID, E> persister(
-            @NonNull ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
+            ComponentBuilder<SimpleRepositoryEntityPersister<ID, E>> persister
     ) {
         this.persister = requireNonNull(persister, "The repository persister builder cannot be null.");
         return this;
     }
 
     @Override
-    public PersisterPhase<ID, E> loader(@NonNull ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader) {
+    public PersisterPhase<ID, E> loader(ComponentBuilder<SimpleRepositoryEntityLoader<ID, E>> loader) {
         this.loader = requireNonNull(loader, "The repository loader builder cannot be null.");
         return this;
     }
 
     @Override
     public MessagingMetamodelPhase<ID, E> repository(
-            @NonNull ComponentBuilder<Repository<ID, E>> repository
+            ComponentBuilder<Repository<ID, E>> repository
     ) {
         this.repository = requireNonNull(repository, "The repository builder cannot be null.");
         return this;
@@ -94,7 +93,7 @@ class SimpleStateBasedEntityModule<ID, E>
 
     @Override
     public EntityIdResolverPhase<ID, E> messagingModel(
-            @NonNull EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
+            EntityMetamodelConfigurationBuilder<E> metamodelFactory) {
         requireNonNull(metamodelFactory, "The metamodelFactory cannot be null.");
         this.entityModel = c -> metamodelFactory.build(c, EntityMetamodel.forEntityType(entityType));
         return this;
@@ -102,7 +101,7 @@ class SimpleStateBasedEntityModule<ID, E>
 
     @Override
     public StateBasedEntityModule<ID, E> entityIdResolver(
-            @NonNull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
+            ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
         this.entityIdResolver = requireNonNull(entityIdResolver, "The EntityIdResolver builder cannot be null.");
         return this;
     }
@@ -123,7 +122,7 @@ class SimpleStateBasedEntityModule<ID, E>
     }
 
     @Override
-    public Configuration build(@NonNull Configuration parent, @NonNull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(Configuration parent, LifecycleRegistry lifecycleRegistry) {
         validate();
         registerRepository();
         registerCommandHandlingComponentIfModelIsPresent();

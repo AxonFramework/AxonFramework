@@ -20,13 +20,14 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
+
 
 import java.util.UUID;
 
@@ -128,7 +129,10 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                                         return MessageStream.empty();
                                                                     }
                                                             );
-                                                            return components.declarative(cfg -> handlingComponent);
+                                                            return components.declarative(
+                                                                    "handlingComponent",
+                                                                    cfg -> handlingComponent
+                                                            );
                                                         }
                                                 )
                                                 .customized((cfg, customization) -> customization.eventCriteria(

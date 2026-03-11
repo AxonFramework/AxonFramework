@@ -203,7 +203,7 @@ class AsyncRetrySchedulerTest {
         }
 
         @Override
-        public Outcome defineFor(@NonNull Message message,
+        public @NonNull Outcome defineFor(@NonNull Message message,
                                  @NonNull Throwable cause,
                                  @NonNull List<Class<? extends Throwable>[]> previousFailures) {
             return policyOutcome.get();

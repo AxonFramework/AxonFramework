@@ -19,7 +19,6 @@ package org.axonframework.modelling.command;
 import org.axonframework.messaging.core.Message;
 
 import java.util.stream.Stream;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Forward all messages {@code T} regardless of their set up.
@@ -31,7 +30,7 @@ import org.jspecify.annotations.NonNull;
 public class ForwardToAll<T extends Message> implements ForwardingMode<T> {
 
     @Override
-    public <E> Stream<E> filterCandidates(@NonNull T message, @NonNull Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
         return candidates;
     }
 }

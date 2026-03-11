@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -24,7 +23,6 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.Set;
@@ -51,13 +49,13 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      *
      * @param eventHandlerInvoker The {@link EventHandlerInvoker} to wrap.
      */
-    public LegacyEventHandlingComponent(@NonNull EventHandlerInvoker eventHandlerInvoker) {
+    public LegacyEventHandlingComponent(EventHandlerInvoker eventHandlerInvoker) {
         this.eventHandlerInvoker = eventHandlerInvoker;
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         try {
             Segment segment = Segment.fromContext(context).orElse(Segment.ROOT_SEGMENT);
             eventHandlerInvoker.handle(event, context, segment);
@@ -76,23 +74,22 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public boolean supports(@NonNull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         Set<QualifiedName> supportedEvents = supportedEvents();
         return supportedEvents.contains(eventName);
     }
 
-    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())
                             .filter(SimpleEventHandlerInvoker.class::isInstance)
                             .map(SimpleEventHandlerInvoker.class::cast)
-                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event, context))
+                            .flatMap(invoker -> invoker.getSequencingPolicy().sequenceIdentifierFor(event, context))
                             .orElseGet(event::identifier);
             case SimpleEventHandlerInvoker simpleInvoker ->
-                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event, context).orElseGet(event::identifier);
+                    simpleInvoker.getSequencingPolicy().sequenceIdentifierFor(event, context).orElseGet(event::identifier);
             default -> event.identifier();
         };
     }
@@ -103,14 +100,14 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public @NotNull MessageStream.Empty<Message> handle(@NotNull ResetContext resetContext,
-                                                        @NotNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                                        ProcessingContext context) {
         eventHandlerInvoker.performReset(resetContext, context);
         return MessageStream.empty();
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         // Unimplemented as this is legacy flow.
     }
 

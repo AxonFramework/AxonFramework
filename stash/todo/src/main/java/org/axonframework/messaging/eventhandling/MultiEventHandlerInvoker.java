@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -54,7 +53,7 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @param delegates which will be used to do the actual event handling
      */
-    public MultiEventHandlerInvoker(@NonNull List<EventHandlerInvoker> delegates) {
+    public MultiEventHandlerInvoker(List<EventHandlerInvoker> delegates) {
         this.delegates = flatten(delegates);
     }
 
@@ -70,13 +69,12 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
         return flattened;
     }
 
-    @NonNull
     public List<EventHandlerInvoker> delegates() {
         return Collections.unmodifiableList(delegates);
     }
 
     @Override
-    public boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context, @NonNull Segment segment) {
+    public boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment) {
         return delegates.stream().anyMatch(i -> canHandle(i, eventMessage, context, segment));
     }
 
@@ -85,12 +83,12 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandleType(@NonNull Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         return delegates.stream().anyMatch(i -> i.canHandleType(payloadType));
     }
 
     @Override
-    public void handle(@NonNull EventMessage message, @NonNull ProcessingContext context, @NonNull Segment segment) throws Exception {
+    public void handle(EventMessage message, ProcessingContext context, Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
             if (canHandle(i, message, context, segment)) {
                 i.handle(message, context, segment);

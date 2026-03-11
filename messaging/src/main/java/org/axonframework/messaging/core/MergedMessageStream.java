@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -49,9 +50,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     private final MessageStream<M> second;
     private final Comparator<Entry<M>> comparator;
 
-    private final AtomicReference<Runnable> callbackRef = new AtomicReference<>();
+    private final AtomicReference<@Nullable Runnable> callbackRef = new AtomicReference<>();
     private final AtomicBoolean callbackRunning = new AtomicBoolean(false);
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
 
 
     /**
@@ -62,9 +63,9 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
      * @param first      The first message stream to merge.
      * @param second     The second message stream to merge.
      */
-    public MergedMessageStream(@NonNull Comparator<Entry<M>> comparator,
-                               @NonNull MessageStream<M> first,
-                               @NonNull MessageStream<M> second) {
+    public MergedMessageStream(Comparator<Entry<M>> comparator,
+                               MessageStream<M> first,
+                               MessageStream<M> second) {
         this.comparator = Objects.requireNonNull(comparator, "comparator must not be null");
         this.first = Objects.requireNonNull(first, "first must not be null");
         this.second = Objects.requireNonNull(second, "second must not be null");
@@ -103,7 +104,7 @@ public class MergedMessageStream<M extends Message> implements MessageStream<M> 
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         callbackRef.set(callback);
         Runnable delegating = () -> {
             if (hasNextAvailable() || isCompleted() || error().isPresent()) {

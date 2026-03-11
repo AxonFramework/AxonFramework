@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -103,23 +102,23 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public boolean canForward(@NonNull CommandMessage message, @NonNull P target) {
+    public boolean canForward(CommandMessage message, P target) {
         return childEntityResolver.apply(message, target) != null;
     }
 
     @Override
-    public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
+    public boolean canHandle(Message message, ProcessingContext context) {
         return childHandler.canHandle(message, context);
     }
 
     @Override
-    public boolean canHandleMessageType(@NonNull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @Override
-    public Object handleSync(@NonNull Message message,
-                             @NonNull ProcessingContext context,
+    public Object handleSync(Message message,
+                             ProcessingContext context,
                              @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
@@ -132,7 +131,7 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public MessageStream<?> handle(@NonNull Message message, @NonNull ProcessingContext context, @Nullable P target) {
+    public MessageStream<?> handle(Message message, ProcessingContext context, @Nullable P target) {
         try {
             Object result = handleSync(message, context, target);
             return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));

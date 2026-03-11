@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -141,7 +140,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * @param enqueuePolicy The {@link EnqueuePolicy} to use.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration enqueuePolicy(@NonNull EnqueuePolicy<EventMessage> enqueuePolicy) {
+    public DeadLetterQueueConfiguration enqueuePolicy(EnqueuePolicy<EventMessage> enqueuePolicy) {
         assertNonNull(enqueuePolicy, "Enqueue policy may not be null");
         this.enqueuePolicy = enqueuePolicy;
         return this;
@@ -191,8 +190,9 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * <p>
      * The factory receives a component-scoped processing group identifier that uniquely identifies the dead letter
      * queue within its event processor. A single processor may contain multiple event handling components, each with
-     * its own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentIndex]"}, for example
-     * {@code "DeadLetterQueue[myProcessor][0]"} for the first component of a processor named {@code "myProcessor"}.
+     * its own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentName]"}, for example
+     * {@code "DeadLetterQueue[myProcessor][myComponent]"} for a component named {@code "myComponent"} within a
+     * processor named {@code "myProcessor"}.
      * <p>
      * This allows using different DLQ implementations such as JPA or JDBC-backed queues
      * instead of the default in-memory implementation.
@@ -255,7 +255,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("enabled", enabled);
         descriptor.describeProperty("clearOnReset", clearOnReset);
         descriptor.describeProperty("cacheMaxSize", cacheMaxSize);

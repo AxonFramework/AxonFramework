@@ -16,8 +16,9 @@
 
 package org.axonframework.common.infra;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Component;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.*;
 
@@ -53,7 +54,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     private static final String PATH_SEPARATOR = "/";
 
     private final Map<Object, String> componentPaths;
-    private final Map<String, Object> processedComponents;
+    private final Map<String, @Nullable Object> processedComponents;
     private final String currentPath;
 
     /**
@@ -76,7 +77,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Object object) {
+    public void describeProperty(String name, @Nullable Object object) {
         if (object instanceof DescribableComponent component) {
             describeComponent(name, component);
         } else {
@@ -104,7 +105,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Collection<?> collection) {
+    public void describeProperty(String name, @Nullable Collection<?> collection) {
         if (collection == null) {
             processedComponents.put(name, null);
             return;
@@ -141,7 +142,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Map<?, ?> map) {
+    public void describeProperty(String name, @Nullable Map<?, ?> map) {
         if (map == null) {
             processedComponents.put(name, null);
             return;
@@ -190,17 +191,17 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@NonNull String name, String value) {
+    public void describeProperty(String name, @Nullable String value) {
         processedComponents.put(name, value);
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Long value) {
+    public void describeProperty(String name, @Nullable Long value) {
         processedComponents.put(name, value);
     }
 
     @Override
-    public void describeProperty(@NonNull String name, Boolean value) {
+    public void describeProperty(String name, @Nullable Boolean value) {
         processedComponents.put(name, value);
     }
 
@@ -221,7 +222,6 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
         private static final String SYMLINK_INDICATOR = " -> ";
 
         @Override
-        @NonNull
         public String toString() {
             return SYMLINK_INDICATOR + targetPath;
         }
@@ -236,14 +236,14 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
 
         private final StringBuilder result = new StringBuilder();
 
-        String render(Map<String, Object> properties) {
+        String render(Map<String, @Nullable Object> properties) {
             result.append(ROOT_PATH).append("\n");
             var context = new RenderContext("", "");
             render(properties, context);
             return result.toString();
         }
 
-        private void render(Map<String, Object> properties, RenderContext context) {
+        private void render(Map<String, @Nullable Object> properties, RenderContext context) {
             var entries = new ArrayList<>(properties.entrySet());
 
             for (int i = 0; i < entries.size(); i++) {
@@ -258,7 +258,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
 
         private void renderProperty(
                 String name,
-                Object value,
+                @Nullable Object value,
                 RenderContext context,
                 boolean isLastInCollection
         ) {
@@ -355,12 +355,12 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                   .append(link).append("\n");
         }
 
-        private void renderSimpleValue(String name, Object value, RenderContext context, boolean isLastInCollection) {
+        private void renderSimpleValue(String name, @Nullable Object value, RenderContext context, boolean isLastInCollection) {
             result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name)
                   .append(": ").append(valueOrNull(value)).append("\n");
         }
 
-        private String valueOrNull(Object value) {
+        private String valueOrNull(@Nullable Object value) {
             return value == null ? "null" : value.toString();
         }
 

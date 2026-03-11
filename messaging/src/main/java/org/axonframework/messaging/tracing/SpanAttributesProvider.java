@@ -19,7 +19,6 @@ package org.axonframework.messaging.tracing;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a provider of attributes to a {@link Span}, based on a {@link Message}. It's the responsibility of the
@@ -36,6 +35,5 @@ public interface SpanAttributesProvider {
      * @param message The message
      * @return The attributes
      */
-    @NonNull
-    Map<String, String> provideForMessage(@NonNull Message message);
+    Map<String, String> provideForMessage(Message message);
 }

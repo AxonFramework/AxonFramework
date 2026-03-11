@@ -20,7 +20,6 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Contract describing a component that can process {@link DeadLetter dead letters} that it has enqueued.
@@ -54,8 +53,7 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise
      */
-    @NonNull
-    CompletableFuture<Boolean> process(@NonNull Predicate<DeadLetter<? extends M>> sequenceFilter);
+    CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends M>> sequenceFilter);
 
     /**
      * Process any sequence of {@link DeadLetter dead letters} belonging to this component.
@@ -69,7 +67,6 @@ public interface SequencedDeadLetterProcessor<M extends Message> {
      * @return a {@link CompletableFuture} with {@code true} if at least one {@link DeadLetter dead letter} was
      * processed successfully, {@code false} otherwise
      */
-    @NonNull
     default CompletableFuture<Boolean> processAny() {
         return process(letter -> true);
     }

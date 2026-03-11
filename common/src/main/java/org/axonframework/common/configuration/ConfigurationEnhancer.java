@@ -16,8 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Interface describing an enhancement of the {@link ComponentRegistry} from the Axon Framework configuration API,
  * taking effect during {@link ApplicationConfigurer#build() build} of the configurer.
@@ -50,7 +48,7 @@ public interface ConfigurationEnhancer {
      *
      * @param registry The registry instance to enhance.
      */
-    void enhance(@NonNull ComponentRegistry registry);
+    void enhance(ComponentRegistry registry);
 
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.

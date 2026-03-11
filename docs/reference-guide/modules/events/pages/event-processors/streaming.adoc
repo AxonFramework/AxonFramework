@@ -185,9 +185,9 @@ axon.eventhandling.processors[example.processor].source=eventStore
 ----
 
 [#bean_based_config_pooled]
-=== Bean-based configuration - Spring Boot with ProcessorDefinition
+=== Bean-based configuration - Spring Boot with EventProcessorDefinition
 
-For programmatic, type-safe configuration of event processors, Spring Boot users can define `ProcessorDefinition` beans.
+For programmatic, type-safe configuration of event processors, Spring Boot users can define `EventProcessorDefinition` beans.
 This approach provides several advantages:
 
 * Compile-time validation of configuration
@@ -197,7 +197,7 @@ This approach provides several advantages:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -205,12 +205,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.orders"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialSegmentCount(4)
                     .batchSize(100)
                     .claimExtensionThreshold(5000)
@@ -228,13 +228,13 @@ The `assigningHandlers` method receives an `EventHandlerDescriptor` that provide
 
 This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
-Use `withDefaultSettings()` instead of `withConfiguration()` when you don't need custom processor settings but still want explicit handler assignment:
+Use `notCustomized()` instead of `customized()` when you don't need custom processor settings but still want explicit handler assignment:
 
 [source,java]
 ----
-ProcessorDefinition.pooledStreamingProcessor("example-processor")
+EventProcessorDefinition.pooledStreaming("example-processor")
         .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
-        .withDefaultSettings();
+        .notCustomized();
 ----
 
 [IMPORTANT]
@@ -243,11 +243,11 @@ ProcessorDefinition.pooledStreamingProcessor("example-processor")
 
 When using multiple configuration approaches:
 
-1. `ProcessorDefinition` beans take precedence over properties-based configuration
-2. If a handler matches multiple `ProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
-3. Handlers not matched by any `ProcessorDefinition` are assigned to a processor based on their package name (default behavior)
+1. `EventProcessorDefinition` beans take precedence over properties-based configuration
+2. If a handler matches multiple `EventProcessorDefinition` selectors, an `AxonConfigurationException` is thrown at startup
+3. Handlers not matched by any `EventProcessorDefinition` are assigned to a processor based on their package name (default behavior)
 
-To avoid conflicts, ensure each handler is matched by at most one `ProcessorDefinition` using mutually exclusive selectors.
+To avoid conflicts, ensure each handler is matched by at most one `EventProcessorDefinition` using mutually exclusive selectors.
 ====
 
 [[error_mode]]
@@ -400,11 +400,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, the initial token can be configured through the `initialToken()` method:
+When using `EventProcessorDefinition`, the initial token can be configured through the `initialToken()` method:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -412,12 +412,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialToken(source -> source.latestToken(null)));
     }
 }
@@ -487,11 +487,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, configure token claim settings through the configuration methods:
+When using `EventProcessorDefinition`, configure token claim settings through the configuration methods:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -499,11 +499,11 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanName().startsWith("example"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .claimExtensionThreshold(2500)
                     .tokenClaimInterval(7500));
     }
@@ -694,6 +694,7 @@ To override the TokenStore, either define a bean in a Spring `@Configuration` cl
 
 [source,java]
 ----
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStoreConfiguration;
@@ -702,9 +703,9 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 public class AxonConfig {
 
     @Bean
-    public TokenStore customTokenStore(EntityManagerProvider entityManagerProvider,
+    public TokenStore customTokenStore(EntityManagerFactory entityManagerFactory,
                                        Converter converter) {
-        return new JpaTokenStore(entityManagerProvider, converter, JpaTokenStoreConfiguration.DEFAULT);
+        return new JpaTokenStore(new JpaTransactionalExecutorProvider(entityManagerFactory), converter, JpaTokenStoreConfiguration.DEFAULT);
     }
 }
 ----
@@ -791,11 +792,11 @@ Spring Boot::
 
 The default number of segments for the `PooledStreamingEventProcessor` is sixteen.
 
-When using `ProcessorDefinition`, you can configure the initial segment count programmatically:
+When using `EventProcessorDefinition`, you can configure the initial segment count programmatically:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -803,12 +804,12 @@ import org.springframework.context.annotation.Configuration;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .equals("com.example.eventhandlers"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .initialSegmentCount(32));
     }
 }
@@ -872,7 +873,7 @@ Thus, if the `SequencingPolicy` returns a _different_ value for two events, they
 Note that if the policy returns an `Optional#empty` as the sequence identifier, the event may be processed in parallel with _any_ other events.
 
 By default, a `HierarchicalSequencingPolicy` is configured, which first tries for the `SequentialPerAggregatePolicy`.
-If that fails, because the events don't contain events, it falls back to the `SequentialPolicy`.
+If that fails, because the events don't contain aggregate information, it falls back to the `SequentialPolicy`.
 This policy handles events in the order they've been published within a **single** segment, thus eliminating any possibility for parallel processing.
 
 As correctly sequencing your events is important for any application, we **highly** recommend you check out the <<sequential_processing,sequential processing>> section to understand how to configure a policy that fits with your application.
@@ -889,7 +890,7 @@ For the policies Axon provides out of the box and how to configure them, we reco
 Conceptually, the `SequencingPolicy` decides whether an event belongs to a given <<parallel_processing,segment>>.
 From there, Axon guarantees that Events that are part of the same segment are processed sequentially.
 
-The framework provides several policies you can use out of the box:
+The framework provides several policies you can use out of the box for sequencing your events:
 
 * `PropertySequencingPolicy`: When configuring this policy, the user is required to provide a property name or property extractor function.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events.
@@ -938,8 +939,8 @@ Hence, for the `PropertySequencingPolicy`, you are able to omit the first parame
 [source,java]
 ----
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -971,8 +972,8 @@ Thus, if you have an Event Handling Component with a `@SequencingPolicy` on the 
 [source,java]
 ----
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.annotation.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"studentId"})
 class CustomEventHandlingComponent {
@@ -1003,7 +1004,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.messaging.eventhandling.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
 
 public class AxonConfig {
 
@@ -1083,13 +1084,13 @@ public class AxonConfig {
 
 If the available policies do not suffice, you can define your own.
 To that end, we should implement the `SequencingPolicy` interface.
-This interface defines a single method, `getSequenceIdentifierFor(EventMessage, ProcessingContext)`, that returns an `Optional` of the sequence identifier for the given event and context:
+This interface defines a single method, `sequenceIdentifierFor(EventMessage, ProcessingContext)`, that returns an `Optional` of the sequence identifier for the given event and context:
 
 [source,java]
 ----
 public interface SequencingPolicy {
 
-    Optional<Object> getSequenceIdentifierFor(EventMessage event, ProcessingContext context);
+    Optional<Object> sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 }
 ----
 
@@ -1171,12 +1172,12 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, you can configure custom thread pools for the coordinator and worker executors:
+When using `EventProcessorDefinition`, you can configure custom thread pools for the coordinator and worker executors:
 
 [source,java]
 ----
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1186,12 +1187,12 @@ import java.util.concurrent.Executors;
 public class EventProcessorConfig {
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition() {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanType().getPackageName()
                               .startsWith("com.example"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .coordinatorExecutor(Executors.newScheduledThreadPool(
                         1, new AxonThreadFactory("Coordinator - example-processor")
                     ))
@@ -1723,11 +1724,11 @@ Spring Boot::
 +
 --
 
-When using `ProcessorDefinition`, first create a `MultiStreamableEventSource` bean, then reference it in your processor configuration:
+When using `EventProcessorDefinition`, first create a `MultiStreamableEventSource` bean, then reference it in your processor configuration:
 
 [source,java]
 ----
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventstreaming.MultiStreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.springframework.context.annotation.Bean;
@@ -1747,11 +1748,11 @@ public class EventProcessorConfig {
     }
 
     @Bean
-    public ProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
-        return ProcessorDefinition.pooledStreamingProcessor("example-processor")
+    public EventProcessorDefinition exampleProcessorDefinition(MultiStreamableEventSource multiEventSource) {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
                 .assigningHandlers(descriptor ->
                     descriptor.beanName().contains("multi"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                     .eventSource(multiEventSource));
     }
 }

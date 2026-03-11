@@ -18,23 +18,17 @@ package org.axonframework.messaging.core.configuration;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.ModuleBuilder;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.InterceptingEventBus;
-import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -49,7 +43,15 @@ import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegis
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.InterceptingEventBus;
+import org.axonframework.messaging.eventhandling.gateway.DefaultEventGateway;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryBusTestUtils;
 import org.axonframework.messaging.queryhandling.QueryMessage;
@@ -58,6 +60,7 @@ import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -96,6 +99,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        // and a CommandSequencingPolicy that leads to CommandSequencingInterceptor
         assertInstanceOf(InterceptingCommandBus.class, commandBus.get());
 
         Optional<EventGateway> eventGateway = result.getOptionalComponent(EventGateway.class);
@@ -154,12 +158,16 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = aCommandBus();
 
-        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not built.
+        // Setting NoOpSequencingPolicy ensures CommandSequencingInterceptor is not built.
         // This otherwise leads to the InterceptingCommandBus
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
+                                          .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                                        MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
                                           .registerCommandBus(c -> expected)
                                           .build();
 
@@ -170,8 +178,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerEventSinkOverridesDefault() {
         EventSink expected = new EventSink() {
             @Override
-            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                                   @NonNull List<EventMessage> events) {
+            public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                            @NonNull List<? extends EventMessage> events) {
                 return FutureUtils.emptyCompletedFuture();
             }
 
@@ -240,21 +248,21 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         DispatchInterceptorRegistry interceptorRegistry = result.getComponent(DispatchInterceptorRegistry.class);
 
         List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
-                interceptorRegistry.commandInterceptors(result);
+                interceptorRegistry.commandInterceptors(result, CommandBus.class, null);
         assertThat(commandInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         commandInterceptors.getFirst().interceptOnDispatch(null, null, null);
         assertThat(counter).hasValue(1);
 
         List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
-                interceptorRegistry.eventInterceptors(result);
+                interceptorRegistry.eventInterceptors(result, EventSink.class, null);
         assertThat(eventInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         eventInterceptors.getFirst().interceptOnDispatch(null, null, null);
         assertThat(counter).hasValue(2);
 
         List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
-                interceptorRegistry.queryInterceptors(result);
+                interceptorRegistry.queryInterceptors(result, QueryBus.class, null);
         assertThat(queryInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         queryInterceptors.getFirst().interceptOnDispatch(null, null, null);
@@ -271,7 +279,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         List<MessageDispatchInterceptor<? super CommandMessage>> interceptors =
                 result.getComponent(DispatchInterceptorRegistry.class)
-                      .commandInterceptors(result);
+                      .commandInterceptors(result, CommandBus.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 
@@ -285,7 +293,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         List<MessageDispatchInterceptor<? super EventMessage>> interceptors =
                 result.getComponent(DispatchInterceptorRegistry.class)
-                      .eventInterceptors(result);
+                      .eventInterceptors(result, EventSink.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 
@@ -299,7 +307,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         List<MessageDispatchInterceptor<? super QueryMessage>> interceptors =
                 result.getComponent(DispatchInterceptorRegistry.class)
-                      .queryInterceptors(result);
+                      .queryInterceptors(result, QueryBus.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 
@@ -313,30 +321,34 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         };
 
         // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
+        // Overriding CommandSequencingPolicy ensures CommandSequencingInterceptor is not present.
         Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
                                                   CorrelationDataProviderRegistry.class,
                                                   c -> new DefaultCorrelationDataProviderRegistry()
                                           ))
+                                          .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                                        MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                                        c -> NoOpSequencingPolicy.INSTANCE))
                                           .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);
 
         List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors =
-                handlerInterceptorRegistry.commandInterceptors(result);
+                handlerInterceptorRegistry.commandInterceptors(result, CommandBus.class, null);
         assertThat(commandInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         commandInterceptors.getFirst().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(1);
 
         List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors =
-                handlerInterceptorRegistry.eventInterceptors(result);
+                handlerInterceptorRegistry.eventInterceptors(result, EventSink.class, null);
         assertThat(eventInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         eventInterceptors.getFirst().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(2);
 
         List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors =
-                handlerInterceptorRegistry.queryInterceptors(result);
+                handlerInterceptorRegistry.queryInterceptors(result, QueryBus.class, null);
         assertThat(queryInterceptors).hasSize(1);
         //noinspection DataFlowIssue | Input is not important to validate invocation
         queryInterceptors.getFirst().interceptOnHandle(null, null, null);
@@ -351,9 +363,9 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerCommandHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<? super CommandMessage>> interceptors = result.getComponent(
-                                                                                             HandlerInterceptorRegistry.class)
-                                                                                     .commandInterceptors(result);
+        List<MessageHandlerInterceptor<? super CommandMessage>> interceptors =
+                result.getComponent(HandlerInterceptorRegistry.class)
+                      .commandInterceptors(result, CommandBus.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 
@@ -365,9 +377,9 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerEventHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<? super EventMessage>> interceptors = result.getComponent(
-                                                                                           HandlerInterceptorRegistry.class)
-                                                                                   .eventInterceptors(result);
+        List<MessageHandlerInterceptor<? super EventMessage>> interceptors =
+                result.getComponent(HandlerInterceptorRegistry.class)
+                      .eventInterceptors(result, EventSink.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 
@@ -379,9 +391,9 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Configuration result = testSubject.registerQueryHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
 
-        List<MessageHandlerInterceptor<? super QueryMessage>> interceptors = result.getComponent(
-                                                                                           HandlerInterceptorRegistry.class)
-                                                                                   .queryInterceptors(result);
+        List<MessageHandlerInterceptor<? super QueryMessage>> interceptors =
+                result.getComponent(HandlerInterceptorRegistry.class)
+                      .queryInterceptors(result, QueryBus.class, null);
         assertThat(interceptors).contains(handlerInterceptor);
     }
 

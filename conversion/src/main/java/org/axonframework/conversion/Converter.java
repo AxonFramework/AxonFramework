@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
@@ -26,35 +25,13 @@ import java.lang.reflect.Type;
  * Interface describing a mechanism that can convert data from one to another type.
  * <p>
  * Used when object are added/retrieved from a storage solution or put on/received from a network. Clear example of this
- * is the {@link org.axonframework.messaging.Message}.
+ * is the {@code org.axonframework.messaging.core.Message}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @since 3.0.0
  */
 public interface Converter extends DescribableComponent {
-
-    /**
-     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
-     * {@code targetType}.
-     *
-     * @param sourceType The type of data to convert from.
-     * @param targetType The type of data to convert to.
-     * @return {@code true} if conversion is possible, {@code false} otherwise.
-     */
-    default boolean canConvert(@NonNull Class<?> sourceType, @NonNull Class<?> targetType) {
-        return canConvert(sourceType, (Type) targetType);
-    }
-
-    /**
-     * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
-     * {@code targetType}.
-     *
-     * @param sourceType The type of data to convert from.
-     * @param targetType The type of data to convert to.
-     * @return {@code true} if conversion is possible, {@code false} otherwise.
-     */
-    boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType);
 
     /**
      * Converts the given {@code input} object into an object of the given {@code targetType}.
@@ -66,7 +43,7 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    default <T> T convert(@Nullable Object input, @NonNull Class<T> targetType) {
+    default <T> T convert(@Nullable Object input, Class<T> targetType) {
         return convert(input, (Type) targetType);
     }
 
@@ -80,5 +57,5 @@ public interface Converter extends DescribableComponent {
      * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    <T> T convert(@Nullable Object input, @NonNull Type targetType);
+    <T> T convert(@Nullable Object input, Type targetType);
 }

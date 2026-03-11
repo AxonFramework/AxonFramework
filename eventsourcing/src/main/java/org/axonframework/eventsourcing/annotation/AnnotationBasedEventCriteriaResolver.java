@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -88,9 +87,9 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
      * @param idType        The identifier type to resolve criteria for.
      * @param configuration The configuration to use for resolving the criteria.
      */
-    public AnnotationBasedEventCriteriaResolver(@NonNull Class<E> entityType,
-                                                @NonNull Class<ID> idType,
-                                                @NonNull Configuration configuration) {
+    public AnnotationBasedEventCriteriaResolver(Class<E> entityType,
+                                                Class<ID> idType,
+                                                Configuration configuration) {
         this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
         this.idType = Objects.requireNonNull(idType, "The id type cannot be null.");
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
@@ -206,9 +205,8 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         }
     }
 
-    @NonNull
     @Override
-    public EventCriteria resolve(@NonNull Object id, @NonNull ProcessingContext context) {
+    public EventCriteria resolve(Object id, ProcessingContext context) {
         Optional<Object> builderResult = builderMap
                 .keySet()
                 .stream()
@@ -224,7 +222,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("idType", idType.getName());
         descriptor.describeProperty("entityType", entityType.getName());
         descriptor.describeProperty("tagKey", tagKey);

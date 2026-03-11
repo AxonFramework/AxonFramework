@@ -16,7 +16,6 @@
 
 package org.axonframework.test.util;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -54,7 +53,7 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
@@ -67,8 +66,8 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@NonNull QualifiedName name,
-                                @NonNull CommandHandler handler) {
+    public CommandBus subscribe(QualifiedName name,
+                                CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
         subscriptions.putIfAbsent(name, commandHandler);
         return this;
@@ -150,7 +149,7 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("subscriptions", subscriptions);
         descriptor.describeProperty("dispatchedCommands", dispatchedCommands);
         descriptor.describeProperty("callbackBehavior", callbackBehavior);

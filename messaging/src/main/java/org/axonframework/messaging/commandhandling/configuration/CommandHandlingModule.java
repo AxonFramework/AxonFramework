@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -29,6 +28,7 @@ import org.axonframework.messaging.commandhandling.annotation.AnnotatedCommandHa
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 
@@ -73,7 +73,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
      * @param moduleName The name of the {@code CommandHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
-    static SetupPhase named(@NonNull String moduleName) {
+    static SetupPhase named(String moduleName) {
         return new SimpleCommandHandlingModule(moduleName);
     }
 
@@ -100,7 +100,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          *                            right away.
          * @return The command handler phase of this module, for a fluent API.
          */
-        default CommandHandlerPhase commandHandlers(@NonNull Consumer<CommandHandlerPhase> configurationLambda) {
+        default CommandHandlerPhase commandHandlers(Consumer<CommandHandlerPhase> configurationLambda) {
             CommandHandlerPhase commandHandlerPhase = commandHandlers();
             requireNonNull(configurationLambda, "The command handler configuration lambda cannot be null.")
                     .accept(commandHandlerPhase);
@@ -135,8 +135,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @param commandHandler The command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
-        default CommandHandlerPhase commandHandler(@NonNull QualifiedName commandName,
-                                                   @NonNull CommandHandler commandHandler) {
+        default CommandHandlerPhase commandHandler(QualifiedName commandName,
+                                                   CommandHandler commandHandler) {
             requireNonNull(commandHandler, "The command handler cannot be null.");
             return commandHandler(commandName, cfg -> commandHandler);
         }
@@ -158,8 +158,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandler(
-                @NonNull QualifiedName commandName,
-                @NonNull ComponentBuilder<CommandHandler> commandHandlerBuilder);
+                QualifiedName commandName,
+                ComponentBuilder<CommandHandler> commandHandlerBuilder);
 
         /**
          * Registers the given {@code handlingComponentBuilder} within this module.
@@ -177,7 +177,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandlingComponent(
-                @NonNull ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
+                ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -192,14 +192,15 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          *                                 of the command handling component.
          * @return The command handler phase of this builder, for a fluent API.
          */
-        default CommandHandlerPhase annotatedCommandHandlingComponent(
-                @NonNull ComponentBuilder<Object> handlingComponentBuilder
+        default CommandHandlerPhase autodetectedCommandHandlingComponent(
+                ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
-                    ClasspathHandlerDefinition.forClass(c.getClass()),
+                    c.getOptionalComponent(HandlerDefinition.class)
+                     .orElse(ClasspathHandlerDefinition.forClass(c.getClass())),
                     c.getComponent(MessageTypeResolver.class),
                     c.getComponent(MessageConverter.class)
             ));

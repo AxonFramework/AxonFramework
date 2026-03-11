@@ -122,7 +122,7 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
+        public @NonNull CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
             return CompletableFuture.completedFuture(null);
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.Converter;
 
@@ -43,17 +42,17 @@ public abstract class MessageDecorator implements Message {
      *
      * @param delegate The {@link Message} delegate.
      */
-    protected MessageDecorator(@NonNull Message delegate) {
+    protected MessageDecorator(Message delegate) {
         this.delegate = delegate;
     }
 
     @Override
-        public @NonNull String identifier() {
+    public String identifier() {
         return delegate.identifier();
     }
 
     @Override
-        public @NonNull MessageType type() {
+    public MessageType type() {
         return delegate.type();
     }
 
@@ -65,23 +64,22 @@ public abstract class MessageDecorator implements Message {
 
     @Override
     @Nullable
-    public <T> T payloadAs(@NonNull Type type, @Nullable Converter converter) {
+    public <T> T payloadAs(Type type, @Nullable Converter converter) {
         return delegate.payloadAs(type, converter);
     }
 
     @Override
-    @NonNull
     public Class<?> payloadType() {
         return delegate.payloadType();
     }
 
     @Override
-        public @NonNull Metadata metadata() {
+    public Metadata metadata() {
         return delegate.metadata();
     }
 
     @Override
-        public @NonNull Message withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+    public Message withConvertedPayload(Type type, Converter converter) {
         return delegate.withConvertedPayload(type, converter);
     }
 
@@ -90,7 +88,7 @@ public abstract class MessageDecorator implements Message {
      *
      * @return The wrapped {@link Message} delegated by this decorator.
      */
-        protected @NonNull Message delegate() {
+    protected Message delegate() {
         return delegate;
     }
 

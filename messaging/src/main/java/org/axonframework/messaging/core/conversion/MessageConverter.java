@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
@@ -46,7 +45,7 @@ public interface MessageConverter extends Converter {
      * {@code targetType}.
      */
     @Nullable
-    default <M extends Message, T> T convertPayload(@NonNull M message, @NonNull Class<T> targetType) {
+    default <M extends Message, T> T convertPayload(M message, Class<T> targetType) {
         return convertPayload(message, (Type) targetType);
     }
 
@@ -62,7 +61,7 @@ public interface MessageConverter extends Converter {
      * {@code targetType}.
      */
     @Nullable
-    <M extends Message, T> T convertPayload(@NonNull M message, @NonNull Type targetType);
+    <M extends Message, T> T convertPayload(M message, Type targetType);
 
     /**
      * Converts the given {@code message's} {@link Message#payload() payload} to the given {@code targetType}, returning
@@ -75,8 +74,7 @@ public interface MessageConverter extends Converter {
      * @return A new {@code Message} containing the converted version of the given {@code message's}
      * {@link Message#payload() payload} into the given {@code targetType}.
      */
-    @NonNull
-    default <M extends Message, T> M convertMessage(@NonNull M message, @NonNull Class<T> targetType) {
+    default <M extends Message, T> M convertMessage(M message, Class<T> targetType) {
         return convertMessage(message, (Type) targetType);
     }
 
@@ -90,6 +88,5 @@ public interface MessageConverter extends Converter {
      * @return A new {@code Message} containing the converted version of the given {@code message's}
      * {@link Message#payload() payload} into the given {@code targetType}.
      */
-    @NonNull
-    <M extends Message> M convertMessage(@NonNull M message, @NonNull Type targetType);
+    <M extends Message> M convertMessage(M message, Type targetType);
 }

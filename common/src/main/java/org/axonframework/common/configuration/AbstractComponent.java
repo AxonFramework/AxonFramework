@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 
@@ -52,9 +51,9 @@ public abstract class AbstractComponent<C, A extends C>
      * @param startHandlers    A list of preconfigured startup handlers for this component.
      * @param shutdownHandlers A list of preconfigured shutdown handlers for this component.
      */
-    protected AbstractComponent(@NonNull Identifier<C> identifier,
-                                @NonNull List<HandlerRegistration<A>> startHandlers,
-                                @NonNull List<HandlerRegistration<A>> shutdownHandlers) {
+    protected AbstractComponent(Identifier<C> identifier,
+                                List<HandlerRegistration<A>> startHandlers,
+                                List<HandlerRegistration<A>> shutdownHandlers) {
         this(identifier);
         this.startHandlers.addAll(requireNonNull(startHandlers, "The start handlers must not be null."));
         this.shutdownHandlers.addAll(requireNonNull(shutdownHandlers, "The shutdown handlers must not be null."));
@@ -65,7 +64,7 @@ public abstract class AbstractComponent<C, A extends C>
      *
      * @param identifier The identifier of the component.
      */
-    protected AbstractComponent(@NonNull Identifier<C> identifier) {
+    protected AbstractComponent(Identifier<C> identifier) {
         this.identifier = requireNonNull(identifier, "The identifier must not be null.");
     }
 
@@ -75,7 +74,7 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public ComponentDefinition<C> onStart(int phase, @NonNull ComponentLifecycleHandler<C> handler) {
+    public ComponentDefinition<C> onStart(int phase, ComponentLifecycleHandler<C> handler) {
         this.startHandlers.add(new HandlerRegistration<>(
                 phase, requireNonNull(handler, "The start handler must not be null.")
         ));
@@ -83,7 +82,7 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public ComponentDefinition<C> onShutdown(int phase, @NonNull ComponentLifecycleHandler<C> handler) {
+    public ComponentDefinition<C> onShutdown(int phase, ComponentLifecycleHandler<C> handler) {
         this.shutdownHandlers.add(new HandlerRegistration<>(
                 phase, requireNonNull(handler, "The shutdown handler must not be null.")
         ));
@@ -107,7 +106,7 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public C resolve(@NonNull Configuration configuration) {
+    public @Nullable C resolve(Configuration configuration) {
         return doResolve(requireNonNull(configuration, "The configuration must not be null."));
     }
 
@@ -118,11 +117,12 @@ public abstract class AbstractComponent<C, A extends C>
      * @param configuration The configuration that declared this component.
      * @return The resolved instance defined in this component.
      */
-    abstract A doResolve(@NonNull Configuration configuration);
+    @Nullable
+    abstract A doResolve(Configuration configuration);
 
     @Override
-    public void initLifecycle(@NonNull Configuration configuration,
-                              @NonNull LifecycleRegistry lifecycleRegistry) {
+    public void initLifecycle(Configuration configuration,
+                              LifecycleRegistry lifecycleRegistry) {
         requireNonNull(configuration, "The configuration must not be null.");
         requireNonNull(lifecycleRegistry, "The lifecycle registry must not be null.");
 
@@ -148,7 +148,7 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("identifier", identifier);
         descriptor.describeProperty("initialized", isInitialized());
         descriptor.describeProperty("instantiated", isInstantiated());
@@ -161,7 +161,7 @@ public abstract class AbstractComponent<C, A extends C>
      * @param handler The handler to execute.
      * @param <C>     The type of component.
      */
-    public record HandlerRegistration<C>(int phase, @NonNull ComponentLifecycleHandler<C> handler) {
+    public record HandlerRegistration<C>(int phase, ComponentLifecycleHandler<C> handler) {
 
         /**
          * Initializes an entry holding the lifecycle {@code handler} and its corresponding {@code phase}.

@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token.annotation;
 
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.WrappedToken;
@@ -42,8 +41,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<TrackingToken> createInstance(@NonNull Executable executable,
-                                                           @NonNull Parameter[] parameters,
+    public ParameterResolver<TrackingToken> createInstance(Executable executable,
+                                                           Parameter[] parameters,
                                                            int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
@@ -53,9 +52,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
-        @NonNull
         @Override
-        public CompletableFuture<TrackingToken> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<TrackingToken> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(
                     TrackingToken.fromContext(context)
                                  .map(this::unwrap)
@@ -68,7 +66,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(TrackingToken.RESOURCE_KEY);
         }
     }

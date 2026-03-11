@@ -52,7 +52,12 @@ public class UnknownSerializedType {
      * @return {@code true} if the format is supported, otherwise {@code false}
      */
     public <T> boolean supportsFormat(Class<T> desiredFormat) {
-        return serializer.getConverter().canConvert(serializedObject.getContentType(), desiredFormat);
+        Converter converter = serializer.getConverter();
+        if (converter instanceof ChainingContentTypeConverter chainingConverter) {
+            return chainingConverter.canConvert(serializedObject.getContentType(), desiredFormat);
+        } else {
+            return false;
+        }
     }
 
     /**

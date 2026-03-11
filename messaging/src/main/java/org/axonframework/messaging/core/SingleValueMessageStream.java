@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
@@ -107,13 +106,13 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
     }
 
     @Override
-    public <RM extends Message> Single<RM> map(@NonNull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> Single<RM> map(Function<Entry<M>, Entry<RM>> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@NonNull R identity,
-                                           @NonNull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(R identity,
+                                           BiFunction<R, Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
 

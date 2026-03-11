@@ -19,9 +19,6 @@ package org.axonframework.messaging.core;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-
-import org.jspecify.annotations.NonNull;
-
 /**
  * Implementation of the {@link MessageStream} that ignores all {@link Entry entries} of the {@code delegate} stream and
  * returns an empty stream.
@@ -45,7 +42,7 @@ class IgnoredEntriesMessageStream<M extends Message>
      *
      * @param delegate The instance to delegate calls to.
      */
-    IgnoredEntriesMessageStream(@NonNull MessageStream<M> delegate) {
+    IgnoredEntriesMessageStream(MessageStream<M> delegate) {
         super(delegate);
         this.empty = MessageStream.empty();
     }
@@ -61,7 +58,7 @@ class IgnoredEntriesMessageStream<M extends Message>
     }
 
     @Override
-    public Empty<Message> onNext(@NonNull Consumer<Entry<Message>> onNext) {
+    public Empty<Message> onNext(Consumer<Entry<Message>> onNext) {
         return empty.onNext(onNext);
     }
 

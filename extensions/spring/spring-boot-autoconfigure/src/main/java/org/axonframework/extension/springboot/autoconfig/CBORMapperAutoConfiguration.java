@@ -16,8 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -26,17 +24,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 /**
  * Autoconfiguration that constructs a default {@link CBORMapper}, typically to be used by a
- * {@link JacksonConverter}.
+ * {@link org.axonframework.conversion.jackson.JacksonConverter}.
  *
  * @author Mitchell Herrijgers
  * @since 4.9.0
  */
 @AutoConfiguration
 @AutoConfigureBefore(ConverterAutoConfiguration.class)
-@ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
+@ConditionalOnClass(name = {"tools.jackson.dataformat.cbor.CBORMapper"})
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class CBORMapperAutoConfiguration {
 
@@ -53,6 +52,6 @@ public class CBORMapperAutoConfiguration {
     @ConditionalOnMissingBean(CBORMapper.class)
     @ConditionalOnExpression("'${axon.converter.general}' == 'cbor' || '${axon.converter.events}' == 'cbor' || '${axon.converter.messages}' == 'cbor'")
     public CBORMapper defaultAxonCborMapper() {
-        return (CBORMapper) new CBORMapper().findAndRegisterModules();
+        return CBORMapper.builder().findAndAddModules().build();
     }
 }

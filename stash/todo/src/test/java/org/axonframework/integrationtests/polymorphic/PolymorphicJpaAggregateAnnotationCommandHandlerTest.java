@@ -51,7 +51,7 @@ public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
                 .entityManagerProvider(() -> entityManager)
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
-                    public <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
+                    public @NonNull <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
                         //noinspection unchecked
                         return (Repository<R>) repositories.get(aggregateType);
                     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
@@ -62,6 +61,6 @@ public interface ResetHandler extends MessageHandler {
      * @param context The processing context for this operation.
      * @return An empty message stream after handling completes successfully.
      */
-    MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
-                                        @NonNull ProcessingContext context);
+    MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                        ProcessingContext context);
 }

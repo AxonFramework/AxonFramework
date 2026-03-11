@@ -2,6 +2,7 @@
 target/
 # ...but keep the wrapper jar
 !.mvn/wrapper/maven-wrapper.jar
+pom.xml.versionsBackup
 
 axon.ipr
 axon.iws
@@ -25,3 +26,13 @@ docs/_playbook/build
 # Claude Code
 .claude/settings.local.json
 .ai/temp
+
+# AI ASSISTANT - Kiro
+.kiro
+
+# AI ASSISTANT - Cursor
+.vscode
+.cursor
+
+# just - console helper
+.justfile

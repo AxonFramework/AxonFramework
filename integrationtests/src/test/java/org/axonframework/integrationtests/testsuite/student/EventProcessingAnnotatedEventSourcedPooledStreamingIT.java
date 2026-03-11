@@ -153,6 +153,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                 .eventHandlingComponents(components -> components.autodetected(
+                        "maxCoursesAutomation",
                         cfg -> new WhenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
                 )).notCustomized();
         return configurer.messaging(
@@ -172,7 +173,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingIT extends Abstr
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule
                 .named("send-max-courses-notification-command-handler")
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
+                .autodetectedCommandHandlingComponent(cfg -> new SendMaxCoursesNotificationCommandHandler()).build();
 
         configurer.registerCommandHandlingModule(sendMaxCoursesNotificationCommandHandler);
     }

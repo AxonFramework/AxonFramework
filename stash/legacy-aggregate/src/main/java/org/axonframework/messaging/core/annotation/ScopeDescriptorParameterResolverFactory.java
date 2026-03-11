@@ -28,7 +28,6 @@ import org.axonframework.messaging.core.NoScopeDescriptor;
 import org.axonframework.messaging.core.Scope;
 import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Factory for a {@link ScopeDescriptor} {@link ParameterResolver}. Will return the result of
@@ -42,8 +41,8 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     @Nullable
     @Override
-    public ParameterResolver<ScopeDescriptor> createInstance(@NonNull Executable executable,
-                                                             @NonNull Parameter[] parameters,
+    public ParameterResolver<ScopeDescriptor> createInstance(Executable executable,
+                                                             Parameter[] parameters,
                                                              int parameterIndex) {
         return ScopeDescriptor.class.isAssignableFrom(parameters[parameterIndex].getType())
                 ? new ScopeDescriptorParameterResolver() : null;
@@ -51,9 +50,8 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
 
     private static class ScopeDescriptorParameterResolver implements ParameterResolver<ScopeDescriptor> {
 
-        @NonNull
         @Override
-        public CompletableFuture<ScopeDescriptor> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<ScopeDescriptor> resolveParameterValue(ProcessingContext context) {
             try {
                 var scope = Scope.describeCurrentScope();
                 return CompletableFuture.completedFuture(scope);
@@ -63,7 +61,7 @@ public class ScopeDescriptorParameterResolverFactory implements ParameterResolve
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -51,12 +50,12 @@ import java.util.concurrent.CompletableFuture;
  * @since 2.1
  */
 @SuppressWarnings("PackageAccessibility")
-@Priority(Priority.LOW)
+@Priority(Priority.NEUTRAL)
 public class SpringBeanParameterResolverFactory implements ParameterResolverFactory, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
 
-    private ApplicationContext applicationContext;
+    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Default constructor, which relies on Spring to inject the application context.
@@ -76,7 +75,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@NonNull Executable executable, @NonNull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {
             return null;
         }
@@ -147,14 +146,13 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             this.beanName = beanName;
         }
 
-        @NonNull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.getBean(beanName));
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

@@ -18,7 +18,6 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.common.ReflectionUtils;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -38,7 +37,7 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
      *
      * @param aggregateClass The aggregate type.
      */
-    public NoArgumentConstructorCreationPolicyAggregateFactory(@NonNull Class<? extends A> aggregateClass) {
+    public NoArgumentConstructorCreationPolicyAggregateFactory(Class<? extends A> aggregateClass) {
         this.aggregateClass = aggregateClass;
     }
 
@@ -50,7 +49,6 @@ public class NoArgumentConstructorCreationPolicyAggregateFactory<A> implements C
      * @return An aggregate instance.
      */
     @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
-    @NonNull
     @Override
     public A create(@Nullable Object identifier) {
         try {

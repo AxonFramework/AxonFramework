@@ -32,16 +32,19 @@ public class CourseStatsConfiguration {
         PooledStreamingEventProcessorModule projectionProcessor = EventProcessorModule
                 .pooledStreaming(NAME)
                 .eventHandlingComponents(
-                        c -> c.autodetected(cfg -> new CoursesStatsProjector(cfg.getComponent(CourseStatsRepository.class)))
+                        c -> c.autodetected(
+                                "coursesStatsProjector",
+                                cfg -> new CoursesStatsProjector(cfg.getComponent(CourseStatsRepository.class))
+                        )
                 )
                 .notCustomized();
 
 
         QueryHandlingModule queryModule = QueryHandlingModule.named("Stats-Handler")
                 .queryHandlers()
-                .annotatedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
-                .annotatedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
+                .autodetectedQueryHandlingComponent(cfg -> new FindAllCoursesQueryHandler(cfg.getComponent(
                         CourseStatsRepository.class)))
                 .build();
 

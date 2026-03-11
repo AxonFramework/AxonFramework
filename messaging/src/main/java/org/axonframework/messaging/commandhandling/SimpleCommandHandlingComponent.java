@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -44,8 +43,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SimpleCommandHandlingComponent implements
-        CommandHandlingComponent,
+public class SimpleCommandHandlingComponent implements CommandHandlingComponent,
         CommandHandlerRegistry<SimpleCommandHandlingComponent> {
 
     private final String name;
@@ -59,17 +57,17 @@ public class SimpleCommandHandlingComponent implements
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link CommandHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleCommandHandlingComponent create(@NonNull String name) {
+    public static SimpleCommandHandlingComponent create(String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 
-    private SimpleCommandHandlingComponent(@NonNull String name) {
+    private SimpleCommandHandlingComponent(String name) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
     }
 
     @Override
-    public SimpleCommandHandlingComponent subscribe(@NonNull QualifiedName name,
-                                                    @NonNull CommandHandler commandHandler) {
+    public SimpleCommandHandlingComponent subscribe(QualifiedName name,
+                                                    CommandHandler commandHandler) {
         if (commandHandler instanceof CommandHandlingComponent component) {
             return subscribe(component);
         }
@@ -84,14 +82,14 @@ public class SimpleCommandHandlingComponent implements
     }
 
     @Override
-    public SimpleCommandHandlingComponent subscribe(@NonNull CommandHandlingComponent commandHandlingComponent) {
+    public SimpleCommandHandlingComponent subscribe(CommandHandlingComponent commandHandlingComponent) {
         subComponents.add(commandHandlingComponent);
         return this;
     }
 
     @Override
-    public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
-                                                                      @NonNull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                             ProcessingContext context) {
         QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
                 .type()
                 .qualifiedName();
@@ -122,7 +120,7 @@ public class SimpleCommandHandlingComponent implements
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);
         descriptor.describeProperty("subComponents", subComponents);

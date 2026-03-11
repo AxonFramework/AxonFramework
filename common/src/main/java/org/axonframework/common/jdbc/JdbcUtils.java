@@ -18,6 +18,9 @@ package org.axonframework.common.jdbc;
 
 import org.axonframework.common.annotation.Internal;
 
+import org.jspecify.annotations.Nullable;
+
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -291,9 +294,9 @@ public class JdbcUtils {
      * @throws NullPointerException If the {@code resultSet} or {@code columnType} are {@code null}.
      * @see #extract(ResultSet, int, Class, Object)
      */
-    public static <T> T nextAndExtract(ResultSet resultSet,
-                                       int column,
-                                       Class<T> columnType) throws SQLException, NullPointerException {
+    public static @Nullable <T> T nextAndExtract(ResultSet resultSet,
+                                                 int column,
+                                                 Class<T> columnType) throws SQLException, NullPointerException {
         return nextAndExtract(resultSet, column, columnType, null);
     }
 

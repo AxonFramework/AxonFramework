@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.HashSet;
@@ -61,7 +60,7 @@ sealed class OrEventCriteria implements EventCriteria permits EventTypeRestricta
     }
 
     @Override
-    public boolean matches(@NonNull QualifiedName type, @NonNull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return criteria.stream().anyMatch(criteria -> criteria.matches(type, tags));
     }
 

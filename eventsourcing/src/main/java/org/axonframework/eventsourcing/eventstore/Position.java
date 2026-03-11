@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Represents a position from which sourcing may start.
  *
@@ -41,5 +39,5 @@ public sealed interface Position permits GlobalIndexPosition, AggregateSequenceN
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position is incompatible with this position.
      */
-    @NonNull Position min(@NonNull Position other);
+    Position min(Position other);
 }

@@ -63,7 +63,7 @@ class SpringBootTestContainerIntegrationWithAxonServerPropertiesFileIT {
     void verifyApplicationStartsNormallyWithAxonServerInstance() {
         assertTrue(axonServer.isRunning());
         assertNotNull(connectionDetails);
-        assertTrue(connectionDetails.routingServers().endsWith("" + axonServer.getGrpcPort()));
+        assertEquals(axonServer.getHost() + ":" + axonServer.getGrpcPort(), connectionDetails.routingServers());
         assertNotNull(axonServerConfiguration);
 
         assertNotEquals("localhost:8024", axonServerConfiguration.getServers());

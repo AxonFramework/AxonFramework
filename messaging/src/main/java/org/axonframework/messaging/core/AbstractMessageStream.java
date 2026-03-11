@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,11 +37,11 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
 public abstract class AbstractMessageStream<M extends Message> implements MessageStream<M> {
 
     private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
     private final AtomicBoolean completed = new AtomicBoolean(false);
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         this.callback.set(callback);
         if (hasNextAvailable() || isCompleted()) {
             invokeCallbackSafely();

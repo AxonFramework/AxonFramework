@@ -30,6 +30,8 @@
             <property name="illegalClasses"
                       value="jakarta.annotation.Nonnull,
                              jakarta.annotation.Nullable,
+                             org.jetbrains.annotations.NotNull,
+                             org.jetbrains.annotations.Nullable,
                              org.springframework.lang.NonNull"
             />
         </module>

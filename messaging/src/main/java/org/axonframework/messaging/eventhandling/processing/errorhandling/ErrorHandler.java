@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -54,5 +53,5 @@ public interface ErrorHandler {
      * @param errorContext Contextual information describing the error.
      * @throws Exception If this handler decides to propagate the error.
      */
-    void handleError(@NonNull ErrorContext errorContext) throws Exception;
+    void handleError(ErrorContext errorContext) throws Exception;
 }

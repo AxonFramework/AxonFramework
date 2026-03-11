@@ -27,7 +27,6 @@ import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.jspecify.annotations.NonNull;
 
 /**
  * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
@@ -61,9 +60,8 @@ public final class TimestampParameterResolverFactory
      */
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
-        @NonNull
         @Override
-        public CompletableFuture<Instant> resolveParameterValue(@NonNull ProcessingContext context) {
+        public CompletableFuture<Instant> resolveParameterValue(ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
                 return CompletableFuture.completedFuture(eventMessage.timestamp());
             }
@@ -71,7 +69,7 @@ public final class TimestampParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@NonNull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

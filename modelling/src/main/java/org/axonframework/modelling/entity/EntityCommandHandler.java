@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.core.MessageStream;
@@ -44,7 +43,7 @@ public interface EntityCommandHandler<E> extends MessageHandler {
      * @param context The {@link ProcessingContext} for the command.
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
-    MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
-                                                      @NonNull E entity,
-                                                      @NonNull ProcessingContext context);
+    MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                      E entity,
+                                                      ProcessingContext context);
 }

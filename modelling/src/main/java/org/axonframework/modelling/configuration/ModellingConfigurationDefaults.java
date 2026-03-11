@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -44,7 +43,7 @@ public class ModellingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
         registry.registerIfNotPresent(ComponentDefinition

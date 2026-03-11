@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventsourcing.AggregateFactory;
@@ -117,7 +116,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
 //    }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -181,7 +180,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         }
 
         @Override
-        public Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
+        public Builder spanFactory(SnapshotterSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

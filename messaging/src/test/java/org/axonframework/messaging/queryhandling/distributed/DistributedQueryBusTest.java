@@ -176,7 +176,7 @@ class DistributedQueryBusTest {
         }
 
         @Override
-        public CompletableFuture<Void> subscribe(@NonNull QualifiedName name) {
+        public @NonNull CompletableFuture<Void> subscribe(@NonNull QualifiedName name) {
             subscribedQueries.add(name);
             return CompletableFuture.completedFuture(null);
         }

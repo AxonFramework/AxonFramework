@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.repository;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -66,7 +65,7 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
      * @param idType     The type of the identifier for entities in this repository.
      * @param entityType The type of entity stored in this repository.
      */
-    public InMemoryRepository(@NonNull Class<ID> idType, @NonNull Class<E> entityType) {
+    public InMemoryRepository(Class<ID> idType, Class<E> entityType) {
         requireNonNull(idType, "The idType may not be null");
         requireNonNull(entityType, "The entityType may not be null");
 
@@ -85,43 +84,41 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
-                                       @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity,
+                                       ProcessingContext processingContext) {
         return delegate.attach(entity, processingContext);
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return delegate.entityType();
     }
 
-    @NonNull
     @Override
     public Class<ID> idType() {
         return delegate.idType();
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
-                                                        @NonNull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                        ProcessingContext processingContext) {
         return delegate.load(identifier, processingContext);
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
-                                                                @NonNull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                                ProcessingContext processingContext) {
         return delegate.loadOrCreate(identifier, processingContext);
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@NonNull ID identifier, @NonNull E entity,
-                                        @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(ID identifier, E entity,
+                                        ProcessingContext processingContext) {
         return delegate.persist(identifier, entity, processingContext);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("storageType", "ConcurrentHashMap");
         descriptor.describeProperty("storageSize", storage.size());
         descriptor.describeWrapperOf(delegate);

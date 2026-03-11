@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Clock;
+import io.dropwizard.metrics5.Clock;
 
 class TestClock extends Clock {
 

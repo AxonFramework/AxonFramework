@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.TrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -143,10 +142,9 @@ class SplitTask extends CoordinatorTask {
         return true;
     }
 
-    @NonNull
-    private CompletableFuture<Void> splitAndRelease(@NonNull TrackerStatus[] splitStatuses,
-                                                    @NonNull Segment segmentToSplit,
-                                                    @NonNull ProcessingContext context) {
+    private CompletableFuture<Void> splitAndRelease(TrackerStatus[] splitStatuses,
+                                                    Segment segmentToSplit,
+                                                    ProcessingContext context) {
         return tokenStore.initializeSegment(
                                  splitStatuses[1].getTrackingToken(),
                                  name,

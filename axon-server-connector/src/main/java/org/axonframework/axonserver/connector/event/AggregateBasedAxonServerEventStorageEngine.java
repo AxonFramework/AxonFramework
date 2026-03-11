@@ -25,7 +25,6 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -87,16 +86,16 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param connection       The backing connection to Axon Server
      * @param converter The converter to use to serialize payloads to bytes
      */
-    public AggregateBasedAxonServerEventStorageEngine(@NonNull AxonServerConnection connection,
-                                                      @NonNull EventConverter converter) {
+    public AggregateBasedAxonServerEventStorageEngine(AxonServerConnection connection,
+                                                      EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext context,
-                                                                @NonNull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -149,7 +148,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@NonNull AggregateBasedConsistencyMarker marker) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(AggregateBasedConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -172,7 +171,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -196,7 +195,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
-        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
+        AtomicReference<@Nullable AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         AggregateEventStream aggregateStream =
                 connection.eventChannel()
@@ -236,7 +235,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
@@ -285,12 +284,12 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         return connection.eventChannel().getTokenAt(at.toEpochMilli()).thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("converter", converter);
     }

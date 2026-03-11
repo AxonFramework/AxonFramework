@@ -19,7 +19,6 @@ package org.axonframework.modelling.saga;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Used to derive the value of an association property as designated by the association property name.
@@ -31,11 +30,11 @@ public interface AssociationResolver {
     /**
      * Validates that the associationPropertyName supplied is compatible with the handler.
      */
-    <T> void validate(@NonNull String associationPropertyName, @NonNull MessageHandlingMember<T> handler);
+    <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler);
 
     /**
      * Resolves the associationPropertyName as a value.
      */
-    <T> Object resolve(@NonNull String associationPropertyName, @NonNull EventMessage message,
-                       @NonNull MessageHandlingMember<T> handler);
+    <T> Object resolve(String associationPropertyName, EventMessage message,
+                       MessageHandlingMember<T> handler);
 }

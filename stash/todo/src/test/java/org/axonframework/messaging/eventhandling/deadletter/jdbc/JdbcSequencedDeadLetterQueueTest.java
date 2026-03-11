@@ -21,7 +21,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jdbc.ConnectionExecutor;
 import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.conversion.CachingSupplier;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -40,17 +40,18 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.DateTimeUtils.parseInstant;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.axonframework.common.jdbc.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+import static org.axonframework.common.jdbc.JdbcUtils.executeUpdates;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Tag("flaky")
 class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;

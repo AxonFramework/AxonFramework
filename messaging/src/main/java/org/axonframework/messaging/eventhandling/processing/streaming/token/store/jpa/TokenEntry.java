@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
@@ -92,10 +91,10 @@ public class TokenEntry {
      * @param token         The tracking token to store.
      * @param converter     The converter to use when storing a serialized token.
      */
-    public TokenEntry(@NonNull String processorName,
-                      @NonNull Segment segment,
+    public TokenEntry(String processorName,
+                      Segment segment,
                       @Nullable TrackingToken token,
-                      @NonNull Converter converter) {
+                      Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);
@@ -119,7 +118,7 @@ public class TokenEntry {
      * @param converter The converter to deserialize the token with.
      * @return The deserialized token stored in this entry.
      */
-    public TrackingToken getToken(@NonNull Converter converter) {
+    public TrackingToken getToken(Converter converter) {
         return (token == null || tokenType == null)
                 ? null
                 : converter.convert(this.token, ClassUtils.loadClass(tokenType));
@@ -202,7 +201,7 @@ public class TokenEntry {
      * @param token     The new token that needs to be persisted.
      * @param converter The converter that will be used to serialize the token.
      */
-    public void updateToken(@Nullable TrackingToken token, @NonNull Converter converter) {
+    public void updateToken(@Nullable TrackingToken token, Converter converter) {
         this.timestamp = formatInstant(clock.instant());
         if (token != null) {
             this.token = converter.convert(token, byte[].class);

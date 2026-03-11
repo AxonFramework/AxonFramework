@@ -33,7 +33,7 @@ public class MutableEmployee extends MutablePerson {
 
     @EntityMember
     private MutableSalaryInformation salary;
-    @EntityMember
+    @EntityMember(routingKey = "taskId")
     private List<MutableTask> taskList = new ArrayList<>();
 
     @CommandHandler

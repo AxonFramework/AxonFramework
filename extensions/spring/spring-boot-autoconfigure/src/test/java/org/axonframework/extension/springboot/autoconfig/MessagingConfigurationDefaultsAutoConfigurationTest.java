@@ -16,23 +16,26 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.RoutingStrategy;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.conversion.Converter;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.RoutingStrategy;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
-import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
-import org.axonframework.conversion.Converter;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -40,13 +43,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating that the {@link MessagingConfigurationDefaults} are registered
- * and customizable when using Spring Boot.
+ * Test class validating that the {@link MessagingConfigurationDefaults} are registered and customizable when using
+ * Spring Boot.
  *
  * @author Steven van Beelen
  */
@@ -89,6 +93,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasBean(QueryGateway.class.getName());
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean(QueryBus.class.getName());
+            assertThat(context).hasSingleBean(SequencingPolicy.class);
         });
     }
 
@@ -119,6 +124,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             assertThat(context).hasBean("customQueryGateway");
             assertThat(context).hasSingleBean(QueryBus.class);
             assertThat(context).hasBean("customQueryBus");
+            assertThat(context).getBean("commandSequencingPolicy", SequencingPolicy.class)
+                               .isInstanceOf(CustomSequencingPolicy.class);
         });
     }
 
@@ -136,7 +143,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             return new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@NotNull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     registry.disableEnhancer(EventSourcingConfigurationDefaults.class);
                 }
 
@@ -210,6 +217,19 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         @Bean
         public QueryBus customQueryBus() {
             return mock(QueryBus.class);
+        }
+
+        @Bean
+        public SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
+            return new CustomSequencingPolicy();
+        }
+    }
+
+    private static final class CustomSequencingPolicy implements SequencingPolicy<CommandMessage> {
+
+        @Override
+        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
+            return Optional.empty();
         }
     }
 }

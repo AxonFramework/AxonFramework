@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,18 +46,18 @@ public class SimpleContext implements Context {
     }
 
     @Override
-    public boolean containsResource(@NonNull ResourceKey<?> key) {
+    public boolean containsResource(ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(@NonNull ResourceKey<T> key) {
+    public <T> T getResource(ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
 
     @Override
-    public <T> Context withResource(@NonNull ResourceKey<T> key, @NonNull T resource) {
+    public <T> Context withResource(ResourceKey<T> key, T resource) {
         ConcurrentHashMap<ResourceKey<?>, Object> newResources = new ConcurrentHashMap<>(this.resources);
         newResources.put(key, resource);
         return new SimpleContext(newResources);

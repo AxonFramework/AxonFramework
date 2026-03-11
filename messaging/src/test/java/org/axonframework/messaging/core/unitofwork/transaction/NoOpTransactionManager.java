@@ -16,9 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
-
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A non-final {@link TransactionManager} implementation, so that it can be spied upon through Mockito.
@@ -26,7 +24,7 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 public class NoOpTransactionManager implements TransactionManager {
 
     @Override
-    public Transaction startTransaction() {
+    public @NonNull Transaction startTransaction() {
         return new Transaction() {
             @Override
             public void commit() {

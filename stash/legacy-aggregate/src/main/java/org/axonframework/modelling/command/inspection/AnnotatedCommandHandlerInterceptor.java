@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.annotation.InterceptorChainParameterReso
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Annotated command handler interceptor on aggregate. Will invoke the delegate to the real interceptor method.
@@ -50,12 +49,11 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
-    @NonNull
     @Override
     public MessageStream<?> interceptOnHandle(
-            @NonNull CommandMessage message,
-            @NonNull ProcessingContext context,
-            @NonNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
+            CommandMessage message,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain<CommandMessage> interceptorChain
     ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,

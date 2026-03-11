@@ -16,8 +16,9 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,7 +42,7 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
     private final Component<C> delegate;
     private final ComponentDecorator<C, D> decorator;
 
-    private final AtomicReference<D> instanceReference = new AtomicReference<>();
+    private final AtomicReference<@Nullable D> instanceReference = new AtomicReference<>();
 
     /**
      * Initializes a component that decorates the given {@code delegate} using given {@code decorator} function.
@@ -54,17 +55,17 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
      * @param startHandlers    A list of handlers to invoke during application startup.
      * @param shutdownHandlers A list of handlers to invoke during application shutdown.
      */
-    DecoratedComponent(@NonNull Component<C> delegate,
-                       @NonNull ComponentDecorator<C, D> decorator,
-                       @NonNull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
-                       @NonNull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
+    DecoratedComponent(Component<C> delegate,
+                       ComponentDecorator<C, D> decorator,
+                       List<AbstractComponent.HandlerRegistration<D>> startHandlers,
+                       List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
         super(requireNonNull(delegate, "The delegate cannot be null.").identifier(), startHandlers, shutdownHandlers);
         this.delegate = delegate;
         this.decorator = decorator;
     }
 
     @Override
-    public D doResolve(@NonNull Configuration configuration) {
+    public D doResolve(Configuration configuration) {
         D existingInstance = instanceReference.get();
         if (existingInstance != null) {
             return existingInstance;
@@ -99,13 +100,13 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
     }
 
     @Override
-    public void initLifecycle(@NonNull Configuration configuration, @NonNull LifecycleRegistry lifecycleRegistry) {
+    public void initLifecycle(Configuration configuration, LifecycleRegistry lifecycleRegistry) {
         delegate.initLifecycle(configuration, lifecycleRegistry);
         super.initLifecycle(configuration, lifecycleRegistry);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         D instance = instanceReference.get();
         if (instance != null) {

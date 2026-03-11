@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -136,7 +135,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) throws Exception {
+    public Object handleSync(EventMessage event, ProcessingContext context) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType).stream()
                          .filter(h -> h.canHandle(event, context))
@@ -149,7 +148,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public boolean canHandle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public boolean canHandle(EventMessage event, ProcessingContext context) {
         return inspector.getHandlers(listenerType).stream()
                         .anyMatch(h -> h.canHandle(event, context));
     }

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
@@ -51,7 +50,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
     private final Map<QualifiedName, ComponentBuilder<QueryHandler>> handlerBuilders;
     private final List<ComponentBuilder<QueryHandlingComponent>> handlingComponentBuilders;
 
-    SimpleQueryHandlingModule(@NonNull String moduleName) {
+    SimpleQueryHandlingModule(String moduleName) {
         super(requireNonNull(moduleName, "The module name cannot be null."));
         this.queryHandlingComponentName = "QueryHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
@@ -64,8 +63,8 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
     }
 
     @Override
-    public QueryHandlerPhase queryHandler(@NonNull QualifiedName queryName,
-                                          @NonNull ComponentBuilder<QueryHandler> queryHandlerBuilder) {
+    public QueryHandlerPhase queryHandler(QualifiedName queryName,
+                                          ComponentBuilder<QueryHandler> queryHandlerBuilder) {
         handlerBuilders.put(requireNonNull(queryName, "queryName must not be null"),
                             requireNonNull(queryHandlerBuilder, "The query handler builder cannot be null."));
         return this;
@@ -73,7 +72,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
 
     @Override
     public QueryHandlerPhase queryHandlingComponent(
-            @NonNull ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
+            ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
     ) {
         handlingComponentBuilders.add(
                 requireNonNull(handlingComponentBuilder, "The query handling component builder cannot be null.")

@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +35,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     private final Map<Class<?>, MessageType> mappings;
 
     private NamespaceMessageTypeResolver(
-            @NonNull Map<Class<?>, MessageType> mappings
+            Map<Class<?>, MessageType> mappings
     ) {
         Objects.requireNonNull(mappings, "Mappings may not be null.");
         this.mappings = mappings;
@@ -49,13 +47,13 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
      * @param namespace The namespace to use for message types created after this call.
      * @return The builder instance for method chaining.
      */
-    public static Builder namespace(@NonNull String namespace) {
+    public static Builder namespace(String namespace) {
         Objects.requireNonNull(namespace, "Namespace may not be null.");
         return new Builder(namespace);
     }
 
     @Override
-    public Optional<MessageType> resolve(@NonNull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         Objects.requireNonNull(payloadType, "Payload Type may not be null.");
         var messageType = mappings.get(payloadType);
         return Optional.ofNullable(messageType);
@@ -81,7 +79,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @param namespace The namespace to use for message types created after this call.
          * @return The builder instance for method chaining.
          */
-        public Builder namespace(@NonNull String namespace) {
+        public Builder namespace(String namespace) {
             Objects.requireNonNull(namespace, "Namespace may not be null.");
             this.namespace = namespace;
             return this;
@@ -98,7 +96,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists. Mappings are
          *                                  global, not in the scope of certain namespace.
          */
-        public Builder message(@NonNull Class<?> payloadType, @NonNull String localName, @NonNull String version) {
+        public Builder message(Class<?> payloadType, String localName, String version) {
             Objects.requireNonNull(payloadType, "Payload Type may not be null.");
             Objects.requireNonNull(localName, "Local Name may not be null.");
             Objects.requireNonNull(version, "Version may not be null.");
@@ -133,7 +131,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
          * @param resolver The resolver to use as fallback when this resolver cannot resolve a payload type.
          * @return A {@link MessageTypeResolver} with fallback behavior.
          */
-        public MessageTypeResolver fallback(@NonNull MessageTypeResolver resolver) {
+        public MessageTypeResolver fallback(MessageTypeResolver resolver) {
             Objects.requireNonNull(resolver, "Message Type Resolver may not be null.");
             if (mappings.isEmpty()) {
                 return resolver;

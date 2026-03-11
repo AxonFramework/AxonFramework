@@ -20,7 +20,6 @@ import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract implementation of the {@link SnapshotTrigger} that schedules snapshots on
@@ -48,7 +47,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger {
     }
 
     @Override
-    public void eventHandled(@NonNull EventMessage msg) {
+    public void eventHandled(EventMessage msg) {
         if (msg instanceof DomainEventMessage && exceedsThreshold()) {
             prepareSnapshotScheduling((DomainEventMessage) msg);
             reset();

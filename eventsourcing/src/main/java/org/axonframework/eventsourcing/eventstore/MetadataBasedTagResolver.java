@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -39,12 +38,12 @@ public class MetadataBasedTagResolver implements TagResolver {
      *
      * @param metadataKey The key to extract the tag value from the event's metadata.
      */
-    public MetadataBasedTagResolver(@NonNull String metadataKey) {
+    public MetadataBasedTagResolver(String metadataKey) {
         this.metadataKey = Objects.requireNonNull(metadataKey, "MetadataKey cannot be null");
     }
 
     @Override
-    public Set<Tag> resolve(@NonNull EventMessage event) {
+    public Set<Tag> resolve(EventMessage event) {
         var tagValue = event.metadata().get(metadataKey);
         return tagValue == null ? Set.of() : Set.of(new Tag(metadataKey, tagValue));
     }

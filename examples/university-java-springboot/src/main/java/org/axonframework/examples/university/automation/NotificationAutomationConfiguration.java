@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.university.automation;
 
-import org.axonframework.extension.spring.config.ProcessorDefinition;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,12 +24,12 @@ import org.springframework.context.annotation.Configuration;
 public class NotificationAutomationConfiguration {
 
     @Bean
-    ProcessorDefinition notificationProcessor() {
-        return ProcessorDefinition
-                .pooledStreamingProcessor("notification-processor")
+    EventProcessorDefinition notificationProcessor() {
+        return EventProcessorDefinition
+                .pooledStreaming("notification-processor")
                 .assigningHandlers(descriptor -> descriptor.beanName().endsWith("Notification")
                         && descriptor.beanType().getPackageName().endsWith("automation"))
-                .withConfiguration(config -> config
+                .customized(config -> config
                         .initialSegmentCount(4)
                         .batchSize(100)
                 );

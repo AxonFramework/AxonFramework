@@ -18,7 +18,6 @@ package org.axonframework.extension.springboot.test;
 
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 
-import static org.junit.jupiter.api.Assertions.*;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.matchers.IgnoreField;
 import org.junit.jupiter.api.Test;

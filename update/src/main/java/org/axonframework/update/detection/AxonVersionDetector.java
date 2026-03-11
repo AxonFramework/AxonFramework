@@ -18,6 +18,7 @@ package org.axonframework.update.detection;
 
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.update.api.Artifact;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public final class AxonVersionDetector {
      *
      * @return A list of detected Axon Framework modules with their versions.
      */
-    public static List<Artifact> safeDetectAxonModules() {
+    public static List<@Nullable Artifact> safeDetectAxonModules() {
         try {
             return detectAxonModules()
                     .stream()
@@ -81,8 +82,8 @@ public final class AxonVersionDetector {
         }
     }
 
-    private static List<Artifact> detectAxonModules() {
-        List<Artifact> foundVersions = new LinkedList<>();
+    private static List<@Nullable Artifact> detectAxonModules() {
+        List<@Nullable Artifact> foundVersions = new LinkedList<>();
         List<URL> urlsToCheck = new LinkedList<>();
         for (String groupId : GROUP_IDS) {
             try {
@@ -113,7 +114,7 @@ public final class AxonVersionDetector {
         return foundVersions;
     }
 
-    private static List<Artifact> extractVersionFromJar(URL url) throws IOException {
+    private static List<@Nullable Artifact> extractVersionFromJar(URL url) throws IOException {
         // The URL format for JAR files is typically "file:/path/to/jarfile.jar!/META-INF/maven/...".
         // We need to extract the path to the JAR file, so we remove the "file:" prefix and everything after the "!" character.
         String jarFilePath = url.getPath().substring(5, url.getPath().indexOf("!"));

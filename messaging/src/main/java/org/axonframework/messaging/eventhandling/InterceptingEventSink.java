@@ -16,22 +16,20 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.messaging.core.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 
 /**
  * Decorator around the {@link EventSink} intercepting all {@link EventMessage events} before they are
@@ -42,6 +40,7 @@ import java.util.function.BiFunction;
  * {@code MessageDispatchInterceptors} are present.
  *
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 @Internal
@@ -73,55 +72,59 @@ public class InterceptingEventSink implements EventSink {
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
      * @param interceptors The interceptors to invoke before publishing an event.
      */
-    public InterceptingEventSink(@NonNull EventSink delegate,
-                                 @NonNull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
+    public InterceptingEventSink(EventSink delegate,
+                                 List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventSink may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
-        this.interceptingPublisher = new InterceptingPublisher(interceptors, this::publishEvent);
+        this.interceptingPublisher = new InterceptingPublisher();
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @NonNull List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return interceptingPublisher.interceptAndPublish(events, context);
     }
 
-    private MessageStream.Empty<Message> publishEvent(@NonNull EventMessage event,
-                                                      @Nullable ProcessingContext context) {
-        return MessageStream.fromFuture(delegate.publish(context, event).thenApply(v -> null))
-                            .ignoreEntries();
-    }
-
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
     }
 
-    private static class InterceptingPublisher {
+    private class InterceptingPublisher {
 
         private final DefaultMessageDispatchInterceptorChain<? super EventMessage> interceptorChain;
 
-        private InterceptingPublisher(
-                List<MessageDispatchInterceptor<? super EventMessage>> interceptors,
-                BiFunction<? super EventMessage, ProcessingContext, MessageStream<?>> publisher
-        ) {
-            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, publisher);
+        private InterceptingPublisher() {
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors);
         }
 
         private CompletableFuture<Void> interceptAndPublish(
-                @NonNull List<EventMessage> events,
+                List<? extends EventMessage> events,
                 @Nullable ProcessingContext context
         ) {
 
-            MessageStream<Message> resultStream = MessageStream.empty();
+            /*
+             * Captures events in a batch. A fast path for when there
+             * is only a single event here is not possible because the
+             * interceptor may produce more than one event.
+             *
+             * Note: this could benefit from having a flatMap method
+             * on MessageStream.
+             */
+
+            List<EventMessage> interceptedEvents = new ArrayList<>();
+            MessageStream<EventMessage> resultStream = MessageStream.empty();
+
             for (EventMessage event : events) {
-                resultStream = resultStream.concatWith(interceptorChain.proceed(event, context)
-                                                                       .cast());
+                resultStream = resultStream.concatWith(interceptorChain.proceed(event, context).cast());
             }
-            return resultStream.ignoreEntries()
-                               .asCompletableFuture()
-                               .thenApply(v -> null);
+
+            return resultStream
+                .onNext(entry -> interceptedEvents.add(entry.message()))
+                .ignoreEntries()
+                .asCompletableFuture()
+                .thenCompose(v -> delegate.publish(context, interceptedEvents));
         }
     }
 }
