@@ -181,6 +181,59 @@ This allows flexible handler assignment based on naming conventions, package str
 .assigningHandlers(d -> d.beanName().contains("Handler"))
 ----
 
+[#namespace-based-handler-selection]
+For easy configuration of Event Handling Components to Event Processor purely based on the Event Processor name, you can use the `@Namespace` annotation in combination with the `EventHandlerSelector.matchesNamespaceOnType()`.
+
+The `@Namespace` annotation can be placed on the Event Handling Component, where the value of the annotation dictates the Event Processor name it belongs to. Then, when defining an `EventProcessorDefinition`, using the `EventHandlerSelector.matchesNamespaceOnType()` with the same name as defined in the `@Namespace` will automatically match handlers.
+
+Let's take a look at a concrete example:
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+
+@Bean
+public EventProcessorDefinition ordersProcessor() {
+    return EventProcessorDefinition.pooledStreaming("orders")
+            .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType("orders"))
+            .notCustomized();
+}
+
+@Namespace("orders")
+public class OrderEventHandler {
+    // omitted event handlers for brevity
+}
+----
+
+With `@Namespace` on the `OrderEventHandler`, the `OrderEventHandler` signals it **belongs** to the Event Processor named `orders`. Note that the `@Namespace` annotation can be placed on a class (as shown above), on an enclosing class, on a `package-info.java` file, and on a `module-info.java` file. The `@Namespace` annotation is searched for in the order derived above, thus: allows you to define a
+
+1. On the type
+2. On the enclosing class
+3. On the `package-info.java` file
+4. On the `module-info.java` file
+
+These layers, for example, allow you to add the `@Namespace` annotation on the `package-info.java` file wherein the `OrderEventHandler` other event handlers are packaged.
+
+[TIP]
+.Convenience `EventProcessorDefinition` methods
+====
+For the common case of matching handlers by namespace, `EventProcessorDefinition` provides convenience methods that combine processor creation with `@Namespace`-based handler selection:
+
+[source,java]
+----
+// Equivalent to pooledStreaming("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.pooledStreamingMatching("orders")
+        .notCustomized();
+
+// Equivalent to subscribing("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.subscribingMatching("orders")
+        .notCustomized();
+----
+
+These methods use the processor name as the namespace to match, making it easy to organize processors by namespace / bounded context.
+====
+
 ===== Configuration options
 
 Use `customized()` to customize processor settings, or `notCustomized()` when you only need handler assignment:
