@@ -49,12 +49,11 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     /**
      * Creates a new builder for a processor definition with the given mode and name.
      *
-     * @param name The processor name.
-     * @param mode The processor mode (type).
+     * @param name the processor name
+     * @param mode the processor mode (type)
      */
     public EventProcessorDefinitionBuilder(String name, EventProcessorSettings.ProcessorMode mode) {
-        Assert.notNull(mode, () -> "Processor mode must not be null");
-        this.mode = mode;
+        this.mode = Objects.requireNonNull(mode, "Processor mode must not be null");
         this.name = Assert.nonEmpty(name, "Processor name must not be null");
     }
 
@@ -66,8 +65,12 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
 
     @Override
     public EventProcessorDefinition customized(Function<T, T> configurer) {
-        Assert.notNull(configurer, () -> "Configuration customizer must not be null");
-        return new CompletedEventProcessorDefinitionImpl<>(mode, name, selector, configurer);
+        return new CompletedEventProcessorDefinitionImpl<>(
+                mode,
+                name,
+                Objects.requireNonNull(selector, "Selector predicate must not be null"),
+                Objects.requireNonNull(configurer, "Configuration customizer must not be null")
+        );
     }
 
     @Override
