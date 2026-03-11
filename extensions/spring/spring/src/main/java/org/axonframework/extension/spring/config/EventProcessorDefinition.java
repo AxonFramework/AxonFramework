@@ -124,7 +124,7 @@ public interface EventProcessorDefinition {
      */
     static ConfigurationStep<SubscribingEventProcessorConfiguration> subscribingMatching(String name) {
         return new EventProcessorDefinitionBuilder<SubscribingEventProcessorConfiguration>(
-                name, EventProcessorSettings.ProcessorMode.POOLED
+                name, EventProcessorSettings.ProcessorMode.SUBSCRIBING
         ).assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(name));
     }
 
