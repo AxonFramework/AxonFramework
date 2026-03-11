@@ -121,4 +121,16 @@ public class AxonTimeoutAutoConfiguration {
             return properties.getEventProcessor().getOrDefault(name, properties.getEventProcessors());
         }
     }
-}
+
+
+    /**
+     * Bean creation method for a {@link AxonTaskJanitorShutdownHandler} that ensures the janitor executor service
+     * is properly shut down when the Spring context closes. This prevents the non-daemon janitor thread from
+     * preventing JVM shutdown.
+     *
+     * @return The shutdown handler bean.
+     */
+    @Bean
+    public AxonTaskJanitorShutdownHandler axonTaskJanitorShutdownHandler() {
+        return new AxonTaskJanitorShutdownHandler();
+    }}
