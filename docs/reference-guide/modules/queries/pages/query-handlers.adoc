@@ -31,7 +31,7 @@ public class FetchCardSummaryQuery {
 
 The query message is annotated with `@Query` to define its message type. The annotation specifies:
 
-* `namespace`: The bounded context or namespace for the query (defaults to the package name if omitted)
+* `namespace`: The bounded context or namespace for the query (defaults to the package name, or the value from a `@Namespace` annotation if present, as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here])
 * `name`: The business/domain name of the query (defaults to the simple class name if omitted)
 * `version`: The version of the query message (defaults to "1.0" if omitted)
 
