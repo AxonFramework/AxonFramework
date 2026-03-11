@@ -256,10 +256,12 @@ public interface MessageStream<M extends Message> {
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
      *
+     * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return An empty stream.
      */
-    static Empty<Message> empty() {
-        return EmptyMessageStream.instance();
+    @SuppressWarnings("unchecked")
+    static <M extends Message> Empty<M> empty() {
+        return (Empty<M>) EmptyMessageStream.instance();
     }
 
     /**
