@@ -23,9 +23,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.pooled.Poo
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.springframework.beans.factory.config.BeanDefinition;
 
-
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Defines the configuration for an event processor, including which event handlers it should process and how it should
@@ -36,7 +34,7 @@ import java.util.function.Predicate;
  *     <li>Start with a static factory method (e.g., {@link #pooledStreaming(String)} or
  *     {@link #subscribing(String)})</li>
  *     <li>Define which event handlers should be assigned to this processor using
- *     {@link SelectorStep#assigningHandlers(Predicate)}</li>
+ *     {@link SelectorStep#assigningHandlers(EventHandlerSelector)}</li>
  *     <li>Either apply custom configuration using {@link ConfigurationStep#customized(Function)}
  *     or use default settings with {@link ConfigurationStep#notCustomized()}</li>
  * </ol>
@@ -173,18 +171,21 @@ public interface EventProcessorDefinition {
         /**
          * Defines the selection criteria for event handlers to be assigned to this processor.
          * <p>
-         * The provided predicate will be evaluated for each event handler component discovered in the Spring context.
-         * Handlers for which the predicate returns {@code true} will be assigned to this processor.
+         * The provided {@code selector} will be evaluated for each event handler component discovered in the Spring
+         * context. Handlers for which the {@code selector} returns {@code true} will be assigned to this processor.
+         * Note that the {@link EventHandlerSelector} describes a number of out-of-the-box selector options that you can
+         * use for convenience.
          * <p>
          * Example:
          * <pre>{@code
          * assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
          * }</pre>
          *
-         * @param selector A predicate that determines which event handlers to assign to this processor.
-         * @return The next step in the fluent API to configure the processor settings.
+         * @param selector a selector that determines which event handlers to assign to this processor
+         * @return the next step in the fluent API to configure the processor settings
+         * @see EventHandlerSelector
          */
-        ConfigurationStep<T> assigningHandlers(Predicate<EventHandlerDescriptor> selector);
+        ConfigurationStep<T> assigningHandlers(EventHandlerSelector selector);
     }
 
     /**

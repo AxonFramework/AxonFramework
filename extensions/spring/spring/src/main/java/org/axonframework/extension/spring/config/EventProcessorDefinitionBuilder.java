@@ -21,8 +21,9 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.config.EventProcessorDefinition.ConfigurationStep;
 import org.axonframework.extension.spring.config.EventProcessorDefinition.SelectorStep;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
+import org.jspecify.annotations.Nullable;
 
-
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -42,7 +43,8 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
 
     private final EventProcessorSettings.ProcessorMode mode;
     private final String name;
-    private Predicate<EventProcessorDefinition.EventHandlerDescriptor> selector;
+    @Nullable
+    private EventHandlerSelector selector;
 
     /**
      * Creates a new builder for a processor definition with the given mode and name.
@@ -57,6 +59,12 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     }
 
     @Override
+    public ConfigurationStep<T> assigningHandlers(EventHandlerSelector selector) {
+        this.selector = Objects.requireNonNull(selector, "Selector predicate must not be null");
+        return this;
+    }
+
+    @Override
     public EventProcessorDefinition customized(Function<T, T> configurer) {
         Assert.notNull(configurer, () -> "Configuration customizer must not be null");
         return new CompletedEventProcessorDefinitionImpl<>(mode, name, selector, configurer);
@@ -65,15 +73,6 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
     @Override
     public EventProcessorDefinition notCustomized() {
         return customized(Function.identity());
-    }
-
-    @Override
-    public ConfigurationStep<T> assigningHandlers(
-            Predicate<EventProcessorDefinition.EventHandlerDescriptor> selector
-    ) {
-        Assert.notNull(selector, () -> "Selector predicate must not be null");
-        this.selector = selector;
-        return this;
     }
 
     private record CompletedEventProcessorDefinitionImpl<T extends EventProcessorConfiguration>(
