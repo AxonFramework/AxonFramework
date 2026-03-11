@@ -1,0 +1,5 @@
+build
+node_modules
+.vscode
+vale
+package-lock.json

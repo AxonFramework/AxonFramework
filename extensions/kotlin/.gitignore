@@ -1,0 +1,15 @@
+# Maven build artifacts can be ignored
+target/
+# ...but keep the wrapper jar
+!.mvn/wrapper/maven-wrapper.jar
+
+*.iml
+axon.ipr
+axon.iws
+.idea/
+**/*.iml
+.classpath
+.project
+.settings/
+events/
+.DS_Store

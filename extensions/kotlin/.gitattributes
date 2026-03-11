@@ -1,0 +1,15 @@
+# Auto detect text files and perform LF normalization
+*               text=auto
+
+# Explicitly declare text files we want to always be normalized and converted
+# to native line endings on checkout.
+*.java          text diff=java
+*.html          text diff=html
+*.properties    text
+*.xml           text
+*.txt           text
+*.md            text
+*.css           text
+*.js            text
+*.sql           text
+core/src/main/resources/META-INF/services/org.axonframework.serialization.ContentTypeConverter text
