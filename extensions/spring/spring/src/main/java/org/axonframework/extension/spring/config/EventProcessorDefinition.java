@@ -16,11 +16,11 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.config.BeanDefinition;
 
 import java.util.function.Function;
@@ -55,34 +55,77 @@ import java.util.function.Function;
 public interface EventProcessorDefinition {
 
     /**
-     * Creates a new processor definition for a pooled streaming event processor with the given name.
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor pooled
+     * streaming event processor} with the given {@code name}.
      * <p>
      * Pooled streaming event processors distribute event processing across multiple threads, allowing for parallel
      * processing of events within a single processor instance.
      *
-     * @param name The name of the processor.
-     * @return The next step in the fluent API to define the handler selection criteria.
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
      */
-    static SelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(
-            String name
-    ) {
+    static SelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(String name) {
         return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
 
     /**
-     * Creates a new processor definition for a subscribing event processor with the given name.
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor pooled
+     * streaming event processor} with the given {@code name}, automatically selecting any event handler that's part of
+     * a namespace matching the {@code name}, including them to the pooled streaming event processor.
+     * <p>
+     * Pooled streaming event processors distribute event processing across multiple threads, allowing for parallel
+     * processing of events within a single processor instance.
+     * <p>
+     * Selecting the event handlers is done based on the presence and contents of the
+     * {@link org.axonframework.messaging.core.annotation.Namespace}.
+     *
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
+     */
+    static ConfigurationStep<PooledStreamingEventProcessorConfiguration> pooledStreamingMatching(String name) {
+        return new EventProcessorDefinitionBuilder<PooledStreamingEventProcessorConfiguration>(
+                name, EventProcessorSettings.ProcessorMode.POOLED
+        ).assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(name));
+    }
+
+    /**
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor subscribing
+     * event processor} with the given {@code name}.
      * <p>
      * With Subscribing event processors, the processor relies on the threading model of the
      * {@link org.axonframework.messaging.core.SubscribableEventSource}, potentially providing low-latency processing
      * but without the ability to replay events or track progress.
      *
-     * @param name The name of the processor.
-     * @return The next step in the fluent API to define the handler selection criteria.
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
      */
-    static SelectorStep<SubscribingEventProcessorConfiguration> subscribing(
-            String name
-    ) {
+    static SelectorStep<SubscribingEventProcessorConfiguration> subscribing(String name) {
         return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
+    }
+
+    /**
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor subscribing
+     * event processor} with the given {@code name}, automatically selecting any event handler that's part of a
+     * namespace matching the {@code name}, including them to the subscribing event processor.
+     * <p>
+     * With Subscribing event processors, the processor relies on the threading model of the
+     * {@link org.axonframework.messaging.core.SubscribableEventSource}, potentially providing low-latency processing
+     * but without the ability to replay events or track progress.
+     * <p>
+     * Selecting the event handlers is done based on the presence and contents of the
+     * {@link org.axonframework.messaging.core.annotation.Namespace}.
+     *
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
+     */
+    static ConfigurationStep<SubscribingEventProcessorConfiguration> subscribingMatching(String name) {
+        return new EventProcessorDefinitionBuilder<SubscribingEventProcessorConfiguration>(
+                name, EventProcessorSettings.ProcessorMode.POOLED
+        ).assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(name));
     }
 
     /**
