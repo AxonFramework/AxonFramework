@@ -57,7 +57,7 @@ updates:
     - "Priority 1: Must"
   milestone: 119
   groups:
-    maven-dependencies:
+    antora-dependencies:
       update-types:
         - "patch"
         - "minor"
