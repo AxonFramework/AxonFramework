@@ -98,7 +98,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         assignments.forEach((processorName, beanDefs) -> {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
-                for (ProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
+                for (EventProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
                     resultOfRegistration = resultOfRegistration.autodetected(
                             namedBeanDefinition.beanName(),
                             namedBeanDefinition.component()
