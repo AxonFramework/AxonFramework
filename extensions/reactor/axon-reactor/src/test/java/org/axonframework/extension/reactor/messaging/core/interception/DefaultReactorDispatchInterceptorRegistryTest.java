@@ -38,6 +38,8 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the {@link DefaultReactorDispatchInterceptorRegistry}.
+ *
+ * @author Theo Emanuelsson
  */
 class DefaultReactorDispatchInterceptorRegistryTest {
 

@@ -36,7 +36,6 @@ import reactor.core.publisher.Mono;
  * @author Theo Emanuelsson
  * @since 4.4.2
  */
-@FunctionalInterface
 public interface ReactorMessageDispatchInterceptor<M extends Message> {
 
     /**

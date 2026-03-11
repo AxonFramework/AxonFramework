@@ -35,6 +35,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link ReactorConfigurationDefaults}.
+ *
+ * @author Theo Emanuelsson
  */
 class ReactorConfigurationDefaultsTest {
 

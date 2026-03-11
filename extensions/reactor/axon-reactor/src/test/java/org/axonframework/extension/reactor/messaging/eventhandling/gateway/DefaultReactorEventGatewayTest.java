@@ -48,6 +48,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link DefaultReactorEventGateway}.
+ *
+ * @author Theo Emanuelsson
  */
 class DefaultReactorEventGatewayTest {
 

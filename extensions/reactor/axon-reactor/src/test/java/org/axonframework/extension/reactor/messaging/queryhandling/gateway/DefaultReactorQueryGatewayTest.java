@@ -46,6 +46,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link DefaultReactorQueryGateway}.
+ *
+ * @author Theo Emanuelsson
  */
 class DefaultReactorQueryGatewayTest {
 
