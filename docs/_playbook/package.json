@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@antora/atlas-extension": "^1.0.0-alpha.2",
+    "@antora/atlas-extension": "^1.0.0-alpha.5",
     "@antora/cli": "^3.2.0-alpha.2",
     "@antora/lunr-extension": "^1.0.0-alpha.8",
     "@antora/site-generator": "^3.2.0-alpha.2",
