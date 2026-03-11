@@ -42,14 +42,15 @@ public interface DeadLetterQueueFactory {
      * <p>
      * The {@code processingGroup} is a component-scoped identifier that uniquely identifies the dead letter queue
      * within its event processor. A single processor may contain multiple event handling components, each with its
-     * own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentIndex]"}, for example
-     * {@code "DeadLetterQueue[myProcessor][0]"} for the first component of a processor named {@code "myProcessor"}.
+     * own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentName]"}, for example
+     * {@code "DeadLetterQueue[myProcessor][myComponent]"} for a component named {@code "myComponent"} within a
+     * processor named {@code "myProcessor"}.
      * <p>
      * Implementations should use this value as-is when scoping dead letters in their backing store
      * (e.g., as the {@code processingGroup} column in a database table).
      *
      * @param processingGroup The component-scoped identifier used to scope dead letters to a single event handling
-     *                        component's queue, e.g. {@code "DeadLetterQueue[myProcessor][0]"}.
+     *                        component's queue, e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}.
      * @return A {@link SequencedDeadLetterQueue} scoped to the given processing group.
      */
     SequencedDeadLetterQueue<EventMessage> create(String processingGroup);

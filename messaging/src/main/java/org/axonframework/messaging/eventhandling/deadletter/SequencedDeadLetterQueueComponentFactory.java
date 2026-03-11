@@ -36,12 +36,15 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * A {@link ComponentFactory} implementation that creates {@link SequencedDeadLetterQueue} instances for event handling
  * components.
  * <p>
- * This factory is used to create DLQ instances on-demand based on the component name. Each event handling component
- * within a processor gets its own DLQ, identified by a name following the pattern
- * {@code "DeadLetterQueue[processorName][componentName]"} (e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}).
+ * When the {@link org.axonframework.common.configuration.ComponentRegistry ComponentRegistry} resolves a
+ * {@link SequencedDeadLetterQueue} by name, it passes that name — the component-scoped processing group identifier —
+ * to this factory's function. Each event handling component within a processor is registered under its own
+ * component-scoped processing group identifier following the pattern
+ * {@code "DeadLetterQueue[processorName][componentName]"}
+ * (e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}).
  * <p>
- * The factory function receives both this component name and the {@link Configuration} to allow retrieving
- * configuration-dependent factories like those from {@link DeadLetterQueueConfiguration}.
+ * The factory function receives both this component-scoped processing group identifier and the {@link Configuration}
+ * to allow retrieving configuration-dependent factories like those from {@link DeadLetterQueueConfiguration}.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
@@ -56,8 +59,9 @@ public class SequencedDeadLetterQueueComponentFactory implements ComponentFactor
     /**
      * Constructs a factory with a custom factory function that has access to the configuration.
      *
-     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given component name
-     *                  (e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}) and configuration.
+     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given component-scoped
+     *                  processing group identifier (e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}) and
+     *                  configuration.
      */
     public SequencedDeadLetterQueueComponentFactory(
             @NonNull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
