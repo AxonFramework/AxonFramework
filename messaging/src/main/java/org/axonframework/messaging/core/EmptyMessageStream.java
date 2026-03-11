@@ -17,6 +17,7 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.core.MessageStream.Entry;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -26,21 +27,22 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream stream} implementation that contains no {@link Entry entries} at all.
  *
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream extends AbstractMessageStream<Message> implements MessageStream.Empty<Message> {
+class EmptyMessageStream<M extends Message> extends AbstractMessageStream<M> implements MessageStream.Empty<M> {
 
     @Override
-    public CompletableFuture<Entry<Message>> asCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return (error().isPresent())
                 ? CompletableFuture.failedFuture(error().get())
                 : FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Optional<Entry<Message>> next() {
+    public Optional<Entry<M>> next() {
         return Optional.empty();
     }
 
@@ -60,19 +62,19 @@ class EmptyMessageStream extends AbstractMessageStream<Message> implements Messa
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(R identity, BiFunction<R, Entry<Message>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(R identity, BiFunction<R, Entry<M>, R> accumulator) {
         return (error().isPresent())
                 ? CompletableFuture.failedFuture(error().get())
                 : CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<Message> onErrorContinue(Function<Throwable, MessageStream<Message>> onError) {
+    public MessageStream<M> onErrorContinue(Function<Throwable, MessageStream<M>> onError) {
         return this;
     }
 
     @Override
-    public Empty<Message> onComplete(Runnable completeHandler) {
+    public Empty<M> onComplete(Runnable completeHandler) {
         if (error().isPresent()) {
             return MessageStream.failed(error().get());
         }
@@ -85,7 +87,7 @@ class EmptyMessageStream extends AbstractMessageStream<Message> implements Messa
     }
 
     @Override
-    public Optional<Entry<Message>> peek() {
+    public Optional<Entry<M>> peek() {
         return Optional.empty();
     }
 }
