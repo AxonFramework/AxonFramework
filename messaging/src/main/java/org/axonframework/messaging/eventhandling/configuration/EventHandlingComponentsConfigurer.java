@@ -26,7 +26,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
-import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
@@ -62,24 +62,69 @@ public interface EventHandlingComponentsConfigurer {
     interface ComponentsPhase {
 
         /**
-         * Configures a single event handling component.
+         * Configures a single event handling component with an auto-generated index-based name.
          *
          * @param handlingComponentBuilder The component to configure.
          * @return The complete phase for decoration and finalization.
+         * @deprecated Use {@link #declarative(String, ComponentBuilder)} to provide an explicit component name.
+         *             When no name is provided, the component receives its registration index as the name.
+         *             Note that the generated index may differ across environments or application restarts,
+         *             so it should not be relied upon for stable identification (e.g., in dead letter queues).
          */
+        @Deprecated(forRemoval = true)
         AdditionalComponentPhase declarative(
                 ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
         );
 
         /**
-         * Configures an auto-detected event handling component.
+         * Configures a single event handling component.
+         *
+         * @param componentName           The unique component name.
+         * @param handlingComponentBuilder The component to configure.
+         * @return The complete phase for decoration and finalization.
+         */
+        AdditionalComponentPhase declarative(
+                String componentName,
+                ComponentBuilder<EventHandlingComponent> handlingComponentBuilder
+        );
+
+        /**
+         * Configures an auto-detected event handling component with an auto-generated index-based name.
          *
          * @param handlingComponentBuilder The component builder.
          * @return The additional component phase for further configuration.
+         * @deprecated Use {@link #autodetected(String, ComponentBuilder)} to provide an explicit component name.
+         *             When no name is provided, the component receives its registration index as the name.
+         *             Note that the generated index may differ across environments or application restarts,
+         *             so it should not be relied upon for stable identification (e.g., in dead letter queues).
          */
-                default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
+        @Deprecated(forRemoval = true)
+        default AdditionalComponentPhase autodetected(ComponentBuilder<Object> handlingComponentBuilder) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
+                    handlingComponentBuilder.build(c),
+                    c.getComponent(ParameterResolverFactory.class),
+                    c.getOptionalComponent(HandlerDefinition.class)
+                     .orElse(ClasspathHandlerDefinition.forClass(c.getClass())),
+                    c.getComponent(MessageTypeResolver.class),
+                    c.getComponent(EventConverter.class)
+            ));
+        }
+
+        /**
+         * Configures an auto-detected event handling component.
+         *
+         * @param componentName           The unique component name.
+         * @param handlingComponentBuilder The component builder.
+         * @return The additional component phase for further configuration.
+         */
+        default AdditionalComponentPhase autodetected(
+                String componentName,
+                ComponentBuilder<Object> handlingComponentBuilder
+        ) {
+            requireNonNull(componentName, "The component name cannot be null.");
+            requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+            return declarative(componentName, c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
                     c.getOptionalComponent(HandlerDefinition.class)
@@ -106,23 +151,10 @@ public interface EventHandlingComponentsConfigurer {
         );
 
         /**
-         * Returns the configured list of event handling components.
+         * Returns the configured map of event handling components.
          *
-         * @return The immutable list of configured components.
+         * @return The immutable map of configured component names to builders.
          */
-        List<ComponentBuilder<EventHandlingComponent>> toList();
-
-        /**
-         * Builds all configured components using the provided configuration.
-         *
-         * @param configuration The framework configuration.
-         * @return The list of built event handling components.
-         */
-        default List<EventHandlingComponent> build(Configuration configuration) {
-            return toList().stream()
-                           .map(builder -> builder.build(configuration))
-                           .toList();
-        }
+        Map<String, ComponentBuilder<EventHandlingComponent>> toMap();
     }
 }
-

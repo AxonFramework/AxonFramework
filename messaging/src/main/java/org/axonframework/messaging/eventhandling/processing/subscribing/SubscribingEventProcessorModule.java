@@ -34,10 +34,10 @@ import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 /**
  * A configuration module for configuring and registering a single {@link SubscribingEventProcessor} component.
@@ -67,7 +67,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
+    private Map<String, ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     /**
@@ -116,9 +116,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private void registerEventHandlingComponents() {
-        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
-            var componentBuilder = eventHandlingComponentBuilders.get(i);
-            var componentName = processorEventHandlingComponentName(i);
+        for (var componentBuilderEntry : eventHandlingComponentBuilders.entrySet()) {
+            var componentBuilder = componentBuilderEntry.getValue();
+            var componentName = processorEventHandlingComponentName(componentBuilderEntry.getKey());
             componentRegistry(cr -> {
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
@@ -141,16 +141,17 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
-        return IntStream.range(0, eventHandlingComponentBuilders.size())
-                        .mapToObj(i -> {
-                            String componentName = processorEventHandlingComponentName(i);
-                            return configuration.getComponent(EventHandlingComponent.class, componentName);
-                        })
+        return eventHandlingComponentBuilders.keySet()
+                        .stream()
+                        .map(componentName -> configuration.getComponent(
+                                EventHandlingComponent.class,
+                                processorEventHandlingComponentName(componentName)
+                        ))
                         .toList();
     }
 
-        private String processorEventHandlingComponentName(int index) {
-        return "EventHandlingComponent[" + processorName + "][" + index + "]";
+    private String processorEventHandlingComponentName(String componentName) {
+        return "EventHandlingComponent[" + processorName + "][" + componentName + "]";
     }
 
     @Override
@@ -204,7 +205,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
-        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
+        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toMap();
         return this;
     }
 

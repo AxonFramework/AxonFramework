@@ -188,7 +188,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     /**
      * Sets the factory function used to create {@link SequencedDeadLetterQueue} instances.
      * <p>
-     * The factory receives the component name (e.g., "EventHandlingComponent[processorName][componentIndex]")
+     * The factory receives the component name (e.g., "EventHandlingComponent[processorName][componentName]")
      * and should return a new {@link SequencedDeadLetterQueue} instance for that component.
      * <p>
      * This allows using different DLQ implementations such as JPA or JDBC-backed queues

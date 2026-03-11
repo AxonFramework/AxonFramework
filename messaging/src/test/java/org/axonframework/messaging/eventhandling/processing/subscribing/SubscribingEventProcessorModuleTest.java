@@ -78,7 +78,7 @@ class SubscribingEventProcessorModuleTest {
             // when
             SubscribingEventProcessorModule module = EventProcessorModule
                     .subscribing(processorName)
-                    .eventHandlingComponents(components -> components.declarative(
+                    .eventHandlingComponents(components -> components.declarative("component",
                             cfg -> SimpleEventHandlingComponent.create("test")
                     ))
                     .customized((cfg, c) -> c);
@@ -158,9 +158,9 @@ class SubscribingEventProcessorModuleTest {
                     ep -> ep.subscribing(
                             sp -> sp.defaults(d -> d.eventSource(eventBus))
                                     .defaultProcessor("test-processor",
-                                                      components -> components.declarative(cfg -> component1)
-                                                                              .declarative(cfg -> component2)
-                                                                              .autodetected(cfg -> component3)
+                                                      components -> components.declarative("component1", cfg -> component1)
+                                                                              .declarative("component2", cfg -> component2)
+                                                                              .autodetected("component3", cfg -> component3)
                                     )
                     )
             );
@@ -202,9 +202,9 @@ class SubscribingEventProcessorModuleTest {
                     ep -> ep.subscribing(
                             sp -> sp.defaults(d -> d.eventSource(eventBus))
                                     .defaultProcessor("test-processor",
-                                                      components -> components.declarative(cfg -> component1)
-                                                                              .declarative(cfg -> component2)
-                                                                              .autodetected(cfg -> component3)
+                                                      components -> components.declarative("component1", cfg -> component1)
+                                                                              .declarative("component2", cfg -> component2)
+                                                                              .autodetected("component3", cfg -> component3)
                                     )
                     )
             );
@@ -266,7 +266,7 @@ class SubscribingEventProcessorModuleTest {
             SubscribingEventProcessorModule sepModuleOne =
                     EventProcessorModule.subscribing("processor-one")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(cfg -> componentOne)
+                                                components -> components.declarative("componentOne", cfg -> componentOne)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorOne
@@ -275,7 +275,7 @@ class SubscribingEventProcessorModuleTest {
             SubscribingEventProcessorModule sepModuleTwo =
                     EventProcessorModule.subscribing("processor-two")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(cfg -> componentTwo)
+                                                components -> components.declarative("componentTwo", cfg -> componentTwo)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorTwo
@@ -497,6 +497,7 @@ class SubscribingEventProcessorModuleTest {
             // and - instance-specific customization
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(processorName,
                                                                                p -> p.eventHandlingComponents(c -> c.declarative(
+                                                                                             "simpleRecordingTestComponent",
                                                                                              cfg -> simpleRecordingTestComponent()))
                                                                                      .notCustomized())));
 
@@ -645,7 +646,7 @@ class SubscribingEventProcessorModuleTest {
         private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
         var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        return components -> components.declarative(cfg -> eventHandlingComponent);
+        return components -> components.declarative("eventHandlingComponent", cfg -> eventHandlingComponent);
     }
 
     private static void awaitProcessorIsStopped(AxonConfiguration configuration, String processorName) {
