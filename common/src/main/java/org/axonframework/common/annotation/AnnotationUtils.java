@@ -236,32 +236,28 @@ public final class AnnotationUtils {
             Predicate<Map<String, Object>> expectedAttributes
     ) {
         // Look at the type itself
-        Optional<Map<String, Object>> attributes = findAnnotationAttributes(type, annotationType);
-        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+        Optional<Map<String, Object>> attributes =
+                findAnnotationAttributes(type, annotationType).filter(expectedAttributes);
+        if (attributes.isPresent()) {
             return attributes;
         }
 
         // Look at enclosing classes
         for (Class<?> enclosingClass : ReflectionUtils.enclosingClassesOf(type)) {
-            attributes = findAnnotationAttributes(enclosingClass, annotationType);
-            if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+            attributes = findAnnotationAttributes(enclosingClass, annotationType).filter(expectedAttributes);
+            if (attributes.isPresent()) {
                 return attributes;
             }
         }
 
         // Look at the package
-        attributes = findAnnotationAttributes(type.getPackage(), annotationType);
-        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
+        attributes = findAnnotationAttributes(type.getPackage(), annotationType).filter(expectedAttributes);
+        if (attributes.isPresent()) {
             return attributes;
         }
 
         // Look at the module
-        attributes = findAnnotationAttributes(type.getModule(), annotationType);
-        if (attributes.isPresent() && expectedAttributes.test(attributes.get())) {
-            return attributes;
-        }
-
-        return Optional.empty();
+        return findAnnotationAttributes(type.getModule(), annotationType).filter(expectedAttributes);
     }
 
     private static boolean collectAnnotationAttributes(Class<? extends Annotation> target,

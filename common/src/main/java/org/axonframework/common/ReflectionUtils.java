@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -611,16 +612,16 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Returns an {@link Iterable} of all enclosing classes of the given class.
+     * Returns a {@link List} of all enclosing classes of the given class.
      * <p>
-     * The iterator returns enclosing classes from the immediate enclosing class outward to the outermost enclosing
-     * class. If the given class has no enclosing class, an empty iterable is returned.
+     * The {@code List} returns enclosing classes from the immediate enclosing class outward to the outermost enclosing
+     * class. If the given class has no enclosing class, an empty {@code List} is returned.
      *
      * @param clazz the class to return enclosing classes for
-     * @return an {@code Iterable} providing access to all enclosing classes, from innermost to outermost
+     * @return an immutable {@code List} providing access to all enclosing classes, from innermost to outermost
      */
-    public static Iterable<Class<?>> enclosingClassesOf(Class<?> clazz) {
-        List<Class<?>> enclosingClasses = new LinkedList<>();
+    public static List<Class<?>> enclosingClassesOf(Class<?> clazz) {
+        List<Class<?>> enclosingClasses = new ArrayList<>();
         Class<?> currentEnclosing = clazz.getEnclosingClass();
         while (currentEnclosing != null) {
             enclosingClasses.add(currentEnclosing);

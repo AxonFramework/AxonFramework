@@ -82,9 +82,12 @@ public final class StringUtils {
 
     /**
      * Return the given {@code string}, with its first character uppercase.
+     * <p>
+     * When the given {@code string} is {@code null}, the returned value is also {@code null}.
      *
      * @param string the input string to adjust to a version with the first character as uppercase
-     * @return the input string, with first character in uppercase
+     * @return the input string, with first character in uppercase, or {@code null} if the given {@code string} is
+     * {@code null}
      */
     @Nullable
     public static String capitalize(@Nullable String string) {

@@ -144,9 +144,9 @@ public final class Assert {
      * @param exceptionMessage the message for the exception
      * @return the given {@code string} when it was not {@code null} or empty
      */
-    @Nullable
     public static String nonEmpty(@Nullable String string, String exceptionMessage) {
         assertThat(string, StringUtils::nonEmptyOrNull, () -> new IllegalArgumentException(exceptionMessage));
+        //noinspection DataFlowIssue
         return string;
     }
 
