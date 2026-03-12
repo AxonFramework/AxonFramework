@@ -84,8 +84,8 @@ import org.axonframework.messaging.core.annotation.Namespace;
 
 The different levels described also represent the search order. When resolving the namespace for a class, the following order is used until a non-empty value is found:
 
-1. The `namespace` attribute on the message annotation (`@Command`, `@Event`, or `@Query`)
-2. The `@Namespace` annotation on the class itself
+1. The `@Namespace` annotation on the class itself
+2. The `namespace` attribute on the message annotation (`@Command`, `@Event`, or `@Query`)
 3. The `@Namespace` annotation on enclosing classes (from innermost to outermost)
 4. The `@Namespace` annotation on the package (via `package-info.java`)
 5. The `@Namespace` annotation on the module (via `module-info.java`)

@@ -362,6 +362,8 @@ class AnnotationMessageTypeResolverTest {
 
         }
 
+        // @Event#namespace is unused as @Event is meta-annotated with @Namespace.
+        // Axon will first check for direct annotations, only if those aren't present does it fallback to meta-annotations.
         @Namespace("overrule")
         @Event(name = "event", namespace = "unused")
         private record MessageWithNamespaceAndMessageNamespaceAttribute(String id) {
