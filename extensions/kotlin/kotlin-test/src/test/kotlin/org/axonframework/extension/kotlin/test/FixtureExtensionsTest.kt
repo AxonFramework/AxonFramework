@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,93 @@
 
 package org.axonframework.extension.kotlin.test
 
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.axonframework.test.fixture.AxonTestPhase
 import kotlin.test.Test
+import kotlin.test.assertSame
 
+/**
+ * Tests [FixtureExtensions].
+ */
 internal class FixtureExtensionsTest {
 
     @Test
-    fun `Aggregate test fixture extension should create an aggregate fixture`() {
-        aggregateTestFixture<ExampleAggregate>()
+    fun `Whenever on Setup should delegate to when()`() {
+        val mockWhen = mockk<AxonTestPhase.When>()
+        val setup = mockk<AxonTestPhase.Setup>()
+        every { setup.`when`() } returns mockWhen
+
+        val result = setup.whenever()
+
+        assertSame(mockWhen, result)
+        verify(exactly = 1) { setup.`when`() }
     }
 
     @Test
-    fun `Saga test fixture extension should create a saga fixture`() {
-        sagaTestFixture<ExampleSaga>()
+    fun `Whenever with command on Setup should delegate to when() then command()`() {
+        val cmd = Any()
+        val mockWhenCommand = mockk<AxonTestPhase.When.Command>()
+        val mockWhen = mockk<AxonTestPhase.When>()
+        val setup = mockk<AxonTestPhase.Setup>()
+        every { setup.`when`() } returns mockWhen
+        every { mockWhen.command(cmd) } returns mockWhenCommand
+
+        val result = setup.whenever(cmd)
+
+        assertSame(mockWhenCommand, result)
+        verify(exactly = 1) { setup.`when`() }
+        verify(exactly = 1) { mockWhen.command(cmd) }
     }
 
     @Test
-    fun `Whenever extension should apply to an aggregate fixture`() {
-        val fixture = aggregateTestFixture<ExampleAggregate>()
+    fun `Whenever on Given should delegate to when()`() {
+        val mockWhen = mockk<AxonTestPhase.When>()
+        val given = mockk<AxonTestPhase.Given>()
+        every { given.`when`() } returns mockWhen
 
-        fixture
-                // Call on an AggregateTestFixture instance
-                .whenever(ExampleCommand("id"))
-                .expectNoEvents()
+        val result = given.whenever()
 
-        fixture
-                // Call on an AggregateTestFixture instance
-                .whenever(ExampleCommand("id"), mapOf())
-                .expectNoEvents()
+        assertSame(mockWhen, result)
+        verify(exactly = 1) { given.`when`() }
     }
 
     @Test
-    fun `Whenever extension should apply to a result validator`() {
-        val fixture = aggregateTestFixture<ExampleAggregate>()
+    fun `Whenever with command on Given should delegate to when() then command()`() {
+        val cmd = Any()
+        val mockWhenCommand = mockk<AxonTestPhase.When.Command>()
+        val mockWhen = mockk<AxonTestPhase.When>()
+        val given = mockk<AxonTestPhase.Given>()
+        every { given.`when`() } returns mockWhen
+        every { mockWhen.command(cmd) } returns mockWhenCommand
 
-        fixture
-                .givenNoPriorActivity()
-                // Call on a ResultValidator instance
-                .whenever(ExampleCommand("id"))
-                .expectNoEvents()
+        val result = given.whenever(cmd)
 
-        fixture
-                .givenNoPriorActivity()
-                // Call on a ResultValidator instance
-                .whenever(ExampleCommand("id"), mapOf())
-                .expectNoEvents()
+        assertSame(mockWhenCommand, result)
+        verify(exactly = 1) { given.`when`() }
+        verify(exactly = 1) { mockWhen.command(cmd) }
     }
 
     @Test
-    fun `Expect exception extension should accept a kotlin class`() {
-        val fixture = aggregateTestFixture<ExampleAggregate>()
-        fixture
-                .whenever(ExampleCommandWithException("id"))
-                .expectException(Exception::class)
+    fun `Exception extension on ThenMessage should accept KClass`() {
+        val thenNothing = mockk<AxonTestPhase.Then.Nothing>()
+        every { thenNothing.exception(Exception::class.java) } returns thenNothing
+
+        val result = thenNothing.exception(Exception::class)
+
+        assertSame(thenNothing, result)
+        verify(exactly = 1) { thenNothing.exception(Exception::class.java) }
+    }
+
+    @Test
+    fun `Exception with message extension on ThenMessage should accept KClass`() {
+        val thenNothing = mockk<AxonTestPhase.Then.Nothing>()
+        every { thenNothing.exception(Exception::class.java, "some message") } returns thenNothing
+
+        val result = thenNothing.exception(Exception::class, "some message")
+
+        assertSame(thenNothing, result)
+        verify(exactly = 1) { thenNothing.exception(Exception::class.java, "some message") }
     }
 }

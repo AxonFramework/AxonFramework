@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,102 +16,72 @@
 
 package org.axonframework.extension.kotlin.test
 
-import org.axonframework.test.aggregate.AggregateTestFixture
-import org.axonframework.test.aggregate.FixtureConfiguration
-import org.axonframework.test.aggregate.ResultValidator
-import org.axonframework.test.aggregate.TestExecutor
-import org.axonframework.test.saga.SagaTestFixture
+import org.axonframework.test.fixture.AxonTestPhase
 import kotlin.reflect.KClass
 
 /**
- * Creates an aggregate test fixture for aggregate [T].
- * @param T reified type of the aggregate.
- * @return aggregate test fixture.
- * @since 0.2.0
- */
-inline fun <reified T : Any> aggregateTestFixture() =
-        AggregateTestFixture(T::class.java)
-
-/**
- * Alias for the `when` method to avoid name clash with Kotlin's `when`.
- * @param command command to pass to the when method.
- * @param T aggregate type.
- * @return result validator.
- * @since 0.2.0
- */
-fun <T : Any> TestExecutor<T>.whenever(command: Any): ResultValidator<T> = this.`when`(command)
-
-/**
- * Alias for the `when` method to avoid name clash with Kotlin's `when`.
- * @param command command to pass to the when method.
- * @param metaData metadata map.
- * @param T aggregate type.
- * @return result validator.
- * @since 0.2.0
- */
-fun <T : Any> TestExecutor<T>.whenever(command: Any, metaData: Map<String, Any>): ResultValidator<T> = this.`when`(command, metaData)
-
-/**
- * Registers subtypes of this aggregate to support aggregate polymorphism. Command Handlers defined on this subtype
- * will be considered part of this aggregate's handlers.
+ * Alias for [AxonTestPhase.Setup.when] to avoid conflict with Kotlin's reserved `when` keyword.
  *
- * @param subtypes subtypes in this polymorphic hierarchy
- * @return the current FixtureConfiguration, for fluent interfacing
- * @since 0.2.0
+ * @return the [AxonTestPhase.When] phase
+ * @see AxonTestPhase.Setup.when
+ * @since 0.5.0
  */
-fun <T : Any> AggregateTestFixture<T>.withSubtypes(vararg subtypes: KClass<out T>) =
-        this.withSubtypes(* subtypes.map { it.java }.toTypedArray())
+fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
- * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
- * is ignored when performing deep equality checks.
+ * Convenience alias that combines [AxonTestPhase.Setup.when] and [AxonTestPhase.When.command] in one call,
+ * avoiding Kotlin's reserved `when` keyword.
  *
- * @param T type of fixture target.
- * @param F filed type.
- * @param fieldName The name of the field
- * @return the current FixtureConfiguration, for fluent interfacing
- * @since 0.2.0
+ * @param command the command to dispatch in the when-phase
+ * @return the [AxonTestPhase.When.Command] phase
+ * @see AxonTestPhase.Setup.when
+ * @see AxonTestPhase.When.command
+ * @since 0.5.0
  */
-inline fun <T : Any, reified F : Any> FixtureConfiguration<T>.registerIgnoredField(fieldName: String): FixtureConfiguration<T> =
-        this.registerIgnoredField(F::class.java, fieldName)
+fun AxonTestPhase.Setup.whenever(command: Any): AxonTestPhase.When.Command = this.`when`().command(command)
 
 /**
- * Creates a saga test fixture for saga [T].
- * @param T reified type of the saga.
- * @return saga test fixture.
- * @since 0.2.0
+ * Alias for [AxonTestPhase.Given.when] to avoid conflict with Kotlin's reserved `when` keyword.
+ *
+ * @return the [AxonTestPhase.When] phase
+ * @see AxonTestPhase.Given.when
+ * @since 0.5.0
  */
-inline fun <reified T : Any> sagaTestFixture() =
-        SagaTestFixture(T::class.java)
+fun AxonTestPhase.Given.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
- * Reified version of command gateway registration.
- * @param T saga type
- * @param I command gateway type.
- * @return registered command gateway instance.
- * @since 0.2.0
+ * Convenience alias that combines [AxonTestPhase.Given.when] and [AxonTestPhase.When.command] in one call,
+ * avoiding Kotlin's reserved `when` keyword.
+ *
+ * @param command the command to dispatch in the when-phase
+ * @return the [AxonTestPhase.When.Command] phase
+ * @see AxonTestPhase.Given.when
+ * @see AxonTestPhase.When.command
+ * @since 0.5.0
  */
-inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(): I =
-        this.registerCommandGateway(I::class.java)
+fun AxonTestPhase.Given.whenever(command: Any): AxonTestPhase.When.Command = this.`when`().command(command)
 
 /**
- * Reified version of command gateway registration.
- * @param T saga type
- * @param I command gateway type.
- * @param stubImplementation stub implementation.
- * @return registered command gateway instance.
- * @since 0.2.0
+ * Accepts a [KClass] exception type instead of [Class], to provide idiomatic Kotlin usage.
+ *
+ * @param T the type of then-message
+ * @param expectedException the [KClass] of the expected exception
+ * @return this, for fluent interfacing
+ * @see AxonTestPhase.Then.MessageAssertions.exception
+ * @since 0.5.0
  */
-inline fun <T : Any, reified I : Any> SagaTestFixture<T>.registerCommandGateway(stubImplementation: I): I =
-        this.registerCommandGateway(I::class.java, stubImplementation)
+fun <T : AxonTestPhase.Then.MessageAssertions<T>> T.exception(expectedException: KClass<out Throwable>): T =
+    this.exception(expectedException.java)
 
 /**
- * Expect a KClass exception for aggregate [T].
- * @param T aggregate type
- * @param E exception type
- * @param expectedException kotlin class of the exception
- * @return this
- * @since 0.2.0
+ * Accepts a [KClass] exception type with message instead of [Class], to provide idiomatic Kotlin usage.
+ *
+ * @param T the type of then-message
+ * @param expectedException the [KClass] of the expected exception
+ * @param message the expected exception message substring
+ * @return this, for fluent interfacing
+ * @see AxonTestPhase.Then.MessageAssertions.exception
+ * @since 0.5.0
  */
-fun <T : Any, E : KClass<out Throwable>> ResultValidator<T>.expectException(expectedException: E): ResultValidator<T> =
-        this.expectException(expectedException.java)
+fun <T : AxonTestPhase.Then.MessageAssertions<T>> T.exception(expectedException: KClass<out Throwable>, message: String): T =
+    this.exception(expectedException.java, message)

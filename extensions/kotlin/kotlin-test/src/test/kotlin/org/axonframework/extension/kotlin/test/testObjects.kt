@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,7 @@
 
 package org.axonframework.extension.kotlin.test
 
-import org.axonframework.commandhandling.CommandHandler
-import org.axonframework.commandhandling.RoutingKey
-import org.axonframework.modelling.command.AggregateIdentifier
-
-internal data class ExampleCommand(@RoutingKey val aggregateId: String)
-internal data class ExampleCommandWithException(@RoutingKey val aggregateId: String)
-
-internal class ExampleAggregate {
-
-    @AggregateIdentifier
-    lateinit var aggregateId: String
-
-    constructor()
-
-    @CommandHandler
-    constructor(command: ExampleCommand)
-
-    @CommandHandler
-    constructor(command: ExampleCommandWithException) {
-        throw Exception()
-    }
-}
-
-class ExampleSaga
+/**
+ * Simple command class for use in tests.
+ */
+internal data class ExampleCommand(val aggregateId: String)

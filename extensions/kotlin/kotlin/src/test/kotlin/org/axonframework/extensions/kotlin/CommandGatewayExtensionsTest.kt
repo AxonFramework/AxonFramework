@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,16 @@
  */
 package org.axonframework.extensions.kotlin
 
-import io.mockk.*
-import org.axonframework.commandhandling.CommandCallback
-import org.axonframework.commandhandling.gateway.CommandGateway
-import org.axonframework.messaging.MetaData
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.commandhandling.gateway.CommandResult
+import java.util.concurrent.CompletableFuture
+import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertSame
 
 /**
  * Tests Command Gateway extensions.
@@ -28,32 +33,42 @@ import kotlin.test.Test
  */
 internal class CommandGatewayExtensionsTest {
     private val subjectGateway = mockk<CommandGateway>()
-
     private val exampleCommand = ExampleCommand("1")
 
-    @Test
-    fun `Send extension should invoke correct method on the gateway`() {
-        every { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) } just Runs
-
-        subjectGateway.send(
-            command = exampleCommand,
-            onError = { _, _, _ -> },
-            onSuccess = { _, _: Any, _ -> }
-        )
-
-        verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
+    @AfterTest
+    fun tearDown() {
+        clearMocks(subjectGateway)
     }
 
     @Test
-    fun `Send extension should invoke correct method on the gateway without explicit generic parameters`() {
-        every { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) } just Runs
+    fun `Send extension should return CommandResult from gateway`() {
+        val commandResult = mockk<CommandResult>()
+        every { subjectGateway.send(exampleCommand as Any) } returns commandResult
 
-        subjectGateway.send(
-            command = exampleCommand,
-            onError = { _, _: Throwable, _: MetaData -> },
-            onSuccess = { _, _: Any, _: MetaData -> }
-        )
+        val result = subjectGateway.send(exampleCommand)
 
-        verify { subjectGateway.send(exampleCommand, any<CommandCallback<ExampleCommand, Any>>()) }
+        assertSame(commandResult, result)
+        verify(exactly = 1) { subjectGateway.send(exampleCommand as Any) }
+    }
+
+    @Test
+    fun `SendForResult extension should invoke send with result class`() {
+        val future = CompletableFuture.completedFuture("result")
+        every { subjectGateway.send(exampleCommand as Any, String::class.java) } returns future
+
+        val result = subjectGateway.sendForResult<ExampleCommand, String>(exampleCommand)
+
+        assertSame(future, result)
+        verify(exactly = 1) { subjectGateway.send(exampleCommand as Any, String::class.java) }
+    }
+
+    @Test
+    fun `SendAndWait extension should invoke sendAndWait with result class`() {
+        every { subjectGateway.sendAndWait(exampleCommand as Any, String::class.java) } returns "42"
+
+        val result = subjectGateway.sendAndWait<ExampleCommand, String>(exampleCommand)
+
+        kotlin.test.assertEquals("42", result)
+        verify(exactly = 1) { subjectGateway.sendAndWait(exampleCommand as Any, String::class.java) }
     }
 }

@@ -20,9 +20,14 @@
     <name>Axon Framework - Kotlin Extension</name>
     <description>Extension for Axon Framework that provides Kotlin utilities.</description>
 
+    <parent>
+        <groupId>org.axonframework.extensions</groupId>
+        <artifactId>axon-extensions</artifactId>
+        <version>5.1.0-SNAPSHOT</version>
+    </parent>
+
     <groupId>org.axonframework.extensions.kotlin</groupId>
-    <artifactId>axon-kotlin-parent</artifactId>
-    <version>4.12.1-SNAPSHOT</version>
+    <artifactId>axon-kotlin-extension</artifactId>
     <packaging>pom</packaging>
 
     <modules>
@@ -54,14 +59,11 @@
             ${project.basedir}/../coverage-report/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <!-- Main -->
-        <axon.version>4.12.0</axon.version>
         <kotlin.version>2.2.0</kotlin.version>
         <!-- Serialization -->
-        <jackson-kotlin.version>2.19.2</jackson-kotlin.version>
         <kotlin-serialization.version>1.6.3</kotlin-serialization.version>
         <!-- Logging -->
         <slf4j.version>2.0.17</slf4j.version>
-        <log4j.version>2.13.3</log4j.version>
         <!-- Testing -->
         <junit.jupiter.version>5.13.3</junit.jupiter.version>
         <mockk.version>1.12.4</mockk.version>
@@ -102,20 +104,15 @@
             <!-- Axon -->
             <dependency>
                 <groupId>org.axonframework</groupId>
-                <artifactId>axon-configuration</artifactId>
-                <version>${axon.version}</version>
+                <artifactId>axon-messaging</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.axonframework</groupId>
                 <artifactId>axon-test</artifactId>
-                <version>${axon.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- Serialization -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-kotlin</artifactId>
-                <version>${jackson-kotlin.version}</version>
-            </dependency>
             <dependency>
               <groupId>org.jetbrains.kotlinx</groupId>
               <artifactId>kotlinx-serialization-core</artifactId>
@@ -177,15 +174,6 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
         </dependency>
-        <!-- Serialization -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-serialization-core</artifactId>
-        </dependency>
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -205,27 +193,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-json</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-cbor</artifactId>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.jetbrains.kotlinx</groupId>
-          <artifactId>kotlinx-serialization-protobuf</artifactId>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Not part of Java 8 by default. Adding it as a dependency makes it compatible with Java 8 -->
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -268,7 +235,7 @@
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>21</jvmTarget>
                     <args>
                         <arg>-Xjsr305=strict</arg>
                     </args>
@@ -277,10 +244,6 @@
                         <plugin>all-open</plugin>
                         <plugin>kotlinx-serialization</plugin>
                     </compilerPlugins>
-                    <pluginOptions>
-                        <!-- Axon specific classes -->
-                        <option>all-open:annotation=org.axonframework.modelling.command.AggregateRoot</option>
-                    </pluginOptions>
                 </configuration>
                 <executions>
                     <execution>
@@ -330,8 +293,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>21</source>
+                    <target>21</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
                 <executions>
@@ -377,7 +340,6 @@
                     </includes>
                     <systemPropertyVariables>
                         <slf4j.version>${slf4j.version}</slf4j.version>
-                        <log4j.version>${log4j.version}</log4j.version>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -446,7 +408,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>1.8</version>
+                                    <version>21</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
                                     <version>3.5</version>

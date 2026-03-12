@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,22 @@
 
 package org.axonframework.extensions.kotlin
 
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
 
 /**
- * Reified version of [org.axonframework.queryhandling.QueryUpdateEmitter.emit] which uses generics
+ * Reified version of [org.axonframework.messaging.queryhandling.QueryUpdateEmitter.emit] which uses generics
  * to indicate Query type and Update type.
  *
  * Emits given incremental update to subscription queries matching given generic query type and filter.
- * In order to send nullable updates, use [org.axonframework.queryhandling.QueryUpdateEmitter.emit]
- * with an [org.axonframework.queryhandling.SubscriptionQueryUpdateMessage]
  *
  * @param update    incremental update
  * @param filter    predicate on query payload used to filter subscription queries
  * @param Q         the type of the query
  * @param U         the type of the update
- * @see org.axonframework.queryhandling.QueryUpdateEmitter.emit
+ * @see org.axonframework.messaging.queryhandling.QueryUpdateEmitter.emit
  * @author Stefan Andjelkovic
  * @since 0.1.0
  */
-inline fun <reified Q, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =
-        this.emit(Q::class.java, filter, update)
-
-
+@Suppress("UNCHECKED_CAST")
+inline fun <reified Q : Any, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =
+        this.emit(Q::class.java, { q: Q -> filter(q) }, update)

@@ -1,10 +1,4 @@
 # Axon Framework - Kotlin Extension
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.axonframework.extensions.kotlin/axon-kotlin)
-![Build Status](https://github.com/AxonFramework/extension-kotlin/workflows/Kotlin%20Extension/badge.svg?branch=master)
-[![SonarCloud Status](https://sonarcloud.io/api/project_badges/measure?project=AxonFramework_extension-kotlin&metric=alert_status)](https://sonarcloud.io/dashboard?id=AxonFramework_extension-kotlin)
-[![Open Source Helpers](https://www.codetriage.com/axonframework/extension-kotlin/badges/users.svg)](https://www.codetriage.com/axonframework/extension-kotlin)
-
-_Note:_ This extension is still in an experimental stage.
 
 Axon Framework is a framework for building evolutionary, event-driven microservice systems,
  based on the principles of Domain Driven Design, Command-Query Responsibility Segregation (CQRS) and Event Sourcing.
@@ -32,14 +26,14 @@ For the Kotlin extension itself you can get the version from the [axon-bom](http
 <dependency>
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin</artifactId>
-    <version>4.6.0</version>
+    <version>5.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-implementation("org.axonframework.extensions.kotlin:axon-kotlin:4.6.0")
+implementation("org.axonframework.extensions.kotlin:axon-kotlin:5.1.0-SNAPSHOT")
 ```
 
 For the Kotlin testing extension itself please use the following coordinates:
@@ -50,14 +44,14 @@ For the Kotlin testing extension itself please use the following coordinates:
 <dependency>
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin-test</artifactId>
-    <version>4.6.0</version>
+    <version>5.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```
-implementation("org.axonframework.extensions.kotlin:axon-kotlin-test:4.6.0")
+implementation("org.axonframework.extensions.kotlin:axon-kotlin-test:5.1.0-SNAPSHOT")
 ```
 
 
@@ -78,7 +72,7 @@ Know that any support from contributors on posted question is very much apprecia
 
 ## Feature requests and issue reporting
 
-We use GitHub's [issue tracking system](https://github.com/AxonFramework/extension-kotlin/issues) for new feature
+We use GitHub's [issue tracking system](https://github.com/AxonFramework/AxonFramework/issues) for new feature
 request, extension enhancements and bugs.
 Prior to filing an issue, please verify that it's not already reported by someone else.
 
@@ -103,7 +97,7 @@ If you want to build the extension locally, you need to check it out from GiHub 
 
 Please execute the following command line if you are interested in producing KDoc and Source archives:
 
-    ./mvnw clean install -Pjavadoc-and-sources
+    ./mvnw clean install -Pdocs-and-sources
 
 
 ---
