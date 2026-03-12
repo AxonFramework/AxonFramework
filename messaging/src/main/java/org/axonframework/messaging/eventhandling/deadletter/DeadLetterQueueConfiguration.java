@@ -204,7 +204,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      *                processing group, e.g. {@code "DeadLetterQueue[myProcessor][0]"}.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration factory(@NonNull DeadLetterQueueFactory factory) {
+    public DeadLetterQueueConfiguration factory(DeadLetterQueueFactory factory) {
         assertNonNull(factory, "Factory may not be null");
         this.factory = factory;
         return this;

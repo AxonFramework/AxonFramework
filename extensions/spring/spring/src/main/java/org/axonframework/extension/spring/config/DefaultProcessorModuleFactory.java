@@ -19,8 +19,9 @@ package org.axonframework.extension.spring.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
@@ -118,20 +119,10 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
                     var customization = SpringCustomizations.pooledStreamingCustomizations(processorName,
-                                                                                          moduleSettings)
-                                                           .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
-                                                                   UnitOfWorkFactory.class)))
-                                                           .andThen(customizeConfiguration(processorName));
-                    if (moduleSettings.dlq().enabled()) {
-                        var dlqFactory = axonConfiguration.getOptionalComponent(DeadLetterQueueFactory.class)
-                                                          .orElseThrow(() -> new AxonConfigurationException(
-                                                                  "DLQ is enabled for processor '" + processorName
-                                                                          + "' but no DeadLetterQueueFactory bean is available. "
-                                                                          + "Ensure a DeadLetterQueueFactory bean is registered "
-                                                                          + "(e.g. by including JPA or JDBC DLQ autoconfiguration)."));
-                        customization = customization.andThen(
-                                SpringCustomizations.dlqCustomization(moduleSettings.dlq(), dlqFactory));
-                    }
+                                                                                           moduleSettings)
+                                                            .andThen((cfg, c) -> c.unitOfWorkFactory(axonConfiguration.getComponent(UnitOfWorkFactory.class)))
+                                                            .andThen(dlqCustomization(processorName, moduleSettings.dlq(), axonConfiguration))
+                                                            .andThen(customizeConfiguration(processorName));
                     yield EventProcessorModule
                             .pooledStreaming(processorModuleName)
                             .eventHandlingComponents(componentRegistration)
@@ -176,6 +167,40 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             }
         }
         return UnaryOperator.identity();
+    }
+
+    /**
+     * Builds a {@link PooledStreamingEventProcessorModule.Customization} that enables and wires a Dead Letter Queue
+     * for the given processor.
+     * <p>
+     * When DLQ is disabled in {@code dlqSettings}, returns a no-op customization. When enabled, looks up a
+     * {@link DeadLetterQueueFactory} bean from the {@link Configuration} (which wraps the Spring
+     * {@code ApplicationContext}). This means users only need to register a {@link DeadLetterQueueFactory} bean —
+     * no explicit programmatic wiring is required.
+     *
+     * @param processorName    The name of the processor, used in the error message when no factory bean is found.
+     * @param dlqSettings      The DLQ settings controlling whether DLQ is enabled and the cache size.
+     * @param axonConfiguration The {@link Configuration} used to look up the {@link DeadLetterQueueFactory} bean.
+     * @return A customization that enables and wires the Dead Letter Queue, or a no-op if DLQ is disabled.
+     * @throws org.axonframework.common.AxonConfigurationException if DLQ is enabled but no
+     *                                                             {@link DeadLetterQueueFactory} bean is available.
+     */
+    private PooledStreamingEventProcessorModule.Customization dlqCustomization(
+            String processorName,
+            EventProcessorSettings.DlqSettings dlqSettings,
+            Configuration axonConfiguration
+    ) {
+        if (!dlqSettings.enabled()) {
+            return PooledStreamingEventProcessorModule.Customization.noOp();
+        }
+        var dlqFactory = axonConfiguration.getOptionalComponent(DeadLetterQueueFactory.class)
+                                          .orElseThrow(() -> new AxonConfigurationException(
+                                                  "DLQ is enabled for processor '" + processorName
+                                                          + "' but no DeadLetterQueueFactory bean is available."));
+        return (cfg, c) -> c.deadLetterQueue(dlq ->
+                dlq.enabled()
+                   .factory(dlqFactory)
+                   .cacheMaxSize(dlqSettings.cache().size()));
     }
 
     /**
