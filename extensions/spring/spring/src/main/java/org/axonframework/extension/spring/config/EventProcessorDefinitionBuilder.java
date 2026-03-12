@@ -21,11 +21,9 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.config.EventProcessorDefinition.ConfigurationStep;
 import org.axonframework.extension.spring.config.EventProcessorDefinition.SelectorStep;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Internal builder implementation for {@link EventProcessorDefinition}.
@@ -43,8 +41,8 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
 
     private final EventProcessorSettings.ProcessorMode mode;
     private final String name;
-    @Nullable
-    private EventHandlerSelector selector;
+    private EventHandlerSelector selector = eventHandlerDescriptor -> false;
+    private Function<T, T> configurationCustomizer = t -> t;
 
     /**
      * Creates a new builder for a processor definition with the given mode and name.
@@ -57,20 +55,20 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
         this.name = Assert.nonEmpty(name, "Processor name must not be null or empty");
     }
 
+    // EventProcessorDefinition.SelectorStep methods
+
     @Override
     public ConfigurationStep<T> assigningHandlers(EventHandlerSelector selector) {
         this.selector = Objects.requireNonNull(selector, "Selector predicate must not be null");
         return this;
     }
 
+    // EventProcessorDefinition.ConfigurationStep methods
+
     @Override
     public EventProcessorDefinition customized(Function<T, T> configurer) {
-        return new CompletedEventProcessorDefinitionImpl<>(
-                mode,
-                name,
-                Objects.requireNonNull(selector, "Selector predicate must not be null"),
-                Objects.requireNonNull(configurer, "Configuration customizer must not be null")
-        );
+        this.configurationCustomizer = Objects.requireNonNull(configurer, "Configuration customizer must not be null");
+        return this;
     }
 
     @Override
@@ -78,21 +76,26 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
         return customized(Function.identity());
     }
 
-    private record CompletedEventProcessorDefinitionImpl<T extends EventProcessorConfiguration>(
-            @Override EventProcessorSettings.ProcessorMode mode,
-            @Override String name,
-            Predicate<EventHandlerDescriptor> selector,
-            Function<T, T> configurationCustomizer) implements EventProcessorDefinition {
+    // EventProcessorDefinition methods
 
-        @Override
-        public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
-            return selector.test(eventHandlerDescriptor);
-        }
+    @Override
+    public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
+        return selector.test(eventHandlerDescriptor);
+    }
 
-        @Override
-        public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
-            //noinspection unchecked
-            return configurationCustomizer.apply((T) settings);
-        }
+    @Override
+    public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
+        //noinspection unchecked
+        return configurationCustomizer.apply((T) settings);
+    }
+
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    @Override
+    public EventProcessorSettings.ProcessorMode mode() {
+        return this.mode;
     }
 }

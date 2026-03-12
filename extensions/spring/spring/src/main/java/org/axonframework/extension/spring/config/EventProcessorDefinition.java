@@ -236,7 +236,7 @@ public interface EventProcessorDefinition {
      *
      * @param <T> The type of {@link EventProcessorConfiguration} for this processor.
      */
-    interface ConfigurationStep<T extends EventProcessorConfiguration> {
+    interface ConfigurationStep<T extends EventProcessorConfiguration> extends EventProcessorDefinition {
 
         /**
          * Applies custom configuration to the processor using the provided configuration function.
