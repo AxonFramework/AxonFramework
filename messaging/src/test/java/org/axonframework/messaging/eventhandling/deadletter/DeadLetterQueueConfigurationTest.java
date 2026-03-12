@@ -182,13 +182,15 @@ class DeadLetterQueueConfigurationTest {
         }
 
         @Test
-        void rejectsZeroCacheMaxSize() {
+        void acceptsZeroCacheMaxSize() {
             // given
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
 
-            // when / then
-            assertThatThrownBy(() -> config.cacheMaxSize(0))
-                    .isInstanceOf(AxonConfigurationException.class);
+            // when
+            config.cacheMaxSize(0);
+
+            // then
+            assertThat(config.cacheMaxSize()).isEqualTo(0);
         }
 
         @Test
@@ -306,7 +308,7 @@ class DeadLetterQueueConfigurationTest {
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
 
             // when
-            SequencedDeadLetterQueue<EventMessage> queue = config.factory().apply("test-component");
+            SequencedDeadLetterQueue<EventMessage> queue = config.factory().create("test-component", null);
 
             // then
             assertThat(queue).isNotNull();
@@ -320,10 +322,10 @@ class DeadLetterQueueConfigurationTest {
             SequencedDeadLetterQueue<EventMessage> customQueue = InMemorySequencedDeadLetterQueue.defaultQueue();
 
             // when
-            config.factory(name -> customQueue);
+            config.factory((name, cfg) -> customQueue);
 
             // then
-            assertThat(config.factory().apply("any-name")).isSameAs(customQueue);
+            assertThat(config.factory().create("any-name", null)).isSameAs(customQueue);
         }
 
         @Test
@@ -342,13 +344,13 @@ class DeadLetterQueueConfigurationTest {
             // given
             DeadLetterQueueConfiguration config = new DeadLetterQueueConfiguration();
             AtomicReference<String> capturedName = new AtomicReference<>();
-            config.factory(name -> {
+            config.factory((name, cfg) -> {
                 capturedName.set(name);
                 return InMemorySequencedDeadLetterQueue.defaultQueue();
             });
 
             // when
-            config.factory().apply("my-processor-dlq");
+            config.factory().create("my-processor-dlq", null);
 
             // then
             assertThat(capturedName.get()).isEqualTo("my-processor-dlq");

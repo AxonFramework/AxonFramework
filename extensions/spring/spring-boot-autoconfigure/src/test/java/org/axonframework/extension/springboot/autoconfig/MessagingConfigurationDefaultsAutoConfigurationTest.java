@@ -130,9 +130,11 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
+    // Also excludes JpaDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
+    // when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = ConverterAutoConfiguration.class
+            exclude = {ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class}
     )
     public static class TestContext {
 
@@ -154,9 +156,11 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
+    // Also excludes JpaDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
+    // when multiple custom Converter beans are registered without @Primary.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = ConverterAutoConfiguration.class
+            exclude = {ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class}
     )
     public static class CustomContext {
 

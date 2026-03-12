@@ -124,7 +124,7 @@ class MessageHandlerConfigurerTest {
                 (EventProcessorSettings.SubscribingEventProcessorSettings) () -> "mock"
         );
         when(applicationContext.getBean(ProcessorModuleFactory.class)).thenReturn(new DefaultProcessorModuleFactory(
-                Collections.emptyList(), eventProcessorSettings, mock()));
+                Collections.emptyList(), eventProcessorSettings));
         Map<String, String> eventHandlers = new HashMap<>();
         eventHandlers.put("Handler1", "my.event.packaging.Handler1");
         eventHandlers.put("Handler2", "my.event.packaging.Handler2");

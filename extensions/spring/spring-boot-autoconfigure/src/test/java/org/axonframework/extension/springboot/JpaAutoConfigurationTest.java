@@ -104,29 +104,6 @@ class JpaAutoConfigurationTest {
                    });
     }
 
-
-    @Test
-    @Disabled("TODO #3517")
-    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-      /*
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
-                   .run(context -> {
-                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
-
-                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-                       assertNotNull(eventProcessingConfig);
-
-                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
-                               eventProcessingConfig.deadLetterQueue("first");
-                       assertTrue(dlq.isPresent());
-                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
-
-                       dlq = eventProcessingConfig.deadLetterQueue("second");
-                       assertFalse(dlq.isPresent());
-                   });
-    */
-    }
-
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)

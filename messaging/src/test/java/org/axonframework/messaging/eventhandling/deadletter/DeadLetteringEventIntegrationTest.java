@@ -20,8 +20,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -100,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class DeadLetteringEventIntegrationTest {
 
-    private static final String PROCESSING_GROUP = "problematicProcessingGroup";
+    protected static final String PROCESSING_GROUP = "problematicProcessingGroup";
     private static final boolean SUCCEED = true;
     private static final boolean SUCCEED_RETRY = true;
     private static final boolean FAIL = false;
@@ -151,17 +152,17 @@ public abstract class DeadLetteringEventIntegrationTest {
     protected abstract SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue();
 
     /**
-     * Returns the {@link Converter} used for payload deserialization via
-     * {@link Message#payloadAs(java.lang.reflect.Type, Converter)}.
+     * Returns the {@link EventConverter} used for event payload deserialization via {@link Message#payloadAs}.
      * <p>
-     * Returns {@code PassThroughConverter} by default, which is sufficient for in-memory implementations where the
-     * payload is already the expected type. Subclasses backed by serialized storage (e.g. JDBC, JPA) should override
-     * this to return a converter capable of deserializing the stored payload bytes.
+     * Returns a {@link DelegatingEventConverter} wrapping {@link PassThroughConverter} by default, which is sufficient
+     * for in-memory implementations where the payload is already the expected type. Subclasses backed by serialized
+     * storage (e.g. JDBC, JPA) should override this to return an {@link EventConverter} capable of deserializing the
+     * stored payload bytes.
      *
-     * @return A {@link Converter}, or {@code null} if no conversion is needed.
+     * @return An {@link EventConverter} for event payload conversion.
      */
-    protected Converter converter() {
-        return PassThroughConverter.INSTANCE;
+    protected EventConverter eventConverter() {
+        return new DelegatingEventConverter(PassThroughConverter.INSTANCE);
     }
 
     /**
@@ -186,7 +187,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        eventHandler = new ProblematicEventHandler(converter());
+        eventHandler = new ProblematicEventHandler(eventConverter());
         deadLetterQueue = buildDeadLetterQueue();
 
         // A policy that ensures a letter is only retried once by adding diagnostics.
@@ -211,8 +212,8 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // Create a SimpleEventHandlingComponent with custom sequencing policy
         SequencingPolicy<? super EventMessage> sequencingPolicy = (event, context) ->
-                Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class, converter())
-                                 .getAggregateIdentifier());
+                Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class, eventConverter())
+                                  .getAggregateIdentifier());
 
         SimpleEventHandlingComponent simpleComponent =
                 SimpleEventHandlingComponent.create("component", sequencingPolicy);
@@ -321,7 +322,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                     deadLetterQueue.deadLetterSequence("failure", null).join().iterator();
             assertTrue(sequence.hasNext());
             assertEquals(failedEvent.payload(),
-                         sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
+                         sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
             assertFalse(sequence.hasNext());
         }
 
@@ -365,13 +366,13 @@ public abstract class DeadLetteringEventIntegrationTest {
                         deadLetterQueue.deadLetterSequence(aggregateId, null).join().iterator();
                 assertTrue(sequence.hasNext());
                 assertEquals(firstDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertTrue(sequence.hasNext());
                 assertEquals(secondDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertTrue(sequence.hasNext());
                 assertEquals(thirdDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, converter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
                 assertFalse(sequence.hasNext());
             });
         }
@@ -494,6 +495,42 @@ public abstract class DeadLetteringEventIntegrationTest {
 
             // As evaluation fails, the sequenceId should still exist
             assertTrue(deadLetterQueue.contains(aggregateId, null).join());
+        }
+
+        @Test
+        void processedDeadLetterIsAvailableInProcessingContext() {
+            // given
+            String aggregateId = UUID.randomUUID().toString();
+
+            // Three events in sequence "aggregateId" succeed
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            // One event in sequence "aggregateId" fails, causing the rest to fail, but succeed on retry
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+
+            startProcessingEvent();
+
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                assertEquals(1, streamingProcessor.processingStatus().size());
+                var status = streamingProcessor.processingStatus().get(0);
+                assertNotNull(status);
+                assertTrue(status.getCurrentPosition().orElse(-1) >= 6);
+            });
+
+            assertTrue(deadLetterQueue.contains(aggregateId, null).join());
+
+            // During initial event handling, the DeadLetter should NOT be in the ProcessingContext
+            assertEquals(0, eventHandler.deadLetterInContextCount(aggregateId));
+
+            // when
+            deadLetteringComponent.process(deadLetter -> true).join();
+
+            // then — all 3 dead-lettered events should have had the DeadLetter available in the ProcessingContext
+            assertWithin(1, TimeUnit.SECONDS,
+                         () -> assertEquals(3, eventHandler.deadLetterInContextCount(aggregateId)));
         }
     }
 
@@ -732,14 +769,15 @@ public abstract class DeadLetteringEventIntegrationTest {
      */
     private static class ProblematicEventHandler implements EventHandler {
 
-        private final Converter converter;
+        private final EventConverter converter;
         private final Set<String> handledEvent = new ConcurrentSkipListSet<>();
         private final Map<String, Integer> firstTrySuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
+        private final Map<String, Integer> deadLetterFoundInContext = new ConcurrentSkipListMap<>();
 
-        ProblematicEventHandler(Converter converter) {
+        ProblematicEventHandler(EventConverter converter) {
             this.converter = converter;
         }
 
@@ -749,6 +787,10 @@ public abstract class DeadLetteringEventIntegrationTest {
             DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();
+
+            DeadLetter.fromContext(context).ifPresent(
+                    dl -> deadLetterFoundInContext.compute(sequenceId, (id, count) -> count == null ? 1 : ++count)
+            );
 
             if (!handledEvent.contains(eventIdentifier)) {
                 // This is the first time we get this event.
@@ -825,6 +867,10 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         public int overallSuccessfulHandlingCount(String sequenceId) {
             return firstTrySuccesses.get(sequenceId) + evaluationSuccesses.get(sequenceId);
+        }
+
+        public int deadLetterInContextCount(String sequenceId) {
+            return deadLetterFoundInContext.getOrDefault(sequenceId, 0);
         }
     }
 

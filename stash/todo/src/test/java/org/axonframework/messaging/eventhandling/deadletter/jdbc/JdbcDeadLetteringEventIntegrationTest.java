@@ -58,8 +58,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegrationTest {
 
-    private static final String TEST_PROCESSING_GROUP = "some-processing-group";
-
     private DataSource dataSource;
     private JdbcTransactionalExecutorProvider executorProvider;
     private DeadLetterStatementFactory<EventMessage> statementFactory;
@@ -82,7 +80,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                             .build();
 
         jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.builder()
-                                                          .processingGroup(TEST_PROCESSING_GROUP)
+                                                          .processingGroup(PROCESSING_GROUP)
                                                           .transactionalExecutorProvider(executorProvider)
                                                           .schema(schema)
                                                           .statementFactory(statementFactory)
@@ -126,8 +124,8 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     }
 
     @Override
-    protected Converter converter() {
-        return jacksonConverter;
+    protected EventConverter eventConverter() {
+        return eventConverter;
     }
 
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
@@ -176,7 +174,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             assertEquals(expected.message().payload(),
-                         actual.message().payloadAs(Integer.class, converter()),
+                         actual.message().payloadAs(Integer.class, eventConverter()),
                          assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
@@ -191,7 +189,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                 connection,
                                                 c -> statementFactory.enqueueStatement(
                                                         c,
-                                                        TEST_PROCESSING_GROUP,
+                                                        PROCESSING_GROUP,
                                                         aggregateId,
                                                         letter,
                                                         index,
