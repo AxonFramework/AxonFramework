@@ -231,7 +231,7 @@ EventProcessorDefinition.subscribingMatching("orders")
         .notCustomized();
 ----
 
-These methods use the processor name as the namespace to match, making it easy to organize processors by namespace / bounded context.
+These methods use the processor name as the namespace to match, making it easy to organize processors by namespace or bounded context.
 ====
 
 ===== Configuration options
