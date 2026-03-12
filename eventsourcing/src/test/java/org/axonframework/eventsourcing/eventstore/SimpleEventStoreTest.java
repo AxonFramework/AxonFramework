@@ -219,8 +219,24 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(null));
             when(mockAppendTransaction.afterCommit(any())).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
-                EventStoreTransaction transaction = testSubject.transaction(pc);
+                EventStoreTransaction transaction = testSubject.transaction(pc, appendCondition -> appendCondition.withTypes("Type2"));
                 var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
+
+
+                // option 1
+                transaction.source(
+                        SourcingCondition.conditionFor(EventCriteria.havingAnyTag().andBeingOneOfTypes("Type1", "Type2")),
+                        appendCriteria -> appendCriteria.withTypes("Type2")
+                );
+
+                // option 2
+                transaction.source(
+                        SourcingCondition.conditionFor(EventCriteria.havingAnyTag().andBeingOneOfTypes("Type1", "Type2"))
+                );
+                transaction.overrideAppendCondition(appendCondition -> appendCondition.withTypes("Type2"));
+                transaction.overrideAppendCondition(appendCondition -> AppendCondition.withCriteria(EventCriteria.havingAnyTag()));
+
+
 
                 var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));

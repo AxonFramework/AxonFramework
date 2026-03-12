@@ -26,6 +26,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * Infrastructure component providing the means to start an {@link EventStoreTransaction} to
@@ -65,4 +66,6 @@ public interface EventStore extends StreamableEventSource, EventBus, Describable
      * @return The {@link EventStoreTransaction}, existing or newly created, for the given {@code processingContext}.
      */
     EventStoreTransaction transaction(ProcessingContext processingContext);
+
+    EventStoreTransaction transaction(UnaryOperator<AppendCondition> overrideFn, ProcessingContext processingContext);
 }

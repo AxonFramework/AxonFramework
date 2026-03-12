@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * Interface describing the actions that can be taken on a transaction to source a model from the {@link EventStore}
@@ -56,6 +57,10 @@ public interface EventStoreTransaction {
      */
     default MessageStream<? extends EventMessage> source(SourcingCondition condition) {
         return source(condition, null);
+    }
+
+    void overrideAppendCondition(UnaryOperator<AppendCondition> overrideFn) {
+
     }
 
     /**
