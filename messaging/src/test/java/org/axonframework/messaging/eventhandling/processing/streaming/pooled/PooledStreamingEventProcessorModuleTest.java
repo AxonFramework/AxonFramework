@@ -44,10 +44,15 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.deadletter.CachingSequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -793,6 +798,52 @@ class PooledStreamingEventProcessorModuleTest {
                                                    "DeadLetterQueue[" + processorWithoutDlq + "][eventHandlingComponent]"
                                            ));
             assertThat(dlqDisabled).isEmpty();
+        }
+
+        @Test
+        void shouldInvalidateDlqCacheOnlyForReleasedSegment() {
+            // given
+            var processorName = "testProcessor";
+            var component = SimpleEventHandlingComponent.create("component");
+            component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .deadLetterQueue(DeadLetterQueueConfiguration::enabled));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            @SuppressWarnings("unchecked")
+            var dlq = (CachingSequencedDeadLetterQueue<EventMessage>) configuration
+                    .getModuleConfiguration(processorName)
+                    .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterQueue.class,
+                                                         "DeadLetterQueue[" + processorName + "][component]"))
+                    .orElseThrow();
+
+            // and - populate caches for two different segments
+            Segment segment0 = Segment.ROOT_SEGMENT;
+            Segment segment1 = new Segment(1, 1);
+            ProcessingContext context0 = new StubProcessingContext().withResource(Segment.RESOURCE_KEY, segment0);
+            ProcessingContext context1 = new StubProcessingContext().withResource(Segment.RESOURCE_KEY, segment1);
+            dlq.enqueue("seq-0", new GenericDeadLetter<>("seq-0", EventTestUtils.createEvent(1)), context0).join();
+            dlq.enqueue("seq-1", new GenericDeadLetter<>("seq-1", EventTestUtils.createEvent(2)), context1).join();
+            assertThat(dlq.cacheEnqueuedSize()).isEqualTo(2);
+
+            // when - segment 0 is released
+            var processorConfig = configurationOf(processor(configuration, processorName).orElseThrow());
+            processorConfig.segmentChangeListener().onSegmentReleased(segment0).join();
+
+            // then - segment 1 cache is intact: event for seq-1 is still accessible via cache
+            assertThat(dlq.contains("seq-1", context1).join()).isTrue();
+            // and - only segment 1's cache entry remains; segment 0's cache was removed
+            assertThat(dlq.cacheEnqueuedSize()).isEqualTo(1);
+            // and - segment 0's data is still in the DLQ (only the cache was invalidated, not the letters)
+            assertThat(dlq.contains("seq-0", context0).join()).isTrue();
         }
     }
 
