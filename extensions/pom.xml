@@ -37,5 +37,6 @@
         <module>spring</module>
         <module>metrics</module>
         <module>tracing</module>
+        <module>kotlin</module>
     </modules>
 </project>
