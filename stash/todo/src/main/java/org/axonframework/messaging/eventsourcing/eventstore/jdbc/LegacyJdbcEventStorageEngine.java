@@ -20,6 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
