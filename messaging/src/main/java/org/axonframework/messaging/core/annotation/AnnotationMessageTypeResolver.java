@@ -38,10 +38,10 @@ import java.util.Optional;
  * <p>
  * This resolver can use unique annotations per attribute. The attributes searched for are the namespace, name, and
  * version, reflecting the {@link QualifiedName#namespace()}, {@link QualifiedName#localName()}, and
- * {@link MessageType#version()} to follow from resolution. The default annotation for the name and version is the
- * {@link Message} annotation, from which the {@link Message#name() name} and {@link Message#version()} attributes will be
- * used respectively. The namespace attribute is determined by the {@link Namespace} annotation instead. The 
- * {@code Message} annotation is meta-annotated with the namespace annotation as a fallback.
+ * {@link MessageType#version()}. The default annotation for the name and version is the {@link Message} annotation,
+ * from which the {@link Message#name() name} and {@link Message#version()} attributes will be used respectively. The
+ * namespace attribute is determined by the {@link Namespace} annotation instead. The {@code Message} annotation is
+ * meta-annotated with the namespace annotation as a fallback.
  * <p>
  * Allows for defining a fallback {@code MessageTypeResolver}, for when the defined annotations are not present.
  *
@@ -55,8 +55,8 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
 
     /**
      * Constructs a default {@code AnnotationMessageTypeResolver}, using the {@link ClassBasedMessageTypeResolver} as
-     * the fallback when there is no {@link Message} annotation present on the given {@code payloadType} for resolving the name and
-     * version specifically.
+     * the fallback when there is no {@link Message} annotation present on the given {@code payloadType} for resolving
+     * the name and version specifically.
      */
     public AnnotationMessageTypeResolver() {
         this(new ClassBasedMessageTypeResolver(), AnnotationSpecification.DEFAULT);
@@ -66,8 +66,8 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      * Constructs a default {@code AnnotationMessageTypeResolver}, using the given {@code fallback} when there is no
      * {@link Message} present on the given {@code payloadType} for resolving the name and version specifically.
      *
-     * @param fallback the message type resolver to use as fall back when the {@link Message} annotation is not present on the
-     *                 given {@code payloadType} for resolving the name and version specifically
+     * @param fallback the message type resolver to use as fall back when the {@link Message} annotation is not present
+     *                 on the given {@code payloadType} for resolving the name and version specifically
      */
     public AnnotationMessageTypeResolver(@Nullable MessageTypeResolver fallback) {
         this(fallback, AnnotationSpecification.DEFAULT);
@@ -79,12 +79,12 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      * given {@code specification} are not present on the given {@code payloadType} when resolving the
      * {@link MessageType}.
      *
-     * @param fallback      the message type resolver to fall back to whenever the
+     * @param fallback      the message type resolver to use as fall back when the
      *                      {@link AnnotationSpecification#nameAnnotation()} and
      *                      {@link AnnotationSpecification#versionAnnotation()} as defined in the given
      *                      {@code specification} are not present on the given {@code payloadType} when resolving the
      *                      {@link MessageType}
-     * @param specification the specification dictating what annotation to look for on the given {@code payloadType}
+     * @param specification the specification that determines what annotation to look for on the given {@code payloadType}
      *                      when resolving the {@link MessageType}
      */
     public AnnotationMessageTypeResolver(@Nullable MessageTypeResolver fallback,
@@ -141,7 +141,8 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
      * @param namespaceAnnotation the annotation class to search for when {@link #resolve(Class)} is invoked for the
      *                            {@code namespaceAttribute} specifically
      * @param namespaceAttribute  the attribute for the {@link QualifiedName#namespace()} field of the
-     *                            {@link QualifiedName} set in the resolved {@link MessageType}, or just the {@link #nameAttribute()} if {@code null}
+     *                            {@link QualifiedName} set in the resolved {@link MessageType}, or just the
+     *                            {@link #nameAttribute()} if {@code null}
      */
     public record AnnotationSpecification(
             Class<? extends Annotation> nameAnnotation,
@@ -153,7 +154,7 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
     ) {
 
         /**
-         * The default {@link AnnotationSpecification} looking for the {@link Message} annotation for the
+         * The default {@link AnnotationSpecification} that looks for the {@link Message} annotation for the
          * {@link #nameAttribute()} and {@link #versionAttribute()}, and the {@link Namespace} annotation for the
          * {@link #namespaceAttribute()}.
          */
@@ -170,7 +171,8 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
          * @param versionAttribute   the attribute for the {@link MessageType#version()}, that should be present on the
          *                           given {@code annotation}
          * @param namespaceAttribute the attribute for the {@link QualifiedName#namespace()} field of the
-         *                           {@link QualifiedName} set in the resolved {@link MessageType}, or just the {@link #nameAttribute()} if {@code null}
+         *                           {@link QualifiedName} set in the resolved {@link MessageType}, or just the
+         *                           {@link #nameAttribute()} if {@code null}
          * @deprecated in favor of the {@link #AnnotationSpecification(Class, String, Class, String, Class, String)}
          * constructor that allows annotation configuration per resolvable attribute
          */
