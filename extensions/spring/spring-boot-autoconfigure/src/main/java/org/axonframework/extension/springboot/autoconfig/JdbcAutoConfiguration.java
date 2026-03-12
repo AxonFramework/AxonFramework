@@ -17,9 +17,9 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.conversion.jackson.JacksonConverter;
-import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
@@ -35,7 +35,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.ObjectMapper;
 
-import java.sql.SQLException;
 import javax.sql.DataSource;
 
 /**
@@ -122,19 +121,17 @@ public class JdbcAutoConfiguration {
     }
 
     /**
-     * Provides a {@link PersistenceExceptionResolver} that translates JDBC SQL error codes to Axon-specific
-     * exceptions.
+     * Provides a {@link PersistenceExceptionResolver} that detects duplicate key violations from JDBC
+     * {@link java.sql.SQLIntegrityConstraintViolationException} exceptions.
      * <p>
      * Conditional on the absence of an existing {@link PersistenceExceptionResolver} bean, since
      * {@link JpaAutoConfiguration} may already register one when JPA is on the classpath.
      *
-     * @param dataSource the data source used to auto-detect the database product name for SQL error code resolution
-     * @return a {@link SQLErrorCodesResolver} instance
-     * @throws SQLException if retrieving the database product name from the data source fails
+     * @return a {@link JdbcSQLErrorCodesResolver} instance
      */
     @Bean
     @ConditionalOnMissingBean
-    public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
-        return new SQLErrorCodesResolver(dataSource);
+    public PersistenceExceptionResolver persistenceExceptionResolver() {
+        return new JdbcSQLErrorCodesResolver();
     }
 }

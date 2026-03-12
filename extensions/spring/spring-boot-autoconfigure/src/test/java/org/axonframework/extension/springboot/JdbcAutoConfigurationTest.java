@@ -18,8 +18,8 @@ package org.axonframework.extension.springboot;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.JdbcTokenStore;
@@ -32,9 +32,6 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
@@ -65,7 +62,7 @@ class JdbcAutoConfigurationTest {
         testContext.run(context -> {
             assertThat(context).getBean(ConnectionProvider.class).isInstanceOf(SpringDataSourceConnectionProvider.class);
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
-            assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(SQLErrorCodesResolver.class);
+            assertThat(context).getBean(PersistenceExceptionResolver.class).isInstanceOf(JdbcSQLErrorCodesResolver.class);
         });
     }
 
@@ -112,14 +109,8 @@ class JdbcAutoConfigurationTest {
     private static class TestContext {
 
         @Bean
-        public DataSource dataSource() throws SQLException {
-            DatabaseMetaData databaseMetaData = mock(DatabaseMetaData.class);
-            when(databaseMetaData.getDatabaseProductName()).thenReturn("H2");
-            Connection connection = mock(Connection.class);
-            when(connection.getMetaData()).thenReturn(databaseMetaData);
-            DataSource dataSource = mock(DataSource.class);
-            when(dataSource.getConnection()).thenReturn(connection);
-            return dataSource;
+        public DataSource dataSource() {
+            return mock(DataSource.class);
         }
     }
 }
