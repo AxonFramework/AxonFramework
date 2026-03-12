@@ -31,7 +31,9 @@ public class FetchCardSummaryQuery {
 
 The query message is annotated with `@Query` to define its message type. The annotation specifies:
 
-* `namespace`: The bounded context or namespace for the query (defaults to the package name, or the value from a `@Namespace` annotation if present, as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here])
+* `namespace`: The bounded context or namespace for the query.
+When not defined on the `@Query` annotation, Axon searches for the `@Namespace` annotation (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here]).
+When `@Namespace` is also not present, this attribute defaults to the package name of the query class
 * `name`: The business/domain name of the query (defaults to the simple class name if omitted)
 * `version`: The version of the query message (defaults to "1.0" if omitted)
 

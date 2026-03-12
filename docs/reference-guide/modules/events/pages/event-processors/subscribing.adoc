@@ -160,9 +160,9 @@ The `assigningHandlers` method uses the `EventHandlerSelector` to receive an `Ev
 
 This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
-In the example above, we use the convenience `EventHandlerSelector` that assigns handlers that are annotated with `@Namespace("orders")`.
-Handlers can be assigned with a `@Namespace` on several levels, as described xref:ROOT:spring-boot-integration.adoc#namespace-based-handler-selection[here].
-When the Event Processor name and `@Namespace` name are identical, you can use the `EventProcessorDefinition.subscribingMatching()` to skip the `assigningHandlers` method automatically:
+In the example above, we use the convenience `EventHandlerSelector#matchesNamespaceOnType` method that assigns handlers that are annotated with `@Namespace("orders")` to an `SubscribingEventProcessor` with the name `"example-processor"`.
+Event Handlers can describe their `@Namespace` on several levels, as described xref:ROOT:spring-boot-integration.adoc#namespace-based-handler-selection[here].
+When the Event Processor name and namespace are identical, you can use the `EventProcessorDefinition.subscribingMatching()` to skip the `assigningHandlers` method automatically:
 
 [source,java]
 ----

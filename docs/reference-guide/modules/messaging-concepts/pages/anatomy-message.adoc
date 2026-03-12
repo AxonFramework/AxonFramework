@@ -62,11 +62,12 @@ They make it immediately clear that a class represents a command, event, or quer
 [[namespace-annotation]]
 === Defining the namespace with `@Namespace`
 
-While you can specify the `namespace` attribute directly on each `@Command`, `@Event`, or `@Query` annotation, Axon provides the `@Namespace` annotation as a convenient way to define the namespace for multiple message classes at once.
+You can use the `@Namespace` annotation as a convenient way to define the `namespace` of the `MessageType` for multiple message classes at once.
+As such, it acts as a fallback for whenever you are (1) using annotations and (2) have **not** specified the `namespace` attribute directly on each `@Command`, `@Event`, or `@Query` annotation.
 
 The `@Namespace` annotation can be applied at different levels:
 
-* **On a class** - Defines the namespace for that specific message class. Technically no different from
+* **On a class** - Defines the namespace for that specific message class. Technically no different from using the `@Command`, `@Event`, or `@Query` annotation.
 * **On an enclosing class** - Defines the namespace for all nested classes within it
 * **On a package** (via `package-info.java`) - Defines the namespace for all classes in that package
 * **On a module** (via `module-info.java`) - Defines the namespace for all classes in that module

@@ -61,7 +61,7 @@ As a first migration step it is recommended to keep the default behavior to alig
 
 If you don't specify the annotation parameters, Axon uses the following default behavior:
 
-* **`namespace`**: Defaults to the **package name** of the message class (or the value from a `@Namespace` annotation if present, as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here]).
+* **`namespace`**: First checks if the `@Namespace` annotation is present (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here]). When not present, defaults to the **package name** of the message class.
 * **`name`**: Defaults to the **simple class name**.
 * **`version`**: Defaults to `0.0.1`.
 

@@ -213,7 +213,15 @@ With `@Namespace` on the `OrderEventHandler`, the `OrderEventHandler` signals it
 3. On the `package-info.java` file
 4. On the `module-info.java` file
 
-These layers, for example, allow you to add the `@Namespace` annotation on the `package-info.java` file wherein the `OrderEventHandler` other event handlers are packaged.
+As such, you're able to use the `@Namespace` such that it describes several event handlers belonging to a package like so:
+
+[source,java]
+----
+@Namespace("orders")
+package com.example.orders;
+
+import org.axonframework.messaging.core.annotation.Namespace;
+----
 
 [TIP]
 .Convenience `EventProcessorDefinition` methods
