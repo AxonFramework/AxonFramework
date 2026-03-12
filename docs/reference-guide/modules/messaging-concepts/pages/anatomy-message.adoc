@@ -195,7 +195,7 @@ public class FindUserByIdQuery {
 
 **Default values:**
 
-* If you don't specify a `namespace`, Axon searches for the `@Namespace` (as described xref:namespace-annotation[here]) to use its value as the `namespace`.
+* If you don't specify a `namespace`, Axon searches for the `@Namespace` annotation (as described xref:namespace-annotation[here]) to use its value as the `namespace`.
 The fallback for when that is not present too is the package name of the class.
 * If you don't specify a `name`, Axon uses the simple class name.
 * If you don't specify a `version`, Axon uses `0.0.1` as the version.
