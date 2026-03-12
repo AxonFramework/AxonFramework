@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.commandhandling.gateway;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -36,7 +37,7 @@ import reactor.core.publisher.Mono;
  * @see org.axonframework.messaging.commandhandling.gateway.CommandGateway
  * @see ReactorMessageDispatchInterceptor
  */
-public interface ReactorCommandGateway {
+public interface ReactorCommandGateway extends DescribableComponent {
 
     /**
      * Sends the given {@code command} in the provided {@code context} (if available) and returns a {@link Mono} with

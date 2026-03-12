@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.commandhandling.gateway;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -121,6 +122,12 @@ public class DefaultReactorCommandGateway implements ReactorCommandGateway {
             commandMessage = new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command);
         }
         return (Mono<CommandMessage>) interceptorChain.proceed(commandMessage, context);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }
 
     private static ReactorMessageDispatchInterceptorChain<CommandMessage> buildChain(

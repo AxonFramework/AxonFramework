@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.queryhandling.gateway;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -128,6 +129,12 @@ public class DefaultReactorQueryGateway implements ReactorQueryGateway {
             queryMessage = new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query);
         }
         return (Mono<QueryMessage>) interceptorChain.proceed(queryMessage, context);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }
 
     private static ReactorMessageDispatchInterceptorChain<QueryMessage> buildChain(

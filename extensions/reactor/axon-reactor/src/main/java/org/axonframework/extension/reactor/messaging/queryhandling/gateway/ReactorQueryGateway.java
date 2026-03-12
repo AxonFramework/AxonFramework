@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.queryhandling.gateway;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -39,7 +40,7 @@ import java.util.List;
  * @see org.axonframework.messaging.queryhandling.gateway.QueryGateway
  * @see ReactorMessageDispatchInterceptor
  */
-public interface ReactorQueryGateway {
+public interface ReactorQueryGateway extends DescribableComponent {
 
     /**
      * Sends the given {@code query} in the provided {@code context} (if available) and returns a {@link Mono} with a

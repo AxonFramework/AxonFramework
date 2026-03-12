@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.eventhandling.gateway;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -39,7 +40,7 @@ import java.util.List;
  * @see org.axonframework.messaging.eventhandling.gateway.EventGateway
  * @see ReactorMessageDispatchInterceptor
  */
-public interface ReactorEventGateway {
+public interface ReactorEventGateway extends DescribableComponent {
 
     /**
      * Publishes the given {@code events} within the given {@code context} (if available) and returns a {@link Mono}

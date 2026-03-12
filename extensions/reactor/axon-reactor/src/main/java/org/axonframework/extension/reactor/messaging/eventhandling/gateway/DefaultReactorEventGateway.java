@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.reactor.messaging.eventhandling.gateway;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptor;
 import org.axonframework.extension.reactor.messaging.core.ReactorMessageDispatchInterceptorChain;
@@ -115,6 +116,12 @@ public class DefaultReactorEventGateway implements ReactorEventGateway {
     @SuppressWarnings("unchecked")
     private Mono<EventMessage> dispatchThroughChain(EventMessage eventMessage, ProcessingContext context) {
         return (Mono<EventMessage>) interceptorChain.proceed(eventMessage, context);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }
 
     private static ReactorMessageDispatchInterceptorChain<EventMessage> buildChain(
