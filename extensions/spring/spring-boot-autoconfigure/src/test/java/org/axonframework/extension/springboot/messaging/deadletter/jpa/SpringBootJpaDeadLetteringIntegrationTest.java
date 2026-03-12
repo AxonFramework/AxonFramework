@@ -19,7 +19,6 @@ package org.axonframework.extension.springboot.messaging.deadletter.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.json.JacksonConverter;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;

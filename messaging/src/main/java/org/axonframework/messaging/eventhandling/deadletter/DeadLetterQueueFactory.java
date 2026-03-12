@@ -33,7 +33,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
  * }</pre>
  *
  * @author Mateusz Nowak
- * @since 5.0.2
+ * @since 5.1.0
  */
 @FunctionalInterface
 public interface DeadLetterQueueFactory {

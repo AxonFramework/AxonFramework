@@ -658,7 +658,7 @@ class PooledStreamingEventProcessorModuleTest {
                             .eventSource(new AsyncInMemoryStreamableEventSource())
                             .deadLetterQueue(dlq -> dlq
                                     .enabled()
-                                    .factory(name -> {
+                                    .factory((name, ignored) -> {
                                         SequencedDeadLetterQueue<EventMessage> queue =
                                                 InMemorySequencedDeadLetterQueue.defaultQueue();
                                         createdQueues.put(name, queue);
@@ -720,7 +720,7 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> d
                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                            .deadLetterQueue(dlq -> dlq.factory(name -> {
+                            .deadLetterQueue(dlq -> dlq.factory((name, ignored) -> {
                                 SequencedDeadLetterQueue<EventMessage> queue =
                                         InMemorySequencedDeadLetterQueue.defaultQueue();
                                 createdQueues.put(name, queue);

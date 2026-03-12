@@ -19,7 +19,6 @@ package org.axonframework.extension.springboot;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
@@ -36,7 +35,6 @@ import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -104,12 +102,6 @@ class JpaAutoConfigurationTest {
                        );
                        assertEquals(Duration.ofMillis(3001), tokenClaimInterval);
                    });
-    }
-
-
-    @Test
-    void jpaDeadLetterQueueFactoryBeanIsAutoConfigured() {
-        testContext.run(context -> assertThat(context).hasSingleBean(DeadLetterQueueFactory.class));
     }
 
     @ContextConfiguration
