@@ -151,7 +151,7 @@ public class EventProcessorConfig {
 }
 ----
 
-The `assigningHandlers` method uses the `EventHandlerSelector` to receives an `EventHandlerDescriptor` that provides access to:
+The `assigningHandlers` method uses the `EventHandlerSelector` to receive an `EventHandlerDescriptor` that provides access to:
 
 * `beanName()` - The Spring bean name
 * `beanType()` - The event handler class
