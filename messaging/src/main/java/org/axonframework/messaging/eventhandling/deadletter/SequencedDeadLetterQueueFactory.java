@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
  * <p>
  * Example:
  * <pre>{@code
- * DeadLetterQueueFactory myFactory = (processingGroup, configuration) ->
+ * SequencedDeadLetterQueueFactory myFactory = (processingGroup, configuration) ->
  *     new MySequencedDeadLetterQueue(processingGroup, storage);
  * }</pre>
  *
@@ -36,7 +36,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
  * @since 5.1.0
  */
 @FunctionalInterface
-public interface DeadLetterQueueFactory {
+public interface SequencedDeadLetterQueueFactory {
 
     /**
      * Creates a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}.

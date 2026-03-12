@@ -23,7 +23,6 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
@@ -71,7 +70,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     private EnqueuePolicy<EventMessage> enqueuePolicy = DEFAULT_ENQUEUE_POLICY;
     private boolean clearOnReset = true;
     private int cacheMaxSize = SequenceIdentifierCache.DEFAULT_MAX_SIZE;
-    private DeadLetterQueueFactory factory = (processingGroup, configuration) -> InMemorySequencedDeadLetterQueue.defaultQueue();
+    private SequencedDeadLetterQueueFactory factory = (processingGroup, configuration) -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
     /**
      * Creates a new {@code DeadLetterQueueConfiguration} with default settings.
@@ -187,7 +186,7 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     /**
-     * Sets the {@link DeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
+     * Sets the {@link SequencedDeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
      * <p>
      * The factory receives a component-scoped processing group identifier that uniquely identifies the dead letter
      * queue within its event processor. A single processor may contain multiple event handling components, each with
@@ -200,11 +199,11 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * <p>
      * Defaults to a factory that creates {@link InMemorySequencedDeadLetterQueue} instances.
      *
-     * @param factory The {@link DeadLetterQueueFactory} that creates a {@link SequencedDeadLetterQueue} for a given
+     * @param factory The {@link SequencedDeadLetterQueueFactory} that creates a {@link SequencedDeadLetterQueue} for a given
      *                processing group, e.g. {@code "DeadLetterQueue[myProcessor][0]"}.
      * @return This configuration instance for fluent chaining.
      */
-    public DeadLetterQueueConfiguration factory(DeadLetterQueueFactory factory) {
+    public DeadLetterQueueConfiguration factory(SequencedDeadLetterQueueFactory factory) {
         assertNonNull(factory, "Factory may not be null");
         this.factory = factory;
         return this;
@@ -238,11 +237,11 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
     }
 
     /**
-     * Returns the {@link DeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
+     * Returns the {@link SequencedDeadLetterQueueFactory} used to create {@link SequencedDeadLetterQueue} instances.
      *
-     * @return The {@link DeadLetterQueueFactory}.
+     * @return The {@link SequencedDeadLetterQueueFactory}.
      */
-    public DeadLetterQueueFactory factory() {
+    public SequencedDeadLetterQueueFactory factory() {
         return factory;
     }
 

@@ -17,7 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -42,7 +42,7 @@ class JpaDeadLetterQueueAutoConfigurationTest {
 
     @Test
     void jpaDeadLetterQueueFactoryBeanIsAutoConfigured() {
-        testContext.run(context -> assertThat(context).hasSingleBean(DeadLetterQueueFactory.class));
+        testContext.run(context -> assertThat(context).hasSingleBean(SequencedDeadLetterQueueFactory.class));
     }
 
     @ContextConfiguration

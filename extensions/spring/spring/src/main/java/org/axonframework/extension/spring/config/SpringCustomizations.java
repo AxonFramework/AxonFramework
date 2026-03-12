@@ -16,13 +16,13 @@
 
 package org.axonframework.extension.spring.config;
 
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -162,9 +162,9 @@ interface SpringCustomizations {
                     .tokenStore(tokenStore)
                     .unitOfWorkFactory(unitOfWorkFactory);
             if (settings.dlq().enabled()) {
-                var dlqFactory = getComponent(configuration, DeadLetterQueueFactory.class, null, null);
+                var dlqFactory = getComponent(configuration, SequencedDeadLetterQueueFactory.class, null, null);
                 require(dlqFactory != null,
-                        "DLQ is enabled for processor '" + name + "' but no DeadLetterQueueFactory bean is available.");
+                        "DLQ is enabled for processor '" + name + "' but no SequencedDeadLetterQueueFactory bean is available.");
                 config = config.deadLetterQueue(dlq ->
                         dlq.enabled().factory(dlqFactory).cacheMaxSize(settings.dlq().cache().size()));
             }

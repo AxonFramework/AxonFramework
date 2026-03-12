@@ -18,7 +18,7 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
@@ -29,7 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * Spring Boot autoconfiguration that registers a JPA-backed {@link DeadLetterQueueFactory} bean.
+ * Spring Boot autoconfiguration that registers a JPA-backed {@link SequencedDeadLetterQueueFactory} bean.
  * <p>
  * This configuration activates when a {@code EntityManagerFactory} bean is present (i.e. JPA is on the
  * classpath and configured). The registered factory creates a {@link JpaSequencedDeadLetterQueue}
@@ -47,12 +47,12 @@ import org.springframework.context.annotation.Bean;
  * axon.eventhandling.processors.<processorName>.dlq.cache.size=2048
  * }</pre>
  * <p>
- * To replace the default JPA factory with a custom backend, declare your own {@link DeadLetterQueueFactory}
+ * To replace the default JPA factory with a custom backend, declare your own {@link SequencedDeadLetterQueueFactory}
  * bean — the {@code @ConditionalOnMissingBean} guard on the default will yield to it.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
- * @see DeadLetterQueueFactory
+ * @see SequencedDeadLetterQueueFactory
  * @see JpaSequencedDeadLetterQueue
  */
 @AutoConfiguration(after = {JpaAutoConfiguration.class, ConverterAutoConfiguration.class})
@@ -61,7 +61,7 @@ import org.springframework.context.annotation.Bean;
 public class JpaDeadLetterQueueAutoConfiguration {
 
     /**
-     * Creates a JPA-backed {@link DeadLetterQueueFactory} that instantiates a
+     * Creates a JPA-backed {@link SequencedDeadLetterQueueFactory} that instantiates a
      * {@link JpaSequencedDeadLetterQueue} per event handling component.
      * <p>
      * The {@code processingGroup} passed to the factory is a component-scoped identifier following the pattern
@@ -72,13 +72,13 @@ public class JpaDeadLetterQueueAutoConfiguration {
      * @param entityManagerFactory The JPA {@link EntityManagerFactory} used for persistence.
      * @param eventConverter       The {@link EventConverter} used to convert event payloads and metadata.
      * @param genericConverter     The generic {@link Converter} used for type conversion.
-     * @return A {@link DeadLetterQueueFactory} backed by JPA.
+     * @return A {@link SequencedDeadLetterQueueFactory} backed by JPA.
      */
     @Bean
     @ConditionalOnMissingBean
-    public DeadLetterQueueFactory jpaDeadLetterQueueFactory(EntityManagerFactory entityManagerFactory,
-                                                            EventConverter eventConverter,
-                                                            Converter genericConverter) {
+    public SequencedDeadLetterQueueFactory jpaDeadLetterQueueFactory(EntityManagerFactory entityManagerFactory,
+                                                                     EventConverter eventConverter,
+                                                                     Converter genericConverter) {
         var provider = new JpaTransactionalExecutorProvider(entityManagerFactory);
         return (processingGroup, configuration) -> JpaSequencedDeadLetterQueue.builder()
                                                                                .processingGroup(processingGroup)
