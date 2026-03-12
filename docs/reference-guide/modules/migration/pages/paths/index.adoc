@@ -9,6 +9,8 @@ Whether you are performing a straightforward version bump or a deep architectura
 1. **Base Migration Changes**
 * Import and Package Changes
 * Module Restructuring
+* Startup Event
+* Axon Framework BOM
 2. **Specific Migration Paths**
 * xref:migration:paths/messages.adoc[Message Migration (@Event, @Command, @Query)]
 * xref:migration:paths/aggregates/index.adoc[Aggregate Migration]
@@ -242,6 +244,10 @@ Axon Framework 5 has been restructured into more focused modules. This allows fo
 |===
 
 Users should update their dependency management (Maven/Gradle) to reflect these changes. Note that the modules in `extensions` have moved to a different group ID (`org.axonframework.extensions.*`) as well.
+
+=== Startup Event
+In Axon Framework 4, the internal AxonStartedEvent was used to ensure the application was fully loaded before processing began.
+In Axon Framework 5, this responsibility shifts to Spring: components are initialized at startup, and ApplicationStartedEvent is the signal that the application is ready
 
 === Axon Framework BOM
 
