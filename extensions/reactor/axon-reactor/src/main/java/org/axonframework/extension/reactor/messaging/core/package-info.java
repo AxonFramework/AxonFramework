@@ -16,7 +16,7 @@
 
 
 /**
- * Part of the Axon Extension module. Contains core reactor messaging dispatch interceptor components.
+ * Part of the Axon Extension module. Contains core reactor messaging concepts, like dispatch interceptor components.
  */
 @NullMarked
 package org.axonframework.extension.reactor.messaging.core;
