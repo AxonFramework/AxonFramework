@@ -60,11 +60,10 @@ public class EventProcessingAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    ProcessorModuleFactory processorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
-                                                  EventProcessorSettings.MapWrapper eventProcessorSettings,
-                                                  Configuration axonConfiguration) {
-        return new DefaultProcessorModuleFactory(eventProcessorDefinitions,
-                                                 eventProcessorSettings.settings(),
-                                                 axonConfiguration);
+    ProcessorModuleFactory processorModuleFactory(
+            List<EventProcessorDefinition> eventProcessorDefinitions,
+            EventProcessorSettings.MapWrapper eventProcessorSettings
+    ) {
+        return new DefaultProcessorModuleFactory(eventProcessorDefinitions, eventProcessorSettings.settings());
     }
 }

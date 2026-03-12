@@ -21,6 +21,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
@@ -93,8 +95,13 @@ interface SpringCustomizations {
             require(messageSource != null, "Could not find a mandatory Source with name '" + settings.source()
                     + "' for event processor '" + name + "'.");
 
+            var unitOfWorkFactory = getComponent(configuration, UnitOfWorkFactory.class, null, null);
+            require(unitOfWorkFactory != null,
+                    "Could not find a mandatory UnitOfWorkFactory for event processor '" + name + "'.");
+
             return subscribingEventProcessorConfiguration
-                    .eventSource(messageSource);
+                    .eventSource(messageSource)
+                    .unitOfWorkFactory(unitOfWorkFactory);
         }
     }
 
@@ -142,13 +149,26 @@ interface SpringCustomizations {
                     "Could not find a mandatory TokenStore with name '" + settings.tokenStore()
                             + "' for event processor '" + name + "'."
             );
-            return eventProcessorConfiguration
+            var unitOfWorkFactory = getComponent(configuration, UnitOfWorkFactory.class, null, null);
+            require(unitOfWorkFactory != null,
+                    "Could not find a mandatory UnitOfWorkFactory for event processor '" + name + "'.");
+
+            var config = eventProcessorConfiguration
                     .workerExecutor(scheduledExecutorService)
                     .tokenClaimInterval(settings.tokenClaimIntervalInMillis())
                     .batchSize(settings.batchSize())
                     .initialSegmentCount(settings.initialSegmentCount())
                     .eventSource(eventStore)
-                    .tokenStore(tokenStore);
+                    .tokenStore(tokenStore)
+                    .unitOfWorkFactory(unitOfWorkFactory);
+            if (settings.dlq().enabled()) {
+                var dlqFactory = getComponent(configuration, DeadLetterQueueFactory.class, null, null);
+                require(dlqFactory != null,
+                        "DLQ is enabled for processor '" + name + "' but no DeadLetterQueueFactory bean is available.");
+                config = config.deadLetterQueue(dlq ->
+                        dlq.enabled().factory(dlqFactory).cacheMaxSize(settings.dlq().cache().size()));
+            }
+            return config;
         }
     }
 
