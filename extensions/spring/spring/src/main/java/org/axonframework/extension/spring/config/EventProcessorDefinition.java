@@ -72,8 +72,8 @@ public interface EventProcessorDefinition {
     /**
      * Creates a new processor definition for a
      * {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor pooled
-     * streaming event processor} with the given {@code name}, automatically selecting any event handler that's part of
-     * a namespace matching the {@code name}, including them to the pooled streaming event processor.
+     * streaming event processor} with the given {@code name}, automatically selecting any event handler with
+     * a namespace matching the {@code name}, and adding them to the pooled streaming event processor.
      * <p>
      * Pooled streaming event processors distribute event processing across multiple threads, allowing for parallel
      * processing of events within a single processor instance.
@@ -109,8 +109,8 @@ public interface EventProcessorDefinition {
     /**
      * Creates a new processor definition for a
      * {@link org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor subscribing
-     * event processor} with the given {@code name}, automatically selecting any event handler that's part of a
-     * namespace matching the {@code name}, including them to the subscribing event processor.
+     * event processor} with the given {@code name}, automatically selecting any event handler with a 
+     * namespace matching the {@code name}, and adding them to the subscribing event processor.
      * <p>
      * With Subscribing event processors, the processor relies on the threading model of the
      * {@link org.axonframework.messaging.core.SubscribableEventSource}, potentially providing low-latency processing

@@ -26,7 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link AnnotationMessageTypeResolver} resolves the
+ * Test class validating that the {@link AnnotationMessageTypeResolver} resolves the
  * {@link org.axonframework.messaging.core.annotation.Namespace} annotation when present on a {@code package-info.java}
  * file.
  *

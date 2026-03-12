@@ -199,9 +199,9 @@ public record OrderPlacedEvent(
 }
 ----
 
-<1> When `namespace` is not specified on `@Event`, Axon first searches for the presence of the `@Namespace` annotation (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[her]). When no `@Namespace` is found, the `namespace` falls back to the package name of the class.
+<1> When `namespace` is not specified on `@Event`, Axon first searches for the presence of the `@Namespace` annotation (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here]). When no `@Namespace` annotation is found, it falls back to the package name of the class.
 
-The event handler's name is composed of `namespace` + `name` (for example, `"orders.OrderPlaced"`).
+The event handler's name is composed of `namespace` and `name` (for example, `"orders.OrderPlaced"`).
 Now let's assume we have an `@EventHandler` handling the `OrderPlacedEvent`:
 
 [source,java]

@@ -71,7 +71,7 @@ The `@Namespace` annotation can be applied at different levels:
 * **On a package** (via `package-info.java`) - Defines the namespace for all classes in that package
 * **On a module** (via `module-info.java`) - Defines the namespace for all classes in that module
 
-Thus, to automatically set the namespace for several message inside the same package, we could annotate the `package-info.java` file like so:
+To automatically set the namespace for several messages inside the same package, we could annotate the `package-info.java` file as shown below:
 
 [source,java]
 ----
@@ -81,7 +81,7 @@ package com.example.orders.api;
 import org.axonframework.messaging.core.annotation.Namespace;
 ----
 
-The different levels just described also represent the search order. Thus, when resolving the namespace for a class, the following order is taken until a non-empty value is found:
+The different levels described also represent the search order. When resolving the namespace for a class, the following order is used until a non-empty value is found:
 
 1. The `namespace` attribute on the message annotation (`@Command`, `@Event`, or `@Query`)
 2. The `@Namespace` annotation on the class itself
@@ -95,7 +95,7 @@ This layered approach allows you to set a default namespace at a broad level (pa
 [TIP]
 ====
 Using `@Namespace` at the package level is particularly useful for Domain-Driven Design (DDD) applications, where you can align the namespace with your bounded context.
-All messages within a bounded context can share the same namespace, making it explicit which context they belong to.
+All messages within a bounded context can share the same namespace, making it explicit to which context they belong to.
 ====
 
 === Payload conversion at handling time

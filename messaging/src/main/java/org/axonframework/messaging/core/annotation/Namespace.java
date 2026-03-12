@@ -27,13 +27,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation used to describe the namespace (or bounded context) of a class, a package, or an entire module.
+ * Annotation used to declare the namespace (or bounded context) of a class, package, or module.
  * <p>
- * The namespace value is, for example, used to derive the {@link QualifiedName#namespace()} field whenever a
- * {@link QualifiedName} is to be constructed while annotation resolving components are used. By being applicable to
- * packages and modules,  it provides a single location to adjust the namespace for a large number of classes in one go.
- * This is particularly useful when messages are grouped within a package or module, which all require the same
- * namespace field. As such, it is a catch-all compared to the type-specific {@link Command#namespace()},
+ * The namespace value is used, for example, to derive the {@link QualifiedName#namespace()} field when a
+ * {@link QualifiedName} is constructed by annotation-resolving components. Because this annotation can be applied to
+ * packages and modules, it provides a single location to configure the namespace for many classes at once.
+ * <p>
+ * This is particularly useful when messages within a package or module share the same 
+ * namespace. As such, this annotation acts as a catch-all alternative to the type-specific {@link Command#namespace()},
  * {@link Event#namespace()}, and {@link Query#namespace()} annotations.
  * <p>
  * Example usage on a class:

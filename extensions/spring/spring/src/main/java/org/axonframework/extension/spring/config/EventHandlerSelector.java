@@ -27,7 +27,7 @@ import java.util.function.Predicate;
  * Functional interface describing a filter for the
  * {@link org.axonframework.extension.spring.config.EventProcessorDefinition.EventHandlerDescriptor}.
  * <p>
- * Used as part of the {@link EventProcessorDefinition.SelectorStep} to allow you to form a predicate to assign
+ * Used as part of the {@link EventProcessorDefinition.SelectorStep} to create predicates to assign
  * {@link org.axonframework.messaging.eventhandling.EventHandlingComponent} beans to an
  * {@link org.axonframework.messaging.eventhandling.processing.EventProcessor}
  *
@@ -50,9 +50,9 @@ public interface EventHandlerSelector extends Predicate<EventProcessorDefinition
      *     <li>The {@link Class#getModule() module} of the {@link EventProcessorDefinition.EventHandlerDescriptor#beanType()}</li>
      * </ol>
      *
-     * @param namespace the namespace to match with the {@code value} of the {@link Namespace}
+     * @param namespace the namespace to match with the {@code value} of the {@link Namespace} annotation
      * @return an {@code EventHandlerSelector} that matches the given {@code namespace} with the {@code value} of the
-     * {@link Namespace}
+     * {@link Namespace} annotation
      */
     static EventHandlerSelector matchesNamespaceOnType(String namespace) {
         return eventHandlerDescriptor -> {
@@ -62,7 +62,7 @@ public interface EventHandlerSelector extends Predicate<EventProcessorDefinition
             }
             Class<?> type = eventHandlerDescriptor.beanType();
             if (type == null) {
-                // Spring couldn't uncover the type, so we can't uncover if there's a Namespace present
+                // Spring couldn't uncover the type, so we can't uncover it either if there's a Namespace present
                 return false;
             }
             String uncoveredNamespace =

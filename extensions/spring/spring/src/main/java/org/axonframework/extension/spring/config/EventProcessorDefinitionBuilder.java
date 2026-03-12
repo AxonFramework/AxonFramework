@@ -54,7 +54,7 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
      */
     public EventProcessorDefinitionBuilder(String name, EventProcessorSettings.ProcessorMode mode) {
         this.mode = Objects.requireNonNull(mode, "Processor mode must not be null");
-        this.name = Assert.nonEmpty(name, "Processor name must not be null");
+        this.name = Assert.nonEmpty(name, "Processor name must not be null or empty");
     }
 
     @Override
