@@ -27,6 +27,7 @@ org.axonframework.extension.springboot.autoconfig.InfrastructureAutoConfiguratio
 org.axonframework.extension.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.Jackson2MapperAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JdbcAutoConfiguration
+org.axonframework.extension.springboot.autoconfig.JdbcDeadLetterQueueAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JdbcTransactionAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JpaDeadLetterQueueAutoConfiguration
