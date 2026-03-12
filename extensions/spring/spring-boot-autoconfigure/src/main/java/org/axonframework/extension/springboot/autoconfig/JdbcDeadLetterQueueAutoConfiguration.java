@@ -20,6 +20,7 @@ import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
+import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -62,6 +63,20 @@ import javax.sql.DataSource;
 public class JdbcDeadLetterQueueAutoConfiguration {
 
     /**
+     * Creates a default {@link DeadLetterSchema} bean using the default column and table names.
+     * <p>
+     * To customize the schema, declare your own {@link DeadLetterSchema} bean — the
+     * {@code @ConditionalOnMissingBean} guard on this default will yield to it.
+     *
+     * @return A {@link DeadLetterSchema} with default table and column names.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public DeadLetterSchema deadLetterSchema() {
+        return DeadLetterSchema.defaultSchema();
+    }
+
+    /**
      * Creates a JDBC-backed {@link SequencedDeadLetterQueueFactory} that instantiates a
      * {@link JdbcSequencedDeadLetterQueue} per event handling component.
      * <p>
@@ -73,19 +88,22 @@ public class JdbcDeadLetterQueueAutoConfiguration {
      * @param dataSource       The JDBC {@link DataSource} used for persistence.
      * @param eventConverter   The {@link EventConverter} used to convert event payloads and metadata.
      * @param genericConverter The generic {@link Converter} used for type conversion.
+     * @param schema           The {@link DeadLetterSchema} describing the table and column names.
      * @return A {@link SequencedDeadLetterQueueFactory} backed by JDBC.
      */
     @Bean
     @ConditionalOnMissingBean
     public SequencedDeadLetterQueueFactory jdbcDeadLetterQueueFactory(DataSource dataSource,
                                                                       EventConverter eventConverter,
-                                                                      Converter genericConverter) {
+                                                                      Converter genericConverter,
+                                                                      DeadLetterSchema schema) {
         var provider = new JdbcTransactionalExecutorProvider(dataSource);
         return (processingGroup, configuration) -> JdbcSequencedDeadLetterQueue.builder()
                                                                                 .processingGroup(processingGroup)
                                                                                 .transactionalExecutorProvider(provider)
                                                                                 .eventConverter(eventConverter)
                                                                                 .genericConverter(genericConverter)
+                                                                                .schema(schema)
                                                                                 .build();
     }
 }

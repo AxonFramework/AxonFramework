@@ -17,6 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
@@ -30,6 +31,8 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 class JdbcDeadLetterQueueAutoConfigurationTest {
@@ -46,6 +49,46 @@ class JdbcDeadLetterQueueAutoConfigurationTest {
     @Test
     void jdbcDeadLetterQueueFactoryBeanIsAutoConfigured() {
         testContext.run(context -> assertThat(context).hasSingleBean(SequencedDeadLetterQueueFactory.class));
+    }
+
+    @Test
+    void defaultDeadLetterSchemaIsPresent() {
+        testContext.run(context -> {
+            DeadLetterSchema schema = context.getBean(DeadLetterSchema.class);
+            assertNotNull(schema);
+            assertEquals("DeadLetterEntry", schema.deadLetterTable());
+        });
+    }
+
+    @Test
+    void customDeadLetterSchemaIsPresent() {
+        String expectedDeadLetterTable = "custom-table-name";
+        DeadLetterSchema customSchema = DeadLetterSchema.builder()
+                                                        .deadLetterTable(expectedDeadLetterTable)
+                                                        .build();
+        testContext.withBean(DeadLetterSchema.class, () -> customSchema)
+                   .run(context -> {
+                       DeadLetterSchema schema = context.getBean(DeadLetterSchema.class);
+                       assertNotNull(schema);
+                       assertEquals(expectedDeadLetterTable, schema.deadLetterTable());
+                   });
+    }
+
+    @Test
+    void sequencedDeadLetterQueueFactoryCanBeAutoConfigured() {
+        testContext.run(context ->
+            assertThat(context).hasSingleBean(SequencedDeadLetterQueueFactory.class)
+        );
+    }
+
+    @Test
+    void customSequencedDeadLetterQueueFactoryOverridesDefault() {
+        SequencedDeadLetterQueueFactory customFactory = mock(SequencedDeadLetterQueueFactory.class);
+        testContext.withBean(SequencedDeadLetterQueueFactory.class, () -> customFactory)
+                   .run(context -> {
+                       assertThat(context).hasSingleBean(SequencedDeadLetterQueueFactory.class);
+                       assertThat(context.getBean(SequencedDeadLetterQueueFactory.class)).isSameAs(customFactory);
+                   });
     }
 
     @ContextConfiguration
