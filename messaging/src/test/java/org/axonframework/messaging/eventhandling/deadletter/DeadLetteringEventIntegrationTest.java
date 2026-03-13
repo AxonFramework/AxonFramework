@@ -46,6 +46,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
@@ -532,6 +533,45 @@ public abstract class DeadLetteringEventIntegrationTest {
             assertWithin(1, TimeUnit.SECONDS,
                          () -> assertEquals(3, eventHandler.deadLetterInContextCount(aggregateId)));
         }
+
+        @Test
+        void trackingTokenCapturedDuringInitialHandlingIsRestoredIntoProcessingContextOnRetry() {
+            // given
+            String aggregateId = UUID.randomUUID().toString();
+
+            // Three events in sequence "aggregateId" succeed
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED)));
+            // One event in sequence "aggregateId" fails (causing the rest to be enqueued), but succeed on retry
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, FAIL, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+            eventSource.publishMessage(asEventMessage(new DeadLetterableEvent(aggregateId, SUCCEED, SUCCEED_RETRY)));
+
+            // The PooledStreamingEventProcessor injects a TrackingToken into the ProcessingContext during streaming.
+            // DeadLetteringEventHandlingComponent captures that context into the dead letter via captureContext().
+            startProcessingEvent();
+
+            assertWithin(1, TimeUnit.SECONDS, () -> {
+                assertEquals(1, streamingProcessor.processingStatus().size());
+                var status = streamingProcessor.processingStatus().get(0);
+                assertNotNull(status);
+                assertTrue(status.getCurrentPosition().orElse(-1) >= 6);
+            });
+
+            assertTrue(deadLetterQueue.contains(aggregateId, null).join());
+
+            // During initial event handling, no TrackingToken should be found in the context via DeadLetter
+            assertEquals(0, eventHandler.tokenInContextOnRetryCount(aggregateId));
+
+            // when — retry dead-lettered events; DeadLetteredEventProcessingTask merges context resources back
+            deadLetteringComponent.process(deadLetter -> true).join();
+
+            // then — all 3 retried events should have had a TrackingToken available in the ProcessingContext,
+            // proving that the context captured during streaming was preserved through the DLQ round-trip
+            assertWithin(1, TimeUnit.SECONDS,
+                         () -> assertEquals(3, eventHandler.tokenInContextOnRetryCount(aggregateId)));
+        }
     }
 
     @Nested
@@ -776,6 +816,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> firstTryFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationFailures = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> deadLetterFoundInContext = new ConcurrentSkipListMap<>();
+        private final Map<String, Integer> tokenFoundInContextOnRetry = new ConcurrentSkipListMap<>();
 
         ProblematicEventHandler(EventConverter converter) {
             this.converter = converter;
@@ -788,9 +829,12 @@ public abstract class DeadLetteringEventIntegrationTest {
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();
 
-            DeadLetter.fromContext(context).ifPresent(
-                    dl -> deadLetterFoundInContext.compute(sequenceId, (id, count) -> count == null ? 1 : ++count)
-            );
+            DeadLetter.fromContext(context).ifPresent(dl -> {
+                deadLetterFoundInContext.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
+                if (context.containsResource(TrackingToken.RESOURCE_KEY)) {
+                    tokenFoundInContextOnRetry.compute(sequenceId, (id, count) -> count == null ? 1 : ++count);
+                }
+            });
 
             if (!handledEvent.contains(eventIdentifier)) {
                 // This is the first time we get this event.
@@ -871,6 +915,10 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         public int deadLetterInContextCount(String sequenceId) {
             return deadLetterFoundInContext.getOrDefault(sequenceId, 0);
+        }
+
+        public int tokenInContextOnRetryCount(String sequenceId) {
+            return tokenFoundInContextOnRetry.getOrDefault(sequenceId, 0);
         }
     }
 
