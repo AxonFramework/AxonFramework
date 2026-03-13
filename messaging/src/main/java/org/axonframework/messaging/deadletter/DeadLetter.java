@@ -19,6 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -28,8 +29,8 @@ import java.util.function.UnaryOperator;
  * Interface describing a dead lettered {@link Message} implementation of generic type {@code M}.
  * <p>
  * The time of storing the {@link #message()} is kept through {@link #enqueuedAt()}. The last time this letter was
- * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator)} or
- * {@link SequencedDeadLetterQueue#process(java.util.function.Predicate, java.util.function.Function) processing}, is kept in {@link #lastTouched()}. Additional
+ * accessed on either {@link SequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator, ProcessingContext)} or
+ * {@link SequencedDeadLetterQueue#process(java.util.function.Predicate, java.util.function.Function, ProcessingContext) processing}, is kept in {@link #lastTouched()}. Additional
  * information on why the letter is enqueued can be found in the {@link #diagnostics() diagnostics}.
  *
  * @param <M> The type of {@link Message} represented by this interface.
@@ -135,8 +136,7 @@ public interface DeadLetter<M extends Message> {
 
     /**
      * Returns the {@link Context} associated with this dead letter, carrying resources that were present in the
-     * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} when the letter was enqueued. Defaults to
-     * {@link Context#empty()} if not overridden.
+     * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} when the letter was enqueued.
      * <p>
      * The following resources are stored and restored through this context:
      * <ul>
@@ -150,7 +150,5 @@ public interface DeadLetter<M extends Message> {
      *
      * @return The {@link Context} associated with this dead letter.
      */
-    default Context context() {
-        return Context.empty();
-    }
+    Context context();
 }
