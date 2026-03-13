@@ -36,6 +36,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -128,8 +129,8 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
     }
 
     private EventMessage deserializeMessage(ResultSet resultSet) throws SQLException {
-        byte[] payloadBytes = resultSet.getBytes(schema.payloadColumn());
-        byte[] metadataBytes = resultSet.getBytes(schema.metadataColumn());
+        byte[] payloadBytes = copyBytes(resultSet.getBytes(schema.payloadColumn()));
+        byte[] metadataBytes = copyBytes(resultSet.getBytes(schema.metadataColumn()));
         Map<String, String> metadataMap = eventConverter.convert(metadataBytes, METADATA_MAP_TYPE_REF.getType());
 
         String eventTimestampString = resultSet.getString(schema.timestampColumn());
@@ -148,7 +149,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
 
         String tokenType = resultSet.getString(schema.tokenTypeColumn());
         if (tokenType != null) {
-            byte[] tokenBytes = resultSet.getBytes(schema.tokenColumn());
+            byte[] tokenBytes = copyBytes(resultSet.getBytes(schema.tokenColumn()));
             if (tokenBytes != null) {
                 TrackingToken token = genericConverter.convert(tokenBytes, ClassUtils.loadClass(tokenType));
                 if (token != null) {
@@ -173,8 +174,12 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         return context;
     }
 
+    private static byte[] copyBytes(byte[] bytes) {
+        return bytes == null ? null : Arrays.copyOf(bytes, bytes.length);
+    }
+
     private Metadata convertToDiagnostics(ResultSet resultSet) throws SQLException {
-        byte[] diagnosticsBytes = resultSet.getBytes(schema.diagnosticsColumn());
+        byte[] diagnosticsBytes = copyBytes(resultSet.getBytes(schema.diagnosticsColumn()));
         if (diagnosticsBytes == null) {
             return Metadata.emptyInstance();
         }
