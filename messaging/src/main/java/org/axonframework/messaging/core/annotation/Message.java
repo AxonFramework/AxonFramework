@@ -35,6 +35,7 @@ import java.lang.annotation.Target;
  * @since 5.0.0
  */
 @Internal
+@Namespace
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface Message {

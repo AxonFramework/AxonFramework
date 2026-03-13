@@ -540,17 +540,16 @@ Use the `@Command` annotation on your command class to declare its message type:
 [source,java]
 ----
 @Command(
-    namespace = "com.example.giftcard",  // <1>
-    name = "IssueCard",                   // <2>
-    version = "1.0.0",                    // <3>
-    routingKey = "cardId"                 // <4>
+    namespace = "giftcard", // <1>
+    name = "IssueCard",     // <2>
+    version = "1.0.0",      // <3>
+    routingKey = "cardId"   // <4>
 )
 public record IssueCardCommand(String cardId, int amount, String shopId) {
 }
 ----
 
-<1> The `namespace` typically represents the bounded context.
-Defaults to the package name of the class.
+<1> The `namespace` typically represents the bounded context. When no `namespace` is specified on `@Command`, Axon searches for the presence of the `@Namespace` annotation (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[her]). When no `@Namespace` annotation is found, then `namespace` falls back to the package name of the class.
 
 <2> The `name` is the business/domain name of the command.
 Defaults to the simple class name.

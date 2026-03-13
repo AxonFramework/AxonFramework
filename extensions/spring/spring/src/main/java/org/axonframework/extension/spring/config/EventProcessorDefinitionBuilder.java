@@ -22,9 +22,8 @@ import org.axonframework.extension.spring.config.EventProcessorDefinition.Config
 import org.axonframework.extension.spring.config.EventProcessorDefinition.SelectorStep;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 
-
+import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Internal builder implementation for {@link EventProcessorDefinition}.
@@ -42,24 +41,34 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
 
     private final EventProcessorSettings.ProcessorMode mode;
     private final String name;
-    private Predicate<EventProcessorDefinition.EventHandlerDescriptor> selector;
+    private EventHandlerSelector selector = eventHandlerDescriptor -> false;
+    private Function<T, T> configurationCustomizer = t -> t;
 
     /**
      * Creates a new builder for a processor definition with the given mode and name.
      *
-     * @param name The processor name.
-     * @param mode The processor mode (type).
+     * @param name the processor name
+     * @param mode the processor mode (type)
      */
     public EventProcessorDefinitionBuilder(String name, EventProcessorSettings.ProcessorMode mode) {
-        Assert.notNull(mode, () -> "Processor mode must not be null");
-        this.mode = mode;
-        this.name = Assert.nonEmpty(name, "Processor name must not be null");
+        this.mode = Objects.requireNonNull(mode, "Processor mode must not be null");
+        this.name = Assert.nonEmpty(name, "Processor name must not be null or empty");
     }
+
+    // EventProcessorDefinition.SelectorStep methods
+
+    @Override
+    public ConfigurationStep<T> assigningHandlers(EventHandlerSelector selector) {
+        this.selector = Objects.requireNonNull(selector, "Selector predicate must not be null");
+        return this;
+    }
+
+    // EventProcessorDefinition.ConfigurationStep methods
 
     @Override
     public EventProcessorDefinition customized(Function<T, T> configurer) {
-        Assert.notNull(configurer, () -> "Configuration customizer must not be null");
-        return new CompletedEventProcessorDefinitionImpl<>(mode, name, selector, configurer);
+        this.configurationCustomizer = Objects.requireNonNull(configurer, "Configuration customizer must not be null");
+        return this;
     }
 
     @Override
@@ -67,30 +76,26 @@ class EventProcessorDefinitionBuilder<T extends EventProcessorConfiguration>
         return customized(Function.identity());
     }
 
+    // EventProcessorDefinition methods
+
     @Override
-    public ConfigurationStep<T> assigningHandlers(
-            Predicate<EventProcessorDefinition.EventHandlerDescriptor> selector
-    ) {
-        Assert.notNull(selector, () -> "Selector predicate must not be null");
-        this.selector = selector;
-        return this;
+    public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
+        return selector.test(eventHandlerDescriptor);
     }
 
-    private record CompletedEventProcessorDefinitionImpl<T extends EventProcessorConfiguration>(
-            @Override EventProcessorSettings.ProcessorMode mode,
-            @Override String name,
-            Predicate<EventHandlerDescriptor> selector,
-            Function<T, T> configurationCustomizer) implements EventProcessorDefinition {
+    @Override
+    public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
+        //noinspection unchecked
+        return configurationCustomizer.apply((T) settings);
+    }
 
-        @Override
-        public boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor) {
-            return selector.test(eventHandlerDescriptor);
-        }
+    @Override
+    public String name() {
+        return this.name;
+    }
 
-        @Override
-        public EventProcessorConfiguration applySettings(EventProcessorConfiguration settings) {
-            //noinspection unchecked
-            return configurationCustomizer.apply((T) settings);
-        }
+    @Override
+    public EventProcessorSettings.ProcessorMode mode() {
+        return this.mode;
     }
 }
