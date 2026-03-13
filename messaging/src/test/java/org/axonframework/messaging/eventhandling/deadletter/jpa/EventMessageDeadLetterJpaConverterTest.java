@@ -23,8 +23,8 @@ import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -118,9 +118,9 @@ class EventMessageDeadLetterJpaConverterTest {
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        MessageStream.Entry<EventMessage> restoredEntry =
+        DeadLetter<EventMessage> restoredLetter =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
-        assertCorrectlyRestored(message, restoredEntry.message());
+        assertCorrectlyRestored(message, restoredLetter.message());
     }
 
     private void testConversionWithContext(EventMessage message, Context context) {
@@ -131,11 +131,11 @@ class EventMessageDeadLetterJpaConverterTest {
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        MessageStream.Entry<EventMessage> restoredEntry =
+        DeadLetter<EventMessage> restoredLetter =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
 
-        assertCorrectlyRestored(message, restoredEntry.message());
-        assertContextRestored(context, restoredEntry);
+        assertCorrectlyRestored(message, restoredLetter.message());
+        assertContextRestored(context, restoredLetter.context());
     }
 
     private void assertCorrectlyRestored(EventMessage expected, EventMessage actual) {
@@ -152,36 +152,36 @@ class EventMessageDeadLetterJpaConverterTest {
         assertInstanceOf(GenericEventMessage.class, actual);
     }
 
-    private void assertContextRestored(Context originalContext, MessageStream.Entry<EventMessage> restoredEntry) {
+    private void assertContextRestored(Context originalContext, Context restoredContext) {
         // Check tracking token restoration
         if (originalContext.containsResource(TrackingToken.RESOURCE_KEY)) {
-            assertTrue(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY));
+            assertTrue(restoredContext.containsResource(TrackingToken.RESOURCE_KEY));
             assertEquals(
                     originalContext.getResource(TrackingToken.RESOURCE_KEY),
-                    restoredEntry.getResource(TrackingToken.RESOURCE_KEY)
+                    restoredContext.getResource(TrackingToken.RESOURCE_KEY)
             );
         }
 
         // Check domain info restoration
         if (originalContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
             );
         }
         if (originalContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_TYPE_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY)
             );
         }
         if (originalContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)
             );
         }
     }
@@ -250,11 +250,11 @@ class EventMessageDeadLetterJpaConverterTest {
 
             // when
             DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
-            MessageStream.Entry<EventMessage> restoredEntry =
+            DeadLetter<EventMessage> restoredLetter =
                     converter.convert(entry, eventConverter, genericConverter);
 
             // then - message is correctly restored
-            EventMessage restored = restoredEntry.message();
+            EventMessage restored = restoredLetter.message();
             assertThat(restored.identifier()).isEqualTo(message.identifier());
             assertThat(restored.timestamp()).isEqualTo(message.timestamp());
             assertThat(restored.type()).isEqualTo(message.type());
@@ -264,10 +264,11 @@ class EventMessageDeadLetterJpaConverterTest {
             assertThat(deserializedPayload).isEqualTo(message.payload());
 
             // then - no context resources are restored
-            assertThat(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
-            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
-            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
-            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
+            Context restoredContext = restoredLetter.context();
+            assertThat(restoredContext.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
+            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
+            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
+            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
         }
     }
 

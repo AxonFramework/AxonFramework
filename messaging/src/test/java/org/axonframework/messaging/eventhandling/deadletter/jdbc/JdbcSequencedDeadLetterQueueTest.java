@@ -28,7 +28,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.DeadLetterWithContext;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
@@ -136,19 +135,15 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     }
 
     @Override
-    public DeadLetterWithContext<EventMessage> generateInitialLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable()),
-                buildTestContext()
-        );
+    public DeadLetter<EventMessage> generateInitialLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable(),
+                                      buildTestContext());
     }
 
     @Override
-    protected DeadLetterWithContext<EventMessage> generateFollowUpLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent()),
-                buildTestContext()
-        );
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), (Throwable) null,
+                                      buildTestContext());
     }
 
     private Context buildTestContext() {
@@ -160,8 +155,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     }
 
     @Override
-    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetterWithContext<EventMessage> letterWithContext) {
-        DeadLetter<EventMessage> deadLetter = letterWithContext.letter();
+    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetter<EventMessage> deadLetter) {
         if (deadLetter instanceof JdbcDeadLetter) {
             return deadLetter;
         }
@@ -197,14 +191,6 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     }
 
     @Override
-    protected Context extractContext(DeadLetter<? extends EventMessage> deadLetter) {
-        if (deadLetter instanceof JdbcDeadLetter<? extends EventMessage> jdbcDeadLetter) {
-            return jdbcDeadLetter.context();
-        }
-        return super.extractContext(deadLetter);
-    }
-
-    @Override
     protected void assertLetter(DeadLetter<? extends EventMessage> expected,
                                 DeadLetter<? extends EventMessage> actual) {
         assertMessage(expected.message(), actual.message());
@@ -236,7 +222,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
 
     @Test
     void invokingEvictWithNonJdbcDeadLetterThrowsWrongDeadLetterTypeException() {
-        DeadLetter<EventMessage> testLetter = generateInitialLetter().letter();
+        DeadLetter<EventMessage> testLetter = generateInitialLetter();
         CompletionException exception = assertThrows(CompletionException.class,
                                                      () -> jdbcDeadLetterQueue.evict(testLetter, null).join());
         assertInstanceOf(WrongDeadLetterTypeException.class, exception.getCause());

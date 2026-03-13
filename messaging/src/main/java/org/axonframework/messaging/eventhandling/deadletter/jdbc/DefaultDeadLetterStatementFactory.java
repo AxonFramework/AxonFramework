@@ -112,7 +112,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
         AtomicInteger fieldIndex = new AtomicInteger(1);
         E eventMessage = letter.message();
 
-        Context effectiveContext = context != null ? context : Context.empty();
+        Context effectiveContext = letter.context();
 
         setIdFields(statement, fieldIndex, processingGroup, sequenceIdentifier, sequenceIndex);
         setEventFields(statement, fieldIndex, eventMessage);

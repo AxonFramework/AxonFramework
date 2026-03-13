@@ -58,19 +58,13 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Override
-    public DeadLetterWithContext<EventMessage> generateInitialLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable()),
-                null
-        );
+    public DeadLetter<EventMessage> generateInitialLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
     }
 
     @Override
-    protected DeadLetterWithContext<EventMessage> generateFollowUpLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent()),
-                null
-        );
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
     }
 
     @Override

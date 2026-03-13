@@ -37,7 +37,6 @@ import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +157,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 }
 
                 DeadLetterEventEntry entry = converter.convert(
-                        letter.message(), context, eventConverter, genericConverter
+                        letter.message(), letter.context(), eventConverter, genericConverter
                 );
                 return entityManagerExecutor(context).accept(em -> {
                     Long sequenceIndex = nextIndexForSequence(em, stringSequenceIdentifier);
@@ -325,7 +324,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * Converts a {@link DeadLetterEntry} from the database into a {@link JpaDeadLetter}, using the configured
      * {@link DeadLetterJpaConverter DeadLetterJpaConverters} to restore the original message from it.
      * <p>
-     * The converter returns a {@link MessageStream.Entry} containing both the message and its associated context. The
+     * The converter returns a {@link DeadLetter} carrying both the message and its associated context. The
      * context includes restored resources such as tracking token and domain info (aggregate identifier, type, sequence
      * number) that were stored when the dead letter was enqueued.
      *
@@ -338,9 +337,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(),
                                                                       DIAGNOSTICS_MAP_TYPE_REF.getType());
         Metadata deserializedDiagnostics = Metadata.from(diagnosticsMap);
-        MessageStream.Entry<M> messageEntry =
-                (MessageStream.Entry<M>) converter.convert(entry.getMessage(), eventConverter, genericConverter);
-        return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry.message(), messageEntry);
+        DeadLetter<M> convertedLetter =
+                (DeadLetter<M>) converter.convert(entry.getMessage(), eventConverter, genericConverter);
+        return new JpaDeadLetter<>(entry, deserializedDiagnostics, convertedLetter.message(), convertedLetter.context());
     }
 
     @Override

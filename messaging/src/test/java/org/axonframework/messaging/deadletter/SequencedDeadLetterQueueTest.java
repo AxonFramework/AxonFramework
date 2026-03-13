@@ -102,32 +102,24 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
     protected abstract long maxSequenceSize();
 
     /**
-     * Convenience method to enqueue a generated dead letter with its associated context.
+     * Convenience method to enqueue a generated dead letter with the processing context derived from
+     * {@link DeadLetter#context()}.
      *
      * @param sequenceId The identifier of the sequence to enqueue to.
-     * @param generated  The generated dead letter paired with its context.
+     * @param letter     The dead letter to enqueue.
      */
-    private void enqueue(Object sequenceId, DeadLetterWithContext<? extends M> generated) {
-        testSubject.enqueue(sequenceId, generated.letter(), toProcessingContext(generated.context())).join();
-    }
-
-    /**
-     * Asserts that the {@code actual} {@link DeadLetter} retrieved from the queue matches the {@code expected}
-     * {@link DeadLetterWithContext}, comparing both the letter and the context (extracted via
-     * {@link #extractContext(DeadLetter)}).
-     */
-    private void assertLetterWithContext(DeadLetterWithContext<? extends M> expected,
-                                         DeadLetter<? extends M> actual) {
-        assertLetter(expected.letter(), actual);
-        assertContext(expected.context(), extractContext(actual));
+    private void enqueue(Object sequenceId, DeadLetter<? extends M> letter) {
+        testSubject.enqueue(sequenceId, letter, toProcessingContext(letter.context())).join();
     }
 
     /**
      * Converts a {@link Context} to a {@link ProcessingContext} using {@link StubProcessingContext#fromContext(Context)},
-     * or returns {@code null} if the given context is {@code null}.
+     * or returns {@code null} if the given context is {@code null} or empty.
      */
     protected ProcessingContext toProcessingContext(Context context) {
-        return context != null ? StubProcessingContext.fromContext(context) : null;
+        return context != null && !context.resources().isEmpty()
+                ? StubProcessingContext.fromContext(context)
+                : null;
     }
 
     @Nested
@@ -137,16 +129,16 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void enqueueAddsDeadLetter() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
+            var letter = generateInitialLetter();
 
             // when
-            enqueue(testId, generated);
+            enqueue(testId, letter);
 
             // then
             assertTrue(testSubject.contains(testId, null).join());
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
-            assertLetterWithContext(generated, resultLetters.next());
+            assertLetter(letter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
         }
 
@@ -161,10 +153,10 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // when / then
             Object oneSequenceToMany = generateId();
-            var generated = generateInitialLetter();
+            var letter = generateInitialLetter();
             assertThatThrownBy(() -> testSubject.enqueue(oneSequenceToMany,
-                                                         generated.letter(),
-                                                         toProcessingContext(generated.context()))
+                                                         letter,
+                                                         toProcessingContext(letter.context()))
                                                    .join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(DeadLetterQueueOverflowException.class);
@@ -181,10 +173,10 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             }
 
             // when / then
-            var generated = generateInitialLetter();
+            var letter = generateInitialLetter();
             assertThatThrownBy(() -> testSubject.enqueue(testId,
-                                                         generated.letter(),
-                                                         toProcessingContext(generated.context()))
+                                                         letter,
+                                                         toProcessingContext(letter.context()))
                                                    .join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(DeadLetterQueueOverflowException.class);
@@ -207,7 +199,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // when / then
             var followUp = generateFollowUpLetter();
             assertThatThrownBy(() -> testSubject.enqueueIfPresent(testId,
-                                                                 () -> followUp.letter(),
+                                                                 () -> followUp,
                                                                  toProcessingContext(followUp.context()))
                                                    .join())
                     .isInstanceOf(CompletionException.class)
@@ -222,7 +214,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // when
             var followUp = generateFollowUpLetter();
             boolean result = testSubject.enqueueIfPresent(testId,
-                                                          () -> followUp.letter(),
+                                                          () -> followUp,
                                                           toProcessingContext(followUp.context()))
                                                .join();
 
@@ -241,7 +233,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // when
             var followUp = generateFollowUpLetter();
             boolean result = testSubject.enqueueIfPresent(testSecondId,
-                                                          () -> followUp.letter(),
+                                                          () -> followUp,
                                                           toProcessingContext(followUp.context()))
                                                .join();
 
@@ -255,23 +247,23 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void enqueueIfPresentEnqueuesForExistingSequenceIdentifier() {
             // given
             Object testId = generateId();
-            var firstGenerated = generateInitialLetter();
-            var secondGenerated = generateFollowUpLetter();
+            var firstLetter = generateInitialLetter();
+            var secondLetter = generateFollowUpLetter();
 
             // when
-            enqueue(testId, firstGenerated);
+            enqueue(testId, firstLetter);
             testSubject.enqueueIfPresent(testId,
-                                         () -> secondGenerated.letter(),
-                                         toProcessingContext(secondGenerated.context()))
+                                         () -> secondLetter,
+                                         toProcessingContext(secondLetter.context()))
                        .join();
 
             // then
             assertTrue(testSubject.contains(testId, null).join());
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
-            assertLetterWithContext(firstGenerated, resultLetters.next());
+            assertLetter(firstLetter, resultLetters.next());
             assertTrue(resultLetters.hasNext());
-            assertLetterWithContext(secondGenerated, resultLetters.next());
+            assertLetter(secondLetter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
         }
     }
@@ -283,8 +275,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void evictDoesNotChangeTheQueueForNonExistentSequenceIdentifier() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
 
             // when
             testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null).join();
@@ -293,7 +285,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             assertTrue(testSubject.contains(testId, null).join());
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
-            assertLetterWithContext(generated, resultLetters.next());
+            assertLetter(letter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
         }
 
@@ -301,8 +293,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void evictDoesNotChangeTheQueueForNonExistentLetterIdentifier() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
 
             // when
             testSubject.evict(mapToQueueImplementation(generateInitialLetter()), null).join();
@@ -311,7 +303,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             assertTrue(testSubject.contains(testId, null).join());
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
-            assertLetterWithContext(generated, resultLetters.next());
+            assertLetter(letter, resultLetters.next());
             assertFalse(resultLetters.hasNext());
         }
 
@@ -319,8 +311,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void evictRemovesLetterFromQueue() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
             DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).join().iterator().next();
 
             // when
@@ -338,10 +330,10 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         @Test
         void requeueThrowsNoSuchDeadLetterExceptionForNonExistentSequenceIdentifier() {
             // given
-            var testGenerated = generateInitialLetter();
+            var testLetter = generateInitialLetter();
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testGenerated), l -> l, null).join())
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(testLetter), l -> l, null).join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(NoSuchDeadLetterException.class);
         }
@@ -350,12 +342,12 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void requeueThrowsNoSuchDeadLetterExceptionForNonExistentLetterIdentifier() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            var otherGenerated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            var otherLetter = generateInitialLetter();
+            enqueue(testId, letter);
 
             // when / then
-            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherGenerated), l -> l, null).join())
+            assertThatThrownBy(() -> testSubject.requeue(mapToQueueImplementation(otherLetter), l -> l, null).join())
                     .isInstanceOf(CompletionException.class)
                     .hasCauseInstanceOf(NoSuchDeadLetterException.class);
         }
@@ -364,11 +356,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void requeueReentersLetterToQueueWithUpdatedLastTouchedAndCause() {
             // given
             Object testId = generateId();
-            var generated = generateInitialLetter();
+            var letter = generateInitialLetter();
             Throwable testCause = generateThrowable();
-            enqueue(testId, generated);
+            enqueue(testId, letter);
             DeadLetter<? extends M> resultLetter = testSubject.deadLetterSequence(testId, null).join().iterator().next();
-            DeadLetter<M> expectedLetter = generateRequeuedLetter(generated.letter(), testCause);
+            DeadLetter<M> expectedLetter = generateRequeuedLetter(letter, testCause);
 
             // when
             testSubject.requeue(resultLetter, l -> l.withCause(testCause), null).join();
@@ -379,7 +371,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             assertTrue(resultLetters.hasNext());
             DeadLetter<? extends M> requeuedLetter = resultLetters.next();
             assertLetter(expectedLetter, requeuedLetter);
-            assertContext(generated.context(), extractContext(requeuedLetter));
+            assertContext(letter.context(), requeuedLetter.context());
             assertFalse(resultLetters.hasNext());
         }
     }
@@ -414,7 +406,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             resultIterator = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultIterator.hasNext());
-            assertLetterWithContext(expected, resultIterator.next());
+            assertLetter(expected, resultIterator.next());
             assertFalse(resultIterator.hasNext());
         }
 
@@ -422,7 +414,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         void deadLetterSequenceReturnsMatchingEnqueuedLettersInInsertOrder() {
             // given
             Object testId = generateId();
-            LinkedHashMap<Integer, DeadLetterWithContext<M>> enqueuedLetters = new LinkedHashMap<>();
+            LinkedHashMap<Integer, DeadLetter<M>> enqueuedLetters = new LinkedHashMap<>();
             var initial = generateInitialLetter();
             enqueue(testId, initial);
             enqueuedLetters.put(0, initial);
@@ -438,9 +430,9 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             Iterator<DeadLetter<? extends M>> resultIterator = testSubject.deadLetterSequence(testId, null).join().iterator();
 
             // then
-            for (Map.Entry<Integer, DeadLetterWithContext<M>> entry : enqueuedLetters.entrySet()) {
+            for (Map.Entry<Integer, DeadLetter<M>> entry : enqueuedLetters.entrySet()) {
                 assertTrue(resultIterator.hasNext());
-                assertLetterWithContext(entry.getValue(), resultIterator.next());
+                assertLetter(entry.getValue(), resultIterator.next());
             }
         }
 
@@ -471,15 +463,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
                 while (resultLetters.hasNext()) {
                     count += 1;
                     DeadLetter<? extends M> resultLetter = resultLetters.next();
-                    if (letterMatches(thisFirstExpected.letter()).test(resultLetter)) {
-                        assertLetterWithContext(thisFirstExpected, resultLetter);
+                    if (letterMatches(thisFirstExpected).test(resultLetter)) {
+                        assertLetter(thisFirstExpected, resultLetter);
                         assertTrue(resultLetters.hasNext());
-                        assertLetterWithContext(thisSecondExpected, resultLetters.next());
+                        assertLetter(thisSecondExpected, resultLetters.next());
                         assertFalse(resultLetters.hasNext());
                     } else {
-                        assertLetterWithContext(thatFirstExpected, resultLetter);
+                        assertLetter(thatFirstExpected, resultLetter);
                         assertTrue(resultLetters.hasNext());
-                        assertLetterWithContext(thatSecondExpected, resultLetters.next());
+                        assertLetter(thatSecondExpected, resultLetters.next());
                         assertFalse(resultLetters.hasNext());
                     }
                 }
@@ -597,15 +589,15 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             };
 
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
 
             // when
             boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertTrue(result);
-            assertLetterWithContext(generated, resultLetter.get());
+            assertLetter(letter, resultLetter.get());
 
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertFalse(resultLetters.hasNext());
@@ -623,25 +615,25 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             };
 
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
 
             Instant expectedLastTouched = setAndGetTime();
             DeadLetter<M> expectedRequeuedLetter =
-                    generateRequeuedLetter(generated.letter(), expectedLastTouched, testThrowable, testDiagnostics);
+                    generateRequeuedLetter(letter, expectedLastTouched, testThrowable, testDiagnostics);
 
             // when
             boolean result = testSubject.process(testTask, null).join();
 
             // then
             assertFalse(result);
-            assertLetterWithContext(generated, resultLetter.get());
+            assertLetter(letter, resultLetter.get());
 
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertTrue(resultLetters.hasNext());
             DeadLetter<? extends M> requeuedLetter = resultLetters.next();
             assertLetter(expectedRequeuedLetter, requeuedLetter);
-            assertContext(generated.context(), extractContext(requeuedLetter));
+            assertContext(letter.context(), requeuedLetter.context());
             assertFalse(resultLetters.hasNext());
         }
 
@@ -666,11 +658,11 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             // when / then
             boolean result = testSubject.process(testTask, null).join();
             assertTrue(result);
-            assertLetterWithContext(testThisLetter, resultLetter.get());
+            assertLetter(testThisLetter, resultLetter.get());
 
             result = testSubject.process(testTask, null).join();
             assertTrue(result);
-            assertLetterWithContext(testThatLetter, resultLetter.get());
+            assertLetter(testThatLetter, resultLetter.get());
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -694,13 +686,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             setAndGetTime(Instant.now());
             var secondTestLetter = generateFollowUpLetter();
             testSubject.enqueueIfPresent(testId,
-                                         () -> secondTestLetter.letter(),
+                                         () -> secondTestLetter,
                                          toProcessingContext(secondTestLetter.context()))
                        .join();
             setAndGetTime(Instant.now());
             var thirdTestLetter = generateFollowUpLetter();
             testSubject.enqueueIfPresent(testId,
-                                         () -> thirdTestLetter.letter(),
+                                         () -> thirdTestLetter,
                                          toProcessingContext(thirdTestLetter.context()))
                        .join();
 
@@ -715,9 +707,9 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             assertTrue(result);
             Deque<DeadLetter<? extends M>> resultSequence = resultLetters.get();
 
-            assertLetterWithContext(firstTestLetter, resultSequence.pollFirst());
-            assertLetterWithContext(secondTestLetter, resultSequence.pollFirst());
-            assertLetterWithContext(thirdTestLetter, resultSequence.pollFirst());
+            assertLetter(firstTestLetter, resultSequence.pollFirst());
+            assertLetter(secondTestLetter, resultSequence.pollFirst());
+            assertLetter(thirdTestLetter, resultSequence.pollFirst());
         }
 
         @Test
@@ -738,13 +730,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             var firstTestLetter = generateInitialLetter();
             enqueue(testId, firstTestLetter);
 
-            List<DeadLetterWithContext<M>> expectedOrderList = new LinkedList<>();
+            List<DeadLetter<M>> expectedOrderList = new LinkedList<>();
             long loopSize = maxSequences() - 5;
             for (int i = 0; i < loopSize; i++) {
                 var deadLetter = generateFollowUpLetter();
                 expectedOrderList.add(deadLetter);
                 testSubject.enqueueIfPresent(testId,
-                                             () -> deadLetter.letter(),
+                                             () -> deadLetter,
                                              toProcessingContext(deadLetter.context()))
                            .join();
             }
@@ -758,12 +750,12 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             DeadLetter<? extends M> resultLetter = resultSequence.pollFirst();
             assertNotNull(resultLetter);
-            assertLetterWithContext(firstTestLetter, resultLetter);
+            assertLetter(firstTestLetter, resultLetter);
 
             for (int i = 0; i < loopSize; i++) {
                 resultLetter = resultSequence.pollFirst();
                 assertNotNull(resultLetter);
-                assertLetterWithContext(expectedOrderList.get(i), resultLetter);
+                assertLetter(expectedOrderList.get(i), resultLetter);
             }
         }
 
@@ -792,8 +784,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             };
 
             Object testId = generateId();
-            var generated = generateInitialLetter();
-            enqueue(testId, generated);
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
 
             // when
             Thread blockingProcess = new Thread(() -> testSubject.process(blockingTask, null).join());
@@ -808,7 +800,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             hasProcessed.countDown();
             blockingProcess.join();
-            assertLetterWithContext(generated, resultLetter.get());
+            assertLetter(letter, resultLetter.get());
         }
     }
 
@@ -880,13 +872,13 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             enqueue(testThatId, testThatLetter);
 
             // when / then
-            boolean result = testSubject.process(letterMatches(testThisLetter.letter()), testTask, null).join();
+            boolean result = testSubject.process(letterMatches(testThisLetter), testTask, null).join();
             assertTrue(result);
-            assertLetterWithContext(testThisLetter, resultLetter.get());
+            assertLetter(testThisLetter, resultLetter.get());
 
-            result = testSubject.process(letterMatches(testThatLetter.letter()), testTask, null).join();
+            result = testSubject.process(letterMatches(testThatLetter), testTask, null).join();
             assertTrue(result);
-            assertLetterWithContext(testThatLetter, resultLetter.get());
+            assertLetter(testThatLetter, resultLetter.get());
         }
 
         @Test
@@ -900,9 +892,8 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             Object testId = generateId();
             Object nonMatchingId = generateId();
-            var generated = generateInitialLetter();
-            DeadLetter<M> testLetter = generated.letter();
-            enqueue(testId, generated);
+            var testLetter = generateInitialLetter();
+            enqueue(testId, testLetter);
             enqueue(nonMatchingId, generateInitialLetter());
 
             // when
@@ -914,7 +905,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
             // then
             assertTrue(result);
-            assertLetterWithContext(generated, resultLetter.get());
+            assertLetter(testLetter, resultLetter.get());
 
             Iterator<DeadLetter<? extends M>> resultLetters = testSubject.deadLetterSequence(testId, null).join().iterator();
             assertFalse(resultLetters.hasNext());
@@ -984,34 +975,33 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
     }
 
     /**
-     * Generate an initial {@link DeadLetterWithContext} containing a {@link DeadLetter} and its associated context.
-     * <p>
-     * The context may carry resources needed by the queue implementation during enqueueing (e.g. tracking token,
-     * aggregate info for JPA-backed queues).
+     * Generate an initial {@link DeadLetter} for testing. The letter may carry {@link Context} resources
+     * (e.g. tracking token, aggregate info) needed by the queue implementation during enqueueing.
      *
-     * @return A {@link DeadLetterWithContext} with the initial dead letter and its context.
+     * @return A {@link DeadLetter} with the initial dead letter, including any context resources.
      */
-    protected abstract DeadLetterWithContext<M> generateInitialLetter();
+    protected abstract DeadLetter<M> generateInitialLetter();
 
     /**
-     * Generate a follow-up {@link DeadLetterWithContext} containing a {@link DeadLetter} and its associated context.
-     * <p>
-     * The context may carry resources needed by the queue implementation during enqueueing (e.g. tracking token,
-     * aggregate info for JPA-backed queues).
+     * Generate a follow-up {@link DeadLetter} for testing. The letter may carry {@link Context} resources
+     * (e.g. tracking token, aggregate info) needed by the queue implementation during enqueueing.
      *
-     * @return A {@link DeadLetterWithContext} with the follow-up dead letter and its context.
+     * @return A {@link DeadLetter} with the follow-up dead letter, including any context resources.
      */
-    protected abstract DeadLetterWithContext<M> generateFollowUpLetter();
+    protected abstract DeadLetter<M> generateFollowUpLetter();
 
     /**
      * Generates a {@link DeadLetter} implementation specific to the {@link SequencedDeadLetterQueue} tested, using
-     * the provided {@link DeadLetterWithContext} which pairs the dead letter with its associated {@link Context}.
+     * the provided {@link DeadLetter}.
+     * <p>
+     * By default, simply returns the letter as-is. Subclasses backed by a database should override this to wrap
+     * the letter in the queue-specific implementation (e.g. {@code JpaDeadLetter}, {@code JdbcDeadLetter}).
      *
-     * @param letterWithContext The dead letter paired with its context.
+     * @param letter The dead letter to map.
      * @return The converted dead letter.
      */
-    protected DeadLetter<M> mapToQueueImplementation(DeadLetterWithContext<M> letterWithContext) {
-        return letterWithContext.letter();
+    protected DeadLetter<M> mapToQueueImplementation(DeadLetter<M> letter) {
+        return letter;
     }
 
     /**
@@ -1121,18 +1111,5 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         assertNotNull(expected, "Expected context was null but actual was not");
         assertNotNull(actual, "Actual context was null but expected was not");
         assertEquals(expected.resources(), actual.resources());
-    }
-
-    /**
-     * Extracts the {@link Context} from a {@link DeadLetter} retrieved from the queue. Subclasses should override this
-     * to extract context from their specific {@code DeadLetter} implementation (e.g. {@code JpaDeadLetter.context()}).
-     * <p>
-     * Returns {@code null} by default, indicating no context is available for comparison.
-     *
-     * @param deadLetter The dead letter retrieved from the queue.
-     * @return The context associated with the dead letter, or {@code null}.
-     */
-    protected Context extractContext(DeadLetter<? extends M> deadLetter) {
-        return null;
     }
 }

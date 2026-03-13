@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -98,7 +100,9 @@ class DeadLetteredEventProcessingTask {
         return unitOfWork.executeWithResult(context -> {
             MessageStream.Empty<Message> result = delegate.handle(
                     message,
-                    context.withResource(DeadLetter.RESOURCE_KEY, letter).withResource(Message.RESOURCE_KEY, message)
+                    mergeContextResources(context, letter.context())
+                            .withResource(DeadLetter.RESOURCE_KEY, letter)
+                            .withResource(Message.RESOURCE_KEY, message)
             );
 
             return result.asCompletableFuture()
@@ -133,5 +137,14 @@ class DeadLetteredEventProcessingTask {
                         letter.message().identifier(), cause);
         }
         return enqueuePolicy.decide(letter, cause);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ProcessingContext mergeContextResources(ProcessingContext target, Context source) {
+        ProcessingContext result = target;
+        for (Map.Entry<Context.ResourceKey<?>, Object> entry : source.resources().entrySet()) {
+            result = result.withResource((Context.ResourceKey<Object>) entry.getKey(), entry.getValue());
+        }
+        return result;
     }
 }

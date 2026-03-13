@@ -22,10 +22,11 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.deadletter.Cause;
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
@@ -73,11 +74,14 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
-                                                              EventConverter eventConverter,
-                                                              Converter genericConverter) {
-        return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
-                                 restoreContext(entry, genericConverter));
+    public DeadLetter<EventMessage> convert(DeadLetterEventEntry entry,
+                                            EventConverter eventConverter,
+                                            Converter genericConverter) {
+        EventMessage message = deserializeMessage(entry, eventConverter);
+        Context context = restoreContext(entry, genericConverter);
+        return new GenericDeadLetter<>(null, message, (Cause) null,
+                                       Instant.EPOCH, Instant.EPOCH,
+                                       Metadata.emptyInstance(), context);
     }
 
     private EventMessage deserializeMessage(DeadLetterEventEntry entry, EventConverter eventConverter) {

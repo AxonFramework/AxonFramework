@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -110,7 +112,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
 
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
-                () -> new GenericDeadLetter<>(sequenceIdentifier, event),
+                () -> new GenericDeadLetter<>(sequenceIdentifier, event, (Throwable) null, captureContext(context)),
                 context
         ).thenCompose(wasEnqueued -> {
             if (wasEnqueued) {
@@ -162,7 +164,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      */
     private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier,
                                                Throwable error) {
-        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
+        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error, captureContext(context));
         EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, error);
 
         if (decision.shouldEnqueue()) {
@@ -214,5 +216,14 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
                 delegate, enqueuePolicy, unitOfWorkFactory
         );
         return queue.process(sequenceFilter, processingTask::process, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Context captureContext(ProcessingContext processingContext) {
+        Context snapshot = Context.empty();
+        for (Map.Entry<Context.ResourceKey<?>, Object> entry : processingContext.resources().entrySet()) {
+            snapshot = snapshot.withResource((Context.ResourceKey<Object>) entry.getKey(), entry.getValue());
+        }
+        return snapshot;
     }
 }

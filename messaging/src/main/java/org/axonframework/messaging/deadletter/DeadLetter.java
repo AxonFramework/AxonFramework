@@ -132,4 +132,15 @@ public interface DeadLetter<M extends Message> {
     default DeadLetter<M> withDiagnostics(UnaryOperator<Metadata> diagnosticsBuilder) {
         return withDiagnostics(diagnosticsBuilder.apply(this.diagnostics()));
     }
+
+    /**
+     * Returns the {@link Context} associated with this dead letter, carrying resources (e.g. tracking token,
+     * aggregate info) that were present in the {@link org.axonframework.messaging.core.unitofwork.ProcessingContext}
+     * when the letter was enqueued. Defaults to {@link Context#empty()} if not overridden.
+     *
+     * @return The {@link Context} associated with this dead letter.
+     */
+    default Context context() {
+        return Context.empty();
+    }
 }

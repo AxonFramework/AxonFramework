@@ -33,7 +33,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.DeadLetterWithContext;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
@@ -93,19 +92,15 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    public DeadLetterWithContext<EventMessage> generateInitialLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable()),
-                buildTestContext()
-        );
+    public DeadLetter<EventMessage> generateInitialLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable(),
+                                      buildTestContext());
     }
 
     @Override
-    protected DeadLetterWithContext<EventMessage> generateFollowUpLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent()),
-                buildTestContext()
-        );
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), (Throwable) null,
+                                      buildTestContext());
     }
 
     private Context buildTestContext() {
@@ -117,13 +112,11 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetterWithContext<EventMessage> letterWithContext) {
-        DeadLetter<EventMessage> deadLetter = letterWithContext.letter();
+    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetter<EventMessage> deadLetter) {
         if (deadLetter instanceof JpaDeadLetter) {
             return deadLetter;
         }
         if (deadLetter instanceof GenericDeadLetter) {
-            Context context = letterWithContext.context() != null ? letterWithContext.context() : Context.empty();
             return new JpaDeadLetter<>(
                     IdentifierFactory.getInstance().generateIdentifier(),
                     0L,
@@ -133,7 +126,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                     deadLetter.cause().orElse(null),
                     deadLetter.diagnostics(),
                     deadLetter.message(),
-                    context
+                    deadLetter.context()
             );
         }
         throw new IllegalArgumentException("Can not map dead letter of type " + deadLetter.getClass().getName());
@@ -157,14 +150,6 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         // Payload is stored as raw bytes; deserialize to compare with the original
         Object deserializedPayload = eventConverter.convertPayload(actual, expected.payloadType());
         assertEquals(expected.payload(), deserializedPayload);
-    }
-
-    @Override
-    protected Context extractContext(DeadLetter<? extends EventMessage> deadLetter) {
-        if (deadLetter instanceof JpaDeadLetter<? extends EventMessage> jpaDeadLetter) {
-            return jpaDeadLetter.context();
-        }
-        return super.extractContext(deadLetter);
     }
 
     @Override
@@ -270,7 +255,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         GlobalSequenceTrackingToken expectedToken = new GlobalSequenceTrackingToken(42L);
         Context contextWithTokenOnly = Context.with(TrackingToken.RESOURCE_KEY, expectedToken);
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(
-                "sequenceIdentifier", generateEvent(), generateThrowable()
+                "sequenceIdentifier", generateEvent(), generateThrowable(), contextWithTokenOnly
         );
 
         // when
@@ -295,7 +280,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     @Test
     void cannotRequeueGenericDeadLetter() {
         SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
-        DeadLetter<EventMessage> letter = generateInitialLetter().letter();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         CompletionException exception =
                 assertThrows(CompletionException.class, () -> queue.requeue(letter, d -> d, null).join());
         assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);
@@ -304,7 +289,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     @Test
     void cannotEvictGenericDeadLetter() {
         SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
-        DeadLetter<EventMessage> letter = generateInitialLetter().letter();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         CompletionException exception =
                 assertThrows(CompletionException.class, () -> queue.evict(letter, null).join());
         assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);
