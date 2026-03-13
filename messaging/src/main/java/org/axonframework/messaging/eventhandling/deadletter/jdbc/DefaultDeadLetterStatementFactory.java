@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.IdentifierFactory;
@@ -24,7 +23,6 @@ import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -103,8 +101,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
                                               String processingGroup,
                                               String sequenceIdentifier,
                                               DeadLetter<? extends E> letter,
-                                              long sequenceIndex,
-                                              @Nullable ProcessingContext context) throws SQLException {
+                                              long sequenceIndex) throws SQLException {
         String sql = "INSERT INTO " + schema.deadLetterTable() + " "
                 + "(" + schema.deadLetterFields() + ") "
                 + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";

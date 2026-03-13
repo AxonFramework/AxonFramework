@@ -192,8 +192,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                                                         PROCESSING_GROUP,
                                                         aggregateId,
                                                         letter,
-                                                        index,
-                                                        null
+                                                        index
                                                 ),
                                                 e -> new JdbcException(
                                                         "Failed to enqueue dead letter with message id ["
