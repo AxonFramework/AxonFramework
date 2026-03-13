@@ -17,19 +17,18 @@
 package org.axonframework.messaging.eventhandling;
 
 import org.assertj.core.api.Assertions;
-import org.axonframework.common.TypeReference;
-import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.core.GenericResultMessage;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;
@@ -37,9 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -125,7 +122,7 @@ class GenericEventMessageTest extends MessageTestSuite<GenericEventMessage> {
             String acPayload = exMessage.payloadAs(String.class);
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -147,7 +144,7 @@ class GenericEventMessageTest extends MessageTestSuite<GenericEventMessage> {
             });
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -161,7 +158,7 @@ class GenericEventMessageTest extends MessageTestSuite<GenericEventMessage> {
 
             assertThat(acPayload).isEqualTo(exStringPayload);
             assertThat(acPayload2).isEqualTo(exStringPayload);
-            verify(converter, times(1)).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter, times(1)).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -173,8 +170,9 @@ class GenericEventMessageTest extends MessageTestSuite<GenericEventMessage> {
             GenericEventMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericEventMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericEventMessage.class)
+                    .isNotSameAs(original);
         }
 
         @Test
@@ -186,8 +184,9 @@ class GenericEventMessageTest extends MessageTestSuite<GenericEventMessage> {
             GenericEventMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericEventMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericEventMessage.class)
+                    .isNotSameAs(original);
             assertThat(result.identifier()).isEqualTo(original.identifier());
             assertThat(result.type()).isEqualTo(original.type());
             assertThat(result.payload()).isEqualTo(original.payload());

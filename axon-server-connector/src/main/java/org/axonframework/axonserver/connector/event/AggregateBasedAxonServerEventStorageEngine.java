@@ -25,7 +25,6 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
@@ -53,6 +52,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -262,7 +262,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                 payload.getData().toByteArray(),
                 getMetadata(event.getMetaDataMap()),
                 Instant.ofEpochMilli(event.getTimestamp())
-        );
+        ).withConverter(converter);
     }
 
     private Metadata getMetadata(Map<String, MetaDataValue> metadataMap) {
