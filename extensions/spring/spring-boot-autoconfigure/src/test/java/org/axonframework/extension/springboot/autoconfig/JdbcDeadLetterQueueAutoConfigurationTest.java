@@ -75,13 +75,6 @@ class JdbcDeadLetterQueueAutoConfigurationTest {
     }
 
     @Test
-    void sequencedDeadLetterQueueFactoryCanBeAutoConfigured() {
-        testContext.run(context ->
-            assertThat(context).hasSingleBean(SequencedDeadLetterQueueFactory.class)
-        );
-    }
-
-    @Test
     void customSequencedDeadLetterQueueFactoryOverridesDefault() {
         SequencedDeadLetterQueueFactory customFactory = mock(SequencedDeadLetterQueueFactory.class);
         testContext.withBean(SequencedDeadLetterQueueFactory.class, () -> customFactory)

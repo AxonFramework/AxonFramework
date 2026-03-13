@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot;
+package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;

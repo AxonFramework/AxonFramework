@@ -16,13 +16,13 @@
 
 package org.axonframework.extension.springboot.messaging.deadletter.jdbc;
 
-import org.axonframework.conversion.Converter;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.GenericDeadLetterTableFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,8 +48,8 @@ import javax.sql.DataSource;
  * A Spring Boot-idiomatic implementation of the {@link DeadLetteringEventIntegrationTest} validating the
  * {@link JdbcSequencedDeadLetterQueue} with full Spring Boot auto-configuration.
  * <p>
- * This test leverages Spring Boot auto-configuration for JDBC infrastructure ({@code DataSource}) instead of
- * manually wiring these beans. An embedded H2 in-memory database is configured via properties.
+ * This test leverages Spring Boot auto-configuration for JDBC infrastructure ({@code DataSource}) instead of manually
+ * wiring these beans. An embedded H2 in-memory database is configured via properties.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
@@ -75,21 +75,17 @@ class SpringBootJdbcDeadLetteringIntegrationTest extends DeadLetteringEventInteg
     @Autowired
     private UnitOfWorkFactory unitOfWorkFactory;
     @Autowired
-    private Converter converter;
-    @Autowired
     private EventConverter eventConverter;
-
-    private JdbcSequencedDeadLetterQueue<EventMessage> jdbcDeadLetterQueue;
+    @Autowired
+    private SequencedDeadLetterQueueFactory deadLetterQueueFactory;
+    @Autowired
+    private Configuration configuration;
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        jdbcDeadLetterQueue = JdbcSequencedDeadLetterQueue.<EventMessage>builder()
-                                                          .processingGroup(PROCESSING_GROUP)
-                                                          .transactionalExecutorProvider(
-                                                                  new JdbcTransactionalExecutorProvider(dataSource))
-                                                          .eventConverter(eventConverter)
-                                                          .genericConverter(converter)
-                                                          .build();
+    protected JdbcSequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
+        var jdbcDeadLetterQueue = (JdbcSequencedDeadLetterQueue<EventMessage>) deadLetterQueueFactory.create(
+                PROCESSING_GROUP,
+                configuration);
         dropSchemaIfExists();
         jdbcDeadLetterQueue.createSchema(new GenericDeadLetterTableFactory(), null)
                            .orTimeout(10, TimeUnit.SECONDS).join();
@@ -106,8 +102,9 @@ class SpringBootJdbcDeadLetteringIntegrationTest extends DeadLetteringEventInteg
     }
 
     /**
-     * Delegates to the auto-configured {@link org.axonframework.messaging.core.unitofwork.transaction.TransactionManager}
-     * (a {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager}) which automatically
+     * Delegates to the auto-configured
+     * {@link org.axonframework.messaging.core.unitofwork.transaction.TransactionManager} (a
+     * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager}) which automatically
      * registers {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY} on the
      * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext}, exercising the same code path as
      * production.
