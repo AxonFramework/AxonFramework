@@ -16,16 +16,16 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.CachingSupplier;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.time.Clock;
@@ -175,6 +175,23 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
                                                convertedPayload,
                                                delegate.metadata());
         return new GenericEventMessage(converted, timestamp());
+    }
+
+    /**
+     * Returns a new {@code GenericEventMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericEventMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericEventMessage withConverter(Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericEventMessage(updated, this.timestampSupplier);
     }
 
     @Override
