@@ -130,11 +130,15 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
-    // when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
+    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because
+    // its Converter parameter cannot be resolved when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = {ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class}
+            exclude = {
+                    ConverterAutoConfiguration.class,
+                    JpaDeadLetterQueueAutoConfiguration.class,
+                    JdbcDeadLetterQueueAutoConfiguration.class
+            }
     )
     public static class TestContext {
 
@@ -156,11 +160,15 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
+    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
     // when multiple custom Converter beans are registered without @Primary.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = {ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class}
+            exclude = {
+                    ConverterAutoConfiguration.class,
+                    JpaDeadLetterQueueAutoConfiguration.class,
+                    JdbcDeadLetterQueueAutoConfiguration.class
+            }
     )
     public static class CustomContext {
 
@@ -228,7 +236,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     private static final class CustomSequencingPolicy implements SequencingPolicy<CommandMessage> {
 
         @Override
-        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
+        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message,
+                                                      @NonNull ProcessingContext context) {
             return Optional.empty();
         }
     }

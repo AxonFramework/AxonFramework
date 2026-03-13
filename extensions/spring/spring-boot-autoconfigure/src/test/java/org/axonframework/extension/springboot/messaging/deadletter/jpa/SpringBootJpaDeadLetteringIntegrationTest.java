@@ -18,6 +18,7 @@ package org.axonframework.extension.springboot.messaging.deadletter.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -28,6 +29,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEntry;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEventEntry;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
@@ -88,19 +90,17 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
     private Converter converter;
     @Autowired
     private EventConverter eventConverter;
+    @Autowired
+    private SequencedDeadLetterQueueFactory deadLetterQueueFactory;
+    @Autowired
+    private Configuration configuration;
 
     private JpaSequencedDeadLetterQueue<EventMessage> jpaDeadLetterQueue;
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
-        jpaDeadLetterQueue = JpaSequencedDeadLetterQueue.<EventMessage>builder()
-                                                        .processingGroup(PROCESSING_GROUP)
-                                                        .transactionalExecutorProvider(
-                                                                new JpaTransactionalExecutorProvider(
-                                                                        entityManagerFactory))
-                                                        .eventConverter(eventConverter)
-                                                        .genericConverter(converter)
-                                                        .build();
+    protected JpaSequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
+        jpaDeadLetterQueue = (JpaSequencedDeadLetterQueue<EventMessage>) deadLetterQueueFactory
+                .create(PROCESSING_GROUP, configuration);
         return jpaDeadLetterQueue;
     }
 

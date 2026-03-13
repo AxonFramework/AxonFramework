@@ -15,7 +15,7 @@
  */
 
 /**
- * This is part of a stashed module that is not actively maintained and just kept for reference.
+ * Part of the Axon Messaging module. Contains classes related to JDBC-specific dead lettering components.
  */
 @NullMarked
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
