@@ -17,13 +17,18 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 128;
+
+    private final AtomicLong sequenceCounter = new AtomicLong(0);
 
     @Override
     protected SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
@@ -59,12 +66,22 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Override
     public DeadLetter<EventMessage> generateInitialLetter() {
-        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable(),
+                                      buildTestContext());
     }
 
     @Override
     protected DeadLetter<EventMessage> generateFollowUpLetter() {
-        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), (Throwable) null,
+                                      buildTestContext());
+    }
+
+    private Context buildTestContext() {
+        long seqNo = sequenceCounter.getAndIncrement();
+        return Context.with(TrackingToken.RESOURCE_KEY, new GlobalSequenceTrackingToken(seqNo))
+                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "TestAggregate")
+                      .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-" + seqNo)
+                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, seqNo);
     }
 
     @Override

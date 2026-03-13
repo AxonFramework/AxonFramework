@@ -198,6 +198,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
         assertEquals(formatExpected(expected.enqueuedAt()), actual.enqueuedAt());
         assertEquals(formatExpected(expected.lastTouched()), actual.lastTouched());
         assertEquals(expected.diagnostics(), actual.diagnostics());
+        assertContext(expected.context(), actual.context());
     }
 
     @Override
@@ -223,9 +224,7 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
     @Test
     void invokingEvictWithNonJdbcDeadLetterThrowsWrongDeadLetterTypeException() {
         DeadLetter<EventMessage> testLetter = generateInitialLetter();
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> jdbcDeadLetterQueue.evict(testLetter, null).join());
-        assertInstanceOf(WrongDeadLetterTypeException.class, exception.getCause());
+        assertThrows(WrongDeadLetterTypeException.class, () -> joinAndUnwrap(jdbcDeadLetterQueue.evict(testLetter, null)));
     }
 
     @SuppressWarnings("DataFlowIssue")

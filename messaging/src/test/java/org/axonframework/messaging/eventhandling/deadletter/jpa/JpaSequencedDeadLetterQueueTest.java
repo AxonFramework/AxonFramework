@@ -39,6 +39,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.jspecify.annotations.NonNull;
@@ -47,6 +48,7 @@ import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -105,7 +107,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     private Context buildTestContext() {
         long seqNo = sequenceCounter.getAndIncrement();
-        return Context.with(TrackingToken.RESOURCE_KEY, new GlobalSequenceTrackingToken(seqNo))
+        return Context.with(TrackingToken.RESOURCE_KEY, new GapAwareTrackingToken(seqNo, Collections.emptyList()))
                       .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "TestAggregate")
                       .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-" + seqNo)
                       .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, seqNo);
