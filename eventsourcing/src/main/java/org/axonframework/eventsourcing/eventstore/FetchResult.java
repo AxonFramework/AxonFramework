@@ -38,8 +38,8 @@ import java.util.Objects;
  * @param items  the elements that matched the condition and should be emitted; never {@code null}
  * @param cursor the last element scanned in the batch, regardless of match; {@code null} when the DB
  *               returned no rows
- * @author Axon Framework
- * @since 5.0.0
+ * @author Markus Eckstein
+ * @since 5.0.4
  */
 @Internal
 public record FetchResult<E>(List<E> items, @Nullable E cursor) {
