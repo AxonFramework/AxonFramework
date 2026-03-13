@@ -215,7 +215,8 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                             format("Unknown event type: %s", eventMessage.type()));
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
-                .entityIdResolver(PersonIdentifierEntityIdResolver::new);
+                .entityIdResolver(PersonIdentifierEntityIdResolver::new)
+                .build();
         return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
     }
 }

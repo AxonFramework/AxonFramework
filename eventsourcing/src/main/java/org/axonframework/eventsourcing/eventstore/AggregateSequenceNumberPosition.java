@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.annotation.Internal;
 
 /**
  * An implementation of {@link Position} based on aggregate sequence numbers.
@@ -45,7 +46,14 @@ public final class AggregateSequenceNumberPosition implements Position {
 
     private final long sequenceNumber;
 
-    AggregateSequenceNumberPosition(long sequenceNumber) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param sequenceNumber a sequence number, cannot be negative
+     * @throws IllegalArgumentException if the sequence number was negative
+     */
+    @Internal
+    public AggregateSequenceNumberPosition(long sequenceNumber) {
         if (sequenceNumber < 0) {
             throw new IllegalArgumentException("sequenceNumber cannot be negative");
         }

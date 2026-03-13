@@ -67,6 +67,10 @@ public interface EventStoreTransaction {
      * {@link Position resume position} is only known when the stream reaches its terminal event. As such, the callback
      * is guaranteed to be invoked only if the stream is fully consumed.
      * <p>
+     * If sourcing completes and no events are found, the callback will be invoked with the position
+     * specified in {@code sourcingCondition} or with a greater position. Returning a greater position
+     * allows resuming from a point that already excludes positions known to be non-matching.
+     * <p>
      * If the stream terminates with an error, is closed prematurely, or is not consumed to completion, the callback is
      * not guaranteed to be invoked.
      * <p>
@@ -82,7 +86,7 @@ public interface EventStoreTransaction {
      * @param condition              The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing
      *                               the sequence of events that can rehydrate a model.
      * @param resumePositionCallback An optional callback that receives the {@link Position} from which sourcing may be
-     *                               resumed once it becomes available.
+     *                               resumed once it becomes available; the position provided is never {@code null}.
      * @return The {@link MessageStream} of type {@link EventMessage} containing the event sequence complying to the
      * given {@code condition}.
      * @since 5.0.3
