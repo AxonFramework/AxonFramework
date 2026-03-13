@@ -37,7 +37,7 @@ import javax.sql.DataSource;
  * @author John Hendrikx
  * @since 5.0.2
  */
-@AutoConfiguration(after = DataSourceTransactionManagerAutoConfiguration.class)
+@AutoConfiguration(after = {DataSourceTransactionManagerAutoConfiguration.class, JpaTransactionAutoConfiguration.class})
 @ConditionalOnBean({DataSource.class, PlatformTransactionManager.class})
 public class JdbcTransactionAutoConfiguration {
 
@@ -54,9 +54,9 @@ public class JdbcTransactionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TransactionManager axonTransactionManager(
-        PlatformTransactionManager transactionManager,
-        @Nullable EntityManagerProvider entityManagerProvider,
-        @Nullable ConnectionProvider connectionProvider
+            PlatformTransactionManager transactionManager,
+            @Nullable EntityManagerProvider entityManagerProvider,
+            @Nullable ConnectionProvider connectionProvider
     ) {
         return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);
     }

@@ -57,7 +57,7 @@ import javax.sql.DataSource;
  * @see SequencedDeadLetterQueueFactory
  * @see JdbcSequencedDeadLetterQueue
  */
-@AutoConfiguration(after = {JdbcAutoConfiguration.class, ConverterAutoConfiguration.class})
+@AutoConfiguration(after = {JdbcAutoConfiguration.class, ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class})
 @ConditionalOnClass(DataSource.class)
 @ConditionalOnBean(DataSource.class)
 public class JdbcDeadLetterQueueAutoConfiguration {
