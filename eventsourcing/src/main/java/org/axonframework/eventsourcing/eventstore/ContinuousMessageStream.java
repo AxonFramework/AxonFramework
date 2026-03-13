@@ -45,7 +45,7 @@ import java.util.function.Function;
 @Internal
 public final class ContinuousMessageStream<E> implements MessageStream<EventMessage> {
 
-    private final Function<E, List<E>> fetcher;
+    private final Function<E, FetchResult<E>> fetcher;
     private final BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker;
     private final Function<E, Entry<EventMessage>> converter;
 
@@ -62,14 +62,15 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
      * Creates a new {@code ContinuousMessageStream} instance configured with the given strategies.
      *
      * @param fetcher         a function that, given the last fetched element (or {@code null} for the first call),
-     *                        retrieves the next batch of elements; must not return {@code null}
+     *                        returns a {@link FetchResult} containing the matched {@code items} and a {@code cursor}
+     *                        tracking the furthest position scanned
      * @param converter       a function converting each fetched element into an {@link Entry} containing an
      *                        {@link EventMessage}
      * @param callbackTracker a function that, given this stream and a callback {@link Runnable}, registers a listener
      *                        and returns a {@link Registration} allowing it to be canceled
      */
     public ContinuousMessageStream(
-            Function<E, List<E>> fetcher,
+            Function<E, FetchResult<E>> fetcher,
             Function<E, Entry<EventMessage>> converter,
             BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
     ) {
@@ -169,11 +170,14 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
 
     private void fetchMore() {
         try {
-            this.data = fetcher.apply(lastItem);
+            FetchResult<E> result = fetcher.apply(lastItem);
+            this.data = result.items();
             this.position = 0;
 
             if (!data.isEmpty()) {
-                this.lastItem = data.getLast();
+                this.lastItem = data.getLast();           // normal path: advance to last emitted item
+            } else if (result.cursor() != null) {
+                this.lastItem = result.cursor();          // no items matched, but cursor still advanced
             }
         } catch (Exception e) {
             error = e;
