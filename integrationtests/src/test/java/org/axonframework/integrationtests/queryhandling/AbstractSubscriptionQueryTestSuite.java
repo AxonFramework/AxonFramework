@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import org.axonframework.common.FutureUtils;
 import org.jspecify.annotations.NonNull;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
@@ -531,14 +532,17 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         await().until(result::hasNextAvailable);
         Thread.sleep(500);
 
+        List<CompletableFuture<?>> updatesEmitted = new ArrayList<>();
         for (int i = 0; i <= 20; i++) {
             int number = i;
-            queryBus.emitUpdate(testFilter,
+            updatesEmitted.add(queryBus.emitUpdate(testFilter,
                                 () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
                                                                                 "Update" + number),
-                                testContext);
+                                testContext));
         }
-        queryBus.completeSubscriptions(testFilter, testContext);
+        FutureUtils.joinAndUnwrap(CompletableFuture.allOf(updatesEmitted.toArray(new CompletableFuture[0])));
+
+        FutureUtils.joinAndUnwrap(queryBus.completeSubscriptions(testFilter, testContext));
 
         List<QueryResponseMessage> responses = Collections.synchronizedList(new ArrayList<>());
 
