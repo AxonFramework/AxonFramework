@@ -16,6 +16,14 @@ This ensures dead letters are scoped to a single component, preventing interfere
 Each queue is identified by a name following the pattern `DeadLetterQueue[processorName][componentName]`, where `processorName` is the name of the event processor and `componentName` is the name of the event handling component within that processor.
 This naming convention is also used as the `processingGroup` when creating queue instances through the `SequencedDeadLetterQueueFactory`.
 
+The `componentName` is the name you provide when registering event handling components.
+With the Configuration API, this is the name passed to `declarative("myHandler", ...)` or `autodetected("myHandler", ...)`.
+With Spring Boot, it is the Spring bean name of the event handler.
+It is important to keep component names stable, as they are part of the queue identifier used to persist dead letters.
+Changing a component name would effectively orphan any previously dead-lettered events.
+
+For example, given a processor named `order-processor` with a component registered as `orderProjection`, the queue name would be `DeadLetterQueue[order-processor][orderProjection]`.
+
 == Event ordering
 
 Axon Framework's event processors maintain the ordering of events within the same sequence, even when you configure xref:event-processors/streaming.adoc#parallel_processing[parallel processing].
@@ -231,7 +239,9 @@ axon.eventhandling.processors.my-processor.dlq.cache.size=4096
 
 === Configuring DLQ with an `EventProcessorDefinition` bean
 
-When using Spring Boot with `EventProcessorDefinition` beans, you can apply custom DLQ configuration through the `customized` step:
+When using Spring Boot with `EventProcessorDefinition` beans, you can apply custom DLQ configuration through the `customized` step.
+When enabled, the framework creates a separate dead-letter queue for each Spring bean matched by `assigningHandlers`, using the bean name as the component name.
+For example, if `assigningHandlers` matches beans `orderProjection` and `orderNotifier`, the factory will create queues named `DeadLetterQueue[order-processor][orderProjection]` and `DeadLetterQueue[order-processor][orderNotifier]`.
 
 [source,java]
 ----
