@@ -213,7 +213,7 @@ With `@Namespace` on the `OrderEventHandler`, the `OrderEventHandler` signals it
 3. On the `package-info.java` file
 4. On the `module-info.java` file
 
-As such, you're able to use the `@Namespace` such that it describes several event handlers belonging to a package like so:
+This allows you to use `@Namespace` to describe multiple event handlers belonging to a package, as shown below:
 
 [source,java]
 ----
