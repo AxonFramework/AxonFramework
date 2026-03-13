@@ -64,6 +64,12 @@ public abstract class MessageDecorator implements Message {
 
     @Override
     @Nullable
+    public <T> T payloadAs(Class<T> type) {
+        return delegate.payloadAs(type);
+    }
+
+    @Override
+    @Nullable
     public <T> T payloadAs(Type type, @Nullable Converter converter) {
         return delegate.payloadAs(type, converter);
     }
