@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.ContinuousMessageStream;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventCoordinator;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.FetchResult;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -346,7 +347,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         );
     }
 
-    private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start, StreamingCondition condition) {
+    private FetchResult<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start, StreamingCondition condition) {
         Assert.isTrue(
                 start == null || start instanceof GapAwareTrackingToken,
                 () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
@@ -359,6 +360,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             List<AggregateEventEntry> events = queryEventsBy(em, cleanedToken);
 
             GapAwareTrackingToken token = cleanedToken;
+            TokenAndEvent cursor = null;
             Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
             for (AggregateEventEntry event : events) {
                 String type = event.aggregateType();
@@ -367,12 +369,16 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 // A null type or identifier is allowed, but those cannot form a valid tag:
                 Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
 
+                // Always advance the token to track the furthest scanned position, regardless of match:
+                token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
+                cursor = new TokenAndEvent(token, event);
+
                 if (condition.matches(new QualifiedName(event.type()), tags)) {
-                    token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
-                    result.add(new TokenAndEvent(token, event));
+                    result.add(cursor);
                 }
             }
-            return result;
+            // cursor is null when the DB returned no rows (nothing scanned)
+            return new FetchResult<>(result, cursor);
         }).join();
     }
 
