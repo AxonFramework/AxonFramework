@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -337,9 +338,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
         Map<String, String> diagnosticsMap = genericConverter.convert(entry.getDiagnostics(),
                                                                       DIAGNOSTICS_MAP_TYPE_REF.getType());
         Metadata deserializedDiagnostics = Metadata.from(diagnosticsMap);
-        DeadLetter<M> convertedLetter =
-                (DeadLetter<M>) converter.convert(entry.getMessage(), eventConverter, genericConverter);
-        return new JpaDeadLetter<>(entry, deserializedDiagnostics, convertedLetter.message(), convertedLetter.context());
+        MessageStream.Entry<M> messageEntry =
+                (MessageStream.Entry<M>) converter.convert(entry.getMessage(), eventConverter, genericConverter);
+        return new JpaDeadLetter<>(entry, deserializedDiagnostics, messageEntry.message(), messageEntry);
     }
 
     @Override

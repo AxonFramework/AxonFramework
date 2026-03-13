@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling.deadletter.jpa;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
@@ -60,16 +61,17 @@ public interface DeadLetterJpaConverter<M extends EventMessage> {
                                  Converter genericConverter);
 
     /**
-     * Converts a {@link DeadLetterEventEntry} to a {@link org.axonframework.messaging.deadletter.DeadLetter} containing
-     * the {@link EventMessage} implementation and a {@link Context} with restored resources.
+     * Converts a {@link DeadLetterEventEntry} to a {@link MessageStream.Entry} containing the {@link EventMessage}
+     * implementation and a {@link Context} with restored resources.
      * <p>
-     * The returned letter's context contains the restored tracking token and domain info (aggregate identifier, type,
+     * The returned entry's context contains the restored tracking token and domain info (aggregate identifier, type,
      * sequence number) if they were stored when the dead letter was enqueued.
      *
      * @param entry            The database entry to convert.
      * @param eventConverter   The {@link EventConverter} for deserialization of payload and metadata.
      * @param genericConverter The {@link Converter} for deserialization of the tracking token, if present.
-     * @return A {@link org.axonframework.messaging.deadletter.DeadLetter} containing the message and context with restored resources.
+     * @return A {@link MessageStream.Entry} containing the message and context with restored resources.
      */
-    DeadLetter<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter, Converter genericConverter);
+    MessageStream.Entry<M> convert(DeadLetterEventEntry entry, EventConverter eventConverter,
+                                   Converter genericConverter);
 }

@@ -23,8 +23,8 @@ import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -118,9 +118,9 @@ class EventMessageDeadLetterJpaConverterTest {
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        DeadLetter<EventMessage> restoredLetter =
+        MessageStream.Entry<EventMessage> restoredEntry =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
-        assertCorrectlyRestored(message, restoredLetter.message());
+        assertCorrectlyRestored(message, restoredEntry.message());
     }
 
     private void testConversionWithContext(EventMessage message, Context context) {
@@ -131,11 +131,11 @@ class EventMessageDeadLetterJpaConverterTest {
 
         assertCorrectlyMapped(message, context, deadLetterEventEntry);
 
-        DeadLetter<EventMessage> restoredLetter =
+        MessageStream.Entry<EventMessage> restoredEntry =
                 converter.convert(deadLetterEventEntry, eventConverter, genericConverter);
 
-        assertCorrectlyRestored(message, restoredLetter.message());
-        assertContextRestored(context, restoredLetter.context());
+        assertCorrectlyRestored(message, restoredEntry.message());
+        assertContextRestored(context, restoredEntry);
     }
 
     private void assertCorrectlyRestored(EventMessage expected, EventMessage actual) {
@@ -250,11 +250,11 @@ class EventMessageDeadLetterJpaConverterTest {
 
             // when
             DeadLetterEventEntry entry = converter.convert(message, null, eventConverter, genericConverter);
-            DeadLetter<EventMessage> restoredLetter =
+            MessageStream.Entry<EventMessage> restoredEntry =
                     converter.convert(entry, eventConverter, genericConverter);
 
             // then - message is correctly restored
-            EventMessage restored = restoredLetter.message();
+            EventMessage restored = restoredEntry.message();
             assertThat(restored.identifier()).isEqualTo(message.identifier());
             assertThat(restored.timestamp()).isEqualTo(message.timestamp());
             assertThat(restored.type()).isEqualTo(message.type());
@@ -264,11 +264,10 @@ class EventMessageDeadLetterJpaConverterTest {
             assertThat(deserializedPayload).isEqualTo(message.payload());
 
             // then - no context resources are restored
-            Context restoredContext = restoredLetter.context();
-            assertThat(restoredContext.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
-            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
-            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
-            assertThat(restoredContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)).isFalse();
+            assertThat(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)).isFalse();
         }
     }
 
