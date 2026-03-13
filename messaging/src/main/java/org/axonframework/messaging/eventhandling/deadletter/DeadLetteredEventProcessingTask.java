@@ -139,6 +139,22 @@ class DeadLetteredEventProcessingTask {
         return enqueuePolicy.decide(letter, cause);
     }
 
+    /**
+     * Merges all resources from {@code source} into {@code target}. When both contain a resource under the same key,
+     * the value from {@code source} wins, overwriting the value already present in {@code target}.
+     * <p>
+     * This means that resources captured from the dead letter's context (e.g. the
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken} at the time of
+     * original failure, or the legacy aggregate identity resources) take precedence over any same-keyed resources in
+     * the fresh {@link ProcessingContext} created for the retry. This is intentional: the letter's context is
+     * message-specific and point-in-time, whereas the retry-time {@link ProcessingContext} is a generic runtime
+     * context that has no knowledge of the original event.
+     *
+     * @param target The {@link ProcessingContext} to merge resources into.
+     * @param source The {@link Context} whose resources are merged into {@code target}, winning on key conflicts.
+     * @return A new {@link ProcessingContext} containing all resources from both {@code target} and {@code source},
+     * with {@code source} values taking precedence on conflicts.
+     */
     @SuppressWarnings("unchecked")
     private static ProcessingContext mergeContextResources(ProcessingContext target, Context source) {
         ProcessingContext result = target;
