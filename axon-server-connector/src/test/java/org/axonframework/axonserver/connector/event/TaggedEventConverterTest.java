@@ -172,7 +172,7 @@ class TaggedEventConverterTest {
     }
 
     @Test
-    void convertEventWorksAsExpected() {
+    void convertEventWorksAsExpectedAndAttachesConverterToMessage() {
         // given...
         Event testEvent = Event.newBuilder()
                                .setIdentifier(EVENT_ID)
@@ -188,8 +188,11 @@ class TaggedEventConverterTest {
         assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
         assertArrayEquals(eventPayloadByteArray, result.payloadAs(byte[].class));
+        assertEquals(eventPayload, result.payloadAs(TestEvent.class));
         assertEquals(EVENT_METADATA, result.metadata());
         assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
+
+        verify(converter).convert(eq(eventPayloadByteArray), eq((Type) TestEvent.class));
     }
 
     private record TestEvent(String stringState, Integer intState, List<Boolean> booleanState) {

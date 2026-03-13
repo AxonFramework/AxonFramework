@@ -70,7 +70,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
-    protected static final EventConverter CONVERTER = new DelegatingEventConverter(new JacksonConverter());
 
     protected String TEST_DOMAIN_ID;
     protected String OTHER_DOMAIN_ID;
@@ -764,7 +763,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         assertThat(stream.next())
             .map(Entry::message)
-            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .map(em -> em.payloadAs(String.class))
             .contains("Hello World");
     }
 
@@ -797,12 +796,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         assertThat(stream1.next())
             .map(Entry::message)
-            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .map(em -> em.payloadAs(String.class))
             .contains("Hello From Engine 1");
 
         assertThat(stream2.next())
             .map(Entry::message)
-            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .map(em -> em.payloadAs(String.class))
             .contains("Hello From Engine 1");
 
         // Append an event via engine 2:
@@ -821,12 +820,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         assertThat(stream1.next())
             .map(Entry::message)
-            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .map(em -> em.payloadAs(String.class))
             .contains("Hello From Engine 2");
 
         assertThat(stream2.next())
             .map(Entry::message)
-            .map(em -> em.payloadAs(String.class, CONVERTER))
+            .map(em -> em.payloadAs(String.class))
             .contains("Hello From Engine 2");
 
         disposeStorageEngine(engine2);

@@ -102,8 +102,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         handlingComponent.subscribe(
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
-                    var converter = context.component(EventConverter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    // direct conversion via message-attached converter
+                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class);
                     var studentId = studentEnrolled.studentId();
                     var state = context.component(StateManager.class);
                     var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
