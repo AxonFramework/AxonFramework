@@ -11,7 +11,9 @@ xref:axoniq-platform-reference:ROOT:index.adoc[AxonIQ Platform] provides insight
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
 You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of AxonIQ Platform].
 
-Note that each event handling component within a processor receives its own dead-letter queue instance.
+== Queue scoping and naming
+
+Each event handling component within a processor receives its own dead-letter queue instance.
 This ensures dead letters are scoped to a single component, preventing interference between different event handlers.
 Each queue is identified by a name following the pattern `DeadLetterQueue[processorName][componentName]`, where `processorName` is the name of the event processor and `componentName` is the name of the event handling component within that processor.
 This naming convention is also used as the `processingGroup` when creating queue instances through the `SequencedDeadLetterQueueFactory`.
