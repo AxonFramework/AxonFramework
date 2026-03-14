@@ -11,13 +11,13 @@ It receives the `DeadLetter` and the failure `Throwable`, and returns an `Enqueu
 
 Available decisions via the `Decisions` utility class:
 
-* `Decisions.enqueue(cause)` — Add or keep the letter in the queue (default behavior).
-* `Decisions.requeue(cause, letterUpdater)` — Re-queue the letter, optionally updating its diagnostics metadata.
+* `Decisions.enqueue(cause)`:Add or keep the letter in the queue (default behavior).
+* `Decisions.requeue(cause, letterUpdater)`:Re-queue the letter, optionally updating its diagnostics metadata.
 Use this to track retry counts or attach structured failure information.
-* `Decisions.ignore()` — Skip the current failure without changing the queue.
-* `Decisions.doNotEnqueue()` — Prevent a new letter from being created during initial handling.
+* `Decisions.ignore()`:Skip the current failure without changing the queue.
+* `Decisions.doNotEnqueue()`:Prevent a new letter from being created during initial handling.
 The event is discarded; handlers that already succeeded keep their results.
-* `Decisions.evict()` — Permanently remove an existing letter from the queue during retry processing.
+* `Decisions.evict()`:Permanently remove an existing letter from the queue during retry processing.
 Use this when a letter has exhausted its retries or is otherwise no longer relevant.
 
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
@@ -53,8 +53,8 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 }
 ----
 
-<1> No need to dead-letter this — the same `NullPointerException` will always recur.
-<2> If a notification event has been in the queue for over 5 minutes, evict it — it's no longer relevant.
+<1> No need to dead-letter this:the same `NullPointerException` will always recur.
+<2> If a notification event has been in the queue for over 5 minutes, evict it:it's no longer relevant.
 <3> Default: keep the letter in the queue for a future retry.
 
 === Evict after a maximum number of retries

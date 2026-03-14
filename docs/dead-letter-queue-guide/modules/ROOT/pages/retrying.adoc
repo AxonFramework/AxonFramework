@@ -87,7 +87,7 @@ public class DeadLetterRetryScheduler {
 
 == Processing all sequences until empty
 
-To drain the entire queue — for example after deploying a fix — process sequences in a loop until none remain:
+To drain the entire queue, for example after deploying a fix, process sequences in a loop until none remain:
 
 [source,java]
 ----
