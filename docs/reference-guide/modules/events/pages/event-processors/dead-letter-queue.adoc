@@ -533,15 +533,15 @@ Contains resources like the tracking token and sequence identifier.
 
 == Enqueue policy
 
-By default, every event handling failure results in a dead-lettered entry.
-However, some failures — such as programming errors on transient data — may not be worth retrying.
-Similarly, when <<Processing sequences,dead-letter processing>> fails, you may want to evict the letter rather than re-enqueue it indefinitely.
+By default, when you configure a dead-letter queue and event handling fails, the event is dead-lettered.
+However, you might not want all event failures to result in dead-lettered entries.
+Similarly, when <<Processing sequences,letter processing>> fails, you might want to reconsider whether you want to enqueue the letter again.
 
 Configure an `EnqueuePolicy` to control this behavior.
 The policy receives a `DeadLetter` and the failure cause (`Throwable`), and returns an `EnqueueDecision` that tells the framework whether to enqueue, re-queue, or evict the letter.
 You can also modify the stored exception — for example, to truncate a cause that would otherwise exceed a database column limit.
 
-Axon Framework evaluates the policy at two points: when initial event handling fails, and again when dead-letter processing fails.
+Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <<Processing dead-letter sequences,dead-letter processing>> fails.
 This means a letter that keeps failing can be evicted or enriched with additional diagnostic metadata (such as a retry count) rather than staying in the queue forever.
 
 See the sample `EnqueuePolicy` below for an example of retry-count-based eviction:
