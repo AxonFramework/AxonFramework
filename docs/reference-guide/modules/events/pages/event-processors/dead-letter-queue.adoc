@@ -3,7 +3,7 @@
 When configuring xref:axon-framework-reference:events:event-processors/index.adoc#error-handling[error handling] for your event processors, you might want to consider a Dead-Letter Queue to park events that you were unable to handle.
 
 Instead of either logging the error and continuing, or infinitely retrying the current event, a Dead-Letter Queue will park the event in the queue so you can decide to try and handle it again later.
-In addition, it will prevent handling of later events in the same sequence until the failed event is successfully processed — preserving correct event ordering.
+In addition, it will prevent handling of later events in the same sequence until the failed event is successfully processed, preserving correct event ordering.
 
 [TIP]
 .Insight and management
@@ -56,7 +56,7 @@ The JDBC dead-letter queue is a suitable option for production environments and 
 Before configuring a `SequencedDeadLetterQueue` it is vital to validate whether your event handling functions are idempotent.
 As a processor consists of several Event Handling Components (as explained in the intro of this chapter), some handlers may succeed in event handling while others will not.
 A configured dead-letter queue does not stall event handling, so a failure in one Event Handling Component does not cause a rollback for other event handlers.
-Furthermore, when the failed event is retried later via <<Processing sequences,dead-letter processing>>, only the Event Handling Component that originally failed is invoked again — but all event handlers within that component that match the event are invoked.
+Furthermore, when the failed event is retried later via <<Processing sequences,dead-letter processing>>, only the Event Handling Component that originally failed is invoked again. However, all event handlers within that component that match the event are invoked.
 
 If your event handlers are not idempotent, retrying dead letters may produce undesired side effects.
 We strongly recommend making your event handlers idempotent when using the dead-letter queue.
@@ -111,11 +111,11 @@ Spring Boot auto-configuration will automatically detect whether JPA or JDBC is 
 No additional bean definitions are needed for the default setup.
 
 [NOTE]
-====
+=====
 Enabling the DLQ via properties enables it for **all** Event Handling Components assigned to that processor.
 Each component gets its own separate queue instance (see <<Queue scoping and naming>>), but the enabled/disabled setting applies uniformly to the entire processor.
 To selectively enable or disable the DLQ for individual components, use the Configuration API or an `EventProcessorDefinition` bean with a custom factory.
-====
+=====
 --
 ====
 
@@ -216,12 +216,12 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 === Sequence identifier caching
 
 The dead-letter queue is automatically wrapped with a `CachingSequencedDeadLetterQueue` to optimize `contains()` lookups.
-Before processing each event, the framework checks whether that event's sequence is already in the dead-letter queue — if it is, the event must be enqueued rather than processed normally.
+Before processing each event, the framework checks whether that event's sequence is already in the dead-letter queue. If it is, the event must be enqueued rather than processed normally.
 The cache keeps this information in memory, avoiding a database round-trip for every healthy event that is _not_ dead-lettered.
 
 Size the cache to match the maximum number of distinct failing sequences you expect at any given time.
 Increase it if you regularly have more concurrent failing sequences than the default of 1024.
-Set it to 0 to disable caching entirely — useful when memory is constrained or when failing sequences are highly dynamic and cache hits would be rare:
+Set it to 0 to disable caching entirely. This is useful when memory is constrained or when failing sequences are highly dynamic and cache hits would be rare:
 
 [tabs]
 ====
@@ -349,7 +349,7 @@ The `SequencedDeadLetterProcessor` interface provides two operations:
 . `CompletableFuture<Boolean> processAny()` - Processes the oldest dead-letter sequence.
 Returns `true` if a sequence was processed successfully.
 . `CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends EventMessage>>)` - Processes the oldest dead-letter sequence whose _first_ entry matches the predicate.
-The predicate only tests the first entry because sequences are processed as a unit — matching the first entry selects the entire sequence.
+The predicate only tests the first entry because sequences are processed as a unit: matching the first entry selects the entire sequence.
 Returns `true` if a matching sequence was processed successfully.
 
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
@@ -455,7 +455,7 @@ public class DeadLetterProcessor {
 
 === Detecting dead-letter processing in handlers
 
-Some event handlers benefit from knowing whether the event being processed is a dead letter — for example, to adjust logging or apply different recovery logic.
+Some event handlers benefit from knowing whether the event being processed is a dead letter, for example to adjust logging or apply different recovery logic.
 Inject a `DeadLetter` parameter into the event handling method to get this information.
 The parameter exposes several <<Attributes,attributes>>, such as `cause()` and `diagnostics()`.
 
@@ -475,7 +475,7 @@ class MyEventHandler {
     @EventHandler
     public void on(SomeEvent event, DeadLetter<EventMessage> deadLetter) {
         if (deadLetter != null) {
-            // Retrying a dead letter — inspect why it was parked and how many times it was tried
+            // Retrying a dead letter: inspect why it was parked and how many times it was tried
             int retries = (int) deadLetter.diagnostics().getOrDefault("retries", 0);
             deadLetter.cause().ifPresent(cause ->
                     log.warn("Retrying dead-lettered {} (attempt {}): {} - {}",
@@ -539,7 +539,7 @@ Similarly, when <<Processing sequences,letter processing>> fails, you might want
 
 Configure an `EnqueuePolicy` to control this behavior.
 The policy receives a `DeadLetter` and the failure cause (`Throwable`), and returns an `EnqueueDecision` that tells the framework whether to enqueue, re-queue, or evict the letter.
-You can also modify the stored exception — for example, to truncate a cause that would otherwise exceed a database column limit.
+You can also modify the stored exception, for example to truncate a cause that would otherwise exceed a database column limit.
 
 Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <<Processing sequences,dead-letter processing>> fails.
 This means a letter that keeps failing can be evicted or enriched with additional diagnostic metadata (such as a retry count) rather than staying in the queue forever.
@@ -587,16 +587,16 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
 
 The `Decisions` utility class provides factory methods for the five possible outcomes:
 
-* `Decisions.enqueue(cause)` — Create a new dead letter for an event that failed during initial handling.
+* `Decisions.enqueue(cause)`:Create a new dead letter for an event that failed during initial handling.
 Pass the failure `Throwable` so it is stored as the letter's `cause` for inspection during retries.
-* `Decisions.requeue(cause, diagnosticsUpdater)` — Re-queue a letter that failed again during retry processing.
+* `Decisions.requeue(cause, diagnosticsUpdater)`:Re-queue a letter that failed again during retry processing.
 The `diagnosticsUpdater` function transforms the letter's current diagnostics metadata, making it the right place to track retry counts or other state.
 The key difference from `enqueue`: `requeue` updates an _existing_ letter, whereas `enqueue` creates a new one.
-* `Decisions.ignore()` — Leave an existing letter in the queue unchanged.
+* `Decisions.ignore()`:Leave an existing letter in the queue unchanged.
 Use this when you want to keep the letter for future retry without updating its cause or diagnostics.
-* `Decisions.doNotEnqueue()` — Skip the failed event entirely during initial handling.
+* `Decisions.doNotEnqueue()`:Skip the failed event entirely during initial handling.
 The event is never added to the queue; handlers that already succeeded keep their results.
-* `Decisions.evict()` — Remove an existing letter from the queue permanently during retry processing.
+* `Decisions.evict()`:Remove an existing letter from the queue permanently during retry processing.
 Use this when a letter has exhausted its retries or is otherwise no longer relevant.
 
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
