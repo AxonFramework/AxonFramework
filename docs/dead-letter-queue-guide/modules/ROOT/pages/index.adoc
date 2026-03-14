@@ -3,12 +3,21 @@
 
 == Introduction
 
-Once you are running a large application with thousands of events in a production environment, there's a possibility for errors to occur.
-For example, an error in your system could occur due to the fact that an external API (such as a payment processing service) is temporarily unavailable. As a result, this may require changing your event messaging code when an error manifests due to a combination of not-tested events.
+In production environments, event handling failures are inevitable.
+An external API may be temporarily unavailable, a downstream service may time out, or an unexpected combination of events may trigger an unhandled edge case.
 
-Now, the default configuration for event processors is simply to log any errors that occur. In a production environment, developers have the option to modify the default behavior to throw the error instead. Please note, however, that this can cause an event processor to stop processing events altogether, due to the fact that it will keep trying to process the same event until it stops causing an exception.
+By default, event processors log errors and move on, or stop processing altogether when configured to rethrow.
+Neither approach is ideal: ignoring failures loses data, while stopping blocks the entire processor.
 
-To prevent this behavior, it's possible to configure the use of a sequenced Dead Letter Queue (DLQ). With a DLQ, instead of retrying to process the event over and over unsuccessfully, the framework simply places the failed event in a queue. In order to maintain the correct order of such events, the framework also places all further events having the same sequence identifier _(by default, the sequence identifier is the aggregate id)_ directly into the queue. Such an approach ensures that all events for the same aggregate must wait on the event that is causing an exception. As a result, the event processor doesn't consume resources continuously trying to process unprocessable events.
+A Dead-Letter Queue (DLQ) provides a third option: park the failed event in a persistent queue so you can decide to retry it later once the underlying problem is resolved.
+In addition, because events within a sequence must be processed in order, the DLQ also enqueues all subsequent events for the same sequence,ensuring that a later event is never applied before an earlier one has succeeded.
 
-This tutorial guides you through the process of enabling the sequenced Dead Letter Queue for event processing.
-It also guides you through the process of re-processing the queued events after you fix the processing error.
+The supported dead-letter queue implementation is the `SequencedDeadLetterQueue`, which tracks failing sequences by their sequence identifier (determined by the xref:axon-framework-reference:events:event-processors/streaming.adoc#sequential-processing[sequencing policy]).
+
+[TIP]
+.Insight and management
+xref:axoniq-platform-reference:ROOT:index.adoc[AxonIQ Platform] provides insight into the Dead-Letter Queue and tools for its management.
+You can view dead letters in the queue and retry or discard them directly from the UI.
+You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of AxonIQ Platform].
+
+This guide walks you through enabling the DLQ, retrying dead-lettered events, and customizing the enqueue behavior.

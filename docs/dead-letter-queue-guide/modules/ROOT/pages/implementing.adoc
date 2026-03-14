@@ -1,54 +1,138 @@
 = Implementing Dead Letter Queues (DLQ)
 :navtitle: Implementing dead letter queue
 
-To enable a DLQ you need to configure the `SequencedDeadLetterQueue` component.
-Like most components related to event processing, there are implementations available for JPA, JDBC, and Mongo.
-To best leverage transactions, it's best to choose the same implementation as the `TokenStore` and likely also for your projection. Please note that for best results, this also means having them located in the same database, or the same collection.
+To enable a DLQ you configure the dead-letter queue on the event processor.
+Axon Framework includes JPA and JDBC implementations of `SequencedDeadLetterQueue`.
+To best leverage transactions, it's best to choose the same implementation as the `TokenStore` and likely also for your projection. Please note that for best results, this also means having them located in the same database.
 
-There are two ways of configuring the `SequencedDeadLetterQueue`.
+[NOTE]
+====
+Before enabling a DLQ, verify that your event handlers are idempotent.
+When a failed event is retried, all event handlers within the Event Handling Component that originally failed are invoked again.
+If handlers are not idempotent, retrying may produce undesired side effects.
+====
 
-== Register a dead letter queue with the event processor
+== Enabling the dead-letter queue
 
-The first approach is to register a DLQ provider in the event processor configuration. This approach allows you to specify processing groups if you want to configure the DLQ only for some of them. As DLQs add complexity and introduce some overhead, you should prefer this method when you don't need a separate DLQ for each processing group.
-
-[source,java]
-
-The `DeadLetterQueueProviderConfigurerModule` has an example of how you can use this.
-
-[source,java]
-----
-include::example$source_code/spring-boot-autoconfigure/src/main/java/org/axonframework/extension/springboot/autoconfig/JpaAutoConfiguration.java[tag=JpaDeadLetterQueueProviderConfigurerModule]
-----
-
-You might notice the `EventProcessorProperties` parameter. That's because with Spring autoconfiguration it's easy to enable dead letter event processing for a specific processing group. You can do so by setting a property similar to `axon.eventhandling.processors.first.dlq.enabled=true`.
-In this case, the processing group is `firsts`. Similarly, you can set caching and cache size.
-Caching prevents unnecessary calls to the database, at the cost of keeping some of the sequence identifiers in memory.
-
-== Add a dead letter queue to a specific processing group
-
-The other way is to add a `SequencedDeadLetterQueue` to a specific processing group in the `EventProcessingConfigurer` using the `registerDeadLetterQueue` method.
-For example for setting the `JpaSequencedDeadLetterQueue` on the `my-processing-group` in a non-Spring context.
+[tabs]
+====
+Configuration API::
++
+--
+Use `EventProcessorModule.customized()` to enable the DLQ for a specific processor.
+The example below uses `JpaSequencedDeadLetterQueue`:
 
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.conversion.Converter;
+import jakarta.persistence.EntityManagerFactory;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
-        // Replace "my-processing-group" for the processing group you want to configure the DLQ on.
-        processingConfigurer.registerDeadLetterQueue(
-                "my-processing-group",
-                config -> JpaSequencedDeadLetterQueue.builder()
-                                                     .processingGroup("my-processing-group")
-                                                     .maxSequences(256)
-                                                     .maxSequenceSize(256)
-                                                     .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
-                                                     .transactionManager(config.getComponent(TransactionManager.class))
-                                                     .serializer(config.serializer())
-                                                     .build()
-        );
+
+    public void configureDeadLetterQueue(
+            EntityManagerFactory entityManagerFactory,
+            EventConverter eventConverter,
+            Converter converter
+    ) {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(components -> components
+                                        .declarative("myHandler", cfg -> myHandlerComponent))
+                                .customized((cfg, processorConfig) -> processorConfig
+                                        .deadLetterQueue(dlq -> dlq
+                                                .enabled()
+                                                .factory((name, config) ->
+                                                        JpaSequencedDeadLetterQueue.builder()
+                                                                .processingGroup(name)
+                                                                .maxSequences(256)
+                                                                .maxSequenceSize(256)
+                                                                .transactionalExecutorProvider(
+                                                                        new JpaTransactionalExecutorProvider(entityManagerFactory))
+                                                                .eventConverter(eventConverter)
+                                                                .genericConverter(converter)
+                                                                .build())))
+                )
+        ));
+    }
+}
+----
+--
+
+Spring Boot::
++
+--
+The simplest way to enable the DLQ in Spring Boot is via properties.
+Spring Boot auto-configuration automatically detects whether JPA or JDBC is available and creates the appropriate `SequencedDeadLetterQueueFactory` bean:
+
+[source,properties]
+----
+axon.eventhandling.processors.my-processor.dlq.enabled=true
+----
+
+To customize queue capacity or use a non-default implementation, define a `SequencedDeadLetterQueueFactory` bean.
+The factory is called once per Event Handling Component and receives the queue name as its first argument (following the `DeadLetterQueue[processorName][beanName]` pattern, where `beanName` is the Spring bean name of the event handler):
+
+[source,java]
+----
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DlqConfig {
+
+    @Bean
+    SequencedDeadLetterQueueFactory myDeadLetterQueueFactory(
+            EntityManagerFactory entityManagerFactory,
+            EventConverter eventConverter,
+            Converter converter
+    ) {
+        return (processingGroup, config) ->
+                JpaSequencedDeadLetterQueue.builder()
+                        .processingGroup(processingGroup)
+                        .maxSequences(256)
+                        .maxSequenceSize(256)
+                        .transactionalExecutorProvider(
+                                new JpaTransactionalExecutorProvider(entityManagerFactory))
+                        .eventConverter(eventConverter)
+                        .genericConverter(converter)
+                        .build();
     }
 }
 ----
 
-Although this enables the processing to continue in case of errors, it doesn't retry the failed events automatically.
-The next section explains some of the options to enable retries.
+[source,properties]
+----
+axon.eventhandling.processors.my-processor.dlq.enabled=true
+----
+--
+====
+
+== Queue naming
+
+Each Event Handling Component within a processor gets its own queue instance.
+Queues are identified by the pattern `DeadLetterQueue[processorName][componentName]`, where `componentName` is the name passed to `declarative(...)` / `autodetected(...)` in the Configuration API, or the Spring bean name in Spring Boot.
+
+Keep component names stable.
+Changing a component name orphans any previously dead-lettered events.
+
+== Capacity limits
+
+You can set the maximum number of sequences (defaults to 1024) and the maximum number of letters per sequence (also defaults to 1024).
+If either threshold is exceeded, the queue throws a `DeadLetterQueueOverflowException` and the processor stops accepting new events, falling back to the xref:axon-framework-reference:events:event-processors/index.adoc#error-handling[default error handling behavior].
+
+Although this enables the processor to continue in case of errors, it does not retry failed events automatically.
+The next section explains how to enable retries.
