@@ -541,7 +541,7 @@ Configure an `EnqueuePolicy` to control this behavior.
 The policy receives a `DeadLetter` and the failure cause (`Throwable`), and returns an `EnqueueDecision` that tells the framework whether to enqueue, re-queue, or evict the letter.
 You can also modify the stored exception — for example, to truncate a cause that would otherwise exceed a database column limit.
 
-Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <<Processing dead-letter sequences,dead-letter processing>> fails.
+Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <<Processing sequences,dead-letter processing>> fails.
 This means a letter that keeps failing can be evicted or enriched with additional diagnostic metadata (such as a retry count) rather than staying in the queue forever.
 
 See the sample `EnqueuePolicy` below for an example of retry-count-based eviction:

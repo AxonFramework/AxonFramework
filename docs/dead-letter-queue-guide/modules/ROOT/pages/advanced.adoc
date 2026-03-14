@@ -1,19 +1,51 @@
 = Advanced Use Cases
 :navtitle: Advanced use cases
 
-It's possible to change the default enqueue behavior. You can do so by implementing the `EnqueuePolicy` interface.
-For example like this:
+== Enqueue policy
+
+By default, every event handling failure results in the event being enqueued in the dead-letter queue.
+You can override this behavior by implementing `EnqueuePolicy`.
+
+The policy is evaluated at two points: when initial event handling fails, and again when dead-letter processing fails.
+It receives the `DeadLetter` and the failure `Throwable`, and returns an `EnqueueDecision`.
+
+Available decisions via the `Decisions` utility class:
+
+* `Decisions.enqueue(cause)` — Add or keep the letter in the queue (default behavior).
+* `Decisions.requeue(cause, letterUpdater)` — Re-queue the letter, optionally updating its diagnostics metadata.
+Use this to track retry counts or attach structured failure information.
+* `Decisions.ignore()` — Skip the current failure without changing the queue.
+* `Decisions.doNotEnqueue()` — Prevent a new letter from being created during initial handling.
+The event is discarded; handlers that already succeeded keep their results.
+* `Decisions.evict()` — Permanently remove an existing letter from the queue during retry processing.
+Use this when a letter has exhausted its retries or is otherwise no longer relevant.
+
+`doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
+
+=== Evict based on cause type
+
+Skip enqueuing entirely for errors that are guaranteed to recur (such as programming errors), and evict notification events that have been waiting too long:
 
 [source,java]
 ----
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import java.time.Duration;
+import java.time.Instant;
+
 public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+
     @Override
-    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+    public EnqueueDecision<EventMessage<?>> decide(
+            DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
         if (cause instanceof NullPointerException) {
             return Decisions.doNotEnqueue(); // <1>
         }
         if (letter.message().getPayload() instanceof NotificationEvent &&
-                letter.enqueuedAt().isAfter(Instant.now().plus(Duration.ofMinutes(5L)))) {
+                letter.enqueuedAt().isBefore(Instant.now().minus(Duration.ofMinutes(5L)))) {
             return Decisions.evict(); // <2>
         }
         return Decisions.enqueue(cause); // <3>
@@ -21,19 +53,28 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 }
 ----
 
-<1> No need to put this in a dead letter queue.
-As this always creates the same `NullPointerException`, don't enqueue it.
-<2> If it's a notification event, which is already in the queue for 5 minutes, evict the event so it's not retried again.
-<3> Default to enqueue the event message again.
+<1> No need to dead-letter this — the same `NullPointerException` will always recur.
+<2> If a notification event has been in the queue for over 5 minutes, evict it — it's no longer relevant.
+<3> Default: keep the letter in the queue for a future retry.
 
-Below is another example that uses the diagnostics and evicts after trying 5 times:
+=== Evict after a maximum number of retries
+
+Track the retry count in the letter's diagnostics and evict after a threshold:
 
 [source,java]
 ----
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
 public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
+
     @Override
-    public EnqueueDecision<EventMessage<?>> decide(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
-        final int retries = (int) letter.diagnostics().getOrDefault("retries", -1); // <1>
+    public EnqueueDecision<EventMessage<?>> decide(
+            DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+        int retries = (int) letter.diagnostics().getOrDefault("retries", -1); // <1>
         if (retries < 5) {
             return Decisions.requeue(cause, l -> l.diagnostics().and("retries", retries + 1)); // <2>
         }
@@ -42,19 +83,64 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage<?>> {
 }
 ----
 
-<1> Get the retries, default to -1. So on entering the queue, the value is 0.
-<2> Requeue, increasing the retries.
-<3> Once it's retried 5 times, the framework evicts the event message.
+<1> Read the retry count from diagnostics; defaults to -1 so the first enqueue sets it to 0.
+<2> Requeue the letter and increment the retry counter.
+<3> After 5 retries, evict the letter permanently.
 
-You can set the policy for a specific group with something like:
+== Configuring the policy
 
+[tabs]
+====
+Configuration API::
++
+--
 [source,java]
 ----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
 public class AxonConfig {
-    // omitting other configuration methods...
-    public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
-        // Replace "my-processing-group" for the processing group you want to configure the policy on.
-        configurer.registerDeadLetterPolicy("my-processing-group", config -> new CustomEnqueuePolicy());
+
+    public void configureEnqueuePolicy() {
+        var configurer = MessagingConfigurer.create();
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(/* ... */)
+                                .customized((cfg, processorConfig) -> processorConfig
+                                        .deadLetterQueue(dlq -> dlq
+                                                .enabled()
+                                                .enqueuePolicy(new CustomEnqueuePolicy()))))
+        ));
     }
 }
 ----
+--
+
+Spring Boot::
++
+--
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProcessorConfig {
+
+    @Bean
+    EventProcessorDefinition myProcessor() {
+        return EventProcessorDefinition.pooledStreaming("my-processor")
+                .assigningHandlers(descriptor ->
+                        descriptor.beanName().startsWith("my"))
+                .customized(config -> config
+                        .deadLetterQueue(dlq -> dlq
+                                .enabled()
+                                .enqueuePolicy(new CustomEnqueuePolicy())));
+    }
+}
+----
+--
+====
