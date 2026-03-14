@@ -169,7 +169,7 @@ Spring Boot::
 +
 --
 Define a custom `SequencedDeadLetterQueueFactory` bean and enable the DLQ via properties.
-The factory receives the queue name (following the `DeadLetterQueue[processorName][componentName]` pattern from <<Queue scoping and naming>>) as its first parameter, and is called once per event handling component.
+The factory receives the queue name (following the `DeadLetterQueue[processorName][beanName]` pattern from <<Queue scoping and naming>>, where `beanName` is the Spring bean name of the event handler) as its first parameter, and is called once per event handling component.
 When this bean is present, it replaces the Spring Boot auto-configured factory for all processors where the DLQ is enabled:
 
 [source,java]
@@ -373,7 +373,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import java.util.concurrent.TimeUnit;
 
-public class DeadLetterRetrier {
+public class DeadLetterProcessor {
 
     // ErrorEvent is your application-defined event class
     private static final QualifiedName ERROR_EVENT_TYPE =
@@ -405,7 +405,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import java.util.concurrent.TimeUnit;
 
-public class DeadLetterRetrier {
+public class DeadLetterProcessor {
 
     private final Configuration configuration;
 
@@ -429,7 +429,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import java.util.concurrent.TimeUnit;
 
-public class DeadLetterRetrier {
+public class DeadLetterProcessor {
 
     private final Configuration configuration;
 
