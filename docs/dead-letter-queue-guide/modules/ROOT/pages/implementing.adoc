@@ -12,7 +12,7 @@ When a failed event is retried, all event handlers within the Event Handling Com
 If handlers are not idempotent, retrying may produce undesired side effects.
 ====
 
-== Enabling the DLQ
+== Enabling the dead-letter queue
 
 [tabs]
 ====
