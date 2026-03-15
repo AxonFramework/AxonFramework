@@ -41,6 +41,7 @@ class AxonTaskJanitorShutdownTest {
                 .withUserConfiguration(TestContext.class)
                 .withPropertyValues(
                         "axon.axonserver.enabled=false",
+                        "axon.timeout.enabled=true",
                         "axon.eventstorage.jpa.polling-interval=0"
                 );
     }
