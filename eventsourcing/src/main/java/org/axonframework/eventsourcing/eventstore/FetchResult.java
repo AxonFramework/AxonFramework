@@ -46,5 +46,16 @@ public record FetchResult<E>(List<E> items, @Nullable E cursor) {
 
     public FetchResult {
         Objects.requireNonNull(items, "items must not be null");
+        if (!items.isEmpty()) {
+            E lastItem = items.getLast();
+            if (!lastItem.equals(cursor)) {
+                String message = """
+                    When items is non-empty, cursor must equal the last item.
+                    Got cursor: %s, last item: %s
+                    """.formatted(cursor, lastItem);
+
+                throw new IllegalArgumentException(message);
+            }
+        }
     }
 }
