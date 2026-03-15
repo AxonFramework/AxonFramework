@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot.autoconfig;
+package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.core.timeout.AxonTaskJanitor;
+import org.axonframework.messaging.timeout.AxonTaskJanitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
  * @author Axon Framework Contributors
  * @since 4.13.1
  */
-@Internal
 public class AxonTaskJanitorShutdownHandler implements SmartLifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
