@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.repository;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,5 +38,5 @@ public interface SimpleRepositoryEntityPersister<I, T> {
      * @param context The context in which the entity should be persisted.
      * @return a CompletableFuture that completes when the entity has been persisted.
      */
-    CompletableFuture<Void> persist(@NonNull I id, @NonNull T entity, @NonNull ProcessingContext context);
+    CompletableFuture<Void> persist(I id, T entity, ProcessingContext context);
 }

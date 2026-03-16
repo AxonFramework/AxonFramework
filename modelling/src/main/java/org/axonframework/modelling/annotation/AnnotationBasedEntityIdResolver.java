@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -25,6 +24,7 @@ import org.axonframework.modelling.EntityIdResolver;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,14 +53,12 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
     private static final Class<TargetEntityId> IDENTIFIER_ANNOTATION = TargetEntityId.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();
 
-    @NonNull
     @Override
-    public T resolve(@NonNull Message message, @NonNull ProcessingContext context) throws EntityIdResolutionException {
+    public T resolve(Message message, ProcessingContext context) throws EntityIdResolutionException {
         Object payload = message.payload();
-        List<Object> identifiers = getIdentifiers(payload)
-                .stream()
-                .filter(Objects::nonNull)
-                .toList();
+        List<Object> identifiers = payload != null
+                ? getIdentifiers(payload).stream().toList()
+                : Collections.emptyList();
 
         if (identifiers.size() == 1) {
             @SuppressWarnings("unchecked")
@@ -69,7 +67,7 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
             return first;
         }
 
-        throw new EntityIdResolutionException(payload.getClass(), identifiers);
+        throw new EntityIdResolutionException(message.payloadType(), identifiers);
     }
 
     /**

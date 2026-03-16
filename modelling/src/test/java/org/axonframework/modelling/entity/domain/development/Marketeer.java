@@ -23,9 +23,9 @@ import org.axonframework.modelling.entity.domain.development.commands.ChangeMark
 import org.axonframework.modelling.entity.domain.development.events.MarketeerHubspotUsernameChanged;
 
 public class Marketeer {
+
     private final String email;
     private String hubspotUsername;
-
 
     public Marketeer(String email, String hubspotUsername) {
         this.email = email;

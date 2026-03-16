@@ -16,24 +16,22 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import static java.util.Objects.requireNonNull;
-
-import java.util.Optional;
-import java.util.Set;
-
-
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.jspecify.annotations.NonNull;
+
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Decorator implementation of {@link EventHandlingComponent} that uses a configurable {@link SequencingPolicy} to
@@ -53,7 +51,7 @@ import org.jspecify.annotations.NonNull;
 @Internal
 public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
-    private final SequencingPolicy sequencingPolicy;
+    private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final EventHandlingComponent delegate;
 
     /**
@@ -63,17 +61,16 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequenceOverridingEventHandlingComponent(@NonNull SequencingPolicy sequencingPolicy,
-                                                    @NonNull EventHandlingComponent delegate) {
+    public SequenceOverridingEventHandlingComponent(SequencingPolicy<? super EventMessage> sequencingPolicy,
+                                                    EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @NonNull
     @Override
-    public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
-        return sequencingPolicy.getSequenceIdentifierFor(event, context)
+        return sequencingPolicy.sequenceIdentifierFor(event, context)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 
@@ -83,13 +80,13 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public boolean supports(@NonNull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
@@ -99,8 +96,8 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                               ProcessingContext context) {
         return delegate.handle(resetContext, context);
     }
 
@@ -111,7 +108,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }

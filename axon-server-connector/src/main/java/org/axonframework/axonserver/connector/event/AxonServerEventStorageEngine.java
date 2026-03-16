@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -73,16 +72,16 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
      * @param converter  The converter to use to serialize {@link EventMessage#payload() payloads} and complex
      *                   {@link Metadata} values into bytes.
      */
-    public AxonServerEventStorageEngine(@NonNull AxonServerConnection connection,
-                                        @NonNull EventConverter converter) {
+    public AxonServerEventStorageEngine(AxonServerConnection connection,
+                                        EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The Axon Server connection cannot be null.");
         this.converter = new TaggedEventConverter(converter);
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext context,
-                                                                @NonNull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
@@ -104,7 +103,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -115,7 +114,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -146,7 +145,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -160,7 +159,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("converter", converter);
     }
@@ -182,7 +181,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        public CompletableFuture<ConsistencyMarker> afterCommit(@NonNull AppendEventsResponse appendResponse) {
+        public CompletableFuture<ConsistencyMarker> afterCommit(AppendEventsResponse appendResponse) {
             long marker = appendResponse.getConsistencyMarker();
             logger.debug("Committing append transaction succeeded with marker [{}].", marker);
 

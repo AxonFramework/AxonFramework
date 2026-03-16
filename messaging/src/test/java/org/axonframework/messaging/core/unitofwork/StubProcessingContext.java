@@ -121,7 +121,7 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle on(@NonNull Phase phase,
+    public @NonNull ProcessingLifecycle on(@NonNull Phase phase,
                                   @NonNull Function<ProcessingContext, CompletableFuture<?>> action) {
         if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
@@ -131,13 +131,13 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public ProcessingLifecycle onError(@NonNull ErrorHandler action) {
+    public @NonNull ProcessingLifecycle onError(@NonNull ErrorHandler action) {
         logger.warn("Error handler is not yet supported in the StubProcessingContext");
         return this;
     }
 
     @Override
-    public ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
+    public @NonNull ProcessingLifecycle whenComplete(@NonNull Consumer<ProcessingContext> action) {
         logger.warn("Completion action is not yet supported in the StubProcessingContext");
         return this;
     }
@@ -154,7 +154,7 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> ProcessingContext withResource(@NonNull ResourceKey<T> key,
+    public <T> @NonNull ProcessingContext withResource(@NonNull ResourceKey<T> key,
                                               @NonNull T resource) {
         resources.put(key, resource);
         return this;

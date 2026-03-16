@@ -38,6 +38,7 @@ import org.jobrunr.storage.InMemoryStorageProvider;
 import org.jobrunr.storage.StorageProvider;
 import org.junit.jupiter.api.*;
 
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -220,14 +221,14 @@ class JobRunrEventSchedulerTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                        @NonNull List<? extends EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public Registration subscribe(
+        public @NonNull Registration subscribe(
                 @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }

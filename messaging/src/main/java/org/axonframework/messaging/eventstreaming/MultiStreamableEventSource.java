@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Context;
@@ -102,12 +101,12 @@ public class MultiStreamableEventSource implements StreamableEventSource {
      * @param source     The first event source to include.
      * @return A SourceCollector for adding more sources and configuring the comparator.
      */
-    public static SourceCollector combining(@NonNull String sourceName, @NonNull StreamableEventSource source) {
+    public static SourceCollector combining(String sourceName, StreamableEventSource source) {
         return new SourceCollectorImpl(sourceName, source);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+    public MessageStream<EventMessage> open(StreamingCondition condition,
                                             @Nullable ProcessingContext context) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken == null) {
@@ -161,7 +160,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at, @Nullable ProcessingContext context) {
         return createToken(s -> s.tokenAt(at, context)).thenApply(t -> t);
     }
 
@@ -200,7 +199,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
          * @return This SourceCollector for fluent chaining.
          * @throws IllegalArgumentException if the sourceName is already used.
          */
-        SourceCollector and(@NonNull String sourceName, @NonNull StreamableEventSource source);
+        SourceCollector and(String sourceName, StreamableEventSource source);
 
         /**
          * Creates a MultiStreamableEventSource using timestamp-based comparison (oldest event first). This is the
@@ -218,7 +217,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
          *                   is consumed first.
          * @return A configured MultiStreamableEventSource instance.
          */
-        MultiStreamableEventSource comparingUsing(@NonNull Comparator<MessageStream.Entry<EventMessage>> comparator);
+        MultiStreamableEventSource comparingUsing(Comparator<MessageStream.Entry<EventMessage>> comparator);
     }
 
     /**
@@ -240,7 +239,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
         }
 
         @Override
-        public SourceCollector and(@NonNull String sourceName, @NonNull StreamableEventSource source) {
+        public SourceCollector and(String sourceName, StreamableEventSource source) {
             addSource(sourceName, source);
             return this;
         }
@@ -260,7 +259,7 @@ public class MultiStreamableEventSource implements StreamableEventSource {
 
         @Override
         public MultiStreamableEventSource comparingUsing(
-                @NonNull Comparator<MessageStream.Entry<EventMessage>> comparator) {
+                Comparator<MessageStream.Entry<EventMessage>> comparator) {
             Objects.requireNonNull(comparator, "comparator must not be null");
             return new MultiStreamableEventSource(eventSourceMap, comparator);
         }

@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ModuleBuilder;
+import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
@@ -32,13 +32,12 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 import org.axonframework.messaging.eventhandling.interception.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.common.lifecycle.Phase;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 /**
  * A configuration module for configuring and registering a single {@link SubscribingEventProcessor} component.
@@ -68,7 +67,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         EventProcessorModule.CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> {
 
     private final String processorName;
-    private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
+    private Map<String, ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<SubscribingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
 
     /**
@@ -79,7 +78,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
      *
      * @param processorName The unique name for the subscribing event processor.
      */
-    public SubscribingEventProcessorModule(@NonNull String processorName) {
+    public SubscribingEventProcessorModule(String processorName) {
         super(processorName);
         this.processorName = processorName;
     }
@@ -117,9 +116,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private void registerEventHandlingComponents() {
-        for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
-            var componentBuilder = eventHandlingComponentBuilders.get(i);
-            var componentName = processorEventHandlingComponentName(i);
+        for (var componentBuilderEntry : eventHandlingComponentBuilders.entrySet()) {
+            var componentBuilder = componentBuilderEntry.getValue();
+            var componentName = processorEventHandlingComponentName(componentBuilderEntry.getKey());
             componentRegistry(cr -> {
                 cr.registerComponent(EventHandlingComponent.class, componentName,
                                      cfg -> {
@@ -142,27 +141,27 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     }
 
     private List<EventHandlingComponent> getEventHandlingComponents(Configuration configuration) {
-        return IntStream.range(0, eventHandlingComponentBuilders.size())
-                        .mapToObj(i -> {
-                            String componentName = processorEventHandlingComponentName(i);
-                            return configuration.getComponent(EventHandlingComponent.class, componentName);
-                        })
+        return eventHandlingComponentBuilders.keySet()
+                        .stream()
+                        .map(componentName -> configuration.getComponent(
+                                EventHandlingComponent.class,
+                                processorEventHandlingComponentName(componentName)
+                        ))
                         .toList();
     }
 
-        private @NonNull String processorEventHandlingComponentName(int index) {
-        return "EventHandlingComponent[" + processorName + "][" + index + "]";
+    private String processorEventHandlingComponentName(String componentName) {
+        return "EventHandlingComponent[" + processorName + "][" + componentName + "]";
     }
 
     @Override
     public SubscribingEventProcessorModule customized(
-            @NonNull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
+            BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> instanceCustomization
     ) {
-        this.customizedProcessorConfigurationBuilder = cfg -> {
-            var typeCustomization = typeSpecificCustomizationOrNoOp(cfg).apply(cfg,
-                                                                               defaultEventProcessorsConfiguration(
-                                                                                       cfg));
-            return instanceCustomization.apply(cfg, typeCustomization);
+        this.customizedProcessorConfigurationBuilder = config -> {
+            var typeCustomization = typeSpecificCustomizationOrNoOp(config)
+                    .apply(config, defaultEventProcessorsConfiguration(config, processorName));
+            return instanceCustomization.apply(config, typeCustomization);
         };
         return this;
     }
@@ -175,11 +174,14 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         return this;
     }
 
-    static @NonNull SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
+    static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(
+            Configuration config,
+            String processorName
+    ) {
         return new SubscribingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg)),
-                cfg
+                parentSharedCustomizationOrDefault(config)
+                        .apply(config, new EventProcessorConfiguration(processorName, config)),
+                config
         );
     }
 
@@ -199,11 +201,11 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
 
     @Override
     public CustomizationPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration> eventHandlingComponents(
-            @NonNull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
+            Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> configurerTask
     ) {
         Objects.requireNonNull(configurerTask, "configurerTask may not be null");
         var componentsConfigurer = new DefaultEventHandlingComponentsConfigurer();
-        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toList();
+        this.eventHandlingComponentBuilders = configurerTask.apply(componentsConfigurer).toMap();
         return this;
     }
 
@@ -240,7 +242,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.
          */
-        default Customization andThen(@NonNull Customization other) {
+        default Customization andThen(Customization other) {
             Objects.requireNonNull(other, "other may not be null");
             return (config, pConfig) -> other.apply(config, this.apply(config, pConfig));
         }

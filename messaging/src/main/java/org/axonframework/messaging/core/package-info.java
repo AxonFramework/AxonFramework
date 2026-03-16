@@ -17,4 +17,7 @@
 /**
  * Classes related to message processing in Axon Framework.
  */
+@NullMarked
 package org.axonframework.messaging.core;
+
+import org.jspecify.annotations.NullMarked;

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 
 import java.util.Set;
@@ -25,10 +24,10 @@ import java.util.Set;
  * Factory for building {@link EventProcessorModule EventProcessorModules} from a set of discovered event handler components.
  * <p>
  * This interface should only be implemented if the default assignment rules for event processors need to be
- * customized beyond what {@link ProcessorDefinition} provides. The factory is responsible for determining which event
+ * customized beyond what {@link EventProcessorDefinition} provides. The factory is responsible for determining which event
  * handlers should be assigned to which processors and creating the corresponding modules.
  * <p>
- * The default implementation ({@link DefaultProcessorModuleFactory}) uses {@link ProcessorDefinition ProcessorDefinitions}
+ * The default implementation ({@link DefaultProcessorModuleFactory}) uses {@link EventProcessorDefinition ProcessorDefinitions}
  * to assign handlers based on their selectors. If no matching processor definition is found for a handler, it defaults to
  * assigning the handler to a processor named after the handler's package.
  * <p>
@@ -43,7 +42,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 5.0.2
  * @see DefaultProcessorModuleFactory
- * @see ProcessorDefinition
+ * @see EventProcessorDefinition
  */
 public interface ProcessorModuleFactory {
 
@@ -56,6 +55,5 @@ public interface ProcessorModuleFactory {
      * @param handlers The set of discovered event handler components to be assigned to processors.
      * @return A set of event processor modules, each containing its assigned event handlers.
      */
-    @NonNull
-    Set<EventProcessorModule> buildProcessorModules(@NonNull Set<ProcessorDefinition.EventHandlerDescriptor> handlers);
+    Set<EventProcessorModule> buildProcessorModules(Set<EventProcessorDefinition.EventHandlerDescriptor> handlers);
 }

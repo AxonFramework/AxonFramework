@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -41,7 +40,7 @@ public class ChildAmbiguityException extends RuntimeException {
      *
      * @param message The message describing the cause of this exception.
      */
-    public ChildAmbiguityException(@NonNull String message) {
+    public ChildAmbiguityException(String message) {
         super(message);
     }
 }

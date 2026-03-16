@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
@@ -140,7 +139,7 @@ public class MultiSourceTrackingToken implements TrackingToken {
         return true;
     }
 
-        private @NonNull MultiSourceTrackingToken assertSameKeysMultiSourceTrackingToken(TrackingToken other) {
+        private MultiSourceTrackingToken assertSameKeysMultiSourceTrackingToken(TrackingToken other) {
         Assert.isTrue(other instanceof MultiSourceTrackingToken, () -> "Incompatible token type provided.");
 
         MultiSourceTrackingToken otherMultiToken = (MultiSourceTrackingToken) other;

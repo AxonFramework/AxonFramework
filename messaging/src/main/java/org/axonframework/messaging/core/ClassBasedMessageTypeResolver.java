@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Objects;
 import java.util.Optional;
 
@@ -58,7 +56,7 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public Optional<MessageType> resolve(@NonNull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         Objects.requireNonNull(payloadType, "payloadType may not be null");
         return Optional.of(new MessageType(payloadType.getName(), version));
     }

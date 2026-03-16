@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericResultMessage;
@@ -34,7 +33,6 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Unit of Work implementation that is able to process a batch of Messages instead of just a single Message.
@@ -81,7 +79,7 @@ public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyU
      */
     @Override
     public <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
-                                                  @NonNull RollbackConfiguration rollbackConfiguration) {
+                                                  RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }

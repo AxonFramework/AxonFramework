@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -34,7 +33,7 @@ public class SubscriptionQueryAlreadyRegisteredException extends RuntimeExceptio
      * @param queryId The {@link SubscriptionQueryMessage#identifier()} of the subscription query accidentally being
      *                registered multiple times.
      */
-    public SubscriptionQueryAlreadyRegisteredException(@NonNull String queryId) {
+    public SubscriptionQueryAlreadyRegisteredException(String queryId) {
         super("There is already a subscription query with query identifier [" + queryId + "] present.");
     }
 }

@@ -17,4 +17,7 @@
 /**
  * Classes that implement the concept of command handling using explicit command objects.
  */
+@NullMarked
 package org.axonframework.messaging.commandhandling;
+
+import org.jspecify.annotations.NullMarked;

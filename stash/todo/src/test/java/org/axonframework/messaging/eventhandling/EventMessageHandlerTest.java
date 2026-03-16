@@ -34,7 +34,7 @@ class EventMessageHandlerTest {
     @SuppressWarnings("Convert2Lambda") // Cannot spy a lambda
     private final org.axonframework.messaging.eventhandling.EventMessageHandler testSubject = spy(new EventMessageHandler() {
         @Override
-        public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) throws Exception {
+        public @NonNull Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) throws Exception {
             return null;
         }
     });

@@ -28,7 +28,6 @@ import org.springframework.util.MultiValueMap;
 
 import java.lang.invoke.MethodHandles;
 import java.util.stream.Stream;
-import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.extension.spring.SpringUtils.isQualifierMatch;
 
@@ -56,7 +55,6 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
         this.qualifierAttribute = qualifierAttribute;
     }
 
-    @NonNull
     @Override
     public ConfigurationPhase getConfigurationPhase() {
         return ConfigurationPhase.REGISTER_BEAN;

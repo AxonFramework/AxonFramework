@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.QualifiedName;
 
 /**
@@ -35,9 +34,9 @@ public class DuplicateQueryHandlerSubscriptionException extends RuntimeException
      * @param initialHandler   the initial {@link QueryHandler} for which a duplicate was encountered.
      * @param duplicateHandler The duplicated {@link QueryHandler}.
      */
-    public DuplicateQueryHandlerSubscriptionException(@NonNull QualifiedName name,
-                                                      @NonNull QueryHandler initialHandler,
-                                                      @NonNull QueryHandler duplicateHandler) {
+    public DuplicateQueryHandlerSubscriptionException(QualifiedName name,
+                                                      QueryHandler initialHandler,
+                                                      QueryHandler duplicateHandler) {
         this(String.format("Duplicate subscription for query handler [%s] detected. "
                                    + "Registration of handler [%s]  conflicts with previously registered handler [%s].",
                            name, initialHandler, duplicateHandler));

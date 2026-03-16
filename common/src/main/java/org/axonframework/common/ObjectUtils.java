@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -90,7 +92,7 @@ public final class ObjectUtils {
      * @return the output of {@code valueProvider} by ingesting {@code instance} if it is not {@code null}, otherwise
      * the {@code defaultValue}
      */
-    public static <I, T> T getOrDefault(I instance, Function<I, T> valueProvider, T defaultValue) {
+    public static <I, T> T getOrDefault(@Nullable I instance, Function<I, T> valueProvider, T defaultValue) {
         return instance != null ? valueProvider.apply(instance) : defaultValue;
     }
 
@@ -103,7 +105,7 @@ public final class ObjectUtils {
      * @return the type of the given {@code instance} if it is not {@code null}, otherwise {@link Void#getClass()}
      */
     @SuppressWarnings("unchecked")
-    public static <T> Class<T> nullSafeTypeOf(T instance) {
+    public static <T> Class<T> nullSafeTypeOf(@Nullable T instance) {
         if (instance == null) {
             return (Class<T>) Void.class;
         }
@@ -133,7 +135,7 @@ public final class ObjectUtils {
      * @return a supplier that returns the same instance
      */
     public static <T> Supplier<T> sameInstanceSupplier(Supplier<T> supplier) {
-        AtomicReference<T> instanceRef = new AtomicReference<>();
+        AtomicReference<@Nullable T> instanceRef = new AtomicReference<>();
         // Using the AtomicReference ensures the lock is only created once for the supplier's invocations.
         return () -> instanceRef.updateAndGet(current -> getOrDefault(current, supplier));
     }

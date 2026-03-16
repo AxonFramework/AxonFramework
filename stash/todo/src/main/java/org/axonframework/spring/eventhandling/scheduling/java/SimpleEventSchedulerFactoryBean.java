@@ -33,7 +33,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Spring FactoryBean that creates a SimpleEventScheduler instance using resources found in the Spring Application
@@ -144,7 +143,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

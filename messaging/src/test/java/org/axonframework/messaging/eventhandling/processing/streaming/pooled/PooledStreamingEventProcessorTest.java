@@ -20,7 +20,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.util.DelegateScheduledExecutorService;
 import org.axonframework.common.util.MockException;
-import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.TestConverter;
+import org.axonframework.messaging.core.ApplicationContext;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -34,6 +36,7 @@ import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
@@ -45,6 +48,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
@@ -56,7 +61,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -107,6 +114,7 @@ class PooledStreamingEventProcessorTest {
     private ScheduledExecutorService workerExecutor;
     private SimpleEventHandlingComponent simpleEhc;
     private RecordingEventHandlingComponent defaultEventHandlingComponent;
+    private Converter converter;
 
     @BeforeEach
     void setUp() {
@@ -120,6 +128,7 @@ class PooledStreamingEventProcessorTest {
         simpleEhc = SimpleEventHandlingComponent.create("test");
         simpleEhc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
         defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(simpleEhc));
+        converter = TestConverter.JACKSON.getConverter();
         withTestSubject(List.of()); // default always applied
     }
 
@@ -141,9 +150,12 @@ class PooledStreamingEventProcessorTest {
         var componentsWithDefault = new ArrayList<>(eventHandlingComponents);
         componentsWithDefault.add(defaultEventHandlingComponent);
 
-        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
+        TestApplicationContext testApplicationContext = new TestApplicationContext();
+        testApplicationContext.addComponent(Converter.class, null, converter);
+        EventProcessorConfiguration baseConfig = new EventProcessorConfiguration(PROCESSOR_NAME, null);
+        var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration(baseConfig)
                 .eventSource(stubMessageSource)
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory(testApplicationContext))
                 .tokenStore(tokenStore)
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)
@@ -1458,7 +1470,8 @@ class PooledStreamingEventProcessorTest {
             TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
             String expectedContext = "my-context";
-            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
+            byte[] convertedContext = converter.convert(expectedContext, byte[].class);
+            TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, convertedContext);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
             simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
@@ -1590,6 +1603,7 @@ class PooledStreamingEventProcessorTest {
             TrackingToken testToken = new GlobalSequenceTrackingToken(42);
             int expectedSegmentCount = 2;
             String expectedContext = "my-context";
+            byte[] convertedContext = converter.convert(expectedContext, byte[].class);
 
             AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
             simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
@@ -1632,8 +1646,8 @@ class PooledStreamingEventProcessorTest {
             assertThat(token1).isNotNull();
             assertTrue(ReplayToken.isReplay(token1));
             // Verify the reset context is stored in the ReplayToken
-            assertEquals(expectedContext, ((ReplayToken) token0).context());
-            assertEquals(expectedContext, ((ReplayToken) token1).context());
+            assertThat(convertedContext).containsSequence(((ReplayToken) token0).resetContext());
+            assertThat(convertedContext).containsSequence(((ReplayToken) token1).resetContext());
         }
     }
 
@@ -1659,6 +1673,24 @@ class PooledStreamingEventProcessorTest {
                          () -> withTestSubject(List.of(), c -> c.initialSegmentCount(0)));
             assertThrows(AxonConfigurationException.class,
                          () -> withTestSubject(List.of(), c -> c.initialSegmentCount(-1)));
+        }
+    }
+
+    private class TestApplicationContext implements ApplicationContext {
+
+        private final Map<Key<?>, Object> components = new HashMap<>();
+
+        @SuppressWarnings("unchecked")
+        public <C> C component(@NonNull Class<C> type, @Nullable String name) {
+            return (C) components.get(new Key<>(type, name));
+        }
+
+        <C> void addComponent(@NonNull Class<C> type, @Nullable String name, @NonNull C component) {
+            components.put(new Key<>(type, name), component);
+        }
+
+        private record Key<C>(Class<C> type, @Nullable String name) {
+
         }
     }
 }

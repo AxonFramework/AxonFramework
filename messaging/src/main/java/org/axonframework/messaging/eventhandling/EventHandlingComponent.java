@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -55,7 +53,7 @@ public interface EventHandlingComponent
      * @param eventName The name of the event to check for support.
      * @return {@code true} if the given {@code eventName} is supported, {@code false} otherwise.
      */
-    default boolean supports(@NonNull QualifiedName eventName) {
+    default boolean supports(QualifiedName eventName) {
         return supportedEvents().contains(eventName);
     }
 
@@ -71,8 +69,7 @@ public interface EventHandlingComponent
      * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
-    @NonNull
-    Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context);
+    Object sequenceIdentifierFor(EventMessage event, ProcessingContext context);
 
     /**
      * Indicates whether this component supports reset operations.

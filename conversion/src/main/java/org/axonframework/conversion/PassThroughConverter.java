@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 
@@ -26,9 +25,8 @@ import java.lang.reflect.Type;
  * A {@link Converter} implementation that only "passes through" input object if the {@code sourceType} and
  * {@code targetType} are the identical.
  * <p>
- * As such, no conversion is performed by this {@code Converter}! The {@link #canConvert(Class, Class)} operation will
- * <b>only</b> return {@code true} whenever both types are identical. Furthermore, both {@link #convert(Object, Class)}
- * and {@link #convert(Object, Type)} will expect identical typing too, otherwise resulting in an
+ * As such, no conversion is performed by this {@code Converter}! Both {@link #convert(Object, Class)} and
+ * {@link #convert(Object, Type)} will expect identical typing too, otherwise resulting in an
  * {@link IllegalArgumentException}.
  * <p>
  * As such, this {@code Converter} is only useful when conversion is not necessary (e.g. during testing) for the
@@ -49,13 +47,8 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public boolean canConvert(@NonNull Type sourceType, @NonNull Type targetType) {
-        return sourceType.equals(targetType);
-    }
-
-    @Override
     @Nullable
-    public <T> T convert(@Nullable Object input, @NonNull Type targetType) {
+    public <T> T convert(@Nullable Object input, Type targetType) {
         if (input == null) {
             return null;
         }
@@ -72,7 +65,7 @@ public final class PassThroughConverter implements Converter {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         // Nothing internal to describe about this component
     }
 }

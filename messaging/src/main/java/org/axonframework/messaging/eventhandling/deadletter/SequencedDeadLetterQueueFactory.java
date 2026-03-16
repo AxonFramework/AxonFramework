@@ -16,76 +16,46 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.jspecify.annotations.NonNull;
-import org.axonframework.common.configuration.Component;
-import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.InstantiatedComponentDefinition;
-import org.axonframework.common.configuration.LifecycleRegistry;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
-import java.util.Optional;
-import java.util.function.BiFunction;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
-
 /**
- * A {@link ComponentFactory} implementation that creates {@link SequencedDeadLetterQueue} instances for event handling
- * components.
+ * Factory that creates a {@link SequencedDeadLetterQueue} for a given processing group.
  * <p>
- * This factory is used to create DLQ instances on-demand based on the component name.
- * The factory function receives both the component name and the {@link Configuration} to allow
- * retrieving configuration-dependent factories like those from {@link DeadLetterQueueConfiguration}.
+ * Implementations provide the backing store for dead-lettered events. The factory is invoked once per event handling
+ * component when DLQ support is enabled, allowing each component within a processor to have its own queue.
+ * <p>
+ * Example:
+ * <pre>{@code
+ * SequencedDeadLetterQueueFactory myFactory = (processingGroup, configuration) ->
+ *     new MySequencedDeadLetterQueue(processingGroup, storage);
+ * }</pre>
  *
  * @author Mateusz Nowak
  * @since 5.1.0
  */
-public class SequencedDeadLetterQueueFactory implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
-
-    private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> TYPE_REF = new TypeReference<>() {
-    };
-
-    private final BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn;
+@FunctionalInterface
+public interface SequencedDeadLetterQueueFactory {
 
     /**
-     * Constructs a factory with a custom factory function that has access to the configuration.
+     * Creates a {@link SequencedDeadLetterQueue} for the given {@code processingGroup}.
+     * <p>
+     * The {@code processingGroup} is a component-scoped identifier that uniquely identifies the dead letter queue
+     * within its event processor. A single processor may contain multiple event handling components, each with its
+     * own DLQ. The name follows the pattern {@code "DeadLetterQueue[processorName][componentName]"}, for example
+     * {@code "DeadLetterQueue[myProcessor][myComponent]"} for a component named {@code "myComponent"} within a
+     * processor named {@code "myProcessor"}.
+     * <p>
+     * Implementations should use this value as-is when scoping dead letters in their backing store
+     * (e.g., as the {@code processingGroup} column in a database table).
      *
-     * @param factoryFn The function that creates a {@link SequencedDeadLetterQueue} for a given name and configuration.
+     * @param processingGroup The component-scoped identifier used to scope dead letters to a single event handling
+     *                        component's queue, e.g. {@code "DeadLetterQueue[myProcessor][myComponent]"}.
+     * @param configuration   The {@link Configuration} providing access to framework components needed to build the
+     *                        queue (e.g., entity managers, converters). May be ignored when all dependencies are
+     *                        already wired externally (e.g., in a Spring context via bean injection).
+     * @return A {@link SequencedDeadLetterQueue} scoped to the given processing group.
      */
-    public SequencedDeadLetterQueueFactory(
-            @NonNull BiFunction<String, Configuration, SequencedDeadLetterQueue<EventMessage>> factoryFn
-    ) {
-        assertNonNull(factoryFn, "Factory function may not be null");
-        this.factoryFn = factoryFn;
-    }
-
-    @Override
-    @NonNull
-    public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
-        return TYPE_REF.getTypeAsClass();
-    }
-
-    @Override
-    @NonNull
-    public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(
-            @NonNull String name,
-            @NonNull Configuration config
-    ) {
-        return Optional.of(new InstantiatedComponentDefinition<>(
-                new Component.Identifier<>(forType(), name),
-                factoryFn.apply(name, config)
-        ));
-    }
-
-    @Override
-    public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
-    }
-
-    @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("type", forType());
-    }
+    SequencedDeadLetterQueue<EventMessage> create(String processingGroup, Configuration configuration);
 }

@@ -17,7 +17,6 @@
 package org.axonframework.messaging.core.unitofwork.transaction.jpa;
 
 import jakarta.persistence.EntityTransaction;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.conversion.CachingSupplier;
@@ -64,11 +63,11 @@ public class EntityManagerTransactionManager implements TransactionManager {
      *                              {@code null}
      * @throws NullPointerException if {@code entityManagerProvider} is {@code null}
      */
-    public EntityManagerTransactionManager(@NonNull EntityManagerProvider entityManagerProvider) {
+    public EntityManagerTransactionManager(EntityManagerProvider entityManagerProvider) {
         this.entityManagerProvider = Objects.requireNonNull(entityManagerProvider, "entityManagerProvider");
     }
 
-    @NonNull
+    
     @Override
     public Transaction startTransaction() {
         EntityTransaction tx = entityManagerProvider.getEntityManager().getTransaction();
@@ -106,7 +105,7 @@ public class EntityManagerTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void attachToProcessingLifecycle(@NonNull ProcessingLifecycle processingLifecycle) {
+    public void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
             pc.putResource(JpaTransactionalExecutorProvider.SUPPLIER_KEY, CachingSupplier.of(() -> new EntityManagerExecutor(entityManagerProvider)));

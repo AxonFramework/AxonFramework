@@ -46,13 +46,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Annotations -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Database -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
@@ -99,6 +92,11 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.ehcache</groupId>
@@ -135,6 +133,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
 

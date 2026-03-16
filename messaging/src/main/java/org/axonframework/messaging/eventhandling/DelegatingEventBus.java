@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
@@ -44,23 +43,23 @@ public abstract class DelegatingEventBus implements EventBus {
      *
      * @param delegate The {@link EventBus} instance to delegate calls to.
      */
-    public DelegatingEventBus(@NonNull EventBus delegate) {
+    public DelegatingEventBus(EventBus delegate) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate EventBus may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @NonNull List<EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegate.publish(context, events);
     }
 
     @Override
-    public Registration subscribe(@NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return delegate.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         delegate.describeTo(descriptor);
     }
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
@@ -44,9 +43,9 @@ public interface EntityIdResolverDefinition {
      * @return The {@link EntityIdResolver} for the given entity type and identifier type.
      */
     <E, ID> EntityIdResolver<ID> createIdResolver(
-            @NonNull Class<E> entityType,
-            @NonNull Class<ID> idType,
-            @NonNull AnnotatedEntityMetamodel<E> entityMetamodel,
-            @NonNull Configuration configuration
+            Class<E> entityType,
+            Class<ID> idType,
+            AnnotatedEntityMetamodel<E> entityMetamodel,
+            Configuration configuration
     );
 }

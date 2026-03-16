@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -40,7 +39,6 @@ public interface QueryHandler extends MessageHandler {
      * @param context The context to the given {@code command} is handled in.
      * @return A {@code MessagesStream} of zero, one, or N {@link QueryResponseMessage response messages}.
      */
-    @NonNull
-    MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
-                                               @NonNull ProcessingContext context);
+    MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                               ProcessingContext context);
 }

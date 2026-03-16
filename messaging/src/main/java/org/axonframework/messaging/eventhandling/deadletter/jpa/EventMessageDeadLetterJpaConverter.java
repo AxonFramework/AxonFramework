@@ -16,16 +16,15 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ClassUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -52,10 +51,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     };
 
     @Override
-    public @NonNull DeadLetterEventEntry convert(@NonNull EventMessage message,
-                                                 @Nullable Context context,
-                                                 @NonNull EventConverter eventConverter,
-                                                 @NonNull Converter genericConverter) {
+    public DeadLetterEventEntry convert(EventMessage message,
+                                        @Nullable Context context,
+                                        EventConverter eventConverter,
+                                        Converter genericConverter) {
         Context effectiveContext = context != null ? context : Context.empty();
         TrackingToken token = effectiveContext.getResource(TrackingToken.RESOURCE_KEY);
 
@@ -74,9 +73,9 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public MessageStream.@NonNull Entry<EventMessage> convert(@NonNull DeadLetterEventEntry entry,
-                                                              @NonNull EventConverter eventConverter,
-                                                              @NonNull Converter genericConverter) {
+    public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
+                                                     EventConverter eventConverter,
+                                                     Converter genericConverter) {
         return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
                                  restoreContext(entry, genericConverter));
     }

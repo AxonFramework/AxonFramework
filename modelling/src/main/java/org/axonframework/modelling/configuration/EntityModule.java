@@ -38,8 +38,8 @@ import org.axonframework.modelling.repository.Repository;
 public interface EntityModule<ID, E> extends Module {
 
     /**
-     * The name of the entity, typically a concatenation of the entity type's {@link Class#getSimpleName() simple name}
-     * and the identifier type's simple name.
+     * The name of the entity, typically a concatenation of the entity type's {@link Class#getName() name}
+     * and the identifier type's name.
      * <p>
      * The module should use this name for the components they register to the
      * {@link ComponentRegistry}.
@@ -47,7 +47,7 @@ public interface EntityModule<ID, E> extends Module {
      * @return The name of the entity.
      */
     default String entityName() {
-        return String.format("%s#%s", entityType().getSimpleName(), idType().getSimpleName());
+        return String.format("%s#%s", entityType().getName(), idType().getName());
     }
 
     /**

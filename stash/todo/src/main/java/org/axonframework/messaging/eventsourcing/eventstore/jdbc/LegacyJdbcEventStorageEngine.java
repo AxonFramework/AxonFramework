@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.eventsourcing.eventstore.jdbc;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.common.jdbc.JdbcUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
@@ -420,7 +420,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public Optional<Long> lastSequenceNumberFor(@NonNull String aggregateIdentifier) {
+    public Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {
         return Optional.ofNullable(transactionManager.fetchInTransaction(
                 () -> executeQuery(getConnection(),
                                    connection -> lastSequenceNumberFor(connection, aggregateIdentifier),
@@ -448,7 +448,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    public TrackingToken createTokenAt(@NonNull Instant dateTime) {
+    public TrackingToken createTokenAt(Instant dateTime) {
         Long index = transactionManager.fetchInTransaction(() -> executeQuery(
                 getConnection(),
                 connection -> createTokenAt(connection, dateTime),
@@ -1079,7 +1079,7 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
          * @param connectionProvider a {@link ConnectionProvider} which provides access to a JDBC connection
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder connectionProvider(@NonNull ConnectionProvider connectionProvider) {
+        public Builder connectionProvider(ConnectionProvider connectionProvider) {
             assertNonNull(connectionProvider, "ConnectionProvider may not be null");
             this.connectionProvider = connectionProvider;
             return this;

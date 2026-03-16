@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -50,7 +49,7 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param payload The payload of type {@code U} for this {@link SubscriptionQueryUpdateMessage} representing an
      *                incremental update.
      */
-    public GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
+    public GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                  @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()));
     }
@@ -66,9 +65,9 @@ public class GenericSubscriptionQueryUpdateMessage
      *                           representing an incremental update.
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                      @Nullable P payload,
-                                                     @NonNull Class<P> declaredUpdateType) {
+                                                     Class<P> declaredUpdateType) {
         this(type, payload, declaredUpdateType, Metadata.emptyInstance());
     }
 
@@ -83,10 +82,10 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      * @param metadata           The metadata for this {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@NonNull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                      @Nullable P payload,
-                                                     @NonNull Class<P> declaredUpdateType,
-                                                     @NonNull Map<String, String> metadata) {
+                                                     Class<P> declaredUpdateType,
+                                                     Map<String, @Nullable String> metadata) {
         super(new GenericMessage(type, payload, declaredUpdateType, metadata));
     }
 
@@ -101,23 +100,23 @@ public class GenericSubscriptionQueryUpdateMessage
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericSubscriptionQueryUpdateMessage(@NonNull Message delegate) {
+    public GenericSubscriptionQueryUpdateMessage(Message delegate) {
         super(delegate);
     }
 
     @Override
-        public @NonNull SubscriptionQueryUpdateMessage withMetadata(@NonNull Map<String, String> metadata) {
+        public SubscriptionQueryUpdateMessage withMetadata(Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-        public @NonNull SubscriptionQueryUpdateMessage andMetadata(@NonNull Map<String, String> metadata) {
+        public SubscriptionQueryUpdateMessage andMetadata(Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-        public @NonNull SubscriptionQueryUpdateMessage withConvertedPayload(@NonNull Type type,
-                                                               @NonNull Converter converter) {
+        public SubscriptionQueryUpdateMessage withConvertedPayload(Type type,
+                                                               Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

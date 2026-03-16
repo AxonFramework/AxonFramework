@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -49,23 +48,22 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     @Override
-    protected boolean isMemberTypeSupported(@NonNull Class<?> memberType) {
+    protected boolean isMemberTypeSupported(Class<?> memberType) {
         return List.class.isAssignableFrom(memberType);
     }
 
     @Override
-    protected Class<?> getChildTypeFromMember(@NonNull Member member) {
+    protected Class<?> getChildTypeFromMember(Member member) {
         return getChildTypeFromList(member);
     }
 
-    @NonNull
     @Override
     protected <C, P> EntityChildMetamodel<C, P> doCreate(
-            @NonNull Class<P> parentClass,
-            @NonNull EntityMetamodel<C> entityMetamodel,
-            @NonNull String fieldName,
-            @NonNull EventTargetMatcher<C> eventTargetMatcher,
-            @NonNull CommandTargetResolver<C> commandTargetResolver) {
+            Class<P> parentClass,
+            EntityMetamodel<C> entityMetamodel,
+            String fieldName,
+            EventTargetMatcher<C> eventTargetMatcher,
+            CommandTargetResolver<C> commandTargetResolver) {
 
         return ListEntityChildMetamodel
                 .forEntityModel(parentClass, entityMetamodel)

@@ -20,7 +20,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+
+import java.util.Objects;
 
 /**
  * EntityManagerProvider implementation that expects the container to inject the default container managed
@@ -35,12 +38,11 @@ import org.jspecify.annotations.NonNull;
  */
 public class ContainerManagedEntityManagerProvider implements EntityManagerProvider {
 
-    private EntityManager entityManager;
+    private @Nullable EntityManager entityManager;
 
-    @NonNull
     @Override
     public EntityManager getEntityManager() {
-        return entityManager;
+        return Objects.requireNonNull(entityManager);
     }
 
     /**

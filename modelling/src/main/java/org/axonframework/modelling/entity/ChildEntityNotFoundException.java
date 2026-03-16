@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
@@ -53,8 +52,8 @@ public class ChildEntityNotFoundException extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
-    public ChildEntityNotFoundException(@NonNull CommandMessage commandMessage,
-                                        @NonNull Object parentEntity) {
+    public ChildEntityNotFoundException(CommandMessage commandMessage,
+                                        Object parentEntity) {
         super("No available child entity found for command of type [%s]. State of parent entity [%s]: [%s]"
                       .formatted(commandMessage.type(), parentEntity.getClass().getName(), parentEntity)
         );

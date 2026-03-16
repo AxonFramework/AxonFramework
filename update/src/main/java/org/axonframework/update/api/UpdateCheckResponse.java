@@ -16,7 +16,6 @@
 
 package org.axonframework.update.api;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 
@@ -38,8 +37,8 @@ import java.util.List;
 @Internal
 public record UpdateCheckResponse(
         int checkInterval,
-        @NonNull List<ArtifactAvailableUpgrade> upgrades,
-        @NonNull List<DetectedVulnerability> vulnerabilities
+        List<ArtifactAvailableUpgrade> upgrades,
+        List<DetectedVulnerability> vulnerabilities
 ) {
 
     /**
@@ -62,7 +61,7 @@ public record UpdateCheckResponse(
      * @param body The response body as a string.
      * @return A {@code UsageResponse} object containing the parsed data.
      */
-    public static @NonNull UpdateCheckResponse fromRequest(@Nullable String body) {
+    public static UpdateCheckResponse fromRequest(@Nullable String body) {
         int checkInterval = 86400; // Default to 24 hours, in case request didn't work
         List<ArtifactAvailableUpgrade> upgrades = new ArrayList<>();
         List<DetectedVulnerability> vulnerabilities = new ArrayList<>();

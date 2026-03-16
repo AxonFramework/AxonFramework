@@ -74,7 +74,7 @@ class AxonTestFixtureStatelessAnnotatedCommandHandlerIntegrationTest {
                 .registerCommandHandlingModule(
                         CommandHandlingModule.named("StatelessCommandHandler")
                                 .commandHandlers()
-                                .annotatedCommandHandlingComponent(c -> new StatelessCommandHandler())
+                                .autodetectedCommandHandlingComponent(c -> new StatelessCommandHandler())
                 );
     }
 

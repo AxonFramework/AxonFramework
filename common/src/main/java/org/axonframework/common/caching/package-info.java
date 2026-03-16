@@ -15,9 +15,9 @@
  */
 
 /**
- * Package containing a Caching abstraction, while waiting for the JSR 107 to be fully specified and implemented.
- *
- * @author Allard Buijze
- * @since 2.1.2
+ * Caching abstractions and helpers.
  */
+@NullMarked
 package org.axonframework.common.caching;
+
+import org.jspecify.annotations.NullMarked;

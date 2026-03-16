@@ -48,6 +48,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -122,7 +123,7 @@ class AggregateBasedJpaEventStorageEngineIT
                         .eventCoordinator(new JpaPollingEventCoordinator(new FactoryBasedEntityManagerProvider(entityManagerFactory), Duration.ofMillis(500)))
                         .persistenceExceptionResolver(new PersistenceExceptionResolver() {
                             @Override
-                            public boolean isDuplicateKeyViolation(Exception exception) {
+                            public boolean isDuplicateKeyViolation(@NonNull Exception exception) {
                                 return causeIsEntityExistsException(exception);
                             }
 

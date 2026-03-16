@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Describes a policy for retrying failed messages. These could be commands, events, as well as queries where the
@@ -39,8 +38,8 @@ public interface RetryPolicy extends DescribableComponent {
      * @param previousFailures a summary of all previous failures
      * @return the outcome describing the expected rescheduling behavior
      */
-    RetryPolicy.Outcome defineFor(@NonNull Message message, @NonNull Throwable failure,
-                                  @NonNull List<Class<? extends Throwable>[]> previousFailures);
+    RetryPolicy.Outcome defineFor(Message message, Throwable failure,
+                                  List<Class<? extends Throwable>[]> previousFailures);
 
     /**
      * The outcome of applying a {@link RetryPolicy} to a given message. The outcome can either be

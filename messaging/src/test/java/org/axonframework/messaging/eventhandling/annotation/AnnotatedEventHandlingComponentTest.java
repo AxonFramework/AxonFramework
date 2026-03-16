@@ -16,23 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -59,6 +43,20 @@ import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangeHandler;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.core.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.

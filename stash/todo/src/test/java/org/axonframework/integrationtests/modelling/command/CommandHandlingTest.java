@@ -97,8 +97,8 @@ class CommandHandlingTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @NonNull List<EventMessage> events) {
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                        @NonNull List<? extends EventMessage> events) {
             if (context == null) {
                 storeEvents(events);
             } else {
@@ -107,7 +107,7 @@ class CommandHandlingTest {
             return super.publish(context, events);
         }
 
-        private void storeEvents(@NonNull List<EventMessage> events) {
+        private void storeEvents(@NonNull List<? extends EventMessage> events) {
             storedEvents.addAll(
                     events.stream()
                           .map(StubEventStore::asDomainEventMessage)
@@ -122,7 +122,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(
+        public @NonNull Registration subscribe(
                 @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -101,9 +100,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@NonNull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext processingContext,
-                                                                @NonNull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
             return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
@@ -150,7 +149,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@NonNull ConsistencyMarker marker) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(ConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -170,7 +169,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             return WITHOUT_MARKER;
         }
 
-        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
+        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()))
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
@@ -180,7 +179,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@NonNull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -197,7 +196,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@NonNull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -241,7 +240,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -263,7 +262,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("offset", offset);
     }
 
@@ -320,9 +319,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
-        public void setCallback(@NonNull Runnable callback) {
+        public void setCallback(Runnable callback) {
             this.callback.set(callback);
-            callback.run();
+            if (isCompleted() || hasNextAvailable()) {
+                callback.run();
+            }
         }
 
         @Override
@@ -365,7 +366,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         Optional<Entry<EventMessage>> lastEntry() {
             if (sharedLastEntry.compareAndSet(false, true)) {
-                Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end));
+                Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end + 1));
                 return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
             } else {
                 return Optional.empty();

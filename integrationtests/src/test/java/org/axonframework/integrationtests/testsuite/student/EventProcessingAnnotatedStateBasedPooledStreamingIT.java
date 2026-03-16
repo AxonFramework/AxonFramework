@@ -21,13 +21,13 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
@@ -105,7 +106,9 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("student-courses-readmodel-processor")
-                .eventHandlingComponents(components -> components.declarative(cfg -> studentCoursesProjector()))
+                .eventHandlingComponents(
+                        components -> components.declarative("studentCoursesProjector", cfg -> studentCoursesProjector())
+                )
                 .notCustomized();
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
@@ -123,7 +126,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
                     var converter = context.component(EventConverter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    var studentEnrolled = requireNonNull(event.payloadAs(StudentEnrolledEvent.class, converter));
                     var state = context.component(StateManager.class);
                     var studentId = studentEnrolled.studentId();
                     var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, studentId, context)

@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.LifecycleHandler;
 import org.slf4j.Logger;
@@ -55,7 +54,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
      * @param task  The task to execute on shutdown.
      */
     SpringLifecycleShutdownHandler(int phase,
-                                   @NonNull Supplier<CompletableFuture<?>> task) {
+                                   Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }
@@ -82,7 +81,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
     }
 
     @Override
-    public void stop(@NonNull Runnable callback) {
+    public void stop(Runnable callback) {
         task.get()
             .whenComplete((result, throwable) -> {
                 if (throwable != null) {

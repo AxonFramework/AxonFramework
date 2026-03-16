@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -74,7 +73,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param parent The parent {@link EventProcessingConfigurer} that manages this configurer.
      */
     @Internal
-    public SubscribingEventProcessorsConfigurer(@NonNull EventProcessingConfigurer parent) {
+    public SubscribingEventProcessorsConfigurer(EventProcessingConfigurer parent) {
         this.parent = parent;
     }
 
@@ -121,8 +120,8 @@ public class SubscribingEventProcessorsConfigurer {
      *                          applied.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer defaults(
-            @NonNull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
+    public SubscribingEventProcessorsConfigurer defaults(
+            BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
@@ -141,8 +140,8 @@ public class SubscribingEventProcessorsConfigurer {
      *                          defaults.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer defaults(
-            @NonNull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
+    public SubscribingEventProcessorsConfigurer defaults(
+            UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
@@ -159,9 +158,9 @@ public class SubscribingEventProcessorsConfigurer {
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer defaultProcessor(
-            @NonNull String name,
-            @NonNull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+    public SubscribingEventProcessorsConfigurer defaultProcessor(
+            String name,
+            Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
         processor(
                 () -> EventProcessorModule.subscribing(name)
@@ -179,9 +178,9 @@ public class SubscribingEventProcessorsConfigurer {
      * @param moduleCustomizer Function to customize the processor module configuration.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer processor(
-            @NonNull String name,
-            @NonNull Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
+    public SubscribingEventProcessorsConfigurer processor(
+            String name,
+            Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
     ) {
         processor(
                 () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name)).build()
@@ -195,8 +194,8 @@ public class SubscribingEventProcessorsConfigurer {
      * @param moduleBuilder A builder that creates a {@link SubscribingEventProcessorModule} instance.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer processor(
-            @NonNull ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
+    public SubscribingEventProcessorsConfigurer processor(
+            ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
         Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
         moduleBuilders.add(moduleBuilder);
@@ -209,7 +208,7 @@ public class SubscribingEventProcessorsConfigurer {
      * @param registryAction Action to perform on the component registry.
      * @return This configurer instance for method chaining.
      */
-        public @NonNull SubscribingEventProcessorsConfigurer componentRegistry(@NonNull Consumer<ComponentRegistry> registryAction) {
+    public SubscribingEventProcessorsConfigurer componentRegistry(Consumer<ComponentRegistry> registryAction) {
         Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;

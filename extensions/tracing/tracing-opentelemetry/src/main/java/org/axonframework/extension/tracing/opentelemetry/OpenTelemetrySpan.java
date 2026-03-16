@@ -21,6 +21,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanScope;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public class OpenTelemetrySpan implements Span {
 
     private final SpanBuilder spanBuilder;
     private final List<Scope> scopes = new CopyOnWriteArrayList<>();
-    private io.opentelemetry.api.trace.Span span = null;
+    private io.opentelemetry.api.trace.@Nullable Span span = null;
     private boolean ended = false;
 
     /**
@@ -116,13 +117,14 @@ public class OpenTelemetrySpan implements Span {
 
     @Override
     public Span recordException(Throwable t) {
+        Objects.requireNonNull(span, "Span must be started before exceptions can be recorded!");
         span.recordException(t);
         span.setStatus(StatusCode.ERROR, t.getMessage());
         return this;
     }
 
     @Override
-    public Span addAttribute(String key, String value) {
+    public Span addAttribute(String key, @Nullable String value) {
         if(this.span == null) {
             spanBuilder.setAttribute(key, value);
         } else {

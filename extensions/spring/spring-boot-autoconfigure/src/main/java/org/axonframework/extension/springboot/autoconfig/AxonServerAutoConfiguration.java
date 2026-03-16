@@ -18,16 +18,17 @@ package org.axonframework.extension.springboot.autoconfig;
 
 
 import io.axoniq.axonserver.connector.control.ControlChannel;
-import org.jspecify.annotations.NonNull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.axonserver.connector.TopologyChangeListener;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.extension.springboot.TagsConfigurationProperties;
 import org.axonframework.extension.springboot.service.connection.AxonServerConnectionDetails;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
@@ -57,7 +58,10 @@ import java.util.List;
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
-@EnableConfigurationProperties(AxonServerConfiguration.class)
+@EnableConfigurationProperties(value = {
+        AxonServerConfiguration.class,
+        TagsConfigurationProperties.class
+})
 public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     /**
@@ -82,7 +86,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     public ConfigurationEnhancer disableAxonServerConfigurationEnhancer() {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@NonNull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
             }
 
@@ -178,6 +182,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         );
     }
 
+    @Bean
+    @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
+    public TagsConfiguration tagsConfiguration(TagsConfigurationProperties tagProperties) {
+        return tagProperties.toTagsConfiguration();
+    }
+
     /**
      * Bean creation method constructing a {@link ConfigurationEnhancer} that uses the available
      * {@link TopologyChangeListener TopologyChangeListeners} and registers them with the
@@ -210,7 +220,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

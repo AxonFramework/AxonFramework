@@ -25,21 +25,21 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.jpa.EntityManagerExecutor;
 import org.axonframework.common.tx.TransactionalExecutor;
 import org.axonframework.conversion.CachingSupplier;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.DeadLetterWithContext;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueueTest;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.jspecify.annotations.NonNull;
@@ -48,6 +48,7 @@ import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -93,37 +94,31 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    public DeadLetterWithContext<EventMessage> generateInitialLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable()),
-                buildTestContext()
-        );
+    public DeadLetter<EventMessage> generateInitialLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable(),
+                                      buildTestContext());
     }
 
     @Override
-    protected DeadLetterWithContext<EventMessage> generateFollowUpLetter() {
-        return new DeadLetterWithContext<>(
-                new GenericDeadLetter<>("sequenceIdentifier", generateEvent()),
-                buildTestContext()
-        );
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
+        return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), (Throwable) null,
+                                      buildTestContext());
     }
 
     private Context buildTestContext() {
         long seqNo = sequenceCounter.getAndIncrement();
-        return Context.with(TrackingToken.RESOURCE_KEY, new GlobalSequenceTrackingToken(seqNo))
+        return Context.with(TrackingToken.RESOURCE_KEY, new GapAwareTrackingToken(seqNo, Collections.emptyList()))
                       .withResource(LegacyResources.AGGREGATE_TYPE_KEY, "TestAggregate")
                       .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, "aggregate-" + seqNo)
                       .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, seqNo);
     }
 
     @Override
-    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetterWithContext<EventMessage> letterWithContext) {
-        DeadLetter<EventMessage> deadLetter = letterWithContext.letter();
+    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetter<EventMessage> deadLetter) {
         if (deadLetter instanceof JpaDeadLetter) {
             return deadLetter;
         }
         if (deadLetter instanceof GenericDeadLetter) {
-            Context context = letterWithContext.context() != null ? letterWithContext.context() : Context.empty();
             return new JpaDeadLetter<>(
                     IdentifierFactory.getInstance().generateIdentifier(),
                     0L,
@@ -133,7 +128,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
                     deadLetter.cause().orElse(null),
                     deadLetter.diagnostics(),
                     deadLetter.message(),
-                    context
+                    deadLetter.context()
             );
         }
         throw new IllegalArgumentException("Can not map dead letter of type " + deadLetter.getClass().getName());
@@ -157,14 +152,6 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         // Payload is stored as raw bytes; deserialize to compare with the original
         Object deserializedPayload = eventConverter.convertPayload(actual, expected.payloadType());
         assertEquals(expected.payload(), deserializedPayload);
-    }
-
-    @Override
-    protected Context extractContext(DeadLetter<? extends EventMessage> deadLetter) {
-        if (deadLetter instanceof JpaDeadLetter<? extends EventMessage> jpaDeadLetter) {
-            return jpaDeadLetter.context();
-        }
-        return super.extractContext(deadLetter);
     }
 
     @Override
@@ -192,27 +179,28 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     /**
      * Creates a {@link TransactionalExecutorProvider} that delegates to the real
-     * {@link JpaTransactionalExecutorProvider} when a {@link ProcessingContext} is available
-     * (exercising the production code path that extracts the executor from the context),
-     * and falls back to the test's single {@link EntityManager} when the context is {@code null}.
+     * {@link JpaTransactionalExecutorProvider} when a {@link ProcessingContext} is available (exercising the production
+     * code path that extracts the executor from the context), and falls back to the test's single {@link EntityManager}
+     * when the context is {@code null}.
      * <p>
-     * The fallback is necessary because this test uses rollback-based isolation: a single
-     * {@link EntityManager} with a transaction opened in {@code @BeforeEach} and rolled back in
-     * {@code @AfterEach}. This transaction also serves as the transaction management that
-     * {@link EntityManagerExecutor} assumes is already active (it does not begin/commit on its own —
-     * in production, the real {@link ProcessingContext} lifecycle handles that).
+     * The fallback is necessary because this test uses rollback-based isolation: a single {@link EntityManager} with a
+     * transaction opened in {@code @BeforeEach} and rolled back in {@code @AfterEach}. This transaction also serves as
+     * the transaction management that {@link EntityManagerExecutor} assumes is already active (it does not begin/commit
+     * on its own — in production, the real {@link ProcessingContext} lifecycle handles that).
      * <p>
      * When the context is {@code null}, {@link JpaTransactionalExecutorProvider} creates a
      * <em>second</em> {@link EntityManager} with its own transaction. That second transaction
-     * blocks on table locks held by the test's transaction, while the test thread blocks waiting
-     * for the operation to complete — a classic deadlock. The fallback avoids this by routing
-     * all null-context operations through the test's existing {@link EntityManager} and transaction.
+     * blocks on table locks held by the test's transaction, while the test thread blocks waiting for the operation to
+     * complete — a classic deadlock. The fallback avoids this by routing all null-context operations through the test's
+     * existing {@link EntityManager} and transaction.
      */
     private JpaTransactionalExecutorProvider testTransactionalExecutorProvider() {
         return new JpaTransactionalExecutorProvider(emf) {
             @Override
             @NonNull
-            public TransactionalExecutor<EntityManager> getTransactionalExecutor(@Nullable ProcessingContext processingContext) {
+            public TransactionalExecutor<EntityManager> getTransactionalExecutor(
+                    @Nullable ProcessingContext processingContext
+            ) {
                 if (processingContext != null) {
                     return super.getTransactionalExecutor(processingContext);
                 }
@@ -269,7 +257,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
         GlobalSequenceTrackingToken expectedToken = new GlobalSequenceTrackingToken(42L);
         Context contextWithTokenOnly = Context.with(TrackingToken.RESOURCE_KEY, expectedToken);
         DeadLetter<EventMessage> letter = new GenericDeadLetter<>(
-                "sequenceIdentifier", generateEvent(), generateThrowable()
+                "sequenceIdentifier", generateEvent(), generateThrowable(), contextWithTokenOnly
         );
 
         // when
@@ -294,7 +282,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     @Test
     void cannotRequeueGenericDeadLetter() {
         SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
-        DeadLetter<EventMessage> letter = generateInitialLetter().letter();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         CompletionException exception =
                 assertThrows(CompletionException.class, () -> queue.requeue(letter, d -> d, null).join());
         assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);
@@ -303,7 +291,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     @Test
     void cannotEvictGenericDeadLetter() {
         SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
-        DeadLetter<EventMessage> letter = generateInitialLetter().letter();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         CompletionException exception =
                 assertThrows(CompletionException.class, () -> queue.evict(letter, null).join());
         assertThat(exception.getCause()).isInstanceOf(WrongDeadLetterTypeException.class);

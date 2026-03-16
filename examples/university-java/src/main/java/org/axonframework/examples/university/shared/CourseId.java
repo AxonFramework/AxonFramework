@@ -17,6 +17,7 @@
 package org.axonframework.examples.university.shared;
 
 import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -45,7 +46,7 @@ public record CourseId(@NotNull String raw) {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return raw;
     }
 

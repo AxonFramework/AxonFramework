@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
@@ -87,9 +86,9 @@ public class InterceptingCommandBus implements CommandBus {
      * @param dispatchInterceptors The interceptors to invoke before dispatching a command and on the command result.
      */
     public InterceptingCommandBus(
-            @NonNull CommandBus delegate,
-            @NonNull List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors,
-            @NonNull List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
+            CommandBus delegate,
+            List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors,
+            List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -102,19 +101,19 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public InterceptingCommandBus subscribe(@NonNull QualifiedName name,
-                                            @NonNull CommandHandler commandHandler) {
+    public InterceptingCommandBus subscribe(QualifiedName name,
+                                            CommandHandler commandHandler) {
         delegate.subscribe(name, new InterceptingHandler(commandHandler, handlerInterceptors));
         return this;
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return interceptingDispatcher.interceptAndDispatch(command, processingContext);
     }
 
-    private MessageStream<?> dispatchCommand(@NonNull Message message,
+    private MessageStream<?> dispatchCommand(Message message,
                                              @Nullable ProcessingContext processingContext) {
         if (!(message instanceof CommandMessage command)) {
             // The compiler should avoid this from happening.
@@ -124,7 +123,7 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
@@ -140,8 +139,8 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream.@NonNull Single<CommandResultMessage> handle(@NonNull CommandMessage command,
-                                                                          @NonNull ProcessingContext context) {
+        public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                                          ProcessingContext context) {
             return interceptorChain.proceed(command, context)
                                    .first()
                                    .cast();
@@ -160,7 +159,7 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         private CompletableFuture<CommandResultMessage> interceptAndDispatch(
-                @NonNull CommandMessage command,
+                CommandMessage command,
                 @Nullable ProcessingContext context
         ) {
             return interceptorChain.proceed(command, context)

@@ -21,7 +21,6 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
@@ -82,9 +81,9 @@ public final class CommandConverter {
      *                      {@link org.axonframework.axonserver.connector.AxonServerConfiguration}.
      * @return The given {@code command} converted to a {@link Command}.
      */
-    public static Command convertCommandMessage(@NonNull CommandMessage command,
-                                                @NonNull String clientId,
-                                                @NonNull String componentName) {
+    public static Command convertCommandMessage(CommandMessage command,
+                                                String clientId,
+                                                String componentName) {
         Object payload = command.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -120,7 +119,7 @@ public final class CommandConverter {
      * {@link CompletableFuture} for convenience.
      */
     public static CompletableFuture<CommandResultMessage> convertCommandResponse(
-            @NonNull CommandResponse commandResponse
+            CommandResponse commandResponse
     ) {
         if (commandResponse.hasErrorMessage()) {
             return CompletableFuture.failedFuture(ExceptionConverter.convertToAxonException(
@@ -153,7 +152,7 @@ public final class CommandConverter {
      * @param command The command to convert to a {@link CommandMessage}.
      * @return The given {@code command} converted into a {@link CommandMessage}.
      */
-    public static CommandMessage convertCommand(@NonNull Command command) {
+    public static CommandMessage convertCommand(Command command) {
         SerializedObject commandPayload = command.getPayload();
         int priority = priority(command.getProcessingInstructionsList());
         String routingKey = ProcessingInstructionUtils.routingKey(command.getProcessingInstructionsList());
@@ -183,7 +182,7 @@ public final class CommandConverter {
      * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier}.
      */
     public static CommandResponse convertResultMessage(@Nullable CommandResultMessage resultMessage,
-                                                       @NonNull String requestIdentifier) {
+                                                       String requestIdentifier) {
         if (resultMessage == null) {
             return CommandResponse.newBuilder()
                                   .setMessageIdentifier(UUID.randomUUID().toString())

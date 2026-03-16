@@ -21,11 +21,14 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.WebApplicationType;
@@ -118,6 +121,12 @@ public class HierarchicalSpringContextTest {
         @Bean
         CorrelationDataProviderRegistry correlationDataProviderRegistry() {
             return new DefaultCorrelationDataProviderRegistry();
+        }
+
+        // Adding NoOpSequencingPolicy ensures we don't get a CommandSequencingInterceptor leading to an InterceptingCommandBus
+        @Bean
+        SequencingPolicy<? super CommandMessage> commandSequencingPolicy() {
+            return NoOpSequencingPolicy.INSTANCE;
         }
     }
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.update.api;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 
 /**
@@ -30,9 +29,9 @@ import org.axonframework.common.annotation.Internal;
  */
 @Internal
 public record ArtifactAvailableUpgrade(
-        @NonNull String groupId,
-        @NonNull String artifactId,
-        @NonNull String latestVersion
+        String groupId,
+        String artifactId,
+        String latestVersion
 ) {
 
 }

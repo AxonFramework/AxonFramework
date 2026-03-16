@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.MessageStream;
@@ -34,7 +34,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.TestInstance.*;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;

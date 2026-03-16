@@ -18,12 +18,11 @@ package org.axonframework.messaging.commandhandling.annotation;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.commandhandling.annotation.AnnotationRoutingStrategy;
-import org.axonframework.messaging.commandhandling.annotation.Command;
-import org.axonframework.messaging.commandhandling.annotation.RoutingKey;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -78,34 +77,20 @@ class AnnotationRoutingStrategyTest {
         assertNull(testSubject.getRoutingKey(testCommand));
     }
 
-
     @Test
-    void getRoutingKeyFromFieldLegacy() {
-        CommandMessage testCommand = new GenericCommandMessage(
-                new MessageType(SomeFieldAnnotatedCommandLegacy.class), new SomeFieldAnnotatedCommandLegacy()
+    void returnedNullRoutingKeyOnFieldAndMethodResolvesToNull() {
+        CommandMessage testNullFieldCommand = new GenericCommandMessage(
+                new MessageType(SomeCommandWithoutTheRoutingAnnotation.class),
+                new SomeNullFieldAnnotatedCommand()
         );
-        assertEquals("Target", testSubject.getRoutingKey(testCommand));
+        assertThat(testSubject.getRoutingKey(testNullFieldCommand)).isNull();
 
-        CommandMessage otherTestCommand = new GenericCommandMessage(
-                new MessageType(SomeOtherFieldAnnotatedCommandLegacy.class), new SomeOtherFieldAnnotatedCommandLegacy()
+        CommandMessage testNullMethodCommand = new GenericCommandMessage(
+                new MessageType(SomeCommandWithoutTheRoutingAnnotation.class),
+                new SomeNullMethodAnnotatedCommand()
         );
-        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
+        assertThat(testSubject.getRoutingKey(testNullMethodCommand)).isNull();
     }
-
-    @Test
-    void getRoutingKeyFromMethodLegacy() {
-        CommandMessage testCommand = new GenericCommandMessage(
-                new MessageType(SomeMethodAnnotatedCommandLegacy.class), new SomeMethodAnnotatedCommandLegacy()
-        );
-        assertEquals("Target", testSubject.getRoutingKey(testCommand));
-
-        CommandMessage otherTestCommand = new GenericCommandMessage(
-                new MessageType(SomeOtherMethodAnnotatedCommandLegacy.class), new SomeOtherMethodAnnotatedCommandLegacy()
-        );
-
-        assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
-    }
-
 
     @Command(routingKey = "target")
     public static class SomeFieldAnnotatedCommand {
@@ -114,24 +99,9 @@ class AnnotationRoutingStrategyTest {
         private final String target = "Target";
     }
 
-    @Command
-    public static class SomeFieldAnnotatedCommandLegacy {
-
-        @RoutingKey
-        @SuppressWarnings("unused")
-        private final String target = "Target";
-    }
-
     @Command(routingKey = "target")
     public static class SomeOtherFieldAnnotatedCommand {
 
-        @SuppressWarnings("unused")
-        private final SomeObject target = new SomeObject("Target");
-    }
-
-    public static class SomeOtherFieldAnnotatedCommandLegacy {
-
-        @RoutingKey
         @SuppressWarnings("unused")
         private final SomeObject target = new SomeObject("Target");
     }
@@ -147,18 +117,6 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    @Command
-    public static class SomeMethodAnnotatedCommandLegacy {
-
-        @SuppressWarnings("FieldCanBeLocal")
-        private final String target = "Target";
-
-        @RoutingKey
-        public String getTarget() {
-            return target;
-        }
-    }
-
     @Command(routingKey = "target")
     public static class SomeOtherMethodAnnotatedCommand {
 
@@ -169,22 +127,19 @@ class AnnotationRoutingStrategyTest {
         }
     }
 
-    public static class SomeOtherMethodAnnotatedCommandLegacy {
-
-        private final SomeObject someObject = new SomeObject("Target");
-
-        @RoutingKey
-        public SomeObject getTarget() {
-            return someObject;
-        }
-    }
-
-    private record SomeObject(String target) {
+    public record SomeObject(String target) {
 
         @Override
         public String toString() {
             return target;
         }
+    }
+
+    @Command(routingKey = "target")
+    public static class SomeNullFieldAnnotatedCommand {
+
+        @SuppressWarnings("unused")
+        private final String target = null;
     }
 
     @Command(routingKey = "target")

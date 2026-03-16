@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
@@ -45,7 +44,7 @@ import java.util.Optional;
 public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<String> optionalRoutingKey = original.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
         Optional<String> optionalCommandName = original.attribute(HandlerAttributes.COMMAND_NAME);
         return optionalRoutingKey.isPresent() && optionalCommandName.isPresent()
@@ -80,7 +79,7 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         }
 
         @Override
-        public boolean canHandle(@NonNull Message message, @NonNull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return super.canHandle(message, context) && message instanceof CommandMessage;
         }
 

@@ -17,8 +17,6 @@
 package org.axonframework.messaging.eventsourcing;
 
 import org.jspecify.annotations.NonNull;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.LogEvent;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
@@ -28,7 +26,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.eventsourcing.snapshotting.AbstractSnapshotter;
 import org.axonframework.messaging.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
 import org.axonframework.messaging.eventsourcing.snapshotting.SnapshotterSpanFactory;
-import org.axonframework.messaging.eventsourcing.util.RecordingAppender;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -37,9 +34,7 @@ import org.axonframework.messaging.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
@@ -135,8 +130,8 @@ class AbstractSnapshotterTest {
     @Test
     @Disabled("TODO #3105")
     void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
-        RecordingAppender recordingAppender = RecordingAppender.getInstance();
-        recordingAppender.startRecording(e -> e.getLevel().isMoreSpecificThan(Level.WARN));
+//        RecordingAppender recordingAppender = RecordingAppender.getInstance();
+//        recordingAppender.startRecording(e -> e.getLevel().isMoreSpecificThan(Level.WARN));
 
         final String aggregateIdentifier = "aggregateIdentifier";
 //        doNothing().doThrow(new ConcurrencyException("Mock"))
@@ -148,8 +143,8 @@ class AbstractSnapshotterTest {
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
 //        verify(mockEventStore, times(2)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
 
-        List<LogEvent> logEvents = recordingAppender.stopRecording();
-        assertEquals(Collections.emptyList(), logEvents);
+//        List<LogEvent> logEvents = recordingAppender.stopRecording();
+//        assertEquals(Collections.emptyList(), logEvents);
     }
 
     @Test
@@ -238,9 +233,9 @@ class AbstractSnapshotterTest {
         }
 
         @Override
-        protected DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                    String aggregateIdentifier,
-                                                    DomainEventStream eventStream) {
+        protected @NonNull DomainEventMessage createSnapshot(@NonNull Class<?> aggregateType,
+                                                             @NonNull String aggregateIdentifier,
+                                                             @NonNull DomainEventStream eventStream) {
             long lastIdentifier = getLastIdentifierFrom(eventStream);
             if (lastIdentifier <= 0) {
                 return null;
@@ -260,25 +255,25 @@ class AbstractSnapshotterTest {
         private static class Builder extends AbstractSnapshotter.Builder {
 
             @Override
-            public Builder eventStore(EventStore eventStore) {
+            public @NonNull Builder eventStore(EventStore eventStore) {
                 super.eventStore(eventStore);
                 return this;
             }
 
             @Override
-            public Builder executor(Executor executor) {
+            public @NonNull Builder executor(Executor executor) {
                 super.executor(executor);
                 return this;
             }
 
             @Override
-            public Builder transactionManager(TransactionManager transactionManager) {
+            public @NonNull Builder transactionManager(TransactionManager transactionManager) {
                 super.transactionManager(transactionManager);
                 return this;
             }
 
             @Override
-            public Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
+            public @NonNull Builder spanFactory(@NonNull SnapshotterSpanFactory spanFactory) {
                 super.spanFactory(spanFactory);
                 return this;
             }
@@ -298,7 +293,7 @@ class AbstractSnapshotterTest {
         }
 
         @Override
-        public Transaction startTransaction() {
+        public @NonNull Transaction startTransaction() {
             return transaction;
         }
     }

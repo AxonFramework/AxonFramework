@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.deadletter;
 
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 
@@ -24,7 +25,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Generic implementation of the {@link DeadLetter dead letter} allowing any type of {@link Message} to be dead
@@ -48,6 +48,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Metadata diagnostics;
+    private final Context context;
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier} and {@code message}. The
@@ -58,7 +59,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
      */
     public GenericDeadLetter(Object sequenceIdentifier, M message) {
-        this(sequenceIdentifier, message, null);
+        this(sequenceIdentifier, message, (Throwable) null, Context.empty());
     }
 
     /**
@@ -71,22 +72,38 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param cause              The cause for the {@code message} to be dead lettered.
      */
     public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause) {
+        this(sequenceIdentifier, message, cause, Context.empty());
+    }
+
+    /**
+     * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier}, {@code message}, {@code cause},
+     * and associated {@link Context}.
+     *
+     * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
+     * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
+     * @param cause              The cause for the {@code message} to be dead lettered.
+     * @param context            The {@link Context} associated with this dead letter.
+     */
+    public GenericDeadLetter(Object sequenceIdentifier, M message, Throwable cause, Context context) {
         this(sequenceIdentifier,
              message,
              cause != null ? new ThrowableCause(cause) : null,
-             () -> clock.instant());
+             () -> clock.instant(),
+             context);
     }
 
     private GenericDeadLetter(Object sequenceIdentifier,
                               M message,
                               Cause cause,
-                              Supplier<Instant> timeSupplier) {
+                              Supplier<Instant> timeSupplier,
+                              Context context) {
         this(sequenceIdentifier,
              message,
              cause,
              timeSupplier.get(),
              timeSupplier.get(),
-             Metadata.emptyInstance());
+             Metadata.emptyInstance(),
+             context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Instant touched) {
@@ -95,7 +112,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              delegate.cause().orElse(null),
              delegate.enqueuedAt(),
              touched,
-             delegate.diagnostics);
+             delegate.diagnostics,
+             delegate.context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Metadata diagnostics) {
@@ -104,7 +122,8 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              delegate.cause().orElse(null),
              delegate.enqueuedAt(),
              clock.instant(),
-             diagnostics);
+             diagnostics,
+             delegate.context);
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Throwable requeueCause) {
@@ -113,11 +132,13 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              requeueCause != null ? ThrowableCause.asCause(requeueCause) : delegate.cause,
              delegate.enqueuedAt(),
              clock.instant(),
-             delegate.diagnostics());
+             delegate.diagnostics(),
+             delegate.context);
     }
 
     /**
-     * Construct a {@link GenericDeadLetter} defining all the fields.
+     * Construct a {@link GenericDeadLetter} defining all the fields. The {@link Context} defaults to
+     * {@link Context#empty()}.
      *
      * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
      * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
@@ -132,12 +153,34 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
                              Instant enqueuedAt,
                              Instant lastTouched,
                              Metadata diagnostics) {
+        this(sequenceIdentifier, message, cause, enqueuedAt, lastTouched, diagnostics, Context.empty());
+    }
+
+    /**
+     * Construct a {@link GenericDeadLetter} defining all the fields including the associated {@link Context}.
+     *
+     * @param sequenceIdentifier The sequence identifier of the {@link GenericDeadLetter} to build.
+     * @param message            The {@link Message} of type {@code M} of the {@link GenericDeadLetter} to build.
+     * @param cause              The cause for the {@code message} to be dead lettered.
+     * @param enqueuedAt         The moment this dead letter is enqueued.
+     * @param lastTouched        The last time this dead letter was touched.
+     * @param diagnostics        The diagnostic {@link Metadata} of this dead letter.
+     * @param context            The {@link Context} associated with this dead letter.
+     */
+    public GenericDeadLetter(Object sequenceIdentifier,
+                             M message,
+                             Cause cause,
+                             Instant enqueuedAt,
+                             Instant lastTouched,
+                             Metadata diagnostics,
+                             Context context) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.message = message;
         this.cause = cause;
         this.enqueuedAt = enqueuedAt;
         this.lastTouched = lastTouched;
         this.diagnostics = diagnostics;
+        this.context = Objects.requireNonNull(context, "Context may not be null");
     }
 
     @Override
@@ -165,12 +208,17 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         return diagnostics;
     }
 
+    @Override
+    public Context context() {
+        return context;
+    }
+
     public DeadLetter<M> markTouched() {
         return new GenericDeadLetter<>(this, clock.instant());
     }
 
     @Override
-    public DeadLetter<M> withCause(@NonNull Throwable requeueCause) {
+    public DeadLetter<M> withCause(Throwable requeueCause) {
         return new GenericDeadLetter<>(this, requeueCause);
     }
 
@@ -202,12 +250,13 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
                 && Objects.equals(cause, that.cause)
                 && Objects.equals(enqueuedAt, that.enqueuedAt)
                 && Objects.equals(lastTouched, that.lastTouched)
-                && Objects.equals(diagnostics, that.diagnostics);
+                && Objects.equals(diagnostics, that.diagnostics)
+                && Objects.equals(context, that.context);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sequenceIdentifier, message, cause, enqueuedAt, lastTouched, diagnostics);
+        return Objects.hash(sequenceIdentifier, message, cause, enqueuedAt, lastTouched, diagnostics, context);
     }
 
     @Override
@@ -219,6 +268,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
                 ", enqueuedAt=" + enqueuedAt +
                 ", lastTouched=" + lastTouched +
                 ", diagnostics=" + diagnostics +
+                ", context=" + context +
                 '}';
     }
 }

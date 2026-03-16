@@ -16,14 +16,13 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import org.jspecify.annotations.NonNull;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
@@ -37,18 +36,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-
-import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
 
 /**
  * An {@link EventHandlingComponent} decorator that uses a {@link SequencedDeadLetterQueue} to enqueue
  * {@link EventMessage events} for which handling failed.
  * <p>
  * Uses an {@link EnqueuePolicy} to decide whether a failed event should be
- * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter) enqueued}. Subsequent events belonging to an already
+ * {@link SequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueued}. Subsequent events belonging to an already
  * enqueued "sequence identifier" are also enqueued to maintain event ordering in the face of failures.
  * <p>
  * This component provides operations to {@link #processAny()} {@link DeadLetter dead letters} it has enqueued through
@@ -69,8 +67,6 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private static final EnqueuePolicy<EventMessage> DEFAULT_ENQUEUE_POLICY =
-            (letter, cause) -> Decisions.enqueue(truncated(cause));
 
     /**
      * The order for decorating {@link EventHandlingComponent EventHandlingComponents} with dead-lettering support.
@@ -95,12 +91,12 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      *                          {@link org.axonframework.messaging.core.unitofwork.UnitOfWork UnitOfWork} instances for
      *                          processing dead letters
      * @param allowReset        whether to clear the queue on reset. If {@code true},
-     *                          {@link SequencedDeadLetterQueue#clear()} will be invoked upon a reset
+     *                          {@link SequencedDeadLetterQueue#clear(ProcessingContext)} will be invoked upon a reset
      */
-    public DeadLetteringEventHandlingComponent(@NonNull EventHandlingComponent delegate,
-                                               @NonNull SequencedDeadLetterQueue<EventMessage> queue,
-                                               @NonNull EnqueuePolicy<EventMessage> enqueuePolicy,
-                                               @NonNull UnitOfWorkFactory unitOfWorkFactory,
+    public DeadLetteringEventHandlingComponent(EventHandlingComponent delegate,
+                                               SequencedDeadLetterQueue<EventMessage> queue,
+                                               EnqueuePolicy<EventMessage> enqueuePolicy,
+                                               UnitOfWorkFactory unitOfWorkFactory,
                                                boolean allowReset) {
         super(delegate);
         this.queue = Objects.requireNonNull(queue, "SequencedDeadLetterQueue may not be null");
@@ -110,13 +106,13 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
-                                                        @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         Object sequenceIdentifier = sequenceIdentifierFor(event, context);
 
         CompletableFuture<MessageStream<Message>> resultFuture = queue.enqueueIfPresent(
                 sequenceIdentifier,
-                () -> new GenericDeadLetter<>(sequenceIdentifier, event),
+                () -> new GenericDeadLetter<>(sequenceIdentifier, event, (Throwable) null, captureContext(context)),
                 context
         ).thenCompose(wasEnqueued -> {
             if (wasEnqueued) {
@@ -166,8 +162,9 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
      * @param error              the error that occurred
      * @return a stream that completes after the error is handled (either enqueued or evicted)
      */
-    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier, Throwable error) {
-        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error);
+    private MessageStream<Message> handleError(EventMessage event, ProcessingContext context, Object sequenceIdentifier,
+                                               Throwable error) {
+        DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, event, error, captureContext(context));
         EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, error);
 
         if (decision.shouldEnqueue()) {
@@ -203,7 +200,7 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
     }
 
     @Override
-    public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext, @NonNull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext, ProcessingContext context) {
         if (allowReset) {
             CompletableFuture<MessageStream<Message>> resultFuture = queue.clear(context)
                                                                           .thenApply(v -> delegate.handle(resetContext,
@@ -213,12 +210,20 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         return delegate.handle(resetContext, context);
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<Boolean> process(@NonNull Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
+    public CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
                 delegate, enqueuePolicy, unitOfWorkFactory
         );
         return queue.process(sequenceFilter, processingTask::process, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Context captureContext(ProcessingContext processingContext) {
+        Context snapshot = Context.empty();
+        for (Map.Entry<Context.ResourceKey<?>, Object> entry : processingContext.resources().entrySet()) {
+            snapshot = snapshot.withResource((Context.ResourceKey<Object>) entry.getKey(), entry.getValue());
+        }
+        return snapshot;
     }
 }

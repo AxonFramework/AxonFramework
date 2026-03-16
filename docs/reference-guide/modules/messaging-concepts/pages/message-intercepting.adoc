@@ -14,6 +14,7 @@ Message dispatch interceptors are invoked when a message is **dispatched/publish
 They can alter the message by adding metadata or block it by not proceeding with the chain.
 These interceptors are always invoked on the thread that dispatches the message.
 
+[[dispatch-interceptor]]
 The `MessageDispatchInterceptor` interface defines a single method:
 
 [source,java]
@@ -32,6 +33,7 @@ public interface MessageDispatchInterceptor<M extends Message> {
 In turn, message handler interceptors can take action both before and after message **handling**.
 Interceptors can even block message processing altogether, for example for security reasons.
 
+[[handler-interceptor]]
 The `MessageHandlerInterceptor` interface also defines a single method:
 
 [source,java]
@@ -253,6 +255,14 @@ public void registerCommandHandlerInterceptor(MessagingConfigurer configurer) {
 }
 ----
 
+[TIP]
+.Built-in command sequencing
+====
+Axon Framework provides built-in command sequencing through the `CommandSequencingInterceptor`, which is automatically configured by default. This interceptor prevents optimistic locking failures by ensuring commands targeting the same entities execute sequentially.
+
+See xref:tuning:command-processing.adoc#command-sequencing[Command sequencing] for details.
+====
+
 == Event interceptors
 
 Similar to command messages, event messages can also be intercepted prior to publishing and handling.
@@ -422,9 +432,101 @@ To register the `QuerySecurityInterceptor` as a `QueryMessage`-specific `Message
 
 [source,java]
 ----
-public void registerEventHandlerInterceptor(MessagingConfigurer configurer) {
-    configurer.registerEventHandlerInterceptor(
-            config -> new EventSecurityInterceptor()
+public void registerQueryHandlerInterceptor(MessagingConfigurer configurer) {
+    configurer.registerQueryHandlerInterceptor(
+            config -> new QuerySecurityInterceptor()
     );
 }
 ----
+
+[[reactive-dispatch-interceptors]]
+== Reactor dispatch interceptors
+
+When using the xref:axon-framework-reference:ROOT:modules.adoc#axon-reactor[Reactor extension], reactor gateways provide their own interceptor type: `ReactorMessageDispatchInterceptor`.
+Unlike the standard `MessageDispatchInterceptor`, the reactor variant runs inside the Reactor subscription chain.
+This means interceptors can access Reactor context using `Mono.deferContextual()`, enabling integration with reactive context holders such as Spring Security's `ReactiveSecurityContextHolder`.
+
+The following example shows a reactor dispatch interceptor that extracts the authenticated user from Reactor context and attaches it as metadata:
+
+[source,java]
+----
+public class SecurityReactorInterceptor
+        implements ReactorMessageDispatchInterceptor<CommandMessage> {
+
+    @Override
+    public Mono<?> interceptOnDispatch(
+            CommandMessage message,
+            ProcessingContext context, // <1>
+            ReactorMessageDispatchInterceptorChain<CommandMessage> chain
+    ) {
+        return Mono.deferContextual(ctx -> { // <2>
+            SecurityContext secCtx = ctx.get(SecurityContext.class);
+            String userId = secCtx.getAuthentication().getName();
+            return chain.proceed( // <3>
+                    message.andMetadata(Metadata.with("userId", userId)),
+                    context
+            );
+        });
+    }
+}
+----
+
+<1> The `ProcessingContext` is passed through from the gateway call.
+<2> `Mono.deferContextual()` accesses the Reactor context from the subscriber.
+In a Spring WebFlux application, this is where `ReactiveSecurityContextHolder` stores the authenticated user.
+<3> The interceptor enriches the message metadata and proceeds through the chain.
+
+Register the interceptor:
+
+[tabs]
+====
+Spring Boot::
++
+--
+Declare the interceptor as a Spring bean.
+The Reactor auto-configuration discovers `ReactorMessageDispatchInterceptor` beans and registers them on the `ReactorDispatchInterceptorRegistry`.
+
+[source,java]
+----
+@Bean
+ReactorMessageDispatchInterceptor<CommandMessage> securityInterceptor() {
+    return new SecurityReactorInterceptor();
+}
+----
+--
+
+Configuration API::
++
+--
+Decorate the `ReactorDispatchInterceptorRegistry` component to register interceptors:
+
+[source,java]
+----
+configurer.componentRegistry(cr -> cr.registerDecorator(
+        ReactorDispatchInterceptorRegistry.class,
+        0,
+        (config, name, registry) ->
+                registry.registerCommandInterceptor(c -> new SecurityReactorInterceptor())
+));
+----
+--
+====
+
+This pattern extracts context at the reactive gateway boundary and attaches it as message metadata.
+Handlers can then read it using `@MetadataValue`:
+
+[source,java]
+----
+@CommandHandler
+public void handle(MyCommand command,
+                   @MetadataValue(value = "userId", required = false) String userId) {
+    // userId was extracted from Reactor context by the dispatch interceptor
+}
+----
+
+[NOTE]
+====
+Reactor context is only available at the gateway boundary, inside the reactive dispatch interceptor chain.
+Once the message crosses into the imperative bus, Reactor context is no longer accessible.
+The interceptor-to-metadata pattern shown above is the recommended approach for propagating context to handlers.
+====

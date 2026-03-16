@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -56,14 +55,14 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
      * @param entityEvolvers The map of {@link EntityEvolver} instance to {@link QualifiedName} to evolve an entity
      *                       through.
      */
-    public SimpleEntityEvolvingComponent(@NonNull Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
+    public SimpleEntityEvolvingComponent(Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
         this.entityEvolvers = new HashMap<>(requireNonNull(entityEvolvers, "The entity evolvers cannot be null."));
     }
 
     @Override
-    public E evolve(@NonNull E entity,
-                    @NonNull EventMessage event,
-                    @NonNull ProcessingContext context) {
+    public E evolve(E entity,
+                    EventMessage event,
+                    ProcessingContext context) {
         QualifiedName eventName = event.type().qualifiedName();
         EntityEvolver<E> entityEvolver = entityEvolvers.get(eventName);
 
@@ -77,14 +76,13 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
         return entityEvolver.evolve(entity, event, context);
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(entityEvolvers.keySet());
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("delegates", Collections.unmodifiableMap(entityEvolvers));
     }
 }

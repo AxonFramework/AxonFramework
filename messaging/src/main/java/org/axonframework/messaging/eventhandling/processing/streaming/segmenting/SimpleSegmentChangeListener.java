@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -40,8 +38,8 @@ public class SimpleSegmentChangeListener implements SegmentChangeListener {
      * @param onRelease The release handler.
      */
     public SimpleSegmentChangeListener(
-            @NonNull Function<Segment, CompletableFuture<Void>> onClaim,
-            @NonNull Function<Segment, CompletableFuture<Void>> onRelease
+            Function<Segment, CompletableFuture<Void>> onClaim,
+            Function<Segment, CompletableFuture<Void>> onRelease
     ) {
         Objects.requireNonNull(onClaim, "Claim listener may not be null");
         Objects.requireNonNull(onRelease, "Release listener may not be null");
@@ -50,12 +48,12 @@ public class SimpleSegmentChangeListener implements SegmentChangeListener {
     }
 
     @Override
-    public @NonNull CompletableFuture<Void> onSegmentClaimed(@NonNull Segment segment) {
+    public CompletableFuture<Void> onSegmentClaimed(Segment segment) {
         return onClaim.apply(segment);
     }
 
     @Override
-    public @NonNull CompletableFuture<Void> onSegmentReleased(@NonNull Segment segment) {
+    public CompletableFuture<Void> onSegmentReleased(Segment segment) {
         return onRelease.apply(segment);
     }
 }

@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -39,6 +40,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -72,12 +74,13 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void disablingAxonServerDisabledAllAxonServerComponents() {
-        testContext.withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0").run(context -> {
-            assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
-            assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
-            assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
-            assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
-        });
+        testContext.withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0").run(
+                context -> {
+                    assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
+                    assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
+                    assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
+                    assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
+                });
     }
 
     @Test
@@ -118,6 +121,25 @@ class AxonServerAutoConfigurationTest {
             assertThat(executorService).isInstanceOf(ThreadPoolExecutor.class)
                                        .hasFieldOrPropertyWithValue("corePoolSize", queryThreads);
         });
+    }
+
+    @Test
+    void tagPropertiesAreCapturedInTagConfiguration() {
+        testContext.withUserConfiguration(TestContext.class)
+                   .withPropertyValues(
+                           "axon.tags.region=Eu",
+                           "axon.tags.country=It",
+                           "axon.tags.city=Rome"
+                   )
+                   .run(context -> {
+                       TagsConfiguration tagsConfiguration = context.getBean(TagsConfiguration.class);
+                       assertThat(tagsConfiguration).isNotNull();
+                       Map<String, String> tags = tagsConfiguration.getTags();
+                       assertThat(tags.size()).isEqualTo(3);
+                       assertThat(tags).containsEntry("region", "Eu");
+                       assertThat(tags).containsEntry("country", "It");
+                       assertThat(tags).containsEntry("city", "Rome");
+                   });
     }
 
     @Test

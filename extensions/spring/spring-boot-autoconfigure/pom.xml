@@ -31,25 +31,18 @@
     </description>
 
     <dependencies>
-
         <!-- Axon dependencies -->
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-server-connector</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-dropwizard</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -60,8 +53,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.axonframework.extensions.metrics</groupId>
-            <artifactId>axon-metrics-micrometer</artifactId>
+            <groupId>org.axonframework.extensions.reactor</groupId>
+            <artifactId>axon-reactor</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -153,6 +146,14 @@
         </dependency>
 
         <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${spring.boot.version}</version>
@@ -215,11 +216,6 @@
             <artifactId>jakarta.persistence-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -234,6 +230,17 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
             <optional>true</optional>
         </dependency>
@@ -255,7 +262,6 @@
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
             <optional>true</optional>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -276,7 +282,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>

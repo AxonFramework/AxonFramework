@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -51,9 +50,9 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
      * @param converter  The converter to use to convert each Message's payload.
      * @param targetType The desired representation of forwarded Message's payload.
      */
-    public PayloadConvertingQueryBusConnector(@NonNull QueryBusConnector delegate,
-                                              @NonNull MessageConverter converter,
-                                              @NonNull Class<?> targetType) {
+    public PayloadConvertingQueryBusConnector(QueryBusConnector delegate,
+                                              MessageConverter converter,
+                                              Class<?> targetType) {
         super(delegate);
 
         this.converter = requireNonNull(converter, "The converter must not be null.");
@@ -61,38 +60,34 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
     }
 
 
-    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query, @Nullable ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context) {
         return delegate.query(query.withConvertedPayload(targetType, converter), context);
     }
 
-    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@NonNull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         return delegate.subscriptionQuery(query.withConvertedPayload(targetType, converter), context, updateBufferSize);
     }
 
     @Override
-    public void onIncomingQuery(@NonNull Handler handler) {
+    public void onIncomingQuery(Handler handler) {
         delegate.onIncomingQuery(new Handler() {
 
             @Override
-            public MessageStream<QueryResponseMessage> query(@NonNull QueryMessage query) {
+            public MessageStream<QueryResponseMessage> query(QueryMessage query) {
                 return handler.query(query)
                               .mapMessage(rm -> rm.withConvertedPayload(targetType, converter));
             }
 
-            @NonNull
             @Override
-            public Registration registerUpdateHandler(@NonNull QueryMessage subscriptionQueryMessage,
-                                                      @NonNull UpdateCallback updateCallback) {
+            public Registration registerUpdateHandler(QueryMessage subscriptionQueryMessage,
+                                                      UpdateCallback updateCallback) {
                 return handler.registerUpdateHandler(subscriptionQueryMessage, new UpdateCallback() {
-                    @NonNull
                     @Override
-                    public CompletableFuture<Void> sendUpdate(@NonNull SubscriptionQueryUpdateMessage update) {
+                    public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
                         return updateCallback.sendUpdate(update.withConvertedPayload(targetType, converter));
                     }
 
@@ -102,7 +97,7 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
                     }
 
                     @Override
-                    public CompletableFuture<Void> completeExceptionally(@NonNull Throwable cause) {
+                    public CompletableFuture<Void> completeExceptionally(Throwable cause) {
                         return updateCallback.completeExceptionally(cause);
                     }
                 });
@@ -111,7 +106,7 @@ public class PayloadConvertingQueryBusConnector extends DelegatingQueryBusConnec
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("targetType", targetType);

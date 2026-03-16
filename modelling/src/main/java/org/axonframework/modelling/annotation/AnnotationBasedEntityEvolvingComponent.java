@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
@@ -62,9 +61,9 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param converter           The converter to use for converting event payloads to the handler's expected type.
      * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@NonNull Class<E> entityType,
-                                                  @NonNull EventConverter converter,
-                                                  @NonNull MessageTypeResolver messageTypeResolver) {
+    public AnnotationBasedEntityEvolvingComponent(Class<E> entityType,
+                                                  EventConverter converter,
+                                                  MessageTypeResolver messageTypeResolver) {
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
@@ -81,10 +80,10 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param converter           The converter to use for converting event payloads to the handler's expected type.
      * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@NonNull Class<E> entityType,
-                                                  @NonNull AnnotatedHandlerInspector<E> inspector,
-                                                  @NonNull EventConverter converter,
-                                                  @NonNull MessageTypeResolver messageTypeResolver
+    public AnnotationBasedEntityEvolvingComponent(Class<E> entityType,
+                                                  AnnotatedHandlerInspector<E> inspector,
+                                                  EventConverter converter,
+                                                  MessageTypeResolver messageTypeResolver
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
@@ -93,9 +92,9 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     }
 
     @Override
-    public E evolve(@NonNull E entity,
-                    @NonNull EventMessage event,
-                    @NonNull ProcessingContext context) {
+    public E evolve(E entity,
+                    EventMessage event,
+                    ProcessingContext context) {
         try {
             var listenerType = entity.getClass();
 
@@ -139,7 +138,6 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
         return existing;
     }
 
-    @NonNull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return inspector.getHandlers(entityType).stream()

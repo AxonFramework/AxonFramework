@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -57,7 +56,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void enhance(@NonNull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
 //        configurer.eventProcessing()
 //                  .registerSaga(sagaType,
 //                                sagaConfigurer -> {
@@ -71,7 +70,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

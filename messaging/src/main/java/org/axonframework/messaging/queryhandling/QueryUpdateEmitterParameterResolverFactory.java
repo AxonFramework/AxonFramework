@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -42,22 +41,21 @@ public class QueryUpdateEmitterParameterResolverFactory implements ParameterReso
 
     @Nullable
     @Override
-    public ParameterResolver<QueryUpdateEmitter> createInstance(@NonNull Executable executable,
-                                                                @NonNull Parameter[] parameters,
+    public ParameterResolver<QueryUpdateEmitter> createInstance(Executable executable,
+                                                                Parameter[] parameters,
                                                                 int parameterIndex) {
         if (!QueryUpdateEmitter.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return null;
         }
 
         return new ParameterResolver<>() {
-            @NonNull
             @Override
-            public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(@NonNull ProcessingContext context) {
+            public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(ProcessingContext context) {
                 return CompletableFuture.completedFuture(QueryUpdateEmitter.forContext(context));
             }
 
             @Override
-            public boolean matches(@NonNull ProcessingContext context) {
+            public boolean matches(ProcessingContext context) {
                 return true;
             }
         };

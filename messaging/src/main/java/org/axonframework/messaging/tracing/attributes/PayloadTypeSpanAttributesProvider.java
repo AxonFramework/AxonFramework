@@ -22,7 +22,6 @@ import org.axonframework.messaging.tracing.SpanAttributesProvider;
 
 import java.util.Collections;
 import java.util.Map;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Adds the {@link Message#payloadType payload type} as an attribute to the {@link Span}.
@@ -33,7 +32,7 @@ import org.jspecify.annotations.NonNull;
 public class PayloadTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @NonNull Map<String, String> provideForMessage(@NonNull Message message) {
+    public Map<String, String> provideForMessage(Message message) {
         return Collections.singletonMap("axon_payload_type", message.payloadType().getName());
     }
 }

@@ -16,6 +16,9 @@
 
 package org.axonframework.axonserver.connector.util;
 
+import org.jspecify.annotations.NonNull;
+
+
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,7 +55,7 @@ public class FakeScheduler implements Scheduler {
     }
 
     @Override
-    public ScheduledTask scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit timeUnit) {
+    public @NonNull ScheduledTask scheduleWithFixedDelay(@NonNull Runnable command, long initialDelay, long delay, @NonNull TimeUnit timeUnit) {
         Instant first = clock.instant().plusMillis(timeUnit.toMillis(initialDelay));
         Runnable runnable = new Runnable() {
             private Instant next = first;

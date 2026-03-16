@@ -29,7 +29,6 @@ import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the UnitOfWork that processes a single message.
@@ -70,7 +69,7 @@ public class LegacyDefaultUnitOfWork<T extends Message> extends AbstractLegacyUn
 
     @Override
     public <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
-                                                  @NonNull RollbackConfiguration rollbackConfiguration) {
+                                                  RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
         }

@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.dbscheduler;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -71,10 +70,10 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * @param metadata             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
-    DbSchedulerHumanReadableDeadlineDetails(@NonNull String deadlineName,
-                                            @NonNull String type,
-                                            @NonNull String scopeDescriptor,
-                                            @NonNull String scopeDescriptorClass,
+    DbSchedulerHumanReadableDeadlineDetails(String deadlineName,
+                                            String type,
+                                            String scopeDescriptor,
+                                            String scopeDescriptorClass,
                                             @Nullable String payload,
                                             @Nullable String payloadClass,
                                             @Nullable String payloadRevision,
@@ -101,10 +100,10 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      *                     {@code metadata}, as well as the whole {@link DbSchedulerHumanReadableDeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    static DbSchedulerHumanReadableDeadlineDetails serialized(@NonNull String deadlineName,
-                                                              @NonNull ScopeDescriptor descriptor,
-                                                              @NonNull DeadlineMessage message,
-                                                              @NonNull Serializer serializer) {
+    static DbSchedulerHumanReadableDeadlineDetails serialized(String deadlineName,
+                                                              ScopeDescriptor descriptor,
+                                                              DeadlineMessage message,
+                                                              Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
         SerializedObject<String> serializedMetadata = serializer.serialize(message.metadata(), String.class);

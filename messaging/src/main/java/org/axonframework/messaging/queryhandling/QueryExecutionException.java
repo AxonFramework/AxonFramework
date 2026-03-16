@@ -16,6 +16,7 @@
 package org.axonframework.messaging.queryhandling;
 
 import org.axonframework.messaging.core.HandlerExecutionException;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception indicating that the execution of a Query Handler has resulted in an exception.
@@ -34,7 +35,7 @@ public class QueryExecutionException extends HandlerExecutionException {
      * @param message Message explaining the context of the error
      * @param cause   The underlying cause of the invocation failure
      */
-    public QueryExecutionException(String message, Throwable cause) {
+    public QueryExecutionException(String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 

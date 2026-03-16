@@ -16,6 +16,8 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Field;
 
 /**
@@ -29,7 +31,8 @@ public class DirectPropertyAccessStrategy extends PropertyAccessStrategy {
 	}
 
 	@Override
-	protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+    @Nullable
+	protected <T> Property<T> propertyFor(Class<? extends T> targetClass, @Nullable String property) {
 		Field[] fields = targetClass.getFields();
 		for(Field field : fields) {
 			if (field.getName().equals(property)) {

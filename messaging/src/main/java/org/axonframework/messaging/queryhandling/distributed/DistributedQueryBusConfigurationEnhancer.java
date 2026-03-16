@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.distributed;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -48,7 +47,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
     public static final int DISTRIBUTED_QUERY_BUS_ORDER = InterceptingQueryBus.DECORATION_ORDER - 50;
 
     @Override
-    public void enhance(@NonNull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         if (componentRegistry.hasComponent(QueryBusConnector.class)) {
             componentRegistry
                     .registerIfNotPresent(
@@ -74,7 +73,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
         };
     }
 
-    static @NonNull QueryBus distributedQueryBus(QueryBus delegate, QueryBusConnector connector,
+    static QueryBus distributedQueryBus(QueryBus delegate, QueryBusConnector connector,
                                                 DistributedQueryBusConfiguration queryBusConfiguration) {
         return new DistributedQueryBus(delegate, connector, queryBusConfiguration);
     }

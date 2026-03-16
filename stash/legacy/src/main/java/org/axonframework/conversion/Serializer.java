@@ -17,7 +17,6 @@
 package org.axonframework.conversion;
 
 import java.lang.reflect.Type;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -44,13 +43,13 @@ public interface Serializer {
      * @return the instance representing the serialized object.
      */
     @Deprecated
-    <T> SerializedObject<T> serialize(@Nullable Object object, @NonNull Class<T> expectedRepresentation);
+    <T> SerializedObject<T> serialize(@Nullable Object object, Class<T> expectedRepresentation);
 
-    default <T> T convert(@Nullable Object source, @NonNull Class<T> targetRepresentation) {
+    default <T> T convert(@Nullable Object source, Class<T> targetRepresentation) {
         return convert(source, (Type) targetRepresentation);
     }
 
-    default <T> T convert(@Nullable Object source, @NonNull Type targetRepresentation) {
+    default <T> T convert(@Nullable Object source, Type targetRepresentation) {
         throw new UnsupportedOperationException("Not supported by this serializer");
     }
 
@@ -67,7 +66,7 @@ public interface Serializer {
      * @return {@code true} if the {@code expectedRepresentation} is supported, otherwise {@code false}.
      */
     @Deprecated
-    <T> boolean canSerializeTo(@NonNull Class<T> expectedRepresentation);
+    <T> boolean canSerializeTo(Class<T> expectedRepresentation);
 
     /**
      * Deserializes the first object read from the given {@code bytes}. The {@code bytes} are not consumed from the
@@ -80,7 +79,7 @@ public interface Serializer {
      * @throws ClassCastException if the first object in the stream is not an instance of &lt;T&gt;.
      */
     @Deprecated
-    <S, T> T deserialize(@NonNull SerializedObject<S> serializedObject);
+    <S, T> T deserialize(SerializedObject<S> serializedObject);
 
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized
@@ -93,7 +92,7 @@ public interface Serializer {
      * @return the Class representing the type of the serialized Object
      */
     @Deprecated
-    Class classForType(@NonNull SerializedType type);
+    Class classForType(SerializedType type);
 
     /**
      * Returns the type identifier for the given class. This is the type identifier of the Serialized object as returned

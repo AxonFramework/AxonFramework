@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Collections;
@@ -38,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-record TagFilteredEventCriteria(@NonNull Set<Tag> tags)
+record TagFilteredEventCriteria(Set<Tag> tags)
         implements EventCriteria, EventCriterion, EventTypeRestrictableEventCriteria {
 
     /**
@@ -47,7 +46,7 @@ record TagFilteredEventCriteria(@NonNull Set<Tag> tags)
      *
      * @param tags The tags that events are expected to have.
      */
-    TagFilteredEventCriteria(@NonNull Set<Tag> tags) {
+    TagFilteredEventCriteria(Set<Tag> tags) {
         this.tags = Set.copyOf(requireNonNull(tags, "The tags cannot be null"));
     }
 
@@ -70,7 +69,7 @@ record TagFilteredEventCriteria(@NonNull Set<Tag> tags)
     }
 
     @Override
-    public boolean matches(@NonNull QualifiedName type, @NonNull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return matchesTags(tags);
     }
 
@@ -101,7 +100,7 @@ record TagFilteredEventCriteria(@NonNull Set<Tag> tags)
     }
 
     @Override
-    public EventCriteria andBeingOneOfTypes(@NonNull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(Set<QualifiedName> types) {
         return new TagAndTypeFilteredEventCriteria(types, tags);
     }
 }

@@ -17,20 +17,27 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventsourcing.eventstore.Position;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 import org.axonframework.messaging.core.Context.ResourceKey;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
+import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,9 +56,11 @@ import static java.util.Objects.requireNonNull;
  * @param <E>  The type of the event sourced entity to load.
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 0.1
  */
 public class EventSourcingRepository<ID, E> implements Repository.LifecycleManagement<ID, E> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcingRepository.class);
 
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, E>>>> managedEntitiesKey =
             ResourceKey.withLabel("managedEntities");
@@ -62,6 +71,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     private final CriteriaResolver<ID> criteriaResolver;
     private final EntityEvolver<E> entityEvolver;
     private final EventSourcedEntityFactory<ID, E> entityFactory;
+    private final Snapshotter<ID, E> snapshotter;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -76,24 +86,27 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      * @param criteriaResolver Converts the given identifier to an {@link EventCriteria} used to load a matching event
      *                         stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
+     * @param snapshotter      The optional snapshotter consulted for creating and retrieving snapshots.
      */
-    public EventSourcingRepository(@NonNull Class<ID> idType,
-                                   @NonNull Class<E> entityType,
-                                   @NonNull EventStore eventStore,
-                                   @NonNull EventSourcedEntityFactory<ID, E> entityFactory,
-                                   @NonNull CriteriaResolver<ID> criteriaResolver,
-                                   @NonNull EntityEvolver<E> entityEvolver) {
+    public EventSourcingRepository(Class<ID> idType,
+                                   Class<E> entityType,
+                                   EventStore eventStore,
+                                   EventSourcedEntityFactory<ID, E> entityFactory,
+                                   CriteriaResolver<ID> criteriaResolver,
+                                   EntityEvolver<E> entityEvolver,
+                                   @Nullable Snapshotter<ID, E> snapshotter) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
         this.entityFactory = requireNonNull(entityFactory, "The entity factory must not be null.");
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver must not be null.");
         this.entityEvolver = requireNonNull(entityEvolver, "The entity evolver must not be null.");
+        this.snapshotter = Objects.requireNonNullElse(snapshotter, Snapshotter.noSnapshotter());
     }
 
     @Override
-    public ManagedEntity<ID, E> attach(@NonNull ManagedEntity<ID, E> entity,
-                                       @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> attach(ManagedEntity<ID, E> entity,
+                                       ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -106,21 +119,19 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         ).resultNow();
     }
 
-    @NonNull
     @Override
     public Class<E> entityType() {
         return entityType;
     }
 
-    @NonNull
     @Override
     public Class<ID> idType() {
         return idType;
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> load(@NonNull ID identifier,
-                                                        @NonNull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> load(ID identifier,
+                                                        ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -131,8 +142,8 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@NonNull ID identifier,
-                                                                @NonNull ProcessingContext context) {
+    public CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(ID identifier,
+                                                                ProcessingContext context) {
         var managedEntities = context.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
@@ -150,31 +161,68 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             if (createdEntity == null) {
                 throw new EntityMissingAfterLoadOrCreateException(identifier);
             }
-            return new EventSourcedEntity<>(identifier, createdEntity);
+            return new EventSourcedEntity<>(snapshotter, identifier, createdEntity);
         }
         return entity;
     }
 
-    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext context) {
-        return eventStore
-                .transaction(context)
-                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(identifier, context)))
-                .reduce(new EventSourcedEntity<>(identifier),
-                        (entity, entry) -> {
-                            entity.ensureInitialState(() -> entityFactory.create(identifier, entry.message(), context));
-                            entity.evolve(entry.message(), entityEvolver, context);
-                            return entity;
-                        });
+    private CompletableFuture<EventSourcedEntity<ID, E>> doLoad(ID identifier, ProcessingContext pc) {
+        long startTime = System.currentTimeMillis();
+
+        return snapshotter.load(identifier)
+            .exceptionally(e -> {
+                LOGGER.warn("Snapshot loading failed, falling back to full reconstruction for: {}({}={})", entityType, idType, identifier, e);
+
+                return null;  // indicates no snapshot, should trigger full reconstruction in next step
+            })
+            .thenCompose(snapshot -> {
+                @SuppressWarnings("unchecked")
+                EventSourcedEntity<ID, E> initialEntity = new EventSourcedEntity<>(snapshotter, identifier, snapshot == null ? null : (E)snapshot.payload());
+
+                return sourceAndEvolve(initialEntity, snapshot == null ? Position.START : snapshot.position(), pc)
+                    .thenApply(entity -> {
+                        if (initialEntity.evolutionCount > 0) {
+                            snapshotter.onEvolutionCompleted(
+                                identifier,
+                                entity.entity(),
+                                entity.position,
+                                new EvolutionResult(
+                                    initialEntity.evolutionCount,
+                                    Duration.ofMillis(Math.max(0, System.currentTimeMillis() - startTime)),
+                                    initialEntity.snapshotRequested
+                                )
+                            );
+                        }
+
+                        return entity;
+                    });
+            });
+    }
+
+    private CompletableFuture<EventSourcedEntity<ID, E>> sourceAndEvolve(EventSourcedEntity<ID, E> initialEntity, Position position, ProcessingContext pc) {
+        EventStoreTransaction transaction = eventStore.transaction(pc);
+        SourcingCondition sourcingCondition = SourcingCondition.conditionFor(position, criteriaResolver.resolve(initialEntity.identifier, pc));
+        AtomicReference<Position> postionRef = new AtomicReference<>(position);
+        MessageStream<? extends EventMessage> source = transaction.source(sourcingCondition, postionRef::set);
+
+        return source
+            .onComplete(() -> initialEntity.updatePosition(postionRef.get()))
+            .reduce(initialEntity, (entity, entry) -> {
+                entity.ensureInitialState(() -> entityFactory.create(entity.identifier, entry.message(), pc));
+                entity.evolve(entry.message(), entityEvolver, pc);
+
+                return entity;
+            });
     }
 
     @Override
-    public ManagedEntity<ID, E> persist(@NonNull ID identifier,
-                                        @NonNull E entity,
-                                        @NonNull ProcessingContext processingContext) {
+    public ManagedEntity<ID, E> persist(ID identifier,
+                                        E entity,
+                                        ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(identifier, id -> {
-            EventSourcedEntity<ID, E> sourcedEntity = new EventSourcedEntity<>(identifier, entity);
+            EventSourcedEntity<ID, E> sourcedEntity = new EventSourcedEntity<>(snapshotter, identifier, entity);
             updateActiveEntity(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
@@ -209,13 +257,14 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("idType", idType);
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("entityFactory", entityFactory);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("entityEvolver", entityEvolver);
+        descriptor.describeProperty("snapshotter", snapshotter);
     }
 
     /**
@@ -226,15 +275,16 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
      */
     private static class EventSourcedEntity<ID, M> implements ManagedEntity<ID, M> {
 
+        private final Snapshotter<ID, M> snapshotter;
         private final ID identifier;
         private final AtomicReference<M> currentState;
         private boolean initialized;
+        private Position position = Position.START;
+        private int evolutionCount;
+        private boolean snapshotRequested;
 
-        private EventSourcedEntity(ID identifier) {
-            this(identifier, null);
-        }
-
-        private EventSourcedEntity(ID identifier, M currentState) {
+        private EventSourcedEntity(Snapshotter<ID, M> snapshotter, ID identifier, @Nullable M currentState) {
+            this.snapshotter = snapshotter;
             this.identifier = identifier;
             this.currentState = new AtomicReference<>(currentState);
             this.initialized = currentState != null;
@@ -243,7 +293,11 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         private static <ID, T> EventSourcedEntity<ID, T> mapToEventSourcedEntity(ManagedEntity<ID, T> entity) {
             return entity instanceof EventSourcingRepository.EventSourcedEntity<ID, T> eventSourcedEntity
                     ? eventSourcedEntity
-                    : new EventSourcedEntity<>(entity.identifier(), entity.entity());
+                    : new EventSourcedEntity<>(Snapshotter.noSnapshotter(), entity.identifier(), entity.entity());
+        }
+
+        void updatePosition(Position position) {
+            this.position = Objects.requireNonNull(position, "The position cannot be null.");
         }
 
         @Override
@@ -283,8 +337,16 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
         private M evolve(EventMessage event,
                          EntityEvolver<M> evolver,
                          ProcessingContext processingContext) {
+            evolutionCount++;
+
             this.initialized = true;
-            return currentState.updateAndGet(current -> evolver.evolve(current, event, processingContext));
+            M result = currentState.updateAndGet(current -> evolver.evolve(current, event, processingContext));
+
+            if (!snapshotRequested) {
+                snapshotRequested = snapshotter.onEventApplied(identifier, result, event);
+            }
+
+            return result;
         }
     }
 }

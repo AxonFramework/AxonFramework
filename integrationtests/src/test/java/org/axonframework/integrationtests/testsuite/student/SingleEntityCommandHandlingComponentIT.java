@@ -76,7 +76,7 @@ class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStud
 
     @Test
     void canHandleCommandThatTargetsOneModelViaStateManagerParameter() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new SingleModelAnnotatedCommandHandler()
         ));
         startApp();

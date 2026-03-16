@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -41,9 +40,8 @@ public class EmptyApplicationContext implements ApplicationContext {
     private EmptyApplicationContext() {
     }
 
-    @NonNull
     @Override
-    public <C> C component(@NonNull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         throw new UnsupportedOperationException(
                 "EmptyApplicationContext does not provide any components. " +
                         "You should never use it if you want to be able to retrieve components from the ProcessingContext."

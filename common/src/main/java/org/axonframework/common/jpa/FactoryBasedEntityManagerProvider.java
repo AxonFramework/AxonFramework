@@ -16,7 +16,6 @@
 
 package org.axonframework.common.jpa;
 
-import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -37,7 +36,7 @@ public class FactoryBasedEntityManagerProvider implements EntityManagerProvider 
      *
      * @param entityManagerFactory The {@link EntityManagerFactory} to use, cannot be {@code null}.
      */
-    public FactoryBasedEntityManagerProvider(@NonNull EntityManagerFactory entityManagerFactory) {
+    public FactoryBasedEntityManagerProvider(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = Objects.requireNonNull(entityManagerFactory, "entityManagerFactory");
     }
 

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 
@@ -48,8 +47,8 @@ public interface QueryHandlerRegistry<S extends QueryHandlerRegistry<S>> {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@NonNull Set<QualifiedName> names,
-                        @NonNull QueryHandler queryHandler) {
+    default S subscribe(Set<QualifiedName> names,
+                        QueryHandler queryHandler) {
         names.forEach(name -> subscribe(name, queryHandler));
         //noinspection unchecked
         return (S) this;
@@ -67,8 +66,8 @@ public interface QueryHandlerRegistry<S extends QueryHandlerRegistry<S>> {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given queryName.
      * @return This registry for fluent interfacing.
      */
-    S subscribe(@NonNull QualifiedName queryName,
-                @NonNull QueryHandler queryHandler);
+    S subscribe(QualifiedName queryName,
+                QueryHandler queryHandler);
 
     /**
      * Subscribe the given {@code handlingComponent} with this registry.
@@ -80,7 +79,7 @@ public interface QueryHandlerRegistry<S extends QueryHandlerRegistry<S>> {
      * @param handlingComponent The query handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@NonNull QueryHandlingComponent handlingComponent) {
+    default S subscribe(QueryHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedQueries(), handlingComponent);
     }
 }

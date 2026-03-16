@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -54,17 +53,17 @@ public class SimpleQueryHandlingComponent implements
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link QueryHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleQueryHandlingComponent create(@NonNull String name) {
+    public static SimpleQueryHandlingComponent create(String name) {
         return new SimpleQueryHandlingComponent(name);
     }
 
-    private SimpleQueryHandlingComponent(@NonNull String name) {
+    private SimpleQueryHandlingComponent(String name) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@NonNull QualifiedName queryName,
-                                                  @NonNull QueryHandler handler) {
+    public SimpleQueryHandlingComponent subscribe(QualifiedName queryName,
+                                                  QueryHandler handler) {
         if (handler instanceof QueryHandlingComponent component) {
             return subscribe(component);
         }
@@ -79,15 +78,14 @@ public class SimpleQueryHandlingComponent implements
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@NonNull QueryHandlingComponent handlingComponent) {
+    public SimpleQueryHandlingComponent subscribe(QueryHandlingComponent handlingComponent) {
         subComponents.add(handlingComponent);
         return this;
     }
 
-    @NonNull
     @Override
-    public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage query,
-                                                      @NonNull ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                                      ProcessingContext context) {
         QualifiedName handlerName = query.type().qualifiedName();
         Optional<QueryHandlingComponent> optionalSubHandler =
                 subComponents.stream()
@@ -118,7 +116,7 @@ public class SimpleQueryHandlingComponent implements
     }
 
     @Override
-    public void describeTo(@NonNull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("queryHandlers", queryHandlers);
         descriptor.describeProperty("subComponents", subComponents);

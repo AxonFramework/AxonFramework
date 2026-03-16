@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * Utility classes used to connect Axon Event publishing mechanisms to a Spring Messaging Channel.
+ * Part of the Axon Extension module. Contains classes related to Spring messaging.
  */
+@NullMarked
 package org.axonframework.extension.spring.messaging;
+
+import org.jspecify.annotations.NullMarked;

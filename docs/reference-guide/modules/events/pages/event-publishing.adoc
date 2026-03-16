@@ -77,6 +77,53 @@ public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
 ----
 ====
 
+=== Appending events with metadata
+
+Sometimes you want to attach `Metadata` to an event at the append site.
+The `EventAppender` provides overloads for both a single event and a batch:
+
+[source,java]
+----
+import org.axonframework.messaging.core.Metadata;
+
+@CommandHandler
+public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
+    Metadata metadata = Metadata.from(Map.of("issuedBy", "admin-service"));
+
+    // Single event with metadata
+    appender.append(new CardIssuedEvent(cmd.cardId(), cmd.amount(), cmd.shopId()), metadata);
+
+    return new GiftCard();
+}
+----
+
+The same `Metadata` can be applied to every event in a batch in a single call:
+
+[source,java]
+----
+@CommandHandler
+public static GiftCard create(IssueCardCommand cmd, EventAppender appender) {
+    Metadata metadata = Metadata.from(Map.of("issuedBy", "admin-service"));
+
+    appender.append(
+            List.of(
+                    new CardIssuedEvent(cmd.cardId(), cmd.amount(), cmd.shopId()),
+                    new CardActivatedEvent(cmd.cardId())
+            ),
+            metadata
+    );
+    return new GiftCard();
+}
+----
+
+When the supplied event is already an `EventMessage` that carries its own metadata, the provided `Metadata` is *merged* with the existing metadata.
+Provided values take precedence on conflict, so any key present in both sets resolves to the value you pass at the append site.
+
+[NOTE]
+====
+When the event is a plain object (not a `Message`), the provided `Metadata` is set directly on the resulting `EventMessage`.
+====
+
 [#event_gateway]
 == Event Gateway: Publishing events from a non-entity
 
@@ -192,6 +239,12 @@ public CompletableFuture<Void> publishEvent() {
                        });
 }
 ----
+====
+
+[TIP]
+.Reactive event publishing
+====
+If your application uses Project Reactor, the xref:axon-framework-reference:ROOT:modules.adoc#axon-reactor[Reactor extension] provides a `ReactorEventGateway` that returns `Mono<Void>` and supports reactive dispatch interceptors with access to Reactor context.
 ====
 
 [#low_level_event_publication]

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.ConversionException;
@@ -50,7 +49,7 @@ public interface CommandResult {
      * @param <R>  The type of the command result.
      * @return The result of command handling, cast to the given {@code type}, within a {@code CompletableFuture}.
      */
-    default <R> CompletableFuture<R> resultAs(@NonNull Class<R> type) {
+    default <R> CompletableFuture<R> resultAs(Class<R> type) {
         requireNonNull(type, "The result type must not be null");
         return getResultMessage().thenApply(r -> {
             if (r == null || r.payload() == null) {
@@ -76,7 +75,7 @@ public interface CommandResult {
      * @return This command result, invoking the given {@code successHandler} when command handling resolves
      * successfully.
      */
-    default CommandResult onSuccess(@NonNull Consumer<Message> successHandler) {
+    default CommandResult onSuccess(Consumer<Message> successHandler) {
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
@@ -99,8 +98,8 @@ public interface CommandResult {
      * @return This command result, invoking the given {@code successHandler} when command handling resolves
      * successfully.
      */
-    default <R> CommandResult onSuccess(@NonNull Class<R> resultType,
-                                        @NonNull BiConsumer<R, Message> successHandler) {
+    default <R> CommandResult onSuccess(Class<R> resultType,
+                                        BiConsumer<R, Message> successHandler) {
         requireNonNull(resultType, "The result type must not be null.");
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
@@ -124,8 +123,8 @@ public interface CommandResult {
      * @return This command result, invoking the given {@code successHandler} when command handling resolves
      * successfully.
      */
-    default <R> CommandResult onSuccess(@NonNull Class<R> resultType,
-                                        @NonNull Consumer<R> successHandler) {
+    default <R> CommandResult onSuccess(Class<R> resultType,
+                                        Consumer<R> successHandler) {
         requireNonNull(successHandler, "The success handler must not be null.");
         return onSuccess(resultType, (result, message) -> successHandler.accept(result));
     }
@@ -139,7 +138,7 @@ public interface CommandResult {
      * @return This command result, invoking the given {@code errorHandler} when command handling resolves with an
      * error.
      */
-    default CommandResult onError(@NonNull Consumer<Throwable> errorHandler) {
+    default CommandResult onError(Consumer<Throwable> errorHandler) {
         requireNonNull(errorHandler, "The error handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e != null) {
@@ -157,7 +156,7 @@ public interface CommandResult {
      * @return The result of command handling, cast to the given {@code type}.
      * @throws CommandExecutionException When a checked exception occurs while waiting for the result.
      */
-    default <R> R wait(@NonNull Class<R> resultType) {
+    default <R> R wait(Class<R> resultType) {
         try {
             return resultAs(resultType).get();
         } catch (InterruptedException e) {
@@ -169,7 +168,7 @@ public interface CommandResult {
     }
 
     private static RuntimeException rethrowUnwrappedExecutionException(
-            @NonNull ExecutionException executionException
+            ExecutionException executionException
     ) {
         if (executionException.getCause() instanceof RuntimeException runtimeException) {
             throw runtimeException;

@@ -16,16 +16,17 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.ExponentiallyDecayingReservoir;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
-import com.codahale.metrics.Reservoir;
-import com.codahale.metrics.Timer;
-import org.jspecify.annotations.NonNull;
+import io.dropwizard.metrics5.Clock;
+import io.dropwizard.metrics5.ExponentiallyDecayingReservoir;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricSet;
+import io.dropwizard.metrics5.Reservoir;
+import io.dropwizard.metrics5.Timer;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,21 +49,21 @@ public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
     private final Timer ignoredTimer;
 
     /**
-     * Instantiate a Builder to be able to create a {@link MessageTimerMonitor}.
+     * Instantiate a Builder to be able to create a {@code MessageTimerMonitor}.
      * <p>
      * The {@link Clock} is defaulted to a {@link Clock#defaultClock()} and the {@code reservoirFactory} defaults to
      * creating a {@link ExponentiallyDecayingReservoir}.
      *
-     * @return a Builder to be able to create a {@link MessageTimerMonitor}
+     * @return a Builder to be able to create a {@code MessageTimerMonitor}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Instantiate a {@link MessageTimerMonitor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code MessageTimerMonitor} based on the fields contained in the {@link Builder}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link MessageTimerMonitor} instance
+     * @param builder the {@link Builder} used to instantiate a {@code MessageTimerMonitor} instance
      */
     protected MessageTimerMonitor(Builder builder) {
         builder.validate();
@@ -77,7 +78,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@NonNull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final Timer.Context allTimerContext = this.allTimer.time();
         final Timer.Context successTimerContext = this.successTimer.time();
         final Timer.Context failureTimerContext = this.failureTimer.time();
@@ -104,12 +105,12 @@ public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("allTimer", allTimer);
-        metrics.put("successTimer", successTimer);
-        metrics.put("failureTimer", failureTimer);
-        metrics.put("ignoredTimer", ignoredTimer);
+    public Map<MetricName, Metric> getMetrics() {
+        Map<MetricName, Metric> metrics = new HashMap<>();
+        metrics.put(MetricName.build("allTimer"), allTimer);
+        metrics.put(MetricName.build("successTimer"), successTimer);
+        metrics.put(MetricName.build("failureTimer"), failureTimer);
+        metrics.put(MetricName.build("ignoredTimer"), ignoredTimer);
         return metrics;
     }
 

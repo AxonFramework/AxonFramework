@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import org.jspecify.annotations.NonNull;
 
 /**
  * Interface describing instances that are capable of creating snapshot events for aggregates. Although snapshotting is
@@ -34,5 +33,5 @@ public interface Snapshotter {
      * @param aggregateType       the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(@NonNull Class<?> aggregateType, @NonNull String aggregateIdentifier);
+    void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier);
 }

@@ -85,7 +85,7 @@ class AnnotatedEventSourcedEntityModuleTest {
 
     @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
-        String expectedEntityName = "Course#CourseId";
+        String expectedEntityName = Course.class.getName() + "#" + CourseId.class.getName();
 
         EventSourcedEntityModule<CourseId, Course> testSubject =
                 EventSourcedEntityModule.autodetected(CourseId.class, Course.class);
@@ -202,9 +202,9 @@ class AnnotatedEventSourcedEntityModuleTest {
     static class CustomCriteriaResolverDefinition implements CriteriaResolverDefinition {
 
         @Override
-        public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(@NonNull Class<E> entityType,
-                                                                        @NonNull Class<ID> idType,
-                                                                        @NonNull Configuration configuration) {
+        public <E, ID> @NonNull CriteriaResolver<ID> createEventCriteriaResolver(@NonNull Class<E> entityType,
+                                                                                 @NonNull Class<ID> idType,
+                                                                                 @NonNull Configuration configuration) {
             assertInstanceOf(Configuration.class, configuration);
             return new CustomCriteriaResolver<>();
         }
@@ -228,7 +228,7 @@ class AnnotatedEventSourcedEntityModuleTest {
             implements EventSourcedEntityFactoryDefinition<CustomEntityFactoryCourse, CourseId> {
 
         @Override
-        public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
+        public @NonNull EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
                 @NonNull Class<CustomEntityFactoryCourse> entityType,
                 @NonNull Set<Class<? extends CustomEntityFactoryCourse>> entitySubTypes,
                 @NonNull Class<CourseId> idType,

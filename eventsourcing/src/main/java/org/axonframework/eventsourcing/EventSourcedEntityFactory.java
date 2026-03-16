@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -109,7 +108,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @return The entity to create. This may be {@code null} if no entity should be created.
      */
     @Nullable
-    E create(@NonNull ID id, @Nullable EventMessage firstEventMessage, @NonNull ProcessingContext context);
+    E create(ID id, @Nullable EventMessage firstEventMessage, ProcessingContext context);
 
     /**
      * Creates a factory for an entity of type {@link E} using a specified no-argument constructor.
@@ -125,7 +124,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @param <E>     The type of the entity.
      * @return A factory that creates the entity using the no-argument constructor.
      */
-    static <ID, E> EventSourcedEntityFactory<ID, E> fromNoArgument(@NonNull Supplier<E> creator) {
+    static <ID, E> EventSourcedEntityFactory<ID, E> fromNoArgument(Supplier<E> creator) {
         Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt, context) -> creator.get();
     }
@@ -145,7 +144,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * @param <E>     The type of the entity.
      * @return A factory that creates the entity using the constructor with the identifier as parameter.
      */
-    static <ID, E> EventSourcedEntityFactory<ID, E> fromIdentifier(@NonNull Function<ID, E> creator) {
+    static <ID, E> EventSourcedEntityFactory<ID, E> fromIdentifier(Function<ID, E> creator) {
         Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt, context) -> creator.apply(id);
     }
@@ -171,7 +170,7 @@ public interface EventSourcedEntityFactory<ID, E> {
      * parameters.
      */
     static <ID, E> EventSourcedEntityFactory<ID, E> fromEventMessage(
-            @NonNull BiFunction<ID, EventMessage, E> creator) {
+            BiFunction<ID, EventMessage, E> creator) {
         Objects.requireNonNull(creator, "The creator must not be null.");
         return (id, evt, context) -> evt == null
                 ? null

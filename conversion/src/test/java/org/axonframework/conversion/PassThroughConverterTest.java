@@ -34,18 +34,6 @@ class PassThroughConverterTest extends ConverterTestSuite<PassThroughConverter> 
     }
 
     @Override
-    protected Stream<Arguments> specificSupportedConversions() {
-        Assumptions.abort("The PassThroughConverter does not support conversion.");
-        return null;
-    }
-
-    @Override
-    protected Stream<Arguments> specificUnsupportedConversions() {
-        Assumptions.abort("The PassThroughConverter does not support conversion.");
-        return null;
-    }
-
-    @Override
     protected Stream<Arguments> specificSameTypeConversions() {
         return Stream.empty();
     }

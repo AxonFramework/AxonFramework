@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.deadletter;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
@@ -53,7 +52,7 @@ public interface DeadLetter<M extends Message> {
      * @return an {@link Optional} of {DeadLetter}, returning the resource keyed under the
      * {@link #RESOURCE_KEY} in the given {@code context}
      */
-    static Optional<DeadLetter<?>> fromContext(@NonNull Context context) {
+    static Optional<DeadLetter<?>> fromContext(Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
 
@@ -132,5 +131,26 @@ public interface DeadLetter<M extends Message> {
      */
     default DeadLetter<M> withDiagnostics(UnaryOperator<Metadata> diagnosticsBuilder) {
         return withDiagnostics(diagnosticsBuilder.apply(this.diagnostics()));
+    }
+
+    /**
+     * Returns the {@link Context} associated with this dead letter, carrying resources that were present in the
+     * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} when the letter was enqueued. Defaults to
+     * {@link Context#empty()} if not overridden.
+     * <p>
+     * The following resources are stored and restored through this context:
+     * <ul>
+     *     <li>{@link org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken#RESOURCE_KEY} —
+     *     always present when the letter was enqueued by a streaming event processor.</li>
+     *     <li>{@link org.axonframework.messaging.core.LegacyResources#AGGREGATE_TYPE_KEY},
+     *     {@link org.axonframework.messaging.core.LegacyResources#AGGREGATE_IDENTIFIER_KEY}, and
+     *     {@link org.axonframework.messaging.core.LegacyResources#AGGREGATE_SEQUENCE_NUMBER_KEY} — present only when
+     *     the event was stored by an aggregate-based event storage engine.</li>
+     * </ul>
+     *
+     * @return The {@link Context} associated with this dead letter.
+     */
+    default Context context() {
+        return Context.empty();
     }
 }

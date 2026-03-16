@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.BinaryMessageEncoder;
@@ -37,20 +36,17 @@ import java.io.IOException;
 public class GenericRecordToByteArrayConverter implements ContentTypeConverter<GenericRecord, byte[]> {
 
     @Override
-    @NonNull
     public Class<GenericRecord> expectedSourceType() {
         return GenericRecord.class;
     }
 
     @Override
-    @NonNull
     public Class<byte[]> targetType() {
         return byte[].class;
     }
 
     @Override
-    @Nullable
-    public byte[] convert(@Nullable GenericRecord input) {
+    public byte @Nullable [] convert(@Nullable GenericRecord input) {
         if (input == null) {
             return null;
         }

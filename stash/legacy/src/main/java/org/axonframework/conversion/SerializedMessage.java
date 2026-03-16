@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.AbstractMessage;
 import org.axonframework.messaging.core.Message;
@@ -58,10 +57,10 @@ public class SerializedMessage<P> extends AbstractMessage {
      * @param serializedMetadata The {@link SerializedObject serializer} message metadata.
      * @param serializer         The {@link Serializer} required when the data needs to be deserialized.
      */
-    public SerializedMessage(@NonNull String identifier,
-                             @NonNull SerializedObject<?> serializedPayload,
-                             @NonNull SerializedObject<?> serializedMetadata,
-                             @NonNull Serializer serializer) {
+    public SerializedMessage(String identifier,
+                             SerializedObject<?> serializedPayload,
+                             SerializedObject<?> serializedMetadata,
+                             Serializer serializer) {
         // TODO #3012 - I think the Serializer/Converter should provide the MessageType in this case.
         this(identifier,
              new MessageType(serializedPayload.getType().getName()),
@@ -81,17 +80,17 @@ public class SerializedMessage<P> extends AbstractMessage {
      * @param payload    serialized payload that can be deserialized on demand and never more than once
      * @param metadata   serialized metadata that can be deserialized on demand and never more than once
      */
-    public SerializedMessage(@NonNull String identifier,
-                             @NonNull MessageType type,
-                             @NonNull LazyDeserializingObject<?> payload,
-                             @NonNull LazyDeserializingObject<Metadata> metadata) {
+    public SerializedMessage(String identifier,
+                             MessageType type,
+                             LazyDeserializingObject<?> payload,
+                             LazyDeserializingObject<Metadata> metadata) {
         super(identifier, type);
         this.metadata = metadata;
         this.payload = payload;
     }
 
-    private SerializedMessage(@NonNull SerializedMessage message,
-                              @NonNull LazyDeserializingObject<Metadata> newMetadata) {
+    private SerializedMessage(SerializedMessage message,
+                              LazyDeserializingObject<Metadata> newMetadata) {
         this(message.identifier(), message.type(), message.payload, newMetadata);
     }
 
@@ -107,13 +106,13 @@ public class SerializedMessage<P> extends AbstractMessage {
 
     @Override
     @Nullable
-    public <T> T payloadAs(@NonNull Type type, @Nullable Converter converter) {
+    public <T> T payloadAs(Type type, @Nullable Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
     }
 
     @Override
-        public @NonNull Metadata metadata() {
+        public Metadata metadata() {
         try {
             return metadata.getObject();
         } catch (SerializationException e) {
@@ -122,7 +121,6 @@ public class SerializedMessage<P> extends AbstractMessage {
     }
 
     @Override
-    @NonNull
     public Class<?> payloadType() {
         return payload.getType();
     }
@@ -136,17 +134,17 @@ public class SerializedMessage<P> extends AbstractMessage {
     }
 
     @Override
-        public @NonNull SerializedMessage withMetadata(@NonNull Map<String, String> metadata) {
+    public SerializedMessage withMetadata(Map<String, String> metadata) {
         return (SerializedMessage) super.withMetadata(metadata);
     }
 
     @Override
-        public @NonNull SerializedMessage andMetadata(@NonNull Map<String, String> metadata) {
+    public SerializedMessage andMetadata(Map<String, String> metadata) {
         return (SerializedMessage) super.andMetadata(metadata);
     }
 
     @Override
-        public @NonNull Message withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+    public Message withConvertedPayload(Type type, Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
     }

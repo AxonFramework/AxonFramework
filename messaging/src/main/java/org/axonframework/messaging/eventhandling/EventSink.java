@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -57,7 +56,7 @@ public interface EventSink extends DescribableComponent {
      * successful completion of this future means the {@code events} where published.
      */
     default CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                            EventMessage... events) {
+                                            EventMessage @Nullable ... events) {
         return publish(context, Arrays.asList(events));
     }
 
@@ -78,5 +77,5 @@ public interface EventSink extends DescribableComponent {
      * successful completion of this future means the {@code events} where published.
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                    @NonNull List<EventMessage> events);
+                                    List<? extends EventMessage> events);
 }

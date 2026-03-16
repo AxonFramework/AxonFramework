@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Context.ResourceKey;
@@ -110,9 +109,8 @@ public class InterceptorChainParameterResolverFactory
         return (MessageHandlerInterceptorChain<M>) processingContext.getResource(INTERCEPTOR_CHAIN_KEY);
     }
 
-    @NonNull
     @Override
-    public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(@NonNull ProcessingContext context) {
+    public CompletableFuture<MessageHandlerInterceptorChain<?>> resolveParameterValue(ProcessingContext context) {
         // TODO #3485 - The MessageHandlerInterceptorChain should be registered as a resource to the ProcessingContext
         //  and retrieved from the given context here upon resolution i.o. using a thread local.
         MessageHandlerInterceptorChain<?> interceptorChain =
@@ -127,15 +125,15 @@ public class InterceptorChainParameterResolverFactory
     }
 
     @Override
-    public boolean matches(@NonNull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return CURRENT.get() != null
                 || (context != null && context.containsResource(INTERCEPTOR_CHAIN_KEY));
     }
 
     @Nullable
     @Override
-    public ParameterResolver<MessageHandlerInterceptorChain<?>> createInstance(@NonNull Executable executable,
-                                                                               @NonNull Parameter[] parameters,
+    public ParameterResolver<MessageHandlerInterceptorChain<?>> createInstance(Executable executable,
+                                                                               Parameter[] parameters,
                                                                                int parameterIndex) {
         if (MessageHandlerInterceptorChain.class.equals(parameters[parameterIndex].getType())) {
             return this;

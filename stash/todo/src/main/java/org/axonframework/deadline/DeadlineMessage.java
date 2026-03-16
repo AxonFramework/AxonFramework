@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.conversion.Converter;
@@ -42,28 +41,24 @@ public interface DeadlineMessage extends EventMessage {
      *
      * @return The name of the {@link DeadlineMessage deadline}.
      */
-    @NonNull
     String getDeadlineName();
 
     @Override
-    @NonNull
-    DeadlineMessage withMetadata(@NonNull Map<String, String> metadata);
+    DeadlineMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @NonNull
-    DeadlineMessage andMetadata(@NonNull Map<String, String> additionalMetadata);
+    DeadlineMessage andMetadata(Map<String, String> additionalMetadata);
 
     @Override
-        default @NonNull DeadlineMessage withConvertedPayload(@NonNull Class<?> type, @NonNull Converter converter) {
+        default DeadlineMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-        default @NonNull DeadlineMessage withConvertedPayload(@NonNull TypeReference<?> type, @NonNull Converter converter) {
+        default DeadlineMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @NonNull
-    DeadlineMessage withConvertedPayload(@NonNull Type type, @NonNull Converter converter);
+    DeadlineMessage withConvertedPayload(Type type, Converter converter);
 }

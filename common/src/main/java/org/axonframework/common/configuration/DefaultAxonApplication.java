@@ -16,12 +16,13 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.lifecycle.LifecycleHandlerInvocationException;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
 
-    private final AtomicReference<AxonConfiguration> configuration = new AtomicReference<>();
+    private final AtomicReference<@Nullable AxonConfiguration> configuration = new AtomicReference<>();
 
     /**
      * Creates a default axon application.
@@ -76,18 +77,18 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
     }
 
     @Override
-    public DefaultAxonApplication onStart(int phase, @NonNull LifecycleHandler startHandler) {
+    public DefaultAxonApplication onStart(int phase, LifecycleHandler startHandler) {
         return registerLifecycleHandler(startHandlers, phase, startHandler);
     }
 
     @Override
-    public DefaultAxonApplication onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
+    public DefaultAxonApplication onShutdown(int phase, LifecycleHandler shutdownHandler) {
         return registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
     }
 
     private DefaultAxonApplication registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
                                                             int phase,
-                                                            @NonNull LifecycleHandler lifecycleHandler) {
+                                                            LifecycleHandler lifecycleHandler) {
         if (configuration.get() != null) {
             throw new IllegalArgumentException(
                     "Cannot register lifecycle handlers when the configuration is already initialized"
@@ -99,7 +100,7 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
     }
 
     @Override
-    public DefaultAxonApplication registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
+    public DefaultAxonApplication registerLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
         assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
         requireNonNull(timeUnit, "The lifecycle phase time unit should not be null");
         this.lifecyclePhaseTimeout = timeout;
@@ -112,17 +113,17 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
         if (configuration.get() == null) {
             configuration.set(new AxonConfigurationImpl(componentRegistry.build(this)));
         }
-        return configuration.get();
+        return requireNonNull(configuration.get());
     }
 
     @Override
-    public ApplicationConfigurer componentRegistry(@NonNull Consumer<ComponentRegistry> componentRegistrar) {
+    public ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
         componentRegistrar.accept(componentRegistry);
         return this;
     }
 
     @Override
-    public ApplicationConfigurer lifecycleRegistry(@NonNull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
         lifecycleRegistrar.accept(this);
         return this;
     }
@@ -242,13 +243,34 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@NonNull Class<C> type, @Nullable String name) {
+        public <C> Optional<C> getOptionalComponent(Class<C> type, @Nullable String name) {
             return config.getOptionalComponent(type, name);
         }
 
-        @NonNull
         @Override
-        public <C> C getComponent(@NonNull Class<C> type, @Nullable String name, @NonNull Supplier<C> defaultImpl) {
+        public <C> C getComponent(TypeReference<C> typeReference) {
+            return config.getComponent(typeReference);
+        }
+
+        @Override
+        public <C> C getComponent(TypeReference<C> typeReference,
+                                  @Nullable String name) {
+            return config.getComponent(typeReference, name);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference) {
+            return config.getOptionalComponent(typeReference);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(TypeReference<C> typeReference,
+                                                    @Nullable String name) {
+            return config.getOptionalComponent(typeReference, name);
+        }
+
+        @Override
+        public <C> C getComponent(Class<C> type, @Nullable String name, Supplier<C> defaultImpl) {
             return config.getComponent(type, name, defaultImpl);
         }
 
@@ -257,26 +279,23 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
             return null;
         }
 
-        @NonNull
         @Override
-        public <C> C getComponent(@NonNull Class<C> type) {
+        public <C> C getComponent(Class<C> type) {
             return config.getComponent(type);
         }
 
-        @NonNull
         @Override
-        public <C> C getComponent(@NonNull Class<C> type, @NonNull Supplier<C> defaultImpl) {
+        public <C> C getComponent(Class<C> type, Supplier<C> defaultImpl) {
             return config.getComponent(type, defaultImpl);
         }
 
-        @NonNull
         @Override
-        public <C> C getComponent(@NonNull Class<C> type, @Nullable String name) {
+        public <C> C getComponent(Class<C> type, @Nullable String name) {
             return config.getComponent(type, name);
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@NonNull Class<C> type) {
+        public <C> Optional<C> getOptionalComponent(Class<C> type) {
             return config.getOptionalComponent(type);
         }
 
@@ -286,18 +305,17 @@ public class DefaultAxonApplication implements ApplicationConfigurer, LifecycleR
         }
 
         @Override
-        public Optional<Configuration> getModuleConfiguration(@NonNull String name) {
+        public Optional<Configuration> getModuleConfiguration(String name) {
             return config.getModuleConfiguration(name);
         }
 
-        @NonNull
         @Override
-        public <C> Map<String, C> getComponents(@NonNull Class<C> type) {
+        public <C> Map<String, C> getComponents(Class<C> type) {
             return config.getComponents(type);
         }
 
         @Override
-        public void describeTo(@NonNull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
             descriptor.describeProperty("components", componentRegistry);
             descriptor.describeProperty("lifecycleState", lifecycleState.get());
         }

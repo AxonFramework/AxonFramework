@@ -24,9 +24,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TransferQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-
-import org.jspecify.annotations.NonNull;
-
 /**
  * MessageStream implementation that uses a Queue to make elements available to a consumer.
  *
@@ -58,7 +55,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      *
      * @param queue The queue to use to store {@link Entry entries} in transit from producer to consumer.
      */
-    public QueueMessageStream(@NonNull BlockingQueue<Entry<M>> queue) {
+    public QueueMessageStream(BlockingQueue<Entry<M>> queue) {
         this.queue = queue;
     }
 
@@ -73,7 +70,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      * @param context The context to accompany the message.
      * @return {@code true} if the message was successfully buffered. Otherwise {@code false}.
      */
-    public boolean offer(@NonNull M message, @NonNull Context context) {
+    public boolean offer(M message, Context context) {
         if (!isClosed() && queue.offer(new SimpleEntry<>(message, context))) {
             Throwable before = error().orElse(null);
             invokeCallbackSafely();
@@ -99,7 +96,7 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
     }
 
     @Override
-    public void completeExceptionally(@NonNull Throwable error) {
+    public void completeExceptionally(Throwable error) {
         super.completeExceptionally(error);
     }
 
@@ -111,12 +108,12 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
      *
      * @param callback The callback to invoke when {@link Entry entries} are consumed.
      */
-    public void onConsumeCallback(@NonNull Runnable callback) {
+    public void onConsumeCallback(Runnable callback) {
         this.onConsumeCallback.set(callback);
     }
 
     @Override
-    public void setCallback(@NonNull Runnable callback) {
+    public void setCallback(Runnable callback) {
         Throwable before = error().orElse(null);
         super.setCallback(callback);
         if (error().isPresent() && before == null) {
