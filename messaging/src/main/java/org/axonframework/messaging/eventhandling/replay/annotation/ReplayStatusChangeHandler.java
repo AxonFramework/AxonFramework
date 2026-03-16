@@ -16,15 +16,14 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
+import org.axonframework.messaging.core.annotation.MessageHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
-import org.axonframework.messaging.core.annotation.MessageHandler;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 
 /**
  * Annotation that can be placed on a method that is to be invoked when the {@link ReplayStatus} is about to change.

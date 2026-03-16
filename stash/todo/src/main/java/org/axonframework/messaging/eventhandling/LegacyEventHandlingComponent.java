@@ -102,7 +102,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Override
     public MessageStream.Empty<Message> handle(ResetContext resetContext,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         eventHandlerInvoker.performReset(resetContext, context);
         return MessageStream.empty();
     }

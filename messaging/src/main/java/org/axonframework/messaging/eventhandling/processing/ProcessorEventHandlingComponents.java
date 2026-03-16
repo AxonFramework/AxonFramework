@@ -16,14 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
-
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -41,6 +33,13 @@ import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChang
 import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Internal class for managing multiple {@link EventHandlingComponent} instances and processing event messages through
@@ -122,9 +121,10 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
                 var componentResult = component.handle(event, context);
                 result = result.concatWith(componentResult);
             }
-            // Validated deliberately AFTER handling the event
+            // Validated deliberately AFTER handling the event; that's the point handling switches from REPLAY to REGULAR
             if (token.isPresent() && ReplayToken.willFinish(token.get())) {
-                ReplayStatusChange replayStatusChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, null);
+                ReplayStatusChange replayStatusChange =
+                        new GenericReplayStatusChange(ReplayStatus.REGULAR, (Object) null);
                 result.concatWith(component.handle(replayStatusChange, context));
             }
         }

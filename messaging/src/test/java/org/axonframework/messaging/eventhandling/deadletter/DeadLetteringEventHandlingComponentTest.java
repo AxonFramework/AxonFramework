@@ -16,21 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
@@ -55,6 +40,20 @@ import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DeadLetteringEventHandlingComponent}.
@@ -967,8 +966,8 @@ class DeadLetteringEventHandlingComponentTest {
         }
 
         @Override
-        public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
-                                                   ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChange statusChange,
+                                                            @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }
 

@@ -16,13 +16,13 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import java.lang.reflect.Type;
-import java.util.Map;
-
-
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.Nullable;
+
+import java.lang.reflect.Type;
+import java.util.Map;
 
 /**
  * A {@link Message} signalling that the {@link ReplayStatus} of an Event Handling Component changed.
@@ -45,7 +45,7 @@ public interface ReplayStatusChange extends Message {
     ReplayStatusChange withMetadata(Map<String, String> metadata);
 
     @Override
-    ReplayStatusChange andMetadata(Map<String, String> metadata);
+    ReplayStatusChange andMetadata(Map<String, @Nullable String> metadata);
 
     @Override
     default ReplayStatusChange withConvertedPayload(Class<?> type, Converter converter) {

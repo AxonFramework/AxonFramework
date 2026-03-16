@@ -213,7 +213,7 @@ class SimpleEventHandlingComponentTest {
             component.subscribe(handler);
 
             // when
-            var statusChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, null);
+            var statusChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, (Object) null);
             component.handle(statusChange, STUB_PROCESSING_CONTEXT);
 
             // then
@@ -234,7 +234,7 @@ class SimpleEventHandlingComponentTest {
             component.subscribe(handler);
 
             // when
-            var statusChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, null);
+            var statusChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, (Object) null);
             component.handle(statusChange, STUB_PROCESSING_CONTEXT);
 
             // then

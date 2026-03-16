@@ -16,11 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
-import java.lang.reflect.Type;
-import java.util.Map;
-import java.util.Objects;
-
-
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.conversion.Converter;
@@ -30,8 +25,11 @@ import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.lang.reflect.Type;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Generic implementation of the {@link ReplayStatusChange} interface.
@@ -69,7 +67,7 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
      */
     public GenericReplayStatusChange(ReplayStatus status,
                                      @Nullable Object payload,
-                                     Map<String, String> metadata) {
+                                     Map<String, @Nullable String> metadata) {
         this(status, new GenericMessage(new MessageType(ReplayStatusChange.class), payload, metadata));
     }
 
@@ -96,17 +94,17 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
     }
 
     @Override
-    public @NonNull ReplayStatusChange withMetadata(@NonNull Map<String, String> metadata) {
+    public ReplayStatusChange withMetadata(Map<String, String> metadata) {
         return new GenericReplayStatusChange(this.status, delegate().withMetadata(metadata));
     }
 
     @Override
-    public @NonNull ReplayStatusChange andMetadata(@NonNull Map<String, String> additionalMetadata) {
+    public ReplayStatusChange andMetadata(Map<String, @Nullable String> additionalMetadata) {
         return new GenericReplayStatusChange(this.status, delegate().andMetadata(additionalMetadata));
     }
 
     @Override
-    public @NonNull ReplayStatusChange withConvertedPayload(@NonNull Type type, @NonNull Converter converter) {
+    public ReplayStatusChange withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = this.payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;

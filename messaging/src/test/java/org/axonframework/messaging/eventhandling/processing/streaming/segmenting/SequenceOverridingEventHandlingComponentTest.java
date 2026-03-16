@@ -32,6 +32,11 @@ import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Test class for {@link SequenceOverridingEventHandlingComponent}.
  */
@@ -108,8 +113,8 @@ class SequenceOverridingEventHandlingComponentTest {
             }
 
             @Override
-            public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
-                                                       ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChange statusChange,
+                                                                @NonNull ProcessingContext context) {
                 return MessageStream.empty();
             }
         };

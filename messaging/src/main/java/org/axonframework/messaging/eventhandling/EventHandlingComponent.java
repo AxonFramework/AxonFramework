@@ -19,6 +19,7 @@ package org.axonframework.messaging.eventhandling;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 

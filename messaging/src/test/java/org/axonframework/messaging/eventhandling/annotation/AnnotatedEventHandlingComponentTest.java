@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -47,8 +46,10 @@ import org.junit.jupiter.api.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -890,15 +891,12 @@ class AnnotatedEventHandlingComponentTest {
 
         @Test
         void invokesReplayStatusChangeHandlerWhenHandlingReplayStatusChange() {
-            // given
-            ReplayStatusChange replayChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, null);
-            ReplayStatusChange regularChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, null);
+            ReplayStatusChange replayChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, (Object) null);
+            ReplayStatusChange regularChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, (Object) null);
 
-            // when
             eventHandlingComponent.handle(replayChange, StubProcessingContext.forMessage(replayChange));
             eventHandlingComponent.handle(regularChange, StubProcessingContext.forMessage(regularChange));
 
-            // then
             assertThat(eventHandler.replayStatusChanges).hasSize(2);
             assertThat(eventHandler.replayStatusChanges.get(0).status()).isEqualTo(ReplayStatus.REPLAY);
             assertThat(eventHandler.replayStatusChanges.get(1).status()).isEqualTo(ReplayStatus.REGULAR);
