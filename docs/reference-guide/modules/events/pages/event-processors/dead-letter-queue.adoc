@@ -453,6 +453,44 @@ public class DeadLetterProcessor {
 --
 ====
 
+=== Scheduling retries
+
+A common pattern is to schedule periodic retries, giving the system time to recover between attempts.
+The following Spring Boot example retries the oldest dead-letter sequence every 30 seconds:
+
+[source,java]
+----
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DeadLetterRetryScheduler {
+
+    private final Configuration configuration;
+
+    public DeadLetterRetryScheduler(Configuration configuration) {
+        this.configuration = configuration;
+    }
+
+    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <1>
+    public void retryDeadLetters() {
+        configuration.getComponents(SequencedDeadLetterProcessor.class) // <2>
+                .values()
+                .forEach(processor ->
+                        processor.processAny() // <3>
+                                .orTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                                .join());
+    }
+}
+----
+
+<1> Wait 30 seconds after startup, then retry every 30 seconds.
+Use a generous interval to avoid stressing a system that may already be under pressure.
+<2> Retrieves all registered `SequencedDeadLetterProcessor` instances across all processors and components.
+<3> `processAny()` picks the oldest unprocessed sequence and returns `true` if it was processed successfully.
+
 === Detecting dead-letter processing in handlers
 
 Some event handlers benefit from knowing whether the event being processed is a dead letter, for example to adjust logging or apply different recovery logic.
@@ -602,6 +640,42 @@ Use this when a letter has exhausted its retries or is otherwise no longer relev
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
 
 You are free to construct your own `EnqueueDecision` implementation when none of these fits.
+
+=== Cause-type and time-based eviction
+
+Skip enqueuing for errors that are guaranteed to recur (such as programming errors), and evict events that have been in the queue too long.
+For example, if a processor sends real-time alerts, retrying a five-minute-old alert might be pointless:
+
+[source,java]
+----
+import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.deadletter.Decisions;
+import org.axonframework.messaging.deadletter.EnqueueDecision;
+import org.axonframework.messaging.deadletter.EnqueuePolicy;
+import org.axonframework.messaging.eventhandling.EventMessage;
+
+import java.time.Duration;
+import java.time.Instant;
+
+public class CauseAndTimeBasedPolicy implements EnqueuePolicy<EventMessage> {
+
+    @Override
+    public EnqueueDecision<EventMessage> decide(DeadLetter<? extends EventMessage> letter,
+                                                Throwable cause) {
+        if (cause instanceof NullPointerException) {
+            return Decisions.doNotEnqueue(); // <1>
+        }
+        if (letter.enqueuedAt().isBefore(Instant.now().minus(Duration.ofMinutes(5)))) {
+            return Decisions.evict(); // <2>
+        }
+        return Decisions.enqueue(cause); // <3>
+    }
+}
+----
+
+<1> No need to dead-letter this: the same `NullPointerException` will always recur.
+<2> If the event has been in the queue for over 5 minutes, evict it: it is no longer relevant.
+<3> Default: keep the letter in the queue for a future retry.
 
 See the following example for configuring a custom policy:
 
