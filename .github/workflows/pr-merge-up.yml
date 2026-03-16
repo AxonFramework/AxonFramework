@@ -74,13 +74,13 @@ jobs:
 
           # Attempt to merge the source branch in
           if git merge --no-ff "origin/${SOURCE_BRANCH}" \
-               -m "chore: merge ${SOURCE_BRANCH} into ${TARGET_BRANCH} (from PR #${PR_NUMBER})"; then
+               -m "Port ${SOURCE_BRANCH} into ${TARGET_BRANCH} (from PR #${PR_NUMBER})"; then
             echo "Merge succeeded cleanly."
           else
             echo "::warning::Merge conflict detected. Pushing branch anyway for manual resolution."
             # Stage whatever merged cleanly, leave conflicts for the PR reviewer
             git add -A
-            git commit -m "chore: partial merge ${SOURCE_BRANCH} into ${TARGET_BRANCH} — conflicts need resolution"
+            git commit -m "Partial port of ${SOURCE_BRANCH} into ${TARGET_BRANCH} — conflicts need resolution"
           fi
 
           git push origin "$MERGE_BRANCH"
@@ -98,6 +98,6 @@ jobs:
           gh pr create \
             --base  "$TARGET_BRANCH" \
             --head  "$MERGE_BRANCH" \
-            --title "chore: merge-up \`${SOURCE_BRANCH}\` → \`${TARGET_BRANCH}\` (#${PR_NUMBER})" \
+            --title "Port \`${SOURCE_BRANCH}\` → \`${TARGET_BRANCH}\` (#${PR_NUMBER})" \
             --body  "$BODY" \
             --label "merge-up" || echo "PR may already exist — skipping creation."
