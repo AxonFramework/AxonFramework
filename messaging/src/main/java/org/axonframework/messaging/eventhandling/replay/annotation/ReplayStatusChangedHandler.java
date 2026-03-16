@@ -18,7 +18,7 @@ package org.axonframework.messaging.eventhandling.replay.annotation;
 
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -42,12 +42,12 @@ import java.lang.annotation.Target;
  * @author Simon Zambrovski
  * @author Stefan Dragisic
  * @author Steven van Beelen
- * @see org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler
+ * @see org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler
  * @since 5.1.0
  */
 @Retention(RetentionPolicy.RUNTIME)
-@MessageHandler(messageType = ReplayStatusChange.class)
+@MessageHandler(messageType = ReplayStatusChanged.class)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-public @interface ReplayStatusChangeHandler {
+public @interface ReplayStatusChangedHandler {
 
 }

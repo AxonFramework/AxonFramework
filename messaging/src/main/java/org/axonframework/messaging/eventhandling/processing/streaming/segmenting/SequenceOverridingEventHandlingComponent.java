@@ -25,7 +25,7 @@ import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Optional;
@@ -102,7 +102,7 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
                                                ProcessingContext context) {
         return delegate.handle(statusChange, context);
     }

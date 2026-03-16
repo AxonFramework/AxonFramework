@@ -28,9 +28,9 @@ import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandlerRegistry;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandlerRegistry;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
@@ -56,7 +56,7 @@ public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
         EventHandlerRegistry<SimpleEventHandlingComponent>,
         ResetHandlerRegistry<SimpleEventHandlingComponent>,
-        ReplayStatusChangeHandlerRegistry<SimpleEventHandlingComponent> {
+        ReplayStatusChangedHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy<? super EventMessage> DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy<>(
             SequentialPerAggregatePolicy.INSTANCE,
@@ -67,7 +67,7 @@ public class SimpleEventHandlingComponent implements
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
-    private final Set<ReplayStatusChangeHandler> replayStatusChangeHandlers = ConcurrentHashMap.newKeySet();
+    private final Set<ReplayStatusChangedHandler> replayStatusChangedHandlers = ConcurrentHashMap.newKeySet();
 
     /**
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
@@ -203,11 +203,11 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
                                                ProcessingContext context) {
         MessageStream<Message> result = MessageStream.empty();
 
-        for (ReplayStatusChangeHandler handler : replayStatusChangeHandlers) {
+        for (ReplayStatusChangedHandler handler : replayStatusChangedHandlers) {
             MessageStream<Message> handlerResult = handler.handle(statusChange, context);
             result = result.concatWith(handlerResult);
         }
@@ -216,8 +216,8 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public SimpleEventHandlingComponent subscribe(ReplayStatusChangeHandler replayStatusChangeHandler) {
-        replayStatusChangeHandlers.add(replayStatusChangeHandler);
+    public SimpleEventHandlingComponent subscribe(ReplayStatusChangedHandler replayStatusChangedHandler) {
+        replayStatusChangedHandlers.add(replayStatusChangedHandler);
         return this;
     }
 
@@ -226,7 +226,7 @@ public class SimpleEventHandlingComponent implements
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("eventHandlers", eventHandlers);
         descriptor.describeProperty("resetHandlers", resetHandlers);
-        descriptor.describeProperty("replayStatusChangeHandlers", replayStatusChangeHandlers);
+        descriptor.describeProperty("replayStatusChangedHandlers", replayStatusChangedHandlers);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

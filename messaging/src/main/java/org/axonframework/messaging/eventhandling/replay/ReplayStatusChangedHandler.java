@@ -23,15 +23,15 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 /**
- * Functional interface for handling {@link ReplayStatusChange} messages.
+ * Functional interface for handling {@link ReplayStatusChanged} messages.
  * <p>
  * Implementations of this interface process replay status changes, typically to prepare for and finalize an event
  * replay. Actions to consider during a {@code ReplayStatus} change are cleaning up the projection state, clearing
  * caches, or switching storage solution aliases. To that end, the {@code ReplayStatusChange} message contains the
- * {@link ReplayStatus} that will be changed to.
+ * {@link ReplayStatus} changed to.
  * <p>
  * Replay status change handlers are registered via
- * {@link ReplayStatusChangeHandlerRegistry#subscribe(ReplayStatusChangeHandler)}.
+ * {@link ReplayStatusChangedHandlerRegistry#subscribe(ReplayStatusChangedHandler)}.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -47,29 +47,30 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
  * @author Simon Zambrovski
  * @author Stefan Dragisic
  * @author Steven van Beelen
- * @see ReplayStatusChange
- * @see ReplayStatusChangeHandlerRegistry
+ * @see ReplayStatusChanged
+ * @see ReplayStatusChangedHandlerRegistry
  * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
  * @since 5.1.0
  */
 @FunctionalInterface
-public interface ReplayStatusChangeHandler extends MessageHandler {
+public interface ReplayStatusChangedHandler extends MessageHandler {
 
     /**
-     * Handles the given {@link ReplayStatusChange} message, allowing for tasks to be performed when the
+     * Handles the given {@link ReplayStatusChanged} message, allowing for tasks to be performed when the
      * {@link ReplayStatus#REPLAY replay starts} and {@link ReplayStatus#REGULAR ends}.
      * <p>
-     * This method is invoked on the moment the {@code ReplayStatus} is about to change. Thus, when
-     * {@link StreamingEventProcessor#resetTokens() resetting} would cause a switch from regular handling to a replay.
-     * Furthermore, this method will be invoked when the {@code ReplayStatus} is <b>about</b> to change from replay to
-     * regular.
+     * This method is invoked on the moment the {@code ReplayStatus} is about to change as part of the event handling
+     * {@link ProcessingContext}. For example, when {@link StreamingEventProcessor#resetTokens() resetting} would cause
+     * a switch from regular handling to a replay. Furthermore, this method will be invoked when the
+     * {@code ReplayStatus} is <b>about</b> to change from replay to regular.
      * <p>
-     * TODO - figure out what to do with exceptional stream results - If this method completes exceptionally, the reset operation will be aborted and no replay will occur.
+     * If this returns a {@link MessageStream#failed(Throwable) failed MessageStream}, this impacts the event handling
+     * that occurs within the given {@code context}.
      *
      * @param statusChange the replay status context message containing replay status information
      * @param context      the processing context for this operation
      * @return an empty message stream after handling completes successfully
      */
-    MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+    MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
                                         ProcessingContext context);
 }

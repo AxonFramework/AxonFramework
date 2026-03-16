@@ -36,7 +36,7 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
@@ -966,7 +966,7 @@ class DeadLetteringEventHandlingComponentTest {
         }
 
         @Override
-        public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChange statusChange,
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChanged statusChange,
                                                             @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }

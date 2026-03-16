@@ -19,7 +19,7 @@ package org.axonframework.messaging.eventhandling;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 
@@ -39,7 +39,7 @@ import java.util.Set;
  * @since 3.0.0
  */
 public interface EventHandlingComponent
-        extends EventHandler, ResetHandler, ReplayStatusChangeHandler, DescribableComponent {
+        extends EventHandler, ResetHandler, ReplayStatusChangedHandler, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

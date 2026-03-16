@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Generic implementation of the {@link ReplayStatusChange} interface.
+ * Generic implementation of the {@link ReplayStatusChanged} interface.
  *
  * @author Simon Zambrovski
  * @author Stefan Dragisic
@@ -40,7 +40,7 @@ import java.util.Objects;
  * @since 5.1.0
  */
 @Internal
-public class GenericReplayStatusChange extends MessageDecorator implements ReplayStatusChange {
+public class GenericReplayStatusChanged extends MessageDecorator implements ReplayStatusChanged {
 
     private final ReplayStatus status;
 
@@ -50,10 +50,10 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
      * The {@link Metadata} defaults to an empty instance.
      *
      * @param status  the status changed to as notified by this message
-     * @param payload the payload for this {@link ReplayStatusChange}
+     * @param payload the payload for this {@link ReplayStatusChanged}
      */
-    public GenericReplayStatusChange(ReplayStatus status,
-                                     @Nullable Object payload) {
+    public GenericReplayStatusChanged(ReplayStatus status,
+                                      @Nullable Object payload) {
         this(status, payload, Metadata.emptyInstance());
     }
 
@@ -62,18 +62,18 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
      * {@code metadata}.
      *
      * @param status   the status changed to as notified by this message
-     * @param payload  the payload for this {@link ReplayStatusChange}
-     * @param metadata the metadata for this {@link ReplayStatusChange}
+     * @param payload  the payload for this {@link ReplayStatusChanged}
+     * @param metadata the metadata for this {@link ReplayStatusChanged}
      */
-    public GenericReplayStatusChange(ReplayStatus status,
-                                     @Nullable Object payload,
-                                     Map<String, @Nullable String> metadata) {
-        this(status, new GenericMessage(new MessageType(ReplayStatusChange.class), payload, metadata));
+    public GenericReplayStatusChanged(ReplayStatus status,
+                                      @Nullable Object payload,
+                                      Map<String, @Nullable String> metadata) {
+        this(status, new GenericMessage(new MessageType(ReplayStatusChanged.class), payload, metadata));
     }
 
     /**
      * Constructs a {@code GenericReplayStatusChange} for the given {@code delegate}, intended to reconstruct another
-     * {@link ReplayStatusChange}.
+     * {@link ReplayStatusChanged}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
@@ -83,7 +83,7 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link EventMessage} to reconstruct
      */
-    public GenericReplayStatusChange(ReplayStatus status, Message delegate) {
+    public GenericReplayStatusChanged(ReplayStatus status, Message delegate) {
         super(delegate);
         this.status = Objects.requireNonNull(status);
     }
@@ -94,23 +94,23 @@ public class GenericReplayStatusChange extends MessageDecorator implements Repla
     }
 
     @Override
-    public ReplayStatusChange withMetadata(Map<String, String> metadata) {
-        return new GenericReplayStatusChange(this.status, delegate().withMetadata(metadata));
+    public ReplayStatusChanged withMetadata(Map<String, String> metadata) {
+        return new GenericReplayStatusChanged(this.status, delegate().withMetadata(metadata));
     }
 
     @Override
-    public ReplayStatusChange andMetadata(Map<String, @Nullable String> additionalMetadata) {
-        return new GenericReplayStatusChange(this.status, delegate().andMetadata(additionalMetadata));
+    public ReplayStatusChanged andMetadata(Map<String, @Nullable String> additionalMetadata) {
+        return new GenericReplayStatusChanged(this.status, delegate().andMetadata(additionalMetadata));
     }
 
     @Override
-    public ReplayStatusChange withConvertedPayload(Type type, Converter converter) {
+    public ReplayStatusChanged withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = this.payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;
         }
         Message delegate = delegate();
-        return new GenericReplayStatusChange(
+        return new GenericReplayStatusChanged(
                 this.status,
                 new GenericMessage(delegate.identifier(), delegate.type(), convertedPayload, delegate.metadata())
         );

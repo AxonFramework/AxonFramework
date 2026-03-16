@@ -36,10 +36,10 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
-import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangeHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangedHandler;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
@@ -436,7 +436,7 @@ class AnnotatedEventHandlingComponentTest {
         private String handledTimestamps = "null";
         private int handledCount = 0;
         private boolean objectHandlerInvoked = false;
-        private final List<ReplayStatusChange> replayStatusChanges = new ArrayList<>();
+        private final List<ReplayStatusChanged> replayStatusChanges = new ArrayList<>();
 
         @EventHandler
         void handle(Object payload) {
@@ -460,8 +460,8 @@ class AnnotatedEventHandlingComponentTest {
             this.handledCount++;
         }
 
-        @ReplayStatusChangeHandler
-        void handle(ReplayStatusChange statusChange) {
+        @ReplayStatusChangedHandler
+        void handle(ReplayStatusChanged statusChange) {
             replayStatusChanges.add(statusChange);
         }
     }
@@ -887,12 +887,12 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     @Nested
-    class ReplayStatusChangeHandling {
+    class ReplayStatusChangedHandling {
 
         @Test
         void invokesReplayStatusChangeHandlerWhenHandlingReplayStatusChange() {
-            ReplayStatusChange replayChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, (Object) null);
-            ReplayStatusChange regularChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, (Object) null);
+            ReplayStatusChanged replayChange = new GenericReplayStatusChanged(ReplayStatus.REPLAY, (Object) null);
+            ReplayStatusChanged regularChange = new GenericReplayStatusChanged(ReplayStatus.REGULAR, (Object) null);
 
             eventHandlingComponent.handle(replayChange, StubProcessingContext.forMessage(replayChange));
             eventHandlingComponent.handle(regularChange, StubProcessingContext.forMessage(regularChange));

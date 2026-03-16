@@ -32,7 +32,7 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 5.1.0
  */
-public interface ReplayStatusChange extends Message {
+public interface ReplayStatusChanged extends Message {
 
     /**
      * The status changed to as notified by this message.
@@ -42,21 +42,21 @@ public interface ReplayStatusChange extends Message {
     ReplayStatus status();
 
     @Override
-    ReplayStatusChange withMetadata(Map<String, String> metadata);
+    ReplayStatusChanged withMetadata(Map<String, String> metadata);
 
     @Override
-    ReplayStatusChange andMetadata(Map<String, @Nullable String> metadata);
+    ReplayStatusChanged andMetadata(Map<String, @Nullable String> metadata);
 
     @Override
-    default ReplayStatusChange withConvertedPayload(Class<?> type, Converter converter) {
+    default ReplayStatusChanged withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    default ReplayStatusChange withConvertedPayload(TypeReference<?> type, Converter converter) {
+    default ReplayStatusChanged withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    ReplayStatusChange withConvertedPayload(Type type, Converter converter);
+    ReplayStatusChanged withConvertedPayload(Type type, Converter converter);
 }

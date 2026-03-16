@@ -17,7 +17,7 @@
 package org.axonframework.messaging.eventhandling.replay;
 
 /**
- * Registry for subscribing {@link ReplayStatusChangeHandler} instances.
+ * Registry for subscribing {@link ReplayStatusChangedHandler} instances.
  * <p>
  * Components implementing this interface accept replay status changed handler subscriptions, allowing dynamic
  * registration of replay status change behavior following the same pattern as event handler registration.
@@ -37,20 +37,20 @@ package org.axonframework.messaging.eventhandling.replay;
  * @author Simon Zambrovski
  * @author Stefan Dragisic
  * @author Steven van Beelen
- * @see ReplayStatusChangeHandler
+ * @see ReplayStatusChangedHandler
  * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
  * @since 5.1.0
  */
-public interface ReplayStatusChangeHandlerRegistry<S extends ReplayStatusChangeHandlerRegistry<S>> {
+public interface ReplayStatusChangedHandlerRegistry<S extends ReplayStatusChangedHandlerRegistry<S>> {
 
     /**
-     * Subscribes a replay status change handler to this registry.
+     * Subscribes a replay status changed handler to this registry.
      * <p>
-     * The handler will be invoked when the {@link ReplayStatus} is about to change. Multiple handlers can be
-     * subscribed, and all will be invoked when the replay status changes.
+     * The handler will be invoked when the {@link ReplayStatus} changed. Multiple handlers can be subscribed, and all
+     * will be invoked when the replay status changes.
      *
-     * @param replayStatusChangeHandler the replay status change handler to subscribe, must not be {@code null}
+     * @param replayStatusChangedHandler the replay status changed handler to subscribe, must not be {@code null}
      * @return this registry instance for method chaining
      */
-    S subscribe(ReplayStatusChangeHandler replayStatusChangeHandler);
+    S subscribe(ReplayStatusChangedHandler replayStatusChangedHandler);
 }

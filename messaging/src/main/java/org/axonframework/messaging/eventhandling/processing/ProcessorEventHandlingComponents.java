@@ -29,9 +29,9 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.List;
@@ -123,9 +123,9 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
             }
             // Validated deliberately AFTER handling the event; that's the point handling switches from REPLAY to REGULAR
             if (token.isPresent() && ReplayToken.willFinish(token.get())) {
-                ReplayStatusChange replayStatusChange =
-                        new GenericReplayStatusChange(ReplayStatus.REGULAR, (Object) null);
-                result.concatWith(component.handle(replayStatusChange, context));
+                ReplayStatusChanged replayStatusChanged =
+                        new GenericReplayStatusChanged(ReplayStatus.REGULAR, (Object) null);
+                result.concatWith(component.handle(replayStatusChanged, context));
             }
         }
         return result.ignoreEntries().cast();

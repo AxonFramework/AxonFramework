@@ -34,15 +34,15 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangeHandler;
+import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
 import org.junit.jupiter.api.*;
 
 /**
  * Test class validating that
- * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler ReplayStatusChangeHandlers} are
+ * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangeHandlers} are
  * invoked when a {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken} is about to
  * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken#willFinish(TrackingToken)
  * finish}.
@@ -52,13 +52,13 @@ import org.junit.jupiter.api.*;
  * @author Steven van Beelen
  * @since 5.1.0
  */
-class ResetStatusChangeHandleIT extends AbstractStudentIT {
+class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
-    private static final String PSEP_NAME = "psep-name";
+    private static final String PSEP_NAME = "replayStatusChangeHandler";
 
     static AtomicInteger eventHandlerInvocations = new AtomicInteger(0);
     static AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-    static AtomicBoolean replayStatusChangeHandlerInvoked = new AtomicBoolean(false);
+    static AtomicBoolean replayStatusChangedHandlerInvoked = new AtomicBoolean(false);
 
     @Test
     void resettingPsepTriggersReplayStatusChangeHandlersWhenFinishingTheReplay() {
@@ -79,7 +79,7 @@ class ResetStatusChangeHandleIT extends AbstractStudentIT {
         await().atMost(Duration.ofMillis(5000))
                .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(4));
         assertThat(resetHandlerInvoked).isFalse();
-        assertThat(replayStatusChangeHandlerInvoked).isFalse();
+        assertThat(replayStatusChangedHandlerInvoked).isFalse();
 
         // when
         eventHandlerInvocations.set(0);
@@ -97,7 +97,7 @@ class ResetStatusChangeHandleIT extends AbstractStudentIT {
         await().atMost(Duration.ofMillis(5000))
                .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(104));
         assertThat(resetHandlerInvoked).isTrue();
-        assertThat(replayStatusChangeHandlerInvoked).isTrue();
+        assertThat(replayStatusChangedHandlerInvoked).isTrue();
     }
 
     @SuppressWarnings("unused")
@@ -113,9 +113,9 @@ class ResetStatusChangeHandleIT extends AbstractStudentIT {
             resetHandlerInvoked.set(true);
         }
 
-        @ReplayStatusChangeHandler
-        public void caughtUp(ReplayStatusChange context) {
-            replayStatusChangeHandlerInvoked.set(true);
+        @ReplayStatusChangedHandler
+        public void on(ReplayStatusChanged context) {
+            replayStatusChangedHandlerInvoked.set(true);
         }
     }
 
