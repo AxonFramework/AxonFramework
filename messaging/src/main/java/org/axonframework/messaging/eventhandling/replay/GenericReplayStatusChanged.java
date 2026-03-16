@@ -118,6 +118,6 @@ public class GenericReplayStatusChanged extends MessageDecorator implements Repl
 
     @Override
     protected String describeType() {
-        return "GenericReplayStatusChange";
+        return "GenericReplayStatusChanged";
     }
 }
