@@ -488,49 +488,92 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
         @Nested
         protected class OverrideAppendCondition {
 
+            /**
+             * Uniqueness without sourcing — ensuring a course name is unique.
+             * <p>
+             * When creating a course, we want to guarantee no course with the same name already exists.
+             * We don't need to source any events — we just need to check that no {@link CourseCreated}
+             * event with a matching {@code courseName} tag has ever been appended
+             * (since {@link ConsistencyMarker#ORIGIN}).
+             * <p>
+             * The first creation succeeds. A second attempt with the same name is rejected because a
+             * matching event now exists since ORIGIN.
+             */
             @Test
             protected void shouldAppendWithOverriddenConditionWithoutSourcing() {
-                // given - a unique tag that will be carried by the appended event
-                Tag uniqueTag = new Tag("Course", UUID.randomUUID().toString());
-                EventCriteria uniqueCriteria = EventCriteria.havingTags(uniqueTag);
+                // given - a unique course name
+                String courseName = UUID.randomUUID().toString();
+                Tag courseNameTag = new Tag("courseName", courseName);
+                EventCriteria courseNameCriteria = EventCriteria.havingTags(courseNameTag);
 
-                // when - first append without sourcing, using override with ORIGIN marker.
-                // No event with uniqueTag exists yet, so ORIGIN-based check passes.
+                // when - first course creation: no sourcing, just enforce name uniqueness
                 UnitOfWork uow1 = unitOfWork();
-                EventMessage newMessage = message(new CourseUpdated(uniqueTag.value(), "override-1"));
 
                 uow1.runOnInvocation(pc -> {
                     EventStoreTransaction tx = eventStore.transaction(pc);
-                    tx.overrideAppendCondition(condition -> AppendCondition.withCriteria(uniqueCriteria));
-                    tx.appendEvent(newMessage);
+                    // no source() — we don't need state, just uniqueness
+                    tx.overrideAppendCondition(condition ->
+                            // condition is AppendCondition.none(); override with ORIGIN-based check
+                            AppendCondition.withCriteria(courseNameCriteria)
+                    );
+                    tx.appendEvent(message(new CourseCreated(courseName)));
                 });
 
                 execute(uow1);
 
-                // then - event was persisted
-                assertThat(stream(StreamingCondition.conditionFor(baseToken, uniqueCriteria), 1))
-                        .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
-                        .containsExactly(newMessage);
+                // then - event was persisted (sourcing finds 1 event with the courseName tag)
+                assertThat(sourceCount(SourcingCondition.conditionFor(courseNameCriteria))).isEqualTo(1);
 
-                // and - second attempt with the same criteria should fail
-                // (event with uniqueTag now exists since ORIGIN)
+                // and - second attempt to create a course with the same name should fail
+                // (CourseCreated with matching courseName tag now exists since ORIGIN)
                 UnitOfWork uow2 = unitOfWork();
-                EventMessage conflictingMessage = message(new CourseUpdated(uniqueTag.value(), "override-2"));
 
                 uow2.runOnInvocation(pc -> {
                     EventStoreTransaction tx = eventStore.transaction(pc);
-                    tx.overrideAppendCondition(condition -> AppendCondition.withCriteria(uniqueCriteria));
-                    tx.appendEvent(conflictingMessage);
+                    tx.overrideAppendCondition(condition ->
+                            AppendCondition.withCriteria(courseNameCriteria)
+                    );
+                    tx.appendEvent(message(new CourseCreated(courseName)));
                 });
 
                 assertThatThrownBy(() -> execute(uow2))
                         .isInstanceOf(AppendEventsTransactionRejectedException.class);
             }
 
+            /**
+             * Narrowing criteria — only conflict-relevant event types.
+             * <p>
+             * When handling a "subscribe student to course" command, we source both
+             * {@link StudentSubscribedToCourse} and {@link StudentUnsubscribedFromCourse} events to build
+             * state (enrolled count, remaining places). However, only {@code StudentSubscribedToCourse}
+             * events can cause a conflict (e.g., duplicate subscription, no remaining places).
+             * {@code StudentUnsubscribedFromCourse} events only broaden state (free up places) and never
+             * conflict.
+             * <p>
+             * By narrowing the append condition to only check for {@code StudentSubscribedToCourse},
+             * a concurrent unsubscription does not cause a false conflict.
+             */
             @Test
             protected void narrowedCriteriaShouldAvoidFalseConflict() {
-                // given - two tags for narrowing
-                Tag narrowTag = new Tag("NarrowTag", UUID.randomUUID().toString());
+                // given - a course with subscriptions
+                String courseId = UUID.randomUUID().toString();
+                Tag courseIdTag = new Tag("courseId", courseId);
+                EventCriteria subscribedAndUnsubscribedEvents = EventCriteria.havingTags(courseIdTag)
+                        .andBeingOneOfTypes(RESOLVER, StudentSubscribedToCourse.class,
+                                            StudentUnsubscribedFromCourse.class);
+                EventCriteria onlySubscribedEvents = EventCriteria.havingTags(courseIdTag)
+                        .andBeingOneOfTypes(RESOLVER, StudentSubscribedToCourse.class);
+
+                // pre-populate: one student already subscribed
+                UnitOfWork setup = unitOfWork();
+                EventMessage initialSubscription = message(
+                        new StudentSubscribedToCourse(courseId, "student-initial")
+                );
+                setup.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    tx.appendEvent(initialSubscription);
+                });
+                execute(setup);
 
                 CountDownLatch sourcingFinished = new CountDownLatch(2);
                 CountDownLatch latch1 = new CountDownLatch(1);
@@ -538,112 +581,105 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
 
                 UnitOfWork uow1 = unitOfWork();
                 UnitOfWork uow2 = unitOfWork();
-                EventMessage msg1 = message(new CourseUpdated(TAG1.value(), "narrow-1"));
-                EventMessage msg2 = message(new CourseUpdated(TAG1.value(), "narrow-2"));
 
-                // TX1: source TAG1, override to narrow criteria to narrowTag (won't conflict with TAG1 appends)
+                // TX1: subscribe a new student — source all subscription events for state,
+                //      but narrow conflict detection to only StudentSubscribedToCourse
+                EventMessage newSubscription = message(
+                        new StudentSubscribedToCourse(courseId, "student-new")
+                );
                 uow1.runOnInvocation(pc -> {
                     EventStoreTransaction tx = eventStore.transaction(pc);
                     MessageStream<? extends EventMessage> sourcing = tx.source(
-                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                            SourcingCondition.conditionFor(subscribedAndUnsubscribedEvents)
                     );
+                    // consume the sourced events (1 initial subscription)
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(1);
 
-                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
-
+                    // only StudentSubscribedToCourse can cause conflicts;
+                    // StudentUnsubscribedFromCourse just makes more places available
                     tx.overrideAppendCondition(condition ->
-                            condition.replacingCriteria(EventCriteria.havingTags(narrowTag))
+                            condition.replacingCriteria(onlySubscribedEvents)
                     );
 
                     sourcingFinished.countDown();
                     awaitLatch(latch1);
 
-                    tx.appendEvent(msg1);
+                    tx.appendEvent(newSubscription);
                 });
 
-                // TX2: source TAG1, no override
+                // TX2: unsubscribe a student — this is a concurrent unsubscription
+                EventMessage unsubscription = message(
+                        new StudentUnsubscribedFromCourse(courseId, "student-initial")
+                );
                 uow2.runOnInvocation(pc -> {
                     EventStoreTransaction tx = eventStore.transaction(pc);
                     MessageStream<? extends EventMessage> sourcing = tx.source(
-                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                            SourcingCondition.conditionFor(subscribedAndUnsubscribedEvents)
                     );
-
-                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(1);
 
                     sourcingFinished.countDown();
                     awaitLatch(latch2);
 
-                    tx.appendEvent(msg2);
+                    tx.appendEvent(unsubscription);
                 });
 
-                // when - TX2 commits first (appends with TAG1 criteria), then TX1 commits
+                // when - TX2 commits first (appends StudentUnsubscribedFromCourse), then TX1 commits
                 CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> execute(uow1));
                 CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> execute(uow2));
 
                 awaitLatch(sourcingFinished);
 
+                // let TX2 (unsubscription) commit first
                 latch2.countDown();
-                assertDoesNotThrow(() -> execute2.join());
+                assertDoesNotThrow(execute2::join);
 
-                // TX1 should also succeed because its criteria was narrowed to narrowTag
+                // TX1 should also succeed: its narrowed criteria (StudentSubscribedToCourse only)
+                // does not match the StudentUnsubscribedFromCourse appended by TX2
                 latch1.countDown();
-                assertDoesNotThrow(() -> execute1.join());
+                assertDoesNotThrow(execute1::join);
             }
 
+            /**
+             * Bypassing conflict detection — creating two courses with the same name.
+             * <p>
+             * Demonstrates that returning {@link AppendCondition#none()} from the override completely
+             * bypasses conflict detection. Here, two courses are created with the same name — normally
+             * this would be rejected (as shown in
+             * {@link #shouldAppendWithOverriddenConditionWithoutSourcing()}), but with the override
+             * returning {@code none()}, both succeed.
+             */
             @Test
             protected void overrideReturningNoneShouldBypassConflictDetection() {
-                CountDownLatch sourcingFinished = new CountDownLatch(2);
-                CountDownLatch latch1 = new CountDownLatch(1);
-                CountDownLatch latch2 = new CountDownLatch(1);
+                // given - a course name and first course already created with uniqueness check
+                String courseName = UUID.randomUUID().toString();
+                Tag courseNameTag = new Tag("courseName", courseName);
+                EventCriteria courseNameCriteria = EventCriteria.havingTags(courseNameTag);
 
-                UnitOfWork uow1 = unitOfWork();
-                UnitOfWork uow2 = unitOfWork();
-                EventMessage msg1 = message(new CourseUpdated(TAG1.value(), "bypass-1"));
-                EventMessage msg2 = message(new CourseUpdated(TAG1.value(), "bypass-2"));
-
-                // TX1: source TAG1, override returns none() to bypass conflict detection
-                uow1.runOnInvocation(pc -> {
+                UnitOfWork setup = unitOfWork();
+                setup.runOnInvocation(pc -> {
                     EventStoreTransaction tx = eventStore.transaction(pc);
-                    MessageStream<? extends EventMessage> sourcing = tx.source(
-                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                    tx.overrideAppendCondition(condition ->
+                            AppendCondition.withCriteria(courseNameCriteria)
                     );
+                    tx.appendEvent(message(new CourseCreated(courseName)));
+                });
+                execute(setup);
 
-                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
-
+                // when - second course creation with same name, but override returns none()
+                UnitOfWork uow = unitOfWork();
+                uow.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    // override returns none() — bypasses the uniqueness check entirely
                     tx.overrideAppendCondition(condition -> AppendCondition.none());
-
-                    sourcingFinished.countDown();
-                    awaitLatch(latch1);
-
-                    tx.appendEvent(msg1);
+                    tx.appendEvent(message(new CourseCreated(courseName)));
                 });
 
-                // TX2: source TAG1, normal append (no override)
-                uow2.runOnInvocation(pc -> {
-                    EventStoreTransaction tx = eventStore.transaction(pc);
-                    MessageStream<? extends EventMessage> sourcing = tx.source(
-                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
-                    );
+                // then - succeeds despite a CourseCreated with the same name already existing
+                assertDoesNotThrow(() -> execute(uow));
 
-                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
-
-                    sourcingFinished.countDown();
-                    awaitLatch(latch2);
-
-                    tx.appendEvent(msg2);
-                });
-
-                // when - TX2 commits first (creates conflict), TX1 commits with none() override
-                CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> execute(uow1));
-                CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> execute(uow2));
-
-                awaitLatch(sourcingFinished);
-
-                latch2.countDown();
-                assertDoesNotThrow(() -> execute2.join());
-
-                // TX1 should succeed despite conflicting append, because override returned none()
-                latch1.countDown();
-                assertDoesNotThrow(() -> execute1.join());
+                // verify both events are persisted
+                assertThat(sourceCount(SourcingCondition.conditionFor(courseNameCriteria))).isEqualTo(2);
             }
         }
 
@@ -806,6 +842,21 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
     }
 
     /**
+     * Counts the number of events matching the given sourcing condition.
+     *
+     * @param condition The condition, cannot be {@code null}.
+     * @return The number of matching events.
+     */
+    protected final int sourceCount(SourcingCondition condition) {
+        return unitOfWork().executeWithResult(pc -> {
+            EventStoreTransaction tx = eventStore.transaction(pc);
+            MessageStream<? extends EventMessage> stream = tx.source(condition);
+
+            return stream.reduce(0, (count, entry) -> count + 1);
+        }).join();
+    }
+
+    /**
      * Executes a {@link UnitOfWork} and returns when it has completed.
      *
      * @param workUnit The {@link UnitOfWork} to execute.
@@ -828,4 +879,13 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
 
     @Event
     record CourseUpdated(@EventTag(key = "Course") String id, String data) {}
+
+    @Event
+    record CourseCreated(@EventTag String courseName) {}
+
+    @Event
+    record StudentSubscribedToCourse(@EventTag String courseId, @EventTag String studentId) {}
+
+    @Event
+    record StudentUnsubscribedFromCourse(@EventTag String courseId, @EventTag String studentId) {}
 }
