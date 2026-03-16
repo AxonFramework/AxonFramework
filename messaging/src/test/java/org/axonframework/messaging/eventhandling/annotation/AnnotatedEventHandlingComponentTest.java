@@ -16,7 +16,23 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import org.jspecify.annotations.NonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -37,21 +53,12 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangeHandler;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.
@@ -430,6 +437,7 @@ class AnnotatedEventHandlingComponentTest {
         private String handledTimestamps = "null";
         private int handledCount = 0;
         private boolean objectHandlerInvoked = false;
+        private final List<ReplayStatusChange> replayStatusChanges = new ArrayList<>();
 
         @EventHandler
         void handle(Object payload) {
@@ -451,6 +459,11 @@ class AnnotatedEventHandlingComponentTest {
             this.handledSources = handledSources + "-" + source;
             this.handledTimestamps = handledTimestamps + "-" + timestamp;
             this.handledCount++;
+        }
+
+        @ReplayStatusChangeHandler
+        void handle(ReplayStatusChange statusChange) {
+            replayStatusChanges.add(statusChange);
         }
     }
 
@@ -872,5 +885,25 @@ class AnnotatedEventHandlingComponentTest {
                 .withResource(LegacyResources.AGGREGATE_TYPE_KEY, AGGREGATE_TYPE)
                 .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, AGGREGATE_IDENTIFIER)
                 .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, payload.longValue());
+    }
+
+    @Nested
+    class ReplayStatusChangeHandling {
+
+        @Test
+        void invokesReplayStatusChangeHandlerWhenHandlingReplayStatusChange() {
+            // given
+            ReplayStatusChange replayChange = new GenericReplayStatusChange(ReplayStatus.REPLAY, null);
+            ReplayStatusChange regularChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, null);
+
+            // when
+            eventHandlingComponent.handle(replayChange, StubProcessingContext.forMessage(replayChange));
+            eventHandlingComponent.handle(regularChange, StubProcessingContext.forMessage(regularChange));
+
+            // then
+            assertThat(eventHandler.replayStatusChanges).hasSize(2);
+            assertThat(eventHandler.replayStatusChanges.get(0).status()).isEqualTo(ReplayStatus.REPLAY);
+            assertThat(eventHandler.replayStatusChanges.get(1).status()).isEqualTo(ReplayStatus.REGULAR);
+        }
     }
 }
