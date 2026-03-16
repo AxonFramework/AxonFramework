@@ -7,9 +7,9 @@ In addition, it will prevent handling of later events in the same sequence until
 
 [TIP]
 .Insight and management
-xref:axoniq-platform-reference:ROOT:index.adoc[AxonIQ Platform] provides insight into the Dead-Letter Queue and tools for its management.
+xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] provides insight into the Dead-Letter Queue and tools for its management.
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
-You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of AxonIQ Platform].
+You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of Axoniq Platform].
 
 == Queue scoping and naming
 
