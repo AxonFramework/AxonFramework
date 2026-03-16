@@ -42,7 +42,7 @@ public final class StringUtils {
      * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
      * otherwise
      */
-    public static boolean nonEmptyOrNull(String s) {
+    public static boolean nonEmptyOrNull(@Nullable String s) {
         return Objects.nonNull(s) && !EMPTY_STRING.equals(s);
     }
 
@@ -82,10 +82,14 @@ public final class StringUtils {
 
     /**
      * Return the given {@code string}, with its first character uppercase.
+     * <p>
+     * When the given {@code string} is {@code null}, the returned value is also {@code null}.
      *
-     * @param string The input string to adjust to a version with the first character as uppercase.
-     * @return The input string, with first character in uppercase.
+     * @param string the input string to adjust to a version with the first character as uppercase
+     * @return the input string, with first character in uppercase, or {@code null} if the given {@code string} is
+     * {@code null}
      */
+    @Nullable
     public static String capitalize(@Nullable String string) {
         if (string == null || string.isEmpty()) {
             return string;

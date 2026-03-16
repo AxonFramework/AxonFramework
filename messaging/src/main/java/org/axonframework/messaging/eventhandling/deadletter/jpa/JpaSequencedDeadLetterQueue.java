@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -37,7 +38,6 @@ import org.axonframework.messaging.deadletter.NoSuchDeadLetterException;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.conversion.Converter;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +158,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                 }
 
                 DeadLetterEventEntry entry = converter.convert(
-                        letter.message(), context, eventConverter, genericConverter
+                        letter.message(), letter.context(), eventConverter, genericConverter
                 );
                 return entityManagerExecutor(context).accept(em -> {
                     Long sequenceIndex = nextIndexForSequence(em, stringSequenceIdentifier);
@@ -325,7 +325,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
      * Converts a {@link DeadLetterEntry} from the database into a {@link JpaDeadLetter}, using the configured
      * {@link DeadLetterJpaConverter DeadLetterJpaConverters} to restore the original message from it.
      * <p>
-     * The converter returns a {@link MessageStream.Entry} containing both the message and its associated context. The
+     * The converter returns a {@link DeadLetter} carrying both the message and its associated context. The
      * context includes restored resources such as tracking token and domain info (aggregate identifier, type, sequence
      * number) that were stored when the dead letter was enqueued.
      *

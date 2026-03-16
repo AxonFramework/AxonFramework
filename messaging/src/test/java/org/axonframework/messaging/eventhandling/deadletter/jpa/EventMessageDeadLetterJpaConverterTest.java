@@ -152,36 +152,36 @@ class EventMessageDeadLetterJpaConverterTest {
         assertInstanceOf(GenericEventMessage.class, actual);
     }
 
-    private void assertContextRestored(Context originalContext, MessageStream.Entry<EventMessage> restoredEntry) {
+    private void assertContextRestored(Context originalContext, Context restoredContext) {
         // Check tracking token restoration
         if (originalContext.containsResource(TrackingToken.RESOURCE_KEY)) {
-            assertTrue(restoredEntry.containsResource(TrackingToken.RESOURCE_KEY));
+            assertTrue(restoredContext.containsResource(TrackingToken.RESOURCE_KEY));
             assertEquals(
                     originalContext.getResource(TrackingToken.RESOURCE_KEY),
-                    restoredEntry.getResource(TrackingToken.RESOURCE_KEY)
+                    restoredContext.getResource(TrackingToken.RESOURCE_KEY)
             );
         }
 
         // Check domain info restoration
         if (originalContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
             );
         }
         if (originalContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_TYPE_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_TYPE_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_TYPE_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_TYPE_KEY)
             );
         }
         if (originalContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)) {
-            assertTrue(restoredEntry.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
+            assertTrue(restoredContext.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY));
             assertEquals(
                     originalContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY),
-                    restoredEntry.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)
+                    restoredContext.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY)
             );
         }
     }

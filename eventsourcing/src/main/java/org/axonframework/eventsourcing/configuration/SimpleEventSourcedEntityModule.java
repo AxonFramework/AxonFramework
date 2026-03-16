@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
@@ -53,7 +54,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
         EventSourcedEntityModule.MessagingModelPhase<ID, E>,
         EventSourcedEntityModule.EntityFactoryPhase<ID, E>,
         EventSourcedEntityModule.CriteriaResolverPhase<ID, E>,
-        EventSourcedEntityModule.EntityIdResolverPhase<ID, E> {
+        EventSourcedEntityModule.OptionalPhase<ID, E> {
 
     private final Class<ID> idType;
     private final Class<E> entityType;
@@ -62,6 +63,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     private ComponentBuilder<CriteriaResolver<ID>> criteriaResolver;
     private ComponentBuilder<EntityMetamodel<E>> entityModel;
     private ComponentBuilder<EntityIdResolver<ID>> entityIdResolver;
+    private ComponentBuilder<Snapshotter<ID, E>> snapshotter;
 
     SimpleEventSourcedEntityModule(Class<ID> idType,
                                    Class<E> entityType) {
@@ -87,17 +89,20 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
     }
 
     @Override
-    public EntityIdResolverPhase<ID, E> criteriaResolver(
-            ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
-    ) {
+    public OptionalPhase<ID, E> criteriaResolver(ComponentBuilder<CriteriaResolver<ID>> criteriaResolver) {
         this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
         return this;
     }
 
     @Override
-    public EventSourcedEntityModule<ID, E> entityIdResolver(
-            ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
+    public OptionalPhase<ID, E> entityIdResolver(ComponentBuilder<EntityIdResolver<ID>> entityIdResolver) {
         this.entityIdResolver = requireNonNull(entityIdResolver, "The entity ID resolver cannot be null.");
+        return this;
+    }
+
+    @Override
+    public OptionalPhase<ID, E> snapshotter(ComponentBuilder<Snapshotter<ID, E>> snapshotter) {
+        this.snapshotter = requireNonNull(snapshotter, "The snapshotter cannot be null.");
         return this;
     }
 
@@ -135,6 +140,10 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                 cr.registerComponent(idResolver());
                 cr.registerComponent(commandHandlingComponent());
             }
+
+            if (snapshotter != null) {
+                cr.registerComponent(snapshotter());
+            }
         });
     }
 
@@ -152,6 +161,12 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                                   .withBuilder(entityIdResolver);
     }
 
+    private ComponentDefinition<Snapshotter<ID, E>> snapshotter() {
+        TypeReference<Snapshotter<ID, E>> type = new TypeReference<>() {};
+        return ComponentDefinition.ofTypeAndName(type, entityName())
+                                  .withBuilder(snapshotter);
+    }
+
     private ComponentDefinition<Repository<ID, E>> repository() {
         TypeReference<Repository<ID, E>> type = new TypeReference<>() {
         };
@@ -165,7 +180,8 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                             config.getComponent(EventStore.class),
                             config.getComponent(EventSourcedEntityFactory.class, entityName()),
                             config.getComponent(CriteriaResolver.class, entityName()),
-                            config.getComponent(EntityMetamodel.class, entityName())
+                            config.getComponent(EntityMetamodel.class, entityName()),
+                            config.getOptionalComponent(Snapshotter.class, entityName()).orElse(null)
                     );
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,

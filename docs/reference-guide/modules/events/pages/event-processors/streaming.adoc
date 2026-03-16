@@ -58,10 +58,11 @@ The Pooled Streaming Event Processor has several additional components that you 
 For other features that are configurable, we refer to their respective sections for more details.
 This section covers how to configure the basics of a Pooled Streaming Event Processor.
 
-To configure a Pooled Streaming Event Processor you have roughly two approaches:
+To configure a Pooled Streaming Event Processor you have roughly three approaches:
 
 1. <<declarative_config_pooled,Declarative configuration>>
 2. <<autodetected_config_spring_properties_pooled,Autodetected configuration>>, like Spring
+3. <<event_processor_definition_based_config,`EventProcessorDefinition` configuration>>, like Spring
 
 Both solutions have examples drafted below, showing how to configure the "example-processor" with a specific event source.
 
@@ -184,8 +185,8 @@ axon.eventhandling.processors[example.processor].mode=pooled-streaming
 axon.eventhandling.processors[example.processor].source=eventStore
 ----
 
-[#bean_based_config_pooled]
-=== Bean-based configuration - Spring Boot with EventProcessorDefinition
+[#event_processor_definition_based_config]
+=== Autodetected configuration - `EventProcessorDefinition` based configuration
 
 For programmatic, type-safe configuration of event processors, Spring Boot users can define `EventProcessorDefinition` beans.
 This approach provides several advantages:
@@ -194,6 +195,45 @@ This approach provides several advantages:
 * Fine-grained handler assignment control
 * Full access to processor configuration options
 * Better IDE support with autocompletion
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
+                                       .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(
+                                               "orders"
+                                       ))
+                                       .customized(config -> config
+                                               .initialSegmentCount(4)
+                                               .batchSize(100)
+                                               .claimExtensionThreshold(5000)
+                                               .tokenClaimInterval(5000)
+                                       );
+    }
+}
+----
+
+The `assigningHandlers` method uses the `EventHandlerSelector` to receive an `EventHandlerDescriptor` that provides access to:
+
+* `beanName()` - The Spring bean name
+* `beanType()` - The event handler class
+* `beanDefinition()` - The Spring bean definition
+* `component()` - The component builder
+
+This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
+
+In the example above, we use the convenience `EventHandlerSelector#matchesNamespaceOnType` method that assigns handlers that are annotated with `@Namespace("orders")` to an `PooledStreamingEventProcessor` with the name `"example-processor"`.
+Event Handlers can describe their `@Namespace` on several levels, as described xref:ROOT:spring-boot-integration.adoc#namespace-based-handler-selection[here].
+When the Event Processor name and namespace are identical, you can use the `EventProcessorDefinition.pooledStreamingMatching()` to skip the `assigningHandlers` method automatically:
 
 [source,java]
 ----
@@ -206,35 +246,34 @@ public class EventProcessorConfig {
 
     @Bean
     public EventProcessorDefinition exampleProcessorDefinition() {
-        return EventProcessorDefinition.pooledStreaming("example-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .equals("com.example.orders"))
-                .customized(config -> config
-                    .initialSegmentCount(4)
-                    .batchSize(100)
-                    .claimExtensionThreshold(5000)
-                    .tokenClaimInterval(5000));
+        return EventProcessorDefinition.pooledStreamingMatching("orders")
+                                       .customized(config -> config
+                                               .initialSegmentCount(4)
+                                               .batchSize(100)
+                                               .claimExtensionThreshold(5000)
+                                               .tokenClaimInterval(5000)
+                                       );
     }
 }
 ----
-
-The `assigningHandlers` method receives an `EventHandlerDescriptor` that provides access to:
-
-* `beanName()` - The Spring bean name
-* `beanType()` - The event handler class
-* `beanDefinition()` - The Spring bean definition
-* `component()` - The component builder
-
-This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
 Use `notCustomized()` instead of `customized()` when you don't need custom processor settings but still want explicit handler assignment:
 
 [source,java]
 ----
-EventProcessorDefinition.pooledStreaming("example-processor")
-        .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
-        .notCustomized();
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreamingMatching("orders")
+                                       .notCustomized();
+    }
+}
 ----
 
 [IMPORTANT]

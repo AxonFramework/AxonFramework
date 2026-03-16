@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -98,7 +100,9 @@ class DeadLetteredEventProcessingTask {
         return unitOfWork.executeWithResult(context -> {
             MessageStream.Empty<Message> result = delegate.handle(
                     message,
-                    context.withResource(DeadLetter.RESOURCE_KEY, letter).withResource(Message.RESOURCE_KEY, message)
+                    mergeContextResources(context, letter.context())
+                            .withResource(DeadLetter.RESOURCE_KEY, letter)
+                            .withResource(Message.RESOURCE_KEY, message)
             );
 
             return result.asCompletableFuture()
@@ -133,5 +137,30 @@ class DeadLetteredEventProcessingTask {
                         letter.message().identifier(), cause);
         }
         return enqueuePolicy.decide(letter, cause);
+    }
+
+    /**
+     * Merges all resources from {@code source} into {@code target}. When both contain a resource under the same key,
+     * the value from {@code source} wins, overwriting the value already present in {@code target}.
+     * <p>
+     * This means that resources captured from the dead letter's context (e.g. the
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken} at the time of
+     * original failure, or the legacy aggregate identity resources) take precedence over any same-keyed resources in
+     * the fresh {@link ProcessingContext} created for the retry. This is intentional: the letter's context is
+     * message-specific and point-in-time, whereas the retry-time {@link ProcessingContext} is a generic runtime
+     * context that has no knowledge of the original event.
+     *
+     * @param target The {@link ProcessingContext} to merge resources into.
+     * @param source The {@link Context} whose resources are merged into {@code target}, winning on key conflicts.
+     * @return A new {@link ProcessingContext} containing all resources from both {@code target} and {@code source},
+     * with {@code source} values taking precedence on conflicts.
+     */
+    @SuppressWarnings("unchecked")
+    private static ProcessingContext mergeContextResources(ProcessingContext target, Context source) {
+        ProcessingContext result = target;
+        for (Map.Entry<Context.ResourceKey<?>, Object> entry : source.resources().entrySet()) {
+            result = result.withResource((Context.ResourceKey<Object>) entry.getKey(), entry.getValue());
+        }
+        return result;
     }
 }

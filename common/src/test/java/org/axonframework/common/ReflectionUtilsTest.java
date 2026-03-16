@@ -372,6 +372,48 @@ class ReflectionUtilsTest {
     }
 
     @Nested
+    class EnclosingClassesOfTest {
+
+        @Test
+        void returnsEmptyForTopLevelClass() {
+            Iterable<Class<?>> result = enclosingClassesOf(String.class);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void returnsEnclosingClassForNestedClass() {
+            Iterable<Class<?>> result = enclosingClassesOf(EnclosingClassFixture.InnerClass.class);
+
+            assertThat(result).containsExactly(
+                    EnclosingClassFixture.class,
+                    ReflectionUtilsTest.class
+            );
+        }
+
+        @Test
+        void returnsAllEnclosingClassesFromInnermostToOutermost() {
+            Iterable<Class<?>> result = enclosingClassesOf(EnclosingClassFixture.InnerClass.DeeplyNestedClass.class);
+
+            assertThat(result).containsExactly(
+                    EnclosingClassFixture.InnerClass.class,
+                    EnclosingClassFixture.class,
+                    ReflectionUtilsTest.class
+            );
+        }
+    }
+
+    private static class EnclosingClassFixture {
+
+        private static class InnerClass {
+
+            private static class DeeplyNestedClass {
+
+            }
+        }
+    }
+
+    @Nested
     class CollectAnnotatedMethodsAndFieldsTest {
 
         static class Foo {

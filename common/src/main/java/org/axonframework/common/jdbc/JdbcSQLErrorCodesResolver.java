@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.eventsourcing.eventstore.jdbc;
+package org.axonframework.common.jdbc;
 
-
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import java.sql.SQLIntegrityConstraintViolationException;
 
 /**
- * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
- * it is an duplicate key constraint violation.
+ * {@link JdbcSQLErrorCodesResolver} is an implementation of {@link PersistenceExceptionResolver} used to resolve SQL
+ * error codes to see if it is a duplicate key constraint violation.
  * <p/>
  *
  * @author Kristian Rosenvold
@@ -35,7 +34,7 @@ public class JdbcSQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     private boolean causeIsEntityExistsException(Throwable exception) {
-        return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+        return exception instanceof SQLIntegrityConstraintViolationException
                 || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
     }
 

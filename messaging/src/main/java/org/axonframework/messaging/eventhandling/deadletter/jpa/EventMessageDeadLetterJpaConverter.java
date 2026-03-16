@@ -22,9 +22,9 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -74,8 +74,8 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
     @Override
     public MessageStream.Entry<EventMessage> convert(DeadLetterEventEntry entry,
-                                                              EventConverter eventConverter,
-                                                              Converter genericConverter) {
+                                                     EventConverter eventConverter,
+                                                     Converter genericConverter) {
         return new SimpleEntry<>(deserializeMessage(entry, eventConverter),
                                  restoreContext(entry, genericConverter));
     }

@@ -208,7 +208,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
                     long sequenceIndex = nextIndexForSequence(connection, sequenceId);
                     executeUpdate(connection,
                                   c -> statementFactory.enqueueStatement(
-                                          c, processingGroup, sequenceId, letter, sequenceIndex, context
+                                          c, processingGroup, sequenceId, letter, sequenceIndex
                                   ),
                                   e -> new JdbcException("Failed to enqueue dead letter with message id ["
                                                                  + letter.message().identifier() + "]", e));

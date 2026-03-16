@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.springboot;
+package org.axonframework.extension.springboot.autoconfig;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.axonframework.extension.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.extension.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.axonframework.messaging.core.Message;
@@ -35,6 +35,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.pooled.Poo
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -62,12 +63,13 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating configuration through a properties file, adjusting the {@link EventProcessorProperties}.
+ * Test class validating configuration through a properties file, adjusting the {@link EventProcessorProperties}, in
+ * combination with the {@link EventProcessorDefinition}.
  *
  * @author Allard Buijze
  * @author Simon Zambrovski
  */
-class EventProcessorConfigurationTest {
+class EventProcessorPropertiesAndDefinitionInteractionTest {
 
     private static final String KEY1 = "org.axonframework.extension.springboot.fixture.event.test1";
     private static final String KEY2 = "org.axonframework.extension.springboot.fixture.event.test2";
@@ -136,7 +138,7 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
                     "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
@@ -246,7 +248,7 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
                     "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
@@ -288,7 +290,7 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class,
+            classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class,
                     SubscribingEventProcessorDefinitionContext.class},
             properties = {
                     "axon.axonserver.enabled=false",
@@ -335,7 +337,7 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class,
+            classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class,
                     SubscribingEventProcessorDefinitionContext.class,
                     PooledStreamingEventProcessorDefinitionContext.class},
             properties = {
