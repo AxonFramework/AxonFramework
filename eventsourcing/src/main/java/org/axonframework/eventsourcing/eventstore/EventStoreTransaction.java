@@ -129,7 +129,7 @@ public interface EventStoreTransaction {
      *     against the entire event store).</li>
      *     <li><b>Narrowing (or broadening) the append condition</b> — sourcing events with broad criteria for state
      *     but only a subset causes real conflicts. The override can narrow the criteria via
-     *     {@link AppendCondition#withCriteria(EventCriteria)} while preserving the sourced marker.</li>
+     *     {@link AppendCondition#replacingCriteria(EventCriteria)} while preserving the sourced marker.</li>
      * </ol>
      * <p>
      * Multiple calls to this method compose: each subsequent override receives the output of the previous one.

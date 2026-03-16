@@ -93,5 +93,7 @@ public sealed interface AppendCondition extends EventsCondition permits NoAppend
      * @param criteria The {@link EventCriteria} for the new {@code AppendCondition}.
      * @return An {@code AppendCondition} with the given {@code criteria}.
      */
-    AppendCondition replacingCriteria(EventCriteria criteria);
+    default AppendCondition replacingCriteria(EventCriteria criteria) {
+        return new DefaultAppendCondition(this.consistencyMarker(), criteria);
+    }
 }
