@@ -16,14 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.*;
+import static java.util.Collections.emptySet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.Collections;
 
-import static java.util.Collections.emptySet;
-import static org.junit.jupiter.api.Assertions.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link ReplayToken}.
@@ -43,7 +45,7 @@ class ReplayTokenTest {
     void advanceReplayTokenWithinReplaySegment() {
         ReplayToken testSubject = (ReplayToken) ReplayToken.createReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(8, emptySet()));
-        assertTrue(actual instanceof ReplayToken);
+        assertInstanceOf(ReplayToken.class, actual);
         assertTrue(ReplayToken.isReplay(actual));
     }
 
@@ -96,7 +98,7 @@ class ReplayTokenTest {
     void getTokenAtReset() {
         ReplayToken testSubject = (ReplayToken) ReplayToken.createReplayToken(innerToken);
         TrackingToken actual = testSubject.advancedTo(GapAwareTrackingToken.newInstance(6, emptySet()));
-        assertTrue(actual instanceof ReplayToken);
+        assertInstanceOf(ReplayToken.class, actual);
         assertEquals(testSubject.getTokenAtReset(), innerToken);
     }
 
@@ -138,7 +140,7 @@ class ReplayTokenTest {
 
         TrackingToken result = ReplayToken.createReplayToken(tokenAtReset, startPosition);
 
-        assertTrue(result instanceof ReplayToken);
+        assertInstanceOf(ReplayToken.class, result);
         assertEquals(tokenAtReset, ((ReplayToken) result).getTokenAtReset());
         assertEquals(startPosition, ((ReplayToken) result).getCurrentToken());
     }
@@ -224,7 +226,7 @@ class ReplayTokenTest {
             TrackingToken advancedToken = ((ReplayToken) replayToken).advancedTo(newToken);
 
             assertTrue(ReplayToken.isReplay(advancedToken),
-                       "Should have remained in replay mode since newToken (index 6) does not have tokenAtReset beyond its positio");
+                       "Should have remained in replay mode since newToken (index 6) does not have tokenAtReset beyond its position");
         }
     }
 
@@ -309,6 +311,44 @@ class ReplayTokenTest {
             ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
 
             assertTrue(replayToken.samePositionAs(sameCurrentToken));
+        }
+    }
+
+    @Nested
+    class WillFinish {
+
+        @Test
+        void returnsTrueWhenCurrentTokenReachedTokenAtReset() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(5);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertThat(ReplayToken.willFinish(replayToken)).isTrue();
+        }
+
+        @Test
+        void returnsFalseWhenCurrentTokenHasNotReachedTokenAtReset() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertThat(ReplayToken.willFinish(replayToken)).isFalse();
+        }
+
+        @Test
+        void returnsFalseForNonReplayToken() {
+            TrackingToken token = new GlobalSequenceTrackingToken(5);
+
+            assertThat(ReplayToken.willFinish(token)).isFalse();
+        }
+
+        @Test
+        void returnsTrueWithGapAwareTokensAtSamePosition() {
+            TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken currentToken = GapAwareTrackingToken.newInstance(10, emptySet());
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+
+            assertThat(ReplayToken.willFinish(replayToken)).isTrue();
         }
     }
 }

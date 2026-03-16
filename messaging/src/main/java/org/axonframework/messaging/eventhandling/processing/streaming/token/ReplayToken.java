@@ -16,17 +16,18 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
-import org.jspecify.annotations.NonNull;
-import org.axonframework.conversion.Converter;
-import org.jspecify.annotations.Nullable;
 import java.beans.ConstructorProperties;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Token keeping track of the position before a reset was triggered. This allows for downstream components to detect
@@ -142,6 +143,24 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     public static boolean isReplay(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
                            .map(rt -> rt.isReplay())
+                           .orElse(false);
+    }
+
+    /**
+     * Indicates whether the given {@code trackingToken} is (1) a {@code ReplayToken} and (2) has reached the exact same
+     * position for the {@link #getTokenAtReset()} and the {@link #getCurrentToken()}.
+     * <p>
+     * When both positions are the {@link TrackingToken#samePositionAs(TrackingToken) same}, the token is about to
+     * finish replaying.
+     *
+     * @param trackingToken the token to verify
+     * @return {@code true} if the token is (1) a {@code ReplayToken} and (2) has the
+     * {@link TrackingToken#samePositionAs(TrackingToken) same position} for both the {@link #getTokenAtReset()} and
+     * {@link #getCurrentToken()}
+     */
+    public static boolean willFinish(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                           .map(rt -> rt.getTokenAtReset().samePositionAs(rt.getCurrentToken()))
                            .orElse(false);
     }
 
