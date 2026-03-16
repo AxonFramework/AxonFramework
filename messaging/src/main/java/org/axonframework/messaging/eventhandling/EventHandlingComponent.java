@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
 import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
@@ -38,7 +39,8 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface EventHandlingComponent extends EventHandler, ResetHandler, DescribableComponent {
+public interface EventHandlingComponent
+        extends EventHandler, ResetHandler, ReplayStatusChangeHandler, DescribableComponent {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

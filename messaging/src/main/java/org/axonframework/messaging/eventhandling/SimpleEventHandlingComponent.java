@@ -16,7 +16,13 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -25,6 +31,9 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangeHandlerRegistry;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
@@ -32,12 +41,7 @@ import org.axonframework.messaging.eventhandling.sequencing.HierarchicalSequenci
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Simple implementation of the {@link EventHandlingComponent}, {@link EventHandlerRegistry}, and
@@ -53,7 +57,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
         EventHandlerRegistry<SimpleEventHandlingComponent>,
-        ResetHandlerRegistry<SimpleEventHandlingComponent> {
+        ResetHandlerRegistry<SimpleEventHandlingComponent>,
+        ReplayStatusChangeHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
             SequentialPerAggregatePolicy.instance(),
@@ -64,6 +69,7 @@ public class SimpleEventHandlingComponent implements
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy sequencingPolicy;
     private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
+    private final Set<ReplayStatusChangeHandler> replayStatusChangeHandlers = ConcurrentHashMap.newKeySet();
 
     /**
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
@@ -201,10 +207,30 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+                                               ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (ReplayStatusChangeHandler handler : replayStatusChangeHandlers) {
+            MessageStream<Message> handlerResult = handler.handle(statusChange, context);
+            result = result.concatWith(handlerResult);
+        }
+
+        return result.ignoreEntries().cast();
+    }
+
+    @Override
+    public SimpleEventHandlingComponent subscribe(ReplayStatusChangeHandler replayStatusChangeHandler) {
+        replayStatusChangeHandlers.add(replayStatusChangeHandler);
+        return this;
+    }
+
+    @Override
     public void describeTo(@NonNull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("eventHandlers", eventHandlers);
         descriptor.describeProperty("resetHandlers", resetHandlers);
+        descriptor.describeProperty("replayStatusChangeHandlers", replayStatusChangeHandlers);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

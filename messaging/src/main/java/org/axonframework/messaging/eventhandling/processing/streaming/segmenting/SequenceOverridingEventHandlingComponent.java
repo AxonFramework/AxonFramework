@@ -16,7 +16,12 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
+import static java.util.Objects.requireNonNull;
+
+import java.util.Optional;
+import java.util.Set;
+
+
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -25,13 +30,10 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-
-import java.util.Optional;
-import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Decorator implementation of {@link EventHandlingComponent} that uses a configurable {@link SequencingPolicy} to
@@ -53,7 +55,6 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
 
     private final SequencingPolicy sequencingPolicy;
     private final EventHandlingComponent delegate;
-
 
     /**
      * Creates a new {@code SequenceOverridingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
@@ -101,6 +102,12 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
                                                         @NonNull ProcessingContext context) {
         return delegate.handle(resetContext, context);
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+                                               ProcessingContext context) {
+        return delegate.handle(statusChange, context);
     }
 
     @Override

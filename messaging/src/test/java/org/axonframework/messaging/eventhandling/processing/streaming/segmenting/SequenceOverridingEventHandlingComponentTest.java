@@ -16,7 +16,12 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.jspecify.annotations.NonNull;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Optional;
+import java.util.Set;
+
+
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -27,14 +32,11 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
-
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class for {@link SequenceOverridingEventHandlingComponent}.
@@ -80,7 +82,7 @@ class SequenceOverridingEventHandlingComponentTest {
         assertThat(result).isEqualTo(delegateSequenceId);
     }
 
-        private @NonNull EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
+    private @NonNull EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
         return new EventHandlingComponent() {
             @NonNull
             @Override
@@ -107,6 +109,12 @@ class SequenceOverridingEventHandlingComponentTest {
             @Override
             public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
                                                                 @NonNull ProcessingContext context) {
+                return MessageStream.empty();
+            }
+
+            @Override
+            public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+                                                       ProcessingContext context) {
                 return MessageStream.empty();
             }
         };

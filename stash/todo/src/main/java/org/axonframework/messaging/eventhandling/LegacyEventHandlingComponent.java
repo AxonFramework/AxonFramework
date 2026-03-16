@@ -16,19 +16,21 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Legacy adapter that wraps an {@link EventHandlerInvoker} to implement the {@link EventHandlingComponent} interface.
@@ -106,6 +108,12 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     public @NotNull MessageStream.Empty<Message> handle(@NotNull ResetContext resetContext,
                                                         @NotNull ProcessingContext context) {
         eventHandlerInvoker.performReset(resetContext, context);
+        return MessageStream.empty();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+                                               ProcessingContext context) {
         return MessageStream.empty();
     }
 

@@ -16,16 +16,18 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.jspecify.annotations.NonNull;
+import java.util.Objects;
+import java.util.Set;
+
+
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-
-import java.util.Objects;
-import java.util.Set;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract implementation of an {@link EventHandlingComponent} that delegates calls to a given delegate.
@@ -81,6 +83,12 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
                                                         @NonNull ProcessingContext context) {
         return delegate.handle(resetContext, context);
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChange statusChange,
+                                               ProcessingContext context) {
+        return delegate.handle(statusChange, context);
     }
 
     @Override

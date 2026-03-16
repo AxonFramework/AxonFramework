@@ -43,11 +43,13 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Repl
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import java.time.Duration;
 import java.time.Instant;
@@ -1409,7 +1411,7 @@ class PooledStreamingEventProcessorTest {
             TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            simpleEhc.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
@@ -1459,7 +1461,7 @@ class PooledStreamingEventProcessorTest {
             TrackingToken expectedToken = ReplayToken.createReplayToken(initialToken, initialToken, expectedContext);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            simpleEhc.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
@@ -1543,7 +1545,7 @@ class PooledStreamingEventProcessorTest {
             TrackingToken expectedToken = new GlobalSequenceTrackingToken(42);
 
             AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-            simpleEhc.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
                 resetHandlerInvoked.set(true);
                 return MessageStream.empty();
             });
@@ -1590,7 +1592,7 @@ class PooledStreamingEventProcessorTest {
             String expectedContext = "my-context";
 
             AtomicReference<Object> capturedResetPayload = new AtomicReference<>();
-            simpleEhc.subscribe((resetContext, ctx) -> {
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> {
                 capturedResetPayload.set(resetContext.payload());
                 return MessageStream.empty();
             });
