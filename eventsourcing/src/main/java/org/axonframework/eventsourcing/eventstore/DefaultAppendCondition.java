@@ -46,4 +46,12 @@ record DefaultAppendCondition(
         }
         return new DefaultAppendCondition(consistencyMarker, criteria);
     }
+
+    @Override
+    public AppendCondition replacingCriteria(EventCriteria criteria) {
+        if (this.criteria.equals(criteria)) {
+            return this;
+        }
+        return new DefaultAppendCondition(consistencyMarker, criteria);
+    }
 }

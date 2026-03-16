@@ -50,6 +50,11 @@ final class NoAppendCondition implements AppendCondition {
 
     @Override
     public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
-        throw new UnsupportedOperationException("Cannot add a consistency marker without any criteria");
+        return new DefaultAppendCondition(consistencyMarker, criteria());
+    }
+
+    @Override
+    public AppendCondition replacingCriteria(EventCriteria criteria) {
+        return new DefaultAppendCondition(consistencyMarker(), criteria);
     }
 }

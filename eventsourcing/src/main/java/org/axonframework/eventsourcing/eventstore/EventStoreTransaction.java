@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * Interface describing the actions that can be taken on a transaction to source a model from the {@link EventStore}
@@ -113,6 +114,33 @@ public interface EventStoreTransaction {
      * @param callback A {@link Consumer} to invoke when an event is appended in this transaction.
      */
     void onAppend(Consumer<EventMessage> callback);
+
+    /**
+     * Overrides the {@link AppendCondition} that will be used when committing this transaction. The provided
+     * {@code conditionOverride} function receives the current {@link AppendCondition} derived from
+     * {@link #source(SourcingCondition) sourcing} calls (or {@link AppendCondition#none()} if no sourcing occurred) and
+     * returns the desired condition.
+     * <p>
+     * This allows two primary use cases:
+     * <ol>
+     *     <li><b>Appending without sourcing</b> — enforcing uniqueness constraints without first sourcing events. The
+     *     input is {@link AppendCondition#none()}, and the override sets the desired criteria and marker (e.g.,
+     *     {@link AppendCondition#withCriteria(EventCriteria)} which uses {@link ConsistencyMarker#ORIGIN} to check
+     *     against the entire event store).</li>
+     *     <li><b>Narrowing (or broadening) the append condition</b> — sourcing events with broad criteria for state
+     *     but only a subset causes real conflicts. The override can narrow the criteria via
+     *     {@link AppendCondition#withCriteria(EventCriteria)} while preserving the sourced marker.</li>
+     * </ol>
+     * <p>
+     * Multiple calls to this method compose: each subsequent override receives the output of the previous one.
+     * The override is applied at commit time, after all {@link #source(SourcingCondition) source} calls have been
+     * processed.
+     * <p>
+     * Returning {@link AppendCondition#none()} from the override function bypasses conflict detection entirely.
+     *
+     * @param conditionOverride A {@link UnaryOperator} that transforms the current {@link AppendCondition}.
+     */
+    void overrideAppendCondition(UnaryOperator<AppendCondition> conditionOverride);
 
     /**
      * Returns the position in the event store of the last {@link #appendEvent(EventMessage) appended} event by this

@@ -486,6 +486,168 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
         }
 
         @Nested
+        protected class OverrideAppendCondition {
+
+            @Test
+            protected void shouldAppendWithOverriddenConditionWithoutSourcing() {
+                // given - a unique tag that will be carried by the appended event
+                Tag uniqueTag = new Tag("Course", UUID.randomUUID().toString());
+                EventCriteria uniqueCriteria = EventCriteria.havingTags(uniqueTag);
+
+                // when - first append without sourcing, using override with ORIGIN marker.
+                // No event with uniqueTag exists yet, so ORIGIN-based check passes.
+                UnitOfWork uow1 = unitOfWork();
+                EventMessage newMessage = message(new CourseUpdated(uniqueTag.value(), "override-1"));
+
+                uow1.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    tx.overrideAppendCondition(condition -> AppendCondition.withCriteria(uniqueCriteria));
+                    tx.appendEvent(newMessage);
+                });
+
+                execute(uow1);
+
+                // then - event was persisted
+                assertThat(stream(StreamingCondition.conditionFor(baseToken, uniqueCriteria), 1))
+                        .usingComparatorForType(EVENT_COMPARATOR, GenericEventMessage.class)
+                        .containsExactly(newMessage);
+
+                // and - second attempt with the same criteria should fail
+                // (event with uniqueTag now exists since ORIGIN)
+                UnitOfWork uow2 = unitOfWork();
+                EventMessage conflictingMessage = message(new CourseUpdated(uniqueTag.value(), "override-2"));
+
+                uow2.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    tx.overrideAppendCondition(condition -> AppendCondition.withCriteria(uniqueCriteria));
+                    tx.appendEvent(conflictingMessage);
+                });
+
+                assertThatThrownBy(() -> execute(uow2))
+                        .isInstanceOf(AppendEventsTransactionRejectedException.class);
+            }
+
+            @Test
+            protected void narrowedCriteriaShouldAvoidFalseConflict() {
+                // given - two tags for narrowing
+                Tag narrowTag = new Tag("NarrowTag", UUID.randomUUID().toString());
+
+                CountDownLatch sourcingFinished = new CountDownLatch(2);
+                CountDownLatch latch1 = new CountDownLatch(1);
+                CountDownLatch latch2 = new CountDownLatch(1);
+
+                UnitOfWork uow1 = unitOfWork();
+                UnitOfWork uow2 = unitOfWork();
+                EventMessage msg1 = message(new CourseUpdated(TAG1.value(), "narrow-1"));
+                EventMessage msg2 = message(new CourseUpdated(TAG1.value(), "narrow-2"));
+
+                // TX1: source TAG1, override to narrow criteria to narrowTag (won't conflict with TAG1 appends)
+                uow1.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    MessageStream<? extends EventMessage> sourcing = tx.source(
+                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                    );
+
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+
+                    tx.overrideAppendCondition(condition ->
+                            condition.replacingCriteria(EventCriteria.havingTags(narrowTag))
+                    );
+
+                    sourcingFinished.countDown();
+                    awaitLatch(latch1);
+
+                    tx.appendEvent(msg1);
+                });
+
+                // TX2: source TAG1, no override
+                uow2.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    MessageStream<? extends EventMessage> sourcing = tx.source(
+                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                    );
+
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+
+                    sourcingFinished.countDown();
+                    awaitLatch(latch2);
+
+                    tx.appendEvent(msg2);
+                });
+
+                // when - TX2 commits first (appends with TAG1 criteria), then TX1 commits
+                CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> execute(uow1));
+                CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> execute(uow2));
+
+                awaitLatch(sourcingFinished);
+
+                latch2.countDown();
+                assertDoesNotThrow(() -> execute2.join());
+
+                // TX1 should also succeed because its criteria was narrowed to narrowTag
+                latch1.countDown();
+                assertDoesNotThrow(() -> execute1.join());
+            }
+
+            @Test
+            protected void overrideReturningNoneShouldBypassConflictDetection() {
+                CountDownLatch sourcingFinished = new CountDownLatch(2);
+                CountDownLatch latch1 = new CountDownLatch(1);
+                CountDownLatch latch2 = new CountDownLatch(1);
+
+                UnitOfWork uow1 = unitOfWork();
+                UnitOfWork uow2 = unitOfWork();
+                EventMessage msg1 = message(new CourseUpdated(TAG1.value(), "bypass-1"));
+                EventMessage msg2 = message(new CourseUpdated(TAG1.value(), "bypass-2"));
+
+                // TX1: source TAG1, override returns none() to bypass conflict detection
+                uow1.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    MessageStream<? extends EventMessage> sourcing = tx.source(
+                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                    );
+
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+
+                    tx.overrideAppendCondition(condition -> AppendCondition.none());
+
+                    sourcingFinished.countDown();
+                    awaitLatch(latch1);
+
+                    tx.appendEvent(msg1);
+                });
+
+                // TX2: source TAG1, normal append (no override)
+                uow2.runOnInvocation(pc -> {
+                    EventStoreTransaction tx = eventStore.transaction(pc);
+                    MessageStream<? extends EventMessage> sourcing = tx.source(
+                            SourcingCondition.conditionFor(EventCriteria.havingTags(TAG1))
+                    );
+
+                    assertThat(sourcing.reduce(0, (c, m) -> ++c).join()).isEqualTo(3);
+
+                    sourcingFinished.countDown();
+                    awaitLatch(latch2);
+
+                    tx.appendEvent(msg2);
+                });
+
+                // when - TX2 commits first (creates conflict), TX1 commits with none() override
+                CompletableFuture<Void> execute1 = CompletableFuture.runAsync(() -> execute(uow1));
+                CompletableFuture<Void> execute2 = CompletableFuture.runAsync(() -> execute(uow2));
+
+                awaitLatch(sourcingFinished);
+
+                latch2.countDown();
+                assertDoesNotThrow(() -> execute2.join());
+
+                // TX1 should succeed despite conflicting append, because override returned none()
+                latch1.countDown();
+                assertDoesNotThrow(() -> execute1.join());
+            }
+        }
+
+        @Nested
         protected class AndActivelyStreamingEvents {
             protected List<EventMessage> seenEvents = new ArrayList<>();
             protected MessageStream<EventMessage> stream;
