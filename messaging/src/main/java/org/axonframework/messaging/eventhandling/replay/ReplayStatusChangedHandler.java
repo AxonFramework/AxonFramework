@@ -64,8 +64,10 @@ public interface ReplayStatusChangedHandler extends MessageHandler {
      * a switch from regular handling to a replay. Furthermore, this method will be invoked when the
      * {@code ReplayStatus} is <b>about</b> to change from replay to regular.
      * <p>
-     * If this returns a {@link MessageStream#failed(Throwable) failed MessageStream}, this impacts the event handling
-     * that occurs within the given {@code context}.
+     * If this operation returns a {@link MessageStream#failed(Throwable) failed MessageStream}, event handling that
+     * occurs within the given {@code context} is impacted. The failure will be passed to the
+     * {@link org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler}, typically resulting in a
+     * rollback of the invoked event handling tasks.
      *
      * @param statusChange the replay status context message containing replay status information
      * @param context      the processing context for this operation
