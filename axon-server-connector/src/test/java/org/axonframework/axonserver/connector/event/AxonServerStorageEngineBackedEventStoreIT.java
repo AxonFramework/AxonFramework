@@ -21,7 +21,7 @@ import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.jspecify.annotations.NonNull;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
+import org.axonframework.eventsourcing.eventstore.DcbBasedStorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Testcontainers
 class AxonServerStorageEngineBackedEventStoreIT
-        extends StorageEngineBackedEventStoreTestSuite<AxonServerEventStorageEngine> {
+        extends DcbBasedStorageEngineBackedEventStoreTestSuite<AxonServerEventStorageEngine> {
 
     private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     private static final String CONTEXT = "default";
