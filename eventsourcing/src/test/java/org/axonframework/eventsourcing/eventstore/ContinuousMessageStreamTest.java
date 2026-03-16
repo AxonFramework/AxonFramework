@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,10 +40,9 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
 
     @Override
     protected MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
+        AtomicBoolean called = new AtomicBoolean(false);
         return new ContinuousMessageStream<EventMessage>(
-            last -> last == null
-                    ? new FetchResult<>(messages, messages.isEmpty() ? null : messages.getLast())
-                    : new FetchResult<>(List.of(), null),
+            () -> called.getAndSet(true) ? List.of() : messages,
             m -> new SimpleEntry<>(m),
             (ms, r) -> () -> true
         );
@@ -61,12 +62,12 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
 
     @Override
     protected MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, RuntimeException failure) {
+        AtomicBoolean called = new AtomicBoolean(false);
         return new ContinuousMessageStream<EventMessage>(
-            last -> {
-                if (last == null && !messages.isEmpty()) {
-                    return new FetchResult<>(messages, messages.getLast());
+            () -> {
+                if (!called.getAndSet(true) && !messages.isEmpty()) {
+                    return messages;
                 }
-
                 throw failure;
             },
             m -> new SimpleEntry<>(m),
@@ -85,37 +86,39 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
     }
 
     @Nested
-    class WhenFetcherReturnsCursorWithNoItems {
+    class WhenFetcherOwnsCursorTracking {
 
         @Test
         void fetchMore_shouldUseReturnedCursorAsNextStartPosition_whenItemsAreEmpty() {
             // given
             EventMessage cursorItem = new GenericEventMessage(new MessageType("cursor"), UUID.randomUUID().toString());
-            List<EventMessage> capturedArgs = new ArrayList<>();
+            List<EventMessage> capturedCursors = new ArrayList<>();
+            AtomicReference<EventMessage> cursorRef = new AtomicReference<>(null);
 
             ContinuousMessageStream<EventMessage> stream = new ContinuousMessageStream<>(
-                last -> {
-                    capturedArgs.add(last);
-                    if (capturedArgs.size() == 1) {
-                        // first call: return empty items but a non-null cursor
-                        return new FetchResult<>(List.of(), cursorItem);
+                () -> {
+                    capturedCursors.add(cursorRef.get());
+                    if (capturedCursors.size() == 1) {
+                        // first call: no matching items, but advance cursor
+                        cursorRef.set(cursorItem);
+                        return List.of();
                     }
-                    // second call: return nothing — stream should wait
-                    return new FetchResult<>(List.of(), null);
+                    // second call: still nothing - stream should wait
+                    return List.of();
                 },
                 m -> new SimpleEntry<>(m),
                 (ms, r) -> () -> true
             );
 
             // when
-            // both calls find data empty (no matching items were returned), so each independently triggers fetchMore()
+            // both calls find no data and each independently triggers fetchMore()
             stream.peek();
             stream.peek();
 
             // then
-            assertThat(capturedArgs).hasSize(2);
-            assertThat(capturedArgs.get(0)).isNull();             // first call: initial lastItem is null
-            assertThat(capturedArgs.get(1)).isSameAs(cursorItem); // second call: cursor was adopted as lastItem
+            assertThat(capturedCursors).hasSize(2);
+            assertThat(capturedCursors.get(0)).isNull();             // first call: cursor not yet set
+            assertThat(capturedCursors.get(1)).isSameAs(cursorItem); // second call: closure advanced the cursor
         }
     }
 }
