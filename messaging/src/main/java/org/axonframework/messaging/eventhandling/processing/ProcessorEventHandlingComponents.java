@@ -202,6 +202,27 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
                          .anyMatch(EventHandlingComponent::supportsReset);
     }
 
+    /**
+     * todo
+     * @param context
+     * @return
+     */
+    public CompletableFuture<Void> replayStarted(ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+        ReplayStatusChanged replayStarted =
+                new GenericReplayStatusChanged(ReplayStatus.REPLAY, (Object) null);
+
+        for (var component : components) {
+            if (component.supportsReset()) {
+                result = result.concatWith(component.handle(replayStarted, context).cast());
+            }
+        }
+
+        return result.ignoreEntries()
+                     .asCompletableFuture()
+                     .thenApply(FutureUtils::ignoreResult);
+    }
+
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("components", components);

@@ -60,6 +60,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
     static AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
     static AtomicBoolean replayStatusChangedHandlerInvoked = new AtomicBoolean(false);
 
+    // TODO expand test to trigger on start of replay as well
     @Test
     void resettingPsepTriggersReplayStatusChangeHandlersWhenFinishingTheReplay() {
         // given

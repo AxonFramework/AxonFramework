@@ -349,11 +349,21 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private <R> CompletableFuture<List<SegmentToken>> performReset(
             List<SegmentToken> segmentTokens,
             @Nullable R resetContext,
-            ProcessingContext processingContext
+            ProcessingContext context
     ) {
         var resetMessage = new GenericResetContext(new MessageType(ResetContext.class), resetContext);
-        return eventHandlingComponents.handleReset(resetMessage, processingContext)
+        return eventHandlingComponents.handleReset(resetMessage, context)
+                                      .thenCompose(ignored -> replayHasStarted(segmentTokens)
+                                              ? eventHandlingComponents.replayStarted(context)
+                                              : FutureUtils.emptyCompletedFuture())
                                       .thenApply(ignored -> segmentTokens);
+    }
+
+    // TODO add test for this to PSEP
+    private static boolean replayHasStarted(List<SegmentToken> segmentTokens) {
+        return segmentTokens.stream()
+                            .map(SegmentToken::token)
+                            .anyMatch(token -> token instanceof ReplayToken);
     }
 
     private CompletableFuture<Void> storeReplayTokens(
