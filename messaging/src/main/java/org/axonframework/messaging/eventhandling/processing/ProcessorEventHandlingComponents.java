@@ -16,26 +16,30 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import org.jspecify.annotations.NonNull;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.messaging.eventhandling.replay.ResetContext;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChange;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Internal class for managing multiple {@link EventHandlingComponent} instances and processing event messages through
@@ -87,7 +91,7 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the event messages are processed.
      * @return A stream of messages resulting from the processing of the event messages.
      */
-        public MessageStream.@NonNull Empty<Message> handle(
+    public MessageStream.@NonNull Empty<Message> handle(
             @NonNull List<? extends EventMessage> events,
             @NonNull ProcessingContext context
     ) {
@@ -100,7 +104,7 @@ public class ProcessorEventHandlingComponents {
                           .cast();
     }
 
-        private MessageStream.@NonNull Empty<Message> handle(
+    private MessageStream.@NonNull Empty<Message> handle(
             @NonNull EventMessage event,
             @NonNull ProcessingContext context
     ) {
@@ -116,6 +120,11 @@ public class ProcessorEventHandlingComponents {
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
                 result = result.concatWith(componentResult);
+            }
+            // Validated deliberately AFTER handling the event
+            if (token.isPresent() && ReplayToken.willFinish(token.get())) {
+                ReplayStatusChange replayStatusChange = new GenericReplayStatusChange(ReplayStatus.REGULAR, null);
+                result.concatWith(component.handle(replayStatusChange, context));
             }
         }
         return result.ignoreEntries().cast();
