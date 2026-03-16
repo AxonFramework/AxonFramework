@@ -166,24 +166,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private void attachAppendEventsStep() {
         processingContext.onPrepareCommit(
                 context -> {
-                    // we need to update the condition with the marker that we may have updated during reading
-                    AppendCondition appendCondition =
-                            context.updateResource(appendConditionKey, current -> {
-                                if (current == null || AppendCondition.none().equals(current)) {
-                                    return AppendCondition.none();
-                                }
-                                return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
-                                                                       current.consistencyMarker()));
-                            });
-
-                    // Apply user-provided override if present
-                    UnaryOperator<AppendCondition> override = context.getResource(conditionOverrideKey);
-                    if (override != null) {
-                        AppendCondition overridden = override.apply(appendCondition);
-                        logger.debug("AppendCondition overridden from [{}] to [{}]", appendCondition, overridden);
-                        appendCondition = overridden;
-                    }
-
+                    AppendCondition appendCondition = resolveAppendCondition(context);
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
@@ -196,6 +179,30 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                                              });
                 }
         );
+    }
+
+    /**
+     * Resolves the final {@link AppendCondition} for this transaction by combining the sourcing-derived condition with
+     * the marker obtained during reading, and then applying any user-provided
+     * {@link #overrideAppendCondition(UnaryOperator) override}.
+     */
+    private AppendCondition resolveAppendCondition(ProcessingContext context) {
+        AppendCondition resolved = context.updateResource(appendConditionKey, current -> {
+            if (current == null || AppendCondition.none().equals(current)) {
+                return AppendCondition.none();
+            }
+            return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
+                                                   current.consistencyMarker()));
+        });
+
+        UnaryOperator<AppendCondition> override = context.getResource(conditionOverrideKey);
+        if (override == null) {
+            return resolved;
+        }
+
+        AppendCondition overridden = override.apply(resolved);
+        logger.debug("AppendCondition overridden from [{}] to [{}]", resolved, overridden);
+        return overridden;
     }
 
     private <R> CompletableFuture<ConsistencyMarker> doAfterCommit(ProcessingContext context,
