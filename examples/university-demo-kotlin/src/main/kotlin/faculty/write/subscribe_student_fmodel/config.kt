@@ -20,67 +20,71 @@ import org.axonframework.modelling.annotation.InjectEntity
 
 @EventSourcedEntity
 internal data class StateEntity @EntityCreator constructor(
-  val state: State = State.InitialState
+    val state: State = State.InitialState
 ) {
 
-  companion object {
+    companion object {
 
-    val CLASS_MESSAGE_TYPE_RESOLVER = ClassBasedMessageTypeResolver()
+        val CLASS_MESSAGE_TYPE_RESOLVER = ClassBasedMessageTypeResolver()
 
-    @JvmStatic
-    @EventCriteriaBuilder
-    fun resolveCriteria(id: SubscriptionId): EventCriteria = EventCriteria.either(
-      EventCriteria
-        .havingTags(id.courseIdTag())
-        .andBeingOneOfTypes(
-          CLASS_MESSAGE_TYPE_RESOLVER,
-          CourseCreated::class.java,
-          StudentSubscribedToCourse::class.java,
-        ),
-      EventCriteria
-        .havingTags(id.studentTag())
-        .andBeingOneOfTypes(
-          CLASS_MESSAGE_TYPE_RESOLVER,
-          StudentEnrolledInFaculty::class.java,
-          StudentSubscribedToCourse::class.java,
+        @JvmStatic
+        @EventCriteriaBuilder
+        fun resolveCriteria(id: SubscriptionId): EventCriteria = EventCriteria.either(
+            EventCriteria
+                .havingTags(id.courseIdTag())
+                .andBeingOneOfTypes(
+                    CLASS_MESSAGE_TYPE_RESOLVER,
+                    CourseCreated::class.java,
+                    StudentSubscribedToCourse::class.java,
+                ),
+            EventCriteria
+                .havingTags(id.studentTag())
+                .andBeingOneOfTypes(
+                    CLASS_MESSAGE_TYPE_RESOLVER,
+                    StudentEnrolledInFaculty::class.java,
+                    StudentSubscribedToCourse::class.java,
+                )
         )
-    )
-  }
+    }
 
-  // TODO -> can't we do better?
-  @EventSourcingHandler
-  fun evolve(event: CourseCreated) = copy(this.state.evolve(event))
+    // TODO -> can't we do better?
+    @EventSourcingHandler
+    fun evolve(event: CourseCreated) = copy(this.state.evolve(event))
 
-  @EventSourcingHandler
-  fun evolve(event: StudentEnrolledInFaculty) = copy(this.state.evolve(event))
+    @EventSourcingHandler
+    fun evolve(event: StudentEnrolledInFaculty) = copy(this.state.evolve(event))
 
-  @EventSourcingHandler
-  fun evolve(event: StudentSubscribedToCourse) = copy(this.state.evolve(event))
+    @EventSourcingHandler
+    fun evolve(event: StudentSubscribedToCourse) = copy(this.state.evolve(event))
 
-  @EventSourcingHandler
-  fun evolve(event: FacultyEvent) : StateEntity {
-    return copy(this.state.evolve(event))
-  }
+    @EventSourcingHandler
+    fun evolve(event: FacultyEvent): StateEntity {
+        return copy(this.state.evolve(event))
+    }
 }
 
 internal class SubscribeStudentToCourseFModelCommandHandler {
-  @CommandHandler
-  internal fun handle(command: SubscribeStudentToCourse, @InjectEntity stateEntity: StateEntity, eventAppender: EventAppender) {
-    eventAppender.append(stateEntity.state.decide(command))
-  }
+    @CommandHandler
+    internal fun handle(
+        command: SubscribeStudentToCourse,
+        @InjectEntity stateEntity: StateEntity,
+        eventAppender: EventAppender
+    ) {
+        eventAppender.append(stateEntity.state.decide(command))
+    }
 }
 
 fun EventSourcingConfigurer.registerSubscribeStudentToCourseFModel() = apply {
-  registerEntity(
-    EventSourcedEntityModule.autodetected(
-      SubscriptionId::class.java,
-      StateEntity::class.java
+    registerEntity(
+        EventSourcedEntityModule.autodetected(
+            SubscriptionId::class.java,
+            StateEntity::class.java
+        )
     )
-  )
-  registerCommandHandlingModule(
-    CommandHandlingModule
-      .named("SubscribeStudentToCourseFModel")
-      .commandHandlers()
-      .annotatedCommandHandlingComponent { SubscribeStudentToCourseFModelCommandHandler() }
-  )
+    registerCommandHandlingModule(
+        CommandHandlingModule
+            .named("SubscribeStudentToCourseFModel")
+            .commandHandlers()
+            .autodetectedCommandHandlingComponent { SubscribeStudentToCourseFModelCommandHandler() }
+    )
 }

@@ -7,12 +7,12 @@ package io.axoniq.demo.university._ext
  * @return itself or evolved version.
  */
 inline fun <T> T.evolveIf(
-  condition: Boolean,
-  evolver: (T) -> T
+    condition: Boolean,
+    evolver: (T) -> T
 ): T {
-  return if (condition) {
-    evolver(this)
-  } else {
-    this
-  }
+    return if (condition) {
+        evolver(this)
+    } else {
+        this
+    }
 }

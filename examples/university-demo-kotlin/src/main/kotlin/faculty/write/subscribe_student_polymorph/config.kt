@@ -9,22 +9,22 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.modelling.annotation.InjectEntity
 
 class SubscribeStudentToCoursePolymorphCommandHandler {
-  @CommandHandler
-  internal fun handle(command: SubscribeStudentToCourse, @InjectEntity state: State, eventAppender: EventAppender) {
-    eventAppender.append(state.decide(command))
-  }
+    @CommandHandler
+    internal fun handle(command: SubscribeStudentToCourse, @InjectEntity state: State, eventAppender: EventAppender) {
+        eventAppender.append(state.decide(command))
+    }
 }
 
 fun EventSourcingConfigurer.registerSubscribeStudentToCoursePolymorph() = apply {
-  registerEntity(
-    EventSourcedEntityModule.autodetected(
-      SubscriptionId::class.java, State::class.java
+    registerEntity(
+        EventSourcedEntityModule.autodetected(
+            SubscriptionId::class.java, State::class.java
+        )
     )
-  )
-  registerCommandHandlingModule(
-    CommandHandlingModule
-      .named("SubscribeStudentToCoursePolymorph")
-      .commandHandlers()
-      .annotatedCommandHandlingComponent { SubscribeStudentToCoursePolymorphCommandHandler() }
-  )
+    registerCommandHandlingModule(
+        CommandHandlingModule
+            .named("SubscribeStudentToCoursePolymorph")
+            .commandHandlers()
+            .autodetectedCommandHandlingComponent { SubscribeStudentToCoursePolymorphCommandHandler() }
+    )
 }

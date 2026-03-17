@@ -8,9 +8,9 @@ fun main(args: Array<String>) {
 
 class UniversityKotlinApplication {
 
-  companion object {
-    @JvmStatic
-    fun configurer(): EventSourcingConfigurer = EventSourcingConfigurer.create()
-  }
+    companion object {
+        @JvmStatic
+        fun configurer(): EventSourcingConfigurer = EventSourcingConfigurer.create()
+    }
 
 }

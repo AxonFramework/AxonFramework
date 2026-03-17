@@ -10,22 +10,26 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.modelling.annotation.InjectEntity
 
 class EnrollStudentCommandHandler {
-  @CommandHandler
-  internal fun handle(command: EnrollStudent, @InjectEntity(idProperty = EnrollStudent.ID_PROP) state: EnrollStudentState, eventAppender: EventAppender) {
-    eventAppender.append(state.decide(command))
-  }
+    @CommandHandler
+    internal fun handle(
+        command: EnrollStudent,
+        @InjectEntity(idProperty = EnrollStudent.ID_PROP) state: EnrollStudentState,
+        eventAppender: EventAppender
+    ) {
+        eventAppender.append(state.decide(command))
+    }
 }
 
 fun EventSourcingConfigurer.registerEnrollStudent() = apply {
-  registerEntity(
-    EventSourcedEntityModule.autodetected(
-      StudentId::class.java,
-      EnrollStudentState::class.java
+    registerEntity(
+        EventSourcedEntityModule.autodetected(
+            StudentId::class.java,
+            EnrollStudentState::class.java
+        )
     )
-  )
-  registerCommandHandlingModule(
-    CommandHandlingModule
-      .named("EnrollStudent")
-      .commandHandlers()
-      .annotatedCommandHandlingComponent { EnrollStudentCommandHandler() })
+    registerCommandHandlingModule(
+        CommandHandlingModule
+            .named("EnrollStudent")
+            .commandHandlers()
+            .autodetectedCommandHandlingComponent { EnrollStudentCommandHandler() })
 }

@@ -7,9 +7,9 @@ import org.axonframework.messaging.commandhandling.annotation.Command
 import org.axonframework.modelling.annotation.TargetEntityId
 
 data class SubscribeStudentToCourse(
-  val studentId: StudentId,
-  val courseId: CourseId,
+    val studentId: StudentId,
+    val courseId: CourseId,
 ) {
-  @TargetEntityId
-  val subscriptionId: SubscriptionId = SubscriptionId(studentId, courseId)
+    @TargetEntityId
+    val subscriptionId: SubscriptionId = SubscriptionId(studentId, courseId)
 }

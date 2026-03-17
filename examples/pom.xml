@@ -51,6 +51,7 @@
         <module>university-demo</module>
         <module>university-java-springboot</module>
         <module>university-java</module>
+        <module>university-demo-kotlin</module>
     </modules>
 
     <build>

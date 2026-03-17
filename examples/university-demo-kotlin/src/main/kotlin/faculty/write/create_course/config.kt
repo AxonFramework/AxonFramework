@@ -10,23 +10,27 @@ import org.axonframework.modelling.annotation.InjectEntity
 
 class CreateCourseCommandHandler {
 
-  @CommandHandler
-  internal fun handle(command: CreateCourse, @InjectEntity(idProperty = CreateCourse.ID) state: CreateCourseState, eventAppender: EventAppender) {
-    eventAppender.append(state.decide(command))
-  }
+    @CommandHandler
+    internal fun handle(
+        command: CreateCourse,
+        @InjectEntity(idProperty = CreateCourse.ID) state: CreateCourseState,
+        eventAppender: EventAppender
+    ) {
+        eventAppender.append(state.decide(command))
+    }
 
 }
 
 fun EventSourcingConfigurer.registerCreateCourse() = apply {
-  registerEntity(
-    EventSourcedEntityModule.autodetected(
-      CourseId::class.java,
-      CreateCourseState::class.java
+    registerEntity(
+        EventSourcedEntityModule.autodetected(
+            CourseId::class.java,
+            CreateCourseState::class.java
+        )
     )
-  )
-  registerCommandHandlingModule(
-    CommandHandlingModule
-      .named("CreateCourse")
-      .commandHandlers()
-      .annotatedCommandHandlingComponent { CreateCourseCommandHandler() })
+    registerCommandHandlingModule(
+        CommandHandlingModule
+            .named("CreateCourse")
+            .commandHandlers()
+            .autodetectedCommandHandlingComponent { CreateCourseCommandHandler() })
 }

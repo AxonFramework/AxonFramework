@@ -9,17 +9,17 @@ import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 @EventSourcedEntity(tagKey = COURSE)
 internal class CreateCourseState @EntityCreator constructor() {
 
-  private var created: Boolean = false
+    private var created: Boolean = false
 
-  fun decide(command: CreateCourse): List<Any> {
-    if (created) {
-      return listOf()
+    fun decide(command: CreateCourse): List<Any> {
+        if (created) {
+            return listOf()
+        }
+        return listOf(CourseCreated(command.courseId, command.name, command.capacity))
     }
-    return listOf(CourseCreated(command.courseId, command.name, command.capacity))
-  }
 
-  @EventSourcingHandler
-  fun evolve(event: CourseCreated): CreateCourseState = apply {
-    created = true
-  }
+    @EventSourcingHandler
+    fun evolve(event: CourseCreated): CreateCourseState = apply {
+        created = true
+    }
 }

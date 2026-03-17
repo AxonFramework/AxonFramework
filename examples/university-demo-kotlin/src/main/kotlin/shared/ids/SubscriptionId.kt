@@ -4,11 +4,11 @@ import io.axoniq.demo.university.faculty.FacultyTags
 import org.axonframework.messaging.eventstreaming.Tag
 
 data class SubscriptionId(
-  val studentId: StudentId,
-  val courseId: CourseId,
+    val studentId: StudentId,
+    val courseId: CourseId,
 ) {
-  fun studentTag() = Tag.of(FacultyTags.STUDENT, studentId.toString())
-  fun courseIdTag() = Tag.of(FacultyTags.COURSE, courseId.toString())
+    fun studentTag() = Tag.of(FacultyTags.STUDENT, studentId.toString())
+    fun courseIdTag() = Tag.of(FacultyTags.COURSE, courseId.toString())
 }
 
 

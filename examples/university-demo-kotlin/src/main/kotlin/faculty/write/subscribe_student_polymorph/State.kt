@@ -15,145 +15,145 @@ import org.axonframework.messaging.core.ClassBasedMessageTypeResolver
 import org.axonframework.messaging.eventstreaming.EventCriteria
 
 @EventSourcedEntity(
-  concreteTypes = [
-    State.InitialState::class,
-    State.CourseCreatedState::class,
-    State.StudentEnrolledState::class,
-    State.SubscriptionState::class
-  ]
+    concreteTypes = [
+        State.InitialState::class,
+        State.CourseCreatedState::class,
+        State.StudentEnrolledState::class,
+        State.SubscriptionState::class
+    ]
 )
 internal sealed interface State {
-  companion object {
+    companion object {
 
-    const val MAX_COURSES_PER_STUDENT = 3
-    val CLASS_MESSAGE_TYPE_RESOLVER = ClassBasedMessageTypeResolver()
+        const val MAX_COURSES_PER_STUDENT = 3
+        val CLASS_MESSAGE_TYPE_RESOLVER = ClassBasedMessageTypeResolver()
 
-    @JvmStatic
-    @EventCriteriaBuilder
-    fun resolveCriteria(id: SubscriptionId): EventCriteria = EventCriteria.either(
-      EventCriteria
-        .havingTags(id.courseIdTag())
-        .andBeingOneOfTypes(
-          CLASS_MESSAGE_TYPE_RESOLVER,
-          CourseCreated::class.java,
-          StudentSubscribedToCourse::class.java,
-        ),
-      EventCriteria
-        .havingTags(id.studentTag())
-        .andBeingOneOfTypes(
-          CLASS_MESSAGE_TYPE_RESOLVER,
-          StudentEnrolledInFaculty::class.java,
-          StudentSubscribedToCourse::class.java,
+        @JvmStatic
+        @EventCriteriaBuilder
+        fun resolveCriteria(id: SubscriptionId): EventCriteria = EventCriteria.either(
+            EventCriteria
+                .havingTags(id.courseIdTag())
+                .andBeingOneOfTypes(
+                    CLASS_MESSAGE_TYPE_RESOLVER,
+                    CourseCreated::class.java,
+                    StudentSubscribedToCourse::class.java,
+                ),
+            EventCriteria
+                .havingTags(id.studentTag())
+                .andBeingOneOfTypes(
+                    CLASS_MESSAGE_TYPE_RESOLVER,
+                    StudentEnrolledInFaculty::class.java,
+                    StudentSubscribedToCourse::class.java,
+                )
         )
-    )
 
-    @JvmStatic
-    @EntityCreator
-    fun initialState(): State {
-      return InitialState
-    }
-  }
-
-  /**
-   * By default, we reject the command. It has to be implemented in the subclass.
-   */
-  fun decide(cmd: SubscribeStudentToCourse): List<Any> {
-    throw UnsupportedOperationException("Command dispatched to incorrect state. Current type is '${this::class.simpleName}'.")
-  }
-
-  object InitialState : State {
-
-    @EventSourcingHandler
-    fun evolve(event: CourseCreated): State = CourseCreatedState(
-      courseId = event.courseId,
-      capacity = event.capacity
-    )
-
-    @EventSourcingHandler
-    fun evolve(event: StudentEnrolledInFaculty): State = StudentEnrolledState(
-      studentId = event.studentId
-    )
-  }
-
-  /**
-   * Course but no student.
-   */
-  data class CourseCreatedState(
-    val courseId: CourseId,
-    val capacity: Int,
-    val subscribedStudents: Int = 0
-  ) : State {
-
-    fun checkCourseHasMoreSpace() {
-      check(capacity > subscribedStudents) { "Course is fully booked" }
-    }
-
-    fun evolveStudentSubscribed() = copy(subscribedStudents = subscribedStudents + 1)
-
-    @EventSourcingHandler
-    fun evolve(event: StudentEnrolledInFaculty): State = SubscriptionState(
-      courseState = this,
-      studentState = StudentEnrolledState(studentId = event.studentId)
-    )
-  }
-
-  /**
-   * Student but no course.
-   */
-  data class StudentEnrolledState(
-    val studentId: StudentId,
-    val coursesForStudent: Int = 0
-  ) : State {
-
-    fun checkStudentCanSubscribeMoreCourses() {
-      check(this.coursesForStudent < MAX_COURSES_PER_STUDENT) { "Student subscribed to too many courses" }
-    }
-
-    fun evolveSubscribedToCourse(): StudentEnrolledState =
-      copy(coursesForStudent = coursesForStudent + 1)
-
-    @EventSourcingHandler
-    fun evolve(event: CourseCreated): State = SubscriptionState(
-      courseState = CourseCreatedState(
-        courseId = event.courseId,
-        capacity = event.capacity
-      ),
-      studentState = this
-    )
-
-  }
-
-  /**
-   * Subscription (student and course).
-   */
-  data class SubscriptionState(
-    val courseState: CourseCreatedState,
-    val studentState: StudentEnrolledState,
-    val alreadySubscribed: Boolean = false
-  ) : State {
-
-    override fun decide(cmd: SubscribeStudentToCourse): List<Any> {
-      courseState.checkCourseHasMoreSpace()
-      studentState.checkStudentCanSubscribeMoreCourses()
-      checkAlreadySubscribed()
-      return listOf(StudentSubscribedToCourse(cmd.studentId, cmd.courseId))
-    }
-
-    fun checkAlreadySubscribed() {
-      check(!alreadySubscribed) { "Student already subscribed to this course" }
-    }
-
-    @EventSourcingHandler
-    fun evolve(event: StudentSubscribedToCourse): State =
-      evolveIf(event.courseId == courseState.courseId) {
-        copy(courseState = courseState.evolveStudentSubscribed())
-      }
-        .evolveIf(event.studentId == studentState.studentId) {
-          copy(studentState = studentState.evolveSubscribedToCourse())
+        @JvmStatic
+        @EntityCreator
+        fun initialState(): State {
+            return InitialState
         }
-        .evolveIf(event.studentId == studentState.studentId && event.courseId == courseState.courseId) {
-          copy(alreadySubscribed = true)
+    }
+
+    /**
+     * By default, we reject the command. It has to be implemented in the subclass.
+     */
+    fun decide(cmd: SubscribeStudentToCourse): List<Any> {
+        throw UnsupportedOperationException("Command dispatched to incorrect state. Current type is '${this::class.simpleName}'.")
+    }
+
+    object InitialState : State {
+
+        @EventSourcingHandler
+        fun evolve(event: CourseCreated): State = CourseCreatedState(
+            courseId = event.courseId,
+            capacity = event.capacity
+        )
+
+        @EventSourcingHandler
+        fun evolve(event: StudentEnrolledInFaculty): State = StudentEnrolledState(
+            studentId = event.studentId
+        )
+    }
+
+    /**
+     * Course but no student.
+     */
+    data class CourseCreatedState(
+        val courseId: CourseId,
+        val capacity: Int,
+        val subscribedStudents: Int = 0
+    ) : State {
+
+        fun checkCourseHasMoreSpace() {
+            check(capacity > subscribedStudents) { "Course is fully booked" }
         }
 
-  }
+        fun evolveStudentSubscribed() = copy(subscribedStudents = subscribedStudents + 1)
+
+        @EventSourcingHandler
+        fun evolve(event: StudentEnrolledInFaculty): State = SubscriptionState(
+            courseState = this,
+            studentState = StudentEnrolledState(studentId = event.studentId)
+        )
+    }
+
+    /**
+     * Student but no course.
+     */
+    data class StudentEnrolledState(
+        val studentId: StudentId,
+        val coursesForStudent: Int = 0
+    ) : State {
+
+        fun checkStudentCanSubscribeMoreCourses() {
+            check(this.coursesForStudent < MAX_COURSES_PER_STUDENT) { "Student subscribed to too many courses" }
+        }
+
+        fun evolveSubscribedToCourse(): StudentEnrolledState =
+            copy(coursesForStudent = coursesForStudent + 1)
+
+        @EventSourcingHandler
+        fun evolve(event: CourseCreated): State = SubscriptionState(
+            courseState = CourseCreatedState(
+                courseId = event.courseId,
+                capacity = event.capacity
+            ),
+            studentState = this
+        )
+
+    }
+
+    /**
+     * Subscription (student and course).
+     */
+    data class SubscriptionState(
+        val courseState: CourseCreatedState,
+        val studentState: StudentEnrolledState,
+        val alreadySubscribed: Boolean = false
+    ) : State {
+
+        override fun decide(cmd: SubscribeStudentToCourse): List<Any> {
+            courseState.checkCourseHasMoreSpace()
+            studentState.checkStudentCanSubscribeMoreCourses()
+            checkAlreadySubscribed()
+            return listOf(StudentSubscribedToCourse(cmd.studentId, cmd.courseId))
+        }
+
+        fun checkAlreadySubscribed() {
+            check(!alreadySubscribed) { "Student already subscribed to this course" }
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: StudentSubscribedToCourse): State =
+            evolveIf(event.courseId == courseState.courseId) {
+                copy(courseState = courseState.evolveStudentSubscribed())
+            }
+                .evolveIf(event.studentId == studentState.studentId) {
+                    copy(studentState = studentState.evolveSubscribedToCourse())
+                }
+                .evolveIf(event.studentId == studentState.studentId && event.courseId == courseState.courseId) {
+                    copy(alreadySubscribed = true)
+                }
+
+    }
 }

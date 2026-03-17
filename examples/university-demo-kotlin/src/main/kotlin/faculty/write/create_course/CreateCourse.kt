@@ -4,11 +4,11 @@ import io.axoniq.demo.university.shared.ids.CourseId
 import org.axonframework.modelling.annotation.TargetEntityId
 
 data class CreateCourse(
-  val courseId: CourseId,
-  val name: String,
-  val capacity: Int
+    val courseId: CourseId,
+    val name: String,
+    val capacity: Int
 ) {
-  companion object {
-    const val ID = "courseId"
-  }
+    companion object {
+        const val ID = "courseId"
+    }
 }

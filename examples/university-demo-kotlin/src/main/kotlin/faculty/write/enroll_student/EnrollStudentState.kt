@@ -8,16 +8,16 @@ import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 
 @EventSourcedEntity(tagKey = FacultyTags.STUDENT)
 internal class EnrollStudentState @EntityCreator constructor() {
-  var enrolled = false
+    var enrolled = false
 
-  fun decide(cmd: EnrollStudent): List<Any> = if (enrolled) {
-    emptyList()
-  } else {
-    listOf(StudentEnrolledInFaculty(cmd.studentId, cmd.firstName, cmd.lastName))
-  }
+    fun decide(cmd: EnrollStudent): List<Any> = if (enrolled) {
+        emptyList()
+    } else {
+        listOf(StudentEnrolledInFaculty(cmd.studentId, cmd.firstName, cmd.lastName))
+    }
 
-  @EventSourcingHandler
-  fun evolve(evt: StudentEnrolledInFaculty) = apply {
-    enrolled = true
-  }
+    @EventSourcingHandler
+    fun evolve(evt: StudentEnrolledInFaculty) = apply {
+        enrolled = true
+    }
 }

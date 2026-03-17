@@ -5,8 +5,8 @@ import io.axoniq.demo.university.shared.ids.CourseId
 import org.axonframework.eventsourcing.annotation.EventTag
 
 data class CourseCreated(
-  @EventTag(key = FacultyTags.COURSE)
-  val courseId: CourseId,
-  val name: String,
-  val capacity: Int
+    @EventTag(key = FacultyTags.COURSE)
+    val courseId: CourseId,
+    val name: String,
+    val capacity: Int
 ) : FacultyEvent
