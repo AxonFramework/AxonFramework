@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class JpaAutoConfigurationTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test
@@ -102,29 +102,6 @@ class JpaAutoConfigurationTest {
                        );
                        assertEquals(Duration.ofMillis(3001), tokenClaimInterval);
                    });
-    }
-
-
-    @Test
-    @Disabled("TODO #3517")
-    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-      /*
-        testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
-                   .run(context -> {
-                       assertNotNull(context.getBean(DeadLetterQueueProviderConfigurerModule.class));
-
-                       EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-                       assertNotNull(eventProcessingConfig);
-
-                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
-                               eventProcessingConfig.deadLetterQueue("first");
-                       assertTrue(dlq.isPresent());
-                       assertTrue(dlq.get() instanceof JpaSequencedDeadLetterQueue);
-
-                       dlq = eventProcessingConfig.deadLetterQueue("second");
-                       assertFalse(dlq.isPresent());
-                   });
-    */
     }
 
     @ContextConfiguration

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.PropertyBasedEntityIdResolver;
 
 /**
@@ -37,7 +36,7 @@ public class TargetEntityIdMemberMismatchException extends RuntimeException {
      * Initialize the exception with the given {@code fieldName} that was not found in the payload of type
      * {@code payloadClass}.
      */
-    public TargetEntityIdMemberMismatchException(@Nonnull String fieldName, @Nonnull Class<?> payloadClass) {
+    public TargetEntityIdMemberMismatchException(String fieldName, Class<?> payloadClass) {
         super(String.format(
                 "Could not find field [%s] or its accessor in payload of type [%s] as indicated on the @InjectModel annotation.",
                 fieldName,

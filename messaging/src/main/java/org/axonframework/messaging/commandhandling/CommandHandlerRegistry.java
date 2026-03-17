@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -48,8 +47,8 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    S subscribe(@Nonnull QualifiedName name,
-                @Nonnull CommandHandler commandHandler);
+    S subscribe(QualifiedName name,
+                CommandHandler commandHandler);
 
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
@@ -62,8 +61,8 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@Nonnull Set<QualifiedName> names,
-                        @Nonnull CommandHandler commandHandler) {
+    default S subscribe(Set<QualifiedName> names,
+                        CommandHandler commandHandler) {
         requireNonNull(names, "The set of names may not be null");
         requireNonNull(commandHandler, "The commandHandler may not be null");
         names.forEach(name -> subscribe(name, commandHandler));
@@ -86,7 +85,7 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      * @param handlingComponent The command handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default S subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+    default S subscribe(CommandHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedCommands(), handlingComponent);
     }
 }

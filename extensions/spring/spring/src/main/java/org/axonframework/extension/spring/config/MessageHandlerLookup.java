@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -78,6 +77,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      *
      * @param messageType The type of message to find handlers for.
      * @param registry    The registry to find these handlers in.
+     * @param includePrototypeBeans Whether to include prototype beans.
      * @return A list of bean names with message handlers.
      */
     public static List<String> messageHandlerBeans(Class<? extends Message> messageType,
@@ -86,10 +86,13 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
         List<String> found = new ArrayList<>();
         for (String beanName : registry.getBeanDefinitionNames()) {
             BeanDefinition bd = registry.getBeanDefinition(beanName);
-            if (includePrototypeBeans || (bd.isSingleton() && !bd.isAbstract())) {
-                Class<?> beanType = registry.getType(beanName);
-                if (beanType != null && hasMessageHandler(messageType, beanType)) {
-                    found.add(beanName);
+
+            if (bd.isAutowireCandidate()) {  // excludes unproxied variants of proxied beans
+                if (includePrototypeBeans || (bd.isSingleton() && !bd.isAbstract())) {
+                    Class<?> beanType = registry.getType(beanName);
+                    if (beanType != null && hasMessageHandler(messageType, beanType)) {
+                        found.add(beanName);
+                    }
                 }
             }
         }
@@ -107,7 +110,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
     }
 
     @Override
-    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         if (!(beanFactory instanceof BeanDefinitionRegistry)) {
             logger.warn("Given bean factory is not a BeanDefinitionRegistry. Cannot auto-configure message handlers");
             return;
@@ -144,7 +147,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      * @return A new {@link List} of sorted bean references, according to the value of the {@link Order} annotation
      * value on the beans.
      */
-    private List<String> sortByOrder(List<String> found, @Nonnull ConfigurableListableBeanFactory beanFactory) {
+    private List<String> sortByOrder(List<String> found, ConfigurableListableBeanFactory beanFactory) {
         return found.stream()
                     .collect(Collectors.toMap(
                             beanRef -> beanRef,
@@ -161,7 +164,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry registry) throws BeansException {
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         // No action required.
     }
 }

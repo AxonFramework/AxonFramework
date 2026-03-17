@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -87,22 +87,22 @@ class QueryMessageHandlerInterceptorChainTest {
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<QueryMessage> interceptorOne = spy(new MessageHandlerInterceptor<QueryMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull QueryMessage message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<QueryMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull QueryMessage message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<QueryMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageHandlerInterceptor<QueryMessage> interceptorTwo = spy(new MessageHandlerInterceptor<QueryMessage>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull QueryMessage message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<QueryMessage> chain) {
+            public MessageStream<?> interceptOnHandle(@NonNull QueryMessage message,
+                                                      @NonNull ProcessingContext context,
+                                                      @NonNull MessageHandlerInterceptorChain<QueryMessage> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }

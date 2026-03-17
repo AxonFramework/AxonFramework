@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package org.axonframework.eventsourcing.annotation.reflection;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.Message;
@@ -32,6 +30,8 @@ import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -88,11 +88,11 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      * @param converter                The converter to use for converting event payloads to the handler's expected
      *                                 type.
      */
-    public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
-                                                    @Nonnull Class<ID> idType,
-                                                    @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                    @Nonnull MessageTypeResolver messageTypeResolver,
-                                                    @Nonnull EventConverter converter
+    public AnnotationBasedEventSourcedEntityFactory(Class<E> entityType,
+                                                    Class<ID> idType,
+                                                    ParameterResolverFactory parameterResolverFactory,
+                                                    MessageTypeResolver messageTypeResolver,
+                                                    EventConverter converter
     ) {
         this(entityType, idType, Collections.emptySet(), parameterResolverFactory, messageTypeResolver, converter);
     }
@@ -111,12 +111,12 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      * @param converter                The converter to use for converting event payloads to the handler's expected
      *                                 type.
      */
-    public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
-                                                    @Nonnull Class<ID> idType,
-                                                    @Nonnull Set<Class<? extends E>> subTypes,
-                                                    @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                                    @Nonnull MessageTypeResolver messageTypeResolver,
-                                                    @Nonnull EventConverter converter
+    public AnnotationBasedEventSourcedEntityFactory(Class<E> entityType,
+                                                    Class<ID> idType,
+                                                    Set<Class<? extends E>> subTypes,
+                                                    ParameterResolverFactory parameterResolverFactory,
+                                                    MessageTypeResolver messageTypeResolver,
+                                                    EventConverter converter
     ) {
         this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
         this.types = new HashSet<>(subTypes);
@@ -273,7 +273,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         if (compatibleCreators.isEmpty()) {
             StringBuilder message = new StringBuilder(
                     "No suitable @EntityCreator found for id: [%s] and event message [%s]. Candidates were:"
-                            .formatted(id, eventMessage));
+                            .formatted(id, ObjectUtils.getOrDefault(eventMessage, Message::type, "none")));
             creators.forEach(creator -> message.append("\n - ").append(creator));
             throw new AxonConfigurationException(message.toString());
         }
@@ -307,7 +307,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
     @Nullable
     @Override
-    public E create(@Nonnull ID id, @Nullable EventMessage firstEventMessage, @Nonnull ProcessingContext context) {
+    public E create(ID id, @Nullable EventMessage firstEventMessage, ProcessingContext context) {
         ProcessingContext preparedContext = context.withResource(ID_KEY, id);
         if (firstEventMessage != null) {
             preparedContext = Message.addToContext(preparedContext, firstEventMessage);
@@ -362,7 +362,6 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                                     .join();
         }
 
-        @Nonnull
         private CompletableFuture<?> tryResolveParameterValue(
                 ParameterResolver<?> parameterResolver,
                 ProcessingContext context
@@ -439,14 +438,13 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      */
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<ID> resolveParameterValue(@Nonnull ProcessingContext processingContext) {
+        public CompletableFuture<ID> resolveParameterValue(ProcessingContext processingContext) {
             return CompletableFuture.completedFuture(processingContext.getResource(ID_KEY));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext processingContext) {
+        public boolean matches(ProcessingContext processingContext) {
             return processingContext.containsResource(ID_KEY);
         }
     }

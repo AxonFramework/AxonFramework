@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.util;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +44,5 @@ public interface ExecutorServiceFactory<C> {
      * @param queue         The {@link BlockingQueue} to use for the ExecutorService.
      * @return An {@link ExecutorService}based on the given {@code configuration} and {@code queue}.
      */
-    @Nonnull
-    ExecutorService createExecutorService(@Nonnull C configuration, @Nonnull BlockingQueue<Runnable> queue);
+    ExecutorService createExecutorService(C configuration, BlockingQueue<Runnable> queue);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 /**
- * Classes related to message processing in Axon Framework.
+ * Classes related to message conversion in Axon Framework.
  */
+@NullMarked
 package org.axonframework.conversion;
+
+import org.jspecify.annotations.NullMarked;

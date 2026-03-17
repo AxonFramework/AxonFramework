@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.EventProcessingException;
 
 /**
@@ -42,7 +41,7 @@ public enum PropagatingErrorHandler implements ErrorHandler {
     }
 
     @Override
-    public void handleError(@Nonnull ErrorContext errorContext) throws Exception {
+    public void handleError(ErrorContext errorContext) throws Exception {
         Throwable error = errorContext.error();
         if (error instanceof Error) {
             throw (Error) error;

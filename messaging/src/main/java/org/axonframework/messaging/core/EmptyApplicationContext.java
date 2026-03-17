@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -41,9 +40,8 @@ public class EmptyApplicationContext implements ApplicationContext {
     private EmptyApplicationContext() {
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         throw new UnsupportedOperationException(
                 "EmptyApplicationContext does not provide any components. " +
                         "You should never use it if you want to be able to retrieve components from the ProcessingContext."

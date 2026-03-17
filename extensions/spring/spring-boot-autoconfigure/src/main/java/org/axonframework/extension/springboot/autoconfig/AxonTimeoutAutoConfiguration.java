@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -72,12 +71,12 @@ public class AxonTimeoutAutoConfiguration {
      * behavior for every type of {@link Message}.
      */
     @Bean
-    public ConfigurationEnhancer axonTimeoutConfigurationEnhancer(@Nonnull TimeoutProperties properties) {
+    public ConfigurationEnhancer axonTimeoutConfigurationEnhancer(TimeoutProperties properties) {
         return new AxonTimeoutConfigurerModule(properties.getTransaction());
     }
 
     private record AxonTimeoutConfigurerModule(
-            @Nonnull TimeoutProperties.TransactionTimeoutProperties properties
+            TimeoutProperties.TransactionTimeoutProperties properties
     ) implements ConfigurationEnhancer {
 
         @Override
@@ -86,7 +85,7 @@ public class AxonTimeoutAutoConfiguration {
         }
 
         @Override
-        public void enhance(@Nonnull ComponentRegistry registry) {
+        public void enhance(ComponentRegistry registry) {
             registry.registerDecorator(
                     HandlerInterceptorRegistry.class,
                     0,

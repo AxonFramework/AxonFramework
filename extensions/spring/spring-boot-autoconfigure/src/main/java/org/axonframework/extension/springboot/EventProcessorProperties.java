@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -24,9 +24,12 @@ import org.axonframework.messaging.eventhandling.processing.streaming.pooled.Poo
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.messaging.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.Environment;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +44,29 @@ import java.util.concurrent.TimeUnit;
  */
 @ConfigurationProperties("axon.eventhandling")
 public class EventProcessorProperties {
+
+    /**
+     * Provides ProcessorSettings per processor name via Environment.
+     * <p>
+     * <i>This is required due to changes on how spring boot 4 loads configurations properties.
+     * If the application configures WebMvc we get cyclic application context. By using {@link Environment} and {@link Binder}
+     * to manually create the processors map we avoid this problem. See <a href="https://github.com/AxonFramework/AxonFramework/issues/4010">issue #4010</a> for details.</i>
+     *
+     * @param environment The spring boot environment.
+     * @return The map of {@link ProcessorSettings} per processor name.
+     */
+    @Internal
+    public static Map<String, EventProcessorSettings> getProcessors(Environment environment) {
+        Binder binder = Binder.get(environment);
+
+        // Bind the same structure that EventProcessorProperties would expose
+        Map<String, ProcessorSettings> raw =
+                binder.bind("axon.eventhandling.processors",
+                            Bindable.mapOf(String.class, EventProcessorProperties.ProcessorSettings.class))
+                      .orElseGet(java.util.HashMap::new);
+
+        return new HashMap<>(raw);
+    }
 
     /**
      * The configuration of each of the processors. The key is the name of the processor, the value represents the
@@ -177,7 +203,6 @@ public class EventProcessorProperties {
          * @return pooled-streaming or subscribed mode, falls back to pooled-streaming.
          */
         @Override
-        @Nonnull
         public EventProcessorSettings.ProcessorMode processorMode() {
             if (Mode.SUBSCRIBING.equals(mode)) {
                 return ProcessorMode.SUBSCRIBING;
@@ -311,7 +336,7 @@ public class EventProcessorProperties {
          *
          * @param tokenStore A name of the Spring Bean used for this processor.
          */
-        public void setTokenStore(@Nonnull String tokenStore) {
+        public void setTokenStore(String tokenStore) {
             Objects.requireNonNull(tokenStore, "TokenStore cannot be null");
             this.tokenStore = tokenStore;
         }
@@ -322,8 +347,7 @@ public class EventProcessorProperties {
          * @return Name of the token store Spring Bean.
          */
         @Override
-        @Nonnull
-        public String tokenStore() {
+                public String tokenStore() {
             return tokenStore;
         }
 
@@ -369,6 +393,21 @@ public class EventProcessorProperties {
         public void setDlq(Dlq dlq) {
             this.dlq = dlq;
         }
+
+        @Override
+        public EventProcessorSettings.DlqSettings dlq() {
+            return new EventProcessorSettings.DlqSettings() {
+                @Override
+                public boolean enabled() {
+                    return dlq.isEnabled();
+                }
+
+                @Override
+                public CacheSettings cache() {
+                    return () -> dlq.getCache().getSize();
+                }
+            };
+        }
     }
 
     /**
@@ -409,18 +448,18 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Retrieves the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * Retrieves the cache settings for the sequenced dead letter queue.
          *
-         * @return the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * @return the cache settings.
          */
         public DlqCache getCache() {
             return cache;
         }
 
         /**
-         * Defines the AutoConfiguration settings for the cache of the sequenced dead letter queue.
+         * Defines the cache settings for the sequenced dead letter queue.
          *
-         * @param cache the cache settings for the sequenced dead letter.
+         * @param cache the cache settings.
          */
         public void setCache(DlqCache cache) {
             this.cache = cache;
@@ -428,55 +467,30 @@ public class EventProcessorProperties {
     }
 
     /**
-     * Configuration for the Dead-Letter-Queue Caching.
+     * Configuration for the Dead-Letter-Queue cache.
      */
     public static class DlqCache {
 
         /**
-         * Enables caching the sequence identifiers on the
-         * {@link org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker}. This can prevent calls
-         * to the database to check whether a sequence is already present. Defaults to {@code false}.
-         */
-        private boolean enabled = false;
-
-        /**
-         * The amount of sequence identifiers to keep in memory. This setting is used per segment, and only when the
-         * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue} is not empty. Defaults to
-         * {@code 1024}.
+         * The maximum number of sequence identifiers to keep in memory per segment.
+         * Setting this to {@code 0} disables the caching wrapper entirely. Defaults to {@code 1024}.
          */
         private int size = 1024;
 
         /**
-         * Indicates whether using a cache is enabled.
+         * Returns the maximum number of sequence identifiers to keep in memory per segment.
          *
-         * @return true if using a cache is enabled, false if otherwise.
-         */
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        /**
-         * Enables (if {@code true}, default) or disables (if {@code false}) using a cache.
-         *
-         * @param enabled whether to enable using a cache.
-         */
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        /**
-         * Returns the size of the sequence identifiers to keep in memory, per segment.
-         *
-         * @return the amount of sequence identifiers to keep in memory.
+         * @return the cache size, or {@code 0} if caching is disabled.
          */
         public int getSize() {
             return size;
         }
 
         /**
-         * Set the amount of sequence identifiers to keep in memory, per segment.
+         * Sets the maximum number of sequence identifiers to keep in memory per segment.
+         * Setting this to {@code 0} disables the caching wrapper entirely.
          *
-         * @param size the maximum size of the sequence identifiers which are not present.
+         * @param size the maximum cache size per segment.
          */
         public void setSize(int size) {
             this.size = size;

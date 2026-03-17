@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Context;
 
 /**
@@ -64,7 +63,7 @@ public interface ConsistencyMarker {
      * @param other The other marker to create the lower bound for
      * @return a ConsistencyMarker that represents the lower bound of two other markers
      */
-    ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other);
+    ConsistencyMarker lowerBound(ConsistencyMarker other);
 
     /**
      * Returns a ConsistencyMarker that represents the upper bound of {@code this} and given {@code other} markers.
@@ -74,7 +73,18 @@ public interface ConsistencyMarker {
      * @param other The other marker to create the upper bound for
      * @return a ConsistencyMarker that represents the upper bound of two other markers
      */
-    ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other);
+    ConsistencyMarker upperBound(ConsistencyMarker other);
+
+    /**
+     * Reduces this consistency marker to a single position if possible. Note that this must
+     * always succeed if the marker was created based on a single sourcing. The position returned
+     * is guaranteed to be suitable to resume an earlier sourcing from the exact position it ended at.
+     *
+     * @return a {@link Position}, never {@code null}
+     * @throws IllegalStateException if the marker was derived from multiple sourcings and could not be
+     *                               reduced to a single position
+     */
+    Position position();
 
     /**
      * Adds the given {@code consistencyMarker} to the given {@code context} using the {@link #RESOURCE_KEY}.
@@ -84,8 +94,8 @@ public interface ConsistencyMarker {
      *                          {@link #RESOURCE_KEY}.
      * @return The given {@code context} with the given {@code consistencyMarker} attached to it.
      */
-    static Context addToContext(@Nonnull Context context,
-                                @Nonnull ConsistencyMarker consistencyMarker) {
+    static Context addToContext(Context context,
+                                ConsistencyMarker consistencyMarker) {
         return context.withResource(RESOURCE_KEY, consistencyMarker);
     }
 }

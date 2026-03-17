@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQu
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
@@ -57,7 +56,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerIfNotPresent(AxonServerConfiguration.class,
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)

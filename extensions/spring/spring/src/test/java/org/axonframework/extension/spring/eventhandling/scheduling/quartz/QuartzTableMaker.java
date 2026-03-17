@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @author Allard Buijze
@@ -54,7 +54,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
     public void createTables() {
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
-            protected void doInTransactionWithoutResult(@Nonnull TransactionStatus status) {
+            protected void doInTransactionWithoutResult(@NonNull TransactionStatus status) {
                 executeCreateSQL();
             }
         });
@@ -87,7 +87,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

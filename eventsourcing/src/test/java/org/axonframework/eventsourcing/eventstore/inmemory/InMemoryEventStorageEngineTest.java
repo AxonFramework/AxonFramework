@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,27 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * Test class validating the {@link StorageEngineBackedEventStore} together with the {@link InMemoryEventStorageEngine}.
+ * Test class validating the {@link InMemoryEventStorageEngine}.
  *
  * @author Steven van Beelen
  */
 class InMemoryEventStorageEngineTest extends StorageEngineTestSuite<InMemoryEventStorageEngine> {
 
     @Override
-    protected InMemoryEventStorageEngine buildStorageEngine() {
+    protected InMemoryEventStorageEngine createStorageEngine() {
         return new InMemoryEventStorageEngine();
     }
 
     @Override
     protected ProcessingContext processingContext() {
         return null;
+    }
+
+    @Override  // disable this unsupported scenario
+    protected void twoIndependentStorageEnginesShouldSeeEachOthersAppends() {
     }
 }

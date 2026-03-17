@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.LifecycleHandler;
 import org.slf4j.Logger;
@@ -55,7 +54,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
      * @param task  The task to execute on shutdown.
      */
     SpringLifecycleShutdownHandler(int phase,
-                                   @Nonnull Supplier<CompletableFuture<?>> task) {
+                                   Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }
@@ -82,7 +81,7 @@ public class SpringLifecycleShutdownHandler implements SmartLifecycle {
     }
 
     @Override
-    public void stop(@Nonnull Runnable callback) {
+    public void stop(Runnable callback) {
         task.get()
             .whenComplete((result, throwable) -> {
                 if (throwable != null) {

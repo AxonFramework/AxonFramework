@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.annotation.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,8 +38,8 @@ import java.util.Objects;
  * The events will be appended in the context this appender was created for. You can construct one through the
  * {@link #forContext(ProcessingContext)}.
  * <p>
- * When using annotation-based {@link MessageHandler @MessageHandler-methods} and
- * you have declared an argument of type {@link EventAppender}, the appender will automatically be injected by the
+ * When using annotation-based {@link MessageHandler @MessageHandler-methods} and you have declared an argument of type
+ * {@link EventAppender}, the appender will automatically be injected by the
  * {@link EventAppenderParameterResolverFactory}.
  * <p>
  * As this component is {@link ProcessingContext}-scoped, it is not retrievable from the {@link Configuration}.
@@ -62,7 +63,7 @@ public interface EventAppender extends DescribableComponent {
      * @param context The {@link ProcessingContext} to create the appender for.
      * @return The created appender.
      */
-    static EventAppender forContext(@Nonnull ProcessingContext context) {
+    static EventAppender forContext(ProcessingContext context) {
         return forContext(context, context.component(EventSink.class), context.component(MessageTypeResolver.class));
     }
 
@@ -77,9 +78,9 @@ public interface EventAppender extends DescribableComponent {
      * @return The created appender.
      */
     static EventAppender forContext(
-            @Nonnull ProcessingContext context,
-            @Nonnull EventSink eventSink,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            ProcessingContext context,
+            EventSink eventSink,
+            MessageTypeResolver messageTypeResolver
     ) {
         Objects.requireNonNull(context, "ProcessingContext may not be null");
         return context.computeResourceIfAbsent(
@@ -104,5 +105,27 @@ public interface EventAppender extends DescribableComponent {
      *
      * @param events The collection of events to publish.
      */
-    void append(@Nonnull List<?> events);
+    void append(List<?> events);
+
+    /**
+     * Append a collection of events to the event store in the current {@link ProcessingContext}, all with the given
+     * {@link Metadata}. If an event is already a {@link org.axonframework.messaging.core.Message}, the provided
+     * metadata is merged with its existing metadata (provided values take precedence on conflict).
+     *
+     * @param events   The collection of events to publish.
+     * @param metadata The metadata to attach to every event.
+     */
+    void append(List<?> events, Metadata metadata);
+
+    /**
+     * Append a single event to the event store in the current {@link ProcessingContext} with the given
+     * {@link Metadata}. If the event is already a {@link org.axonframework.messaging.core.Message}, the provided
+     * metadata is merged with its existing metadata (provided values take precedence on conflict).
+     *
+     * @param event    The event to publish.
+     * @param metadata The metadata to attach to the event.
+     */
+    default void append(Object event, Metadata metadata) {
+        append(List.of(event), metadata);
+    }
 }

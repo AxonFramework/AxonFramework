@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.CollectionUtils;
 
 import java.util.HashMap;
@@ -24,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@link ConsistencyMarker} implementation that keeps track of a sequence per aggregate identifier. A single
+ * {@link ConsistencyMarker} implementation that keeps track of a position per aggregate identifier. A single
  * {@code AggregateBasedConsistencyMarker} can track the positions of multiple Aggregates.
  *
  * @author Allard Buijze
@@ -32,6 +31,11 @@ import java.util.Objects;
  */
 public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<AggregateBasedConsistencyMarker> {
 
+    /**
+     * This contains the consistency marker positions per aggregate. Note that <b>marker positions</b> are not the
+     * same as <b>sequence numbers</b>, but are closely related: marker positions are one higher than the corresponding
+     * sequence number.
+     */
     private final Map<String, Long> aggregatePositions;
 
     /**
@@ -41,7 +45,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
      * @param sequenceNumber      The sequence number of the last seen event of the aggregate.
      */
     public AggregateBasedConsistencyMarker(String aggregateIdentifier, long sequenceNumber) {
-        this(Map.of(aggregateIdentifier, sequenceNumber));
+        this(Map.of(aggregateIdentifier, sequenceNumber + 1));  // Convert to position by adding one to sequence number
     }
 
     private AggregateBasedConsistencyMarker(Map<String, Long> aggregatePositions) {
@@ -87,43 +91,42 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
         return new AggregateBasedConsistencyMarker(newPositions);
     }
 
-    /**
-     * Returns the position of the given {@code aggregateIdentifier} within this marker, or {@value -1} if such
-     * aggregate's position was not explicitly defined.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate to find the position for.
-     * @return The sequence of the last seen event for given {@code aggregateIdentifier}, or {@value -1} if no events
-     * have been seen.
-     */
-    public long positionOf(@Nonnull String aggregateIdentifier) {
-        return aggregatePositions.getOrDefault(aggregateIdentifier, -1L);
+    @Override
+    public Position position() {
+        if (aggregatePositions.size() > 1) {
+            throw new IllegalStateException("ConsistencyMarker contains multiple positions, unable to convert to single position: " + this);
+        }
+
+        return new AggregateSequenceNumberPosition(aggregatePositions.values().iterator().next());
     }
 
     /**
      * Returns a new {@code AggregateBasedConsistencyMarker} with the sequence of given {@code aggregateIdentifier}
-     * forwarded to the given {@code newSequence}. If a sequence for this {@code aggregateIdentifier} has already been
-     * recorded in this marker, and that sequence is further than given {@code newSequence}, an
+     * forwarded to the given {@code newPosition}. If a position for this {@code aggregateIdentifier} has already been
+     * recorded in this marker, and that position is further than given {@code newPosition}, an
      * {@link IllegalArgumentException} is thrown.
      * <p/>
      * This method is practically the same as {@link #upperBound(ConsistencyMarker)}, except that it takes a single
-     * aggregate identifier and sequence number, and additionally validates that the returned marker is at or before
-     * given sequence for given aggregateIdentifier.
+     * aggregate identifier and position, and additionally validates that the returned marker is at or before
+     * given position for given aggregateIdentifier.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to forward the sequence number for
-     * @param newSequence         The new sequence number
-     * @return an AggregateBasedConsistencyMarker that represents the forwarded sequence
+     * @param aggregateIdentifier The identifier of the aggregate to forward the position for
+     * @param newSequence         The new position
+     * @return an AggregateBasedConsistencyMarker that represents the forwarded position
      */
-    public AggregateBasedConsistencyMarker forwarded(String aggregateIdentifier, long newSequence) {
-        long current = positionOf(aggregateIdentifier);
-        if (current > newSequence) {
+    private AggregateBasedConsistencyMarker forwarded(String aggregateIdentifier, long newSequence) {
+        long current = aggregatePositions.getOrDefault(aggregateIdentifier, -1L);
+        long newPosition = newSequence + 1;  // convert to position by adding 1
+
+        if (current > newPosition) {
             throw new IllegalArgumentException(
                     "Aggregate " + aggregateIdentifier + " is already beyond provided position. Current position: "
-                            + current + ", provided: " + newSequence);
-        } else if (current == newSequence) {
+                            + current + ", provided: " + newPosition);
+        } else if (current == newPosition) {
             // no forwarding required
             return this;
         }
-        Map<String, Long> newMap = CollectionUtils.mapWith(aggregatePositions, aggregateIdentifier, newSequence);
+        Map<String, Long> newMap = CollectionUtils.mapWith(aggregatePositions, aggregateIdentifier, newPosition);
         return new AggregateBasedConsistencyMarker(newMap);
     }
 
@@ -145,5 +148,61 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
         return "AggregateBasedConsistencyMarker{" +
                 "aggregatePositions=" + aggregatePositions +
                 '}';
+    }
+
+    /**
+     * Create an {@link AggregateSequencer}, initialized with values from this marker, which can
+     * increment and provide sequence numbers of multiple aggregates, and integrate the results
+     * into a new {@link AggregateBasedConsistencyMarker}.
+     *
+     * @return an {@link AggregateSequencer} initialized with values from this marker, never {@code null}
+     */
+    public AggregateSequencer createSequencer() {
+        return new AggregateSequencer();
+    }
+
+    /**
+     * Helper class that tracks the sequence of events for different aggregates and manages the consistency marker for
+     * the aggregates.
+     */
+    public final class AggregateSequencer {
+        private final Map<String, Long> aggregateSequences = new HashMap<>();
+
+        private AggregateSequencer() {
+        }
+
+        /**
+         * Creates a new {@link AggregateBasedConsistencyMarker} with the current state of aggregate
+         * sequences tracked by this sequencer.
+         *
+         * @return a new {@link AggregateBasedConsistencyMarker}, never {@code null}
+         */
+        public AggregateBasedConsistencyMarker toMarker() {
+            AggregateBasedConsistencyMarker newConsistencyMarker = AggregateBasedConsistencyMarker.this;
+            for (Map.Entry<String, Long> e : aggregateSequences.entrySet()) {
+                newConsistencyMarker = newConsistencyMarker
+                        .forwarded(e.getKey(), e.getValue());
+            }
+
+            return newConsistencyMarker;
+        }
+
+        /**
+         * Get and increment the sequence for the given aggregate identifier.
+         *
+         * @param aggregateIdentifier The identifier of the aggregate to get and increment the sequence for
+         * @return The sequence number for the aggregate
+         */
+        public long incrementAndGetSequenceOf(String aggregateIdentifier) {
+        	    // Note that the position is one higher than the sequence number, so we can use the position as the next sequence number directly
+            return aggregateSequences.compute(
+                    aggregateIdentifier,
+                    (key, oldValue) -> oldValue == null ? positionOf(key) : oldValue + 1
+            );
+        }
+
+        private long positionOf(String aggregateIdentifier) {
+            return aggregatePositions.getOrDefault(aggregateIdentifier, 0L);
+        }
     }
 }

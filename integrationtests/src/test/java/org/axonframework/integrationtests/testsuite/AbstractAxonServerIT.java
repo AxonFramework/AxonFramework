@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,23 +40,19 @@ public abstract class AbstractAxonServerIT {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIT.class);
 
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
-            .withAxonServerHostname("localhost")
-            .withDevMode(true)
-            .withReuse(true);
+    private static final AxonServerContainer container =
+            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+                    .withAxonServerHostname("localhost")
+                    .withDevMode(true)
+                    .withReuse(true)
+                    .withDcbContext(true);
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
 
     @BeforeAll
-    static void beforeAll() throws IOException {
+    static void beforeAll() {
         container.start();
-
-        // Mainly needed to create DBC context now:
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
         logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
                     container.getHttpPort());
     }
@@ -79,6 +75,21 @@ public abstract class AbstractAxonServerIT {
     }
 
     /**
+     * Purge all events from the Axon Server container
+     */
+    protected void purgeEvents() {
+        try {
+            logger.info("Purging events from Axon Server.");
+            AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                               container.getHttpPort(),
+                                                               "default",
+                                                               AxonServerContainerUtils.DCB_CONTEXT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Creates the {@link ApplicationConfigurer} defining the Axon Framework test context.
      *
      * @return The {@link ApplicationConfigurer} defining the Axon Framework test context.
@@ -89,5 +100,22 @@ public abstract class AbstractAxonServerIT {
 
     protected static String createId(String prefix) {
         return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
+    }
+
+    /**
+     * Purges all events from the AxonServer event storage. This method can be called before tests to ensure a clean
+     * state, preventing events from previous test runs from affecting the current test.
+     */
+    protected void purgeEventStorage() {
+        try {
+            AxonServerContainerUtils.purgeEventsFromAxonServer(
+                    container.getHost(),
+                    container.getHttpPort(),
+                    "default",
+                    AxonServerContainerUtils.DCB_CONTEXT
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to purge event storage", e);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.common.AxonException;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Optional;
 
@@ -33,7 +35,7 @@ import java.util.Optional;
  */
 public abstract class HandlerExecutionException extends AxonException {
 
-    private final Object details;
+    private final @Nullable Object details;
 
     /**
      * Initializes an execution exception with given {@code message}. The cause and application-specific details are set
@@ -52,7 +54,7 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param message A message describing the exception
      * @param cause   the cause of the execution exception
      */
-    public HandlerExecutionException(String message, Throwable cause) {
+    public HandlerExecutionException(String message, @Nullable Throwable cause) {
         this(message, cause, resolveDetails(cause).orElse(null));
     }
 
@@ -64,7 +66,7 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param cause   The cause of the execution exception
      * @param details An object providing application-specific details of the exception
      */
-    public HandlerExecutionException(String message, Throwable cause, Object details) {
+    public HandlerExecutionException(String message, @Nullable Throwable cause, @Nullable Object details) {
         this(message, cause, details, false);
     }
 
@@ -77,7 +79,7 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param details            An object providing application-specific details of the exception
      * @param writableStackTrace Whether the stack trace should be generated ({@code true}) or not ({@code false})
      */
-    public HandlerExecutionException(String message, Throwable cause, Object details, boolean writableStackTrace) {
+    public HandlerExecutionException(String message, @Nullable Throwable cause, @Nullable Object details, boolean writableStackTrace) {
         super(message, cause, writableStackTrace);
         this.details = details;
     }
@@ -90,7 +92,7 @@ public abstract class HandlerExecutionException extends AxonException {
      * @param <R>       The type of details expected
      * @return an Optional containing details, if present in the given {@code throwable}
      */
-    public static <R> Optional<R> resolveDetails(Throwable throwable) {
+    public static <R> Optional<R> resolveDetails(@Nullable Throwable throwable) {
         if (throwable instanceof HandlerExecutionException) {
             return ((HandlerExecutionException) throwable).getDetails();
         } else if (throwable != null && throwable.getCause() != null) {

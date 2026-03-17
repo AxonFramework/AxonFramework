@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.annotation.EntityMember;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperAsLeadDeveloper;
 import org.axonframework.modelling.entity.domain.development.commands.AssignDeveloperToProject;
+import org.axonframework.modelling.entity.domain.development.commands.AssignMarketeer;
 import org.axonframework.modelling.entity.domain.development.commands.CreateProjectCommand;
 import org.axonframework.modelling.entity.domain.development.commands.RenameProjectCommand;
 import org.axonframework.modelling.entity.domain.development.common.ProjectType;
 import org.axonframework.modelling.entity.domain.development.events.DeveloperAssignedToProject;
 import org.axonframework.modelling.entity.domain.development.events.LeadDeveloperAssigned;
+import org.axonframework.modelling.entity.domain.development.events.MarketeerAssigned;
 import org.axonframework.modelling.entity.domain.development.events.ProjectCreatedEvent;
 import org.axonframework.modelling.entity.domain.development.events.ProjectRenamedEvent;
 
@@ -37,28 +39,63 @@ import java.util.List;
 
 /**
  * Fictional domain model representing a project in a software development context. Used for validating the Axon
- * Framework's modelling capabilities, such as the
- * {@link AnnotatedEntityMetamodel}.
+ * Framework's modelling capabilities, such as the {@link AnnotatedEntityMetamodel}.
  * <p>
  * The model handles various commands that are validated based on state, and events that are published to reflect
  * changes in the project state. This model does use events to evolve its state, but does not use an event store to
  * source the model from earlier events. As such, it is a state-stored model rather than an event-sourced model.
  * <p>
  * It uses various features, as many as possible in fact, of the entity model, such as:
- * - Polymorphic entities
- * - Entity members in abstract entity
- * - Entity member in concrete entity
- * - Commands in abstract entity
- * - Commands in concrete entity
- * - Multiple EntityMember-annotated fields that use the same routing key
- * - Variations of routing key usage
- * - Evolving mutable child entities
- * - Evolving immutable child entities
+ * <ul>
+ * <li>Polymorphic entities</li>
+ * <li>Entity members in abstract entity</li>
+ * <li>Entity member in concrete entity</li>
+ * <li>Commands in abstract entity</li>
+ * <li>Commands in concrete entity</li>
+ * <li>Multiple EntityMember-annotated fields that use the same routing key</li>
+ * <li>Variations of routing key usage</li>
+ * <li>Evolving mutable child entities</li>
+ * <li>Evolving immutable child entities</li>
+ * </ul>
  *
- * @since 5.0.0
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public abstract class Project {
+
+    public static class InternalProject extends Project {
+        public InternalProject(String projectId, String name) {
+            super(projectId, name);
+        }
+    }
+
+    public static class OpenSourceProject extends Project {
+
+        @EntityMember
+        private Marketeer marketeer;
+
+        public OpenSourceProject(String projectId, String name) {
+            super(projectId, name);
+        }
+
+        @CommandHandler
+        public void handle(AssignMarketeer command, EventAppender appender) {
+            appender.append(new MarketeerAssigned(
+                    command.projectId(),
+                    command.email(),
+                    command.hubspotUsername()
+            ));
+        }
+
+        @EventHandler
+        public void on(MarketeerAssigned event) {
+            this.marketeer = new Marketeer(event.email(), event.hubspotUsername());
+        }
+
+        public Marketeer getMarketeer() {
+            return marketeer;
+        }
+    }
 
     private final String projectId;
     private String name;
@@ -68,14 +105,14 @@ public abstract class Project {
         this.name = name;
     }
 
-    @EntityMember
+    @EntityMember(routingKey = "email")
     private Developer leadDeveloper;
 
-    @EntityMember
-    private List<Developer> otherDevelopers = new ArrayList<>();
+    @EntityMember(routingKey = "email")
+    private final List<Developer> otherDevelopers = new ArrayList<>();
 
-    @EntityMember
-    private List<Milestone> features = new ArrayList<>();
+    @EntityMember(routingKey = "id")
+    private final List<Milestone> features = new ArrayList<>();
 
     @CommandHandler
     public static String handle(CreateProjectCommand command, EventAppender appender) {
@@ -112,14 +149,14 @@ public abstract class Project {
 
     @CommandHandler
     public void handle(AssignDeveloperAsLeadDeveloper command, EventAppender appender) {
-        if(leadDeveloper != null){
-            if(!leadDeveloper.email().equals(command.email())) {
+        if (leadDeveloper != null) {
+            if (!leadDeveloper.email().equals(command.email())) {
                 throw new IllegalArgumentException(
                         "Developer with email " + command.email() + " is already assigned as lead developer.");
             }
         }
 
-        if(otherDevelopers.stream().noneMatch(developer -> developer.email().equals(command.email()))) {
+        if (otherDevelopers.stream().noneMatch(developer -> developer.email().equals(command.email()))) {
             throw new IllegalArgumentException(
                     "Developer with email " + command.email() + " is not assigned to this project.");
         }
@@ -140,10 +177,12 @@ public abstract class Project {
     @EventHandler
     public void on(LeadDeveloperAssigned event) {
         this.leadDeveloper = otherDevelopers.stream()
-                .filter(developer -> developer.email().equals(event.email()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Developer with email " + event.email() + " is not assigned to this project."));
+                                            .filter(developer -> developer.email().equals(event.email()))
+                                            .findFirst()
+                                            .orElseThrow(() -> new IllegalArgumentException(
+                                                    "Developer with email " + event.email()
+                                                            + " is not assigned to this project."
+                                            ));
         otherDevelopers.remove(leadDeveloper);
     }
 
@@ -166,4 +205,5 @@ public abstract class Project {
     public void setLeadDeveloper(Developer leadDeveloper) {
         this.leadDeveloper = leadDeveloper;
     }
+
 }

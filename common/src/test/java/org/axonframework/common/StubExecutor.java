@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.common;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Executor;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the Executor that executes tasks in the calling threads. The {@link #enqueueTasks()} method can be
@@ -35,7 +35,7 @@ public class StubExecutor implements Executor {
     private boolean hold = false;
 
     @Override
-    public void execute(@Nonnull Runnable task) {
+    public void execute(@NonNull Runnable task) {
         if (hold) {
             tasks.add(task);
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.update.api;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.ArrayList;
@@ -38,8 +37,8 @@ import java.util.List;
 @Internal
 public record UpdateCheckResponse(
         int checkInterval,
-        @Nonnull List<ArtifactAvailableUpgrade> upgrades,
-        @Nonnull List<DetectedVulnerability> vulnerabilities
+        List<ArtifactAvailableUpgrade> upgrades,
+        List<DetectedVulnerability> vulnerabilities
 ) {
 
     /**
@@ -62,7 +61,6 @@ public record UpdateCheckResponse(
      * @param body The response body as a string.
      * @return A {@code UsageResponse} object containing the parsed data.
      */
-    @Nonnull
     public static UpdateCheckResponse fromRequest(@Nullable String body) {
         int checkInterval = 86400; // Default to 24 hours, in case request didn't work
         List<ArtifactAvailableUpgrade> upgrades = new ArrayList<>();

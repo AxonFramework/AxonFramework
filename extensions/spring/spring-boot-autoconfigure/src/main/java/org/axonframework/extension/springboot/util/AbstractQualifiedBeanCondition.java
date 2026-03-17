@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.springframework.util.MultiValueMap;
 
 import java.lang.invoke.MethodHandles;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.extension.spring.SpringUtils.isQualifierMatch;
 
@@ -56,7 +55,6 @@ public abstract class AbstractQualifiedBeanCondition extends SpringBootCondition
         this.qualifierAttribute = qualifierAttribute;
     }
 
-    @Nonnull
     @Override
     public ConfigurationPhase getConfigurationPhase() {
         return ConfigurationPhase.REGISTER_BEAN;

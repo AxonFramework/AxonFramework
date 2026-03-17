@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommand
 
     @Test
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+        registerCommandHandlers(handlerPhase -> handlerPhase.autodetectedCommandHandlingComponent(
                 c -> new CompoundModelAnnotatedCommandHandler()
         ));
         startApp();

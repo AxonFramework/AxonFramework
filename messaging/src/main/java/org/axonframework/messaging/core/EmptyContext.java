@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.core;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.Map;
 
@@ -36,17 +34,17 @@ class EmptyContext implements Context {
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(ResourceKey<?> key) {
         return false;
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(ResourceKey<T> key) {
         return null;
     }
 
     @Override
-    public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
+    public <T> Context withResource(ResourceKey<T> key, T resource) {
         return Context.with(key, resource);
     }
 

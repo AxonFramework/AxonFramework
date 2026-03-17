@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,34 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
-
 /**
- * TransactionManager implementation that does nothing. It's a placeholder implementation for the cases where no
- * special transaction management is required.
+ * A {@link TransactionManager} implementation that does nothing.
+ * <p>
+ * It's a placeholder implementation for the cases where no special transaction management is required.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public enum NoTransactionManager implements TransactionManager {
 
     /**
-     * Singleton instance of the TransactionManager
+     * Singleton instance of the {@link TransactionManager}.
      */
     INSTANCE;
 
     /**
-     * Returns the singleton instance of this TransactionManager
+     * Returns the singleton instance of this {@link TransactionManager}.
      *
-     * @return the singleton instance of this TransactionManager
+     * @return the singleton instance of this {@link TransactionManager}
      */
     public static TransactionManager instance() {
         return INSTANCE;
     }
 
 
-
     @Override
     public Transaction startTransaction() {
         return TRANSACTION;
-    }
-
-    @Override
-    public void registerHandlers(ProcessingLifecycle processingLifecycle) {
-        // no-op
     }
 
     private static final Transaction TRANSACTION = new Transaction() {

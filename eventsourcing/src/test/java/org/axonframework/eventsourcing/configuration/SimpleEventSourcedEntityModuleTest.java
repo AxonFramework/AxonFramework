@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -51,10 +55,12 @@ class SimpleEventSourcedEntityModuleTest {
     private CriteriaResolver<CourseId> testCriteriaResolver;
     private EntityMetamodel<Course> testEntityModel;
     private EntityIdResolver<CourseId> testEntityIdResolver;
-    private AtomicBoolean constructedEntityModel;
-    private AtomicBoolean constructedEntityFactory;
-    private AtomicBoolean constructedCriteriaResolver;
-    private AtomicBoolean constructedEntityIdResolver;
+    private Snapshotter<CourseId, Course> testSnapshotter;
+    private AtomicBoolean constructedEntityModel = new AtomicBoolean(false);
+    private AtomicBoolean constructedEntityFactory = new AtomicBoolean(false);
+    private AtomicBoolean constructedCriteriaResolver = new AtomicBoolean(false);
+    private AtomicBoolean constructedEntityIdResolver = new AtomicBoolean(false);
+    private AtomicBoolean constructedSnapshotter = new AtomicBoolean(false);
 
     private EventSourcedEntityModule<CourseId, Course> testSubject;
 
@@ -71,10 +77,7 @@ class SimpleEventSourcedEntityModuleTest {
                                          .creationalCommandHandler(new QualifiedName("creational"),
                                                                    (command, context) -> MessageStream.empty().cast())
                                          .build();
-        constructedEntityFactory = new AtomicBoolean(false);
-        constructedCriteriaResolver = new AtomicBoolean(false);
-        constructedEntityModel = new AtomicBoolean(false);
-        constructedEntityIdResolver = new AtomicBoolean(false);
+        testSnapshotter = Snapshotter.noSnapshotter();
 
         testSubject = EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                               .messagingModel((c, b) -> {
@@ -92,7 +95,12 @@ class SimpleEventSourcedEntityModuleTest {
                                               .entityIdResolver(c -> {
                                                   constructedEntityIdResolver.set(true);
                                                   return testEntityIdResolver;
-                                              });
+                                              })
+                                              .snapshotter(c -> {
+                                                  constructedSnapshotter.set(true);
+                                                  return testSnapshotter;
+                                              })
+                                              .build();
     }
 
     @Test
@@ -124,7 +132,6 @@ class SimpleEventSourcedEntityModuleTest {
                                                    .entityFactory(null));
     }
 
-
     @Test
     void criteriaResolverThrowsNullPointerExceptionForNullCriteriaResolver() {
         //noinspection DataFlowIssue
@@ -147,8 +154,19 @@ class SimpleEventSourcedEntityModuleTest {
     }
 
     @Test
+    void snapshotterThrowsNullPointerExceptionForNullSnapshotter() {
+        assertThrows(NullPointerException.class,
+            () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
+                                          .messagingModel((c, b) -> testEntityModel)
+                                          .entityFactory(c -> testEntityFactory)
+                                          .criteriaResolver(c -> testCriteriaResolver)
+                                          .snapshotter(null)
+        );
+    }
+
+    @Test
     void entityNameCombinesIdentifierAndEntityTypeNames() {
-        String expectedEntityName = "Course#CourseId";
+        String expectedEntityName = Course.class.getName() + "#" + CourseId.class.getName();
 
         assertEquals(expectedEntityName, testSubject.entityName());
     }
@@ -166,18 +184,23 @@ class SimpleEventSourcedEntityModuleTest {
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEntityModel.get());
         assertTrue(constructedEntityIdResolver.get());
+        assertTrue(constructedSnapshotter.get());
     }
 
     @Test
     void registersAnEntityCommandHandlingComponentWithTheCommandBus() {
         CommandBus commandBus = mock(CommandBus.class);
         // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // Registers the NoOpSequencingPolicy, thus removing the CommandSequencingInterceptor.
         // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         EventSourcingConfigurer.create()
                                .componentRegistry(cr -> cr.registerComponent(
                                        CorrelationDataProviderRegistry.class,
                                        c -> new DefaultCorrelationDataProviderRegistry())
                                )
+                               .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
+                                                                             MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
+                                                                             c -> NoOpSequencingPolicy.INSTANCE))
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();

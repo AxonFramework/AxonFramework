@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,27 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.core.annotation.SourceId;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.Converter;
-import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -40,11 +44,14 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
+import static org.axonframework.messaging.core.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.
@@ -56,6 +63,7 @@ class AnnotatedEventHandlingComponentTest {
 
     private static final String AGGREGATE_TYPE = "test";
     private static final String AGGREGATE_IDENTIFIER = "id";
+    private final AtomicInteger callCount = new AtomicInteger();
     private TestEventHandler eventHandler;
     private EventHandlingComponent eventHandlingComponent;
 
@@ -63,6 +71,54 @@ class AnnotatedEventHandlingComponentTest {
     void beforeEach() {
         eventHandler = new TestEventHandler();
         eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
+    }
+
+    @Test
+    void subscribesEventHandlerWithEventName() {
+        Object annotatedEventHandler = new Object() {
+            @SuppressWarnings("unused")
+            @EventHandler(eventName = "myEventName")
+            public void handle(String event) {
+                // Unimportant
+            }
+        };
+        MessageTypeResolver messageTypeResolver = spy(new AnnotationMessageTypeResolver());
+        AnnotatedEventHandlingComponent<Object> annotatedComponent = new AnnotatedEventHandlingComponent<>(
+                annotatedEventHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()),
+                messageTypeResolver,
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedEvents = annotatedComponent.supportedEvents();
+        assertThat(supportedEvents).hasSize(1);
+        assertThat(supportedEvents).contains(new QualifiedName("myEventName"));
+        verifyNoInteractions(messageTypeResolver);
+    }
+
+    @Test
+    void subscribesEventHandlerThroughMessageTypeResolverWhenEventNameIsEmpty() {
+        QualifiedName expectedName = new QualifiedName("defaultName");
+
+        Object annotatedEventHandler = new Object() {
+            @SuppressWarnings({"unused", "DefaultAnnotationParam"})
+            @EventHandler(eventName = "") // Deliberately empty to give control to the MessageTypeResolver
+            public void handle(String event) {
+                // Unimportant
+            }
+        };
+        AnnotatedEventHandlingComponent<Object> annotatedComponent = new AnnotatedEventHandlingComponent<>(
+                annotatedEventHandler,
+                ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()),
+                payloadType -> Optional.of(new MessageType(expectedName)),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
+        );
+
+        Set<QualifiedName> supportedEvents = annotatedComponent.supportedEvents();
+        assertThat(supportedEvents).hasSize(1);
+        assertThat(supportedEvents).contains(expectedName);
     }
 
     @Test
@@ -276,7 +332,7 @@ class AnnotatedEventHandlingComponentTest {
         void rejectsNullEvent() {
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventHandlingComponent.handle(null, messageProcessingContext(null)),
+                         () -> eventHandlingComponent.handle((EventMessage) null, messageProcessingContext(null)),
                          "Event Message may not be null");
         }
 
@@ -345,7 +401,8 @@ class AnnotatedEventHandlingComponentTest {
             var event = eventMessage(0);
 
             // when
-            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, messageProcessingContext(event));
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event,
+                                                                                  messageProcessingContext(event));
 
             // then
             assertThat(sequenceIdentifier).isEqualTo("id");
@@ -397,6 +454,371 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
+    @Nested
+    class GivenAnAnnotatedInterfaceMethod {
+
+        interface I {
+
+            @EventHandler
+            void handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+
+            class T implements I {
+
+                @Override
+                @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+
+            class T implements I {
+
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInterfaceMethod {
+
+        interface I {
+
+            void handle(Integer event);
+        }
+
+        @Nested
+        class WhenImplementedByAnnotedInstanceMethod {
+
+            class T implements I {
+
+                @Override
+                @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+        }
+
+        @Nested
+        class WhenImplementedByUnannotedInstanceMethod {
+
+            class T implements I {
+
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new T());
+            }
+
+            @Nested
+            class AndOverriddenAndAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    @EventHandler
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldCallHandlerOnlyOnce() {
+                    assertCalledOnlyOnce(new U());
+                }
+            }
+
+            @Nested
+            class AndOverriddenButNotAnnotatedInASubclass {
+
+                class U extends T {
+
+                    @Override
+                    public void handle(Integer event) {
+                        callCount.incrementAndGet();
+                    }
+                }
+
+                @Test
+                void shouldNotCallAnything() {
+                    assertNotCalled(new U());
+                }
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnAnnotatedInstanceMethod {
+
+        class T {
+
+            @EventHandler
+            public void handle(Integer event) {
+                callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldCallHandlerOnlyOnce() {
+            assertCalledOnlyOnce(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+
+            class U extends T {
+
+                @Override
+                @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenNotOverriddenInSubclass {
+
+            class U extends T {
+
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+
+            class U extends T {
+
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+    }
+
+    @Nested
+    class GivenAnUnannotatedInstanceMethod {
+
+        class T {
+
+            public void handle(Integer event) {
+                callCount.incrementAndGet();
+            }
+        }
+
+        @Test
+        void shouldNotCallAnything() {
+            assertNotCalled(new T());
+        }
+
+        @Nested
+        class WhenOverriddenAndAnnotatedInASubclass {
+
+            class U extends T {
+
+                @Override
+                @EventHandler
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldCallHandlerOnlyOnce() {
+                assertCalledOnlyOnce(new U());
+            }
+        }
+
+        @Nested
+        class WhenOverriddenButNotAnnotatedInASubclass {
+
+            class U extends T {
+
+                @Override
+                public void handle(Integer event) {
+                    callCount.incrementAndGet();
+                }
+            }
+
+            @Test
+            void shouldNotCallAnything() {
+                assertNotCalled(new U());
+            }
+        }
+    }
+
+    private void assertCalledOnlyOnce(Object handlerInstance) {
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(
+                handlerInstance);
+        EventMessage event = eventMessage(0);
+
+        annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
+
+        assertThat(callCount.get()).isEqualTo(1);
+    }
+
+    private void assertNotCalled(Object handlerInstance) {
+        AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent = annotatedEventHandlingComponent(
+                handlerInstance);
+        EventMessage event = eventMessage(0);
+
+        annotatedEventHandlingComponent.handle(event, messageProcessingContext(event));
+
+        assertThat(callCount.get()).isEqualTo(0);
+    }
+
     private static class ErrorThrowingEventHandler {
 
         @EventHandler
@@ -430,19 +852,19 @@ class AnnotatedEventHandlingComponentTest {
         void handleNotNamed() {
             handledNotNamed++;
         }
-
     }
 
-    @Nonnull
-    private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
+        private @NonNull static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
                 eventHandler,
-                ClasspathParameterResolverFactory.forClass(eventHandler.getClass())
+                ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(eventHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingEventConverter(PassThroughConverter.INSTANCE)
         );
     }
 
-    @Nonnull
-    private static ProcessingContext messageProcessingContext(EventMessage event) {
+    static @NonNull ProcessingContext messageProcessingContext(EventMessage event) {
         var payload = event.payloadAs(Integer.class);
         return StubProcessingContext
                 .withComponent(Converter.class, PassThroughConverter.INSTANCE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.tracing;
 
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,16 +201,16 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createRootTrace(Supplier<String> operationNameSupplier) {
+    public @NonNull Span createRootTrace(@NonNull Supplier<String> operationNameSupplier) {
         TestSpan span = new TestSpan(TestSpanType.ROOT, operationNameSupplier.get(), null);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+    public @NonNull Span createHandlerSpan(@NonNull Supplier<String> operationNameSupplier, @NonNull Message parentMessage,
                                   boolean isChildTrace,
-                                  Message... linkedParents) {
+                                  Message @Nullable... linkedParents) {
         TestSpan span = new TestSpan(isChildTrace ? TestSpanType.HANDLER_CHILD : TestSpanType.HANDLER_LINK,
                                      operationNameSupplier.get(),
                                      parentMessage);
@@ -217,29 +219,29 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
-                                   Message... linkedSiblings) {
+    public @NonNull Span createDispatchSpan(@NonNull Supplier<String> operationNameSupplier, @NonNull Message parentMessage,
+                                            Message... linkedSiblings) {
         TestSpan span = new TestSpan(TestSpanType.DISPATCH, operationNameSupplier.get(), parentMessage);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier) {
+    public @NonNull Span createInternalSpan(@NonNull Supplier<String> operationNameSupplier) {
         TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationNameSupplier.get(), null);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
+    public @NonNull Span createInternalSpan(@NonNull Supplier<String> operationNameSupplier, @NonNull Message message) {
         TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationNameSupplier.get(), message);
         createdSpans.add(span);
         return span;
     }
 
     @Override
-    public void registerSpanAttributeProvider(SpanAttributesProvider provider) {
+    public void registerSpanAttributeProvider(@NonNull SpanAttributesProvider provider) {
 
     }
 
@@ -296,7 +298,7 @@ public class TestSpanFactory implements SpanFactory {
         }
 
         @Override
-        public Span start() {
+        public @NonNull Span start() {
             started = true;
             synchronized (activeSpan) {
                 activeSpan.addFirst(this);
@@ -306,7 +308,7 @@ public class TestSpanFactory implements SpanFactory {
         }
 
         @Override
-        public SpanScope makeCurrent() {
+        public @NonNull SpanScope makeCurrent() {
             return new TestSpanScope(scopeCount.incrementAndGet());
         }
 
@@ -342,14 +344,14 @@ public class TestSpanFactory implements SpanFactory {
         }
 
         @Override
-        public Span recordException(Throwable t) {
+        public @NonNull Span recordException(@NonNull Throwable t) {
             logger.debug("Recorded exception for span with name {}", name, t);
             this.exception = t;
             return this;
         }
 
         @Override
-        public Span addAttribute(String key, String value) {
+        public @NonNull Span addAttribute(@NonNull String key, @Nullable String value) {
             attributes.put(key, value);
             return this;
         }

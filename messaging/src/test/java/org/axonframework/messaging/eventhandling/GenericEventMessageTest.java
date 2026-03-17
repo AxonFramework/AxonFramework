@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
@@ -53,12 +53,12 @@ class GenericEventMessageTest extends MessageTestSuite<EventMessage> {
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull EventMessage result) {
+    protected void validateDefaultMessage(@NonNull EventMessage result) {
         assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull EventMessage actual, @Nonnull EventMessage result) {
+    protected void validateMessageSpecifics(@NonNull EventMessage actual, @NonNull EventMessage result) {
         assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 

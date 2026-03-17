@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
@@ -27,7 +24,9 @@ import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.EntityEvolvingComponent;
 import org.axonframework.modelling.StateEvolvingException;
@@ -62,9 +61,9 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param converter           The converter to use for converting event payloads to the handler's expected type.
      * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
-                                                  @Nonnull EventConverter converter,
-                                                  @Nonnull MessageTypeResolver messageTypeResolver) {
+    public AnnotationBasedEntityEvolvingComponent(Class<E> entityType,
+                                                  EventConverter converter,
+                                                  MessageTypeResolver messageTypeResolver) {
         this(entityType,
              AnnotatedHandlerInspector.inspectType(entityType,
                                                    ClasspathParameterResolverFactory.forClass(entityType),
@@ -81,10 +80,10 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
      * @param converter           The converter to use for converting event payloads to the handler's expected type.
      * @param messageTypeResolver The resolver to use for resolving the event message type.
      */
-    public AnnotationBasedEntityEvolvingComponent(@Nonnull Class<E> entityType,
-                                                  @Nonnull AnnotatedHandlerInspector<E> inspector,
-                                                  @Nonnull EventConverter converter,
-                                                  @Nonnull MessageTypeResolver messageTypeResolver
+    public AnnotationBasedEntityEvolvingComponent(Class<E> entityType,
+                                                  AnnotatedHandlerInspector<E> inspector,
+                                                  EventConverter converter,
+                                                  MessageTypeResolver messageTypeResolver
     ) {
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.inspector = requireNonNull(inspector, "The Annotated Handler Inspector must not be null.");
@@ -93,14 +92,14 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     }
 
     @Override
-    public E evolve(@Nonnull E entity,
-                    @Nonnull EventMessage event,
-                    @Nonnull ProcessingContext context) {
+    public E evolve(E entity,
+                    EventMessage event,
+                    ProcessingContext context) {
         try {
             var listenerType = entity.getClass();
 
             var eventTypeName = event.type().name();
-            var handlers = inspector.getHandlers(listenerType)
+            var handlers = inspector.getHandlers(listenerType).stream()
                                     .filter(h -> messageTypeResolver.resolveOrThrow(h.payloadType())
                                                                     .name().equals(eventTypeName))
                                     .toList();
@@ -131,18 +130,17 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
     private E entityFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialEntityFromStream, E existing) {
         if (potentialEntityFromStream != null) {
             var resultPayload = potentialEntityFromStream.message().payload();
-            if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
+            if (resultPayload != null && entityType.isAssignableFrom(resultPayload.getClass())) {
                 //noinspection unchecked
-                return (E) existing.getClass().cast(resultPayload);
+                return (E) entityType.cast(resultPayload);
             }
         }
         return existing;
     }
 
-    @Nonnull
     @Override
     public Set<QualifiedName> supportedEvents() {
-        return inspector.getHandlers(entityType)
+        return inspector.getHandlers(entityType).stream()
                         .filter(Objects::nonNull)
                         .map(MessageHandlingMember::payloadType)
                         .map(QualifiedName::new)

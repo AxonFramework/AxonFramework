@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -54,12 +53,12 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @param delegate The {@link CommandBus} to which commands will be dispatched.
      */
-    public RecordingCommandBus(@Nonnull CommandBus delegate) {
+    public RecordingCommandBus(CommandBus delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate CommandBus may not be null");
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
@@ -71,12 +70,12 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
+    public CommandBus subscribe(QualifiedName name, CommandHandler commandHandler) {
         return delegate.subscribe(name, commandHandler);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 
@@ -105,7 +104,7 @@ public class RecordingCommandBus implements CommandBus {
      * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
      */
     @Nullable
-    public Message resultOf(@Nonnull CommandMessage command) {
+    public Message resultOf(CommandMessage command) {
         Objects.requireNonNull(command, "Command Message may not be null.");
         return recorded.get(command);
     }

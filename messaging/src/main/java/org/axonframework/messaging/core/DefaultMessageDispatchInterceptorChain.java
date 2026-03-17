@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -40,7 +39,7 @@ import java.util.function.BiFunction;
 public class DefaultMessageDispatchInterceptorChain<M extends Message>
         implements MessageDispatchInterceptorChain<M> {
 
-    private final BiFunction<? super M, ProcessingContext, MessageStream<?>> interceptingDispatcher;
+    private final BiFunction<? super M, @Nullable ProcessingContext, MessageStream<?>> interceptingDispatcher;
 
     /**
      * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors} without a
@@ -49,7 +48,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param interceptors The list of dispatch interceptors that are part of this chain.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors
+            Collection<MessageDispatchInterceptor<? super M>> interceptors
     ) {
         this(interceptors, (message, processingContext) -> MessageStream.just(message).cast());
     }
@@ -62,8 +61,8 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
      * @param terminal     function to be invoked after the chain processing.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors,
-            @Nonnull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
+            Collection<MessageDispatchInterceptor<? super M>> interceptors,
+            BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
         Iterator<MessageDispatchInterceptor<? super M>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
@@ -76,8 +75,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     }
 
     @Override
-    @Nonnull
-    public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+    public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
         return interceptingDispatcher.apply(message, context);
     }
 
@@ -86,7 +84,7 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             BiFunction<M, ProcessingContext, MessageStream<?>> {
 
         private final MessageDispatchInterceptor<? super M> interceptor;
-        private final BiFunction<? super M, ProcessingContext, MessageStream<?>> next;
+        private final BiFunction<? super M, @Nullable ProcessingContext, MessageStream<?>> next;
 
         private InterceptingDispatcher(MessageDispatchInterceptor<? super M> interceptor,
                                        BiFunction<? super M, ProcessingContext, MessageStream<?>> next) {
@@ -94,9 +92,8 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             this.next = next;
         }
 
-        @Nonnull
         @Override
-        public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+        public MessageStream<?> proceed(M message, @Nullable ProcessingContext context) {
             return next.apply(message, context);
         }
 

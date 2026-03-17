@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -45,6 +44,5 @@ public interface EntityIdResolver<ID> {
      * @return The id of the entity.
      * @throws EntityIdResolutionException When the id could not be resolved.
      */
-    @Nonnull
-    ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) throws EntityIdResolutionException;
+    ID resolve(Message message, ProcessingContext context) throws EntityIdResolutionException;
 }

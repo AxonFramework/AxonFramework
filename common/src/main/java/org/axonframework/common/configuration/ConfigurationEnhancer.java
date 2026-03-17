@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.configuration;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing an enhancement of the {@link ComponentRegistry} from the Axon Framework configuration API,
@@ -50,7 +48,7 @@ public interface ConfigurationEnhancer {
      *
      * @param registry The registry instance to enhance.
      */
-    void enhance(@Nonnull ComponentRegistry registry);
+    void enhance(ComponentRegistry registry);
 
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventstreaming.Tag;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
@@ -103,6 +100,39 @@ public final class AggregateBasedEventStorageEngineUtils {
      * @param isConflictException A predicate used to check if the exception is a conflict.
      * @return The translated exception.
      */
+    public static Exception translateConflictException(
+            ConsistencyMarker consistencyMarker,
+            Exception exception,
+            Predicate<Throwable> isConflictException
+    ) {
+        Throwable root = exception;
+
+        while (root != null && !isConflictException.test(root)) {
+            root = root.getCause();
+        }
+
+        if (root == null) {
+            // no conflict detected, return original exception
+            return exception;
+        }
+
+        AppendEventsTransactionRejectedException translated = conflictingEventsDetected(consistencyMarker);
+
+        translated.addSuppressed(exception);
+
+        return translated;
+    }
+
+    /**
+     * Translates the given {@code Throwable} into an {@link AppendEventsTransactionRejectedException} if it is
+     * identified as a conflict through the given {@code isConflictException} predicate. If the exception is not a
+     * conflict, it recursively checks the cause of the exception.
+     *
+     * @param consistencyMarker   The consistency marker used to identify conflicting events.
+     * @param e                   The exception to translate.
+     * @param isConflictException A predicate used to check if the exception is a conflict.
+     * @return The translated exception.
+     */
     public static Throwable translateConflictException(
             ConsistencyMarker consistencyMarker,
             Throwable e,
@@ -122,69 +152,6 @@ public final class AggregateBasedEventStorageEngineUtils {
             }
         }
         return e;
-    }
-
-    /**
-     * Helper class that tracks the sequence of events for different aggregates and manages the consistency marker for
-     * the aggregates.
-     */
-    public static final class AggregateSequencer {
-
-        private final Map<String, AtomicLong> aggregateSequences;
-        private AggregateBasedConsistencyMarker consistencyMarker;
-
-        /**
-         * Constructs a new {@code AggregateSequencer} with the specified aggregate sequences and consistency marker.
-         *
-         * @param aggregateSequences A map of aggregate identifiers to atomic sequences.
-         * @param consistencyMarker  The consistency marker for this sequencer.
-         */
-        private AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
-                                   AggregateBasedConsistencyMarker consistencyMarker) {
-            this.aggregateSequences = aggregateSequences;
-            this.consistencyMarker = consistencyMarker;
-        }
-
-        /**
-         * Creates a new {@code AggregateSequencer} with the provided consistency marker.
-         *
-         * @param consistencyMarker The consistency marker for the new sequencer.
-         * @return A new {@code AggregateSequencer}.
-         */
-        public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
-            return new AggregateSequencer(new HashMap<>(), consistencyMarker);
-        }
-
-        /**
-         * Forwarded the consistency marker by the state of aggregate sequences.
-         *
-         * @return The new consistency marker after forwarding
-         * @see AggregateBasedConsistencyMarker#forwarded(String, long)
-         */
-        public AggregateBasedConsistencyMarker forwarded() {
-            var newConsistencyMarker = consistencyMarker;
-            for (var aggSeq : aggregateSequences.entrySet()) {
-                newConsistencyMarker = newConsistencyMarker
-                        .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
-            }
-            consistencyMarker = newConsistencyMarker;
-            return newConsistencyMarker;
-        }
-
-        /**
-         * Get and increment the sequence for the given aggregate identifier. If the aggregate does not exist, it is
-         * initialized with the consistency marker's position for that identifier.
-         *
-         * @param aggregateIdentifier The identifier of the aggregate to get and increment the sequence for
-         * @return The atomic long sequence for the aggregate
-         */
-        public long incrementAndGetSequenceOf(String aggregateIdentifier) {
-            var aggregateSequence = aggregateSequences.computeIfAbsent(
-                    aggregateIdentifier,
-                    i -> new AtomicLong(consistencyMarker.positionOf(i))
-            );
-            return aggregateSequence.incrementAndGet();
-        }
     }
 
     private AggregateBasedEventStorageEngineUtils() {

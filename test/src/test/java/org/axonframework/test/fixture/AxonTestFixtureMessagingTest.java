@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,29 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.common.configuration.ComponentRegistry;
-import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +63,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -77,7 +77,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -90,7 +90,7 @@ class AxonTestFixtureMessagingTest {
             fixture.when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "name-1", 1));
         }
 
         @Test
@@ -216,6 +216,135 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void givenSingleEventMessageWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessage was passed through correctly (not wrapped)
+            // First event is from Given phase, second event is from command handler
+            assertEquals(2, receivedEvents.size());
+            var givenPhaseEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("my-studentId-1", ((StudentNameChangedEvent) givenPhaseEvent.payload()).id());
+            assertEquals("name-1", ((StudentNameChangedEvent) givenPhaseEvent.payload()).name());
+        }
+
+        @Test
+        void givenEventsWithEventMessagesWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .events(
+                           studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
+                           studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
+                   )
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessages were passed through correctly (not wrapped)
+            // First two events are from Given phase, third event is from command handler
+            assertEquals(3, receivedEvents.size());
+            var firstEvent = (EventMessage) receivedEvents.get(0);
+            var secondEvent = (EventMessage) receivedEvents.get(1);
+            assertEquals("name-1", ((StudentNameChangedEvent) firstEvent.payload()).name());
+            assertEquals("name-2", ((StudentNameChangedEvent) secondEvent.payload()).name());
+        }
+
+        @Test
+        void givenEventsWithListOfEventMessagesWhenCommandThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<EventMessage>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var givenEventMessage1 = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
+            var givenEventMessage2 = studentNameChangedEventMessage("my-studentId-1", "name-2", 2);
+            var givenEventMessages = List.of(givenEventMessage1, givenEventMessage2);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .events(givenEventMessages)
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .success();
+
+            // then - verify EventMessages were passed through correctly (not wrapped)
+            // First two events are from Given phase, third event is from command handler
+            assertEquals(3, receivedEvents.size());
+            // Verify the exact same EventMessage instances were received (not wrapped)
+            assertSame(givenEventMessage1, receivedEvents.get(0));
+            assertSame(givenEventMessage2, receivedEvents.get(1));
+        }
+
+        @Test
+        void givenEventMessageWithAdditionalMetadataThenMetadataIsMerged() {
+            // given
+            var configurer = messagingConfigurer();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            var receivedEvents = new ArrayList<EventMessage>();
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var originalEventMessage = new GenericEventMessage(
+                    new MessageType(StudentNameChangedEvent.class),
+                    new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                    Metadata.with("original-key", "original-value")
+            );
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .event(originalEventMessage, Metadata.with("additional-key", "additional-value"))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .then()
+                   .success();
+
+            // then - verify metadata was merged
+            assertEquals(2, receivedEvents.size());
+            var receivedEvent = receivedEvents.getFirst();
+            assertEquals("original-value", receivedEvent.metadata().get("original-key"));
+            assertEquals("additional-value", receivedEvent.metadata().get("additional-key"));
+        }
+
+        @Test
         void givenEventWhenCommandThenExpectEvents() {
             var configurer = messagingConfigurer();
             var studentEvents = new ArrayList<>();
@@ -247,10 +376,8 @@ class AxonTestFixtureMessagingTest {
                    .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
         }
 
-        @Nonnull
-        private static SimpleCommandBus aCommandBus() {
-            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE),
-                                        Collections.emptyList());
+        static @NonNull SimpleCommandBus aCommandBus() {
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
         }
 
         @Test
@@ -506,6 +633,140 @@ class AxonTestFixtureMessagingTest {
                    .noCommands();
         }
 
+        @Test
+        void whenEventsWithPayloadVarargsThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .events(
+                           new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                           new StudentNameChangedEvent("my-studentId-1", "name-2", 2)
+                   )
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(2, receivedEvents.size());
+        }
+
+        @Test
+        void whenEventsWithEventMessageVarargsThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .events(
+                           studentNameChangedEventMessage("my-studentId-1", "name-1", 1),
+                           studentNameChangedEventMessage("my-studentId-1", "name-2", 2)
+                   )
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(2, receivedEvents.size());
+        }
+
+        @Test
+        void whenSingleEventWithEventMessageThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("my-studentId-1", ((StudentNameChangedEvent) receivedEvent.payload()).id());
+        }
+
+        @Test
+        void whenSingleEventWithMapMetadataThenSuccess() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1), Map.of("key", "value"))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = (EventMessage) receivedEvents.getFirst();
+            assertEquals("value", receivedEvent.metadata().get("key"));
+        }
+
+        @Test
+        void whenEventMessageWithAdditionalMetadataThenMetadataIsMerged() {
+            // given
+            var configurer = messagingConfigurer();
+            var receivedEvents = new ArrayList<EventMessage>();
+            var fixture = AxonTestFixture.with(configurer);
+
+            var originalEventMessage = new GenericEventMessage(
+                    new MessageType(StudentNameChangedEvent.class),
+                    new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                    Metadata.with("original-key", "original-value")
+            );
+
+            // when
+            fixture.given()
+                   .execute(c -> c.getComponent(SubscribableEventSource.class).subscribe((events, context) -> {
+                       receivedEvents.addAll(events);
+                       return CompletableFuture.completedFuture(null);
+                   }))
+                   .when()
+                   .event(originalEventMessage, Metadata.with("additional-key", "additional-value"))
+                   .then()
+                   .success()
+                   .noCommands();
+
+            // then - verify metadata was merged
+            assertEquals(1, receivedEvents.size());
+            var receivedEvent = receivedEvents.getFirst();
+            assertEquals("original-value", receivedEvent.metadata().get("original-key"));
+            assertEquals("additional-value", receivedEvent.metadata().get("additional-key"));
+        }
+
         @Nested
         class AssertionErrors {
 
@@ -646,7 +907,7 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .events(studentNameChangedEventMessage("my-studentId-1", "another-name", 1));
+                   .events(studentNameChangedEvent("my-studentId-1", "another-name", 1));
         }
     }
 

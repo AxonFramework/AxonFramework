@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.messaging.eventhandling.annotation;
 
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
+
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
@@ -57,9 +55,8 @@ public final class AggregateTypeParameterResolverFactory
      */
     static class AggregateTypeParameterResolver implements ParameterResolver<String> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<String> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<String> resolveParameterValue(ProcessingContext context) {
             var aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
             if (aggregateType != null) {
                 return CompletableFuture.completedFuture(aggregateType);
@@ -68,7 +65,7 @@ public final class AggregateTypeParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY);
         }
     }

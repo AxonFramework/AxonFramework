@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Objects;
 import java.util.Set;
@@ -43,20 +44,14 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
      *
      * @param delegate The instance to delegate calls to.
      */
-    public DelegatingEventHandlingComponent(@Nonnull EventHandlingComponent delegate) {
+    public DelegatingEventHandlingComponent(EventHandlingComponent delegate) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         return delegate.handle(event, context);
-    }
-
-    @Override
-    public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return delegate.subscribe(name, eventHandler);
     }
 
     @Override
@@ -65,13 +60,29 @@ public abstract class DelegatingEventHandlingComponent implements EventHandlingC
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event,
+                                        ProcessingContext context) {
         return delegate.sequenceIdentifierFor(event, context);
+    }
+
+    @Override
+    public boolean supportsReset() {
+        return delegate.supportsReset();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                                        ProcessingContext context) {
+        return delegate.handle(resetContext, context);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
     }
 }

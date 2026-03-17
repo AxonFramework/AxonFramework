@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
@@ -112,9 +112,9 @@ class DistributedCommandBusTest {
         private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
-        @Nonnull
+        @NonNull
         @Override
-        public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+        public CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                                 @Nullable ProcessingContext processingContext) {
             CompletableFuture<CommandResultMessage> future = new CompletableFuture<>();
             dispatchedCommands.put(command, future);
@@ -122,18 +122,18 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+        public @NonNull CompletableFuture<Void> subscribe(@NonNull QualifiedName commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        public boolean unsubscribe(@Nonnull QualifiedName commandName) {
+        public boolean unsubscribe(@NonNull QualifiedName commandName) {
             return subscriptions.remove(commandName) != null;
         }
 
         @Override
-        public void onIncomingCommand(@Nonnull Handler handler) {
+        public void onIncomingCommand(@NonNull Handler handler) {
             this.handler.set(handler);
         }
 
@@ -142,7 +142,7 @@ class DistributedCommandBusTest {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("Not required for testing");
         }
     }

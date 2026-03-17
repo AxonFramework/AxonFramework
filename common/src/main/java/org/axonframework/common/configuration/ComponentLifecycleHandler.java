@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.configuration;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -50,5 +48,5 @@ public interface ComponentLifecycleHandler<C> {
      * @param component     The instance of the component.
      * @return A future that completes when the lifecycle operation has terminated.
      */
-    CompletableFuture<?> run(@Nonnull Configuration configuration, @Nonnull C component);
+    CompletableFuture<?> run(Configuration configuration, C component);
 }

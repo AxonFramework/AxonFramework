@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.extension.spring.config.ProcessorModuleFactory;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Auto configuration for event processors.
@@ -39,27 +45,25 @@ public class EventProcessingAutoConfiguration {
     /**
      * Constructs event processing settings.
      *
-     * @param properties event processor properties.
-     * @return event processor settings keyed by processor name.
+     * @param environment The spring boot environment.
+     * @return The event processor settings keyed by processor name.
+     * @see EventProcessorProperties#getProcessors(Environment)
      */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(EventProcessorProperties properties) {
-        Map<String, EventProcessorSettings> map = properties
-                .getProcessors()
-                .entrySet()
-                .stream()
-                .collect(
-                        Collectors.toMap(
-                                java.util.Map.Entry::getKey,
-                                java.util.Map.Entry::getValue
-                        )
-                );
-        // supply a default setting
-        // this gives us the location for the default values, and allows to overwrite them
-        // via properties by the user.
-        if (!map.containsKey(EventProcessorSettings.DEFAULT)) {
-            map.put(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
-        }
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(Environment environment) {
+        Map<String, EventProcessorSettings> map = EventProcessorProperties.getProcessors(environment);
+        // Retain the default behavior
+        map.putIfAbsent(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
+
         return new EventProcessorSettings.MapWrapper(map);
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    ProcessorModuleFactory processorModuleFactory(
+            List<EventProcessorDefinition> eventProcessorDefinitions,
+            EventProcessorSettings.MapWrapper eventProcessorSettings
+    ) {
+        return new DefaultProcessorModuleFactory(eventProcessorDefinitions, eventProcessorSettings.settings());
     }
 }

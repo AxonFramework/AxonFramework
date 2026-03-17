@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -192,7 +192,7 @@ class DefaultComponentRegistryTest {
         ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
 
@@ -204,14 +204,14 @@ class DefaultComponentRegistryTest {
         //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
         ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
         });
         ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(@NonNull ComponentRegistry registry) {
                 // Not important, so do nothing.
             }
 
@@ -1188,6 +1188,171 @@ class DefaultComponentRegistryTest {
                 }
             }
         }
+
+        @Nested
+        class RetrieveByTypeReference {
+
+            @Test
+            void getOptionalComponentByTypeRef() {
+                // given
+                GenericServiceImpl<String> exStringService = new GenericServiceImpl<>("value-a");
+                GenericServiceImpl<Integer> exIntegerService = new GenericServiceImpl<>(124);
+
+                ComponentDefinition<GenericServiceInterface<String>> stringServiceDef =
+                        ComponentDefinition.ofType(new TypeReference<GenericServiceInterface<String>>() {
+                                           })
+                                           .withInstance(exStringService);
+                ComponentDefinition<GenericServiceInterface<Integer>> integerServiceDef =
+                        ComponentDefinition.ofType(new TypeReference<GenericServiceInterface<Integer>>() {
+                                           })
+                                           .withInstance(exIntegerService);
+
+                testSubject.registerComponent(stringServiceDef)
+                           .registerComponent(integerServiceDef);
+
+                Configuration config = testSubject.build(mock());
+
+                // when
+                Optional<GenericServiceInterface<String>> acStringServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+                });
+                GenericServiceInterface<String> acStringService = config.getComponent(new TypeReference<>() {
+                });
+                Optional<GenericServiceInterface<Integer>> acIntegerServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+                });
+                GenericServiceInterface<Integer> acIntegerService = config.getComponent(new TypeReference<>() {
+                });
+                Optional<GenericServiceInterface<Double>> acDoubleServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+                });
+
+                // then
+                assertTrue(acStringServiceOptional.isPresent());
+                assertEquals(exStringService, acStringServiceOptional.get());
+                assertEquals(exStringService, acStringService);
+                assertEquals("value-a", acStringService.getValue());
+
+                assertTrue(acIntegerServiceOptional.isPresent());
+                assertEquals(exIntegerService, acIntegerServiceOptional.get());
+                assertEquals(exIntegerService, acIntegerService);
+                assertEquals(124, acIntegerService.getValue());
+
+                assertFalse(acDoubleServiceOptional.isPresent());
+            }
+        }
+
+        @Test
+        void getComponentByTypeRefAndName() {
+            // given
+            GenericServiceImpl<String> exStringService = new GenericServiceImpl<>("value-a");
+            GenericServiceImpl<Integer> exIntegerService = new GenericServiceImpl<>(124);
+            String exComponentName = "service";
+
+            ComponentDefinition<GenericServiceInterface<String>> stringServiceDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericServiceInterface<String>>() {
+                                       }, exComponentName)
+                                       .withInstance(exStringService);
+            ComponentDefinition<GenericServiceInterface<Integer>> integerServiceDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericServiceInterface<Integer>>() {
+                                       }, exComponentName)
+                                       .withInstance(exIntegerService);
+
+            testSubject.registerComponent(stringServiceDef)
+                       .registerComponent(integerServiceDef);
+
+            Configuration config = testSubject.build(mock());
+
+            // when
+            Optional<GenericServiceInterface<String>> acStringServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+            }, exComponentName);
+            GenericServiceInterface<String> acStringService = config.getComponent(new TypeReference<>() {
+            }, exComponentName);
+            Optional<GenericServiceInterface<Integer>> acIntegerServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+            }, exComponentName);
+            GenericServiceInterface<Integer> acIntegerService = config.getComponent(new TypeReference<>() {
+            }, exComponentName);
+
+            // then
+            assertTrue(acStringServiceOptional.isPresent());
+            assertEquals(exStringService, acStringServiceOptional.get());
+            assertEquals(exStringService, acStringService);
+            assertEquals("value-a", acStringService.getValue());
+
+            assertTrue(acIntegerServiceOptional.isPresent());
+            assertEquals(exIntegerService, acIntegerServiceOptional.get());
+            assertEquals(exIntegerService, acIntegerService);
+            assertEquals(124, acIntegerService.getValue());
+        }
+
+        @Test
+        void hasComponentByTypeRef() {
+            // given
+            GenericServiceImpl<String> exStringService = new GenericServiceImpl<>("value-a");
+            GenericServiceImpl<Integer> exIntegerService = new GenericServiceImpl<>(124);
+
+            ComponentDefinition<GenericServiceInterface<String>> stringServiceDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericServiceInterface<String>>() {
+                                       })
+                                       .withInstance(exStringService);
+            ComponentDefinition<GenericServiceInterface<Integer>> integerServiceDef =
+                    ComponentDefinition.ofType(new TypeReference<GenericServiceInterface<Integer>>() {
+                                       })
+                                       .withInstance(exIntegerService);
+
+            testSubject.registerComponent(stringServiceDef)
+                       .registerComponent(integerServiceDef);
+
+            Configuration config = testSubject.build(mock());
+
+            // when / then
+            assertTrue(config.hasComponent(new TypeReference<GenericServiceInterface<String>>() {
+            }));
+            assertTrue(config.hasComponent(new TypeReference<GenericServiceInterface<Integer>>() {
+            }));
+            assertFalse(config.hasComponent(new TypeReference<GenericServiceInterface<Double>>() {
+            }));
+        }
+
+        @Test
+        void hasComponentByTypeRefAndName() {
+            // given
+            GenericServiceImpl<String> exStringService = new GenericServiceImpl<>("value-a");
+            GenericServiceImpl<Integer> exIntegerService = new GenericServiceImpl<>(124);
+            String exComponentName = "service";
+
+            ComponentDefinition<GenericServiceInterface<String>> stringServiceDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericServiceInterface<String>>() {
+                                       }, exComponentName)
+                                       .withInstance(exStringService);
+            ComponentDefinition<GenericServiceInterface<Integer>> integerServiceDef =
+                    ComponentDefinition.ofTypeAndName(new TypeReference<GenericServiceInterface<Integer>>() {
+                                       }, exComponentName)
+                                       .withInstance(exIntegerService);
+
+            testSubject.registerComponent(stringServiceDef)
+                       .registerComponent(integerServiceDef);
+
+            Configuration config = testSubject.build(mock());
+
+            // when
+            Optional<GenericServiceInterface<String>> acStringServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+            }, exComponentName);
+            GenericServiceInterface<String> acStringService = config.getComponent(new TypeReference<>() {
+            }, exComponentName);
+            Optional<GenericServiceInterface<Integer>> acIntegerServiceOptional = config.getOptionalComponent(new TypeReference<>() {
+            }, exComponentName);
+            GenericServiceInterface<Integer> acIntegerService = config.getComponent(new TypeReference<>() {
+            }, exComponentName);
+
+            // then
+            assertTrue(acStringServiceOptional.isPresent());
+            assertEquals(exStringService, acStringServiceOptional.get());
+            assertEquals(exStringService, acStringService);
+            assertEquals("value-a", acStringService.getValue());
+
+            assertTrue(acIntegerServiceOptional.isPresent());
+            assertEquals(exIntegerService, acIntegerServiceOptional.get());
+            assertEquals(exIntegerService, acIntegerService);
+            assertEquals(124, acIntegerService.getValue());
+        }
     }
 
     @Nested
@@ -1327,12 +1492,12 @@ class DefaultComponentRegistryTest {
             // Register a component factory that can create components on-demand
             ComponentFactory<ServiceInterface> factory = new ComponentFactory<>() {
                 @Override
-                public Class<ServiceInterface> forType() {
+                public @NonNull Class<ServiceInterface> forType() {
                     return ServiceInterface.class;
                 }
 
                 @Override
-                public Optional<Component<ServiceInterface>> construct(String name, Configuration config) {
+                public @NonNull Optional<Component<ServiceInterface>> construct(@NonNull String name, @NonNull Configuration config) {
                     // Factory can create components with names like "factory-1", "factory-2", etc.
                     if (name != null && name.startsWith("factory-")) {
                         return Optional.of(new LazyInitializedComponentDefinition<>(
@@ -1344,12 +1509,12 @@ class DefaultComponentRegistryTest {
                 }
 
                 @Override
-                public void registerShutdownHandlers(LifecycleRegistry registry) {
+                public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
                     // No shutdown needed for this test
                 }
 
                 @Override
-                public void describeTo(org.axonframework.common.infra.ComponentDescriptor descriptor) {
+                public void describeTo(org.axonframework.common.infra.@NonNull ComponentDescriptor descriptor) {
                     descriptor.describeProperty("type", "TestFactory");
                 }
             };
@@ -1508,7 +1673,7 @@ class DefaultComponentRegistryTest {
     ) implements ConfigurationEnhancer {
 
         @Override
-        public void enhance(@Nonnull ComponentRegistry registry) {
+        public void enhance(@NonNull ComponentRegistry registry) {
             invokedEnhancers.add(this);
         }
     }
@@ -1520,7 +1685,7 @@ class DefaultComponentRegistryTest {
          *
          * @param name The name of this module. Must not be {@code null}
          */
-        public TestModule(@Nonnull String name) {
+        public TestModule(@NonNull String name) {
             super(name);
         }
     }
@@ -1555,6 +1720,26 @@ class DefaultComponentRegistryTest {
 
         @Override
         public String getValue() {
+            return value;
+        }
+    }
+
+    // Test component for retrieval by type reference
+    interface GenericServiceInterface<T> {
+
+        T getValue();
+    }
+
+    static class GenericServiceImpl<T> implements GenericServiceInterface<T> {
+
+        private final T value;
+
+        GenericServiceImpl(T value) {
+            this.value = value;
+        }
+
+        @Override
+        public T getValue() {
             return value;
         }
     }

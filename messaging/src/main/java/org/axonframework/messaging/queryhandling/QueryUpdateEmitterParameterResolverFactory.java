@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -42,22 +41,21 @@ public class QueryUpdateEmitterParameterResolverFactory implements ParameterReso
 
     @Nullable
     @Override
-    public ParameterResolver<QueryUpdateEmitter> createInstance(@Nonnull Executable executable,
-                                                                @Nonnull Parameter[] parameters,
+    public ParameterResolver<QueryUpdateEmitter> createInstance(Executable executable,
+                                                                Parameter[] parameters,
                                                                 int parameterIndex) {
         if (!QueryUpdateEmitter.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return null;
         }
 
         return new ParameterResolver<>() {
-            @Nonnull
             @Override
-            public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(@Nonnull ProcessingContext context) {
+            public CompletableFuture<QueryUpdateEmitter> resolveParameterValue(ProcessingContext context) {
                 return CompletableFuture.completedFuture(QueryUpdateEmitter.forContext(context));
             }
 
             @Override
-            public boolean matches(@Nonnull ProcessingContext context) {
+            public boolean matches(ProcessingContext context) {
                 return true;
             }
         };

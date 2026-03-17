@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,7 +215,8 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                             format("Unknown event type: %s", eventMessage.type()));
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
-                .entityIdResolver(PersonIdentifierEntityIdResolver::new);
+                .entityIdResolver(PersonIdentifierEntityIdResolver::new)
+                .build();
         return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
     }
 }

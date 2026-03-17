@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Metadata;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This {@link TextMapSetter} implementation is able to insert the current OpenTelemetry span context into a
@@ -46,7 +46,7 @@ public class MetadataContextSetter implements TextMapSetter<Map<String, String>>
     }
 
     @Override
-    public void set(Map<String, String> metadata, @Nonnull String key, @Nonnull String value) {
+    public void set(@Nullable Map<String, String> metadata, String key, String value) {
         if (metadata == null) {
             throw new IllegalArgumentException("The provided metadata may not be null!");
         }

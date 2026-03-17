@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store;
 
 import org.axonframework.conversion.TestConverter;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -43,5 +45,16 @@ class ConfigTokenTest {
         Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
         ConfigToken token = new ConfigToken(configMap);
         assertEquals(token, converter.serializeDeserialize(token));
+    }
+
+    @Test
+    void samePositionAsUnsupportedOperationException() {
+        Map<String, String> configMap = Collections.singletonMap("some-key", "some-value");
+        ConfigToken token = new ConfigToken(configMap);
+
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(token));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> token.samePositionAs(new GlobalSequenceTrackingToken(0)));
+        assertThrows(UnsupportedOperationException.class, () -> token.samePositionAs(null));
     }
 }

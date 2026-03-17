@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -79,7 +79,7 @@ public abstract class EventTestUtils {
      * @return An {@link EventMessage} containing given {@code event} as payload, or {@code event} if it already
      * implements {@code EventMessage}.
      */
-    public static EventMessage asEventMessage(@Nonnull Object event) {
+    public static EventMessage asEventMessage(@NonNull Object event) {
         if (event instanceof EventMessage e) {
             return e;
         }

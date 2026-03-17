@@ -1,0 +1,14 @@
+= Release Notes
+:page-aliases: README.adoc
+:navtitle: Release Notes
+
+The release notes section for the Axon framework for all major/minor releases.
+You can switch the documentation to other major version on the right side of the header, right above the every chapter.
+
+[cols="<,<"]
+|===
+|Release Type |Version
+
+|**Major** |xref:major-releases.adoc#release_5_0[5.0]
+|**Minor** |xref:minor-releases.adoc#release_5_0[5.0]
+|===

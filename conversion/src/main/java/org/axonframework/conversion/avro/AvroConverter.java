@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.annotation.Internal;
@@ -39,9 +38,8 @@ import java.util.function.UnaryOperator;
  * <a href="https://avro.apache.org/docs/1.11.0/spec.html#single_object_encoding">Single Object Encoded binary
  * encoding</a>.
  * <p>
- * This converter is intended to work for classes, representing messages specified by Avro Schema.
- * It is limited to conversions specifying {@code Class} as a target type (and can not work on pure {@code Type})
- * definitions.
+ * This converter is intended to work for classes, representing messages specified by Avro Schema. It is limited to
+ * conversions specifying {@code Class} as a target type (and can not work on pure {@code Type}) definitions.
  * </p>
  * <p>
  * The conversion is delegated to the {@link AvroConverterStrategy} implementations. By default, the
@@ -68,8 +66,8 @@ public class AvroConverter implements Converter {
      * @param configurationOverride configuration customizer.
      */
     public AvroConverter(
-            @Nonnull SchemaStore schemaStore,
-            @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride
+            SchemaStore schemaStore,
+            UnaryOperator<AvroConverterConfiguration> configurationOverride
     ) {
         this(schemaStore, configurationOverride, new ChainingContentTypeConverter());
     }
@@ -83,9 +81,9 @@ public class AvroConverter implements Converter {
      */
     @Internal
     public AvroConverter(
-            @Nonnull SchemaStore schemaStore,
-            @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride,
-            @Nonnull ChainingContentTypeConverter chainingTypeConverter
+            SchemaStore schemaStore,
+            UnaryOperator<AvroConverterConfiguration> configurationOverride,
+            ChainingContentTypeConverter chainingTypeConverter
     ) {
         var config = Objects.requireNonNull(configurationOverride, "the configurationOverride may not be null.")
                             .apply(
@@ -112,25 +110,6 @@ public class AvroConverter implements Converter {
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(schemaStore));
     }
 
-    @Override
-    public boolean canConvert(@Nonnull Type sourceType,
-                              @Nonnull Type targetType) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Validating if we can convert from source type [{}] to target type [{}].",
-                         sourceType, targetType);
-        }
-        // no conversion needed
-        return sourceType.equals(targetType)
-                // e.g. bytes to generic record for upcaster
-                || converter.canConvert(sourceType, targetType)
-                // any type supported by the strategy to bytes and then by the chain -> conversion
-                || (strategyForType(sourceType) && converter.canConvert(byte[].class, targetType))
-                // chain to bytes and then to any type supported by a strategy -> deserialization
-                || (converter.canConvert(sourceType, byte[].class) && strategyForType(targetType))
-                // generic record to any type -> deserialization after upcaster
-                || (converter.canConvert(sourceType, GenericRecord.class) && strategyForType(targetType));
-    }
-
     private boolean strategyForType(Type type) {
         if (type instanceof Class) {
             return converterStrategies.stream().anyMatch(it -> it.test((Class<?>) type));
@@ -141,7 +120,7 @@ public class AvroConverter implements Converter {
 
     @Nullable
     @Override
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input, Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -212,7 +191,7 @@ public class AvroConverter implements Converter {
         }
     }
 
-    private <T> T serializeByStrategy(@Nonnull Object input, @Nonnull Class<?> sourceType) {
+    private <T> T serializeByStrategy(Object input, Class<?> sourceType) {
         return (T) converterStrategies
                 .stream()
                 .filter(it -> it.test(sourceType))
@@ -225,7 +204,7 @@ public class AvroConverter implements Converter {
                 .convertToSingleObjectEncoded(input);
     }
 
-    private <T> T deserializeByStrategy(@Nonnull byte[] input, @Nonnull Class<?> targetType) {
+    private <T> T deserializeByStrategy(byte [] input, Class<?> targetType) {
         //noinspection unchecked
         return (T) converterStrategies
                 .stream()
@@ -238,7 +217,7 @@ public class AvroConverter implements Converter {
                 .convertFromSingleObjectEncoded(input, targetType);
     }
 
-    private <T> T deserializeByStrategy(@Nonnull GenericRecord input, @Nonnull Class<?> targetType) {
+    private <T> T deserializeByStrategy(GenericRecord input, Class<?> targetType) {
         //noinspection unchecked
         return (T) converterStrategies
                 .stream()
@@ -252,7 +231,7 @@ public class AvroConverter implements Converter {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         for (AvroConverterStrategy strategy : this.converterStrategies) {
             strategy.describeTo(descriptor);
         }

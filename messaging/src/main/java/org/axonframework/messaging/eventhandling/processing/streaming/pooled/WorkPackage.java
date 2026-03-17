@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -37,6 +36,7 @@ import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactor
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -426,7 +426,7 @@ class WorkPackage {
         }
     }
 
-    private void storeToken(TrackingToken token, @Nonnull ProcessingContext processingContext) {
+    private void storeToken(TrackingToken token, ProcessingContext processingContext) {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
         joinAndUnwrap(tokenStore.storeToken(token, name, segment.getSegmentId(), processingContext));
         lastStoredToken = token;
@@ -586,7 +586,7 @@ class WorkPackage {
          * @param context The processing context in which the event messages are processed.
          * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, @Nonnull ProcessingContext context);
+        MessageStream.Empty<Message> process(List<? extends EventMessage> events, ProcessingContext context);
     }
 
     /**
@@ -595,17 +595,17 @@ class WorkPackage {
      */
     static class Builder {
 
-        private String name;
-        private TokenStore tokenStore;
-        private UnitOfWorkFactory unitOfWorkFactory;
-        private ExecutorService executorService;
-        private EventFilter eventFilter;
-        private BatchProcessor batchProcessor;
-        private Segment segment;
-        private TrackingToken initialToken;
+        private @Nullable String name;
+        private @Nullable TokenStore tokenStore;
+        private @Nullable UnitOfWorkFactory unitOfWorkFactory;
+        private @Nullable ExecutorService executorService;
+        private @Nullable EventFilter eventFilter;
+        private @Nullable BatchProcessor batchProcessor;
+        private @Nullable Segment segment;
+        private @Nullable TrackingToken initialToken;
         private int batchSize = 1;
         private long claimExtensionThreshold = 5000;
-        private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+        private @Nullable Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
         private Clock clock = GenericEventMessage.clock;
         private Supplier<ProcessingContext> schedulingProcessingContextProvider = () ->
                 new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
@@ -763,7 +763,7 @@ class WorkPackage {
          * @return The current Builder instance, for fluent interfacing.
          */
         Builder schedulingProcessingContextProvider(
-                @Nonnull Supplier<ProcessingContext> schedulingProcessingContextProvider
+                Supplier<ProcessingContext> schedulingProcessingContextProvider
         ) {
             Objects.requireNonNull(schedulingProcessingContextProvider,
                                    "schedulingProcessingContextProvider may not be null.");

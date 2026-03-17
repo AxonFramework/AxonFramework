@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -33,7 +31,6 @@ import java.util.function.Function;
 class MappedMessageStream<DM extends Message, RM extends Message> extends DelegatingMessageStream<DM, RM> {
 
     private final Function<Entry<DM>, Entry<RM>> mapper;
-    private final MessageStream<DM> delegate;
 
     /**
      * Construct a {@link MessageStream stream} mapping the {@link Entry entries} of the given
@@ -43,21 +40,20 @@ class MappedMessageStream<DM extends Message, RM extends Message> extends Delega
      *                 {@code mapper}.
      * @param mapper   The {@link Function} mapping {@link Entry entries}.
      */
-    MappedMessageStream(@Nonnull MessageStream<DM> delegate,
-                        @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
+    MappedMessageStream(MessageStream<DM> delegate,
+                        Function<Entry<DM>, Entry<RM>> mapper) {
         super(delegate);
-        this.delegate = delegate;
         this.mapper = mapper;
     }
 
     @Override
     public Optional<Entry<RM>> next() {
-        return delegate.next().map(mapper);
+        return delegate().next().map(mapper);
     }
 
     @Override
     public Optional<Entry<RM>> peek() {
-        return delegate.peek().map(mapper);
+        return delegate().peek().map(mapper);
     }
 
     /**
@@ -78,7 +74,7 @@ class MappedMessageStream<DM extends Message, RM extends Message> extends Delega
          *                 given {@code mapper}.
          * @param mapper   The {@link Function} mapping the first {@link Entry} from the given {@code delegate}.
          */
-        Single(@Nonnull MessageStream.Single<DM> delegate, @Nonnull Function<Entry<DM>, Entry<RM>> mapper) {
+        Single(MessageStream.Single<DM> delegate, Function<Entry<DM>, Entry<RM>> mapper) {
             super(delegate, mapper);
         }
     }

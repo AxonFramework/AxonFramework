@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@
 package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.SimpleEntry;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * An abstract implementation of the {@link MessageStream} interface that wraps a {@link ResultStream}. This class
@@ -42,9 +44,8 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractQueryResponseMessageStream<T> implements MessageStream<QueryResponseMessage> {
 
     private final ResultStream<T> stream;
-    private final AtomicReference<Throwable> error = new AtomicReference<>();
-    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-    });
+    private final AtomicReference<@Nullable Throwable> error = new AtomicReference<>();
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
      * Constructs an instance of the AbstractQueryResponseMessageStream class with the provided result stream.
@@ -52,7 +53,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      * @param stream The {@link ResultStream} instance from which query response data will be fetched. Must not be
      *               null.
      */
-    public AbstractQueryResponseMessageStream(@Nonnull ResultStream<T> stream) {
+    public AbstractQueryResponseMessageStream(ResultStream<T> stream) {
         this.stream = requireNonNull(stream, "The query result stream cannot be null.");
     }
 
@@ -67,12 +68,11 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(Runnable callback) {
         this.callback.set(callback);
         stream.onAvailable(callback);
     }
 
-    @Nonnull
     @Override
     public Optional<Throwable> error() {
         return errorIfPresent();
@@ -113,7 +113,6 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
      *
      * @return An {@link Optional} containing the error if present, or {@link Optional#empty()} if no error is detected.
      */
-    @Nonnull
     private Optional<Throwable> errorIfPresent() {
         // Check if we've already processed and stored an error
         if (error.get() != null) {
@@ -139,8 +138,7 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         }
     }
 
-    @Nonnull
-    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(@Nonnull T t) {
+    private Optional<MessageStream.Entry<QueryResponseMessage>> toEntry(T t) {
         if (isError(t)) {
             error.set(createAxonException(t));
             close();
@@ -154,11 +152,9 @@ public abstract class AbstractQueryResponseMessageStream<T> implements MessageSt
         ));
     }
 
-    @Nonnull
-    protected abstract QueryResponseMessage buildResponseMessage(@Nonnull T t);
+    abstract QueryResponseMessage buildResponseMessage(T t);
 
-    @Nonnull
-    protected abstract AxonException createAxonException(@Nonnull T t);
+    abstract AxonException createAxonException(T t);
 
-    protected abstract boolean isError(@Nonnull T t);
+    protected abstract boolean isError(T t);
 }

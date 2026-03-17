@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ public class TracingQueryBus {
 
     /*
         @Override
-    public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+    public CompletableFuture<QueryResponseMessage> query(QueryMessage query) {
         Span span = spanFactory.createQuerySpan(query, false);
         return span.runSupplier(() -> doQuery(query).whenComplete((r, t) -> {
             if (t != null) {
@@ -41,10 +41,10 @@ public class TracingQueryBus {
                 /*
                 // TODO 3594 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
-                    @Nonnull
+                    @NonNull
                     @Override
-                    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
-                                                                         @Nonnull ProcessingContext context) {
+                    public MessageStream<QueryResponseMessage<?>> handle(QueryMessage<?, ?> query,
+                                                                         ProcessingContext context) {
                         return handler.handle((StreamingQueryMessage<Q, R>)query, context).cast();
                     }
                 };

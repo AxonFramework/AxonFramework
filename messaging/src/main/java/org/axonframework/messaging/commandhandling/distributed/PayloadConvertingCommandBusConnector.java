@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -48,23 +47,22 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
      * @param converter  The converter to use to convert each Message's payload.
      * @param targetType The desired representation of forwarded Message's payload.
      */
-    public PayloadConvertingCommandBusConnector(@Nonnull CommandBusConnector delegate,
-                                                @Nonnull MessageConverter converter,
-                                                @Nonnull Class<?> targetType) {
+    public PayloadConvertingCommandBusConnector(CommandBusConnector delegate,
+                                                MessageConverter converter,
+                                                Class<?> targetType) {
         super(delegate);
         this.converter = requireNonNull(converter, "The converter must not be null.");
         this.targetType = requireNonNull(targetType, "The targetType must not be null.");
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command.withConvertedPayload(targetType, converter), processingContext);
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull Handler handler) {
+    public void onIncomingCommand(Handler handler) {
         delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
                 commandMessage,
                 new ConvertingResultMessageCallback(callback)
@@ -72,7 +70,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("targetType", targetType);
@@ -91,7 +89,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
         }
 
         @Override
-        public void onSuccess(CommandResultMessage resultMessage) {
+        public void onSuccess(@Nullable CommandResultMessage resultMessage) {
             if (resultMessage == null || resultMessage.payload() == null) {
                 callback.onSuccess(resultMessage);
                 return;
@@ -100,7 +98,7 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
         }
 
         @Override
-        public void onError(@Nonnull Throwable cause) {
+        public void onError(Throwable cause) {
             callback.onError(cause);
         }
     }

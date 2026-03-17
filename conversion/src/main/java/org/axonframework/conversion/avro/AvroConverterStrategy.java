@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
 import org.apache.avro.generic.GenericRecord;
 import org.axonframework.common.infra.DescribableComponent;
 
@@ -50,8 +49,7 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param object The object to convert.
      * @return The byte array containing Avro Single Object Encoded bytes.
      */
-    @Nonnull
-    byte[] convertToSingleObjectEncoded(@Nonnull Object object);
+    byte [] convertToSingleObjectEncoded(Object object);
 
     /**
      * Converts from single object encoded byte array.
@@ -61,9 +59,8 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param <T>   The payload type to convert to.
      * @return The deserialized object.
      */
-    @Nonnull
-    <T> T convertFromSingleObjectEncoded(@Nonnull byte[] bytes,
-                                         @Nonnull Class<T> type);
+    <T> T convertFromSingleObjectEncoded(byte [] bytes,
+                                         Class<T> type);
 
     /**
      * Converts from Apache Avro generic record (intermediate representation).
@@ -73,8 +70,8 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param <T>           The payload type to convert to.
      * @return deserialized object.
      */
-    <T> T convertFromGenericRecord(@Nonnull GenericRecord genericRecord,
-                                   @Nonnull Class<T> type);
+    <T> T convertFromGenericRecord(GenericRecord genericRecord,
+                                   Class<T> type);
 
     /**
      * Sets the configuration for the strategy.
@@ -88,6 +85,6 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      * @param avroConverterStrategyConfiguration configuration passed after construction.
      */
     default void applyStrategyConfiguration(
-            @Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
+            AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
     }
 }

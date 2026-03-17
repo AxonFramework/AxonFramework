@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,7 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
-import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.common.TypeReference;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.Component;
@@ -34,14 +30,18 @@ import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.configuration.InstantiatedComponentDefinition;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Module;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.extension.spring.config.SpringAxonApplication;
 import org.axonframework.extension.spring.config.SpringComponentRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleRegistry;
 import org.axonframework.extension.spring.config.SpringLifecycleShutdownHandler;
 import org.axonframework.extension.spring.config.SpringLifecycleStartHandler;
-import org.jetbrains.annotations.NotNull;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -50,7 +50,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -77,7 +78,7 @@ public class AxonAutoConfigurationTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test
@@ -178,6 +179,12 @@ public class AxonAutoConfigurationTest {
         testContext.withUserConfiguration(DecoratorDefinitionContext.class).run(context -> {
             assertThat(context).hasBean("commandBus");
             assertThat(context).hasSingleBean(InterceptingCommandBus.class);
+
+            assertThat(context).hasBean("decoratorStarted");
+            AtomicBoolean decoratorStarted = context.getBean("decoratorStarted", AtomicBoolean.class);
+            await().pollDelay(Duration.ofMillis(50))
+                   .atMost(Duration.ofSeconds(1))
+                   .untilTrue(decoratorStarted);
         });
     }
 
@@ -265,7 +272,8 @@ public class AxonAutoConfigurationTest {
     void configurationEnhancerRegisteredGenericComponentsAreCorrectlyRegisteredInApplicationContext() {
         testContext.withUserConfiguration(GenericComponentRegistrationContext.class).run(context -> {
             assertThat(context).hasBean("myDependentBean");
-            //noinspection unchecked
+
+            @SuppressWarnings("unchecked")
             MyDependentBean<String, Long> myDependentBean = context.getBean("myDependentBean", MyDependentBean.class);
 
             assertThat(myDependentBean.beanOne().field()).isEqualTo("helloWorld");
@@ -282,7 +290,7 @@ public class AxonAutoConfigurationTest {
             return new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@NotNull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
                 }
 
@@ -307,7 +315,8 @@ public class AxonAutoConfigurationTest {
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
-            CommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
+            CommandBus simpleCommandBus =
+                    new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE));
             lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;
@@ -385,11 +394,17 @@ public class AxonAutoConfigurationTest {
     public static class DecoratorDefinitionContext {
 
         @Bean
-        DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator() {
+        AtomicBoolean decoratorStarted() {
+            return new AtomicBoolean(false);
+        }
+
+        @Bean
+        DecoratorDefinition<CommandBus, InterceptingCommandBus> interceptingDecorator(AtomicBoolean decoratorStarted) {
             return DecoratorDefinition.forType(CommandBus.class)
                                       .with((config, name, delegate) ->
                                                     new InterceptingCommandBus(delegate, List.of(), List.of()))
-                                      .order(0);
+                                      .order(0)
+                                      .onStart(0, component -> decoratorStarted.set(true));
         }
     }
 
@@ -427,9 +442,9 @@ public class AxonAutoConfigurationTest {
             //noinspection rawtypes
             return new BaseModule("testModule") {
                 @Override
-                public org.axonframework.common.configuration.Configuration build(
-                        @NotNull org.axonframework.common.configuration.Configuration parent,
-                        @NotNull LifecycleRegistry lifecycleRegistry
+                public org.axonframework.common.configuration.@NonNull Configuration build(
+                        org.axonframework.common.configuration.@NonNull Configuration parent,
+                        @NonNull LifecycleRegistry lifecycleRegistry
                 ) {
                     lifecycleRegistry.onStart(1337, () -> moduleSpecificStartHandlerInvoked.set(true));
                     lifecycleRegistry.onShutdown(7331, () -> moduleSpecificShutdownHandlerInvoked.set(true));
@@ -456,21 +471,19 @@ public class AxonAutoConfigurationTest {
         ComponentFactory<String> testComponentFactory(AtomicBoolean factoryShutdownHandlerInvoked) {
             return new ComponentFactory<>() {
                 @Override
-                public void describeTo(@NotNull ComponentDescriptor descriptor) {
+                public void describeTo(@NonNull ComponentDescriptor descriptor) {
                     // Not implemented as not important.
                 }
 
-                @NotNull
                 @Override
-                public Class<String> forType() {
+                public @NonNull Class<String> forType() {
                     return String.class;
                 }
 
-                @NotNull
                 @Override
-                public Optional<Component<String>> construct(
-                        @NotNull String name,
-                        @NotNull org.axonframework.common.configuration.Configuration config
+                public @NonNull Optional<Component<String>> construct(
+                        @NonNull String name,
+                        org.axonframework.common.configuration.@NonNull Configuration config
                 ) {
                     return Optional.of(new InstantiatedComponentDefinition<>(
                             new Component.Identifier<>(forType(), name),
@@ -479,7 +492,7 @@ public class AxonAutoConfigurationTest {
                 }
 
                 @Override
-                public void registerShutdownHandlers(@NotNull LifecycleRegistry registry) {
+                public void registerShutdownHandlers(@NonNull LifecycleRegistry registry) {
                     registry.onShutdown(9001, () -> factoryShutdownHandlerInvoked.set(true));
                 }
             };

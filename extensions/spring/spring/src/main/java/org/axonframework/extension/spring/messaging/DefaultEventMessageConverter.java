@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.extension.spring.messaging;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -51,10 +52,10 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
 
     @Override
     public <T> Message convertToOutboundMessage(EventMessage event) {
-        Map<String, Object> headers = new HashMap<>(event.metadata());
+        Map<String, @Nullable Object> headers = new HashMap<>(event.metadata());
         headers.put(MESSAGE_ID, event.identifier());
         headers.put(MESSAGE_TYPE, event.type().toString());
-        return new GenericMessage(event.payload(),
+        return new GenericMessage(Objects.requireNonNull(event.payload()),
                                   new SettableTimestampMessageHeaders(headers, event.timestamp().toEpochMilli()));
     }
 

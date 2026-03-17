@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
@@ -34,8 +33,8 @@ import java.util.function.Function;
  * @since 5.0.0
  */
 public record GenericTaggedEventMessage<E extends EventMessage>(
-        @Nonnull E event,
-        @Nonnull Set<Tag> tags
+        E event,
+        Set<Tag> tags
 ) implements TaggedEventMessage<E> {
 
     /**
@@ -47,7 +46,7 @@ public record GenericTaggedEventMessage<E extends EventMessage>(
     }
 
     @Override
-    public TaggedEventMessage<E> updateTags(@Nonnull Function<Set<Tag>, Set<Tag>> updater) {
+    public TaggedEventMessage<E> updateTags(Function<Set<Tag>, Set<Tag>> updater) {
         return new GenericTaggedEventMessage<>(this.event, updater.apply(this.tags));
     }
 }

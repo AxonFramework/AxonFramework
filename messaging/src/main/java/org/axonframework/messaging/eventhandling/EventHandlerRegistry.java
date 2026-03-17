@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -24,6 +23,7 @@ import java.util.Set;
 /**
  * Interface describing a registry of {@link EventHandler event handlers}.
  *
+ * @param <S> The type of the registry itself, used for fluent interfacing.
  * @author Allard Buijze
  * @author Gerard Klijs
  * @author Milan Savic
@@ -32,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventHandlerRegistry {
+public interface EventHandlerRegistry<S extends EventHandlerRegistry<S>> {
 
     /**
      * Subscribe the given {@code handler} for {@link EventMessage events} of the given {@code names}.
@@ -45,10 +45,11 @@ public interface EventHandlerRegistry {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
-                                           @Nonnull EventHandler eventHandler) {
+    default S subscribe(Set<QualifiedName> names,
+                        EventHandler eventHandler) {
         names.forEach(name -> subscribe(name, eventHandler));
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     /**
@@ -62,8 +63,8 @@ public interface EventHandlerRegistry {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given name.
      * @return This registry for fluent interfacing.
      */
-    EventHandlerRegistry subscribe(@Nonnull QualifiedName name,
-                                   @Nonnull EventHandler eventHandler);
+    S subscribe(QualifiedName name,
+                EventHandler eventHandler);
 
     /**
      * Subscribe the given {@code handlingComponent} with this registry.
@@ -75,7 +76,7 @@ public interface EventHandlerRegistry {
      * @param handlingComponent The event handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+    default S subscribe(EventHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedEvents(), handlingComponent);
     }
 }

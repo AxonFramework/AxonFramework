@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.awaitility.Awaitility;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.util.MockException;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -37,8 +39,6 @@ import org.axonframework.messaging.queryhandling.QueryHandler;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.common.util.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 

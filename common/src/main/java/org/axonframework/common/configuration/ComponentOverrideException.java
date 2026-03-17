@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.
@@ -36,11 +35,11 @@ public class ComponentOverrideException extends RuntimeException {
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers, potentially {@code null} when unimportant.
      */
-    public ComponentOverrideException(@Nonnull Class<?> type, @Nullable String name) {
+    public ComponentOverrideException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 
-    private static String exceptionMessageFor(Class<?> type, String name) {
+    private static String exceptionMessageFor(Class<?> type, @Nullable String name) {
         if (name != null) {
             return "Cannot override Component with type [" + type + "] and name ["
                     + name + "]; it is already registered.";

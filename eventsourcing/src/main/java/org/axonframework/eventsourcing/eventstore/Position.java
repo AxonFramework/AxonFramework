@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-
 /**
  * Represents a position from which sourcing may start.
  *
@@ -29,7 +27,7 @@ public sealed interface Position permits GlobalIndexPosition, AggregateSequenceN
     /**
      * Represents the smallest possible position.
      */
-    static final Position START = new StartPosition();
+    Position START = new StartPosition();
 
     /**
      * Returns the smallest of the two positions. If one of the positions is {@link #START},
@@ -41,5 +39,5 @@ public sealed interface Position permits GlobalIndexPosition, AggregateSequenceN
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position is incompatible with this position.
      */
-    @Nonnull Position min(@Nonnull Position other);
+    Position min(Position other);
 }

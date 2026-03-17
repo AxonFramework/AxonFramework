@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.ApplicationContext;
+import org.axonframework.messaging.core.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -78,9 +78,10 @@ public class UnitOfWork implements ProcessingLifecycle {
      */
     @Internal
     UnitOfWork(
-            @Nonnull String identifier,
-            @Nonnull Executor workScheduler,
-            @Nonnull ApplicationContext applicationContext
+            String identifier,
+            Executor workScheduler,
+            boolean forceSyncProcessing,
+            ApplicationContext applicationContext
     ) {
         Objects.requireNonNull(identifier, "identifier may not be null.");
         Objects.requireNonNull(workScheduler, "workScheduler may not be null.");
@@ -89,6 +90,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         this.context = new UnitOfWorkProcessingContext(
                 identifier,
                 workScheduler,
+                forceSyncProcessing,
                 applicationContext
         );
     }
@@ -197,20 +199,23 @@ public class UnitOfWork implements ProcessingLifecycle {
                 new ConcurrentSkipListMap<>(Comparator.comparingInt(Phase::order));
         private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
         private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
-        private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
+        private final AtomicReference<@Nullable CauseAndPhase> errorCause = new AtomicReference<>();
 
         private final String identifier;
         private final Executor workScheduler;
         private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
+        private final boolean forceSyncProcessing;
 
         private UnitOfWorkProcessingContext(
                 String identifier,
                 Executor workScheduler,
+                boolean forceSyncProcessing,
                 ApplicationContext applicationContext
         ) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
+            this.forceSyncProcessing = forceSyncProcessing;
             this.resources = new ConcurrentHashMap<>();
             this.applicationContext = applicationContext;
         }
@@ -339,9 +344,21 @@ public class UnitOfWork implements ProcessingLifecycle {
                 );
             }
 
+            if (forceSyncProcessing) {
+                try {
+                    executeAllPhaseHandlers().join();
+                    runCompletionHandlers();
+                    return FutureUtils.emptyCompletedFuture();
+                } catch (CompletionException e) {
+                    return runErrorHandlers(e.getCause());
+                } catch (Exception e) {
+                    return runErrorHandlers(e);
+                }
+            }
+
             return executeAllPhaseHandlers()
-                    .thenRun(this::runCompletionHandlers)
-                    .exceptionallyCompose(this::runErrorHandlers);
+                    .thenRunAsync(this::runCompletionHandlers, workScheduler)
+                    .exceptionallyComposeAsync(this::runErrorHandlers, workScheduler);
         }
 
         private CompletableFuture<Void> executeAllPhaseHandlers() {
@@ -350,13 +367,13 @@ public class UnitOfWork implements ProcessingLifecycle {
                 return FutureUtils.emptyCompletedFuture();
             }
 
-            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
+            CompletableFuture<Void> nextPhaseResult = runNextPhase();
             // Avoid stack overflow due to recursion when executed in single thread.
             while (!phaseActions.isEmpty() && nextPhaseResult.isDone()) {
                 if (nextPhaseResult.isCompletedExceptionally()) {
                     return nextPhaseResult;
                 } else {
-                    nextPhaseResult = runNextPhase().toCompletableFuture();
+                    nextPhaseResult = runNextPhase();
                 }
             }
             return nextPhaseResult.thenCompose(result -> executeAllPhaseHandlers());
@@ -373,7 +390,7 @@ public class UnitOfWork implements ProcessingLifecycle {
             }
         }
 
-        private CompletionStage<Void> runErrorHandlers(Throwable e) {
+        private CompletableFuture<Void> runErrorHandlers(Throwable e) {
             status.set(Status.COMPLETED_ERROR);
             CauseAndPhase recordedCause = errorCause.get();
 
@@ -404,21 +421,31 @@ public class UnitOfWork implements ProcessingLifecycle {
             logger.debug("Calling {}# actions in phase {} (with order {}).",
                          actionQueue.size(), current, current.order());
 
-            return actionQueue.stream()
-                              .map(handler -> FutureUtils.emptyCompletedFuture()
-                                                         .thenComposeAsync(result -> handler.apply(this), workScheduler)
-                                                         .thenAccept(FutureUtils::ignoreResult))
-                              .reduce(CompletableFuture::allOf)
-                              .orElseGet(FutureUtils::emptyCompletedFuture);
+            CompletableFuture<Void> phaseResult = actionQueue.stream()
+                                                             .map(handler -> FutureUtils.emptyCompletedFuture()
+                                                                                        .thenComposeAsync(result -> handler.apply(
+                                                                                                this), workScheduler)
+                                                                                        .thenAccept(FutureUtils::ignoreResult))
+                                                             .reduce(CompletableFuture::allOf)
+                                                             .orElseGet(FutureUtils::emptyCompletedFuture);
+            if (forceSyncProcessing) {
+                try {
+                    phaseResult.join();
+                    return FutureUtils.emptyCompletedFuture();
+                } catch (CompletionException e) {
+                    return CompletableFuture.failedFuture(e.getCause());
+                }
+            }
+            return phaseResult;
         }
 
         @Override
-        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+        public boolean containsResource(Context.ResourceKey<?> key) {
             return resources.containsKey(key);
         }
 
         @Override
-        public <T> T getResource(@Nonnull ResourceKey<T> key) {
+        public <T> T getResource(ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.get(key);
         }
@@ -429,54 +456,52 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public <T> T putResource(@Nonnull ResourceKey<T> key,
-                                 @Nonnull T resource) {
+        public <T> T putResource(ResourceKey<T> key,
+                                 T resource) {
             //noinspection unchecked
             return (T) resources.put(key, resource);
         }
 
         @Override
-        public <T> T updateResource(@Nonnull ResourceKey<T> key,
-                                    @Nonnull UnaryOperator<T> resourceUpdater) {
+        public <T> T updateResource(ResourceKey<T> key,
+                                    UnaryOperator<T> resourceUpdater) {
             //noinspection unchecked
             return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
         }
 
         @Override
-        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                         @Nonnull T resource) {
+        public <T> T putResourceIfAbsent(ResourceKey<T> key,
+                                         T resource) {
             //noinspection unchecked
             return (T) resources.putIfAbsent(key, resource);
         }
 
         @Override
-        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                             @Nonnull Supplier<T> resourceSupplier) {
+        public <T> T computeResourceIfAbsent(ResourceKey<T> key,
+                                             Supplier<T> resourceSupplier) {
             //noinspection unchecked
             return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
         }
 
         @Override
-        public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+        public <T> T removeResource(ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.remove(key);
         }
 
         @Override
-        public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                          @Nonnull T expectedResource) {
+        public <T> boolean removeResource(ResourceKey<T> key,
+                                          T expectedResource) {
             return resources.remove(key, expectedResource);
         }
 
-        @Nonnull
         @Override
-        public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        public <C> C component(Class<C> type, @Nullable String name) {
             return applicationContext.component(type, name);
         }
 
-        @Nonnull
         @Override
-        public <C> C component(@Nonnull Class<C> type) {
+        public <C> C component(Class<C> type) {
             return applicationContext.component(type);
         }
 

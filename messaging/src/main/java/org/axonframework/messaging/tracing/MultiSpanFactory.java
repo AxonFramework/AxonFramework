@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.tracing;
 
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -54,7 +56,7 @@ public class MultiSpanFactory implements SpanFactory {
 
     @Override
     public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
-                                  boolean isChildTrace, Message... linkedParents) {
+                                  boolean isChildTrace, Message @Nullable... linkedParents) {
         return new MultiSpan(
                 spanFactories.stream()
                              .map(sf -> sf.createHandlerSpan(operationNameSupplier,
@@ -67,7 +69,7 @@ public class MultiSpanFactory implements SpanFactory {
 
     @Override
     public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
-                                   Message... linkedSiblings) {
+                                   Message @Nullable ... linkedSiblings) {
         return new MultiSpan(
                 spanFactories.stream()
                              .map(sf -> sf.createDispatchSpan(operationNameSupplier,
@@ -142,7 +144,7 @@ public class MultiSpanFactory implements SpanFactory {
         }
 
         @Override
-        public Span addAttribute(String key, String value) {
+        public Span addAttribute(String key, @Nullable String value) {
             spans.forEach(s -> s.addAttribute(key, value));
             return this;
         }

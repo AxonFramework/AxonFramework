@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,52 +73,6 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
         store.addSchema(ComplexObjectSchemas.compatibleSchema);
         return new AvroConverter(
                 store, (c) -> c
-        );
-    }
-
-    /**
-     * Overriding this method because the super implementation tries to
-     * use objects of type {@link SomeInput} as input
-     * for conversion. In Avro, every object for conversion
-     * needs to follow a schema and depending on the implementation
-     * framework follow specific style. For example if you use default, by Apache
-     * Avro Maven plugin generated classes representing Avro Schemas, those will be subclassing
-     * {@link org.apache.avro.specific.SpecificRecordBase}. In Avro4K, the classes
-     * must be marked with Kotlin Serializable.
-     * <p />
-     * Long story short: an ordinary class is not Avro Serializable.
-     * @return list of arguments carrying input type and target type pairs.
-     */
-    @Override
-    protected Stream<Arguments> commonSupportedConversions() {
-        return Stream.of(
-                // Intermediate conversion levels:
-                arguments(String.class, byte[].class),
-                arguments(byte[].class, String.class),
-                arguments(byte[].class, InputStream.class),
-                arguments(InputStream.class, byte[].class),
-                arguments(String.class, InputStream.class),
-                arguments(InputStream.class, String.class),
-                // Same type:
-                arguments(byte[].class, byte[].class),
-                arguments(String.class, String.class)
-        );
-    }
-
-    @Override
-    protected Stream<Arguments> specificSupportedConversions() {
-        return Stream.of(
-                arguments(byte[].class, GenericRecord.class), // before upcaster
-                arguments(GenericRecord.class, ComplexObject.class), // after upcaster
-                arguments(ComplexObject.class, byte[].class) // direct to bytes
-        );
-    }
-
-    @Override
-    protected Stream<Arguments> specificUnsupportedConversions() {
-        return Stream.of(
-                arguments(byte[].class, Integer.class), // no strategy for integer
-                arguments(Integer.class, byte[].class) // no strategy for integer
         );
     }
 
@@ -290,7 +244,7 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
                         new AvroConverter(schemaStore,
                                           (c) -> c.performAvroCompatibilityCheck(true)
                                                   .includeSchemasInStackTraces(true)
-                                                  )
+                        )
                         ,
                         incompatibilityChecker,
                         AvroUtil.createExceptionFailedToDeserialize(
@@ -341,16 +295,16 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
         ArgumentCaptor<Object> propertyCaptor = ArgumentCaptor.forClass(Object.class);
 
         verify(descriptor).describeProperty(eq("avroConverterStrategyConfiguration"), propertyCaptor.capture());
-        var strategyConfiguration = (AvroConverterStrategyConfiguration)propertyCaptor.getValue();
+        var strategyConfiguration = (AvroConverterStrategyConfiguration) propertyCaptor.getValue();
         assertThat(strategyConfiguration.includeSchemasInStackTraces()).isEqualTo(false);
         assertThat(strategyConfiguration.performAvroCompatibilityCheck()).isEqualTo(true);
 
         verify(descriptor).describeProperty(eq("schemaIncompatibilityChecker"), propertyCaptor.capture());
-        var checker = (SchemaIncompatibilityChecker)propertyCaptor.getValue();
+        var checker = (SchemaIncompatibilityChecker) propertyCaptor.getValue();
         assertThat(checker).isInstanceOf(DefaultSchemaIncompatibilityChecker.class);
 
         verify(descriptor).describeProperty(eq("schemaStore"), propertyCaptor.capture());
-        var capturedStore = (SchemaStore)propertyCaptor.getValue();
+        var capturedStore = (SchemaStore) propertyCaptor.getValue();
         assertThat(capturedStore).isEqualTo(this.store);
     }
 }

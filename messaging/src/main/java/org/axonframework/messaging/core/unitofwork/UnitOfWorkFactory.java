@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -36,8 +35,7 @@ public interface UnitOfWorkFactory {
      *
      * @return A new {@link UnitOfWork} instance.
      */
-    @Nonnull
-    default UnitOfWork create() {
+        default UnitOfWork create() {
         return create(UUID.randomUUID().toString(), UnaryOperator.identity());
     }
 
@@ -47,8 +45,7 @@ public interface UnitOfWorkFactory {
      * @param identifier The identifier for the unit of work.
      * @return A new {@link UnitOfWork} instance.
      */
-    @Nonnull
-    default UnitOfWork create(@Nonnull String identifier) {
+        default UnitOfWork create(String identifier) {
         return create(identifier, UnaryOperator.identity());
     }
 
@@ -57,9 +54,20 @@ public interface UnitOfWorkFactory {
      * configuration.
      *
      * @param identifier    The identifier for the unit of work.
-     * @param customization A function to customize the unit of work's configuration
+     * @param customization A function to customize the unit of work's configuration.
      * @return A new {@link UnitOfWork} instance.
      */
-    @Nonnull
-    UnitOfWork create(@Nonnull String identifier, @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization);
+    UnitOfWork create(String identifier,
+                      Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization);
+
+    /**
+     * Creates a new {@link UnitOfWork} with a random identifier and applies the provided customization to its
+     * configuration.
+     *
+     * @param customization A function to customize the unit of work's configuration.
+     * @return A new {@link UnitOfWork} instance.
+     */
+        default UnitOfWork create(Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization) {
+        return create(UUID.randomUUID().toString(), customization);
+    }
 }

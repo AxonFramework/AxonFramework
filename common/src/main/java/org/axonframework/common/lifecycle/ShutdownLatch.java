@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.common.lifecycle;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class ShutdownLatch {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final AtomicInteger operationCounter = new AtomicInteger(0);
-    private final AtomicReference<CompletableFuture<Void>> latch = new AtomicReference<>();
+    private final AtomicReference<@Nullable CompletableFuture<Void>> latch = new AtomicReference<>();
 
     /**
      * Initialize this {@link ShutdownLatch}.  If the latch was already closed through {@link #initiateShutdown()}, then

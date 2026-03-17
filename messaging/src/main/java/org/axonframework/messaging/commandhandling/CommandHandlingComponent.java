@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -29,7 +30,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface CommandHandlingComponent extends CommandHandler {
+public interface CommandHandlingComponent extends CommandHandler, DescribableComponent {
 
     /**
      * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.

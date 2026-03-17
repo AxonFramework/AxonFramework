@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework.extensions</groupId>
         <artifactId>axon-extensions</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.axonframework.extensions.tracing</groupId>
@@ -35,6 +35,17 @@
     <modules>
         <module>tracing-opentelemetry</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.axonframework.extensions.tracing</groupId>
+                <artifactId>axon-tracing-opentelemetry</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -53,6 +64,10 @@
                                     <excludes>
                                         <exclude>org.springframework</exclude>
                                     </excludes>
+                                    <includes>
+                                        <!-- allow any spring dependency with test scope -->
+                                        <include>org.springframework:*:*:*:test</include>
+                                    </includes>
                                 </bannedDependencies>
                             </rules>
                             <fail>true</fail>

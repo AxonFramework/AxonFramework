@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.reflection;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.core.annotation.HierarchicalParameterResolverFactory;
@@ -37,7 +36,7 @@ import java.util.Optional;
 public class HierarchicalParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         componentRegistry.registerDecorator(
                 ParameterResolverFactory.class,
                 // We want this to be executed late, but still allow users to be able to add resolvers

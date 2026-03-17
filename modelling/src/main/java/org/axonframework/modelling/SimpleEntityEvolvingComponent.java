@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -56,14 +55,14 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
      * @param entityEvolvers The map of {@link EntityEvolver} instance to {@link QualifiedName} to evolve an entity
      *                       through.
      */
-    public SimpleEntityEvolvingComponent(@Nonnull Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
+    public SimpleEntityEvolvingComponent(Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
         this.entityEvolvers = new HashMap<>(requireNonNull(entityEvolvers, "The entity evolvers cannot be null."));
     }
 
     @Override
-    public E evolve(@Nonnull E entity,
-                    @Nonnull EventMessage event,
-                    @Nonnull ProcessingContext context) {
+    public E evolve(E entity,
+                    EventMessage event,
+                    ProcessingContext context) {
         QualifiedName eventName = event.type().qualifiedName();
         EntityEvolver<E> entityEvolver = entityEvolvers.get(eventName);
 
@@ -77,14 +76,13 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
         return entityEvolver.evolve(entity, event, context);
     }
 
-    @Nonnull
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(entityEvolvers.keySet());
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("delegates", Collections.unmodifiableMap(entityEvolvers));
     }
 }

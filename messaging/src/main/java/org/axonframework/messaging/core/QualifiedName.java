@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.StringUtils;
 
@@ -44,7 +43,7 @@ import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTy
  * @see MessageType
  * @since 5.0.0
  */
-public record QualifiedName(@Nonnull String name) {
+public record QualifiedName(String name) {
 
     private static final String DELIMITER = ".";
 
@@ -69,7 +68,7 @@ public record QualifiedName(@Nonnull String name) {
      * @param namespace The first part of the {@link #name()}.
      * @param localName The last part of the {@link #name()}.
      */
-    public QualifiedName(String namespace, @Nonnull String localName) {
+    public QualifiedName(String namespace, String localName) {
         this(combineNames(namespace, localName));
     }
 
@@ -92,7 +91,7 @@ public record QualifiedName(@Nonnull String name) {
      *
      * @param clazz The {@code Class} from which to use the {@link Class#getName()} as the {@link #name()}.
      */
-    public QualifiedName(@Nonnull Class<?> clazz) {
+    public QualifiedName(Class<?> clazz) {
         this(((Class<?>) resolvePrimitiveWrapperTypeIfPrimitive(requireNonNull(
                 clazz, "The given Class cannot be null."
         ))).getName());
@@ -104,8 +103,7 @@ public record QualifiedName(@Nonnull String name) {
         return lastDelimiterIndex != -1 ? name.substring(0, lastDelimiterIndex) : null;
     }
 
-    @Nonnull
-    public String localName() {
+        public String localName() {
         return name.substring(name.lastIndexOf(DELIMITER) + 1);
     }
 

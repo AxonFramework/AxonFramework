@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion;
 
-import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -50,116 +49,6 @@ public abstract class ConverterTestSuite<C extends Converter> {
      * @return The {@link Converter} used in this test suite.
      */
     protected abstract C buildConverter();
-
-    @ParameterizedTest
-    @MethodSource("supportedConversions")
-    void canConvertReturnsTrueForSupportedConversions(Type sourceType, Type targetType) {
-        assertThat(testSubject.canConvert(sourceType, targetType)).isTrue();
-    }
-
-    private Stream<Arguments> supportedConversions() {
-        return Stream.concat(commonSupportedConversions(), specificSupportedConversions());
-    }
-
-    /**
-     * Returns the {@code Stream} of {@link Arguments} containing commonly supported conversions for <b>any</b>
-     * {@link Converter} implementation.
-     * <p>
-     * Any {@link Arguments argument} consists out of two {@link Type Types}. The first parameter refers to the
-     * {@code sourceType} and the second parameter refers to the {@code targetType}, together used to invoke the
-     * {@link Converter#canConvert(Type, Type)} operation.
-     * <p>
-     * Can be overridden when needed for the {@code Converter} under tests.
-     *
-     * @return The {@code Stream} of {@link Arguments} containing commonly supported conversions for <b>any</b>
-     * {@link Converter} implementation.
-     */
-    protected Stream<Arguments> commonSupportedConversions() {
-        return Stream.of(
-                // Convert from concrete type:
-                arguments(SomeInput.class, byte[].class),
-                arguments(SomeInput.class, String.class),
-                arguments(SomeInput.class, InputStream.class),
-                // Convert to concrete type:
-                arguments(byte[].class, SomeInput.class),
-                arguments(String.class, SomeInput.class),
-                arguments(InputStream.class, SomeInput.class),
-                // Convert from another concrete type:
-                arguments(SomeOtherInput.class, String.class),
-                arguments(SomeOtherInput.class, byte[].class),
-                arguments(SomeOtherInput.class, InputStream.class),
-                // Intermediate conversion levels:
-                arguments(String.class, byte[].class),
-                arguments(byte[].class, String.class),
-                arguments(byte[].class, InputStream.class),
-                arguments(InputStream.class, byte[].class),
-                arguments(String.class, InputStream.class),
-                arguments(InputStream.class, String.class),
-                // Same type:
-                arguments(SomeInput.class, SomeInput.class),
-                arguments(SomeOtherInput.class, SomeOtherInput.class),
-                arguments(byte[].class, byte[].class),
-                arguments(String.class, String.class)
-        );
-    }
-
-    /**
-     * Returns the {@code Stream} of {@link Arguments} containing {@link Converter} implementation <b>specific</b>
-     * supported conversions.
-     * <p>
-     * Any {@link Arguments argument} consists out of two {@link Type Types}. The first parameter refers to the
-     * {@code sourceType} and the second parameter refers to the {@code targetType}, together used to invoke the
-     * {@link Converter#canConvert(Type, Type)} operation.
-     *
-     * @return The {@code Stream} of {@link Arguments} containing {@link Converter} implementation <b>specific</b>
-     * supported conversions.
-     */
-    protected abstract Stream<Arguments> specificSupportedConversions();
-
-    @ParameterizedTest
-    @MethodSource("unsupportedConversions")
-    void canConvertReturnsFalseForUnsupportedConversions(Type sourceType, Type targetType) {
-        assertThat(testSubject.canConvert(sourceType, targetType)).isFalse();
-    }
-
-    private Stream<Arguments> unsupportedConversions() {
-        return Stream.concat(commonUnsupportedConversions(), specificUnsupportedConversions());
-    }
-
-    /**
-     * Returns the {@code Stream} of {@link Arguments} containing commonly <b>unsupported</b> conversions for any
-     * {@link Converter} implementation.
-     * <p>
-     * Any {@link Arguments argument} consists out of two {@link Type Types}. The first parameter refers to the
-     * {@code sourceType} and the second parameter refers to the {@code targetType}, together used to invoke the
-     * {@link Converter#canConvert(Type, Type)} operation.
-     * <p>
-     * Can be overridden when needed for the {@code Converter} under tests.
-     *
-     * @return The {@code Stream} of {@link Arguments} containing commonly <b>unsupported</b> conversions for any
-     * {@link Converter} implementation.
-     */
-    protected Stream<Arguments> commonUnsupportedConversions() {
-        return Stream.of(
-                arguments(SomeInput.class, Integer.class),
-                arguments(SomeOtherInput.class, Double.class),
-                arguments(Integer.class, SomeInput.class),
-                arguments(Double.class, SomeOtherInput.class)
-        );
-    }
-
-    /**
-     * Returns the {@code Stream} of {@link Arguments} containing {@link Converter} implementation <b>specific
-     * unsupported</b> conversions.
-     * <p>
-     * Any {@link Arguments argument} consists out of two {@link Type Types}. The first parameter refers to the
-     * {@code sourceType} and the second parameter refers to the {@code targetType}, together used to invoke the
-     * {@link Converter#canConvert(Type, Type)} operation.
-     *
-     * @return The {@code Stream} of {@link Arguments} containing {@link Converter} implementation <b>specific
-     * unsupported</b> conversions.
-     */
-    protected abstract Stream<Arguments> specificUnsupportedConversions();
 
     @ParameterizedTest
     @MethodSource("sameTypeConversions")
@@ -211,16 +100,16 @@ public abstract class ConverterTestSuite<C extends Converter> {
 
     @Test
     void convertForTargetTypeReturnsNullForNullInput() {
-        Object result = testSubject.convert((Object) null, Object.class);
+        Object result = testSubject.convert(null, Object.class);
         assertThat(result).isNull();
 
-        result = testSubject.convert((Object) null, Object.class);
+        result = testSubject.convert(null, Object.class);
         assertThat(result).isNull();
     }
 
     @Test
     void convertForSourceAndTargetTypeReturnsNullForNullInput() {
-        Object result = testSubject.convert((Object) null, Object.class);
+        Object result = testSubject.convert(null, Object.class);
         assertThat(result).isNull();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
@@ -103,7 +102,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(Message message, ProcessingContext context) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.payloadType())
@@ -111,12 +110,12 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandleType(@Nonnull Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         return this.payloadType.isAssignableFrom(payloadType);
     }
 
     @Override
-    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
         return this.messageType.isAssignableFrom(messageType);
     }
 
@@ -150,8 +149,8 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
+    public Object handleSync(Message message,
+                             ProcessingContext context,
                              @Nullable T target) throws Exception {
         try {
             MessageStream.Entry<?> resultEntry = handle(message, context, target).first()
@@ -168,27 +167,30 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message,
-                                   @Nonnull ProcessingContext context,
+    public MessageStream<?> handle(Message message,
+                                   ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         CompletableFuture<Object[]> parametersFuture = resolveParameterValues(contextWithMessage);
 
         CompletableFuture<MessageStream<?>> invocationFuture = parametersFuture.handle((params, throwable) -> {
             if (throwable != null) {
+                logger.warn("Method [{}] failed handling message with identifier [{}].", method, message.identifier());
                 return MessageStream.failed(throwable);
             }
             try {
                 Object result = method.invoke(target, params);
                 return returnTypeConverter.apply(result);
             } catch (IllegalAccessException | InvocationTargetException e) {
+                logger.warn("Method [{}] failed handling message with identifier [{}].", method, message.identifier());
                 if (e.getCause() instanceof Exception) {
                     return MessageStream.failed(e.getCause());
                 } else if (e.getCause() instanceof Error) {
                     return MessageStream.failed(e.getCause());
                 }
                 return MessageStream.failed(new MessageHandlerInvocationException(
-                        String.format("Error handling an object of type [%s]", messageType), e));
+                        String.format("Error handling an object of type [%s]", messageType), e
+                ));
             }
         });
 
@@ -222,7 +224,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                                                       .toArray());
     }
 
-    @Nonnull
     private CompletableFuture<?> tryResolveParameterValue(ParameterResolver<?> parameterResolver,
                                                           ProcessingContext context) {
         try {

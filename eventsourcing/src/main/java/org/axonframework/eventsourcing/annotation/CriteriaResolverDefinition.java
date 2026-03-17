@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -44,8 +43,8 @@ public interface CriteriaResolverDefinition {
      * @return A {@link CriteriaResolver} for the given {@code entityType} and {@code idType}.
      */
     <E, I> CriteriaResolver<I> createEventCriteriaResolver(
-            @Nonnull Class<E> entityType,
-            @Nonnull Class<I> idType,
-            @Nonnull Configuration configuration
+            Class<E> entityType,
+            Class<I> idType,
+            Configuration configuration
     );
 }

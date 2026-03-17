@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ public interface CommandHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
      * Returns the name of the command that can be handled.
+     * <p>
+     * Might be an empty {@link String} when undefined by this handling member, in which case components gathering
+     * {@code CommandHandlingMembers} should fall back to other mechanisms to define the name of a handling member.
      *
      * @return The name of the command that can be handled.
      */

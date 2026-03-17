@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package org.axonframework.axonserver.connector.util;
+
+import org.jspecify.annotations.NonNull;
+
 
 import java.time.Instant;
 import java.util.LinkedList;
@@ -52,7 +55,7 @@ public class FakeScheduler implements Scheduler {
     }
 
     @Override
-    public ScheduledTask scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit timeUnit) {
+    public @NonNull ScheduledTask scheduleWithFixedDelay(@NonNull Runnable command, long initialDelay, long delay, @NonNull TimeUnit timeUnit) {
         Instant first = clock.instant().plusMillis(timeUnit.toMillis(initialDelay));
         Runnable runnable = new Runnable() {
             private Instant next = first;

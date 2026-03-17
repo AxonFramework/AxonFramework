@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 /**
@@ -35,9 +34,9 @@ public class DuplicateCommandHandlerSubscriptionException extends RuntimeExcepti
      * @param initialHandler   the initial {@link CommandHandler} for which a duplicate was encountered.
      * @param duplicateHandler The duplicated {@link CommandHandler}.
      */
-    public DuplicateCommandHandlerSubscriptionException(@Nonnull QualifiedName name,
-                                                        @Nonnull CommandHandler initialHandler,
-                                                        @Nonnull CommandHandler duplicateHandler) {
+    public DuplicateCommandHandlerSubscriptionException(QualifiedName name,
+                                                        CommandHandler initialHandler,
+                                                        CommandHandler duplicateHandler) {
         this(String.format("Duplicate subscription for command [%s] detected. "
                                    + "Registration of handler [%s]  conflicts with previously registered handler [%s].",
                            name, initialHandler, duplicateHandler));

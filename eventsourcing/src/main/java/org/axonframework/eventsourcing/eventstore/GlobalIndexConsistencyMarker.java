@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,13 +64,9 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
         return other.position > this.position ? other : this;
     }
 
-    /**
-     * Returns the position of this global index consistency marker.
-     *
-     * @return The position of this global index consistency marker.
-     */
-    public long position() {
-        return this.position;
+    @Override
+    public Position position() {
+        return new GlobalIndexPosition(position);
     }
 
     @Override

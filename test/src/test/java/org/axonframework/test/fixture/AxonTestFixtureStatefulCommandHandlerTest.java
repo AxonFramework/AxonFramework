@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheAnotherName)
                .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-2", 2));
     }
 
 
@@ -184,7 +184,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-1", 1));
     }
 
     @Nested
@@ -255,7 +255,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                             Student.class,
                                             c.getComponent(EventConverter.class),
                                             c.getComponent(MessageTypeResolver.class)
-                                    )
+                                    ),
+                                    null
                             );
                             return SimpleStateManager.named("testfixture")
                                                      .register(repository);

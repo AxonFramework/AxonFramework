@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,18 +66,18 @@ public class AxonTestFixtureMonitoringTest {
             return configurer.registerEntity(entity)
                              .registerCommandHandlingModule(CommandHandlingModule.named("CreateCourse")
                                                                                  .commandHandlers()
-                                                                                 .annotatedCommandHandlingComponent(c -> new Domain.CourseCreatedCommandHandler()))
+                                                                                 .autodetectedCommandHandlingComponent(c -> new Domain.CourseCreatedCommandHandler()))
                     ;
         }
 
         public static final String COURSE_ID = "courseId";
 
-        @Command(name = "CreateCourse")
+        @Command
         public record CreateCourse(String courseId, String name) {
             // empty
         }
 
-        @Event(name = "CourseCreated")
+        @Event
         public record CourseCreated(@EventTag(key = COURSE_ID) String courseId, String name) {
             // empty
         }
@@ -95,7 +95,7 @@ public class AxonTestFixtureMonitoringTest {
 
         static class CourseCreatedCommandHandler {
 
-            @CommandHandler(commandName = "CreateCourse")
+            @CommandHandler(commandName = "org.axonframework.test.fixture.CreateCourse")
             void handle(CreateCourse cmd, @InjectEntity(idProperty = COURSE_ID) CourseCreatedCommandHandler.State state,
                         EventAppender eventAppender) {
                 eventAppender.append(state.decide(cmd));

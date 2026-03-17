@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 package org.axonframework.messaging.queryhandling;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.common.util.MockException;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -27,7 +26,7 @@ import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactor
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
-import org.axonframework.common.util.MockException;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -83,13 +82,11 @@ class SimpleQueryBusTest {
     private SimpleQueryBus testSubject;
 
     private TransactionManager transactionManager;
-    private Transaction testTransaction;
 
     @BeforeEach
     void setUp() {
         transactionManager = mock(TransactionManager.class);
-        testTransaction = mock(Transaction.class);
-        when(transactionManager.startTransaction()).thenReturn(testTransaction);
+
         UnitOfWorkFactory unitOfWorkFactory =
                 new TransactionalUnitOfWorkFactory(transactionManager, UnitOfWorkTestUtils.SIMPLE_FACTORY);
 
@@ -192,6 +189,7 @@ class SimpleQueryBusTest {
             nextResponse = result.next();
             assertThat(nextResponse).isPresent();
             assertThat(nextResponse.get().message().payload()).isEqualTo("query5678");
+            assertThat(result.hasNextAvailable()).isFalse();
             assertThat(result.isCompleted()).isTrue();
         }
 
@@ -256,8 +254,7 @@ class SimpleQueryBusTest {
                                                           .thenApply(entry -> entry.message().payload());
             // then...
             assertEquals("query1234", result.get());
-            verify(transactionManager).startTransaction();
-            verify(testTransaction).commit();
+            verify(transactionManager).attachToProcessingLifecycle(any(UnitOfWork.class));
         }
 
         @Test
@@ -277,8 +274,7 @@ class SimpleQueryBusTest {
             List<String> completedResult = result.get();
             assertTrue(completedResult.contains("query1234"));
             assertTrue(completedResult.contains("query5678"));
-            verify(transactionManager).startTransaction();
-            verify(testTransaction).commit();
+            verify(transactionManager).attachToProcessingLifecycle(any(UnitOfWork.class));
         }
     }
 

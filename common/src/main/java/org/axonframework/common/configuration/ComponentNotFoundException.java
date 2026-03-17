@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
+import org.axonframework.common.TypeReference;
 
 /**
  * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link Configuration}.
@@ -32,14 +32,26 @@ public class ComponentNotFoundException extends RuntimeException {
      * Constructs a {@code ComponentNotFoundException} with a default message describing a {@link Component} couldn't be
      * found for the given {@code type} and {@code name}.
      *
-     * @param type The type of the component that could not be found, typically an interface.
-     * @param name The name of the component that could not be found, potentially {@code null} when unimportant.
+     * @param type the type of the component that could not be found, typically an interface
+     * @param name the name of the component that could not be found, potentially {@code null} when unimportant
      */
-    public ComponentNotFoundException(@Nonnull Class<?> type, @Nullable String name) {
+    public ComponentNotFoundException(Class<?> type, @Nullable String name) {
         super(exceptionMessageFor(type, name));
     }
 
-    private static String exceptionMessageFor(Class<?> type, String name) {
+    /**
+     * Constructs a {@code ComponentNotFoundException} with a default message describing a {@link Component} couldn't be
+     * found for the given {@code typeReference} and {@code name}.
+     *
+     * @param typeReference the type of the component that could not be found, typically an interface
+     * @param name          the name of the component that could not be found, potentially {@code null} when
+     *                      unimportant
+     */
+    public ComponentNotFoundException(TypeReference<?> typeReference, @Nullable String name) {
+        super(exceptionMessageFor(typeReference.getTypeAsClass(), name));
+    }
+
+    private static String exceptionMessageFor(Class<?> type, @Nullable String name) {
         return name != null
                 ? "No component found for type [" + type + "] name [" + name + "]."
                 : "No component found for type [" + type + "].";

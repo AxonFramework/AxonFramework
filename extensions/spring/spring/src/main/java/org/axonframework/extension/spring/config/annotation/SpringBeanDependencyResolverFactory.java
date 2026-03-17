@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -28,7 +27,6 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.NonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -56,13 +54,13 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
      *
      * @param applicationContext The Spring application context for the executing application
      */
-    public SpringBeanDependencyResolverFactory(@NonNull ApplicationContext applicationContext) {
+    public SpringBeanDependencyResolverFactory(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         final Optional<Boolean> ann =
                 AnnotationUtils.findAnnotationAttribute(parameters[parameterIndex], Autowired.class, "required");
 
@@ -96,14 +94,13 @@ public class SpringBeanDependencyResolverFactory implements ParameterResolverFac
             this.dependencyDescriptor = dependencyDescriptor;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(beanFactory.resolveDependency(dependencyDescriptor, null));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

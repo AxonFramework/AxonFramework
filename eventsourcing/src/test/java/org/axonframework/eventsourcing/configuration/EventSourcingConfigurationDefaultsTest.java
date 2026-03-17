@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
@@ -134,7 +134,7 @@ class EventSourcingConfigurationDefaultsTest {
     private static class TestTagResolver implements TagResolver {
 
         @Override
-        public Set<Tag> resolve(@Nonnull EventMessage event) {
+        public @NonNull Set<Tag> resolve(@NonNull EventMessage event) {
             throw new UnsupportedOperationException();
         }
     }

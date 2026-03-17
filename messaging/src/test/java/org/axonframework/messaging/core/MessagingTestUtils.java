@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
@@ -44,7 +44,7 @@ public class MessagingTestUtils {
      * @param payload       The payload object to include in the message, may be null.
      * @return A new {@link Message} instance with the specified type and payload.
      */
-    public static Message message(@Nonnull String qualifiedName, @Nullable Object payload) {
+    public static Message message(@NonNull String qualifiedName, @Nullable Object payload) {
         return new GenericMessage(new MessageType(qualifiedName), payload);
     }
 
@@ -54,7 +54,7 @@ public class MessagingTestUtils {
      * @param payload The payload object to include in the message, used to determine the message type.
      * @return A new {@link Message} instance with a type based on the payload's class.
      */
-    public static Message message(@Nonnull Object payload) {
+    public static Message message(@NonNull Object payload) {
         return new GenericMessage(new MessageType(payload.getClass()), payload);
     }
 
@@ -64,7 +64,7 @@ public class MessagingTestUtils {
      * @param payload The payload object to include in the command message.
      * @return A new {@link CommandMessage} instance with a type based on the payload's class.
      */
-    public static CommandMessage command(@Nonnull Object payload) {
+    public static CommandMessage command(@NonNull Object payload) {
         return new GenericCommandMessage(new MessageType(payload.getClass()), payload);
     }
 
@@ -75,7 +75,7 @@ public class MessagingTestUtils {
      * @param payload       The payload object to include in the command message.
      * @return A new {@link CommandMessage} instance with the specified type and payload.
      */
-    public static CommandMessage command(@Nonnull String qualifiedName, @Nonnull Object payload) {
+    public static CommandMessage command(@NonNull String qualifiedName, @NonNull Object payload) {
         return new GenericCommandMessage(new MessageType(qualifiedName), payload);
     }
 
@@ -85,7 +85,7 @@ public class MessagingTestUtils {
      * @param payload The payload object to include in the command result message.
      * @return A new {@link CommandResultMessage} instance with a type based on the payload's class.
      */
-    public static CommandResultMessage commandResult(@Nonnull Object payload) {
+    public static CommandResultMessage commandResult(@NonNull Object payload) {
         return new GenericCommandResultMessage(new MessageType(payload.getClass()), payload);
     }
 
@@ -96,7 +96,7 @@ public class MessagingTestUtils {
      * @param payload       The payload object to include in the command result message.
      * @return A new {@link CommandResultMessage} instance with the specified type and payload.
      */
-    public static CommandResultMessage commandResult(@Nonnull String qualifiedName, @Nonnull Object payload) {
+    public static CommandResultMessage commandResult(@NonNull String qualifiedName, @NonNull Object payload) {
         return new GenericCommandResultMessage(new MessageType(qualifiedName), payload);
     }
 
@@ -119,7 +119,7 @@ public class MessagingTestUtils {
      * @param payload The payload object to include in the event message.
      * @return A new {@link EventMessage} instance with a type based on the payload's class.
      */
-    public static EventMessage event(@Nonnull Object payload) {
+    public static EventMessage event(@NonNull Object payload) {
         return new GenericEventMessage(new MessageType(payload.getClass()), payload);
     }
 
@@ -129,7 +129,7 @@ public class MessagingTestUtils {
      * @param payload      The payload object to include in the query message.
      * @return A new {@link QueryMessage} instance configured for a single response type.
      */
-    public static QueryMessage query(@Nonnull Object payload) {
+    public static QueryMessage query(@NonNull Object payload) {
         return new GenericQueryMessage(new MessageType(payload.getClass()), payload);
     }
 
@@ -139,7 +139,7 @@ public class MessagingTestUtils {
      * @param result The result object to include in the query response message.
      * @return A new {@link QueryResponseMessage} instance with a type based on the result's class.
      */
-    public static QueryResponseMessage queryResponse(@Nonnull Object result) {
+    public static QueryResponseMessage queryResponse(@NonNull Object result) {
         return new GenericQueryResponseMessage(new MessageType(result.getClass()), result);
     }
 

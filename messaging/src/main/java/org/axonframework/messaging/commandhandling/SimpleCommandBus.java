@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,21 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -54,35 +47,26 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
-    private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
-     * constructing a {@link ProcessingLifecycle} to handle commands in.
+     * Construct a {@code SimpleCommandBus}, using the given {@code unitOfWorkFactory} to construct
+     * {@link ProcessingContext contexts} to handle commands in.
      *
-     * @param unitOfWorkFactory                    The {@code UnitOfWorkFactory} used to handle commands in a dedicated
-     *                                             {@link ProcessingLifecycle}.
-     * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
-     *                                             used when constructing a
-     *                                             {@link ProcessingLifecycle} to
-     *                                             handle commands in.
+     * @param unitOfWorkFactory the {@code UnitOfWorkFactory} used to construct {@link ProcessingContext contexts} to
+     *                          handle commands in
      */
-    public SimpleCommandBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory,
-                            @Nonnull Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
+    public SimpleCommandBus(UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = requireNonNull(unitOfWorkFactory, "The given UnitOfWorkFactory cannot be null.");
-        this.processingLifecycleHandlerRegistrars = requireNonNull(processingLifecycleHandlerRegistrars).isEmpty()
-                ? emptyList()
-                : new ArrayList<>(processingLifecycleHandlerRegistrars);
     }
 
     /**
      * @throws DuplicateCommandHandlerSubscriptionException when a subscription already exists for the given
-     *                                                      {@code name}.
+     *                                                      {@code name}
      */
     @Override
-    public SimpleCommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
+    public SimpleCommandBus subscribe(QualifiedName name, CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "Given command handler cannot be null.");
         logger.debug("Subscribing command handler with name [{}].", name);
         var existingHandler =
@@ -95,7 +79,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return findCommandHandlerFor(command)
                 .map(handler -> handle(command, handler))
@@ -111,17 +95,15 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Performs the actual handling logic.
      *
-     * @param command The actual command to handle.
-     * @param handler The handler that must be invoked for this command.
+     * @param command the actual command to handle
+     * @param handler the handler that must be invoked for this command
      */
-    protected CompletableFuture<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                             @Nonnull CommandHandler handler) {
+    protected CompletableFuture<CommandResultMessage> handle(CommandMessage command,
+                                                             CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.identifier(), command.type());
         }
-
         UnitOfWork unitOfWork = unitOfWorkFactory.create(command.identifier());
-        processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());
         if (logger.isDebugEnabled()) {
@@ -142,8 +124,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("lifecycleRegistrars", processingLifecycleHandlerRegistrars);
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("subscriptions", subscriptions);
     }

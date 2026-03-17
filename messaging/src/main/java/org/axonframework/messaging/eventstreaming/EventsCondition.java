@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -51,7 +50,7 @@ public interface EventsCondition {
      * @return {@code true} if given type and tags match, otherwise {@code false}.
      * @see EventCriteria
      */
-    default boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
+    default boolean matches(QualifiedName type, Set<Tag> tags) {
         return criteria().matches(type, tags);
     }
 }

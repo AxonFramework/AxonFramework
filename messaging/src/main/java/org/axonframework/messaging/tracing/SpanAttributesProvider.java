@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.messaging.tracing;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 
 /**
  * Represents a provider of attributes to a {@link Span}, based on a {@link Message}. It's the responsibility of the
@@ -36,6 +35,5 @@ public interface SpanAttributesProvider {
      * @param message The message
      * @return The attributes
      */
-    @Nonnull
-    Map<String, String> provideForMessage(@Nonnull Message message);
+    Map<String, String> provideForMessage(Message message);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 /**
@@ -36,7 +35,7 @@ public class NoHandlerForEventException extends RuntimeException {
      * @param componentName The name of the component that did not have an {@link EventHandler} for the given
      *                      {@code eventName}.
      */
-    public NoHandlerForEventException(@Nonnull QualifiedName eventName, @Nonnull String componentName) {
+    public NoHandlerForEventException(QualifiedName eventName, String componentName) {
         super("No handler found for event with name [" + eventName + "] in component [" + componentName + "]");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
@@ -55,6 +54,6 @@ public interface CommandBus extends CommandHandlerRegistry<CommandBus>, Describa
      * @throws NoHandlerForCommandException when no {@link CommandHandler command handler} is registered for the given
      *                                      {@code command}'s name.
      */
-    CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                      @Nullable ProcessingContext processingContext);
 }

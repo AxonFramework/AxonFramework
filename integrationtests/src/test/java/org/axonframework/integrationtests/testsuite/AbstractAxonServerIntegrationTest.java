@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,10 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -43,20 +41,15 @@ public abstract class AbstractAxonServerIntegrationTest {
     private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
-            .withReuse(true);
+            .withReuse(true)
+            .withDcbContext(true);
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
 
     @BeforeAll
-    static void beforeAll() throws IOException {
+    static void beforeAll() {
         container.start();
-
-        // Mainly needed to create DBC context now:
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
         logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
                     container.getHttpPort());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
+
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -57,26 +58,24 @@ public interface CommandMessage extends Message {
     OptionalInt priority();
 
     @Override
-    @Nonnull
-    CommandMessage withMetadata(@Nonnull Map<String, String> metadata);
+    
+    CommandMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    CommandMessage andMetadata(@Nonnull Map<String, String> metadata);
+    
+    CommandMessage andMetadata(Map<String, @Nullable String> metadata);
 
     @Override
-    @Nonnull
-    default CommandMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+        default CommandMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default CommandMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+        default CommandMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    CommandMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    
+    CommandMessage withConvertedPayload(Type type, Converter converter);
 }

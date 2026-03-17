@@ -1,0 +1,36 @@
+= Message Tracking
+:navtitle: Message Tracking
+
+Tracking messages in your system can be useful to analyze what the cause of a message was.
+There are several ways to track messages in your system.
+
+A clear solution to this, is xref:tracing.adoc[tracing], albeit slightly involved.
+Other options you have through Axon Framework, are xref:messaging-concepts:message-correlation.adoc[correlation data providers] or straight out logging in xref:messaging-concepts:message-intercepting.adoc[interceptors]
+You can correlate messages to each other with a Correlation Data Provider or log the messages being handled and dispatched.
+
+== Correlation data
+
+The framework provides the `CorrelationDataProvider`, as described xref:messaging-concepts:message-correlation.adoc[here].
+This interface and its implementations provide you the means to populate the meta-data of a message based on the message that is currently being handled.
+For instance, you could use this to store the command that triggered the event in the metadata of the event itself, allowing you to track the cause of it.
+
+Axon Framework provides a `MessageOriginProvider` provider out of the box, which adds a `correlationId` and `causationId` to all messages.
+The `correlationId-id` is the same over all messages that are triggered because of the same origin, while `causationId` contains the message identifier of the previous message.
+We can see the effect of this in the following table:
+
+|===
+|Message identifier |Type |`correlationId` |`causationId`
+| 1 | Command | - | -
+| 2 | Event | 8231323 | 1
+| 3 | Command | 8231323 | 2
+| 4 | Event | 8231323 | 3
+|===
+
+Check out the xref:messaging-concepts:message-correlation.adoc[message correlation page] to find out more about the `MessageOriginProvider`.
+
+== Interceptor logging
+
+You can track the flow of messages through your application using logging.
+To that end, you can leverage Axon's xref:messaging-concepts:message-intercepting.adoc[handler- and dispatch interceptors].
+Although a custom interceptor can be constructed, Axon Framework provides the `LoggingInterceptor` out of the box for this purpose.
+The `LoggingInterceptor` acts as both a xref:messaging-concepts:message-intercepting.adoc#dispatch-interceptor[dispatch] and xref:messaging-concepts:message-intercepting.adoc#handler-interceptor[handler interceptor], logging __any__ type of message to SLF4J.

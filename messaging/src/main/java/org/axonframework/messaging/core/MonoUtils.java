@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.MessageStream.Single;
 import reactor.core.publisher.Mono;
 
@@ -44,7 +43,7 @@ public abstract class MonoUtils {
      * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
      */
-    public static <M extends Message> Single<M> asSingle(@Nonnull Mono<M> mono) {
+    public static <M extends Message> Single<M> asSingle(Mono<M> mono) {
         return MessageStream.fromFuture(mono.toFuture());
     }
 
@@ -63,8 +62,8 @@ public abstract class MonoUtils {
      * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
      */
-    public static <M extends Message> Single<M> asSingle(@Nonnull Mono<M> mono,
-                                                         @Nonnull Function<M, Context> contextSupplier) {
+    public static <M extends Message> Single<M> asSingle(Mono<M> mono,
+                                                         Function<M, Context> contextSupplier) {
         return MessageStream.fromFuture(mono.toFuture(), contextSupplier);
     }
 

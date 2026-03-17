@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,16 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.extension.springboot.fixture.avro.test1.ComplexObject;
-import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.avro.AvroConverter;
 import org.axonframework.conversion.avro.AvroUtil;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.extension.spring.conversion.avro.AvroSchemaScan;
 import org.axonframework.extension.spring.conversion.avro.ClasspathAvroSchemaLoader;
+import org.axonframework.extension.springboot.fixture.avro.test1.ComplexObject;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -58,7 +58,8 @@ class AvroSchemaStoreAutoConfigurationTest {
     @BeforeEach
     void setUp() {
         testApplicationContext = new ApplicationContextRunner().withPropertyValues(
-                "axon.axonserver.enabled=false"
+                "axon.axonserver.enabled=false",
+                "axon.eventstorage.jpa.polling-interval=0"
         );
     }
 
@@ -69,7 +70,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=avro"
+                        "axon.converter.events=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
                     assertThat(context).hasSingleBean(SchemaStore.class);
@@ -93,7 +95,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=avro"
+                        "axon.converter.events=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
                     assertThat(context).hasSingleBean(SchemaStore.class);
@@ -118,7 +121,9 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=avro")
+                        "axon.converter.events=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
+                )
                 .run(context -> {
                     Converter converter = context.getBean("eventConverter", Converter.class);
                     org.axonframework.extension.springboot.fixture.avro.test2.ComplexObject complexObject = org.axonframework.extension.springboot.fixture.avro.test2.ComplexObject.newBuilder()
@@ -157,7 +162,9 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=avro")
+                        "axon.converter.events=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
+                )
                 .run(context -> {
                     Converter converter = context.getBean("eventConverter", Converter.class);
                     org.axonframework.extension.springboot.fixture.avro.test2.ComplexObject complexObject = org.axonframework.extension.springboot.fixture.avro.test2.ComplexObject.newBuilder()
@@ -184,7 +191,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=jackson"
+                        "axon.converter.events=jackson",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
                     assertThat(context).getBean(SchemaStore.class).isNull();
@@ -199,7 +207,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=avro",
                         "axon.converter.messages=jackson",
-                        "axon.converter.events=jackson"
+                        "axon.converter.events=jackson",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
                     var startupFailure = context.getStartupFailure();
@@ -224,7 +233,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
                         "axon.converter.general=jackson",
-                        "axon.converter.messages=avro"
+                        "axon.converter.messages=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
 
@@ -251,7 +261,8 @@ class AvroSchemaStoreAutoConfigurationTest {
                 .withPropertyValues(
                         "axon.converter.general=jackson",
                         "axon.converter.messages=avro",
-                        "axon.converter.event=avro"
+                        "axon.converter.event=avro",
+                        "axon.eventstorage.jpa.polling-interval=0"
                 )
                 .run(context -> {
 

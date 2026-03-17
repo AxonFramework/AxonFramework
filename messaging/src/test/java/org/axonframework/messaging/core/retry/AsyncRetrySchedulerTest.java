@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -203,14 +203,14 @@ class AsyncRetrySchedulerTest {
         }
 
         @Override
-        public Outcome defineFor(@Nonnull Message message,
-                                 @Nonnull Throwable cause,
-                                 @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+        public @NonNull Outcome defineFor(@NonNull Message message,
+                                 @NonNull Throwable cause,
+                                 @NonNull List<Class<? extends Throwable>[]> previousFailures) {
             return policyOutcome.get();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
 
         }
 

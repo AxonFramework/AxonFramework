@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.Nullable;
+
 import static java.lang.String.format;
 import static java.util.Locale.ENGLISH;
 
@@ -30,8 +32,8 @@ import static java.util.Locale.ENGLISH;
 public class BeanPropertyAccessStrategy extends AbstractMethodPropertyAccessStrategy {
 
     @Override
-    protected String getterName(String property) {
-        return format(ENGLISH, "get%S%s", property.charAt(0), property.substring(1));
+    protected String getterName(@Nullable String property) {
+return format(ENGLISH, "get%S%s", property.charAt(0), property.substring(1));
     }
 
     @Override

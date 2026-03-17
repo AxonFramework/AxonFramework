@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * Classes related to event handling and dispatching, such as {@link org.axonframework.eventhandling.EventMessageHandler
- * Event Listeners} and the {@link org.axonframework.messaging.eventhandling.EventBus Event Bus}.
+ * Package for event handling components in Axon Framework. Events describe something that has occurred in the application.
  */
+@NullMarked
 package org.axonframework.messaging.eventhandling;
+
+import org.jspecify.annotations.NullMarked;

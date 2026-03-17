@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,18 @@ class AxonServerContainerIT {
         String testName = "axoniq/axonserver";
         try (
                 AxonServerContainer testSubject = new AxonServerContainer(testName)
+        ) {
+            testSubject.start();
+            assertTrue(testSubject.isRunning());
+        }
+    }
+
+    @Test
+    void constructionWithDCBStartsAsExpected() {
+        String testName = "axoniq/axonserver";
+        try (
+                AxonServerContainer testSubject = new AxonServerContainer(testName)
+                        .withDcbContext(true)
         ) {
             testSubject.start();
             assertTrue(testSubject.isRunning());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.util;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.ErrorMessage;
 import io.axoniq.axonserver.grpc.SerializedObject;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.AxonException;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 /**
  * Spring {@link FactoryBean} that creates a {@link HandlerDefinition} using configured {@link HandlerDefinition} and
@@ -72,7 +71,7 @@ public class HandlerDefinitionFactoryBean implements FactoryBean<HandlerDefiniti
     }
 
     @Override
-    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
+    public void setBeanClassLoader(ClassLoader classLoader) {
         this.beanClassLoader = classLoader;
     }
 }

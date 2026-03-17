@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -96,7 +95,7 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
 
     @Nullable
     @Override
-    public ParameterResolver<Object> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+    public ParameterResolver<Object> createInstance(Executable executable, Parameter[] parameters,
                                                     int parameterIndex) {
         if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
                 && AnnotationUtils.isAnnotationPresent(executable, ResultHandler.class)) {
@@ -113,14 +112,13 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
             this.parameterType = resultType;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(REGISTERED_RESULT.get());
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             // we must always match, because this parameter is based on execution result
             Object registeredResult = REGISTERED_RESULT.get();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling.gateway;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.Message;
@@ -65,10 +64,10 @@ public class DefaultQueryGateway implements QueryGateway {
      * @param priorityCalculator  The {@link QueryPriorityCalculator} determining the priority of queries.
      * @param converter           The converter to use for converting the result of query handling.
      */
-    public DefaultQueryGateway(@Nonnull QueryBus queryBus,
-                               @Nonnull MessageTypeResolver messageTypeResolver,
-                               @Nonnull QueryPriorityCalculator priorityCalculator,
-                               @Nonnull MessageConverter converter) {
+    public DefaultQueryGateway(QueryBus queryBus,
+                               MessageTypeResolver messageTypeResolver,
+                               QueryPriorityCalculator priorityCalculator,
+                               MessageConverter converter) {
         this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
                                                           "The MessageTypeResolver must not be null.");
@@ -77,10 +76,9 @@ public class DefaultQueryGateway implements QueryGateway {
         this.converter = Objects.requireNonNull(converter, "The MessageConverter must not be null.");
     }
 
-    @Nonnull
     @Override
-    public <R> CompletableFuture<R> query(@Nonnull Object query,
-                                          @Nonnull Class<R> responseType,
+    public <R> CompletableFuture<R> query(Object query,
+                                          Class<R> responseType,
                                           @Nullable ProcessingContext context) {
         QueryMessage queryMessage = asQueryMessage(query);
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
@@ -102,10 +100,9 @@ public class DefaultQueryGateway implements QueryGateway {
         return resultFuture;
     }
 
-    @Nonnull
     @Override
-    public <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
-                                                    @Nonnull Class<R> responseType,
+    public <R> CompletableFuture<List<R>> queryMany(Object query,
+                                                    Class<R> responseType,
                                                     @Nullable ProcessingContext context) {
         QueryMessage queryMessage = asQueryMessage(query);
         MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
@@ -123,10 +120,9 @@ public class DefaultQueryGateway implements QueryGateway {
         return resultFuture;
     }
 
-    @Nonnull
     @Override
-    public <R> Publisher<R> streamingQuery(@Nonnull Object query,
-                                           @Nonnull Class<R> responseType,
+    public <R> Publisher<R> streamingQuery(Object query,
+                                           Class<R> responseType,
                                            @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> asQueryMessage(query))
                    .flatMapMany(queryMessage -> FluxUtils.of(queryBus.query(queryMessage, context)))
@@ -134,16 +130,14 @@ public class DefaultQueryGateway implements QueryGateway {
                    .mapNotNull(m -> m.payloadAs(responseType, converter));
     }
 
-    @Nonnull
     @Override
-    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query, @Nonnull Class<R> responseType) {
+    public <R> Publisher<R> subscriptionQuery(Object query, Class<R> responseType) {
         return subscriptionQuery(query, responseType, m -> m.payloadAs(responseType, converter), null, Queues.SMALL_BUFFER_SIZE);
     }
 
-    @Nonnull
     @Override
-    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
-                                              @Nonnull Class<R> responseType,
+    public <R> Publisher<R> subscriptionQuery(Object query,
+                                              Class<R> responseType,
                                               @Nullable ProcessingContext context,
                                               int updateBufferSize) {
         return subscriptionQuery(query,
@@ -153,10 +147,9 @@ public class DefaultQueryGateway implements QueryGateway {
                                  updateBufferSize);
     }
 
-    @Nonnull
     @Override
-    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
-                                              @Nonnull Class<R> responseType,
+    public <R> Publisher<R> subscriptionQuery(Object query,
+                                              Class<R> responseType,
                                               int updateBufferSize) {
         return subscriptionQuery(query,
                                  responseType,
@@ -165,11 +158,10 @@ public class DefaultQueryGateway implements QueryGateway {
                                  updateBufferSize);
     }
 
-    @Nonnull
     @Override
-    public <T> Publisher<T> subscriptionQuery(@Nonnull Object query,
-                                              @Nonnull Class<T> responseType,
-                                              @Nonnull Function<QueryResponseMessage, T> mapper,
+    public <T> Publisher<T> subscriptionQuery(Object query,
+                                              Class<T> responseType,
+                                              Function<QueryResponseMessage, T> mapper,
                                               @Nullable ProcessingContext context,
                                               int updateBufferSize) {
         QueryMessage queryMessage = asQueryMessage(query);
@@ -196,7 +188,7 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("queryBus", queryBus);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
         descriptor.describeProperty("priorityCalculator", priorityCalculator);

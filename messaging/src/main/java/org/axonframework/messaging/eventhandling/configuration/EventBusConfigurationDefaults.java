@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults;
+import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.InterceptingEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.core.MessageDispatchInterceptor;
-import org.axonframework.messaging.core.interception.DispatchInterceptorRegistry;
 
 import java.util.List;
 
@@ -62,12 +61,12 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
     }
 
-    private static void registerComponents(@Nonnull ComponentRegistry registry) {
+    private static void registerComponents(ComponentRegistry registry) {
         registry.registerIfNotPresent(EventBus.class, EventBusConfigurationDefaults::defaultEventBus);
     }
 
@@ -75,13 +74,15 @@ public class EventBusConfigurationDefaults implements ConfigurationEnhancer {
         return new SimpleEventBus();
     }
 
-    private static void registerDecorators(@Nonnull ComponentRegistry registry) {
+    private static void registerDecorators(ComponentRegistry registry) {
         registry.registerDecorator(
                 EventBus.class,
                 InterceptingEventBus.DECORATION_ORDER,
                 (config, name, delegate) -> {
                     List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+                            config.getComponent(DispatchInterceptorRegistry.class)
+                                  .eventInterceptors(config, EventBus.class, name);
+
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventBus(delegate, dispatchInterceptors);

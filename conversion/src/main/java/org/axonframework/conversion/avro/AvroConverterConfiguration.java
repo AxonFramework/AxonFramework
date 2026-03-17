@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
 
 import java.util.ArrayList;
@@ -38,11 +37,11 @@ import java.util.Objects;
  * @since 5.0.0
  */
 public record AvroConverterConfiguration(
-        @Nonnull List<AvroConverterStrategy> strategies,
+        List<AvroConverterStrategy> strategies,
         boolean includeDefaultAvroConverterStrategies,
-        @Nonnull SchemaStore schemaStore,
-        @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker,
-        @Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration
+        SchemaStore schemaStore,
+        SchemaIncompatibilityChecker schemaIncompatibilityChecker,
+        AvroConverterStrategyConfiguration avroConverterStrategyConfiguration
 ) {
 
     /**
@@ -73,7 +72,7 @@ public record AvroConverterConfiguration(
      *
      * @param schemaStore schema store to use, must not be null.
      */
-    public AvroConverterConfiguration(@Nonnull SchemaStore schemaStore) {
+    public AvroConverterConfiguration(SchemaStore schemaStore) {
         this(
                 new ArrayList<>(),
                 true,
@@ -89,7 +88,7 @@ public record AvroConverterConfiguration(
      * @param strategy provided strategy to use, for example the one compatible with Avro4K data classes.
      * @return configuration instance.
      */
-    public AvroConverterConfiguration addConverterStrategy(@Nonnull AvroConverterStrategy strategy) {
+    public AvroConverterConfiguration addConverterStrategy(AvroConverterStrategy strategy) {
         List<AvroConverterStrategy> strategies = new ArrayList<>(this.strategies);
         strategies.add(Objects.requireNonNull(strategy, "Avro converter strategy cannot be null"));
         return new AvroConverterConfiguration(strategies,
@@ -128,7 +127,7 @@ public record AvroConverterConfiguration(
      * @return new configuration.
      */
     public AvroConverterConfiguration schemaIncompatibilityChecker(
-            @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker) {
+            SchemaIncompatibilityChecker schemaIncompatibilityChecker) {
         return new AvroConverterConfiguration(this.strategies,
                                               this.includeDefaultAvroConverterStrategies,
                                               this.schemaStore,

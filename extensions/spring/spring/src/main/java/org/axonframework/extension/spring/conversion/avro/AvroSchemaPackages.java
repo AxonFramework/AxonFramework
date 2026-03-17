@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 /**
  * Holder for package-based class scanning for Avro schema extraction.
@@ -60,7 +59,6 @@ public class AvroSchemaPackages {
      * @param beanFactory bean factory.
      * @return registered bean or empty null-object.
      */
-    @Nonnull
     public static AvroSchemaPackages get(BeanFactory beanFactory) {
         try {
             return beanFactory.getBean(BEAN, AvroSchemaPackages.class);
@@ -90,12 +88,12 @@ public class AvroSchemaPackages {
 
         private final Environment environment;
 
-        Registrar(@Nonnull Environment environment) {
+        Registrar(Environment environment) {
             Assert.notNull(environment, "Environment must not be null");
             this.environment = environment;
         }
 
-        public static void register(@Nonnull BeanDefinitionRegistry registry, @Nonnull Set<String> packageNames) {
+        public static void register(BeanDefinitionRegistry registry, Set<String> packageNames) {
             Assert.notNull(registry, "Registry must not be null");
             Assert.notNull(packageNames, "PackageNames must not be null");
             if (registry.containsBeanDefinition(BEAN)) {
@@ -139,8 +137,8 @@ public class AvroSchemaPackages {
         }
 
         @Override
-        public void registerBeanDefinitions(@Nonnull AnnotationMetadata importingClassMetadata,
-                                            @Nonnull BeanDefinitionRegistry registry) {
+        public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
+                                            BeanDefinitionRegistry registry) {
             register(
                     registry,
                     getPackagesToScan(

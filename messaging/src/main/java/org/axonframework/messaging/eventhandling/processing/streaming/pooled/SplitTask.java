@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.TrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -143,10 +142,9 @@ class SplitTask extends CoordinatorTask {
         return true;
     }
 
-    @Nonnull
-    private CompletableFuture<Void> splitAndRelease(@Nonnull TrackerStatus[] splitStatuses,
-                                                    @Nonnull Segment segmentToSplit,
-                                                    @Nonnull ProcessingContext context) {
+    private CompletableFuture<Void> splitAndRelease(TrackerStatus[] splitStatuses,
+                                                    Segment segmentToSplit,
+                                                    ProcessingContext context) {
         return tokenStore.initializeSegment(
                                  splitStatuses[1].getTrackingToken(),
                                  name,
@@ -156,6 +154,17 @@ class SplitTask extends CoordinatorTask {
                          .thenCompose(result -> tokenStore.releaseClaim(
                                  name,
                                  splitStatuses[0].getSegment().getSegmentId(),
+                                 context
+                         ))
+                         .thenCompose(result -> tokenStore.deleteToken(
+                                 name,
+                                 splitStatuses[0].getSegment().getSegmentId(),
+                                 context
+                         ))
+                         .thenCompose(result -> tokenStore.initializeSegment(
+                                 splitStatuses[0].getTrackingToken(),
+                                 name,
+                                 splitStatuses[0].getSegment(),
                                  context
                          ))
                          .thenRun(() -> logger.info(

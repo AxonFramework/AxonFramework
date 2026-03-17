@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 
 import java.util.Objects;
@@ -67,11 +66,11 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param <C>  The declared type of the components to decorate.
      * @return A builder for further configuration of this decorator definition.
      */
-    static <C> PartialDecoratorDefinition<C> forType(@Nonnull Class<C> type) {
+    static <C> PartialDecoratorDefinition<C> forType(Class<C> type) {
         requireNonNull(type, "The type must not be null.");
         return new PartialDecoratorDefinition<>() {
             @Override
-            public <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator) {
+            public <D extends C> DecoratorDefinition<C, D> with(ComponentDecorator<C, D> decorator) {
                 return new DefaultDecoratorDefinition<>(id -> type.isAssignableFrom(id.typeAsClass()), decorator);
             }
         };
@@ -90,12 +89,12 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param <C>  The declared type of the components to decorate.
      * @return A builder for further configuration of this decorator definition.
      */
-    static <C> PartialDecoratorDefinition<C> forTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
+    static <C> PartialDecoratorDefinition<C> forTypeAndName(Class<C> type, String name) {
         requireNonNull(type, "The type must not be null.");
         Assert.nonEmpty(name, "The name must not be empty or null.");
         return new PartialDecoratorDefinition<>() {
             @Override
-            public <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator) {
+            public <D extends C> DecoratorDefinition<C, D> with(ComponentDecorator<C, D> decorator) {
                 return new DefaultDecoratorDefinition<>(
                         id -> type.isAssignableFrom(id.typeAsClass()) && Objects.equals(name, id.name()),
                         decorator
@@ -126,7 +125,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param handler The handler to invoke.
      * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    DecoratorDefinition<C, D> onStart(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
+    DecoratorDefinition<C, D> onStart(int phase, ComponentLifecycleHandler<D> handler);
 
     /**
      * Registers the given {@code handler} to be registered with the application's lifecycle during startup for this
@@ -138,7 +137,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param handler The handler to invoke.
      * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    default DecoratorDefinition<C, D> onStart(int phase, @Nonnull Consumer<D> handler) {
+    default DecoratorDefinition<C, D> onStart(int phase, Consumer<D> handler) {
         return onStart(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The start handler cannot be null.")
                    .accept(component);
@@ -156,7 +155,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param handler The handler to invoke.
      * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
+    DecoratorDefinition<C, D> onShutdown(int phase, ComponentLifecycleHandler<D> handler);
 
     /**
      * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown for this
@@ -168,7 +167,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * @param handler The handler to invoke.
      * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    default DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull Consumer<D> handler) {
+    default DecoratorDefinition<C, D> onShutdown(int phase, Consumer<D> handler) {
         return onShutdown(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
                    .accept(component);
@@ -190,7 +189,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
          * @param <D>       The instance type of the decorated component.
          * @return A {@code DecoratorDefinition} for direct use or further configuration.
          */
-        <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator);
+        <D extends C> DecoratorDefinition<C, D> with(ComponentDecorator<C, D> decorator);
     }
 
     /**
@@ -221,7 +220,7 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
          * @param delegate The component to decorate.
          * @return The decorated component.
          */
-        Component<C> decorate(@Nonnull Component<C> delegate);
+        Component<C> decorate(Component<C> delegate);
 
         /**
          * Indicates whether the component with given {@code id} matches the definition of this decorator.
@@ -229,6 +228,6 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
          * @param id The identifier of a component to possibly decorate.
          * @return {@code true} if the component's identifier matches this definition, otherwise {@code false}.
          */
-        boolean matches(@Nonnull Component.Identifier<?> id);
+        boolean matches(Component.Identifier<?> id);
     }
 }

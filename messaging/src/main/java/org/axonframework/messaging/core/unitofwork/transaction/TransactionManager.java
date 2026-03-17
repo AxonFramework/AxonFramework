@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.messaging.core.unitofwork.transaction;
 
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleHandlerRegistrar;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -27,22 +27,25 @@ import java.util.function.Supplier;
  * Typically, this will involve opening database transactions or connecting to external systems.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
-public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar {
+public interface TransactionManager {
 
     /**
-     * Starts a transaction. The return value is the started transaction that can be committed or rolled back.
+     * Starts a transaction.
+     * <p>
+     * The return value is the started transaction that can be committed or rolled back.
      *
-     * @return The object representing the transaction
+     * @return the object representing the transaction
      */
     Transaction startTransaction();
 
     /**
-     * Executes the given {@code task} in a new {@link Transaction}. The transaction is committed when the task
-     * completes normally, and rolled back when it throws an exception.
+     * Executes the given {@code task} in a new {@link Transaction}.
+     * <p>
+     * The transaction is committed when the task completes normally, and rolled back when it throws an exception.
      *
-     * @param task The task to execute
+     * @param task the task to execute
      */
     default void executeInTransaction(Runnable task) {
         Transaction transaction = startTransaction();
@@ -55,16 +58,17 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
         }
     }
 
+    /**
+     * Attaches a {@link Transaction} to the given {@code processingLifecycle} in the
+     * {@link ProcessingLifecycle#runOnPreInvocation(Consumer) pre-invocation phase}.
+     * <p>
+     * The attached {@code Transaction} will from there {@link Transaction#commit() commit} in the
+     * {@link ProcessingLifecycle#runOnCommit(Consumer) commit phase} and {@link Transaction#rollback() rollback}
+     * {@link ProcessingLifecycle#onError(ProcessingLifecycle.ErrorHandler) on error}.
+     *
+     * @param processingLifecycle the {@code ProcessingLifecycle} to attach a {@link Transaction} to
+     */
     default void attachToProcessingLifecycle(ProcessingLifecycle processingLifecycle) {
-        processingLifecycle.runOnPreInvocation(pc -> {
-            Transaction transaction = startTransaction();
-            pc.runOnCommit(p -> transaction.commit());
-            pc.onError((p, phase, e) -> transaction.rollback());
-        });
-    }
-
-    @Override
-    default void registerHandlers(ProcessingLifecycle processingLifecycle) {
         processingLifecycle.runOnPreInvocation(pc -> {
             Transaction transaction = startTransaction();
             pc.runOnCommit(p -> transaction.commit());
@@ -80,9 +84,9 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
      * This method is an alternative to {@link #executeInTransaction(Runnable)} in cases where a result needs to be
      * returned from the code to be executed transactionally.
      *
-     * @param supplier The supplier of the value to return
-     * @param <T>      The type of value to return
-     * @return The value returned by the supplier
+     * @param supplier the supplier of the value to return
+     * @param <T>      the type of value to return
+     * @return the value returned by the supplier
      */
     default <T> T fetchInTransaction(Supplier<T> supplier) {
         Transaction transaction = startTransaction();
@@ -94,5 +98,18 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
             transaction.rollback();
             throw e;
         }
+    }
+
+    /**
+     * Indicates whether the tasks contained with the managed transactions must occur on the same thread.
+     * <p>
+     * By default, this method returns {@code false}, meaning there are no thread affinity requirements for the
+     * transactions. Implementations can override this method if there is a specific need for tasks to be invoked on the
+     * same thread.
+     *
+     * @return {@code true} if the handler invocations must occur on the same thread; {@code false} otherwise
+     */
+    default boolean requiresSameThreadInvocations() {
+        return false;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling.annotation;
 
-import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.MessageHandler;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 
@@ -26,13 +26,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation to mark any method on an object as being a QueryHandler. Use the
- * {@link org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent AnnotatedQueryHandlingComponent} to
- * subscribe the annotated class to the query bus.
+ * Annotation to be placed on methods that can handle {@link QueryMessage queries}, thus making them
+ * {@link org.axonframework.messaging.queryhandling.QueryHandler QueryHandlers}.
  * <p>
- * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may specify
- * a second parameter of type {@link Metadata}. The active metadata will be passed if that
- * parameter is supplied.
+ * Query handler annotated methods are typically subscribed with a
+ * {@link org.axonframework.messaging.queryhandling.QueryBus} as part of an {@link AnnotatedQueryHandlingComponent}.
+ * <p>
+ * The parameters of the annotated method are resolved using parameter resolvers. Axon provides a number of parameter
+ * resolvers that allow you to use the following parameter types:<ul>
+ * <li>The first parameter is always the {@link QueryMessage#payload() payload} of the {@code QueryMessage}.
+ * <li>Parameters annotated with {@link org.axonframework.messaging.core.annotation.MetadataValue} will resolve to the
+ * {@link org.axonframework.messaging.core.Metadata} value with the key as indicated on the annotation. If required is
+ * false (default), null is passed when the metadata value is not present. If required is true, the resolver will not
+ * match and prevent the method from being invoked when the metadata value is not present.</li>
+ * <li>Parameters of type {@code Metadata} will have the entire {@link QueryMessage#metadata() query message metadata}
+ * injected.</li>
+ * <li>Parameters assignable to {@link org.axonframework.messaging.core.Message} will have the entire {@link
+ * QueryMessage} injected (if the message is assignable to that parameter). If the first parameter is of type message,
+ * it effectively matches a query of any type. Due to type erasure, Axon cannot detect what parameter is expected. In
+ * such case, it is best to declare a parameter of the payload type, followed by a parameter of type
+ * {@code Message}.</li>
+ * <li>A parameter of type {@link org.axonframework.messaging.core.unitofwork.ProcessingContext} will inject the active
+ * processing context at that moment in time.</li>
+ * </ul>
  *
  * @author Marc Gathier
  * @since 3.1.0
@@ -44,10 +60,14 @@ import java.lang.annotation.Target;
 public @interface QueryHandler {
 
     /**
-     * The name of the Query this handler listens to. Defaults to the fully qualified class name of the payload type
-     * (i.e. first parameter).
+     * The name of the query this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link QueryMessage#type()}.
+     * <p>
+     * When not defined the {@link org.axonframework.messaging.core.MessageTypeResolver} will derive the name based on
+     * the payload type (thus the <b>first</b> parameter) of the annotated method.
      *
-     * @return The query name.
+     * @return The name of the query this handler listens to, matching to the {@link MessageType#name()} from the
+     * {@link QueryMessage#type()}.
      */
     String queryName() default "";
 }

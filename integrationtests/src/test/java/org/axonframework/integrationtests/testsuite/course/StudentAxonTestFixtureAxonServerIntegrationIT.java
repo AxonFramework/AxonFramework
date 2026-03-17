@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.testsuite.course;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.course.module.CourseCreated;
-import org.axonframework.integrationtests.testsuite.course.module.CreateCourse;
+import org.axonframework.integrationtests.testsuite.course.events.CourseCreated;
+import org.axonframework.integrationtests.testsuite.course.commands.CreateCourse;
 import org.axonframework.integrationtests.testsuite.course.module.CreateCourseConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.server.AxonServerContainer;
@@ -107,5 +107,35 @@ class StudentAxonTestFixtureAxonServerIntegrationIT {
                .then()
                .success()
                .events(new CourseCreated(courseId));
+    }
+
+    @Test
+    void axonTestFixtureRecordsCommandWithNonSerializedPayload() {
+        var courseId = UUID.randomUUID().toString();
+        var command = new CreateCourse(courseId);
+
+        fixture.given()
+               .when()
+               .command(command)
+               .then()
+               .success()
+               .commands(command);
+    }
+
+    @Test
+    void axonTestFixtureRecordsCommandPayloadSatisfyingCustomAssertion() {
+        var courseId = UUID.randomUUID().toString();
+
+        fixture.given()
+               .when()
+               .command(new CreateCourse(courseId))
+               .then()
+               .success()
+               .commandsSatisfy(commands -> {
+                   Assertions.assertEquals(1, commands.size());
+                   var payload = commands.getFirst().payload();
+                   Assertions.assertInstanceOf(CreateCourse.class, payload);
+                   Assertions.assertEquals(courseId, ((CreateCourse) payload).courseId());
+               });
     }
 }

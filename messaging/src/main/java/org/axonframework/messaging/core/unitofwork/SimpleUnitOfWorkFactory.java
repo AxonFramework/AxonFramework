@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.ApplicationContext;
 
 import java.util.Objects;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * Factory for creating simple {@link UnitOfWork} instances. This factory allows for the creation of {@link UnitOfWork}
@@ -32,7 +31,7 @@ import java.util.function.UnaryOperator;
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
     private final ApplicationContext applicationContext;
-    private final UnaryOperator<UnitOfWorkConfiguration> factoryCustomization;
+    private final Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization;
 
     /**
      * Initializes a {@link SimpleUnitOfWorkFactory} with the default configuration. This constructor uses the default
@@ -41,7 +40,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param applicationContext The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
      *                           instances.
      */
-    public SimpleUnitOfWorkFactory(@Nonnull ApplicationContext applicationContext) {
+    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
         this(applicationContext, c -> c);
     }
 
@@ -56,8 +55,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      *                             {@link UnitOfWork} instances.
      */
     public SimpleUnitOfWorkFactory(
-            @Nonnull ApplicationContext applicationContext,
-            @Nonnull UnaryOperator<UnitOfWorkConfiguration> factoryCustomization
+            ApplicationContext applicationContext,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization
     ) {
         Objects.requireNonNull(applicationContext, "The applicationContext may not be null.");
         Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null.");
@@ -65,15 +64,24 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         this.factoryCustomization = factoryCustomization;
     }
 
-    @Nonnull
     @Override
     public UnitOfWork create(
-            @Nonnull String identifier,
-            @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
+            String identifier,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
         Objects.requireNonNull(identifier, "The identifier may not be null.");
         Objects.requireNonNull(customization, "The customization may not be null.");
         var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
-        return new UnitOfWork(identifier, configuration.workScheduler(), applicationContext);
+
+        UnitOfWork uow = new UnitOfWork(
+            identifier,
+            configuration.workScheduler(),
+            !configuration.allowAsyncProcessing(),
+            applicationContext
+        );
+
+        configuration.processingLifecycleEnhancers().forEach(enhancer -> enhancer.accept(uow));
+
+        return uow;
     }
 }

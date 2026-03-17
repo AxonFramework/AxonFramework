@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -79,7 +78,7 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param parent The parent {@link EventProcessingConfigurer} that manages this configurer.
      */
     @Internal
-    public PooledStreamingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
+    public PooledStreamingEventProcessorsConfigurer(EventProcessingConfigurer parent) {
         this.parent = parent;
     }
 
@@ -124,9 +123,8 @@ public class PooledStreamingEventProcessorsConfigurer {
      *                          applied.
      * @return This configurer instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaults(
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
+        public PooledStreamingEventProcessorsConfigurer defaults(
+            BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
@@ -145,9 +143,8 @@ public class PooledStreamingEventProcessorsConfigurer {
      *                          desired defaults.
      * @return This configurer instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaults(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
+        public PooledStreamingEventProcessorsConfigurer defaults(
+            UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
     ) {
         Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
@@ -164,10 +161,9 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaultProcessor(
-            @Nonnull String name,
-            @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
+        public PooledStreamingEventProcessorsConfigurer defaultProcessor(
+            String name,
+            Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
         processor(
                 () -> EventProcessorModule.pooledStreaming(name)
@@ -185,10 +181,9 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param moduleCustomizer Function to customize the processor module configuration.
      * @return This configurer instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull String name,
-            @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
+        public PooledStreamingEventProcessorsConfigurer processor(
+            String name,
+            Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
     ) {
         processor(
                 () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name)).build()
@@ -202,9 +197,8 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param moduleBuilder A builder that creates a {@link PooledStreamingEventProcessorModule} instance.
      * @return This module instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
+        public PooledStreamingEventProcessorsConfigurer processor(
+            ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
     ) {
         Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
         moduleBuilders.add(moduleBuilder);
@@ -217,9 +211,8 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @param registryAction Action to perform on the component registry.
      * @return This configurer instance for method chaining.
      */
-    @Nonnull
-    public PooledStreamingEventProcessorsConfigurer componentRegistry(
-            @Nonnull Consumer<ComponentRegistry> registryAction
+        public PooledStreamingEventProcessorsConfigurer componentRegistry(
+            Consumer<ComponentRegistry> registryAction
     ) {
         Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
@@ -49,9 +48,9 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
      * @param messageRoutingProperty The routing key property of the message, which is used to match against the
      *                               entity.
      */
-    public RoutingKeyEventTargetMatcher(@Nonnull AnnotatedEntityMetamodel<E> metamodel,
-                                        @Nonnull String entityRoutingProperty,
-                                        @Nonnull String messageRoutingProperty) {
+    public RoutingKeyEventTargetMatcher(AnnotatedEntityMetamodel<E> metamodel,
+                                        String entityRoutingProperty,
+                                        String messageRoutingProperty) {
         this.routingKeyEntityMatcher = new AnnotatedEntityModelRoutingKeyMatcher<>(
                 metamodel,
                 entityRoutingProperty,
@@ -60,9 +59,9 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
 
     @Override
-    public boolean matches(@Nonnull E childEntity,
-                           @Nonnull EventMessage message,
-                           @Nonnull ProcessingContext processingContext) {
+    public boolean matches(E childEntity,
+                           EventMessage message,
+                           ProcessingContext processingContext) {
         return routingKeyEntityMatcher.matches(childEntity, message);
     }
 }

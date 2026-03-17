@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.ComponentNotFoundException;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-
 import java.util.UUID;
+
+
+import org.axonframework.common.configuration.ComponentNotFoundException;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Test utilities when dealing with {@link UnitOfWork}.
@@ -48,8 +45,7 @@ public final class UnitOfWorkTestUtils {
      *
      * @return A new {@link UnitOfWork} with the random identifier.
      */
-    @Nonnull
-    public static UnitOfWork aUnitOfWork() {
+    public static @NonNull UnitOfWork aUnitOfWork() {
         return SIMPLE_FACTORY.create(UUID.randomUUID().toString());
     }
 
@@ -64,8 +60,7 @@ public final class UnitOfWorkTestUtils {
      * @param identifier The identifier for the {@link UnitOfWork}.
      * @return A new {@link UnitOfWork} with the given identifier.
      */
-    @Nonnull
-    public static UnitOfWork aUnitOfWork(@Nonnull String identifier) {
+    public static @NonNull UnitOfWork aUnitOfWork(@NonNull String identifier) {
         return SIMPLE_FACTORY.create(identifier);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
@@ -31,16 +37,15 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.TrackerStatus;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
-import org.axonframework.messaging.eventhandling.replay.ResetNotSupportedException;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource;
-import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +102,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     private final Coordinator coordinator;
     private final WorkPackage.EventFilter workPackageEventFilter;
 
-    private final AtomicReference<String> tokenStoreIdentifier = new AtomicReference<>();
+    private final AtomicReference<@Nullable String> tokenStoreIdentifier = new AtomicReference<>();
     private final Map<Integer, TrackerStatus> processingStatus = new ConcurrentHashMap<>();
 
     /**
@@ -116,14 +121,15 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
      *
      * @param name                    A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
-     *                                {@link EventMessage}s.
+     *                                {@link EventMessage}s. These components should already be wrapped with any
+     *                                decorations (such as dead-lettering support) at the module level.
      * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
      *                                {@code PooledStreamingEventProcessor} instance.
      */
     public PooledStreamingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull PooledStreamingEventProcessorConfiguration configuration
+            String name,
+            List<EventHandlingComponent> eventHandlingComponents,
+            PooledStreamingEventProcessorConfiguration configuration
     ) {
         this.name = Objects.requireNonNull(name, "Name may not be null");
         assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
@@ -132,14 +138,15 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         this.eventSource = configuration.eventSource();
         this.tokenStore = configuration.tokenStore();
         this.unitOfWorkFactory = configuration.unitOfWorkFactory();
+        this.workerExecutor = configuration.workerExecutor();
 
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
+
         this.workPackageEventFilter = new DefaultWorkPackageEventFilter(
                 this.name,
                 this.eventHandlingComponents,
                 configuration.errorHandler()
         );
-        this.workerExecutor = configuration.workerExecutor();
         var supportedEvents = this.eventHandlingComponents.supportedEvents();
         this.eventCriteria = Objects.requireNonNull(
                 configuration.eventCriteriaProvider().apply(supportedEvents),
@@ -163,7 +170,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .initialToken(configuration.initialToken())
                                       .coordinatorClaimExtension(configuration.coordinatorExtendsClaims())
                                       .eventCriteria(eventCriteria)
-                                      // .segmentReleasedAction(segment -> eventHandlerInvoker().segmentReleased(segment)) // TODO #3304 - Integrate event replay logic into Event Handling Component
+                                      .segmentChangeListener(configuration.segmentChangeListener())
                                       .build();
     }
 
@@ -234,11 +241,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         return coordinator.mergeSegment(segmentId);
     }
 
+    // region [Reset]
+
     @Override
     public boolean supportsReset() {
-        return false;
-        // TODO #3304 - Integrate event replay logic into Event Handling Component
-        //return eventHandlerInvoker().supportsReset();
+        return eventHandlingComponents.supportsReset();
     }
 
     @Override
@@ -255,55 +262,115 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public CompletableFuture<Void> resetTokens(
-            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
         return initialTrackingTokenSupplier.apply(eventSource).thenCompose(this::resetTokens);
     }
 
     @Override
     public <R> CompletableFuture<Void> resetTokens(
-            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
         return initialTrackingTokenSupplier.apply(eventSource).thenCompose(r -> resetTokens(r, resetContext));
     }
 
     @Override
-    public CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition) {
+    public CompletableFuture<Void> resetTokens(TrackingToken startPosition) {
         return resetTokens(startPosition, null);
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
-        // TODO #3304 - Integrate event replay logic into Event Handling Component
-        var exception = new ResetNotSupportedException(
-                "TODO #3304 - Integrate event replay logic into Event Handling Component");
-        return CompletableFuture.failedFuture(exception);
-//        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
-//        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
-//
-//        var unitOfWork = unitOfWorkFactory.create();
-//        var resetTokensFuture = unitOfWork.executeWithResult((processingContext) -> {
-//            // Find all segments and fetch all tokens
-//            int[] segments = tokenStore.fetchSegments(getName());
-//            logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
-//            TrackingToken[] tokens = Arrays.stream(segments)
-//                                           .mapToObj(segment -> tokenStore.fetchToken(getName(), segment))
-//                                           .toArray(TrackingToken[]::new);
-//            // Perform the reset on the EventHandlerInvoker
-//            eventHandlerInvoker().performReset(resetContext, null);
-//            // Update all tokens towards ReplayTokens
-//            IntStream.range(0, tokens.length)
-//                     .forEach(i -> tokenStore.storeToken(
-//                             ReplayToken.createReplayToken(tokens[i], startPosition, resetContext),
-//                             getName(),
-//                             segments[i]
-//                     ));
-//            logger.info("Processor [{}] successfully reset tokens for segments [{}].", name, segments);
-//            return CompletableFuture.completedFuture(null);
-//        });
-//        joinAndUnwrap(resetTokensFuture);
+    public <R> CompletableFuture<Void> resetTokens(TrackingToken startPosition, R resetContext) {
+        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
+        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
+
+        logger.info("Processor [{}] starting reset to position [{}].", name, startPosition);
+        var unitOfWork = unitOfWorkFactory.create();
+        return unitOfWork.executeWithResult(
+                processingContext ->
+                        fetchSegmentsWithTokens(processingContext)
+                                .thenCompose(segmentTokens -> performReset(
+                                        segmentTokens,
+                                        resetContext,
+                                        processingContext
+                                ))
+                                .thenCompose(segmentTokens -> storeReplayTokens(
+                                        segmentTokens,
+                                        startPosition,
+                                        resetContext,
+                                        processingContext
+                                ))
+        );
     }
+
+    private CompletableFuture<List<SegmentToken>> fetchSegmentsWithTokens(ProcessingContext processingContext) {
+        return tokenStore.fetchSegments(name, processingContext)
+                         .thenCompose(segments -> {
+                             logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
+                             var tokenFutures = segments.stream()
+                                                        .map(segment -> fetchTokenForSegment(segment,
+                                                                                             processingContext))
+                                                        .toList();
+                             return CompletableFuture.allOf(tokenFutures.toArray(CompletableFuture[]::new))
+                                                     .thenApply(ignored -> tokenFutures.stream()
+                                                                                       .map(CompletableFuture::join)
+                                                                                       .toList());
+                         });
+    }
+
+    private CompletableFuture<SegmentToken> fetchTokenForSegment(Segment segment, ProcessingContext processingContext) {
+        return tokenStore.fetchToken(name, segment.getSegmentId(), processingContext)
+                         .thenApply(token -> new SegmentToken(segment, token));
+    }
+
+    private <R> CompletableFuture<List<SegmentToken>> performReset(
+            List<SegmentToken> segmentTokens,
+            R resetContext,
+            ProcessingContext processingContext
+    ) {
+        var resetMessage = new GenericResetContext(new MessageType(ResetContext.class), resetContext);
+        return eventHandlingComponents.handleReset(resetMessage, processingContext)
+                                      .thenApply(ignored -> segmentTokens);
+    }
+
+    private <R> CompletableFuture<Void> storeReplayTokens(
+            List<SegmentToken> segmentTokens,
+            TrackingToken startPosition,
+            R resetContext,
+            ProcessingContext processingContext
+    ) {
+        var storeFutures = segmentTokens.stream()
+                                        .map(st -> tokenStore.storeToken(
+                                                ReplayToken.createReplayToken(
+                                                        st.token(),
+                                                        startPosition,
+                                                        convertedResetContext(
+                                                                resetContext,
+                                                                processingContext.component(Converter.class)
+                                                        )
+                                                ),
+                                                name,
+                                                st.segment().getSegmentId(),
+                                                processingContext
+                                        ))
+                                        .toList();
+        return CompletableFuture.allOf(storeFutures.toArray(CompletableFuture[]::new))
+                                .thenRun(() -> logger.info("Processor [{}] successfully reset tokens for segments [{}].",
+                                                           name,
+                                                           segmentTokens.stream().map(SegmentToken::segment).toList()));
+    }
+
+    private <R> byte[] convertedResetContext(R resetContext, Converter converter) {
+        byte[] convertedResetContext = converter.convert(resetContext, byte[].class);
+        return convertedResetContext == null ? new byte[0] : convertedResetContext;
+    }
+
+    private record SegmentToken(Segment segment, TrackingToken token) {
+
+    }
+
+    // endregion [Reset]
 
     /**
      * {@inheritDoc}
@@ -396,9 +463,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("mode", "pooled");
+        descriptor.describeProperty("running", isRunning());
         descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
         descriptor.describeProperty("eventCriteria", eventCriteria);
         descriptor.describeProperty("configuration", configuration);

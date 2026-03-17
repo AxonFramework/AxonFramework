@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,18 +37,17 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
      *
      * @param value The value to inject as parameter.
      */
-    public FixedValueParameterResolver(@Nonnull T value) {
+    public FixedValueParameterResolver(T value) {
         this.value = value;
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context) {
+    public CompletableFuture<T> resolveParameterValue(ProcessingContext context) {
         return CompletableFuture.completedFuture(value);
     }
 
     @Override
-    public boolean matches(@Nonnull ProcessingContext context) {
+    public boolean matches(ProcessingContext context) {
         return true;
     }
 }

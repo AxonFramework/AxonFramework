@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common;
-
-import jakarta.annotation.Nonnull;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -43,7 +41,7 @@ public abstract class TypeReference<E> {
         }
     }
 
-    private TypeReference(@Nonnull Type type) {
+    private TypeReference(Type type) {
         this.type = Objects.requireNonNull(type, "The given type may not be null.");
     }
 
@@ -54,7 +52,7 @@ public abstract class TypeReference<E> {
      * @param <C>   The clazz this {@code TypeReference} reflects.
      * @return A new {@code TypeReference} instance of the given {@code clazz}.
      */
-    public static <C> TypeReference<C> fromClass(@Nonnull Class<C> clazz) {
+    public static <C> TypeReference<C> fromClass(Class<C> clazz) {
         return new TypeReference<>(clazz) {
         };
     }
@@ -66,7 +64,7 @@ public abstract class TypeReference<E> {
      * @param <C>  The type this {@code TypeReference} reflects.
      * @return A new {@code TypeReference} instance of the given {@code type}.
      */
-    public static <C> TypeReference<C> fromType(@Nonnull Type type) {
+    public static <C> TypeReference<C> fromType(Type type) {
         return new TypeReference<>(type) {
         };
     }
@@ -77,7 +75,6 @@ public abstract class TypeReference<E> {
      * @return The class of the component.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
     public Class<E> getTypeAsClass() {
         if (type instanceof Class<?> clazz) {
             return (Class<E>) clazz;
@@ -99,12 +96,40 @@ public abstract class TypeReference<E> {
         return type;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+    /**
+     * Checks if this {@code TypeReference} is assignable from the {@code other} {@code TypeReference}.
+     * <p>
+     * It takes generic parameters into account by first checking if the raw types match by means of
+     * {@link Class#isAssignableFrom(Class)}, subsequently checking for compatibility of generic types by expecting an
+     * exact match of the types if any of {@code this} and {@code other} represent a parameterized type.
+     *
+     * @param other the other {@code TypeReference} to compare this to
+     * @return {@code true} if the {@code other} {@code TypeReference} is assignable from this {@code TypeReference}.
+     */
+    public boolean isAssignableFrom(TypeReference<?> other) {
+        // check raw type compatibility
+        if (!getTypeAsClass().isAssignableFrom(other.getTypeAsClass())) {
             return false;
         }
-        TypeReference<?> that = (TypeReference<?>) o;
+        // if both are parameterized types we attempt an exact match of the types
+        // no subtype/supertype support for generic types at the moment
+        if (type instanceof ParameterizedType && other.type instanceof ParameterizedType) {
+            return type.equals(other.type);
+        }
+        // if any of the types is parameterized we would need to check in more detail to be sure
+        // defensively returning false
+        if (type instanceof ParameterizedType || other.type instanceof ParameterizedType) {
+            return false;
+        }
+        // if both types are raw and compatible, we assume assignability
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof TypeReference<?> that)) {
+            return false;
+        }
         return Objects.equals(type, that.type);
     }
 

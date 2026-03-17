@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -74,7 +73,7 @@ public class AggregateEventEntry {
     private byte[] payload;
     @Lob
     private byte[] metadata;
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String identifier;
 
     /**
@@ -94,12 +93,12 @@ public class AggregateEventEntry {
      * @param aggregateSequenceNumber The sequence number of the {@link EventMessage} in the aggregate. May be
      *                                {@code null} if the event does not originate from an aggregate.
      */
-    public AggregateEventEntry(@Nonnull String identifier,
-                               @Nonnull String type,
-                               @Nonnull String version,
-                               @Nonnull byte[] payload,
-                               @Nonnull byte[] metadata,
-                               @Nonnull Object timestamp,
+    public AggregateEventEntry(String identifier,
+                               String type,
+                               String version,
+                               byte [] payload,
+                               byte [] metadata,
+                               Object timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
                                @Nullable Long aggregateSequenceNumber) {
@@ -135,12 +134,12 @@ public class AggregateEventEntry {
      *                                {@code null} if the event does not originate from an aggregate.
      */
     public AggregateEventEntry(long globalIndex,
-                               @Nonnull String identifier,
-                               @Nonnull String type,
-                               @Nonnull String version,
-                               @Nonnull byte[] payload,
-                               @Nonnull byte[] metadata,
-                               @Nonnull String timestamp,
+                               String identifier,
+                               String type,
+                               String version,
+                               byte [] payload,
+                               byte [] metadata,
+                                String timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
                                @Nullable Long aggregateSequenceNumber) {
@@ -177,8 +176,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#identifier() identifier} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String identifier() {
+        public String identifier() {
         return identifier;
     }
 
@@ -187,8 +185,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link MessageType#name() type} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String type() {
+        public String type() {
         return type;
     }
 
@@ -197,8 +194,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link MessageType#version() version} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public String version() {
+        public String version() {
         return version;
     }
 
@@ -207,8 +203,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#payload() payload} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public byte[] payload() {
+    public byte [] payload() {
         return payload;
     }
 
@@ -217,8 +212,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#metadata() metadata} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public byte[] metadata() {
+    public byte [] metadata() {
         return metadata;
     }
 
@@ -227,8 +221,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#timestamp() timestamp} of the stored {@link EventMessage}.
      */
-    @Nonnull
-    public Instant timestamp() {
+        public Instant timestamp() {
         return DateTimeUtils.parseInstant(timestamp);
     }
 
@@ -237,8 +230,7 @@ public class AggregateEventEntry {
      *
      * @return The {@link EventMessage#timestamp() timestamp} of the stored {@link EventMessage} as a {@code String}.
      */
-    @Nonnull
-    public String timestampAsString() {
+        public String timestampAsString() {
         return timestamp;
     }
 

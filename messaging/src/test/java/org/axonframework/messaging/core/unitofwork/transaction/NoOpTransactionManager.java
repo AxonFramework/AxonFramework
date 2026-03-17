@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork.transaction;
 
-
-import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
-import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A non-final {@link TransactionManager} implementation, so that it can be spied upon through Mockito.
@@ -26,7 +24,7 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 public class NoOpTransactionManager implements TransactionManager {
 
     @Override
-    public Transaction startTransaction() {
+    public @NonNull Transaction startTransaction() {
         return new Transaction() {
             @Override
             public void commit() {

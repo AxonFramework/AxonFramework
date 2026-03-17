@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 
 import java.util.Objects;
 
@@ -39,13 +38,18 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker lowerBound(ConsistencyMarker other) {
             return this;
         }
 
         @Override
-        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker upperBound(ConsistencyMarker other) {
             return Objects.requireNonNull(other, "The other consistency marker cannot be null.");
+        }
+
+        @Override
+        public Position position() {
+            return Position.START;
         }
 
         @Override
@@ -62,13 +66,18 @@ abstract class ConsistencyMarkers {
         }
 
         @Override
-        public ConsistencyMarker lowerBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker lowerBound(ConsistencyMarker other) {
             return Objects.requireNonNull(other, "The consistency marker cannot be null.");
         }
 
         @Override
-        public ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other) {
+        public ConsistencyMarker upperBound(ConsistencyMarker other) {
             return this;
+        }
+
+        @Override
+        public Position position() {
+            throw new UnsupportedOperationException("Not yet implemented");  // not implemented because there are no use cases
         }
 
         @Override

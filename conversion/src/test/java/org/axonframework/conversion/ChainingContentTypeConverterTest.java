@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package org.axonframework.conversion;
 
+import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.*;
 
 /**
@@ -36,8 +39,13 @@ class ChainingContentTypeConverterTest extends ConverterTestSuite<ChainingConten
         return new ChainingContentTypeConverter();
     }
 
-    @Override
-    protected Stream<Arguments> commonSupportedConversions() {
+    @ParameterizedTest
+    @MethodSource("supportedConversions")
+    void canConvertReturnsTrueForSupportedConversions(Type sourceType, Type targetType) {
+        assertThat(testSubject.canConvert(sourceType, targetType)).isTrue();
+    }
+
+    private Stream<Arguments> supportedConversions() {
         return Stream.of(
                 // Intermediate conversion levels:
                 arguments(String.class, byte[].class),
@@ -52,16 +60,19 @@ class ChainingContentTypeConverterTest extends ConverterTestSuite<ChainingConten
         );
     }
 
-    @Override
-    protected Stream<Arguments> specificSupportedConversions() {
-        // The ChainingContentTypeConverter does not have any specific supported conversion scenarios.
-        return Stream.empty();
+    @ParameterizedTest
+    @MethodSource("unsupportedConversions")
+    void canConvertReturnsFalseForUnsupportedConversions(Type sourceType, Type targetType) {
+        assertThat(testSubject.canConvert(sourceType, targetType)).isFalse();
     }
 
-    @Override
-    protected Stream<Arguments> specificUnsupportedConversions() {
-        // The ChainingContentTypeConverter does not have any specific unsupported conversion scenarios.
-        return Stream.empty();
+    private Stream<Arguments> unsupportedConversions() {
+        return Stream.of(
+                arguments(SomeInput.class, Integer.class),
+                arguments(SomeOtherInput.class, Double.class),
+                arguments(Integer.class, SomeInput.class),
+                arguments(Double.class, SomeOtherInput.class)
+        );
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.messaging.eventhandling.processing.streaming.token.annotation;
 
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.WrappedToken;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
@@ -42,8 +41,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<TrackingToken> createInstance(@Nonnull Executable executable,
-                                                           @Nonnull Parameter[] parameters,
+    public ParameterResolver<TrackingToken> createInstance(Executable executable,
+                                                           Parameter[] parameters,
                                                            int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
@@ -53,9 +52,8 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     private static class TrackingTokenParameterResolver implements ParameterResolver<TrackingToken> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<TrackingToken> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<TrackingToken> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(
                     TrackingToken.fromContext(context)
                                  .map(this::unwrap)
@@ -68,7 +66,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return context.containsResource(TrackingToken.RESOURCE_KEY);
         }
     }

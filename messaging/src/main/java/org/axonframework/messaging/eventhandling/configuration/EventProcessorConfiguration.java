@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,97 +16,92 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.EventProcessor;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.interception.HandlerInterceptorRegistry;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
-import org.axonframework.messaging.tracing.NoOpSpanFactory;
-import org.axonframework.messaging.tracing.SpanFactory;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Configuration class to be used for {@link EventProcessor} implementations.
  * <p>
- * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
- * {@link NoOpMessageMonitor} and the {@link EventProcessorSpanFactory} defaults to
- * {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} and the {@link UnitOfWorkFactory}
- * defaults to the {@link SimpleUnitOfWorkFactory}
+ * The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link UnitOfWorkFactory} defaults
+ * to the {@link SimpleUnitOfWorkFactory}
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class EventProcessorConfiguration implements DescribableComponent {
 
+    protected final String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
-
-    // TODO #3098 - Remove MessageMonitor from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
-    protected MessageMonitor<? super EventMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
-
-    // TODO #3098 - Remove EventProcessorSpanFactory from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
-    protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
-                                                                                      .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                                      .build();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     protected List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
-
-    /**
-     * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
-     * values.
-     */
-    @Internal
-    public EventProcessorConfiguration() {
-    }
+    protected BiFunction<Class<? extends EventProcessor>, String, List<MessageHandlerInterceptor<? super EventMessage>>> interceptorBuilder =
+            (processorType, name) -> new ArrayList<>();
+    protected BiFunction<Class<? extends EventProcessor>, String, MessageMonitor<? super EventMessage>> monitorBuilder =
+            (processorType, name) -> NoOpMessageMonitor.INSTANCE;
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with default values and retrieve global default values.
+     * <p>
+     * When the given {@code config} is {@code null}, the {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * and {@link MessageMonitor} will not be retrieved from the {@link HandlerInterceptorRegistry} and
+     * {@link MessageMonitorRegistry} respectively.
      *
-     * @param configuration The configuration, used to retrieve global default values, like
-     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
+     * @param processorName the name of the processor this configuration is for
+     * @param config        the config, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from
      */
     @Internal
-    public EventProcessorConfiguration(@Nonnull Configuration configuration) {
-        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class)
-                                         .eventInterceptors(configuration);
-        this.messageMonitor(configuration.getComponent(MessageMonitorRegistry.class)
-                                         .eventMonitor(configuration));
+    public EventProcessorConfiguration(String processorName,
+                                       @Nullable Configuration config) {
+        this.processorName = Assert.nonEmpty(processorName, "The processor name cannot be null or empty.");
+        if (config != null) {
+            this.interceptorBuilder = (procType, procName) -> config.getComponent(HandlerInterceptorRegistry.class)
+                                                                    .eventInterceptors(config, procType, procName);
+            this.monitorBuilder = (procType, procName) -> config.getComponent(MessageMonitorRegistry.class)
+                                                                .eventMonitor(config, procType, procName);
+        }
     }
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} copying properties from the given configuration.
      *
-     * @param base The {@code EventProcessorConfiguration} to copy properties from.
+     * @param base the {@code EventProcessorConfiguration} to copy properties from
      */
     @Internal
-    public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+    public EventProcessorConfiguration(EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
-        assertNonNull(base, "Base configuration may not be null");
+        this.processorName = base.processorName;
         this.errorHandler = base.errorHandler();
-        this.messageMonitor = base.messageMonitor();
-        this.spanFactory = base.spanFactory();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
-        this.interceptors = base.interceptors();
+        this.interceptors = new ArrayList<>(base.interceptors);
+        this.interceptorBuilder = base.interceptorBuilder;
+        this.monitorBuilder = base.monitorBuilder;
     }
 
     /**
@@ -117,49 +112,19 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *                     processing
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public EventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
         assertNonNull(errorHandler, "ErrorHandler may not be null");
         this.errorHandler = errorHandler;
         return this;
     }
 
     /**
-     * Sets the {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're processed. Defaults to
-     * a {@link NoOpMessageMonitor}.
+     * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to process an event batch.
      *
-     * @param messageMonitor a {@link MessageMonitor} to monitor {@link EventMessage}s before and after they're
-     *                       processed
+     * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork}.
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-        assertNonNull(messageMonitor, "MessageMonitor may not be null");
-        this.messageMonitor = messageMonitor;
-        return this;
-    }
-
-    /**
-     * Sets the {@link EventProcessorSpanFactory} implementation to use for providing tracing capabilities. Defaults to
-     * a {@link DefaultEventProcessorSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no
-     * tracing capabilities.
-     *
-     * @param spanFactory The {@link SpanFactory} implementation
-     * @return The current instance, for fluent interfacing.
-     */
-    public EventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-        assertNonNull(spanFactory, "SpanFactory may not be null");
-        this.spanFactory = spanFactory;
-        return this;
-    }
-
-    /**
-     * A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork} used to process
-     * an event batch.
-     *
-     * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns
-     *                          {@link UnitOfWork}.
-     * @return The current instance, for fluent interfacing.
-     */
-    public EventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public EventProcessorConfiguration unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
         this.unitOfWorkFactory = unitOfWorkFactory;
         return this;
@@ -185,41 +150,12 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     /**
-     * Returns the {@link MessageMonitor} used to monitor {@link EventMessage}s before and after they're processed.
-     *
-     * @return The {@link MessageMonitor} for this {@link EventProcessor} implementation.
-     */
-    public MessageMonitor<? super EventMessage> messageMonitor() {
-        return messageMonitor;
-    }
-
-    /**
-     * Returns the {@link EventProcessorSpanFactory} implementation used for providing tracing capabilities.
-     *
-     * @return The {@link EventProcessorSpanFactory} for this {@link EventProcessor} implementation.
-     */
-    public EventProcessorSpanFactory spanFactory() {
-        return spanFactory;
-    }
-
-    /**
      * Returns the {@link UnitOfWorkFactory} used to create {@link UnitOfWork} instances for event processing.
      *
      * @return The {@link UnitOfWorkFactory} for this {@link EventProcessor} implementation.
      */
     public UnitOfWorkFactory unitOfWorkFactory() {
         return unitOfWorkFactory;
-    }
-
-    /**
-     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link EventProcessor} under construction with this configuration implementation.
-     *
-     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link EventProcessor} under construction with this configuration implementation.
-     */
-    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
-        return new ArrayList<>(interceptors);
     }
 
     /**
@@ -232,10 +168,8 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("errorHandler", errorHandler);
-        descriptor.describeProperty("messageMonitor", messageMonitor);
-        descriptor.describeProperty("spanFactory", spanFactory);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("interceptors", interceptors);
     }

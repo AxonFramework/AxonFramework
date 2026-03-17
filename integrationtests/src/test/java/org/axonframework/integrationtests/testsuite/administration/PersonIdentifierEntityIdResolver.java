@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -44,9 +44,9 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
         this.config = config;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public PersonIdentifier resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public PersonIdentifier resolve(@NonNull Message message, @NonNull ProcessingContext context) {
         List<Class<? extends PersonCommand>> personCommandTypes = List.of(
                 AssignTaskCommand.class,
                 CreateCustomer.class,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotation.EventTag;
@@ -49,6 +49,7 @@ class AnnotationBasedTagResolverTest {
     @Test
     void shouldThrowExceptionOnNullEvent() {
         // when/then
+        //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> tagResolver.resolve(null));
     }
 
@@ -264,7 +265,7 @@ class AnnotationBasedTagResolverTest {
         static class CustomIterable implements Iterable<String> {
 
             @Override
-            public @Nonnull Iterator<String> iterator() {
+            public @NonNull Iterator<String> iterator() {
                 return Arrays.asList("one", "two", "three").iterator();
             }
         }

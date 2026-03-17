@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.update.configuration;
 
+import org.jspecify.annotations.NonNull;
+
 class DummyProvider implements UsagePropertyProvider {
 
     private final Boolean disabled;
@@ -29,12 +31,12 @@ class DummyProvider implements UsagePropertyProvider {
     }
 
     @Override
-    public Boolean getDisabled() {
+    public @NonNull Boolean getDisabled() {
         return disabled;
     }
 
     @Override
-    public String getUrl() {
+    public @NonNull String getUrl() {
         return url;
     }
 

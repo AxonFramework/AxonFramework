@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.GenericMessage;
@@ -72,7 +71,7 @@ public class MessageStreamResolverUtils {
      * @return A {@code MessageStream} based on the given {@code result}.
      */
     public static MessageStream<?> resolveToStream(@Nullable Object result,
-                                                   @Nonnull MessageTypeResolver typeResolver) {
+                                                   MessageTypeResolver typeResolver) {
         Objects.requireNonNull(typeResolver, "The Message Type Resolver must not be null.");
         if (result == null) {
             return MessageStream.empty();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
+import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
+
+
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-
-import static java.util.Objects.requireNonNull;
-import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
-import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
 /**
  * A {@link MessageStream} implementation that wraps an {@link ResultStream} of {@link QueryResponse}s, using
@@ -45,26 +44,24 @@ public class QueryResponseMessageStream extends AbstractQueryResponseMessageStre
      * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
      */
-    public QueryResponseMessageStream(@Nonnull ResultStream<QueryResponse> stream) {
+    public QueryResponseMessageStream(ResultStream<QueryResponse> stream) {
         super(stream);
     }
 
-    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryResponse queryResponse) {
+    protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
         return convertQueryResponse(queryResponse);
     }
 
-    @Nonnull
     @Override
-    protected AxonException createAxonException(@Nonnull QueryResponse queryResponse) {
+    protected AxonException createAxonException(QueryResponse queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),
                                       queryResponse.getErrorMessage(),
                                       queryResponse.getPayload());
     }
 
     @Override
-    protected boolean isError(@Nonnull QueryResponse queryResponse) {
+    protected boolean isError(QueryResponse queryResponse) {
         return queryResponse.hasErrorMessage();
     }
 }

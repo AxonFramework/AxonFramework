@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,8 +181,8 @@ class DefaultEventStoreTransactionTest {
             .thenApply(this::castTransaction)
             .join();
 
-            return appendTransaction.commit(processingContext)
-                .thenCompose(v -> appendTransaction.afterCommit(v, processingContext))
+            return appendTransaction.commit()
+                .thenCompose(v -> appendTransaction.afterCommit(v))
                 .join();
         }
 

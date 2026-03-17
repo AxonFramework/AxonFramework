@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.conversion.MessageConverter;
@@ -37,10 +36,10 @@ import org.axonframework.modelling.annotation.TargetEntityId;
 public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefinition {
 
     @Override
-    public <E, ID> EntityIdResolver<ID> createIdResolver(@Nonnull Class<E> entityType,
-                                                         @Nonnull Class<ID> idType,
-                                                         @Nonnull AnnotatedEntityMetamodel<E> entityMetamodel,
-                                                         @Nonnull Configuration configuration) {
+    public <E, ID> EntityIdResolver<ID> createIdResolver(Class<E> entityType,
+                                                         Class<ID> idType,
+                                                         AnnotatedEntityMetamodel<E> entityMetamodel,
+                                                         Configuration configuration) {
         return new AnnotatedEntityIdResolver<>(
                 entityMetamodel,
                 idType,

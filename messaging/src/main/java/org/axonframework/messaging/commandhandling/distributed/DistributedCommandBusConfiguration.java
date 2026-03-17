@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.util.ExecutorServiceFactory;
 
@@ -43,7 +42,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public record DistributedCommandBusConfiguration(
         int loadFactor,
         int commandThreads,
-        @Nonnull ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory
+        ExecutorServiceFactory<DistributedCommandBusConfiguration> executorServiceFactory
 ) {
 
     private static final int DEFAULT_LOAD_FACTOR = 100;
@@ -104,7 +103,7 @@ public record DistributedCommandBusConfiguration(
      * @param executorService The {@link ExecutorService} to use for the distributed command bus.
      * @return The configuration itself, for fluent API usage.
      */
-    public DistributedCommandBusConfiguration executorService(@Nonnull ExecutorService executorService) {
+    public DistributedCommandBusConfiguration executorService(ExecutorService executorService) {
         Objects.requireNonNull(executorService, "The ExecutorService may not be null.");
         return new DistributedCommandBusConfiguration(loadFactor, commandThreads, (config, queue) -> executorService);
     }

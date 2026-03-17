@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Component;
 
 /**
@@ -62,5 +61,5 @@ public interface DescribableComponent {
      *
      * @param descriptor The component descriptor to describe {@code this DescribableComponent}n its properties in.
      */
-    void describeTo(@Nonnull ComponentDescriptor descriptor);
+    void describeTo(ComponentDescriptor descriptor);
 }

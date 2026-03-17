@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.update.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Objects;
@@ -58,7 +57,7 @@ public class EnvironmentVariableUsagePropertyProvider implements UsagePropertyPr
      *
      * @param envSupplier The supplier to use for retrieving environment variables.
      */
-    public EnvironmentVariableUsagePropertyProvider(@Nonnull EnvironmentVariableSupplier envSupplier) {
+    public EnvironmentVariableUsagePropertyProvider(EnvironmentVariableSupplier envSupplier) {
         this.envSupplier = Objects.requireNonNull(envSupplier, "The envSupplier must not be null.");
     }
 

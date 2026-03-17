@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Module;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -42,7 +41,7 @@ public class HierarchicalStateManager implements StateManager {
     private final StateManager parent;
     private final StateManager child;
 
-    private HierarchicalStateManager(@Nonnull StateManager parent, @Nonnull StateManager child) {
+    private HierarchicalStateManager(StateManager parent, StateManager child) {
         this.parent = Objects.requireNonNull(parent, "Parent StateManager may not be null");
         this.child = Objects.requireNonNull(child, "Child StateManager may not be null");
     }
@@ -56,21 +55,21 @@ public class HierarchicalStateManager implements StateManager {
      * @param child  The child {@link StateManager} to try first.
      * @return A new hierarchical {@link StateManager} that delegates to the given managers.
      */
-    public static HierarchicalStateManager create(@Nonnull StateManager parent, @Nonnull StateManager child) {
+    public static HierarchicalStateManager create(StateManager parent, StateManager child) {
         return new HierarchicalStateManager(parent, child);
     }
 
     @Override
-    public <I, T> StateManager register(@Nonnull Repository<I, T> repository) {
+    public <I, T> StateManager register(Repository<I, T> repository) {
         Objects.requireNonNull(repository, "The repository must not be null.");
         child.register(repository);
         return this;
     }
 
     @Override
-    public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(@Nonnull Class<T> type,
-                                                                           @Nonnull I id,
-                                                                           @Nonnull ProcessingContext context) {
+    public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(Class<T> type,
+                                                                           I id,
+                                                                           ProcessingContext context) {
         //noinspection unchecked
         Class<I> idClass = (Class<I>) id.getClass();
         Repository<I, T> repository = repository(type, idClass);
@@ -89,7 +88,7 @@ public class HierarchicalStateManager implements StateManager {
     }
 
     @Override
-    public Set<Class<?>> registeredIdsFor(@Nonnull Class<?> entityType) {
+    public Set<Class<?>> registeredIdsFor(Class<?> entityType) {
         HashSet<Class<?>> classes = new HashSet<>();
         classes.addAll(parent.registeredIdsFor(entityType));
         classes.addAll(child.registeredIdsFor(entityType));
@@ -97,7 +96,7 @@ public class HierarchicalStateManager implements StateManager {
     }
 
     @Override
-    public <I, T> Repository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType) {
+    public <I, T> Repository<I, T> repository(Class<T> entityType, Class<I> idType) {
         Repository<I, T> childRepository = child.repository(entityType, idType);
         if (childRepository != null) {
             return childRepository;

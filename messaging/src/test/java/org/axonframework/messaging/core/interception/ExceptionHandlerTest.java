@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ class ExceptionHandlerTest {
      */
     private Object handle(Message message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
-                inspector.getHandlers(ExceptionHandlingComponent.class)
+                inspector.getHandlers(ExceptionHandlingComponent.class).stream()
                          .filter(h -> h.canHandle(message, new LegacyMessageSupportingContext(message)))
                          .findFirst();
         if (handler.isPresent()) {

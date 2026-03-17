@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import static org.assertj.core.api.Assertions.assertThat;
+
+
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.queryhandling.GenericQueryMessage;
-import org.axonframework.messaging.queryhandling.QueryMessage;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Test class validating the {@link GenericQueryMessage}.
@@ -49,12 +48,12 @@ class GenericQueryMessageTest extends MessageTestSuite<QueryMessage> {
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull QueryMessage result) {
+    protected void validateDefaultMessage(@NonNull QueryMessage result) {
         assertThat(result.priority()).isNotPresent();
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull QueryMessage actual, @Nonnull QueryMessage result) {
+    protected void validateMessageSpecifics(@NonNull QueryMessage actual, @NonNull QueryMessage result) {
         assertThat(result.priority()).hasValue(42);
     }
 }

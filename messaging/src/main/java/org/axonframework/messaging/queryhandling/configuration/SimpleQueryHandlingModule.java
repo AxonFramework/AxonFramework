@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.BaseModule;
 import org.axonframework.common.configuration.ComponentBuilder;
@@ -51,7 +50,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
     private final Map<QualifiedName, ComponentBuilder<QueryHandler>> handlerBuilders;
     private final List<ComponentBuilder<QueryHandlingComponent>> handlingComponentBuilders;
 
-    SimpleQueryHandlingModule(@Nonnull String moduleName) {
+    SimpleQueryHandlingModule(String moduleName) {
         super(requireNonNull(moduleName, "The module name cannot be null."));
         this.queryHandlingComponentName = "QueryHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
@@ -64,8 +63,8 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
     }
 
     @Override
-    public QueryHandlerPhase queryHandler(@Nonnull QualifiedName queryName,
-                                          @Nonnull ComponentBuilder<QueryHandler> queryHandlerBuilder) {
+    public QueryHandlerPhase queryHandler(QualifiedName queryName,
+                                          ComponentBuilder<QueryHandler> queryHandlerBuilder) {
         handlerBuilders.put(requireNonNull(queryName, "queryName must not be null"),
                             requireNonNull(queryHandlerBuilder, "The query handler builder cannot be null."));
         return this;
@@ -73,7 +72,7 @@ class SimpleQueryHandlingModule extends BaseModule<SimpleQueryHandlingModule>
 
     @Override
     public QueryHandlerPhase queryHandlingComponent(
-            @Nonnull ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
+            ComponentBuilder<QueryHandlingComponent> handlingComponentBuilder
     ) {
         handlingComponentBuilders.add(
                 requireNonNull(handlingComponentBuilder, "The query handling component builder cannot be null.")

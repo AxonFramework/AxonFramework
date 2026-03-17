@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Collections;
@@ -40,8 +39,8 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-record TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
-                                       @Nonnull Set<Tag> tags) implements EventCriteria, EventCriterion {
+record TagAndTypeFilteredEventCriteria(Set<QualifiedName> types,
+                                       Set<Tag> tags) implements EventCriteria, EventCriterion {
 
     /**
      * Constructs an {@link EventCriteria} that matches against given {@code types} and the given {@code tags}. If the
@@ -51,8 +50,8 @@ record TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
      * @param types The types that this criteria instance matches with.
      * @param tags  The tags that events are expected to have.
      */
-    TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
-                                    @Nonnull Set<Tag> tags) {
+    TagAndTypeFilteredEventCriteria(Set<QualifiedName> types,
+                                    Set<Tag> tags) {
         this.types = Set.copyOf(requireNonNull(types, "The types cannot be null"));
         this.tags = Set.copyOf(requireNonNull(tags, "The tags cannot be null"));
     }
@@ -76,7 +75,7 @@ record TagAndTypeFilteredEventCriteria(@Nonnull Set<QualifiedName> types,
     }
 
     @Override
-    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return matchesType(type) && matchesTags(tags);
     }
 

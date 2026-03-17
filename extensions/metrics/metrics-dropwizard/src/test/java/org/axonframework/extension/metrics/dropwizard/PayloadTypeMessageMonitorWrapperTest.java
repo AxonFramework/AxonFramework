@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package org.axonframework.extension.metrics.dropwizard;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
+import io.dropwizard.metrics5.MetricSet;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -66,9 +67,9 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message> & M
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
+        Map<MetricName, Metric> resultMetrics = testSubject.getMetrics();
         assertEquals(1, resultMetrics.size());
-        assertNotNull(resultMetrics.get(expectedMonitorName));
+        assertNotNull(resultMetrics.get(MetricName.build(expectedMonitorName)));
     }
 
     @Test
@@ -94,10 +95,10 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message> & M
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
+        Map<MetricName, Metric> resultMetrics = testSubject.getMetrics();
         assertEquals(2, resultMetrics.size());
-        assertNotNull(resultMetrics.get(expectedStringMonitorName));
-        assertNotNull(resultMetrics.get(expectedStringMonitorName));
+        assertNotNull(resultMetrics.get(MetricName.build(expectedStringMonitorName)));
+        assertNotNull(resultMetrics.get(MetricName.build(expectedStringMonitorName)));
     }
 
     @Test
@@ -110,8 +111,8 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message> & M
 
         testSubject.onMessageIngested(STRING_MESSAGE);
 
-        Map<String, Metric> resultMetrics = testSubject.getMetrics();
+        Map<MetricName, Metric> resultMetrics = testSubject.getMetrics();
         assertEquals(1, resultMetrics.size());
-        assertNotNull(resultMetrics.get(expectedMonitorName));
+        assertNotNull(resultMetrics.get(MetricName.build(expectedMonitorName)));
     }
 }

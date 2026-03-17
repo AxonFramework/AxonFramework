@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.configuration;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Functional interface describing how to build a component of type {@code C} using the {@link Configuration} during
@@ -35,5 +33,5 @@ public interface ComponentBuilder<C> {
      * @param config The configuration from which other components can be retrieved to build the result.
      * @return A component of type {@code C} using the given {@code config} during construction.
      */
-    C build(@Nonnull Configuration config);
+    C build(Configuration config);
 }

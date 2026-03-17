@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Set;
@@ -54,7 +53,7 @@ final class EventTypeRestrictableOrEventCriteria extends OrEventCriteria impleme
     }
 
     @Override
-    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(Set<QualifiedName> types) {
         EventCriteria builtEventCriteria = buildingCriteria.andBeingOneOfTypes(types);
         return otherCriteria.or(builtEventCriteria);
     }

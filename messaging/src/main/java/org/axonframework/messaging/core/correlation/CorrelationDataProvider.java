@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.correlation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
@@ -42,6 +41,5 @@ public interface CorrelationDataProvider {
      * @param message The message to define correlation data for.
      * @return The data to attach as correlation data to generated messages.
      */
-    @Nonnull
-    Map<String, String> correlationDataFor(@Nonnull Message message);
+    Map<String, String> correlationDataFor(Message message);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +36,7 @@ public interface ParameterResolver<T> {
      * @return A {@link CompletableFuture} that will complete with the parameter value, or completes with {@code null}.
      * @since 5.0.0
      */
-    @Nonnull
-    CompletableFuture<T> resolveParameterValue(@Nonnull ProcessingContext context);
+    CompletableFuture<T> resolveParameterValue(ProcessingContext context);
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code context}.
@@ -46,7 +44,7 @@ public interface ParameterResolver<T> {
      * @param context The current processing context.
      * @return Returns {@code true} if this resolver can provide a value for the message, otherwise {@code false}.
      */
-    boolean matches(@Nonnull ProcessingContext context);
+    boolean matches(ProcessingContext context);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class

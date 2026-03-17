@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package org.axonframework.common.annotation;
 
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Utility class for locating annotation and attribute values on elements.
@@ -204,31 +208,87 @@ public final class AnnotationUtils {
                 .map(attribute -> (T) attribute);
     }
 
+    /**
+     * Find the attributes of an annotation of type {@code annotationType} on the given {@code type}, following a
+     * layered search strategy. The search stops as soon as the {@code expectedAttributes} predicate returns
+     * {@code true} for the found attributes.
+     * <p>
+     * The search follows this ordering:
+     * <ol>
+     *     <li>The {@code type} itself</li>
+     *     <li>The {@link Class#getEnclosingClass() enclosing classes} (from innermost to outermost) of the {@code type}</li>
+     *     <li>The {@link Class#getPackage() package} of the {@code type}</li>
+     *     <li>The {@link Class#getModule() module} of the {@code type}</li>
+     * </ol>
+     *
+     * @param type               the type to search for the annotation on taking the described ordering
+     * @param annotationType     the type of the annotation to find
+     * @param expectedAttributes a predicate that returns {@code true} when the desired attribute is found in the
+     *                           attributes map, indicating the search should stop. For example, to search until a
+     *                           non-empty "namespace" attribute is found:
+     *                           {@code attrs -> !StringUtils.emptyOrNull((String) attrs.get("namespace"))}
+     * @return an optional containing the attributes map if the annotation was found and the predicate was satisfied,
+     * or an empty optional if the annotation was not found at any level
+     */
+    public static Optional<Map<String, Object>> findAnnotationAttributesOnType(
+            Class<?> type,
+            Class<? extends Annotation> annotationType,
+            Predicate<Map<String, Object>> expectedAttributes
+    ) {
+        // Look at the type itself
+        Optional<Map<String, Object>> attributes =
+                findAnnotationAttributes(type, annotationType).filter(expectedAttributes);
+        if (attributes.isPresent()) {
+            return attributes;
+        }
+
+        // Look at enclosing classes
+        for (Class<?> enclosingClass : ReflectionUtils.enclosingClassesOf(type)) {
+            attributes = findAnnotationAttributes(enclosingClass, annotationType).filter(expectedAttributes);
+            if (attributes.isPresent()) {
+                return attributes;
+            }
+        }
+
+        // Look at the package
+        attributes = findAnnotationAttributes(type.getPackage(), annotationType).filter(expectedAttributes);
+        if (attributes.isPresent()) {
+            return attributes;
+        }
+
+        // Look at the module
+        return findAnnotationAttributes(type.getModule(), annotationType).filter(expectedAttributes);
+    }
+
     private static boolean collectAnnotationAttributes(Class<? extends Annotation> target,
                                                        String annotationType,
                                                        Set<String> visited,
                                                        Map<String, Object> attributes,
                                                        boolean overrideOnly) {
         Annotation ann = getAnnotation(target, annotationType);
-        if (ann == null && visited.add(target.getName())) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                if (collectAnnotationAttributes(metaAnn.annotationType(),
-                                                annotationType,
-                                                visited,
-                                                attributes,
-                                                overrideOnly)) {
-                    collectAttributes(metaAnn, attributes, overrideOnly);
-                    return true;
-                }
-            }
-        } else if (ann != null) {
+        if (ann != null) {
             collectAttributes(ann, attributes);
             return true;
+        }
+
+        if (!visited.add(target.getName())) {
+            return false;
+        }
+
+        for (Annotation metaAnn : target.getAnnotations()) {
+            if (collectAnnotationAttributes(metaAnn.annotationType(),
+                                            annotationType,
+                                            visited,
+                                            attributes,
+                                            overrideOnly)) {
+                collectAttributes(metaAnn, attributes, overrideOnly);
+                return true;
+            }
         }
         return false;
     }
 
-    private static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
+    private @Nullable static Annotation getAnnotation(AnnotatedElement target, String annotationType) {
         for (Annotation annotation : target.getAnnotations()) {
             if (annotationType.equals(annotation.annotationType().getName())) {
                 return annotation;
@@ -271,18 +331,18 @@ public final class AnnotationUtils {
     }
 
     /**
-     * Validate whether the given {@code target} annotation {@link Class} is meta-annotated with the given {@code
-     * subject}. If this is the case for the {@code target} itself or any meta-annotation on any level of the {@code
-     * target}, {@code true} will be returned.
+     * Validate whether the given {@code target} annotation {@link Class} is meta-annotated with the given
+     * {@code subject}. If this is the case for the {@code target} itself or any meta-annotation on any level of the
+     * {@code target}, {@code true} will be returned.
      * <p>
      * Any {@link Annotation} classes which are directly annotated or meta-annotated with the given {@code subject} will
      * be stored in the {@code annotatedWithSubject} {@link Set}. The {@code visited} {@code Set} is used to ignore
      * annotations which have already been validated.
      *
-     * @param target               the annotation {@link Class} to validate if it is annotated with the given {@code
-     *                             subject}
-     * @param subject              the annotation {@link Class} to check whether it is present on the given {@code
-     *                             target}, directly or through meta-annotations
+     * @param target               the annotation {@link Class} to validate if it is annotated with the given
+     *                             {@code subject}
+     * @param subject              the annotation {@link Class} to check whether it is present on the given
+     *                             {@code target}, directly or through meta-annotations
      * @param annotatedWithSubject a {@link Set} to store all class' in which are annotated with the {@code subject},
      *                             either directly or through meta-annotations
      * @param visited              a {@link Set} containing all annotation class' which have been visited in the process
@@ -312,6 +372,48 @@ public final class AnnotationUtils {
         }
 
         return hasSubjectAnnotation;
+    }
+
+    /**
+     * Creates a {@link Predicate} that checks whether the given {@link Member} is annotated with the given
+     * {@code annotationType}.
+     *
+     * @param annotationType The annotation type to check.
+     * @return Predicate that checks whether the given annotation is present.
+     */
+    public static Predicate<Member> isAnnotatedWith(Class<? extends Annotation> annotationType) {
+        return it -> it instanceof AnnotatedElement && isAnnotationPresent((AnnotatedElement) it, annotationType);
+    }
+
+    /**
+     * Returns a predicate testing if a type of the given instance is annotated with provided annotation type.
+     *
+     * @param annotationType An annotated type to check for.
+     * @return The predicate.
+     */
+    public static Predicate<Object> isTypeAnnotatedWith(Class<? extends Annotation> annotationType) {
+        return instance -> isAnnotationPresent(instance.getClass(), annotationType);
+    }
+
+    /**
+     * Returns a predicate testing id a type of given instance us annotated with provided annotation type having a
+     * single attribute value equals to the provided one.
+     *
+     * @param annotationType The annotation type to check for.
+     * @param attributeName  The name of the attribute.
+     * @param value          The value of the attribute.
+     * @return The predicate.
+     */
+    public static Predicate<Object> isTypeAnnotatedWithHavingAttributeValue(
+            Class<? extends Annotation> annotationType,
+            String attributeName,
+            @Nullable Object value) {
+        return instance -> findAnnotationAttributes(instance.getClass(), annotationType)
+                .filter(attribute -> (value != null)
+                        ? attribute.containsKey(attributeName) && value.equals(attribute.get(attributeName))
+                        : attribute.containsKey(attributeName) && attribute.get(attributeName) == null
+                )
+                .isPresent();
     }
 
     private AnnotationUtils() {

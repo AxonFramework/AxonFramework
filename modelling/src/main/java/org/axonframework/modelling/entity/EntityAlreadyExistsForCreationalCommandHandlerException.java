@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -36,8 +35,8 @@ public class EntityAlreadyExistsForCreationalCommandHandlerException extends Run
      * @param command        The {@link CommandMessage} that was handled.
      * @param existingEntity The existing entity that was found.
      */
-    public EntityAlreadyExistsForCreationalCommandHandlerException(@Nonnull CommandMessage command,
-                                                                   @Nonnull Object existingEntity) {
+    public EntityAlreadyExistsForCreationalCommandHandlerException(CommandMessage command,
+                                                                   Object existingEntity) {
         super(String.format(
                 "Creational command handler for command [%s] encountered an already existing entity: [%s]",
                 command.type(),

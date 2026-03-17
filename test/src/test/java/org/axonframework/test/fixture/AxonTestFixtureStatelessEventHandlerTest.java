@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,11 +69,11 @@ public class AxonTestFixtureStatelessEventHandlerTest {
                 EventProcessorModule
                         .pooledStreaming("test-given-event-then-command")
                         .eventHandlingComponents(c -> c.declarative(
-                                cfg -> new SimpleEventHandlingComponent()
-                                        .subscribe(
-                                                new QualifiedName(StudentNameChangedEvent.class),
-                                                AxonTestFixtureStatelessEventHandlerTest::handleStudentNameChanged
-                                        )
+                                "notificationHandler",
+                                cfg -> SimpleEventHandlingComponent.create("test").subscribe(
+                                        new QualifiedName(StudentNameChangedEvent.class),
+                                        AxonTestFixtureStatelessEventHandlerTest::handleStudentNameChanged
+                                )
                         )).notCustomized()
         ))));
         return configurer;

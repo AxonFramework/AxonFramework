@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.tracing;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -52,22 +51,22 @@ public class TracingCommandBus implements CommandBus {
      * @param delegate    The delegate {@code CommandBus} that will handle all dispatching and handling logic.
      * @param spanFactory The {@code CommandBusSpanFactory} to create spans with.
      */
-    public TracingCommandBus(@Nonnull CommandBus delegate,
-                             @Nonnull CommandBusSpanFactory spanFactory) {
+    public TracingCommandBus(CommandBus delegate,
+                             CommandBusSpanFactory spanFactory) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.spanFactory = requireNonNull(spanFactory, "The CommandBusSpanFactory must not be null.");
     }
 
     @Override
-    public TracingCommandBus subscribe(@Nonnull QualifiedName name,
-                                       @Nonnull CommandHandler commandHandler) {
+    public TracingCommandBus subscribe(QualifiedName name,
+                                       CommandHandler commandHandler) {
         delegate.subscribe(name,
                            new TracingHandler(requireNonNull(commandHandler, "The command handler cannot be null.")));
         return this;
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(
                 requireNonNull(command, "The command message cannot be null."), false
@@ -76,7 +75,7 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("spanFactory", spanFactory);
     }
@@ -89,11 +88,10 @@ public class TracingCommandBus implements CommandBus {
             this.handler = handler;
         }
 
-        @Nonnull
         @Override
         public MessageStream.Single<CommandResultMessage> handle(
-                @Nonnull CommandMessage message,
-                @Nonnull ProcessingContext processingContext
+                CommandMessage message,
+                ProcessingContext processingContext
         ) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));

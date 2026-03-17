@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,16 @@ public interface HandlerAttributes {
      * Attribute key referencing whether the handler is allowed to be invoked on replays.
      */
     String ALLOW_REPLAY = "AllowReplay.allowReplay";
+
+    /**
+     * Attribute key referencing the sequencing policy type class for the handler.
+     */
+    String SEQUENCING_POLICY_TYPE = "SequencingPolicy.type";
+
+    /**
+     * Attribute key referencing the sequencing policy parameters for the handler.
+     */
+    String SEQUENCING_POLICY_PARAMETERS = "SequencingPolicy.parameters";
 
     /**
      * Attribute key referencing the name of the {@link org.axonframework.deadline.DeadlineMessage} the handler can

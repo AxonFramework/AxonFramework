@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@ import io.axoniq.axonserver.connector.FlowControl;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.connector.ResultStream;
-import io.axoniq.axonserver.connector.impl.AsyncRegistration;
 import io.axoniq.axonserver.connector.query.QueryDefinition;
 import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.FutureUtils;
@@ -51,8 +49,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.Objects.requireNonNull;
@@ -89,8 +85,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
      * @param connection    The connection to AxonServer
      * @param configuration The configuration containing local settings for this connector
      */
-    public AxonServerQueryBusConnector(@Nonnull AxonServerConnection connection,
-                                       @Nonnull AxonServerConfiguration configuration) {
+    public AxonServerQueryBusConnector(AxonServerConnection connection,
+                                       AxonServerConfiguration configuration) {
         this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
         requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
 
@@ -109,35 +105,22 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+    public CompletableFuture<Void> subscribe(QualifiedName name) {
         logger.debug("Subscribing to query handler [{}].",
                      name);
         QueryDefinition definition = new QueryDefinition(name.fullName(), "");
         Registration registration = connection.queryChannel()
                                               .registerQueryHandler(localSegmentAdapter, definition);
 
-        // Make sure that when we subscribe and immediately send a command, it can be handled.
-        if (registration instanceof AsyncRegistration asyncRegistration) {
-            try {
-                // Waiting synchronously for the subscription to be acknowledged, this should be improved
-                // TODO https://github.com/AxonFramework/AxonFramework/issues/3544
-                asyncRegistration.awaitAck(2000, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                throw new RuntimeException(
-                        "Timed out waiting for subscription acknowledgment for query: " + name.fullName(), e
-                );
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for subscription acknowledgment", e);
-            }
-        }
-
         this.subscriptions.put(name, registration);
-        return FutureUtils.emptyCompletedFuture();
+
+        CompletableFuture<Void> completion = new CompletableFuture<>();
+        registration.onAck(() -> completion.complete(null));
+        return completion;
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName name) {
+    public boolean unsubscribe(QualifiedName name) {
         Registration subscription = subscriptions.remove(name);
         if (subscription != null) {
             subscription.cancel();
@@ -147,16 +130,15 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public void onIncomingQuery(@Nonnull Handler handler) {
+    public void onIncomingQuery(Handler handler) {
         this.incomingHandler = requireNonNull(handler, "The incoming query handler must not be null.");
     }
 
     // endregion
 
     // region [QueryBus]
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
@@ -171,9 +153,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
     }
 
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
@@ -229,7 +210,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("clientId", clientId);
         descriptor.describeProperty("componentName", componentName);
@@ -297,13 +278,12 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         private final QueryHandler.UpdateHandler updateHandler;
 
-        public AxonServerUpdateCallback(@Nonnull QueryHandler.UpdateHandler updateHandler) {
+        public AxonServerUpdateCallback(QueryHandler.UpdateHandler updateHandler) {
             this.updateHandler = updateHandler;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Void> sendUpdate(@Nonnull SubscriptionQueryUpdateMessage update) {
+        public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(update));
             return FutureUtils.emptyCompletedFuture();
         }
@@ -315,7 +295,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         @Override
-        public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable error) {
+        public CompletableFuture<Void> completeExceptionally(Throwable error) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, error));
             updateHandler.complete();
             return FutureUtils.emptyCompletedFuture();

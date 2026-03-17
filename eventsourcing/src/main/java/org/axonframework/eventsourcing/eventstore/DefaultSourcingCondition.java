@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
 import static java.util.Objects.requireNonNull;
@@ -34,8 +33,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultSourcingCondition(
-        @Nonnull Position start,
-        @Nonnull EventCriteria criteria
+        Position start,
+        EventCriteria criteria
 ) implements SourcingCondition {
 
     DefaultSourcingCondition {
@@ -44,7 +43,7 @@ record DefaultSourcingCondition(
     }
 
     @Override
-    public SourcingCondition or(@Nonnull SourcingCondition other) {
+    public SourcingCondition or(SourcingCondition other) {
         return new DefaultSourcingCondition(
             other.start().min(start),
             other.criteria().or(criteria)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -49,23 +48,22 @@ import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     @Override
-    protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
+    protected boolean isMemberTypeSupported(Class<?> memberType) {
         return List.class.isAssignableFrom(memberType);
     }
 
     @Override
-    protected Class<?> getChildTypeFromMember(@Nonnull Member member) {
+    protected Class<?> getChildTypeFromMember(Member member) {
         return getChildTypeFromList(member);
     }
 
-    @Nonnull
     @Override
     protected <C, P> EntityChildMetamodel<C, P> doCreate(
-            @Nonnull Class<P> parentClass,
-            @Nonnull EntityMetamodel<C> entityMetamodel,
-            @Nonnull String fieldName,
-            @Nonnull EventTargetMatcher<C> eventTargetMatcher,
-            @Nonnull CommandTargetResolver<C> commandTargetResolver) {
+            Class<P> parentClass,
+            EntityMetamodel<C> entityMetamodel,
+            String fieldName,
+            EventTargetMatcher<C> eventTargetMatcher,
+            CommandTargetResolver<C> commandTargetResolver) {
 
         return ListEntityChildMetamodel
                 .forEntityModel(parentClass, entityMetamodel)

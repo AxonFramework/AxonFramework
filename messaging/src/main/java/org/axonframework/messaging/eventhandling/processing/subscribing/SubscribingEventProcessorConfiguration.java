@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,33 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.messaging.eventhandling.tracing.EventProcessorSpanFactory;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
-import org.axonframework.messaging.tracing.NoOpSpanFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Configuration class for a {@link SubscribingEventProcessor}.
  * <p>
- * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
- * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
- * {@link NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
- * {@link NoOpMessageMonitor}, and the {@link UnitOfWorkFactory} defaults to the
- * {@link SimpleUnitOfWorkFactory}. The Event Processor
- * {@link SubscribableEventSource} is <b>hard requirements</b> and as such should be provided.
+ * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler} and the {@link UnitOfWorkFactory} defaults to
+ * the {@link SimpleUnitOfWorkFactory}. The Event Processor {@link SubscribableEventSource} is <b>hard requirements</b>
+ * and as such should be provided.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -55,19 +50,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
-
-    /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration}.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use
-     * {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
-     * desired.
-     */
-    @Internal
-    public SubscribingEventProcessorConfiguration() {
-        super();
-    }
+    private Consumer<? super EventMessage> ignoredMessageHandler;
+    private List<MessageHandlerInterceptor<? super EventMessage>> sepInterceptors;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration} copying properties from the given configuration.
@@ -75,7 +59,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base) {
         super(base);
     }
 
@@ -83,31 +67,19 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values and retrieve global default
      * values.
      *
+     * @param base          The {@link EventProcessorConfiguration} to copy properties from.
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base,
-                                                  @Nonnull Configuration configuration) {
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base,
+                                                  Configuration configuration) {
         super(base);
     }
 
     @Override
-    public SubscribingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public SubscribingEventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
         super.errorHandler(errorHandler);
-        return this;
-    }
-
-    @Override
-    public SubscribingEventProcessorConfiguration messageMonitor(
-            @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-        super.messageMonitor(messageMonitor);
-        return this;
-    }
-
-    @Override
-    public SubscribingEventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-        super.spanFactory(spanFactory);
         return this;
     }
 
@@ -116,19 +88,34 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
      * @param eventSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
-     *                      {@link EventProcessor} implementation will subscribe itself to receive
-     *                      {@link EventMessage}s.
+     *                    {@link EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration eventSource(
-            @Nonnull SubscribableEventSource eventSource) {
+    public SubscribingEventProcessorConfiguration eventSource(SubscribableEventSource eventSource) {
         assertNonNull(eventSource, "SubscribableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
     }
 
+    /**
+     * Sets the handler, that is invoked when the event is ignored by all
+     * {@link org.axonframework.messaging.eventhandling.EventHandlingComponent EventHandlingComponents} this
+     * {@link SubscribingEventProcessor} controls. Defaults to a no-op.
+     *
+     * @param ignoredMessageHandler The handler, that is invoked when the event is ignored by all
+     *                              {@link org.axonframework.messaging.eventhandling.EventHandlingComponent
+     *                              EventHandlingComponents} this {@link {@link SubscribingEventProcessor}} controls.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public SubscribingEventProcessorConfiguration ignoredMessageHandler(
+            Consumer<? super EventMessage> ignoredMessageHandler
+    ) {
+        this.ignoredMessageHandler = ignoredMessageHandler;
+        return this;
+    }
+
     @Override
-    public SubscribingEventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public SubscribingEventProcessorConfiguration unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
         return this;
     }
@@ -141,9 +128,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                    {@link SubscribingEventProcessor} under construction.
      * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
      */
-    @Nonnull
-    public SubscribingEventProcessorConfiguration withInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
+        public SubscribingEventProcessorConfiguration withInterceptor(
+            MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         //noinspection unchecked | Casting to EventMessage is safe.
         this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
@@ -171,8 +157,39 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return eventSource;
     }
 
+    /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction with this configuration implementation.
+     *
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction with this configuration implementation.
+     */
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+        if (sepInterceptors == null) {
+            sepInterceptors = new ArrayList<>();
+            sepInterceptors.addAll(super.interceptorBuilder.apply(SubscribingEventProcessor.class, processorName));
+            sepInterceptors.addAll(super.interceptors);
+        }
+        return new ArrayList<>(sepInterceptors);
+    }
+
+    /**
+     * Returns the handler for ignored messages.
+     *
+     * @return The ignored message handler.
+     */
+    public Consumer<? super EventMessage> ignoredMessageHandler() {
+        if (ignoredMessageHandler == null) {
+            ignoredMessageHandler =
+                    eventMessage -> monitorBuilder.apply(SubscribingEventProcessor.class, processorName)
+                                                  .onMessageIngested(eventMessage)
+                                                  .reportIgnored();
+        }
+        return ignoredMessageHandler;
+    }
+
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("eventSource", eventSource);
     }

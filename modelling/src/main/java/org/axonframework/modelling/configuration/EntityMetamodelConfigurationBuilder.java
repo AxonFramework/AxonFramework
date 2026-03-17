@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
@@ -43,5 +42,5 @@ public interface EntityMetamodelConfigurationBuilder<E> {
      * @param builder       The builder to use for configuring the metamodel.
      * @return The built {@link EntityMetamodel}.
      */
-    EntityMetamodel<E> build(@Nonnull Configuration configuration, @Nonnull EntityMetamodelBuilder<E> builder);
+    EntityMetamodel<E> build(Configuration configuration, EntityMetamodelBuilder<E> builder);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,22 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
+import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.messaging.core.ConfigurationApplicationContext;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.RecordingEventHandlingComponent;
@@ -29,21 +39,13 @@ import org.axonframework.messaging.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.PropagatingErrorHandler;
-import org.axonframework.messaging.core.ConfigurationApplicationContext;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.SubscribableEventSource;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.conversion.json.JacksonConverter;
-import org.axonframework.common.util.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -76,7 +78,9 @@ class SubscribingEventProcessorModuleTest {
             // when
             SubscribingEventProcessorModule module = EventProcessorModule
                     .subscribing(processorName)
-                    .eventHandlingComponents(components -> components.declarative(cfg -> new SimpleEventHandlingComponent()))
+                    .eventHandlingComponents(components -> components.declarative("component",
+                            cfg -> SimpleEventHandlingComponent.create("test")
+                    ))
                     .customized((cfg, c) -> c);
 
             // then
@@ -154,9 +158,9 @@ class SubscribingEventProcessorModuleTest {
                     ep -> ep.subscribing(
                             sp -> sp.defaults(d -> d.eventSource(eventBus))
                                     .defaultProcessor("test-processor",
-                                                      components -> components.declarative(cfg -> component1)
-                                                                              .declarative(cfg -> component2)
-                                                                              .autodetected(cfg -> component3)
+                                                      components -> components.declarative("component1", cfg -> component1)
+                                                                              .declarative("component2", cfg -> component2)
+                                                                              .autodetected("component3", cfg -> component3)
                                     )
                     )
             );
@@ -198,9 +202,9 @@ class SubscribingEventProcessorModuleTest {
                     ep -> ep.subscribing(
                             sp -> sp.defaults(d -> d.eventSource(eventBus))
                                     .defaultProcessor("test-processor",
-                                                      components -> components.declarative(cfg -> component1)
-                                                                              .declarative(cfg -> component2)
-                                                                              .autodetected(cfg -> component3)
+                                                      components -> components.declarative("component1", cfg -> component1)
+                                                                              .declarative("component2", cfg -> component2)
+                                                                              .autodetected("component3", cfg -> component3)
                                     )
                     )
             );
@@ -262,7 +266,7 @@ class SubscribingEventProcessorModuleTest {
             SubscribingEventProcessorModule sepModuleOne =
                     EventProcessorModule.subscribing("processor-one")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(cfg -> componentOne)
+                                                components -> components.declarative("componentOne", cfg -> componentOne)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorOne
@@ -271,7 +275,7 @@ class SubscribingEventProcessorModuleTest {
             SubscribingEventProcessorModule sepModuleTwo =
                     EventProcessorModule.subscribing("processor-two")
                                         .eventHandlingComponents(
-                                                components -> components.declarative(cfg -> componentTwo)
+                                                components -> components.declarative("componentTwo", cfg -> componentTwo)
                                         )
                                         .customized((config, psepConfig) -> psepConfig.withInterceptor(
                                                 specificInterceptorTwo
@@ -424,13 +428,11 @@ class SubscribingEventProcessorModuleTest {
             SimpleEventBus typeMessageSource = new SimpleEventBus();
             ErrorHandler typeErrorHandler = exception -> {
             };
-            configurer.eventProcessing(ep ->
-                                               ep.subscribing(sp -> sp.defaults(
-                                                       d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                             .eventSource(typeMessageSource)
-                                                             .errorHandler(typeErrorHandler))
-                                               )
-            );
+            configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.defaults(
+                    d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
+                          .eventSource(typeMessageSource)
+                          .errorHandler(typeErrorHandler))
+            ));
 
             // and - instance-specific customization
             ErrorHandler instanceErrorHandler = exception -> {
@@ -438,9 +440,11 @@ class SubscribingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new SubscribingEventProcessorConfiguration().eventSource(p.eventSource())
-                                                                                       .errorHandler(
-                                                                                               instanceErrorHandler));
+                    .customized((__, p) -> new SubscribingEventProcessorConfiguration(
+                                        new EventProcessorConfiguration(processorName, null)
+                                ).eventSource(p.eventSource())
+                                 .errorHandler(instanceErrorHandler)
+                    );
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
             // when
@@ -493,6 +497,7 @@ class SubscribingEventProcessorModuleTest {
             // and - instance-specific customization
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(processorName,
                                                                                p -> p.eventHandlingComponents(c -> c.declarative(
+                                                                                             "simpleRecordingTestComponent",
                                                                                              cfg -> simpleRecordingTestComponent()))
                                                                                      .notCustomized())));
 
@@ -562,7 +567,6 @@ class SubscribingEventProcessorModuleTest {
             );
 
             // and
-            @SuppressWarnings("unchecked")
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
@@ -606,8 +610,7 @@ class SubscribingEventProcessorModuleTest {
         }
     }
 
-    @Nonnull
-    private static UnitOfWorkFactory aUnitOfWorkFactory() {
+    static @NonNull UnitOfWorkFactory aUnitOfWorkFactory() {
         var componentRegistry = new DefaultComponentRegistry();
         componentRegistry.registerComponent(EventConverter.class,
                                             cfg -> new DelegatingEventConverter(new JacksonConverter()));
@@ -624,15 +627,15 @@ class SubscribingEventProcessorModuleTest {
     }
 
     private static RecordingEventHandlingComponent simpleRecordingTestComponent(
-            @Nonnull QualifiedName supportedEventName
+            @NonNull QualifiedName supportedEventName
     ) {
         return new RecordingEventHandlingComponent(
-                new SimpleEventHandlingComponent().subscribe(supportedEventName, (e, c) -> MessageStream.empty())
+                SimpleEventHandlingComponent.create("test")
+                                            .subscribe(supportedEventName, (e, c) -> MessageStream.empty())
         );
     }
 
     private SubscribingEventProcessorModule minimalProcessorModule(String processorName) {
-        //noinspection unchecked
         return EventProcessorModule
                 .subscribing(processorName)
                 .eventHandlingComponents(singleTestEventHandlingComponent())
@@ -640,11 +643,10 @@ class SubscribingEventProcessorModuleTest {
                                                          .orElse(new SimpleEventBus())));
     }
 
-    @Nonnull
-    private static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
-        var eventHandlingComponent = new SimpleEventHandlingComponent();
+        private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
+        var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
-        return components -> components.declarative(cfg -> eventHandlingComponent);
+        return components -> components.declarative("eventHandlingComponent", cfg -> eventHandlingComponent);
     }
 
     private static void awaitProcessorIsStopped(AxonConfiguration configuration, String processorName) {
@@ -659,13 +661,14 @@ class SubscribingEventProcessorModuleTest {
                                               processorName).ifPresent(p -> assertThat(p.isRunning()).isTrue()));
     }
 
-    @Nonnull
-    private static Optional<SubscribingEventProcessor> processor(
+        private @NonNull static Optional<SubscribingEventProcessor> processor(
             AxonConfiguration configuration,
             String processorName
     ) {
         return configuration.getModuleConfiguration(processorName)
-                            .flatMap(m -> m.getOptionalComponent(SubscribingEventProcessor.class, processorName));
+                            .flatMap(m -> m.getOptionalComponent(EventProcessor.class, processorName))
+                            .filter(SubscribingEventProcessor.class::isInstance)
+                            .map(SubscribingEventProcessor.class::cast);
     }
 
     @Nullable

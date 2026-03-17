@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -67,8 +66,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
      *                                    {@link MessageType#qualifiedName() query name}.
      */
-    @Nonnull
-    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
+    MessageStream<QueryResponseMessage> query(QueryMessage query, @Nullable ProcessingContext context);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
@@ -95,8 +93,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @Nonnull
-    MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                           @Nullable ProcessingContext context,
                                                           int updateBufferSize);
 
@@ -121,8 +118,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link SubscriptionQueryAlreadyRegisteredException} if a subscription with the same query identifier already
      * exists.
      */
-    @Nonnull
-    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(@Nonnull QueryMessage query,
+    MessageStream<SubscriptionQueryUpdateMessage> subscribeToUpdates(QueryMessage query,
                                                                      int updateBufferSize);
 
     /**
@@ -139,9 +135,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                       {@code null}).
      * @return A future completing whenever the updateSupplier has been emitted.
      */
-    @Nonnull
-    CompletableFuture<Void> emitUpdate(@Nonnull Predicate<QueryMessage> filter,
-                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+    CompletableFuture<Void> emitUpdate(Predicate<QueryMessage> filter,
+                                       Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                        @Nullable ProcessingContext context);
 
     /**
@@ -159,8 +154,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed.
      */
-    @Nonnull
-    CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<QueryMessage> filter,
+    CompletableFuture<Void> completeSubscriptions(Predicate<QueryMessage> filter,
                                                   @Nullable ProcessingContext context);
 
     /**
@@ -180,8 +174,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int) subscription queries} have
      * been completed exceptionally.
      */
-    @Nonnull
-    CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<QueryMessage> filter,
-                                                               @Nonnull Throwable cause,
+    CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<QueryMessage> filter,
+                                                               Throwable cause,
                                                                @Nullable ProcessingContext context);
 }

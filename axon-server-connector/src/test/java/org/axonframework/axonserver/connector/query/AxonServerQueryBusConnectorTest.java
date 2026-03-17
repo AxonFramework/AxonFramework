@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.google.protobuf.ByteString.copyFromUtf8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AxonServerQueryBusConnectorTest {
@@ -73,6 +72,10 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void subscribeRegistersQueryHandler() {
             Registration reg = mock(Registration.class);
+            when(reg.onAck(any(Runnable.class))).thenAnswer(i -> {
+                i.getArgument(0, Runnable.class).run();
+                return null;
+            });
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
 
             CompletableFuture<Void> future = testSubject.subscribe(new QualifiedName("TestQuery"));
@@ -84,6 +87,10 @@ class AxonServerQueryBusConnectorTest {
         @Test
         void unsubscribeCancelsRegistrationAndReturnsTrueWhenPresent() {
             Registration reg = mock(Registration.class);
+            when(reg.onAck(any(Runnable.class))).thenAnswer(i -> {
+                i.getArgument(0, Runnable.class).run();
+                return null;
+            });
             when(mockQueryChannel.registerQueryHandler(any(), any(QueryDefinition.class))).thenReturn(reg);
             QualifiedName name = new QualifiedName("TestQuery");
             testSubject.subscribe(name).join();

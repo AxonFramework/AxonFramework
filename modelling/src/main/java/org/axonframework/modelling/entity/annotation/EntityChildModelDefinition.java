@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 
@@ -52,10 +51,9 @@ public interface EntityChildModelDefinition {
      * @return An {@link Optional} that resolves to an {@link EntityChildMetamodel} if the field represents a
      * child entity, or an empty optional if no child entity is found.
      */
-    @Nonnull
     <C, P> Optional<EntityChildMetamodel<C, P>> createChildDefinition(
-            @Nonnull Class<P> parentClass,
-            @Nonnull AnnotatedEntityMetamodelFactory metamodelFactory,
-            @Nonnull Member member
+            Class<P> parentClass,
+            AnnotatedEntityMetamodelFactory metamodelFactory,
+            Member member
     );
 }

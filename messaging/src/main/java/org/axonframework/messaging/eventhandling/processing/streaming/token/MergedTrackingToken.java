@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,6 +160,14 @@ public class MergedTrackingToken implements TrackingToken, WrappedToken {
             return other == null;
         }
         return lowerSegmentToken.covers(other) && upperSegmentToken.covers(other);
+    }
+
+    @Override
+    public boolean samePositionAs(TrackingToken other) {
+        if (lowerSegmentToken == null || upperSegmentToken == null) {
+            return other == null;
+        }
+        return lowerSegmentToken.samePositionAs(other) && upperSegmentToken.samePositionAs(other);
     }
 
     @Override

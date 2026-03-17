@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,10 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 /**
- * Spring factory bean that creates a ParameterResolverFactory instance that is capable of resolving parameter values as
- * Spring Beans, in addition to the default behavior defined by Axon.
+ * Spring factory bean that creates a {@link ParameterResolverFactory} instance that is capable of resolving parameter
+ * values as Spring Beans, in addition to the default behavior defined by Axon.
  *
  * @author Allard Buijze
  * @see SpringBeanParameterResolverFactory
@@ -40,10 +39,14 @@ import jakarta.annotation.Nonnull;
  * @see ClasspathParameterResolverFactory
  * @since 2.3.1
  */
-public class SpringParameterResolverFactoryBean implements FactoryBean<ParameterResolverFactory>,
-        BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
+public class SpringParameterResolverFactoryBean implements
+        FactoryBean<ParameterResolverFactory>,
+        BeanClassLoaderAware,
+        InitializingBean,
+        ApplicationContextAware {
 
     private final List<ParameterResolverFactory> factories = new ArrayList<>();
+
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 
@@ -84,12 +87,12 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     }
 
     @Override
-    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
+    public void setBeanClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

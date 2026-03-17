@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -46,8 +45,9 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
-    private final RecordingCommandBus commandBus;
-    private final RecordingEventSink eventSink;
+    private final CommandBus commandBus;
+    private final EventSink eventSink;
+    private final RecordingComponentsRegistry recordings;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -56,10 +56,11 @@ class AxonTestGiven implements AxonTestPhase.Given {
      *
      * @param configuration       The configuration which this test fixture phase is based on.
      * @param customization       Collection of customizations made for this test fixture.
-     * @param commandBus          The recording {@link CommandBus}, used to capture
-     *                            and validate any commands that have been sent.
-     * @param eventSink           The recording {@link EventSink}, used to capture and
-     *                            validate any events that have been sent.
+     * @param commandBus          The outermost {@link CommandBus}, used to dispatch commands through the full
+     *                            decorator chain (including interceptors).
+     * @param eventSink           The outermost {@link EventSink}, used to publish events through the full
+     *                            decorator chain (including interceptors).
+     * @param recordings          The registry holding recording components for assertions.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link MessageType} out of command, event, or query
      *                            payloads provided to this phase.
@@ -67,17 +68,19 @@ class AxonTestGiven implements AxonTestPhase.Given {
      *                            execute every test in.
      */
     AxonTestGiven(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull UnitOfWorkFactory unitOfWorkFactory
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            CommandBus commandBus,
+            EventSink eventSink,
+            RecordingComponentsRegistry recordings,
+            MessageTypeResolver messageTypeResolver,
+            UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
         this.commandBus = commandBus;
         this.eventSink = eventSink;
+        this.recordings = recordings;
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -88,7 +91,10 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given event(@Nonnull Object payload, @Nonnull Metadata metadata) {
+    public AxonTestPhase.Given event(Object payload, Metadata metadata) {
+        if (payload instanceof EventMessage message) {
+            return events(message.andMetadata(metadata));
+        }
         var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);
     }
@@ -103,7 +109,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given events(@Nonnull List<?> events) {
+    public AxonTestPhase.Given events(List<?> events) {
         var messages = events.stream()
                              .map(e -> e instanceof EventMessage message
                                      ? message
@@ -113,7 +119,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given events(@Nonnull EventMessage... messages) {
+    public AxonTestPhase.Given events(EventMessage... messages) {
         inUnitOfWorkOnInvocation(
                 processingContext -> eventSink.publish(processingContext, messages)
         );
@@ -127,13 +133,16 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull Metadata metadata) {
+    public AxonTestPhase.Given command(Object payload, Metadata metadata) {
+        if (payload instanceof CommandMessage message) {
+            return commands(message.andMetadata(metadata));
+        }
         var commandMessage = toGenericCommandMessage(payload, metadata);
         return commands(commandMessage);
     }
 
     @Override
-    public AxonTestPhase.Given commands(@Nonnull List<?> commands) {
+    public AxonTestPhase.Given commands(List<?> commands) {
         var messages = commands.stream()
                                .map(c -> c instanceof CommandMessage message
                                        ? message
@@ -143,19 +152,13 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given execute(@Nonnull Function<Configuration, ?> function) {
-        function.apply(configuration);
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Given executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+    public AxonTestPhase.Given executeAsync(Function<Configuration, CompletableFuture<?>> function) {
         function.apply(configuration).join();
         return this;
     }
 
-    private GenericCommandMessage toGenericCommandMessage(@Nonnull Object payload,
-                                                          @Nonnull Metadata metadata) {
+    private GenericCommandMessage toGenericCommandMessage(Object payload,
+                                                          Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericCommandMessage(
                 messageType,
@@ -165,7 +168,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given commands(@Nonnull CommandMessage... messages) {
+    public AxonTestPhase.Given commands(CommandMessage... messages) {
         for (var message : messages) {
             inUnitOfWorkOnInvocation(processingContext -> commandBus.dispatch(message, processingContext));
         }
@@ -179,6 +182,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
                 customization,
                 commandBus,
                 eventSink,
+                recordings,
                 messageTypeResolver,
                 unitOfWorkFactory
         );
@@ -189,8 +193,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         return new AxonTestThenNothing(
                 configuration,
                 customization,
-                commandBus,
-                eventSink,
+                recordings,
                 null
         );
     }

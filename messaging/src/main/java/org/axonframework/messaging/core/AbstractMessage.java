@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Map;
 
@@ -38,27 +39,24 @@ public abstract class AbstractMessage implements Message {
      * @param identifier The identifier of this {@link Message}.
      * @param type       The {@link MessageType type} for this {@link Message}.
      */
-    public AbstractMessage(@Nonnull String identifier,
-                           @Nonnull MessageType type) {
+    public AbstractMessage(String identifier,
+                           MessageType type) {
         this.identifier = identifier;
         this.type = type;
     }
 
     @Override
-    @Nonnull
-    public String identifier() {
+        public String identifier() {
         return this.identifier;
     }
 
     @Override
-    @Nonnull
-    public MessageType type() {
+        public MessageType type() {
         return this.type;
     }
 
     @Override
-    @Nonnull
-    public Message withMetadata(@Nonnull Map<String, String> metadata) {
+        public Message withMetadata(Map<String, String> metadata) {
         if (metadata().equals(metadata)) {
             return this;
         }
@@ -66,8 +64,7 @@ public abstract class AbstractMessage implements Message {
     }
 
     @Override
-    @Nonnull
-    public Message andMetadata(@Nonnull Map<String, String> metadata) {
+        public Message andMetadata(Map<String, @Nullable String> metadata) {
         if (metadata.isEmpty()) {
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ComponentNotFoundException;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Message;
 
 import java.util.Map;
@@ -51,7 +49,7 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
      *
      * @param message The message to be used as the only resource in this context.
      */
-    public LegacyMessageSupportingContext(@Nonnull Message message) {
+    public LegacyMessageSupportingContext(Message message) {
         this.resources = new ConcurrentHashMap<>();
         Message.addToContext(this, message);
     }
@@ -92,12 +90,12 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     }
 
     @Override
-    public boolean containsResource(@Nonnull ResourceKey<?> key) {
+    public boolean containsResource(ResourceKey<?> key) {
         return resources.containsKey(key);
     }
 
     @Override
-    public <T> T getResource(@Nonnull ResourceKey<T> key) {
+    public <T> T getResource(ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
     }
@@ -108,48 +106,47 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     }
 
     @Override
-    public <T> T putResource(@Nonnull ResourceKey<T> key,
-                             @Nonnull T resource) {
+    public <T> T putResource(ResourceKey<T> key,
+                             T resource) {
         //noinspection unchecked
         return (T) resources.put(key, resource);
     }
 
     @Override
-    public <T> T updateResource(@Nonnull ResourceKey<T> key,
-                                @Nonnull UnaryOperator<T> resourceUpdater) {
+    public <T> T updateResource(ResourceKey<T> key,
+                                UnaryOperator<T> resourceUpdater) {
         //noinspection unchecked
         return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
-    public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                     @Nonnull T resource) {
+    public <T> T putResourceIfAbsent(ResourceKey<T> key,
+                                     T resource) {
         //noinspection unchecked
         return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
-    public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
-                                         @Nonnull Supplier<T> resourceSupplier) {
+    public <T> T computeResourceIfAbsent(ResourceKey<T> key,
+                                         Supplier<T> resourceSupplier) {
         //noinspection unchecked
         return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
-    public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+    public <T> T removeResource(ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.remove(key);
     }
 
     @Override
-    public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nonnull T expectedResource) {
+    public <T> boolean removeResource(ResourceKey<T> key,
+                                      T expectedResource) {
         return resources.remove(key, expectedResource);
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         throw new ComponentNotFoundException(type, name);
     }
 }

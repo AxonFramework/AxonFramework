@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
@@ -41,7 +40,6 @@ public interface EventHandler extends MessageHandler {
      * @param context The context to the given {@code event} is handled in.
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
-    @Nonnull
-    MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                        @Nonnull ProcessingContext context);
+    MessageStream.Empty<Message> handle(EventMessage event,
+                                                 ProcessingContext context);
 }

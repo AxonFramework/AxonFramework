@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 /**
  * A retry policy that caps another policy to maximum number of retries
@@ -42,8 +41,8 @@ public class MaxAttemptsPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable cause,
-                             @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(Message message, Throwable cause,
+                             List<Class<? extends Throwable>[]> previousFailures) {
         if (previousFailures.size() < maxAttempts) {
             return delegate.defineFor(message, cause, previousFailures);
         } else {
@@ -52,7 +51,7 @@ public class MaxAttemptsPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("maxAttempts", maxAttempts);
     }

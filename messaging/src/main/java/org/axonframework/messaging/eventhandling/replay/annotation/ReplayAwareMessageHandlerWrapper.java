@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package org.axonframework.messaging.eventhandling.replay.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.EventHandlingMember;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -35,19 +37,22 @@ import java.util.Optional;
 import static java.util.Collections.singletonMap;
 
 /**
- * An implementation of the {@link HandlerEnhancerDefinition} that is used for
- * {@link AllowReplay} annotated message handling methods.
+ * An implementation of the {@link HandlerEnhancerDefinition} that is used for {@link AllowReplay} annotated
+ * {@link EventHandlingMember event handling methods} .
  *
  * @author Allard Buijze
- * @since 3.2
+ * @since 3.2.0
  */
 public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefinition {
 
     private static final Map<String, Object> DEFAULT_SETTING = singletonMap("allowReplay", Boolean.TRUE);
 
     @Override
-    public @Nonnull
-    <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        // Only wrap event handlers - check message type to work through any existing wrappers
+        if (!original.canHandleMessageType(EventMessage.class)) {
+            return original;
+        }
         boolean isReplayAllowed = (boolean) original
                 .attribute(HandlerAttributes.ALLOW_REPLAY)
                 .orElseGet(() -> original.unwrap(Member.class)
@@ -62,7 +67,8 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         return original;
     }
 
-    private static class ReplayBlockingMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
+    private static class ReplayBlockingMessageHandlingMember<T>
+            extends WrappedMessageHandlingMember<T> {
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         public static final Optional<Boolean> NO_REPLAY = Optional.of(Boolean.FALSE);
@@ -72,14 +78,14 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
-                                 @Nullable T target) throws Exception {
+        public MessageStream<?> handle(Message message,
+                                       ProcessingContext context,
+                                       @Nullable T target) {
             Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
             if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {
-                return null;
+                return MessageStream.empty();
             }
-            return super.handleSync(message, context, target);
+            return super.handle(message, context, target);
         }
 
         @SuppressWarnings("unchecked")

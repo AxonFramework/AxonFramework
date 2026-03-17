@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface towards a mechanism that is capable of resolving the context name to which a {@link Message} should be
@@ -38,7 +39,7 @@ public interface TargetContextResolver<T extends Message> {
      * @return the name of the context this message should be routed to or {@code null} if the message does not specify
      * any context
      */
-    String resolveContext(T message);
+    @Nullable String resolveContext(T message);
 
     /**
      * Returns a TargetContextResolver that uses {@code this} instance to resolve a context for a given message and if

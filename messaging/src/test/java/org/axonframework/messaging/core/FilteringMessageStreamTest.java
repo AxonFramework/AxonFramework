@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,8 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message> {
             MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first));
             FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.isCompleted()).isFalse();
-            stream.next();
+            assertThat(stream.next()).isPresent();
+            assertThat(stream.next()).isEmpty(); // only completes, when no more entries
             assertThat(stream.isCompleted()).isTrue();
         }
     }

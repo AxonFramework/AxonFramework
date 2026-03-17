@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -41,8 +40,7 @@ import java.util.Set;
  */
 public class SimpleQueryHandlingComponent implements
         QueryHandlingComponent,
-        QueryHandlerRegistry<SimpleQueryHandlingComponent>,
-        DescribableComponent {
+        QueryHandlerRegistry<SimpleQueryHandlingComponent> {
 
     private final String name;
     private final Map<QualifiedName, QueryHandler> queryHandlers = new HashMap<>();
@@ -55,34 +53,39 @@ public class SimpleQueryHandlingComponent implements
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link QueryHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleQueryHandlingComponent create(@Nonnull String name) {
+    public static SimpleQueryHandlingComponent create(String name) {
         return new SimpleQueryHandlingComponent(name);
     }
 
-    private SimpleQueryHandlingComponent(@Nonnull String name) {
+    private SimpleQueryHandlingComponent(String name) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull QualifiedName queryName,
-                                                  @Nonnull QueryHandler handler) {
+    public SimpleQueryHandlingComponent subscribe(QualifiedName queryName,
+                                                  QueryHandler handler) {
         if (handler instanceof QueryHandlingComponent component) {
             return subscribe(component);
         }
-        queryHandlers.put(queryName, handler);
+
+        QueryHandler existingHandler = queryHandlers.computeIfAbsent(queryName, k -> handler);
+
+        if (existingHandler != handler) {
+            throw new DuplicateQueryHandlerSubscriptionException(queryName, existingHandler, handler);
+        }
+
         return this;
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
+    public SimpleQueryHandlingComponent subscribe(QueryHandlingComponent handlingComponent) {
         subComponents.add(handlingComponent);
         return this;
     }
 
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                      @Nonnull ProcessingContext context) {
+    public MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                                      ProcessingContext context) {
         QualifiedName handlerName = query.type().qualifiedName();
         Optional<QueryHandlingComponent> optionalSubHandler =
                 subComponents.stream()
@@ -113,7 +116,7 @@ public class SimpleQueryHandlingComponent implements
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("queryHandlers", queryHandlers);
         descriptor.describeProperty("subComponents", subComponents);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.configuration.Module;
 
@@ -40,8 +39,8 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
     private final ParameterResolverFactory parent;
     private final ParameterResolverFactory child;
 
-    private HierarchicalParameterResolverFactory(@Nonnull ParameterResolverFactory parent,
-                                                 @Nonnull ParameterResolverFactory child) {
+    private HierarchicalParameterResolverFactory(ParameterResolverFactory parent,
+                                                 ParameterResolverFactory child) {
         this.parent = parent;
         this.child = child;
     }
@@ -56,15 +55,15 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
      * @param child  The child {@link ParameterResolverFactory} to try first.
      * @return A new hierarchical {@link ParameterResolverFactory} that delegates to the given factories.
      */
-    public static HierarchicalParameterResolverFactory create(@Nonnull ParameterResolverFactory parent,
-                                                              @Nonnull ParameterResolverFactory child) {
+    public static HierarchicalParameterResolverFactory create(ParameterResolverFactory parent,
+                                                              ParameterResolverFactory child) {
         return new HierarchicalParameterResolverFactory(parent, child);
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
-                                               @Nonnull Parameter[] parameters,
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
                                                int parameterIndex) {
         ParameterResolver<?> resolver = child.createInstance(executable, parameters, parameterIndex);
         if (resolver != null) {

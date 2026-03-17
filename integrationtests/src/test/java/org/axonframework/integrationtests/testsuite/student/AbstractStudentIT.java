@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.Configuration;
@@ -120,7 +120,7 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
      * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
      * handlers on the model.
      */
-    protected EntityEvolver<Course> courseEvolver(@Nonnull Configuration config) {
+    protected EntityEvolver<Course> courseEvolver(@NonNull Configuration config) {
         return (course, event, context) -> {
             if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
@@ -169,8 +169,10 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
         return commandGateway.sendAndWait(payload, expectedResultType);
     }
 
-    protected void studentEnrolledToCourse(String studentId, String courseId) {
-        storeEvent(StudentEnrolledEvent.class, new StudentEnrolledEvent(studentId, courseId));
+    protected StudentEnrolledEvent studentEnrolledToCourse(String studentId, String courseId) {
+        StudentEnrolledEvent event = new StudentEnrolledEvent(studentId, courseId);
+        storeEvent(StudentEnrolledEvent.class, event);
+        return event;
     }
 
     protected <T> void storeEvent(Class<T> clazz, T payload) {

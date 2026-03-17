@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,40 +25,41 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker.AggregateSequencer;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
+import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.LegacyResources;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
-import org.axonframework.eventsourcing.eventstore.AggregateSequenceNumberPosition;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.AggregateSequencer;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.core.LegacyResources;
-import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventstreaming.Tag;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -85,16 +86,16 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param connection       The backing connection to Axon Server
      * @param converter The converter to use to serialize payloads to bytes
      */
-    public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull EventConverter converter) {
+    public AggregateBasedAxonServerEventStorageEngine(AxonServerConnection connection,
+                                                      EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext context,
-                                                                @Nonnull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -106,7 +107,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         }
 
         AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-        AggregateSequencer aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+        AggregateSequencer aggregateSequencer = consistencyMarker.createSequencer();
 
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
         try {
@@ -140,14 +141,14 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
         return CompletableFuture.completedFuture(new AppendTransaction<AggregateBasedConsistencyMarker>() {
             @Override
-            public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
+            public CompletableFuture<AggregateBasedConsistencyMarker> commit() {
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                         .thenApply(r -> aggregateSequencer.forwarded());
+                         .thenApply(r -> aggregateSequencer.toMarker());
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker, @Nullable ProcessingContext context) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(AggregateBasedConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -159,7 +160,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             }
 
             @Override
-            public void rollback(@Nullable ProcessingContext context) {
+            public void rollback() {
                 tx.rollback();
             }
         });
@@ -170,7 +171,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -194,7 +195,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
-        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
+        AtomicReference<@Nullable AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         AggregateEventStream aggregateStream =
                 connection.eventChannel()
@@ -234,11 +235,18 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
-                                               this::convertToMessage);
+                                               this::convertToMessage)
+                .filter(e -> {
+                    String type = e.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
+                    String identifier = e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
+                    Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
+
+                    return condition.matches(e.message().type().qualifiedName(), tags);
+                });
         } else {
             throw new IllegalArgumentException(
                     "Tracking Token is not of expected type. Must be GlobalTrackingToken. Is: "
@@ -262,26 +270,26 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> firstToken() {
         return connection.eventChannel()
                          .getFirstToken()
                          .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> latestToken() {
         return connection.eventChannel()
                          .getLastToken()
                          .thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         return connection.eventChannel().getTokenAt(at.toEpochMilli()).thenApply(GlobalSequenceTrackingToken::new);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("converter", converter);
     }

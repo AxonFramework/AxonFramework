@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
 
 /**
  * Implementation of the {@link AxonTestThenMessage then-message-phase} for
@@ -35,23 +32,19 @@ class AxonTestThenNothing
         implements AxonTestPhase.Then.Nothing {
 
     /**
-     * Constructs an {@code AxonTestThenEvent} for the given parameters.
+     * Constructs an {@code AxonTestThenNothing} for the given parameters.
      *
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
-     * @param commandBus      The recording {@link CommandBus}, used to capture and
-     *                        validate any commands that have been sent.
-     * @param eventSink       The recording {@link EventSink}, used to capture and
-     *                        validate any events that have been sent.
+     * @param recordings      The registry holding recording components for assertions.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenNothing(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingComponentsRegistry recordings,
             @Nullable Throwable actualException
     ) {
-        super(configuration, customization, commandBus, eventSink, actualException);
+        super(configuration, customization, recordings, actualException);
     }
 }

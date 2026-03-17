@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.axonframework.messaging.queryhandling;
 
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.annotation.AnnotationMessageTypeResolver;
+import org.axonframework.messaging.core.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.queryhandling.annotation.AnnotatedQueryHandlingComponent;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
@@ -55,8 +58,13 @@ class StreamingQueryTest {
     void setUp() {
 
         myQueryHandler = new MyQueryHandler();
-        QueryHandlingComponent queryHandlingComponent =
-                new AnnotatedQueryHandlingComponent<>(myQueryHandler, new DelegatingMessageConverter(PassThroughConverter.INSTANCE));
+        QueryHandlingComponent queryHandlingComponent = new AnnotatedQueryHandlingComponent<>(
+                myQueryHandler,
+                ClasspathParameterResolverFactory.forClass(myQueryHandler.getClass()),
+                ClasspathHandlerDefinition.forClass(myQueryHandler.getClass()),
+                new AnnotationMessageTypeResolver(),
+                new DelegatingMessageConverter(PassThroughConverter.INSTANCE)
+        );
         queryBus.subscribe(queryHandlingComponent);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventHandler;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
@@ -220,19 +218,6 @@ class SequenceCachingEventHandlingComponentTest {
 
             // then
             verify(delegate).handle(event, context);
-        }
-
-        @Test
-        void shouldDelegateSubscribeToDelegate() {
-            // given
-            QualifiedName eventName = new QualifiedName(String.class);
-            EventHandler handler = (e, c) -> MessageStream.empty();
-
-            // when
-            cachingComponent.subscribe(eventName, handler);
-
-            // then
-            verify(delegate).subscribe(eventName, handler);
         }
 
         @Test

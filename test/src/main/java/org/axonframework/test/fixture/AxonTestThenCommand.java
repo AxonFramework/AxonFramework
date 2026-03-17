@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.StringDescription;
@@ -50,22 +48,18 @@ class AxonTestThenCommand
      *
      * @param configuration        The configuration which this test fixture phase is based on.
      * @param customization        Collection of customizations made for this test fixture.
-     * @param commandBus           The recording {@link CommandBus}, used to capture
-     *                             and validate any commands that have been sent.
-     * @param eventSink            The recording {@link EventSink}, used to capture and
-     *                             validate any events that have been sent.
+     * @param recordings           The registry holding recording components for assertions.
      * @param lastCommandResult    The last result of command handling.
      * @param lastCommandException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenCommand(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingCommandBus commandBus,
-            @Nonnull RecordingEventSink eventSink,
-            @Nonnull Message lastCommandResult,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingComponentsRegistry recordings,
+            Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
-        super(configuration, customization, commandBus, eventSink, lastCommandException);
+        super(configuration, customization, recordings, lastCommandException);
         this.actualResult = lastCommandResult;
     }
 
@@ -76,7 +70,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer) {
+    public AxonTestPhase.Then.Command resultMessageSatisfies(Consumer<? super CommandResultMessage> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -90,7 +84,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Object expectedPayload) {
+    public AxonTestPhase.Then.Command resultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
         PayloadMatcher<CommandResultMessage> expectedMatcher =
@@ -98,17 +92,22 @@ class AxonTestThenCommand
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
-        } else if (!verifyPayloadEquality(expectedPayload, actualResult.payload())) {
-            PayloadMatcher<CommandResultMessage> actualMatcher =
-                    new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.payload()));
-            actualMatcher.describeTo(actualDescription);
-            reporter.reportWrongResult(actualDescription, expectedDescription);
+        } else {
+            var messageConverter = configuration.getComponent(MessageConverter.class);
+            var convertedPayload = actualResult.payloadAs(expectedPayload.getClass(), messageConverter);
+            if (!verifyPayloadEquality(expectedPayload, convertedPayload)) {
+                PayloadMatcher<CommandResultMessage> actualMatcher =
+                        new PayloadMatcher<>(CoreMatchers.equalTo(convertedPayload));
+                actualMatcher.describeTo(actualDescription);
+                reporter.reportWrongResult(actualDescription, expectedDescription);
+            }
         }
         return this;
     }
 
+    @Deprecated(since = "5.1.0", forRemoval = true)
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer) {
+    public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -124,7 +123,27 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
+    public <T> AxonTestPhase.Then.Command resultMessagePayloadSatisfies(
+            Class<T> type,
+            Consumer<T> consumer
+    ) {
+        StringDescription expectedDescription = new StringDescription();
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        }
+        try {
+            var messageConverter = configuration.getComponent(MessageConverter.class);
+            T convertedPayload = actualResult.payloadAs(type, messageConverter);
+            consumer.accept(convertedPayload);
+        } catch (AssertionError e) {
+            reporter.reportWrongResult(actualResult.payload(),
+                                       "Result message to satisfy custom assertions: " + e.getMessage());
+        }
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
@@ -133,7 +152,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> type, String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
@@ -142,7 +161,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Command exceptionSatisfies(Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);

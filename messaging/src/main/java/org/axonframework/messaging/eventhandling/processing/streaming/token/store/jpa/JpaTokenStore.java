@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.tx.TransactionalExecutor;
+import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
@@ -31,10 +33,10 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToRetrieveIdentifierException;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
@@ -44,10 +46,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa.TokenEntry.clock;
 
 /**
@@ -68,7 +68,7 @@ public class JpaTokenStore implements TokenStore {
     private static final String PROCESSOR_NAME_PARAM = "processorName";
     private static final String SEGMENT_PARAM = "segment";
 
-    private final EntityManagerProvider entityManagerProvider;
+    private final TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider;
     private final Converter converter;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
@@ -77,66 +77,62 @@ public class JpaTokenStore implements TokenStore {
     /**
      * Instantiate a {JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
      * <p>
-     * Will assert that the {@link EntityManagerProvider}, {@link Converter} and {@link JpaTokenStoreConfiguration} are
-     * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
+     * Will assert that the {@link TransactionalExecutorProvider}, {@link Converter} and
+     * {@link JpaTokenStoreConfiguration} are not {@code null}, otherwise an {@link AxonConfigurationException} will be
+     * thrown.
      *
-     * @param entityManagerProvider The {@link EntityManagerProvider} used to obtain an {@link EntityManager} for.
-     * @param converter             The {@link Converter} used to serialize and deserialize token for storage.
-     * @param configuration         The configuration for JPA token store.
+     * @param transactionalExecutorProvider The {@link TransactionalExecutorProvider} used to obtain a
+     *                                      {@link TransactionalExecutor} for.
+     * @param converter                     The {@link Converter} used to serialize and deserialize token for storage.
+     * @param configuration                 The configuration for JPA token store.
      */
-    public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider,
-                         @Nonnull Converter converter,
-                         @Nonnull JpaTokenStoreConfiguration configuration
+    public JpaTokenStore(
+            TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
+            Converter converter,
+            JpaTokenStoreConfiguration configuration
     ) {
-        assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
+        assertNonNull(transactionalExecutorProvider,
+                      "TransactionalExecutorProvider is a hard requirement and should be provided");
         assertNonNull(converter, "The Converter is a hard requirement and should be provided");
         assertNonNull(configuration, "The JpaTokenStoreConfiguration should be provided");
-        this.entityManagerProvider = entityManagerProvider;
+        this.transactionalExecutorProvider = transactionalExecutorProvider;
         this.converter = converter;
         this.claimTimeout = configuration.claimTimeout();
         this.nodeId = configuration.nodeId();
         this.loadingLockMode = configuration.loadingLockMode();
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<List<Segment>> initializeTokenSegments(
-            @Nonnull String processorName,
+            String processorName,
             int segmentCount,
             @Nullable TrackingToken initialToken,
             @Nullable ProcessingContext context
     ) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            if (joinAndUnwrap(fetchSegments(processorName, context)).size() > 0) {
-                throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+        return entityManagerExecutor(context).apply(em -> {
+            boolean segmentsPresent = !fetchSegmentsInternal(processorName, em).isEmpty();
+            if (segmentsPresent) {
+                throw new UnableToClaimTokenException(
+                        "Could not initialize segments. Some segments were already present.");
             }
 
             List<Segment> segments = Segment.splitBalanced(Segment.ROOT_SEGMENT, segmentCount - 1);
 
             for (Segment segment : segments) {
-                entityManager.persist(new TokenEntry(processorName, segment, initialToken, converter));
+                em.persist(new TokenEntry(processorName, segment, initialToken, converter));
             }
 
-            entityManager.flush();
-            return CompletableFuture.completedFuture(segments);
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+            em.flush();
+            return segments;
+        });
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
-                                              @Nonnull String processorName,
+                                              String processorName,
                                               int segment,
                                               @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-
+        return entityManagerExecutor(context).accept(em -> {
             final byte[] tokenDataToStore;
             final String tokenTypeToStore;
             if (token != null) {
@@ -146,162 +142,125 @@ public class JpaTokenStore implements TokenStore {
                 tokenDataToStore = null;
                 tokenTypeToStore = TrackingToken.class.getName();
             }
-            int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
-                                                                  + "te.token = :token, "
-                                                                  + "te.tokenType = :tokenType, "
-                                                                  + "te.timestamp = :timestamp "
-                                                                  + "WHERE te.owner = :owner "
-                                                                  + "AND te.processorName = :processorName "
-                                                                  + "AND te.segment = :segment")
-                                             .setParameter("token", tokenDataToStore)
-                                             .setParameter("tokenType", tokenTypeToStore)
-                                             .setParameter("timestamp", TokenEntry.computeTokenTimestamp())
-                                             .setParameter(OWNER_PARAM, nodeId)
-                                             .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                             .setParameter(SEGMENT_PARAM, segment)
-                                             .executeUpdate();
+            int updatedTokens = em.createQuery("""
+                                                       UPDATE TokenEntry te SET
+                                                       te.token = :token,
+                                                       te.tokenType = :tokenType,
+                                                       te.timestamp = :timestamp
+                                                       WHERE te.owner = :owner
+                                                       AND te.processorName = :processorName
+                                                       AND te.segment = :segment""")
+                                  .setParameter("token", tokenDataToStore)
+                                  .setParameter("tokenType", tokenTypeToStore)
+                                  .setParameter("timestamp", TokenEntry.computeTokenTimestamp())
+                                  .setParameter(OWNER_PARAM, nodeId)
+                                  .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                  .setParameter(SEGMENT_PARAM, segment)
+                                  .executeUpdate();
 
             if (updatedTokens == 0) {
-                logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
-                                     + "Trying load-then-save approach instead.",
-                             token, processorName, segment);
-                TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
+                logger.debug(
+                        "Could not update token [{}] for processor [{}] and segment [{}]. Trying load-then-save approach instead.",
+                        token,
+                        processorName,
+                        segment);
+                TokenEntry tokenEntry = loadToken(processorName, segment, em);
                 tokenEntry.updateToken(token, converter);
             }
-            return FutureUtils.emptyCompletedFuture();
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        });
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
+    public CompletableFuture<Void> releaseClaim(String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-
-            entityManager.createQuery(
-                                 "UPDATE TokenEntry te SET te.owner = null " +
-                                         "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                         "AND te.segment = :segment")
-                         .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
-                         .setParameter(OWNER_PARAM, nodeId)
-                         .executeUpdate();
-            return FutureUtils.emptyCompletedFuture();
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return entityManagerExecutor(context)
+                .accept(em ->
+                                em.createQuery("""
+                                                       UPDATE TokenEntry te SET te.owner = null \
+                                                       WHERE te.owner = :owner AND te.processorName = :processorName \
+                                                       AND te.segment = :segment""")
+                                  .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                  .setParameter(SEGMENT_PARAM, segment)
+                                  .setParameter(OWNER_PARAM, nodeId)
+                                  .executeUpdate()
+                );
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
-            @Nonnull String processorName,
-            @Nonnull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            TokenEntry entry = new TokenEntry(processorName, segment, token, converter);
-
-            entityManager.persist(entry);
-            entityManager.flush();
-            return FutureUtils.emptyCompletedFuture();
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(
-                new UnableToInitializeTokenException("Could not initialize processor %d segment %s".formatted(processorName, segment), e)
-            );
-        }
+        return entityManagerExecutor(context).accept(em -> {
+            try {
+                em.persist(new TokenEntry(processorName, segment, token, converter));
+                em.flush();
+            } catch (Exception e) {
+                throw new UnableToInitializeTokenException(
+                        "Could not initialize processor %s segment %s".formatted(processorName, segment), e
+                );
+            }
+        });
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<Void> deleteToken(
-            @Nonnull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            int updates = entityManager.createQuery(
-                                               "DELETE FROM TokenEntry te " +
-                                                       "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                       "AND te.segment = :segment")
-                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                       .setParameter(SEGMENT_PARAM, segment)
-                                       .setParameter(OWNER_PARAM, nodeId)
-                                       .executeUpdate();
+        return entityManagerExecutor(context).accept(em -> {
+            int updates = em.createQuery("""
+                                                 DELETE FROM TokenEntry te \
+                                                 WHERE te.owner = :owner AND te.processorName = :processorName \
+                                                 AND te.segment = :segment""")
+                            .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                            .setParameter(SEGMENT_PARAM, segment)
+                            .setParameter(OWNER_PARAM, nodeId)
+                            .executeUpdate();
 
             if (updates == 0) {
                 throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
             }
-            return FutureUtils.emptyCompletedFuture();
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        });
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+    public CompletableFuture<TrackingToken> fetchToken(String processorName,
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return entityManagerExecutor(context).apply(em -> loadToken(processorName, segment, em).getToken(converter));
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(
-            @Nonnull String processorName,
-            @Nonnull Segment segment,
+            String processorName,
+            Segment segment,
             @Nullable ProcessingContext context
     ) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            return completedFuture(loadToken(processorName, segment, entityManager).getToken(converter));
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return entityManagerExecutor(context).apply(em -> loadToken(processorName, segment, em).getToken(converter));
     }
 
-    @Nonnull
     @Override
     public CompletableFuture<Void> extendClaim(
-            @Nonnull String processorName,
+            String processorName,
             int segment,
             @Nullable ProcessingContext context
     ) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                            "WHERE te.processorName = :processorName " +
-                                                            "AND te.segment = :segment " +
-                                                            "AND te.owner = :owner")
-                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                       .setParameter(SEGMENT_PARAM, segment)
-                                       .setParameter(OWNER_PARAM, nodeId)
-                                       .setParameter("timestamp", formatInstant(clock.instant()))
-                                       .executeUpdate();
+        return entityManagerExecutor(context).accept(em -> {
+            int updates = em.createQuery("""
+                                                 UPDATE TokenEntry te SET te.timestamp = :timestamp \
+                                                 WHERE te.processorName = :processorName \
+                                                 AND te.segment = :segment \
+                                                 AND te.owner = :owner""")
+                            .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                            .setParameter(SEGMENT_PARAM, segment)
+                            .setParameter(OWNER_PARAM, nodeId)
+                            .setParameter("timestamp", formatInstant(clock.instant()))
+                            .executeUpdate();
 
             if (updates == 0) {
                 throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
@@ -309,82 +268,63 @@ public class JpaTokenStore implements TokenStore {
                                                               + "]'. It is either claimed " +
                                                               "by another process, or there is no such token.");
             }
-            return FutureUtils.emptyCompletedFuture();
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        });
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<Segment> fetchSegment(@Nonnull String processorName,
+    public CompletableFuture<Segment> fetchSegment(String processorName,
                                                    int segmentId,
                                                    @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        return entityManagerExecutor(context).apply(em -> {
+            final TokenEntry te = em.createQuery("""
+                                                         SELECT te FROM TokenEntry te \
+                                                         WHERE te.processorName = :processorName AND te.segment = :segment""",
+                                                 TokenEntry.class)
+                                    .setParameter(SEGMENT_PARAM, segmentId)
+                                    .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                    .getSingleResultOrNull();
 
-            final TokenEntry te = entityManager.createQuery(
-                    "SELECT te FROM TokenEntry te "
-                            + "WHERE te.processorName = :processorName AND te.segment = :segment",
-                    TokenEntry.class
-            )
-            .setParameter(SEGMENT_PARAM, segmentId)
-            .setParameter(PROCESSOR_NAME_PARAM, processorName)
-            .getSingleResultOrNull();
-
-            return completedFuture(te == null ? null : te.getSegment());
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+            return te == null ? null : te.getSegment();
+        });
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<List<Segment>> fetchSegments(@Nonnull String processorName,
+    public CompletableFuture<List<Segment>> fetchSegments(String processorName,
                                                           @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-
-            final List<TokenEntry> resultList = entityManager.createQuery(
-                    "SELECT te FROM TokenEntry te "
-                            + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                    TokenEntry.class
-            ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
-
-            return completedFuture(resultList.stream().map(TokenEntry::getSegment).toList());
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+        return entityManagerExecutor(context).apply(em -> fetchSegmentsInternal(processorName, em));
     }
 
-    @Nonnull
+    private static @NonNull List<Segment> fetchSegmentsInternal(@NonNull String processorName, EntityManager em) {
+        final List<TokenEntry> resultList =
+                em.createQuery("""
+                                       SELECT te FROM TokenEntry te \
+                                       WHERE te.processorName = :processorName ORDER BY te.segment ASC""",
+                               TokenEntry.class)
+                  .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                  .setLockMode(LockModeType.NONE)
+                  .getResultList();
+
+        return resultList.stream().map(TokenEntry::getSegment).toList();
+    }
+
     @Override
-    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(String processorName,
                                                                    @Nullable ProcessingContext context) {
-        try {
-            // Note: the caller thread is important for the entity manager, so not using CF supplyAsync to automatically handle exceptions
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        return entityManagerExecutor(context).apply(em -> {
+            final List<TokenEntry> resultList =
+                    em.createQuery("""
+                                           SELECT te FROM TokenEntry te \
+                                           WHERE te.processorName = :processorName ORDER BY te.segment ASC""",
+                                   TokenEntry.class)
+                      .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                      .setLockMode(LockModeType.NONE)
+                      .getResultList();
 
-            final List<TokenEntry> resultList = entityManager.createQuery(
-                    "SELECT te FROM TokenEntry te "
-                            + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                    TokenEntry.class
-            ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
-
-            return completedFuture(resultList.stream()
-                                             .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                                             .map(TokenEntry::getSegment)
-                                             .collect(Collectors.toList())
-            );
-        }
-        catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+            return resultList.stream()
+                             .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                             .map(TokenEntry::getSegment)
+                             .collect(Collectors.toList());
+        });
     }
 
     /**
@@ -456,43 +396,55 @@ public class JpaTokenStore implements TokenStore {
      * @param segment       The segment of the processor to load or insert a token entry for.
      */
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
-        //This segment should exist
-        TokenEntry mergeableSegment = entityManager.find(TokenEntry.class,
-                                                         new TokenEntry.PK(processorName, segment.mergeableSegmentId()),
-                                                         loadingLockMode);
-        if (mergeableSegment == null) {
-            throw new UnableToClaimTokenException(format(
-                    "Unable to claim token '%s[%s]'. It has been merged with another segment",
-                    processorName, segment.getSegmentId()
-            ));
+        int mergeableSegmentId = segment.mergeableSegmentId();
+        // if the ID of the mergeable segment is lower, it means we're trying to claim the "removable" entry in a merge,
+        // meaning there is no risk for a "merge in progress".
+        if (mergeableSegmentId > segment.getSegmentId()) {
+            // we're just reading for the existence. No interest in claiming or locking
+            //This segment should exist
+            TokenEntry mergeableSegment = entityManager.find(
+                    TokenEntry.class,
+                    new TokenEntry.PK(processorName, mergeableSegmentId),
+                    LockModeType.NONE
+            );
+            if (mergeableSegment == null) {
+                throw new UnableToClaimTokenException(format(
+                        "Unable to claim segment '%s[%s]'. It has been merged with another segment",
+                        processorName, segment.getSegmentId()
+                ));
+            }
         }
-        //This segment should not exist
-        TokenEntry splitSegment = entityManager.find(TokenEntry.class,
-                                                     new TokenEntry.PK(processorName, segment.splitSegmentId()),
-                                                     loadingLockMode);
+        // we're just reading for the existence. No interest in claiming or locking
+        // This segment should not exist
+        TokenEntry splitSegment = entityManager.find(
+                TokenEntry.class,
+                new TokenEntry.PK(processorName, segment.splitSegmentId()),
+                LockModeType.NONE
+        );
         if (splitSegment != null) {
             throw new UnableToClaimTokenException(format(
-                    "Unable to claim token '%s[%s]'. It has been split into two segments",
+                    "Unable to claim segment '%s[%s]'. It has been split into two segments",
                     processorName, segment.getSegmentId()
             ));
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public CompletableFuture<String> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
-        try {
-            return completedFuture(getConfig().get("id"));
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(new UnableToRetrieveIdentifierException(
-                    "Exception occurred while trying to retrieve storage identifier",
-                    e
-            ));
-        }
+        return entityManagerExecutor(context).apply(em -> {
+            try {
+                return getConfig(em).get("id");
+            } catch (Exception e) {
+                throw new UnableToRetrieveIdentifierException(
+                        "Exception occurred while trying to retrieve storage identifier",
+                        e
+                );
+            }
+        });
     }
 
-    private ConfigToken getConfig() {
-        EntityManager em = entityManagerProvider.getEntityManager();
+    private ConfigToken getConfig(EntityManager em) {
         TokenEntry token = em.find(TokenEntry.class,
                                    new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT.getSegmentId()),
                                    LockModeType.NONE);
@@ -505,6 +457,10 @@ public class JpaTokenStore implements TokenStore {
             em.flush();
         }
         return (ConfigToken) token.getToken(converter);
+    }
+
+    private TransactionalExecutor<EntityManager> entityManagerExecutor(@Nullable ProcessingContext processingContext) {
+        return transactionalExecutorProvider.getTransactionalExecutor(processingContext);
     }
 
     /**

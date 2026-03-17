@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.core.Message;
 
@@ -62,7 +61,7 @@ public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T>
      * @return the callback that will trigger all the message monitor callbacks
      */
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull T message) {
+    public MonitorCallback onMessageIngested(T message) {
         final List<MonitorCallback> monitorCallbacks = messageMonitors.stream()
                                                                       .map(messageMonitor -> messageMonitor.onMessageIngested(
                                                                               message))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.update.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 import java.util.Comparator;
@@ -42,7 +41,7 @@ public class HierarchicalUsagePropertyProvider implements UsagePropertyProvider 
      *
      * @param providers The list of {@link UsagePropertyProvider} instances to combine.
      */
-    public HierarchicalUsagePropertyProvider(@Nonnull List<UsagePropertyProvider> providers) {
+    public HierarchicalUsagePropertyProvider(List<UsagePropertyProvider> providers) {
         Objects.requireNonNull(providers, "The providers may not be null.");
         this.providers = providers.stream()
                                   .sorted(Comparator.comparingInt(UsagePropertyProvider::priority).reversed())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.Converter;
 
 import java.lang.reflect.Type;
@@ -43,18 +42,16 @@ public abstract class MessageDecorator implements Message {
      *
      * @param delegate The {@link Message} delegate.
      */
-    protected MessageDecorator(@Nonnull Message delegate) {
+    protected MessageDecorator(Message delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    @Nonnull
     public String identifier() {
         return delegate.identifier();
     }
 
     @Override
-    @Nonnull
     public MessageType type() {
         return delegate.type();
     }
@@ -67,25 +64,22 @@ public abstract class MessageDecorator implements Message {
 
     @Override
     @Nullable
-    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+    public <T> T payloadAs(Type type, @Nullable Converter converter) {
         return delegate.payloadAs(type, converter);
     }
 
     @Override
-    @Nonnull
     public Class<?> payloadType() {
         return delegate.payloadType();
     }
 
     @Override
-    @Nonnull
     public Metadata metadata() {
         return delegate.metadata();
     }
 
     @Override
-    @Nonnull
-    public Message withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+    public Message withConvertedPayload(Type type, Converter converter) {
         return delegate.withConvertedPayload(type, converter);
     }
 
@@ -94,7 +88,6 @@ public abstract class MessageDecorator implements Message {
      *
      * @return The wrapped {@link Message} delegated by this decorator.
      */
-    @Nonnull
     protected Message delegate() {
         return delegate;
     }

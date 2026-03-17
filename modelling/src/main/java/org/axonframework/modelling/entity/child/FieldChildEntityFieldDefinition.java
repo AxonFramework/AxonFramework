@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -52,8 +51,8 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
      * @param fieldName   The name of the field to use to access the child entity.
      */
     public FieldChildEntityFieldDefinition(
-            @Nonnull Class<P> parentClass,
-            @Nonnull String fieldName
+            Class<P> parentClass,
+            String fieldName
     ) {
         this.parentClass = Objects.requireNonNull(parentClass, "The parentClass may not be null.");
         this.fieldName = Objects.requireNonNull(fieldName, "The fieldName may not be null.");
@@ -102,10 +101,9 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         }
     }
 
-    @Nonnull
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildInput(@Nonnull P parentEntity, @Nonnull F childInput) {
+    public P evolveParentBasedOnChildInput(P parentEntity, F childInput) {
         try {
             if (optionalSetter != null) {
                 Object invokeResult = optionalSetter.invoke(parentEntity, childInput);
@@ -128,7 +126,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildValue(@Nonnull P parentEntity) {
+    public F getChildValue(P parentEntity) {
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);
@@ -140,7 +138,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("parentClass", parentClass);
         descriptor.describeProperty("fieldName", fieldName);
         descriptor.describeProperty("field", field);

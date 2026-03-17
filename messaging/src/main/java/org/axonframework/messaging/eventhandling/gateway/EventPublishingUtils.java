@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 
 /**
  * Utility class for the {@link EventGateway} and {@link EventAppender} implementations.
@@ -45,7 +44,7 @@ class EventPublishingUtils {
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      * @return The event as an {@link EventMessage}.
      */
-    static EventMessage asEventMessage(@Nonnull Object event, MessageTypeResolver messageTypeResolver) {
+    static EventMessage asEventMessage(Object event, MessageTypeResolver messageTypeResolver) {
         if (event instanceof EventMessage e) {
             return e;
         }
@@ -56,6 +55,34 @@ class EventPublishingUtils {
                 messageTypeResolver.resolveOrThrow(event),
                 event,
                 Metadata.emptyInstance()
+        );
+    }
+
+    /**
+     * Converts the given {@code event} to an {@link EventMessage} with the provided {@code metadata}. If the event is
+     * already an {@link EventMessage}, the provided metadata is merged with its existing metadata (provided values take
+     * precedence on conflict). If the event is a {@link Message}, it is wrapped in a {@link GenericEventMessage} with
+     * merged metadata. Otherwise, a new {@link GenericEventMessage} is created with the given event, the provided
+     * metadata, and the type resolved by the given {@link MessageTypeResolver}.
+     *
+     * @param event               The event to convert.
+     * @param metadata            The metadata to attach to the event.
+     * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
+     * @return The event as an {@link EventMessage} with the given metadata applied.
+     */
+    static EventMessage asEventMessage(Object event,
+                                       Metadata metadata,
+                                       MessageTypeResolver messageTypeResolver) {
+        if (event instanceof EventMessage e) {
+            return e.andMetadata(metadata);
+        }
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message.andMetadata(metadata), () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
+                messageTypeResolver.resolveOrThrow(event),
+                event,
+                metadata
         );
     }
 }

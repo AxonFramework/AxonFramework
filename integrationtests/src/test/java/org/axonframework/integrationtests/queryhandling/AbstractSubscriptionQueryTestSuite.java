@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.jspecify.annotations.NonNull;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
-import org.axonframework.conversion.json.JacksonConverter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -73,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTestSuite {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     protected static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
     protected static final String TEST_UPDATE_PAYLOAD = "some-update";
     protected static final String FOUND = "found";
@@ -266,7 +268,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
                                      .mapNotNull(m -> m.payloadAs(String.class, CONVERTER)))
                     .expectNext("Message1", "Message2", "Message3", "Update1")
                     .expectErrorMatches(assertQueryExecutionException(toBeThrown))
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
     @SuppressWarnings("ConstantValue")
@@ -496,10 +498,10 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         // then
         StepVerifier.create(FluxUtils.of(result).map(MessageStream.Entry::message))
                     .expectErrorMatches(assertQueryExecutionException(toBeThrown))
-                    .verify();
+                    .verify(TIMEOUT);
     }
 
-    @Nonnull
+    @NonNull
     private Predicate<Throwable> assertQueryExecutionException(Throwable toBeThrown) {
         return exception -> {
             if (exception instanceof QueryExecutionException qee) {
@@ -530,14 +532,17 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         await().until(result::hasNextAvailable);
         Thread.sleep(500);
 
+        List<CompletableFuture<?>> updatesEmitted = new ArrayList<>();
         for (int i = 0; i <= 20; i++) {
             int number = i;
-            queryBus.emitUpdate(testFilter,
+            updatesEmitted.add(queryBus.emitUpdate(testFilter,
                                 () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_PAYLOAD_TYPE,
                                                                                 "Update" + number),
-                                testContext);
+                                testContext));
         }
-        queryBus.completeSubscriptions(testFilter, testContext);
+        FutureUtils.joinAndUnwrap(CompletableFuture.allOf(updatesEmitted.toArray(new CompletableFuture[0])));
+
+        FutureUtils.joinAndUnwrap(queryBus.completeSubscriptions(testFilter, testContext));
 
         List<QueryResponseMessage> responses = Collections.synchronizedList(new ArrayList<>());
 

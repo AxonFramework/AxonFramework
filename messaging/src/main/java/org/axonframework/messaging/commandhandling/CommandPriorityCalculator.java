@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.commandhandling;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Calculate the priority of {@link CommandMessage} based on its content.
@@ -35,15 +33,14 @@ public interface CommandPriorityCalculator {
      * @param command A {@link CommandMessage} to prioritize.
      * @return An {@code int} defining the priority of the given {@code command}.
      */
-    int determinePriority(@Nonnull CommandMessage command);
+    int determinePriority(CommandMessage command);
 
     /**
      * Returns a default implementation of the {@code CommandPriorityCalculator}, always returning priority {@code 0}.
      *
      * @return A lambda taking in a {@link CommandMessage} to prioritize to the default of priority {@code 0}.
      */
-    @Nonnull
-    static CommandPriorityCalculator defaultCalculator() {
+        static CommandPriorityCalculator defaultCalculator() {
         return command -> 0;
     }
 }

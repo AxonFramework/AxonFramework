@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,5 +58,25 @@ class GlobalSequenceTrackingTokenTest {
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(1L);
 
         assertEquals(1L, token.position().getAsLong());
+    }
+
+    @Test
+    void samePositionAs() {
+        GlobalSequenceTrackingToken token1 = new GlobalSequenceTrackingToken(1L);
+        GlobalSequenceTrackingToken token2 = new GlobalSequenceTrackingToken(2L);
+        GlobalSequenceTrackingToken token1Copy = new GlobalSequenceTrackingToken(1L);
+
+        // Same index means same position
+        assertTrue(token1.samePositionAs(token1));
+        assertTrue(token1.samePositionAs(token1Copy));
+        assertTrue(token2.samePositionAs(token2));
+
+        // Different index means different position
+        assertFalse(token1.samePositionAs(token2));
+        assertFalse(token2.samePositionAs(token1));
+
+        // Null is never the same
+        assertFalse(token1.samePositionAs(null));
+        assertFalse(token2.samePositionAs(null));
     }
 }

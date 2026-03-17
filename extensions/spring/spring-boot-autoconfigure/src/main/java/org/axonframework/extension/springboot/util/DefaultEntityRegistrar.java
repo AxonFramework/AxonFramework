@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,13 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotationMetadata;
 
 import java.util.Map;
-import jakarta.annotation.Nonnull;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class DefaultEntityRegistrar implements ImportBeanDefinitionRegistrar {
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
-                                        @Nonnull BeanDefinitionRegistry registry) {
+                                        BeanDefinitionRegistry registry) {
         Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes(
                 "org.axonframework.extension.springboot.util.RegisterDefaultEntities");
         String[] packages = (String[]) attributes.get("packages");

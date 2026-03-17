@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,21 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,11 +51,11 @@ class SimpleEventHandlingComponentTest {
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
             // given
             var expectedIdentifier = "sequenceId";
-            SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
+            SequencingPolicy<EventMessage> sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
-            var component = new SimpleEventHandlingComponent(sequencingPolicy)
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", sequencingPolicy);
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -70,8 +73,8 @@ class SimpleEventHandlingComponentTest {
             var expectedIdentifier = "sequenceId";
 
             // when
-            var component = new SimpleEventHandlingComponent((e, ctx) -> Optional.of(expectedIdentifier))
-                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
+            var component = SimpleEventHandlingComponent.create("test", (e, ctx) -> Optional.of(expectedIdentifier));
+            component.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -88,15 +91,15 @@ class SimpleEventHandlingComponentTest {
             // given
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
-            var component = new SimpleEventHandlingComponent()
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler1Invoked.set(true);
-                        return MessageStream.empty();
-                    })
-                    .subscribe(new QualifiedName(String.class), (e, c) -> {
-                        handler2Invoked.set(true);
-                        return MessageStream.empty();
-                    });
+            var component = SimpleEventHandlingComponent.create("test")
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler1Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        })
+                                                        .subscribe(new QualifiedName(String.class), (e, c) -> {
+                                                            handler2Invoked.set(true);
+                                                            return MessageStream.empty();
+                                                        });
 
             //  when
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
@@ -115,8 +118,9 @@ class SimpleEventHandlingComponentTest {
         void shouldDecorateEventHandlingComponent() {
             // given
             SampleDecoration component = new SampleDecoration(
-                    new SimpleEventHandlingComponent()
-                            .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+                    SimpleEventHandlingComponent.create("test")
+                                                .subscribe(new QualifiedName(String.class),
+                                                           (e, c) -> MessageStream.empty())
             );
 
             // when
@@ -132,17 +136,61 @@ class SimpleEventHandlingComponentTest {
 
             AtomicBoolean invoked = new AtomicBoolean();
 
-            public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
+            public SampleDecoration(@NonNull EventHandlingComponent delegate) {
                 super(delegate);
             }
 
-            @Nonnull
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                                @NonNull ProcessingContext context) {
                 invoked.set(true);
                 return super.handle(event, context);
             }
+        }
+    }
+
+    @Nested
+    class ResetHandlerTest {
+
+        @Test
+        void subscribedResetHandlerIsInvoked() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
+        }
+
+        @Test
+        void sameResetHandlerSubscribedTwiceIsInvokedOnlyOnce() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
         }
     }
 }
