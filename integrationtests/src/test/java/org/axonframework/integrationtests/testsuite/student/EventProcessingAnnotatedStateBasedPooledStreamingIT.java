@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.MessageStream;
@@ -32,6 +31,7 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -125,8 +125,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
         studentCoursesProjector.subscribe(
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
-                    var converter = context.component(EventConverter.class);
-                    var studentEnrolled = requireNonNull(event.payloadAs(StudentEnrolledEvent.class, converter));
+                    var studentEnrolled = requireNonNull(event.payloadAs(StudentEnrolledEvent.class));
                     var state = context.component(StateManager.class);
                     var studentId = studentEnrolled.studentId();
                     var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, studentId, context)
@@ -156,9 +155,8 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends Abstrac
 
     private static EntityEvolver<StudentCoursesReadModel> readModelEvolver() {
         return (entity, event, context) -> {
-            var converter = context.component(EventConverter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
+                var payload = event.payloadAs(StudentEnrolledEvent.class);
                 return entity.evolve(payload);
             }
             return entity;

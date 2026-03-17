@@ -36,15 +36,18 @@ import org.axonframework.messaging.commandhandling.distributed.CommandBusConnect
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -74,6 +77,7 @@ class AxonServerCommandBusConnectorTest {
 
     private AxonServerConnection connection;
     private CommandChannel commandChannel;
+    private MessageConverter converter;
 
     private AxonServerCommandBusConnector testSubject;
 
@@ -81,12 +85,13 @@ class AxonServerCommandBusConnectorTest {
     void setUp() {
         connection = mock(AxonServerConnection.class);
         commandChannel = mock(CommandChannel.class);
+        converter = mock(MessageConverter.class);
         when(connection.commandChannel()).thenReturn(commandChannel);
 
         AxonServerConfiguration serverConfig = new AxonServerConfiguration();
         serverConfig.setClientId(TEST_CLIENT_ID);
         serverConfig.setComponentName(TEST_COMPONENT_NAME);
-        testSubject = new AxonServerCommandBusConnector(connection, serverConfig);
+        testSubject = new AxonServerCommandBusConnector(connection, serverConfig, converter);
     }
 
     @Test
@@ -112,13 +117,15 @@ class AxonServerCommandBusConnectorTest {
     }
 
     @Test
-    void dispatchingCommandMessageWithValidPayloadResultsToResponse() {
+    void dispatchingCommandMessageWithValidPayloadResultsToResponse() throws ExecutionException, InterruptedException {
         // Arrange
         CommandMessage command = createTestCommandMessage();
         CommandResponse response = createSuccessfulCommandResponse();
         ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
         when(commandChannel.sendCommand(commandCaptor.capture()))
                 .thenReturn(CompletableFuture.completedFuture(response));
+        when(converter.convert(any(), eq((Type)String.class)))
+                .thenReturn(ANY_TEST_PAYLOAD);
 
         // Act
         CompletableFuture<CommandResultMessage> result = testSubject.dispatch(command, null);
@@ -128,7 +135,11 @@ class AxonServerCommandBusConnectorTest {
         assertThat(dispatchedCommand.getClientId()).isEqualTo(TEST_CLIENT_ID);
         assertThat(dispatchedCommand.getComponentName()).isEqualTo(TEST_COMPONENT_NAME);
         assertDoesNotThrow(() -> result.get());
+        assertEquals(byte[].class, result.get().payloadType());
+        assertEquals(ANY_TEST_PAYLOAD, result.get().payloadAs(String.class));
+
         verify(commandChannel).sendCommand(any(Command.class));
+        verify(converter).convert(any(), eq((Type)String.class));
     }
 
     @Test

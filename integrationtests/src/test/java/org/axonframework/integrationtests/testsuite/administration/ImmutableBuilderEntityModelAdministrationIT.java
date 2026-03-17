@@ -17,12 +17,9 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -38,9 +35,11 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableSalaryInformation;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableTask;
-import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -60,7 +59,6 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
     EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration,
                                                           EntityMetamodelBuilder<ImmutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
-        MessageConverter messageConverter = configuration.getComponent(MessageConverter.class);
         EventConverter eventConverter = configuration.getComponent(EventConverter.class);
 
         // Task is the list-based child-metamodel of Employee
@@ -72,8 +70,7 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
-                                            CompleteTaskCommand convertedPayload =
-                                                    command.payloadAs(CompleteTaskCommand.class, messageConverter);
+                                            CompleteTaskCommand convertedPayload = command.payloadAs(CompleteTaskCommand.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -88,8 +85,7 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
-                                            GiveRaise convertedPayload =
-                                                    command.payloadAs(GiveRaise.class, messageConverter);
+                                            GiveRaise convertedPayload = command.payloadAs(GiveRaise.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -104,16 +100,14 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context);
-                                              CreateEmployee convertedPayload =
-                                                      command.payloadAs(CreateEmployee.class, messageConverter);
+                                              CreateEmployee convertedPayload = command.payloadAs(CreateEmployee.class);
                                               ImmutableEmployee.handle(convertedPayload, eventAppender);
                                               return MessageStream.empty().cast();
                                           }))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
-                                            AssignTaskCommand convertedPayload =
-                                                    command.payloadAs(AssignTaskCommand.class, messageConverter);
+                                            AssignTaskCommand convertedPayload = command.payloadAs(AssignTaskCommand.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -125,7 +119,7 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                                   .commandTargetResolver((candidates, commandMessage, ctx) -> {
                                       if (commandMessage.type().name().equals(CompleteTaskCommand.class.getName())) {
                                           CompleteTaskCommand convertedPayload =
-                                                  commandMessage.payloadAs(CompleteTaskCommand.class, messageConverter);
+                                                  commandMessage.payloadAs(CompleteTaskCommand.class);
                                           return candidates.stream()
                                                            .filter(task -> task.getTaskId()
                                                                                .equals(convertedPayload.taskId()))
@@ -169,8 +163,7 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                                           ((command, context) -> {
                                               EventAppender eventAppender = EventAppender.forContext(context);
-                                              CreateCustomer convertedPayload =
-                                                      command.payloadAs(CreateCustomer.class, messageConverter);
+                                              CreateCustomer convertedPayload = command.payloadAs(CreateCustomer.class);
                                               ImmutableCustomer.handle(convertedPayload, eventAppender);
                                               return MessageStream.empty().cast();
                                           }))
@@ -186,8 +179,7 @@ public class ImmutableBuilderEntityModelAdministrationIT extends AbstractAdminis
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
-                                            ChangeEmailAddress convertedPayload =
-                                                    command.payloadAs(ChangeEmailAddress.class, messageConverter);
+                                            ChangeEmailAddress convertedPayload = command.payloadAs(ChangeEmailAddress.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
