@@ -421,7 +421,7 @@ public abstract class StoreBackedSnapshotterTestSuite {
         @Override
         public E evolve(E entity, EventMessage event, ProcessingContext context) {
             EventConverter converter = context.component(EventConverter.class);
-
+//TODO can we get rid of the converter here?
             return evolver.apply(entity, event.payloadAs(cls, converter));
         }
     }

@@ -20,8 +20,6 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnec
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.axonserver.connector.event.EventProcessorControlService;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentDecorator;
@@ -32,8 +30,10 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.configuration.SearchScope;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
@@ -132,7 +132,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         return ComponentDefinition.ofType(QueryBusConnector.class)
                                   .withBuilder(config -> new AxonServerQueryBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection(),
-                                          config.getComponent(AxonServerConfiguration.class)
+                                          config.getComponent(AxonServerConfiguration.class),
+                                          config.getComponent(MessageConverter.class)
                                   ))
                                   .onStart(Phase.INBOUND_QUERY_CONNECTOR,
                                            connector -> ((AxonServerQueryBusConnector) connector).start())

@@ -16,10 +16,9 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.common.FutureUtils;
-import org.jspecify.annotations.NonNull;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.FluxUtils;
 import org.axonframework.messaging.core.MessageStream;
@@ -39,6 +38,7 @@ import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
@@ -60,6 +60,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -78,6 +79,9 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
     protected static final String TEST_QUERY_PAYLOAD = "axonFrameworkCR";
     protected static final String TEST_UPDATE_PAYLOAD = "some-update";
     protected static final String FOUND = "found";
+    protected static final String TEST_RESPONSE_PAYLOAD_1 = "Message1";
+    protected static final String TEST_RESPONSE_PAYLOAD_2 = "Message2";
+    protected static final String TEST_RESPONSE_PAYLOAD_3 = "Message3";
 
     protected static final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
@@ -91,18 +95,23 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
 
     protected QueryBus queryBus;
     protected RuntimeException toBeThrown;
+    protected AtomicReference<QueryMessage> queryMessageRef;
 
     @BeforeEach
     void setUp() {
         queryBus = queryBus();
         toBeThrown = new RuntimeException("oops");
+        queryMessageRef = new AtomicReference<>();
 
         // Register the commonly used chat messages handler
-        queryBus.subscribe(CHAT_MESSAGES_QUERY_NAME, (query, context) -> MessageStream.fromItems(
-                new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, "Message1"),
-                new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, "Message2"),
-                new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, "Message3")
-        ));
+        queryBus.subscribe(CHAT_MESSAGES_QUERY_NAME, (query, context) -> {
+            queryMessageRef.set(query);
+            return MessageStream.fromItems(
+                    new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, TEST_RESPONSE_PAYLOAD_1),
+                    new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, TEST_RESPONSE_PAYLOAD_2),
+                    new GenericQueryResponseMessage(TEST_RESPONSE_TYPE, TEST_RESPONSE_PAYLOAD_3)
+            );
+        });
 
         Hooks.onErrorDropped(error -> {/*Ignore these exceptions for these test cases*/});
     }

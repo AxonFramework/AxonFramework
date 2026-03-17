@@ -18,9 +18,13 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
-import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
+import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.queryhandling.QueryBus;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -29,6 +33,10 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * An {@link AbstractSubscriptionQueryTestSuite} implementation validating the
@@ -82,5 +90,33 @@ public class DistributedQueryBusSubscriptionQueryTest extends AbstractSubscripti
                                           AxonServerConfiguration.class,
                                           c -> testContainerAxonServerConfiguration()
                                   ));
+    }
+
+    @Test
+    void subscriptionQueryInlinePayloadConversion() throws InterruptedException {
+        // given
+        CountDownLatch queryHandledLatch = new CountDownLatch(1);
+        QueryMessage queryMessage = new GenericQueryMessage(
+                CHAT_MESSAGES_QUERY_TYPE, TEST_QUERY_PAYLOAD
+        );
+
+        // when
+        MessageStream<QueryResponseMessage> result = queryBus.subscriptionQuery(queryMessage, null, 50);
+        result.setCallback(queryHandledLatch::countDown);
+        queryHandledLatch.await();
+
+        await().until(result::hasNextAvailable);
+
+        // then
+        QueryMessage handledQueryMessage = queryMessageRef.get();
+        assertThat(handledQueryMessage.payloadType())
+                .isEqualTo(byte[].class);
+        assertThat(handledQueryMessage.payloadAs(String.class))
+                .isEqualTo(TEST_QUERY_PAYLOAD);
+        QueryResponseMessage firstResult = result.next().orElseThrow().message();
+        assertThat(firstResult.payloadType())
+                .isEqualTo(byte[].class);
+        assertThat(firstResult.payloadAs(String.class))
+                .isEqualTo(TEST_RESPONSE_PAYLOAD_1);
     }
 }

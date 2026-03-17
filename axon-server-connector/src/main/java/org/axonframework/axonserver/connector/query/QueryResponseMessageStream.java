@@ -16,16 +16,17 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
-import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
-
-
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.jspecify.annotations.Nullable;
+
+import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
+import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
 /**
  * A {@link MessageStream} implementation that wraps an {@link ResultStream} of {@link QueryResponse}s, using
@@ -37,20 +38,24 @@ import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 @Internal
 public class QueryResponseMessageStream extends AbstractQueryResponseMessageStream<QueryResponse> {
 
+    private final @Nullable MessageConverter converter;
+
     /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
      * {@link QueryResponse} objects.
      *
      * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
+     * @param converter the converter to be used for payload conversion
      */
-    public QueryResponseMessageStream(ResultStream<QueryResponse> stream) {
+    public QueryResponseMessageStream(ResultStream<QueryResponse> stream, @Nullable MessageConverter converter) {
         super(stream);
+        this.converter = converter;
     }
 
     @Override
     protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
-        return convertQueryResponse(queryResponse);
+        return convertQueryResponse(queryResponse, converter);
     }
 
     @Override

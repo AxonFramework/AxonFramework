@@ -26,12 +26,12 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -42,6 +42,7 @@ import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateM
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -68,12 +69,13 @@ public final class QueryConverter {
      * This method processes the given QueryRequest by extracting its payload, metadata, and other relevant fields to
      * construct a QueryMessage that represents the request for querying information.
      *
-     * @param queryRequest The {@link QueryRequest} to be converted into a {@link QueryMessage}. Must not be null.
-     * @return A {@link QueryMessage} representation of the provided {@link QueryRequest}. The returned object contains
+     * @param queryRequest the {@link QueryRequest} to be converted into a {@link QueryMessage} (must not be null)
+     * @param converter the converter to be used for payload conversion
+     * @return a {@link QueryMessage} representation of the provided {@link QueryRequest}. The returned object contains
      * the extracted payload, metadata, and expected response type.
      * @throws NullPointerException if the provided {@link QueryRequest} is null.
      */
-    static QueryMessage convertQueryRequest(QueryRequest queryRequest) {
+    static QueryMessage convertQueryRequest(QueryRequest queryRequest, Converter converter) {
         var payload = queryRequest.getPayload();
         Integer priority = ProcessingInstructionUtils.priority(queryRequest.getProcessingInstructionsList());
 
@@ -86,7 +88,7 @@ public final class QueryConverter {
                         MetadataConverter.convertMetadataValuesToGrpc(queryRequest.getMetaDataMap())
                 ),
                 priority
-        );
+        ).withConverter(converter);
     }
 
     /**
@@ -143,16 +145,18 @@ public final class QueryConverter {
      * components to construct a corresponding {@link QueryResponseMessage}. If the {@link QueryResponse} contains an
      * error, an appropriate exception is included in the resulting {@link QueryResponseMessage}.
      *
-     * @param queryResponse The {@link QueryResponse} to be converted. Must not be null. The {@link QueryResponse}
+     * @param queryResponse the {@link QueryResponse} to be converted (must not be null). The {@link QueryResponse}
      *                      should contain valid payload and metadata details necessary to construct the resulting
      *                      {@link QueryResponseMessage}.
+     * @param converter     the converter to be used for payload conversion
      * @return A {@link QueryResponseMessage} representation of the provided {@link QueryResponse}. The returned message
      * includes the processed payload, metadata, and any error information, if applicable.
      * @throws IllegalArgumentException if the provided {@link QueryResponse} contains an error, in which case we use
      *                                  {@link ExceptionConverter#convertToAxonException(String, ErrorMessage,
      *                                  SerializedObject)}.
      */
-    public static QueryResponseMessage convertQueryResponse(QueryResponse queryResponse) {
+    public static QueryResponseMessage convertQueryResponse(QueryResponse queryResponse,
+                                                            @Nullable Converter converter) {
         if (queryResponse.hasErrorMessage()) {
             throw new IllegalArgumentException("Query Response contained an error.");
         }
@@ -164,7 +168,8 @@ public final class QueryConverter {
                 MetadataConverter.convertMetadataValuesToGrpc(queryResponse.getMetaDataMap())
         );
 
-        return new GenericQueryResponseMessage(message);
+        return new GenericQueryResponseMessage(message)
+                .withConverter(converter);
     }
 
     /**
@@ -202,13 +207,14 @@ public final class QueryConverter {
      * {@link SubscriptionQuery} by extracting its identifier, payload, metadata, and other necessary fields to
      * construct a {@link QueryMessage}.
      *
-     * @param query The {@link SubscriptionQuery} to be converted. Must not be null. The {@link SubscriptionQuery}
-     *              should contain properly set payload, metadata, and response type details.
-     * @return A {@link QueryMessage} representation of the provided {@link SubscriptionQuery}. It includes
-     * the processed payload, metadata, and response type.
-     * @throws NullPointerException if the provided {@link SubscriptionQuery} is null.
+     * @param query     the {@link SubscriptionQuery} to be converted. Must not be null. The {@link SubscriptionQuery}
+     *                  should contain properly set payload, metadata, and response type details
+     * @param converter the converter to be used for payload conversion
+     * @return a {@link QueryMessage} representation of the provided {@link SubscriptionQuery}. It includes the
+     * processed payload, metadata, and response type
+     * @throws NullPointerException if the provided {@link SubscriptionQuery} is null
      */
-    public static QueryMessage convertSubscriptionQueryMessage(SubscriptionQuery query) {
+    public static QueryMessage convertSubscriptionQueryMessage(SubscriptionQuery query, @Nullable Converter converter) {
         SerializedObject responsePayload = query.getQueryRequest().getPayload();
         var message = new GenericMessage(
                 query.getSubscriptionIdentifier(),
@@ -217,7 +223,8 @@ public final class QueryConverter {
                 MetadataConverter.convertMetadataValuesToGrpc(query.getQueryRequest().getMetaDataMap())
         );
 
-        return new GenericQueryMessage(message);
+        return new GenericQueryMessage(message)
+                .withConverter(converter);
     }
 
 
