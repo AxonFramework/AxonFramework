@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
@@ -52,6 +53,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.StreamingE
  * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
  * @since 5.1.0
  */
+@Internal
 @FunctionalInterface
 public interface ReplayStatusChangedHandler extends MessageHandler {
 

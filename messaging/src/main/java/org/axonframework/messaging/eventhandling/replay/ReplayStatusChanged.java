@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.replay;
 
 import org.axonframework.common.TypeReference;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.Message;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +33,7 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 5.1.0
  */
+@Internal
 public interface ReplayStatusChanged extends Message {
 
     /**

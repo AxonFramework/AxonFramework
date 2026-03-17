@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.replay;
 
+import org.axonframework.common.annotation.Internal;
+
 /**
  * Registry for subscribing {@link ReplayStatusChangedHandler} instances.
  * <p>
@@ -41,6 +43,7 @@ package org.axonframework.messaging.eventhandling.replay;
  * @see org.axonframework.messaging.eventhandling.EventHandlingComponent
  * @since 5.1.0
  */
+@Internal
 public interface ReplayStatusChangedHandlerRegistry<S extends ReplayStatusChangedHandlerRegistry<S>> {
 
     /**
