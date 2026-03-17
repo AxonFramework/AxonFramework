@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.core.Message;
@@ -313,8 +312,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         }
 
         private MessageStream.Empty<Message> handleStudentEnrolled(EventMessage event, ProcessingContext context) {
-            var converter = context.component(Converter.class);
-            var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
+            var payload = event.payloadAs(StudentEnrolledEvent.class);
             var studentId = payload.studentId();
 
             if (failurePredicate.test(studentId)) {
@@ -328,8 +326,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
         @NonNull
         @Override
         public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
-            var converter = context.component(Converter.class);
-            var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
+            var payload = event.payloadAs(StudentEnrolledEvent.class);
             return payload.studentId();
         }
 

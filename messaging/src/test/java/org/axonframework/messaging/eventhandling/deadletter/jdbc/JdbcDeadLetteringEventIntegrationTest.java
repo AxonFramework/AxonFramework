@@ -123,11 +123,6 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         );
     }
 
-    @Override
-    protected EventConverter eventConverter() {
-        return eventConverter;
-    }
-
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
     @BeforeEach
     void setUpJdbc() {
@@ -174,7 +169,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             assertEquals(expected.message().payload(),
-                         actual.message().payloadAs(Integer.class, eventConverter()),
+                         actual.message().payloadAs(Integer.class),
                          assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);

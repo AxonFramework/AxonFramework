@@ -140,7 +140,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
                 payloadBytes,
                 Metadata.from(metadataMap),
                 DateTimeUtils.parseInstant(eventTimestampString)
-        );
+        ).withConverter(eventConverter);
     }
 
     private Context restoreContext(ResultSet resultSet) throws SQLException {

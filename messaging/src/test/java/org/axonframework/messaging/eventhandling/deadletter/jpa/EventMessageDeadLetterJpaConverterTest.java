@@ -271,6 +271,35 @@ class EventMessageDeadLetterJpaConverterTest {
         }
     }
 
+    @Nested
+    class InlinePayloadConversion {
+
+        @Test
+        void convertAttachesConverterToMessage() {
+            // given
+            EventMessage message = EventTestUtils.asEventMessage(event).andMetadata(metadata);
+            DeadLetterEventEntry exEntry = new DeadLetterEventEntry(
+                    message.type().toString(),
+                    message.identifier(),
+                    message.timestamp().toString(),
+                    eventConverter.convert(message.payload(), byte[].class),
+                    eventConverter.convert(message.metadata(), byte[].class),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+
+            // when
+            MessageStream.Entry<EventMessage> acEntry = converter.convert(exEntry, eventConverter, genericConverter);
+
+            // then
+            assertEquals(byte[].class, acEntry.message().payloadType());
+            assertEquals(event, acEntry.message().payloadAs(ConverterTestEvent.class));
+        }
+    }
+
     @Event
     public static class ConverterTestEvent {
 
