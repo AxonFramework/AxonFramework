@@ -45,7 +45,7 @@ import static org.awaitility.Awaitility.await;
  * Test class validating that
  * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangeHandlers} are
  * invoked when a {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken} is about to
- * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken#willFinish(TrackingToken)
+ * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken#concludesReplay(TrackingToken)
  * finish}.
  *
  * @author Simon Zambrovski

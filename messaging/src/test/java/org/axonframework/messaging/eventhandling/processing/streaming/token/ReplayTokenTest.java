@@ -315,40 +315,49 @@ class ReplayTokenTest {
     }
 
     @Nested
-    class WillFinish {
+    class ConcludesReplay {
 
         @Test
-        void returnsTrueWhenCurrentTokenReachedTokenAtReset() {
+        void returnsFalseWhenCurrentTokenIsAtBeforeTokenAtReset() {
             TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(5);
-            TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
-            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(2);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
-            assertThat(ReplayToken.willFinish(replayToken)).isTrue();
+            assertThat(ReplayToken.concludesReplay(replayToken)).isFalse();
         }
 
         @Test
-        void returnsFalseWhenCurrentTokenHasNotReachedTokenAtReset() {
-            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
+        void returnsTrueWhenCurrentTokenIsAtTheSamePositionTokenAtReset() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(5);
             TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
-            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
-            assertThat(ReplayToken.willFinish(replayToken)).isFalse();
+            assertThat(ReplayToken.concludesReplay(replayToken)).isTrue();
+        }
+
+        @Test
+        void returnsTrueWhenCurrentTokenFarSurpassedTheTokenAtReset() {
+            TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(5);
+            TrackingToken currentToken = new GlobalSequenceTrackingToken(10);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
+
+            assertThat(ReplayToken.concludesReplay(replayToken)).isTrue();
         }
 
         @Test
         void returnsFalseForNonReplayToken() {
             TrackingToken token = new GlobalSequenceTrackingToken(5);
 
-            assertThat(ReplayToken.willFinish(token)).isFalse();
+            assertThat(ReplayToken.concludesReplay(token)).isFalse();
         }
 
         @Test
         void returnsTrueWithGapAwareTokensAtSamePosition() {
             TrackingToken tokenAtReset = GapAwareTrackingToken.newInstance(10, emptySet());
             TrackingToken currentToken = GapAwareTrackingToken.newInstance(10, emptySet());
-            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            TrackingToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
-            assertThat(ReplayToken.willFinish(replayToken)).isTrue();
+            assertThat(ReplayToken.concludesReplay(replayToken)).isTrue();
         }
     }
 }

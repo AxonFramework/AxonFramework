@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.conversion.Converter;
 import org.jspecify.annotations.Nullable;
-import org.axonframework.conversion.Converter;
+
 import java.beans.ConstructorProperties;
 import java.util.Arrays;
 import java.util.Objects;
@@ -151,20 +151,17 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     }
 
     /**
-     * Indicates whether the given {@code trackingToken} is (1) a {@code ReplayToken} and (2) has reached the exact same
-     * position for the {@link #getTokenAtReset()} and the {@link #getCurrentToken()}.
+     * Indicates whether the given {@code trackingToken} is (1) a {@code ReplayToken} and (2) will conclude the replay.
      * <p>
-     * When both positions are the {@link TrackingToken#samePositionAs(TrackingToken) same}, the token is about to
-     * finish replaying.
+     * A replay will be concluded when the {@link #getTokenAtReset()} {@link #covers(TrackingToken) covers} the
+     * {@link #getCurrentToken()}.
      *
      * @param trackingToken the token to verify
-     * @return {@code true} if the token is (1) a {@code ReplayToken} and (2) has the
-     * {@link TrackingToken#samePositionAs(TrackingToken) same position} for both the {@link #getTokenAtReset()} and
-     * {@link #getCurrentToken()}
+     * @return {@code true} if the token is (1) a {@code ReplayToken} and (2) will conclude the replay.
      */
-    public static boolean willFinish(TrackingToken trackingToken) {
+    public static boolean concludesReplay(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
-                           .map(rt -> rt.getTokenAtReset().samePositionAs(rt.getCurrentToken()))
+                           .map(rt -> rt.getCurrentToken().covers(rt.getTokenAtReset()))
                            .orElse(false);
     }
 

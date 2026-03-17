@@ -122,7 +122,7 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
                 result = result.concatWith(componentResult);
             }
             // Validated deliberately AFTER handling the event; that's the point handling switches from REPLAY to REGULAR
-            if (token.isPresent() && ReplayToken.willFinish(token.get())) {
+            if (token.isPresent() && ReplayToken.concludesReplay(token.get())) {
                 ReplayStatusChanged replayStatusChanged =
                         new GenericReplayStatusChanged(ReplayStatus.REGULAR, (Object) null);
                 result.concatWith(component.handle(replayStatusChanged, context));
