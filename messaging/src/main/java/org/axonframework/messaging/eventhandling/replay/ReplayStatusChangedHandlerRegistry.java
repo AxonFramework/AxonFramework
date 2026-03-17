@@ -24,7 +24,7 @@ package org.axonframework.messaging.eventhandling.replay;
  * <p>
  * Example usage:
  * <pre>{@code
- * ReplayStatusChangeHandlerRegistry registry = ...;
+ * ReplayStatusChangedHandlerRegistry registry = ...;
  * registry.subscribe((statusChange, context) -> {
  *     if (statusChange.status() == ReplayStatus.REPLAY) {
  *         repository.deleteAll();
