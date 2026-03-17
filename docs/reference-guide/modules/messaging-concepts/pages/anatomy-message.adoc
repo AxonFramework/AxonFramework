@@ -252,10 +252,20 @@ public void retrievePayload(Message message) {
 }
 ----
 
-The `payloadAs(Type)` method converts the payload to the required type at the moment you need it.
-In most cases, you don't need to pass a `Converter` explicitly - if the message has passed through converter-aware components (which is typical in Axon), the conversion happens automatically.
+The `payloadAs(Class<T>)` method attempts to convert the message payload into the required type as you access it.
 
-If you need explicit control over conversion, you can provide a converter:
+In cases where a message does origin from outside the JVM (Axon Server, Database, Store), Axon attaches an applicable converter to the messages before passing it on for handling. This applies for `CommandMessage`s, `CommandResultMessage`s, `EventMessage`s, `QueryMessage`s and `QueryResponseMessage`s and makes those messages conversion aware, so handler code usually does not need to reference a converter directly when using a generic message type for handling:
+
+[source,java]
+----
+@EventHandler
+public void on(EventMessage event) {
+    // Converter is already attached — no need to pass it explicitly
+    OrderPlacedEvent order = event.payloadAs(OrderPlacedEvent.class);
+}
+----
+
+If you need explicit control over conversion or if you are working with a message that was not produced by Axon's infrastructure, you can still supply a converter directly:
 
 [source,java]
 ----
@@ -264,7 +274,12 @@ public void retrieveConvertedPayload(Message message, Converter converter) {
 }
 ----
 
-This is useful when you need the same message in different formats at different points in your processing logic.
+When building custom infrastructure that produces `Message` instances (for example `GenericMessage`, `GenericCommandMessage`, `GenericEventMessage`, `GenericQueryMessage`, etc.), you can call `withConverter(Converter)` to attach the converter so downstream handlers benefit from the same automatic conversion:
+
+[source,java]
+----
+GenericEventMessage messageWithConverter = rawMessage.withConverter(eventConverter);
+----
 
 === Converting message payloads
 

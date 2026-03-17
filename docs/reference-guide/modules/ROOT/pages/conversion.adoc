@@ -92,6 +92,32 @@ This approach:
 * Enables different services to use different Java representations.
 * Simplifies integration with external systems that may expect different formats.
 
+=== Converter attachment at message loading time
+
+To make the automatic conversion above possible without requiring handler code to reference a converter, Axon attaches the appropriate `Converter` to every message at the moment it is loaded from a serialized state (received over the wire, loaded from a database, loaded from a store, etc.).
+The converter is attached to message, so calling `payloadAs(SomeType.class)` in a handler converts the payload to the expected type without the need to explicitly reference a converter from that handler.
+
+For example, the following handler receives the raw event message and converts its payload without needing to know which converter is configured:
+
+[source,java]
+----
+@EventHandler
+public void on(EventMessage<?> event) {
+    // Works without passing a converter — Axon attached one when loading the event
+    UserRegisteredEvent payload = event.payloadAs(UserRegisteredEvent.class);
+    userRepository.save(new User(payload.getUserId(), payload.getEmail()));
+}
+----
+
+When building custom infrastructure that produces `Message` instances, call `withConverter(Converter)` before the message reaches any handler to enable the same behavior:
+
+[source,java]
+----
+GenericEventMessage messageWithConverter = rawMessage.withConverter(eventConverter);
+----
+
+This ensures all downstream code like command handlers, event processors, dead-letter queue processors and query handlers can convert the payload without requiring the converter to be passed explicitly.
+
 [#converter_types]
 == Converter types
 
