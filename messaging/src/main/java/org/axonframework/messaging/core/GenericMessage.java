@@ -216,7 +216,7 @@ public class GenericMessage extends AbstractMessage {
      * @param converter the converter for the new message
      * @return a copy of this instance with the converter
      */
-    public GenericMessage withConverter(Converter converter) {
+    public GenericMessage withConverter(@Nullable Converter converter) {
         return new GenericMessage(this, this.metadata, converter);
     }
 

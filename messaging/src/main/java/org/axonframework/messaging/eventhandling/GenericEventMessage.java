@@ -187,7 +187,7 @@ public class GenericEventMessage extends MessageDecorator implements EventMessag
      * @param converter the converter for the new message
      * @return a copy of this instance with the converter set
      */
-    public GenericEventMessage withConverter(Converter converter) {
+    public GenericEventMessage withConverter(@Nullable Converter converter) {
         Message updated = delegate() instanceof GenericMessage gm
                 ? gm.withConverter(converter)
                 : delegate();
