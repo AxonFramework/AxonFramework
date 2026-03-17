@@ -260,8 +260,11 @@ BDD-style testing:
 5. **Annotation flexibility** - Support both annotation-based and annotation-less design
 
 ### Nullability Annotations
-- Use Jakarta `@Nonnull` and `@Nullable` annotations (`jakarta.annotation.Nonnull`, `jakarta.annotation.Nullable`) to express nullability contracts on public APIs (parameters, return types, fields)
-- In implementations, enforce `@Nonnull` parameters with `Objects.requireNonNull` checks
+- Use JSpecify `@NullMarked` annotation (`org.jspecify.annotations.NullMarked`) at the package level to express nullability contracts
+- By default, all parameters and return values are non-null under `@NullMarked`
+- Use JSpecify `@Nullable` annotation (`org.jspecify.annotations.Nullable`) to explicitly mark a parameter or return value as nullable
+- Jakarta `@Nonnull` and `@Nullable` annotations are explicitly **forbidden** via `build/checkstyle.xml`
+- In implementations, enforce non-null parameters with `Objects.requireNonNull` checks
 
 
 ### Javadoc Guidelines
