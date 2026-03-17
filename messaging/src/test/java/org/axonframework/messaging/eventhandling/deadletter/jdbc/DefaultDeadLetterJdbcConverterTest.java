@@ -137,6 +137,17 @@ class DefaultDeadLetterJdbcConverterTest {
         }
 
         @Test
+        void constructsGenericEventMessageWithConverter() throws SQLException {
+            ResultSet resultSet = mockedResultSet(false, false, true);
+
+            JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
+
+            assertInstanceOf(GenericEventMessage.class, result.message());
+            assertEquals(byte[].class, result.message().payloadType());
+            assertEquals("some-payload", result.message().payloadAs(String.class));
+        }
+
+        @Test
         void constructsWithCause() throws SQLException {
             ResultSet resultSet = mockedResultSet(true, true, true);
 

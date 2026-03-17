@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
@@ -35,8 +34,7 @@ import org.axonframework.messaging.eventhandling.deadletter.jpa.DeadLetterEventE
 import org.axonframework.messaging.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaDeadLetter;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -114,15 +112,6 @@ class SpringBootJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegr
     @Override
     protected UnitOfWorkFactory buildUnitOfWorkFactory() {
         return unitOfWorkFactory;
-    }
-
-    /**
-     * Returns the autowired {@link EventConverter} since the JPA DLQ serializes event payloads to JSON, so
-     * deserialization requires a converter that understands the JSON format.
-     */
-    @Override
-    protected EventConverter eventConverter() {
-        return eventConverter;
     }
 
     /**
