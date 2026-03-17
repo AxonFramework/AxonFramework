@@ -95,16 +95,16 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         eventHandlerInvocations.set(0);
         psep.shutdown()
             .thenCompose(ignored -> psep.resetTokens())
-            // then the replay status switches to replay...
-            .thenRun(() -> assertThat(replayStatusReference).hasValue(ReplayStatus.REPLAY))
-            // when we publish more events...
-            .thenRun(() -> {
-                for (int i = startEventCount + 1; i <= finalEventCount; i++) {
-                    studentEnrolledToCourse(studentId, "my-courseId-" + i);
-                }
-            })
-            .thenCompose(ignored -> psep.start())
             .join();
+
+        // then the replay status switches to replay...
+        assertThat(replayStatusReference).hasValue(ReplayStatus.REPLAY);
+
+        // when we publish more events and start...
+        for (int i = startEventCount + 1; i <= finalEventCount; i++) {
+            studentEnrolledToCourse(studentId, "my-courseId-" + i);
+        }
+        psep.start().join();
 
         // then we expect the reset handler and events to be handled...
         assertThat(resetHandlerInvoked).isTrue();
