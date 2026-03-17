@@ -200,7 +200,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
             return resolved;
         }
 
-        AppendCondition overridden = override.apply(resolved);
+        // A null return from the override is treated as AppendCondition.none() (no conflict detection).
+        AppendCondition overridden = getOrDefault(override.apply(resolved), AppendCondition.none());
         logger.debug("AppendCondition overridden from [{}] to [{}]", resolved, overridden);
         return overridden;
     }

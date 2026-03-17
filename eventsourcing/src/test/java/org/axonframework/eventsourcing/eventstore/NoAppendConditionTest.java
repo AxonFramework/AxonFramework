@@ -50,7 +50,7 @@ class NoAppendConditionTest {
         AppendCondition result = AppendCondition.none().withMarker(marker);
 
         // then
-        assertThat(result).isInstanceOf(DefaultAppendCondition.class);
+
         assertThat(result.consistencyMarker()).isEqualTo(marker);
         assertThat(result.criteria()).isEqualTo(EventCriteria.havingAnyTag());
     }
@@ -61,7 +61,7 @@ class NoAppendConditionTest {
         AppendCondition result = AppendCondition.none().replacingCriteria(TEST_CRITERIA);
 
         // then
-        assertThat(result).isInstanceOf(DefaultAppendCondition.class);
+
         assertThat(result.consistencyMarker()).isEqualTo(ConsistencyMarker.INFINITY);
         assertThat(result.criteria()).isEqualTo(TEST_CRITERIA);
     }

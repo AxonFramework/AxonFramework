@@ -136,7 +136,8 @@ public interface EventStoreTransaction {
      * The override is applied at commit time, after all {@link #source(SourcingCondition) source} calls have been
      * processed.
      * <p>
-     * Returning {@link AppendCondition#none()} from the override function bypasses conflict detection entirely.
+     * Returning {@link AppendCondition#none()} (or {@code null}) from the override function bypasses conflict detection
+     * entirely.
      *
      * @param conditionOverride A {@link UnaryOperator} that transforms the current {@link AppendCondition}.
      */

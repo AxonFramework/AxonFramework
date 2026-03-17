@@ -405,7 +405,14 @@ class DefaultEventStoreTransactionTest {
 
         @Test
         void overrideAfterSourcingReceivesDerivedCondition() {
-            // given
+            // given - pre-populate an event so sourcing produces a non-ORIGIN marker
+            var setupUow = aUnitOfWork();
+            setupUow.runOnPreInvocation(context -> {
+                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+                transaction.appendEvent(eventMessage(0));
+            });
+            awaitSuccessfulCompletion(setupUow.execute());
+
             var receivedCondition = new AtomicReference<AppendCondition>();
 
             // when
@@ -417,13 +424,14 @@ class DefaultEventStoreTransactionTest {
                     receivedCondition.set(condition);
                     return condition;
                 });
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(eventMessage(1));
             });
             awaitSuccessfulCompletion(uow.execute());
 
             // then
             assertThat(receivedCondition.get()).isNotNull();
             assertThat(receivedCondition.get().criteria().flatten()).containsAll(TEST_AGGREGATE_CRITERIA.flatten());
+            assertThat(receivedCondition.get().consistencyMarker()).isNotEqualTo(ConsistencyMarker.ORIGIN);
         }
 
         @Test
@@ -457,7 +465,14 @@ class DefaultEventStoreTransactionTest {
 
         @Test
         void overrideReplacingCriteriaPreservesMarker() {
-            // given
+            // given - pre-populate an event so sourcing produces a non-ORIGIN marker
+            var setupUow = aUnitOfWork();
+            setupUow.runOnPreInvocation(context -> {
+                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+                transaction.appendEvent(eventMessage(0));
+            });
+            awaitSuccessfulCompletion(setupUow.execute());
+
             Tag narrowTag = new Tag("narrow", "criteria");
             EventCriteria narrowCriteria = EventCriteria.havingTags(narrowTag);
             var finalCondition = new AtomicReference<AppendCondition>();
@@ -472,7 +487,7 @@ class DefaultEventStoreTransactionTest {
                     finalCondition.set(narrowed);
                     return narrowed;
                 });
-                transaction.appendEvent(eventMessage(0));
+                transaction.appendEvent(eventMessage(1));
             });
             awaitSuccessfulCompletion(uow.execute());
 
@@ -527,6 +542,29 @@ class DefaultEventStoreTransactionTest {
 
             // then - event was appended normally
             assertThat(appendPosition.get()).isNotEqualTo(ConsistencyMarker.ORIGIN);
+        }
+
+        @Test
+        void overrideReturningNullIsTreatedAsNone() {
+            // given - pre-populate an event
+            var setupUow = aUnitOfWork();
+            setupUow.runOnPreInvocation(context -> {
+                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+                transaction.appendEvent(eventMessage(0));
+            });
+            awaitSuccessfulCompletion(setupUow.execute());
+
+            // when - source (creates a condition), then override returns null
+            var uow = aUnitOfWork();
+            uow.runOnPreInvocation(context -> {
+                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+                FluxUtils.of(transaction.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA))).blockLast();
+                transaction.overrideAppendCondition(condition -> null);
+                transaction.appendEvent(eventMessage(1));
+            });
+
+            // then - should succeed (null treated as AppendCondition.none(), bypassing conflict detection)
+            awaitSuccessfulCompletion(uow.execute());
         }
 
         @Test
