@@ -16,27 +16,26 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.jspecify.annotations.NonNull;
-import org.axonframework.messaging.commandhandling.CommandExecutionException;
-import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -78,7 +77,7 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     EnrollStudentToCourseCommand payload =
-                            command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(EnrollStudentToCourseCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
                     Course course = state.loadEntity(Course.class, payload.courseId(), context).join();

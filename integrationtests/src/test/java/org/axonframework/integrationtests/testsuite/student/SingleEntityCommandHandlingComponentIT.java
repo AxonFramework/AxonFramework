@@ -17,17 +17,16 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,7 +48,7 @@ class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStud
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));

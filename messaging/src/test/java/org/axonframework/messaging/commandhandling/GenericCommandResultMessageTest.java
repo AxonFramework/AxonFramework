@@ -17,24 +17,21 @@
 package org.axonframework.messaging.commandhandling;
 
 import org.assertj.core.api.Assertions;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
-import org.jspecify.annotations.Nullable;
-import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -93,7 +90,7 @@ class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandRes
             String acPayload = exMessage.payloadAs(String.class);
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -115,7 +112,7 @@ class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandRes
             });
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -129,7 +126,7 @@ class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandRes
 
             assertThat(acPayload).isEqualTo(exStringPayload);
             assertThat(acPayload2).isEqualTo(exStringPayload);
-            verify(converter, times(1)).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter, times(1)).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -141,8 +138,9 @@ class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandRes
             GenericCommandResultMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericCommandResultMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericCommandResultMessage.class)
+                    .isNotSameAs(original);
         }
 
         @Test
@@ -154,8 +152,9 @@ class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandRes
             GenericCommandResultMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericCommandResultMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericCommandResultMessage.class)
+                    .isNotSameAs(original);
             assertThat(result.identifier()).isEqualTo(original.identifier());
             assertThat(result.type()).isEqualTo(original.type());
             assertThat(result.payload()).isEqualTo(original.payload());

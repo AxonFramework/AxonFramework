@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -84,7 +83,7 @@ class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     EnrollStudentToCourseCommand payload =
-                            command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(EnrollStudentToCourseCommand.class);
                     // load state to execute the command in the entities contexts
                     StateManager stateManager = context.component(StateManager.class);
                     stateManager.loadEntity(Course.class, payload.courseId(), context).join();

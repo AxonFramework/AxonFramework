@@ -35,7 +35,6 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -112,7 +111,7 @@ class GenericCommandMessageTest extends MessageTestSuite<GenericCommandMessage> 
             String acPayload = exMessage.payloadAs(String.class);
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -134,7 +133,7 @@ class GenericCommandMessageTest extends MessageTestSuite<GenericCommandMessage> 
             });
 
             assertThat(acPayload).isEqualTo(exStringPayload);
-            verify(converter).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -148,7 +147,7 @@ class GenericCommandMessageTest extends MessageTestSuite<GenericCommandMessage> 
 
             assertThat(acPayload).isEqualTo(exStringPayload);
             assertThat(acPayload2).isEqualTo(exStringPayload);
-            verify(converter, times(1)).convert(eq(exBytePayload), eq((Type) String.class));
+            verify(converter, times(1)).convert(exBytePayload, (Type) String.class);
         }
 
         @Test
@@ -160,8 +159,9 @@ class GenericCommandMessageTest extends MessageTestSuite<GenericCommandMessage> 
             GenericCommandMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericCommandMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericCommandMessage.class)
+                    .isNotSameAs(original);
         }
 
         @Test
@@ -173,8 +173,9 @@ class GenericCommandMessageTest extends MessageTestSuite<GenericCommandMessage> 
             GenericCommandMessage result = original.withConverter(converter);
 
             // then
-            assertThat(result).isInstanceOf(GenericCommandMessage.class);
-            assertThat(result).isNotSameAs(original);
+            assertThat(result)
+                    .isInstanceOf(GenericCommandMessage.class)
+                    .isNotSameAs(original);
             assertThat(result.identifier()).isEqualTo(original.identifier());
             assertThat(result.type()).isEqualTo(original.type());
             assertThat(result.payload()).isEqualTo(original.payload());

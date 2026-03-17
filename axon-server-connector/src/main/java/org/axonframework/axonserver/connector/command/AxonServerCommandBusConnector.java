@@ -20,7 +20,6 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
@@ -31,12 +30,13 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -62,6 +62,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ConcurrentHashMap<String, CompletableFuture<?>> commandsInProgress = new ConcurrentHashMap<>();
+    private final @Nullable MessageConverter converter;
 
     /**
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
@@ -74,10 +75,27 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      */
     public AxonServerCommandBusConnector(AxonServerConnection connection,
                                          AxonServerConfiguration configuration) {
+        this(connection, configuration, null);
+    }
+
+    /**
+     * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
+     * {@code connection}.
+     *
+     * @param connection    The {@code AxonServerConnection} to communicate to Axon Server with.
+     * @param configuration The Axon Server configuration, used to retrieve (e.g.) the
+     *                      {@link AxonServerConfiguration#getClientId()} to be set when
+     *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
+     * @param converter     The {@link MessageConverter} that should be attached to received
+     *                      {@link CommandMessage}s and {@link CommandResultMessage} for inline payload conversion.
+     */
+    public AxonServerCommandBusConnector(AxonServerConnection connection,
+                                         AxonServerConfiguration configuration, @Nullable MessageConverter converter) {
         this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
         requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
         this.clientId = configuration.getClientId();
         this.componentName = configuration.getComponentName();
+        this.converter = converter;
     }
 
     /**
@@ -95,7 +113,9 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
             return connection.commandChannel()
                              .sendCommand(CommandConverter.convertCommandMessage(command, clientId, componentName))
-                             .thenCompose(CommandConverter::convertCommandResponse)
+                             .thenCompose((CommandResponse commandResponse) -> CommandConverter.convertCommandResponse(
+                                     commandResponse,
+                                     converter))
                              .whenComplete((commandResponse, throwable) -> commandInTransit.end());
         }
     }
@@ -121,7 +141,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             commandsInProgress.put(command.getMessageIdentifier(), result);
 
             requireNonNull(incomingHandler, "incomingHandler not configured")
-                   .handle(CommandConverter.convertCommand(command), new FutureResultCallback(result, command));
+                   .handle(CommandConverter.convertCommand(command, converter), new FutureResultCallback(result, command));
 
             return result;
         } catch (Exception e) {
