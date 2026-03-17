@@ -65,7 +65,6 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
     private final QualifiedName QUERY_NAME = new QualifiedName("test." + UUID.randomUUID() + "query");
     private final MessageType TEST_QUERY_TYPE = new MessageType(QUERY_NAME.fullName());
-    private final MessageConverter CONVERTER = new DelegatingMessageConverter(new JacksonConverter());
 
     @Nested
     @DisplayName("Dispatch interceptor tests")
@@ -475,7 +474,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
             // then
             QueryResponseMessage response = result.first().asCompletableFuture().join().message();
-            assertThat(response.payloadAs(String.class, CONVERTER)).isEqualTo("initial");
+            assertThat(response.payloadAs(String.class)).isEqualTo("initial");
         }
 
         @Test
@@ -735,7 +734,7 @@ public abstract class AbstractQueryInterceptorTestSuite extends AbstractQueryTes
 
         // then
         QueryResponseMessage response = result.first().asCompletableFuture().join().message();
-        assertThat(response.payloadAs(String.class, CONVERTER)).isEqualTo("subscribed-ok");
+        assertThat(response.payloadAs(String.class)).isEqualTo("subscribed-ok");
     }
 
     @Test

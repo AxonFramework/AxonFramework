@@ -33,11 +33,13 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -57,8 +59,10 @@ class AxonServerQueryBusConnectorTest {
                                                                                  .clientId(clientId)
                                                                                  .componentName(componentName)
                                                                                  .build();
+    private final MessageConverter mockConverter = mock(MessageConverter.class);
 
-    private final AxonServerQueryBusConnector testSubject = new AxonServerQueryBusConnector(connection, configuration);
+    private final AxonServerQueryBusConnector testSubject = new AxonServerQueryBusConnector(connection, configuration,
+                                                                                            mockConverter);
 
     @BeforeEach
     void setUp() {
@@ -153,6 +157,8 @@ class AxonServerQueryBusConnectorTest {
                                                   .build();
             ResultStream<QueryResponse> resultStream = spy(new StubResultStream<>(response));
             when(mockQueryChannel.query(any())).thenReturn(resultStream);
+            when(mockConverter.convert(any(), eq((Type)String.class)))
+                    .thenReturn("ok");
 
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
@@ -166,10 +172,12 @@ class AxonServerQueryBusConnectorTest {
             Optional<MessageStream.Entry<QueryResponseMessage>> next = stream.next();
             assertThat(next).isPresent();
             assertThat(next.get().message().payloadAs(byte[].class)).isEqualTo("ok".getBytes());
+            assertThat(next.get().message().payloadAs(String.class)).isEqualTo("ok");
 
             // Closing the stream should close the underlying ResultStream
             stream.close();
             verify(resultStream).close();
+            verify(mockConverter).convert(any(), eq((Type)String.class));
         }
     }
 
