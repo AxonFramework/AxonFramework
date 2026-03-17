@@ -15,15 +15,14 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.Nullable;
-import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -47,7 +46,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * expected {@code responseType}.
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
-     * @param payload      The payload expressing the query for this {@link CommandMessage}.
+     * @param payload      The payload expressing the query for this {@link QueryMessage}.
      */
     public GenericQueryMessage(MessageType type,
                                @Nullable Object payload) {
@@ -118,6 +117,24 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
                                                delegate.metadata());
         return new GenericQueryMessage(converted, priority);
     }
+
+    /**
+     * Returns a new {@code GenericQueryMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericQueryMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericQueryMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericQueryMessage(updated, priority);
+    }
+
 
     @Override
     public OptionalInt priority() {
