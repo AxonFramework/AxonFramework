@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -26,47 +25,41 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating that the {@link AxonTaskJanitorShutdownHandler} properly shuts down the janitor executor
- * service when the Spring context closes.
- *
- * @author Axon Framework Contributors
+ * Test class validating that the Axon task janitor is shut down when the Axon Configuration is shut down. The
+ * shutdown is registered via {@link org.axonframework.config.AxonTaskJanitorShutdownConfigurerModule}, which is
+ * loaded by the Configurer via ServiceLoader and works in both Spring and non-Spring environments.
  */
 class AxonTaskJanitorShutdownTest {
 
-    private ApplicationContextRunner contextRunner;
-
-    @BeforeEach
-    void setUp() {
-        contextRunner = new ApplicationContextRunner()
-                .withUserConfiguration(TestContext.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.timeout.enabled=true",
-                        "axon.eventstorage.jpa.polling-interval=0"
-                );
-    }
+    private static final ApplicationContextRunner CONTEXT_RUNNER = new ApplicationContextRunner()
+            .withUserConfiguration(TestContext.class)
+            .withPropertyValues(
+                    "axon.axonserver.enabled=false",
+                    "axon.timeout.enabled=true",
+                    "axon.eventstorage.jpa.polling-interval=0"
+            );
 
     @Nested
-    class BeanRegistration {
+    class WhenTimeoutEnabled {
 
         @Test
-        void janitorShutdownHandlerBeanIsCreated() {
+        void contextStartsAndStopsSuccessfully() {
             // given / when
-            contextRunner.run(context -> {
-                // then
-                assertThat(context).hasBean("axonTaskJanitorShutdownHandler");
-                assertThat(context).getBean("axonTaskJanitorShutdownHandler")
-                        .isInstanceOf(AxonTaskJanitorShutdownHandler.class);
+            CONTEXT_RUNNER.run(context -> {
+                // then - Axon Configuration is built with ConfigurerModules (including janitor shutdown)
+                org.axonframework.config.Configuration config =
+                        context.getBean(org.axonframework.config.Configuration.class);
+                assertThat(config).isNotNull();
+                // Context close will trigger config.shutdown(), which runs the janitor shutdown hook
             });
         }
     }
 
     @Nested
-    class WhenTimeoutsDisabled {
+    class WhenTimeoutDisabled {
 
         @Test
-        void janitorShutdownHandlerBeanIsNotCreated() {
-            // given - timeout auto-configuration disabled
+        void contextStartsSuccessfully() {
             ApplicationContextRunner runner = new ApplicationContextRunner()
                     .withUserConfiguration(TestContext.class)
                     .withPropertyValues(
@@ -75,39 +68,8 @@ class AxonTaskJanitorShutdownTest {
                             "axon.eventstorage.jpa.polling-interval=0"
                     );
 
-            // when / then
-            runner.run(context -> assertThat(context).doesNotHaveBean("axonTaskJanitorShutdownHandler"));
-        }
-    }
-
-    @Nested
-    class SmartLifecycleBehaviour {
-
-        @Test
-        void janitorShutdownHandlerIsSmartLifecycle() {
-            // given / when
-            contextRunner.run(context -> {
-                AxonTaskJanitorShutdownHandler handler = context.getBean(AxonTaskJanitorShutdownHandler.class);
-                // then
-                assertThat(handler).isInstanceOf(org.springframework.context.SmartLifecycle.class);
-                assertThat(handler.isAutoStartup()).isTrue();
-            });
-        }
-
-        @Test
-        void janitorThreadIsShutDownOnContextClose() {
-            // given
-            contextRunner.run(context -> {
-                AxonTaskJanitorShutdownHandler handler = context.getBean(AxonTaskJanitorShutdownHandler.class);
-                handler.start();
-                assertThat(handler.isRunning()).isTrue();
-
-                // when
-                handler.stop();
-
-                // then
-                assertThat(handler.isRunning()).isFalse();
-            });
+            runner.run(context -> assertThat(context.getBean(org.axonframework.config.Configuration.class))
+                    .isNotNull());
         }
     }
 

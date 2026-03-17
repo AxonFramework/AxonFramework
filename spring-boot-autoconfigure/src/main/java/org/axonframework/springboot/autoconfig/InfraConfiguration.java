@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.config.AxonTaskJanitorShutdownConfigurerModule;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
@@ -130,6 +131,11 @@ public class InfraConfiguration {
         SpringParameterResolverFactoryBean springParameterResolverFactoryBean = new SpringParameterResolverFactoryBean();
         springParameterResolverFactoryBean.setAdditionalFactories(parameterResolverFactories);
         return springParameterResolverFactoryBean;
+    }
+
+    @Bean
+    public ConfigurerModule axonTaskJanitorShutdownConfigurerModule() {
+        return new AxonTaskJanitorShutdownConfigurerModule();
     }
 
     @ConditionalOnClass(CorrelationDataProvider.class)
