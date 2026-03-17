@@ -239,8 +239,8 @@ class ReplayTokenTest {
             TrackingToken currentToken1 = new GlobalSequenceTrackingToken(5);
             TrackingToken currentToken2 = new GlobalSequenceTrackingToken(5);
 
-            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, null);
-            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, null);
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, new byte[0]);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, new byte[0]);
 
             assertTrue(replayToken1.samePositionAs(replayToken2));
             assertTrue(replayToken2.samePositionAs(replayToken1));
@@ -252,8 +252,8 @@ class ReplayTokenTest {
             TrackingToken currentToken1 = new GlobalSequenceTrackingToken(5);
             TrackingToken currentToken2 = new GlobalSequenceTrackingToken(6);
 
-            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, null);
-            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, null);
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, currentToken1, new byte[0]);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, currentToken2, new byte[0]);
 
             assertFalse(replayToken1.samePositionAs(replayToken2));
             assertFalse(replayToken2.samePositionAs(replayToken1));
@@ -265,7 +265,7 @@ class ReplayTokenTest {
             TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
             TrackingToken otherToken = new GlobalSequenceTrackingToken(5);
 
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
             assertTrue(replayToken.samePositionAs(otherToken));
         }
@@ -276,7 +276,7 @@ class ReplayTokenTest {
             TrackingToken currentToken = new GlobalSequenceTrackingToken(5);
             TrackingToken otherToken = new GlobalSequenceTrackingToken(6);
 
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
             assertFalse(replayToken.samePositionAs(otherToken));
         }
@@ -284,7 +284,7 @@ class ReplayTokenTest {
         @Test
         void samePositionAsWithNullCurrentTokenReturnsFalse() {
             TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, null, null);
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, null, new byte[0]);
 
             TrackingToken otherToken = new GlobalSequenceTrackingToken(5);
 
@@ -294,8 +294,8 @@ class ReplayTokenTest {
         @Test
         void samePositionAsWithBothNullCurrentTokens() {
             TrackingToken tokenAtReset = new GlobalSequenceTrackingToken(10);
-            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, null, null);
-            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, null, null);
+            ReplayToken replayToken1 = new ReplayToken(tokenAtReset, null, new byte[0]);
+            ReplayToken replayToken2 = new ReplayToken(tokenAtReset, null, new byte[0]);
 
             // When both have null currentToken, samePositionAs() returns false
             // because currentToken != null check fails
@@ -308,7 +308,7 @@ class ReplayTokenTest {
             TrackingToken currentToken = GapAwareTrackingToken.newInstance(5, emptySet());
             TrackingToken sameCurrentToken = GapAwareTrackingToken.newInstance(5, emptySet());
 
-            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
+            ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, new byte[0]);
 
             assertTrue(replayToken.samePositionAs(sameCurrentToken));
         }
