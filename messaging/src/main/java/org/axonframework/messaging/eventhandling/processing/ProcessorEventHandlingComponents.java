@@ -125,7 +125,7 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
             if (token.isPresent() && ReplayToken.concludesReplay(token.get())) {
                 ReplayStatusChanged replayStatusChanged =
                         new GenericReplayStatusChanged(ReplayStatus.REGULAR, (Object) null);
-                result.concatWith(component.handle(replayStatusChanged, context));
+                result = result.concatWith(component.handle(replayStatusChanged, context));
             }
         }
         return result.ignoreEntries().cast();
