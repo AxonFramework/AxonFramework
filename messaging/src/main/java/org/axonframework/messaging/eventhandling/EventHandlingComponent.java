@@ -17,8 +17,11 @@
 package org.axonframework.messaging.eventhandling;
 
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
@@ -84,5 +87,10 @@ public interface EventHandlingComponent
      */
     default boolean supportsReset() {
         return true;
+    }
+
+    @Override
+    default MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange, ProcessingContext context) {
+        return MessageStream.empty();
     }
 }
