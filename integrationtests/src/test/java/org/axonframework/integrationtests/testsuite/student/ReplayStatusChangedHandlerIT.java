@@ -68,6 +68,8 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         Map<String, EventProcessor> eventProcessors = startedConfiguration.getComponents(EventProcessor.class);
         assertThat(eventProcessors).containsKey(PSEP_NAME);
         PooledStreamingEventProcessor psep = (PooledStreamingEventProcessor) eventProcessors.get(PSEP_NAME);
+        int startEventCount = 4;
+        int finalEventCount = 104;
 
         // when
         var studentId = UUID.randomUUID().toString();
@@ -87,7 +89,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         psep.shutdown()
             .thenCompose(ignored -> psep.resetTokens())
             .thenRun(() -> {
-                for (int i = 5; i < 105; i++) {
+                for (int i = startEventCount + 1; i <= finalEventCount; i++) {
                     studentEnrolledToCourse(studentId, "my-courseId-" + i);
                 }
             })
@@ -96,7 +98,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
         // then
         await().atMost(Duration.ofMillis(5000))
-               .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(104));
+               .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(finalEventCount));
         assertThat(resetHandlerInvoked).isTrue();
         assertThat(replayStatusChangedHandlerInvoked).isTrue();
     }
