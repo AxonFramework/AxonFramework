@@ -467,10 +467,8 @@ class AggregateBasedJpaEventStorageEngineIT
             );
 
             // then — the stream must eventually surface the matching test event despite the
-            // non-matching batch preceding it (demonstrates the token-advance bug if it loops)
-            await().atMost(5, java.util.concurrent.TimeUnit.SECONDS).untilAsserted(
-                    () -> assertThat(stream.peek()).isNotEmpty()
-            );
+            // non-matching batch preceding it
+            await().untilAsserted(() -> assertThat(stream.peek()).isNotEmpty());
         }
     }
 

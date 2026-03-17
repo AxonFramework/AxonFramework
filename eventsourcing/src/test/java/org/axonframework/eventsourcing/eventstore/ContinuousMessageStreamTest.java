@@ -86,10 +86,10 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
     }
 
     @Nested
-    class WhenFetcherOwnsCursorTracking {
+    class WhenFetcherAdvancesCursor {
 
         @Test
-        void fetchMore_shouldUseReturnedCursorAsNextStartPosition_whenItemsAreEmpty() {
+        void fetchMore_shouldAdvanceStartPositionWhenNoItemsReturned() {
             // given
             EventMessage cursorItem = new GenericEventMessage(new MessageType("cursor"), UUID.randomUUID().toString());
             List<EventMessage> capturedCursors = new ArrayList<>();
