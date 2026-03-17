@@ -16,16 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
-import java.time.Duration;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -34,11 +24,22 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
 import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
 import org.junit.jupiter.api.*;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Test class validating that
@@ -56,14 +57,20 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
     private static final String PSEP_NAME = "replayStatusChangeHandler";
 
-    static AtomicInteger eventHandlerInvocations = new AtomicInteger(0);
-    static AtomicBoolean resetHandlerInvoked = new AtomicBoolean(false);
-    static AtomicBoolean replayStatusChangedHandlerInvoked = new AtomicBoolean(false);
+    static AtomicInteger eventHandlerInvocations;
+    static AtomicBoolean resetHandlerInvoked;
+    static AtomicReference<ReplayStatus> replayStatusReference;
 
-    // TODO expand test to trigger on start of replay as well
+    @BeforeEach
+    void setUp() {
+        eventHandlerInvocations = new AtomicInteger(0);
+        resetHandlerInvoked = new AtomicBoolean(false);
+        replayStatusReference = new AtomicReference<>(null);
+    }
+
     @Test
     void resettingPsepTriggersReplayStatusChangeHandlersWhenFinishingTheReplay() {
-        // given
+        // given...
         startApp();
         Map<String, EventProcessor> eventProcessors = startedConfiguration.getComponents(EventProcessor.class);
         assertThat(eventProcessors).containsKey(PSEP_NAME);
@@ -71,23 +78,26 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         int startEventCount = 4;
         int finalEventCount = 104;
 
-        // when
+        // when publishing some events...
         var studentId = UUID.randomUUID().toString();
         studentEnrolledToCourse(studentId, "my-courseId-1");
         studentEnrolledToCourse(studentId, "my-courseId-2");
         studentEnrolledToCourse(studentId, "my-courseId-3");
         studentEnrolledToCourse(studentId, "my-courseId-4");
 
-        // then
+        // then no replay or reset logic has been invoked...
         await().atMost(Duration.ofMillis(5000))
                .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(4));
         assertThat(resetHandlerInvoked).isFalse();
-        assertThat(replayStatusChangedHandlerInvoked).isFalse();
+        assertThat(replayStatusReference).hasValue(null);
 
-        // when
+        // when shutdown and reset...
         eventHandlerInvocations.set(0);
         psep.shutdown()
             .thenCompose(ignored -> psep.resetTokens())
+            // then the replay status switches to replay...
+            .thenRun(() -> assertThat(replayStatusReference).hasValue(ReplayStatus.REPLAY))
+            // when we publish more events...
             .thenRun(() -> {
                 for (int i = startEventCount + 1; i <= finalEventCount; i++) {
                     studentEnrolledToCourse(studentId, "my-courseId-" + i);
@@ -96,11 +106,14 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
             .thenCompose(ignored -> psep.start())
             .join();
 
-        // then
+        // then we expect the reset handler and events to be handled...
+        assertThat(resetHandlerInvoked).isTrue();
+        await().atMost(Duration.ofMillis(5000))
+               .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValueGreaterThanOrEqualTo(startEventCount));
+        // ...once the original number of events are handled, the switch from REPLAY to REGULAR should happen
+        assertThat(replayStatusReference).hasValue(ReplayStatus.REGULAR);
         await().atMost(Duration.ofMillis(5000))
                .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(finalEventCount));
-        assertThat(resetHandlerInvoked).isTrue();
-        assertThat(replayStatusChangedHandlerInvoked).isTrue();
     }
 
     @SuppressWarnings("unused")
@@ -118,7 +131,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
         @ReplayStatusChangedHandler
         public void on(ReplayStatusChanged context) {
-            replayStatusChangedHandlerInvoked.set(true);
+            replayStatusReference.set(context.status());
         }
     }
 
