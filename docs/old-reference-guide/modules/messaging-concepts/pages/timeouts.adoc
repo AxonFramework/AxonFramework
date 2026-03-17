@@ -186,9 +186,9 @@ axon.timeout.transaction.command-bus.warning-interval-ms=1000
 
 
 # Timeout for the query bus
-axon.timeout.transaction.query.timeout-ms=20000
-axon.timeout.transaction.query.warning-threshold-ms=10000
-axon.timeout.transaction.query.warning-interval-ms=1000
+axon.timeout.transaction.query-bus.timeout-ms=20000
+axon.timeout.transaction.query-bus.warning-threshold-ms=10000
+axon.timeout.transaction.query-bus.warning-interval-ms=1000
 
 # Timeout for the deadline manager
 axon.timeout.transaction.deadline.timeout-ms=20000
