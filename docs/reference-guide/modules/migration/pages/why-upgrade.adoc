@@ -1,0 +1,125 @@
+= Why Upgrade To Axon Framework 5?
+:navtitle: Why Upgrade?
+
+Now if you’re already convinced that you want to upgrade to Axon Framework 5, then jump straight to the next section on the prerequisites that are needed.
+Let's explore what makes Axon Framework 5 genuinely different.
+These capabilities unlock architectural patterns that were either impossible or impractical in Axon Framework 4.x.
+Some of the most compelling features are:
+
+* Async-Native Architectures
+* Dynamic Consistency Boundaries (DCB)
+* Simplified Configurations
+* Domain Entity Classes without Framework Code
+* Axon Framework 5 Extensions
+
+Let’s analyze them further.
+
+== Async-native architecture for modern Java concurrency
+
+Axon Framework 5 rebuilds the entire framework foundation from first principles around asynchronous composition.
+The UnitOfWork that you knew in Axon Framework 4.x no longer exists in its previous form.
+In its place is a fully composable, async-native processing model that works seamlessly whether you're building traditional imperative code, reactive streams with Project Reactor, Kotlin coroutines, or leveraging Java's virtual threads through Project Loom.
+
+This architectural shift has substantial implications.
+Your event-driven systems now naturally support both synchronous and asynchronous patterns without awkward adapters or workarounds.
+The framework no longer depends on ThreadLocal for context propagation.
+Instead, a lightweight ProcessingContext flows through your processing pipeline.
+This explicit context passing eliminates entire categories of concurrency bugs and makes your code more testable and easier to reason about.
+
+For teams building microservices at scale, this means better support for backpressure handling, graceful degradation under load, and tighter integration with cloud-native platforms.
+The explicit context model becomes particularly valuable when managing concurrent operations across multiple threads or when running applications on platforms like Project Loom.
+
+== Dynamic Consistency Boundaries - Move from aggregates to entities
+
+Perhaps the most conceptually significant innovation in Axon Framework 5 is the introduction of Dynamic Consistency Boundaries (DCB).
+This represents a fundamental rethinking of how you structure domain logic.
+
+In traditional event sourcing and Axon Framework 4.x, the aggregate was the primary unit of consistency—the boundary that everything revolved around.
+However, real-world domain complexity doesn't always map cleanly to single aggregates.
+Different parts of your system need different consistency guarantees, different event sourcing strategies, and different performance characteristics.
+
+Dynamic Consistency Boundaries let you break free from this constraint.
+You can now design consistency regions that match your actual business domain, not the other way around.
+Different slices of your application can maintain their own entities, their own event sourcing strategies, and their own read models—all derived from the same underlying events.
+This eliminates artificial coupling between business contexts and enables true vertical slice architecture.
+
+What does this mean in practice?
+Teams can work independently across different consistency boundaries without coordinating through shared aggregates.
+Your system becomes more modular, more parallel in its development, and more aligned with Domain-Driven Design principles.
+
+== Simplified configurations
+
+Axon Framework 4.x centered heavily on Spring annotations and auto-wiring.
+For teams already embedded in the Spring ecosystem, this was convenient.
+However, developers who wanted to use Axon without Spring or who preferred explicit builder-style configuration often found the experience cumbersome.
+
+Axon Framework 5 introduces a completely redesigned Configuration API that adapts to your needs whether you prefer annotations, builders, or pure Java.
+The framework is now organized into intuitive compartments covering messaging, automations, modelling, and testing concerns.
+
+This redesign extends beyond convenience.
+Axon Framework 5 becomes genuinely approachable for new projects, whether you're starting fresh or integrating into an existing architecture.
+Spring Boot integration works elegantly.
+Pure Java configuration is equally well supported.
+This flexibility removes barriers to adoption and lets you choose the configuration style that best fits your project.
+
+== Domain entity classes without Framework code
+
+Here's a question worth thinking about: Why should your core business domain logic know about your persistence or routing framework?
+
+In Axon Framework 4.x, it was common to scatter framework annotations throughout your domain entities.
+Your aggregate class would carry various annotations such as @Aggregate, @AggregateIdentifier, @CommandHandler, @EventHandler, and various other framework markers.
+This caused your business domain logic to become entangled with infrastructure concerns, and the end result was that the business logic and the framework could not be cleanly separated.
+
+Axon Framework 5 fundamentally changes this relationship.
+You now have the option to make your domain entities plain, framework-free Java classes.
+
+=== Why this matters
+
+When your domain entities are POJOs (Plain Old Java Objects), testing becomes straightforward.
+You can instantiate them, exercise their methods, and verify behavior using any testing tool you prefer.
+There is no framework setup required, no special fixtures, and no hidden magic.
+A domain entity test becomes just a regular unit test, which means your team can focus on testing business logic rather than working around framework requirements.
+
+Domain-Driven Design emphasizes that your code should reflect your domain language, not your infrastructure choices.
+Frameworks should serve your domain, and not the other way around.
+In Axon Framework 5, therefore, for example, your Order class, your Account entity, and other classes have the option to remain as regular business domain objects.
+
+== Axon Framework 5 extensions
+
+Axon Framework 5 is designed to work with a flourishing ecosystem of purpose-built extensions, all engineered for seamless compatibility with the new architecture.
+
+In Axon Framework 4.x, extensions existed, but they often felt like companions rather than first-class citizens.
+With Axon Framework 5, the story changes.
+The extensions aren't afterthoughts or legacy components—they're integral to the ecosystem, rebuilt from the ground up to embrace the async-native architecture and all the philosophical improvements that Axon Framework 5 introduces.
+
+=== Why this matters: the PostgreSQL extension for Axon Framework 5
+
+Not every organization runs specialized event stores.
+Many teams have PostgreSQL at their core—a battle-tested, reliable relational database that's already part of their infrastructure.
+
+The PostgreSQL Extension for Axon Framework 5 provides a fully compatible event storage implementation that lets you persist your events in PostgreSQL while embracing Axon Framework 5's architectural improvements.
+
+This extension:
+
+* Leverages Jakarta Persistence with modern, clean configuration
+* Supports Axon Framework 5's message type system natively
+* Provides optimized querying through PostgreSQL's rich feature set
+* Integrates seamlessly with the async-native architecture for non-blocking event operations
+* Simplifies your infrastructure footprint by consolidating event storage into your existing database layer
+
+For teams who want the benefits of event sourcing without adding specialized infrastructure, PostgreSQL Extension offers a pragmatic path forward.
+
+=== Why this matters: the Apache Kafka extension for Axon Framework 5
+
+Real-world systems at scale often need to publish events beyond their local event store.
+The Apache Kafka Extension for Axon Framework 5 provides enterprise-grade event distribution, fully compatible with Axon Framework 5's architecture.
+
+This extension:
+
+* Seamlessly integrates with the async-native processing model, allowing non-blocking event publication.
+* Supports consumer groups for parallel event processing across your microservice landscape.
+* Handles event serialization using Axon Framework 5's new message type system for reliable schema evolution.
+* Works with your domain entities as-is—no framework coupling required in your domain code.
+* Provides built-in resilience patterns for handling transient failures.
+
+Whether you're building a distributed system where events need to flow across service boundaries or orchestrating complex business processes through event-driven choreography, the Apache Kafka Extension brings industrial-strength capabilities to your Axon Framework 5 applications.

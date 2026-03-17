@@ -1,0 +1,47 @@
+= Testing
+:navtitle: Testing
+
+Testing is a critical part of developing reliable applications.
+Axon Framework's testing module provides comprehensive tools for testing either your entire application or parts of your application.
+As such, it allows focus on just your command handlers and entities, but can also be used for complete integration tests.
+
+The testing support is built on a simple principle: use the same configuration in your tests as you do in production.
+This approach eliminates duplicate configuration and ensures your tests accurately reflect your production setup.
+
+The `AxonTestFixture` is the main entry point for testing Axon applications.
+It uses the same `ApplicationConfigurer` that you use to configure your production application, providing consistency between test and production environments.
+
+Once the configuration is inserted in the fixture, you're presented with a given-when-then style to describe and test your scenarios.
+Furthermore, in taking the overarching configuration, the testing module supports testing all aspects of your application:
+
+**Command handler testing**::
+Test command handling logic, validation rules, and state changes.
+Verify that commands produce the expected events and results.
+For a concrete example, check out xref:basic-testing.adoc#testing_command_handling_components[this] section.
+
+**Event handler testing**::
+Test event handling and side effects.
+Verify that events trigger the correct commands, queries, or additional events.
+For a concrete example, check out xref:basic-testing.adoc#testing_event_handling_components[this] section.
+
+**Entity testing**::
+Test event-sourced entities and business logic.
+For a concrete example, check out xref:basic-testing.adoc#testing_event_sourced_entities[this] section.
+
+**Integration testing**::
+Test complete message flows with real infrastructure components.
+Verify end-to-end behavior including conversion, event storage, and processors.
+For a concrete example, check out xref:advanced-testing.adoc#integration_testing[this] section.
+
+== Module contents
+
+This module covers everything you need to test Axon applications.
+
+[cols="<,<"]
+|===
+|Sub-Section |Purpose
+
+|xref:basic-testing.adoc[Basic Testing] |Comprehensive guide to using `AxonTestFixture` for testing, including Given-When-Then phases, creating fixtures, and available assertions
+|xref:matchers-and-field-filters.adoc[Matchers and Field Filters] |Explanation of Matchers and Field Filters to expand then-phase verification options
+|xref:advanced-testing.adoc[Advanced Testing] |Advanced testing techniques including integration testing, testing with Spring Boot, and testing with Testcontainers
+|===

@@ -1,0 +1,227 @@
+= Project Structure
+
+For our sample application, we will create a modular-monolith maven project following the link:https://www.baeldung.com/java-vertical-slice-architecture[Vertical Slice Architecture].
+
+== Create new Axon Framework project with Maven
+
+Let's start by creating a new Maven project.
+While you could also use Gradle, this tutorial will focus on Maven configuration.
+Keep in mind that Axon Framework 5 requires Java 21 or higher.
+
+[NOTE]
+====
+After the creation please make sure to set the following project properties.
+
+[horizontal]
+groupId:: io.axoniq.demo.university
+artifactId:: university-demo
+version:: 1.0.0-SNAPSHOT
+====
+
+== Axon Framework dependencies
+
+In this step we will configure the dependencies to use Axon Framework 5 in our project.
+To enable the use of Axon Framework, we can configure the required Axon Framework dependencies in our project's `pom.xml` file.
+Nevertheless, depending on the specific features we plan to use later, we may need to add additional dependencies for other libraries or tools later (for example, `micrometer` or `reactor`).
+
+Below you can see the resulting pom from our current set of requirements.
+Please ensure you have the following properties and dependencies in your `pom.xml` file:
+
+[source,xml]
+./pom.xml
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.axoniq.demo.university</groupId>
+    <artifactId>university-demo</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <properties>
+        <assertj.version>3.27.3</assertj.version>
+        <axon.version>5.0.1</axon.version>
+        <hamcrest.version>3.0</hamcrest.version>
+        <junit.version>5.12.1</junit.version>
+        <jackson.version>2.20.0</jackson.version>
+        <log4j.version>2.24.3</log4j.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+
+    <dependencies>
+        <!-- Axon Framework Dependencies -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-eventsourcing</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+
+        <!-- Serialization Dependencies -->
+
+        <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${jackson.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <!-- Log4j Dependencies -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-test</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+----
+
+== Project structure
+
+We will design our project follows a *Vertical Slice Architecture* approach.
+This approach organizes code around features (slices) rather than technical layers.
+It aligns perfectly with the Event Modeling that we used to design our application and also with Axon Framework's architecture that is designed around messages.
+
+Our project will follow this structure of packages:
+
+[source]
+----
+📦 io.axoniq.demo.university
+ ┣ 📂 faculty (bounded context)
+ ┃ ┣ 📂 events (events shared across slices)
+ ┃ ┣ 📂 write (command handling slices)
+ ┃ ┃ ┣ 📂 createcourse
+ ┃ ┃ ┣ 📂 changecoursecapacity
+ ┃ ┃ ┣ 📂 subscribestudent
+ ┃ ┃ ┗ 📂 ...
+ ┃ ┣ 📂 read (query handling slices )
+ ┃ ┗ 📂 automation (automation slices)
+ ┣ 📂 shared (common code, like identifiers, exceptions, etc)
+ ┗ 📂 ...
+----
+
+Each module (bounded context) is structured into three distinct types of slices (packages `write`, `read`, `automation`) and there are events (package `events`) between them.
+
+Each slice contains the full implementation of a feature, from command definition to command handling and event publication.
+This approach allows different slices to be implemented independently and in parallel.
+You may even use different implementation styles / architectures inside certain slices.
+You will also see that in this tutorial.
+
+*Write Slices*
+Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (for example `SubscribeStudentToCourse` command → `StudentSubscribedToCourse` event, with `SubscriptionsPerStudentNotExceedMax` rule).
+
+*Read Slices*
+Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example `GetCourseStatsById` query → `CoursesStatsReadModel`).
+
+*Automation Slices*
+Processes events to trigger subsequent actions, implementing system policies and workflows, that connect different modules (for example `WhenStudentSubscribedThenSendNotification`).
+
+
+[NOTE]
+====
+What makes this approach powerful in Axon Framework 5 is the Dynamic Consistency Boundary concept.
+Unlike previous versions where you needed to share an Aggregate between slices,
+you can now keep your slices completely independent of each other!
+====
+
+The architecture screams the capabilities of the system by making it explicit:
+
+* Commands (`CreateCourse` , `SubscribeStudentToCourse`), which are the actions that can be executed
+* Events that capture what happened and may notify other parts of the system or the user
+* Queries that provide information about the state of the system
+
+This approach allows teams to develop different features in parallel without stepping on each other's toes, and even lets you use different implementation styles within different slices.
+
+Once that we have our project created with basic packages structure, in the next step, we may move to the framework configuration.
+
+== Setting up basic configuration
+
+Axon Framework 5 has a new configuration model that allows you to configure your framework application in a more flexible way.
+We will be uncovering this new configuration model in the next steps of this tutorial.
+For now, we just need basic configuration to get started.
+
+We're going to use full potential of Event-Sourced application, so let's create a `UniversityAxonApplication` class and use `EventSourcing.configurer()`.
+This will set up by default all necessary components to run an Event-Sourced application.
+Components like: `EventStore`, `CommandBus`, `EventSink` etc.
+
+[NOTE]
+====
+In Milestone 1, only the in-memory implementation of the Event Store is supported, but this still allows you to try out the new Command handling API and the new DCB-support just the same.
+====
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer configurer() {
+        return EventSourcingConfigurer.create();
+    }
+
+}
+----
+
+With our project structure and basic configuration in place, we're ready to implement our first feature!

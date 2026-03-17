@@ -1,0 +1,14 @@
+name: axon-framework-5-getting-started
+title: Getting Started with Axon Framework 5
+version:
+  axon-(?<version>+({0..9}).+({0..9})).*: $<version>
+  master:
+
+asciidoc:
+  attributes:
+    component_description: Getting started with designing, building, and deploying Axon Technology based applications.
+    type: tutorial
+    group: beginner
+
+nav:
+  - modules/nav.adoc

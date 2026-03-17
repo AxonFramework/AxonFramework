@@ -1,0 +1,495 @@
+= Feature: Course Creation
+
+When implementing a new feature in Axon Framework 5, the first step is defining the messages that will flow through the system. Messages are first-class citizens in Axon, and everything is designed around them.
+They are inputs and outputs of the certain features (slices in the Vertical Slice Architecture).
+While designing the app and also during execution—you're always in the context of some command.
+
+For our first feature, we'll implement the capability to create a new course.
+After all, what's a university faculty without courses that students can subscribe to?
+
+== Define messages
+
+Messages are the contract between different parts of our system, so you need to pay attention to craft them correctly.
+Event Modeling helps a lot, thanks to its completeness check you can be sure that you don't forget about anything.
+So let's take the first Write Slice on the table.
+
+Looking at our Event Modeling diagram, our first writing slice involves `CreateCourse` leading to `CourseCreated`.
+Let's translate these sticky notes into code.
+The orange sticky is an event, and every event needs a cause, which is a command that may trigger the event.
+In this case it's a `CreatCourse` on the blue sticky note.
+
+image::EventModeling_CreateCourse_Stickies.png[]
+
+In Axon Framework 5, we typically define commands and events as Java records to ensure immutability.
+You can also use Java classes if you really want, but records nicely fulfill the characteristic of messages because they are immutable by definition.
+Following our Vertical Slice Architecture, we'll place each message in its appropriate package:
+
+* `CreateCourse` in the `io.axoniq.demo.university.faculty.write.createcourse` package (we place command inside the slice package, because the command has only one handler)
+* `CourseCreated` in the `io.axoniq.demo.university.faculty.events` package (events are shared between slices, there may be 0 to many handlers for the same event)
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+public record CreateCourse(
+    CourseId courseId,
+    String name,
+    int capacity
+) {}
+----
+
+[NOTE]
+====
+You may notice that for the `courseId` field we use `CourseId` value object.
+It's not necessary, but it's a convention.
+This class provides type safety and domain semantics for course identifiers.
+Thanks to that, you won't mix CourseId with other identifiers in the system like StudentId.
+The class may be as simple as:
+[source,java]
+----
+public record CourseId(String raw) {
+    @Override
+    public String toString() { // will be used as a tag value
+        return raw;
+    }
+
+    public static CourseId random() {
+        return new CourseId(UUID.randomUUID().toString());
+    }
+
+}
+----
+In the repository, we have also some additional helpful methods that you may find in the repository, but for now this is enough.
+====
+
+Next, let's define the event that will be published when a course is created:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/events/CourseCreated.java
+----
+public record CourseCreated(
+    @EventTag
+    CourseId courseId, // <1>
+    String name,
+    int capacity
+) {}
+----
+
+<1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
+If you are used to Aggregate approach before, note that the Tag identifies the aggregate. Now, thanks to Dynamic Consistency Boundary, you now can have one event assigned to many business entities (instead of one, as before!).
+The EventStore in Axon Framework 5 always stores your events along with assigned tags, so you can query them later based on those tags and types.
+For the `Tag` value the `toString()` method will be used, so you need to override it in your typed identifier.
+
+Please remember that if you want to use the Value Objects in your events (like for the `courseId`), you need to configure custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
+
+[NOTE]
+====
+For the first milestone, it's only possible to define tags with annotations.
+In the future, the configuration API will expose methods to do that without placing annotations on your events.
+====
+
+== Specification by example
+
+With our messages defined, we'll now follow a Test-First approach to specify the behavior of our slice (feature).
+Axon provides excellent support for testing through the `AxonTestFixture`.
+
+So keep focus on the current command - `CreateCourse` and create corresponding `CreateCourseTest` class in the `io.axoniq.demo.university.faculty.write.createcourse` package.
+
+TIP: You can also use your IDE to create the unit test class.
+Open the `CreateCourse` class and ask your IDE to generate the corresponding unit test.
+Depending on your IDE, the shortcut or menu may vary, but it's a shortcut worth knowing for your IDE.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+class CreateCourseTest {
+
+}
+----
+
+=== Defining the test fixture
+
+Axon Framework's test fixture allows you to execute test cases against a provided configuration.
+It may be your module/component configuration, or even the whole application!
+
+Do you remember the configurer that we used while bootstrapping the application?
+Now it's time to use it to initialize our test fixture.
+We need to have access to application components in tests to verify their behavior, which the configuration provides.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+class CreateCourseTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach // <1>
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer()); // <2>
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop(); // <3>
+    }
+
+}
+----
+
+<.> The `@BeforeEach` marks this method to be called before any test is executed in our test class.
+Adding the code to create the `AxonTestFixture` here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.
+<.> This line creates a new `AxonTestFixture` based on our configurer. The configuration will be built and started from the configurer by the fixture itself.
+In this case, we use the whole application configuration, but you may also create a dedicated configuration for the slice if you want to keep your tests more focused and check the slice implementation correctness in isolation.
+To achieve that, just change the fixture creation line to: `AxonTestFixture.with(application.configurer(CreateCourseConfiguration::configure));`.
+<.> Remember after each test to stop the fixture, so all resources (like Axon Server connections) are properly released.
+
+=== Testing the command
+
+Thanks to the help of the `AxonTestFixture` we can now create a test following the Given-When-Then pattern:
+
+* *Given*: Set the initial state for our test.
+Since we are designing our system to follow Event-Sourcing patterns, we need to set the list of events that have already happened before receiving the command.
+* *When*: Specify the command whose execution we want to test.
+In this case, we will test the processing of a `CreateCourse`.
+* *Expect*: We can instruct the fixture on the expectations we have from our system after processing the command.
+In an Event-Sourcing system, we will specify these expectations in the form of what events should have been produced by the command handler as a result of processing the command.
+
+So, let's define a method in our unit test to check that our system can successfully process the request to create a course.
+For now, we focus on the happy path. In the Event Modeling, we've described this as GWT specification:
+
+image::EventModeling_CreateCourse_GWT_Spec1.png[]
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+class CreateCourseTest {
+
+    // fixture creation skipped for brevity
+
+    @Test
+    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
+        var courseId = CourseId.random();
+        var courseName = "Event Sourcing in Practice";
+        var capacity = 3;
+
+        fixture.given()
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity))
+                .then()
+                .success()
+                .events(new CourseCreated(courseId, courseName, capacity));
+    }
+
+}
+----
+<.> In our case, when we receive the `CreateCourse` command, we expect that no previous events were received in the system.
+We may even skip the whole `given` section if there is nothing to execute.
+<.> We provide the `CreateCourse` command we want to dispatch against the system (scoped to the given configuration).
+<.> After successfully processing the `CreateCourse`, we expect the publication of a new `CourseCreated` event with the details of the new course.
+
+If we run this test now, it will fail with the following error:
+
+[,console]
+----
+org.axonframework.commandhandling.NoHandlerForCommandException: No handler was subscribed for command [io.axoniq.demo.university.faculty.write.createcourse.CreateCourse#0.0.1].
+----
+
+This is expected, of course.
+It means that we need to implement the handler for the `CreateCourse` command.
+And this will be our next step!
+
+=== Implementing the command handler
+
+To process a `CreateCourse` command in our application, we must define a method that receives the command as an argument.
+To indicate that the method should be invoked upon receiving a command, we will add the `@CommandHandler` annotation provided by Axon Framework.
+Let's create a new class for that inside the slice package, name it `CreateCourseCommandHandler`, and implement the minimum required to make the test pass.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+class CreateCourseCommandHandler {
+
+    @CommandHandler // <1>
+     void handle(
+            CreateCourse command,  // <2>
+            EventAppender eventAppender // <3>
+    ) {
+        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());  // <4>
+        eventAppender.append(event); // <5>
+    }
+
+}
+----
+
+<1> The `org.axonframework.commandhandling.annotation.CommandHandler` annotation instructs Axon Framework to call this method upon receiving commands.
+<2> The type of the argument indicates to Axon Framework which type of commands should be linked to the invocation of this method.
+<3> The `EventAppender` is a component that allows us to publish events in the context of the current command so the events will be published after successful command execution.
+<4> We create the Event as a result of the command handling. The Event message responsibility is to notify the change in the state of our system. In this case, the event notifies that the *course has been created*.
+<5> The invocation of `EventAppender#append` stage event to be published after the current `ProcessingContext` is completed.
+
+Have you already tried to run the test?
+Unfortunately, it will fail again.
+What we need to do now, we need to register the `CreateCourseCommandHandler` in the Axon Framework configuration.
+We're going to do it in dedicated class `CreateCourseConfiguration` which will be responsible for spinning up the infrastructure for the whole slice.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+public class CreateCourseConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        var commandHandlingModule = CommandHandlingModule.named("CreateCourse") // <1>
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler()); // <2>
+        return configurer.registerCommandHandlingModule(commandHandlingModule); // <3>
+    }
+
+}
+----
+
+<.> The `CommandHandlingModule` is a component that allows us to register the command handler for the `CreateCourse` command.
+For our current needs we skip `entities` configuration, because we don't need the state yet.
+<.> The `annotatedCommandHandlingComponent` method allows us to register the `CreateCourseCommandHandler` as the command handler for the `CreateCourse` command.
+<.> The `registerCommandHandlingModule` method registers the command handler module in the Axon Framework configuration.
+
+When the slice configurer is ready, we can register it to the main application configurer.
+To do that, let's introduce changes in our main `UniversityAxonApplication` class.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer configurer() {
+        return configurer(CreateCourseConfiguration::configure);
+    }
+
+    // This additional method allows us to selective register modules (helpful in tests)
+    public static ApplicationConfigurer configurer(UnaryOperator<EventSourcingConfigurer> customization) {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = customization.apply(configurer);
+        return configurer;
+    }
+
+}
+----
+
+Let's check our test again, and... now everything is green!
+Can we say that the work is done?
+Not yet!
+Because we have some business rules defined in the Given-When-Then specification as follows:
+
+image::EventModeling_CreateCourse_GWT_Spec2.png[]
+
+The course cannot be created if it already exists.
+So let's add a test case for that to the `CreateCourseTest` class as below.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+class CreateCourseTest {
+
+    // fixture creation skipped for brevity
+
+    @Test
+    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+        var courseId = CourseId.random();
+        var courseName = "Event Sourcing in Practice";
+        var capacity = 3;
+
+        fixture.given()
+                .event(new CourseCreated(courseId, courseName, capacity)) // <1>
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity)) // <2>
+                .then()
+                .success()
+                .noEvents(); // <3>
+    }
+
+}
+----
+
+<1> In our case, when we receive the `CreateCourse` command, we expect that `CourseCreated` event happened in the past, so the Course already exists in the system.
+<2> We provide the `CreateCourse` command we want to dispatch against the system (scoped to the given configuration), so will be handled by registered handler.
+<3> After successfully processing the `CreateCourse`, we expect the command handler executed successfully, but no events were published.
+
+If you ran this test, you may notice that it fails because of unexpected event was published!
+
+[,console]
+----
+org.axonframework.test.AxonAssertionError: The published events do not match the expected events
+
+Expected  |  Actual
+----------|----------
+         <|> io.axoniq.demo.university.faculty.events.CourseCreated
+----
+
+Do you remember that we haven't used any state inside the command handling component?
+Now we are definitely going to do that, because the system decision what to do with the command will be based on what happened in the system before—the state derived from the historical events.
+
+=== Validate the Command against the state
+
+The only thing we need to know when handling a `CreateCourse` command, is whether a certain course already exists.
+So let's add the `State` class which will be responsible for providing that information.
+We will use the generic term `State`, because we do not need the entire `Course` to make our decision.
+You can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
+I'm going to put it as internal class in the handler, because it will be used just there.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
+----
+class CreateCourseCommandHandler {
+
+    @EventSourcedEntity(tagKey = "courseId") // <1>
+    static class State {
+
+        private boolean created; // <2>
+
+        @EntityCreator // <3>
+        private State() {
+            this.created = false;
+        }
+
+        @EventSourcingHandler // <4>
+        public void evolve(CourseCreated event) {
+            this.created = true;
+        }
+    }
+
+    @CommandHandler
+    void handle(
+        CreateCourse command,
+        @InjectEntity(idProperty = "courseId") State state, // <5>
+        EventAppender eventAppender
+    ) {
+        if(state.created) { // <6>
+            return;
+        }
+        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());
+        eventAppender.append(event);
+    }
+
+}
+
+----
+
+<1> The `@EventSourcedEntity` annotation indicates that this class' state is derived from the events published with the given tag key (`courseId` in this case).
+We've already annotated `courseId` property in the `CourseCreated` event class with `@EventTag`, so the event will be applied while loading the entity if the `courseId` value matches.
+Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we can keep it package-private. The cohesion is also higher, because you don't care about the unrelated topics for the current process. It reduces the cognitive load on a developer—you only need to comprehend the state needed for that particular slice.
+<2> The properties needed to guard certain business rules.
+In this case, we need to know if the course was already created or not.
+While executing the command, we don't care about the name or other properties.
+In other words: you don't need to know who/how many students are subscribed to decide if the name can be changed.
+<3> The `@EntityCreator` annotation indicates to Axon Framework that this method should be called when the entity is created. It's the place when you can set up the initial state.
+<4> The `@EventSourcingHandler` annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
+Axon Framework will use the type of the annotated method argument to link this method to the specific type of event. Furthermore, the event type is used to query the `Event Store` just for those types.
+<5> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
+In this case, we want to inject the `State` entity with the `courseId` property.
+<6> The `if` statement checks if the course was already created.
+If it was, we don't need to do anything, so we just return from the method.
+To just ignore the command (do not publish events) is a choice. Thanks to that, the command can be safely retried.
+Alternatively, you may throw an exception or publish an event that notifies about the failure.
+
+CAUTION: In the `EventSourcingHandler` method, we should never validate or ignore the changes represented by the event received.
+The reception of the event and the invocation of the method imply that the command has already been processed previously.
+So we can't ignore or reject those changes *because they already happened*.
+
+As before, the last step to fulfill the next test case is to change our configuration.
+Come back to the `CreateCourseConfiguration` class and add the `State` class to the configuration.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
+----
+public class CreateCourseConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+         var stateEntity = EventSourcedEntityModule
+                .autodetected(CourseId.class, CreateCourseCommandHandler.State.class); // <1>
+
+        var commandHandlingModule = CommandHandlingModule
+                .named("CreateCourse")
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
+
+        return configurer
+                .registerEntity(stateEntity) // <2>
+                .registerCommandHandlingModule(commandHandlingModule);
+    }
+
+}
+----
+
+<1> The `EventSourcedEntityModule` is a module which defines an entity, including the repository and the model, and registers it with the `StateManager` and `CommandBus` of the parent module.
+We use `autodetected`, because of the style we follow here, but you may also invoke just an `declarative` builder method and do everything like defining event handlers here, so you can keep your domain model free from annotations if it's your preferred way of coding.
+<2> The `entity` method allows us to register the `State` class as the entity for the `CreateCourse` command handling module.
+
+You may run the tests again and see that all of them should pass!
+
+=== Execute the command
+
+In your production application you need to get the `CommandGateway` from your configuration to execute commands.
+This component was configured by default for you, because you have used `EventSourcingConfigurer`.
+To be able to get components from the configuration, you need to start the `ApplicationConfigurer`.
+In the example below, we're doing essentially what the Test Fixture does for us under the hood while testing.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer configurer() {
+        return configurer(CreateCourseConfiguration::configure);
+    }
+
+    // This additional method allows us to selective register modules (helpful in tests)
+    public static ApplicationConfigurer configurer(UnaryOperator<EventSourcingConfigurer> customization) {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = customization.apply(configurer);
+        return configurer;
+    }
+
+    public static void main(String[] args) {
+        var configuration = configurer().start(); // <1>
+
+        var createCourse = new CreateCourse(CourseId.random(), "Event Sourcing in Practice", 3);
+
+        var commandGateway = configuration.getComponent(CommandGateway.class); // <2>
+
+        commandGateway.sendAndWait(createCourse); // <3>
+    }
+
+
+}
+----
+<.> The `start` method builds and starts (for example, invoke lifecycle hooks) the configuration and returns the `Configuration` instance.
+<.> The `getComponent` method allows us to retrieve the `CommandGateway` component from the configuration.
+<.> The `sendAndWait` method sends the command to the command bus and waits for the result.
+
+NOTE: If you're using Spring Boot you can always define `Configuration` as a `@Bean` and inject it into your controller. The first-class Spring support for Axon Framework 5 is under development.
+
+NOTE: If you're familiar with Hexagonal Architecture (aka Ports & Adapters) you may treat the CommandGateway as a Port to your application and the controllers as Adapter.
+
+== First in, first out
+
+image::EventModeling_CreateCourse_Done.png[]
+
+Do you like green tests?
+What we like even more are green slices on Event Modeling.
+So if you use this approach now you can mark your first slice as implemented!
+Congratulations!
+
+In the next section, we'll tackle a more complex feature: allowing students to subscribe to courses, where we have to deal with business rules spanning a wider scope of the system.
+
+== Alternative approach without annotations
+
+If you prefer not to use annotations in your domain model, we have you covered.
+You can skip annotations like `@EventSourcingHandler` on the state class and snip up everything in the configuration using plain Java code!
+To see how to implement this slice differently, you can check the GitHub repository link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/createcourseplain/[University Demo (Create Course in plain Java),role=external,window=_blank].
+
+== Next steps
+
+Up next, we will look how to subscribe a student. This is a scenario wherein both a `Course` **and** `Student` entity will be required to perform business validation (which includes use of the dynamic consistency boundary feature). However, if you prefer to pick up another slice similar to the described create course flow, like "Rename Course" or "Change Course Capacity", feel free to follow the same structure is taken above.

@@ -1,0 +1,239 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging.core.interception;
+
+import org.axonframework.common.TypeReference;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.Component;
+import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.LazyInitializedComponentDefinition;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.core.Message;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Default implementation of the {@link HandlerInterceptorRegistry}, maintaining lists of {@link CommandMessage},
+ * {@link EventMessage}, and {@link QueryMessage}-specific
+ * {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
+ * <p>
+ * This implementation ensures give interceptor {@link ComponentBuilder builders} methods are only invoked <b>once</b>.
+ * Note that this does not apply to given {@link HandlerInterceptorFactory factories}!
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+@Internal
+public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegistry {
+
+    private static final TypeReference<MessageHandlerInterceptor<Message>> MESSAGE_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<MessageHandlerInterceptor<? super CommandMessage>> COMMAND_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<MessageHandlerInterceptor<? super EventMessage>> EVENT_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
+    private static final TypeReference<MessageHandlerInterceptor<? super QueryMessage>> QUERY_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
+
+    private final List<HandlerInterceptorFactory<? super CommandMessage>> commandInterceptorFactories = new ArrayList<>();
+    private final List<HandlerInterceptorFactory<? super EventMessage>> eventInterceptorFactories = new ArrayList<>();
+    private final List<HandlerInterceptorFactory<? super QueryMessage>> queryInterceptorFactories = new ArrayList<>();
+
+    @Override
+    public HandlerInterceptorRegistry registerInterceptor(
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+    ) {
+        GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
+
+        return registerCommandInterceptor(config -> {
+            MessageHandlerInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnHandle(
+                    message,
+                    context,
+                    (m, c) -> chain.proceed((CommandMessage) m, c)
+            );
+        }).registerEventInterceptor(config -> {
+            MessageHandlerInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnHandle(
+                    message,
+                    context,
+                    (m, c) -> chain.proceed((EventMessage) m, c)
+            );
+        }).registerQueryInterceptor(config -> {
+            MessageHandlerInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            return (message, context, chain) -> genericInterceptor.interceptOnHandle(
+                    message,
+                    context,
+                    (m, c) -> chain.proceed((QueryMessage) m, c)
+            );
+        });
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerInterceptor(
+            HandlerInterceptorFactory<Message> interceptorFactory
+    ) {
+        registerCommandInterceptor(interceptorFactory);
+        registerEventInterceptor(interceptorFactory);
+        registerQueryInterceptor(interceptorFactory);
+        return this;
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerCommandInterceptor(
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+    ) {
+        ComponentDefinition<MessageHandlerInterceptor<? super CommandMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerCommandInterceptor(
+            HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
+    ) {
+        this.commandInterceptorFactories.add(interceptorFactory);
+        return this;
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerEventInterceptor(
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+    ) {
+        ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerEventInterceptor(
+            HandlerInterceptorFactory<? super EventMessage> interceptorFactory
+    ) {
+        this.eventInterceptorFactories.add(interceptorFactory);
+        return this;
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerQueryInterceptor(
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+    ) {
+        ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>> interceptorDefinition =
+                ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
+        return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
+    }
+
+    @Override
+    public HandlerInterceptorRegistry registerQueryInterceptor(
+            HandlerInterceptorFactory<? super QueryMessage> interceptorFactory
+    ) {
+        this.queryInterceptorFactories.add(interceptorFactory);
+        return this;
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(commandInterceptorFactories, config, componentType, componentName);
+    }
+
+    @Override
+    public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(eventInterceptorFactories, config, componentType, componentName);
+    }
+
+
+    @Override
+    public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(
+            Configuration config,
+            Class<?> componentType,
+            @Nullable String componentName
+    ) {
+        return resolveInterceptors(queryInterceptorFactories, config, componentType, componentName);
+    }
+
+
+    private static <M extends Message> HandlerInterceptorFactory<M> factoryFromDefinition(
+            ComponentDefinition<MessageHandlerInterceptor<? super M>> interceptorDefinition
+    ) {
+        if (!(interceptorDefinition instanceof ComponentDefinition.ComponentCreator<MessageHandlerInterceptor<? super M>> creator)) {
+            // The compiler should avoid this from happening.
+            throw new IllegalArgumentException("Unsupported component definition type: " + interceptorDefinition);
+        }
+        return (config, componentType, componentName) -> creator.createComponent().resolve(config);
+    }
+
+    /**
+     * Resolves and combines multiple {@link MessageHandlerInterceptor} instances from the supplied {@code factories}
+     * for a specific component type and name.
+     *
+     * @param <T>           the type of the {@link Message} the resulting {@link MessageHandlerInterceptor} will
+     *                      intercept
+     * @param factories     a list of {@link HandlerInterceptorFactory} instances for creating
+     *                      {@link MessageHandlerInterceptor} instances
+     * @param config        the {@link Configuration} to be used for resolving the components
+     * @param componentType the type of the component the handler interceptors are build for
+     * @param componentName the name of the component the handler interceptors are build for
+     * @return a list of {@link MessageHandlerInterceptor} instances configured for the {@code componentType} and
+     * {@code componentName} combination
+     */
+    private static <T extends Message> List<MessageHandlerInterceptor<? super T>> resolveInterceptors(
+            List<HandlerInterceptorFactory<? super T>> factories,
+            Configuration config,
+            Class<?> componentType,
+            String componentName
+    ) {
+        List<MessageHandlerInterceptor<? super T>> handlerInterceptors = new ArrayList<>();
+        for (HandlerInterceptorFactory<? super T> factory : factories) {
+            MessageHandlerInterceptor<? super T> interceptor = factory.build(config, componentType, componentName);
+            if (interceptor != null) {
+                handlerInterceptors.add(interceptor);
+            }
+        }
+        return handlerInterceptors;
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeProperty("commandHandlerInterceptorsFactories", commandInterceptorFactories);
+        descriptor.describeProperty("eventHandlerInterceptorsFactories", eventInterceptorFactories);
+        descriptor.describeProperty("queryHandlerInterceptorsFactories", queryInterceptorFactories);
+    }
+
+    // Private class there to simplify use in registerInterceptor(...) only.
+    private static class GenericInterceptorDefinition extends
+            LazyInitializedComponentDefinition<MessageHandlerInterceptor<Message>, MessageHandlerInterceptor<Message>> {
+
+        public GenericInterceptorDefinition(ComponentBuilder<MessageHandlerInterceptor<Message>> builder) {
+            super(new Component.Identifier<>(MESSAGE_INTERCEPTOR_TYPE_REF, null), builder);
+        }
+    }
+}

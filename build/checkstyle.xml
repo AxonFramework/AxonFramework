@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (c) 2010-2026. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+
+    <module name="TreeWalker">
+        <!-- Enforce JSpecify as the single nullness annotation system. -->
+        <!-- TODO: Once we are SpringBoot 4 native, we can also make springframework/Nullable illegal. -->
+        <module name="IllegalImport">
+            <property name="illegalClasses"
+                      value="jakarta.annotation.Nonnull,
+                             jakarta.annotation.Nullable,
+                             org.jetbrains.annotations.NotNull,
+                             org.jetbrains.annotations.Nullable,
+                             org.springframework.lang.NonNull"
+            />
+        </module>
+    </module>
+</module>

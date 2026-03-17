@@ -1,0 +1,236 @@
+= Message Correlation
+
+In messaging systems it is common to group messages together or correlate them.
+In Axon Framework a command message might result in one or several event messages, and a query message might result in one or several query response messages.
+This correlation is implemented using specific message properties—correlation identifiers that track relationships between messages.
+
+== Understanding correlation
+
+When processing messages, it's valuable to track:
+
+* **Correlation ID**: The identifier of the original message that started the entire business transaction or workflow (the root cause).
+* **Causation ID**: The identifier of the immediate parent message that directly caused this message to be created.
+
+For example, if a command triggers an event, which in turn triggers another command, which triggers more events:
+
+----
+Command A (id: cmd-1)
+  └─> Event B (id: evt-2, correlationId: cmd-1, causationId: cmd-1)
+      └─> Command C (id: cmd-3, correlationId: cmd-1, causationId: evt-2)
+          └─> Event D (id: evt-4, correlationId: cmd-1, causationId: cmd-3)
+----
+
+All messages share the same `correlationId` (cmd-1), allowing you to trace the entire workflow.
+Each message's `causationId` points to its immediate parent, allowing you to reconstruct the message chain.
+
+[IMPORTANT]
+====
+**Terminology change from earlier versions**: The correlation terminology has been updated to align with industry standards:
+
+* The old `traceId` is now called `correlationId`
+* The old `correlationId` is now called `causationId`
+
+If you have logic depending on the old metadata keys, you can either override the `MessageOriginProvider` to use the old format or implement a transition period.
+====
+
+== Correlation data provider
+
+Messages in Axon Framework use the xref:anatomy-message.adoc#meta-data[metadata] property to transport meta-information about the message.
+The metadata is of type `Map<String, String>` and is passed around with the message.
+
+To fill the metadata of a new message produced during message processing, a `CorrelationDataProvider` is used.
+The active `ProcessingContext` is in charge of populating the metadata of new messages based on configured correlation data providers.
+
+Axon Framework provides several implementations of the `CorrelationDataProvider` functional interface:
+
+[[MessageOriginProvider]]
+=== `MessageOriginProvider`
+
+By default, the `MessageOriginProvider` is registered as the correlation data provider.
+It is responsible for propagating two values from one message to another: the `correlationId` and `causationId`. These values are added to the `Message#metadata`.
+
+The `MessageOriginProvider` works as follows:
+
+* **correlationId**: References the identifier of the original message that started the entire workflow:
+  - If the parent message already has a `correlationId` in its metadata, that value is propagated
+  - Otherwise, the parent message's identifier is used
+* **causationId**: Always set to the identifier of the parent message.
+
+This allows you to trace the entire chain of messages back to the original trigger.
+
+[source,java]
+----
+// When handling a command that publishes an event:
+@CommandHandler
+public void handle(PlaceOrderCommand command, EventAppender appender) {
+    // Command message id: "cmd-123"
+    // Command has no correlationId yet (it's the root)
+
+    // Create and publish event...
+    appender.append(new OrderPlacedEvent());
+
+    // Event metadata will contain:
+    // - correlationId: "cmd-123" (from command id, since command had none)
+    // - causationId: "cmd-123" (direct parent)
+}
+
+// When the event triggers another command:
+@EventHandler
+public void on(OrderPlacedEvent event, CommandDispatcher dispatcher) {
+    // Event message id: "evt-456"
+    // Event metadata:
+    // - correlationId: "cmd-123"
+    // - causationId: "cmd-123"
+
+    // Create and send command...
+    dispatcher.send(new ShipOrderCommand());
+
+    // Command metadata will contain:
+    // - correlationId: "cmd-123" (propagated from event)
+    // - causationId: "evt-456" (immediate parent)
+}
+----
+
+In the example above, it is the `ProcessingContext`-aware `EventAppender` and `CommandDispatcher` that know to:
+
+1. Wrap your command and event in a `CommandMessage` and `EventMessage` respectively.
+2. Invoke the `CorrelationDataProvider` with the `Message` that is currently handled, retrieved from the `ProcessingContext`.
+
+This correlation data process will take effect regardless of the `CorrelationDataProvider` implementation used.
+
+[[SimpleCorrelationDataProvider]]
+=== `SimpleCorrelationDataProvider`
+
+The `SimpleCorrelationDataProvider` unconditionally copies values of specified metadata keys from one message to another.
+To use it, provide the list of keys to copy in the constructor:
+
+[source,java]
+----
+public class AxonConfig {
+
+    public CorrelationDataProvider simpleProvider() {
+        return new SimpleCorrelationDataProvider("tenantId", "userId");
+    }
+}
+----
+
+This is useful when you have custom metadata keys that should propagate through your message chain.
+
+[[MultiCorrelationDataProvider]]
+=== `MultiCorrelationDataProvider`
+
+A `MultiCorrelationDataProvider` combines the effect of multiple correlation data providers.
+This allows you to use both the standard `MessageOriginProvider` and custom providers:
+
+[source,java]
+----
+import java.util.List;public class Configuration {
+
+    public CorrelationDataProvider customCorrelationDataProviders() {
+        return new MultiCorrelationDataProvider(
+            List.of(
+                new MessageOriginProvider(),
+                new SimpleCorrelationDataProvider("tenantId", "userId")
+            )
+        );
+    }
+}
+----
+
+=== Implementing custom correlation data provider
+
+If the predefined providers don't fulfill your requirements, you can implement your own `CorrelationDataProvider`.
+The interface is functional and requires a single method:
+
+[source,java]
+----
+public class AuthCorrelationDataProvider implements CorrelationDataProvider {
+
+    private final Function<String, String> usernameProvider;
+
+    public AuthCorrelationDataProvider(Function<String, String> userProvider) {
+        this.usernameProvider = userProvider;
+    }
+
+    @Override
+    public Map<String, String> correlationDataFor(Message message) {
+        Map<String, String> correlationData = new HashMap<>();
+
+        // Extract auth token from metadata
+        String token = message.metadata().get("authorization");
+        if (token != null) {
+            String username = usernameProvider.apply(token);
+            correlationData.put("username", username);
+        }
+
+        return correlationData;
+    }
+}
+----
+
+Note that:
+
+* The method returns `Map<String, String>` (all values must be Strings).
+* The method should not return `null` (return an empty map instead).
+* Exceptions thrown from this method might interfere with transaction rollback, so they are caught and ignored by the framework.
+
+== Configuration
+
+When the default `MessageOriginProvider` isn't sufficient for your use case, you need to register custom correlation data providers in your application.
+
+If you are using the Axon Configuration API, use the `registerCorrelationDataProvider` method (call it multiple times to register multiple providers).
+If you are using Spring Boot Autoconfiguration, provide Spring Bean factory methods.
+
+[tabs]
+====
+Configuration API::
++
+[source,java]
+----
+public void buildConfiguration() {
+    MessagingConfigurer.create()
+                       .registerCorrelationDataProvider(
+                               config -> new MessageOriginProvider()
+                       )
+                       .registerCorrelationDataProvider(
+                               config -> new SimpleCorrelationDataProvider("tenantId", "userId")
+                       )
+                       .start();
+}
+----
+
+Spring Boot::
++
+[source,java]
+----
+@Configuration
+public class CorrelationDataProviderConfiguration {
+
+    // Configuring CorrelationDataProvider beans overrides the default MessageOriginProvider
+    @Bean
+    public CorrelationDataProvider messageOriginProvider() {
+        return new MessageOriginProvider();
+    }
+
+    @Bean
+    public CorrelationDataProvider tenantCorrelationProvider() {
+        return new SimpleCorrelationDataProvider("tenantId", "userId");
+    }
+}
+----
+====
+
+== Correlation in distributed scenarios
+
+In distributed systems, correlation identifiers are especially valuable for:
+
+* **Distributed tracing**: Track a request across multiple services.
+* **Log aggregation**: Group log entries from different services that belong to the same workflow.
+* **Debugging**: Understand the chain of events that led to a particular state.
+* **Monitoring**: Track end-to-end latency of business transactions.
+
+When messages cross service boundaries (via event stores, message brokers, or HTTP), the correlation metadata travels with them.
+This allows you to maintain visibility across your entire distributed system.
+
+Many observability tools (like Zipkin, Jaeger, or OpenTelemetry) use similar correlation concepts.
+The `correlationId` in Axon aligns with the "trace ID" concept in these tools, while the `causationId` provides more detailed parent-child relationships within the trace.

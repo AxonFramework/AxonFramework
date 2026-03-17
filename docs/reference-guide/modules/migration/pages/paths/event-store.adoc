@@ -1,0 +1,477 @@
+= Event Store Migration
+:navtitle: Event Store
+
+Axon Framework 5 introduces significant changes to how events are stored and retrieved.
+All to accommodate the xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundary] **as well as** the aggregate-based solution.
+This guide covers the migration path for users transitioning from Axon Framework 4's event storage solutions to Axon Framework 5.
+
+The key changes include:
+
+* Full Dynamic Consistency Boundary (DCB) support in select storage engines.
+* Database schema changes for JPA-based storage.
+* Adjustments to the **internal** `EventStorageEngine` API.
+
+The rest of this page will help you to identify which `EventStorageEngine` to configure when migrating from Axon Framework 4 to 5.
+
+== Choosing your event storage engine
+
+Just as Axon Framework 4, Axon Framework 5 offers several event storage engine implementations.
+Some of these support DCB, while others are tailored towards the previous aggregate-based approach:
+
+[cols="1,2,1"]
+|===
+| Storage Engine | Use Case | DCB Support
+
+| `AxonServerEventStorageEngine`
+| Axon Server version 2025.2.0+
+| Yes
+
+| `AggregateBasedAxonServerEventStorageEngine`
+| Any version of Axon Server
+| No
+
+| `AggregateBasedJpaEventStorageEngine`
+| JPA-compatible databases
+| No
+
+| `PostgresqlEventStorageEngine`
+| Optimized PostgreSQL integration (coming 2026 Q1)
+| Yes
+
+| `InMemoryEventStorageEngine`
+| Testing and development only
+| No
+|===
+
+The above list immediately clarifies a difference between 4 and 5.
+Namely, that the following event storage engines do not have a replacement in Axon Framework 5 at the moment:
+
+1. The `JdbcEventStorageEngine`
+2. The `MongoEventStorageEngine`
+
+If you are using either of the above-mentioned solutions, be sure to reach out to us as referred to xref:migration:paths/index.adoc#missing-a-migration-path[here].
+Although we have made a conscious decision to not put effort in both yet, knowing what our users really use is paramount for influencing the roadmap.
+
+[IMPORTANT]
+====
+If you are using Axon Server and want to leverage xref:events:event-store-internals.adoc[Dynamic Consistency Boundaries (DCB)], ensure your Axon Server version supports DCB (version 2025.2.0 or up!).
+For older Axon Server versions, use `AggregateBasedAxonServerEventStorageEngine`.
+====
+
+== Axon Server event store migration
+
+Just as with Axon Framework 4, the default storage solution is Axon Server.
+In Axon Framework 5, this default results in the `AxonServerEventStorageEngine`.
+In Axon Framework 4, this role was taken by the `AxonServerEventStore`.
+The `AxonServerEventStorageEngine` fully supports DCB with event tagging and criteria-based querying.
+
+However, this version also expects that the Axon Server instances have migrated the events and indices to the DCB solution.
+If you have not performed this migration yet, but do want to upgrade to Axon Framework 5, you should use the `AggregateBasedAxonServerEventStorageEngine` instead.
+This engine uses Axon Server's previous aggregate-oriented APIs, which organize events by aggregate identifier and sequence number.
+
+To configure the `AggregateBasedAxonServerEventStorageEngine`, please regard the following samples:
+
+[tabs]
+====
+Configuration API::
++
+--
+[source,java]
+----
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(EventSourcingConfigurer configurer) {
+        configurer.registerEventStorageEngine(config -> {
+            AxonServerConnectionManager connectionManager =
+                    config.getComponent(AxonServerConnectionManager.class);
+            return new AggregateBasedAxonServerEventStorageEngine(
+                    connectionManager.getConnection(),
+                    config.getComponent(EventConverter.class)
+            );
+        });
+    }
+}
+----
+
+If you need to connect to another context, you should adjust the `connectionManager.getConnection()` such that it uses the desired context name:
+
+[source,java]
+----
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(EventSourcingConfigurer configurer,
+                                       String context) {
+        configurer.registerEventStorageEngine(config -> {
+            AxonServerConnectionManager connectionManager =
+                    config.getComponent(AxonServerConnectionManager.class);
+            return new AggregateBasedAxonServerEventStorageEngine(
+                    connectionManager.getConnection(context),
+                    config.getComponent(EventConverter.class)
+            );
+        });
+    }
+}
+----
+--
+
+Spring Boot::
++
+--
+[source,java]
+----
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public EventStorageEngine storageEngine(AxonServerConnectionManager connectionManager,
+                                            EventConverter eventConverter) {
+        return new AggregateBasedAxonServerEventStorageEngine(
+                connectionManager.getConnection(),
+                eventConverter
+        );
+    }
+}
+----
+
+If you need to connect to another context, you should adjust the `connectionManager.getConnection()` such that it uses the desired context name:
+
+[source,java]
+----
+import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public EventStorageEngine storageEngine(AxonServerConnectionManager connectionManager,
+                                            EventConverter eventConverter,
+                                            @Value("my-context") String context) {
+        return new AggregateBasedAxonServerEventStorageEngine(
+                connectionManager.getConnection(context),
+                eventConverter
+        );
+    }
+}
+----
+
+--
+====
+
+[#jpa-migration]
+== JPA event storage migration
+
+Axon Framework's JPA event store functionality solely supports the aggregate-based approach; so not DCB.
+To clarify this distinction, the `JpaEventStorageEngine` is renamed to the `AggregateBasedJpaEventStorageEngine`.
+
+Before we take a look at the <<configuring_jpa_storage_engine,configuration>>, we should cover the <<jpa_schema_changes,schema changes>> imposed on the JPA-based event storage solution:
+
+[#jpa_schema_changes]
+=== Schema changes
+
+The JPA event storage has undergone significant schema changes.
+The `DomainEventEntry` entity has been replaced by `AggregateEventEntry`, which changes the table name.
+Furthermore, there was a class hierarchy in the `DomainEventEntry` intended for expansion by the user.
+Due to extremely limited use, this layer has been completely removed with the introduction of the `AggregateEventEntry`.
+Lastly, this implementation switch fixates the event payload and metadata to `byte[]`, introduces <<jpa_column_renames,column renames>> for clarity, <<jpa_constraint_change,constraint changes>>, and, lastly, clarify the sequence generation for the `globalIndex`.
+
+[#jpa_table_rename]
+**Table rename**
+
+The default table name changes from `domain_event_entry` to `aggregate_event_entry`.
+
+[#jpa_column_renames]
+**Column renames**
+
+The following columns have been renamed:
+
+[cols="1,1"]
+|===
+| AF4 Column (`DomainEventEntry`) | AF5 Column (`AggregateEventEntry`)
+
+| `eventIdentifier`
+| `identifier`
+
+| `payloadType`
+| `type`
+
+| `payloadRevision`
+| `version`
+
+| `timeStamp`
+| `timestamp`
+
+| `type`
+| `aggregateType`
+
+| `sequenceNumber`
+| `aggregateSequenceNumber`
+
+| `metaData`
+| `metadata`
+|===
+
+[#jpa_constraint_change]
+**Constraint changes**
+
+Some field constraints have changed:
+
+[cols="1,2,3"]
+|===
+| Field | Change | Why
+
+| `identifier` (was `eventIdentifier`)
+| No longer required to be unique
+| Uniqueness is a constraint validation of entities alone and as such not mandatory for the identifier of the event
+
+| `version` (was `payloadRevision`)
+| No longer optional! Axon Framework 5 defaults to 0.0.1 when nothing's given
+| Enforced to ensure non-null versioning inside Axon Framework; foreseen to be used to support version-range registration of event handlers
+
+| `aggregateSequenceNumber` (was `sequenceNumber`)
+| Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
+
+| `aggregateIdentifier`
+| Now optional
+| Although enforced in the past, we stored non-aggregate events with bogus information. We decided against this design decision
+
+| `payload`
+| Max column length restriction (10,000) removed
+| We decided it incorrect to decide on payload size. This should be a user choice.
+
+| `metadata`
+| Max column length restriction (10,000) removed
+| We decided it incorrect to decide on metadata size. This should be a user choice.
+|===
+
+**Global index sequence generator changes**
+
+The sequence generator for the global index has been updated to address Hibernate 6 compatibility issues:
+
+* The generator type is fixed to sequence-based, rather than auto-detection, through the `GenerationType.SEQUENCE` strategy for the `@GeneratedValue` annotation.
+* The generator is named `globalIndexGenerator`.
+* A dedicated sequence named `aggregate-event-global-index-sequence` is used.
+* The allocation size is set to 1 to minimize gaps in the global index.
+
+[IMPORTANT]
+====
+The allocation size of 1 means a database round trip for every appended event.
+This is done intentional to minimize gaps that would slow down event streaming to event processors.
+====
+
+[#jpa_database_migration]
+=== Database migration
+
+When migrating from Axon Framework 4's `JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`, you have two options:
+
+1. **Create a new table**: Let Axon Framework create the new `aggregate_event_entry` table and migrate data manually from the `domain_event_entry` to the new `aggregate_event_entry`.
+2. **Rename existing table and columns**: Alter your existing `domain_event_entry` table to match the new schema. This includes renaming the table, columns, adjusting constraints, and migrating the sequence used for the `globalIndex`.
+
+Below is an example SQL migration script for option two. It is advised to adjust the given SQL for your database dialect, as well as to align it with any other table customizations made:
+
+[source,sql]
+----
+-- Rename table
+ALTER TABLE domain_event_entry RENAME TO aggregate_event_entry;
+
+-- Rename columns
+ALTER TABLE aggregate_event_entry RENAME COLUMN eventIdentifier TO identifier;
+ALTER TABLE aggregate_event_entry RENAME COLUMN payloadType TO type;
+ALTER TABLE aggregate_event_entry RENAME COLUMN payloadRevision TO version;
+ALTER TABLE aggregate_event_entry RENAME COLUMN timeStamp TO timestamp;
+ALTER TABLE aggregate_event_entry RENAME COLUMN type TO aggregateType;
+ALTER TABLE aggregate_event_entry RENAME COLUMN sequenceNumber TO aggregateSequenceNumber;
+ALTER TABLE aggregate_event_entry RENAME COLUMN metaData TO metadata;
+
+-- Update constraints
+-- Drop unique constraint on identifier (eventIdentifier was unique in AF4)
+ALTER TABLE aggregate_event_entry DROP CONSTRAINT IF EXISTS domain_event_entry_eventidentifier_key;
+
+-- Ensure version is NOT NULL (defaults to 0.0.1 if missing, update existing rows first)
+UPDATE aggregate_event_entry SET version = '0.0.1' WHERE version IS NULL;
+ALTER TABLE aggregate_event_entry ALTER COLUMN version SET NOT NULL;
+
+-- Make aggregateSequenceNumber optional (was required in AF4)
+ALTER TABLE aggregate_event_entry ALTER COLUMN aggregateSequenceNumber DROP NOT NULL;
+
+-- Make aggregateIdentifier optional (was required in AF4)
+ALTER TABLE aggregate_event_entry ALTER COLUMN aggregateIdentifier DROP NOT NULL;
+
+-- Remove length restrictions on payload and metadata (was limited to 10,000 bytes in AF4)
+-- The exact syntax varies by database; examples for common databases:
+-- PostgreSQL:
+ALTER TABLE aggregate_event_entry ALTER COLUMN payload TYPE BYTEA;
+ALTER TABLE aggregate_event_entry ALTER COLUMN metadata TYPE BYTEA;
+-- MySQL:
+-- ALTER TABLE aggregate_event_entry MODIFY COLUMN payload LONGBLOB;
+-- ALTER TABLE aggregate_event_entry MODIFY COLUMN metadata LONGBLOB;
+
+-- Migrate the global index sequence generator
+-- IMPORTANT: Do NOT create a new sequence starting from 1, as this will mess up event ordering!
+-- The old sequence name depends on your Hibernate/database configuration.
+-- Common names: 'hibernate_sequence', 'domain_event_entry_seq', or 'domain_event_entry_globalindex_seq'
+
+-- PostgreSQL example - create a new sequence starting from the current position of the old sequence:
+CREATE SEQUENCE aggregate_event_global_index_sequence
+    START WITH (SELECT last_value + 1 FROM hibernate_sequence)
+    INCREMENT BY 1;
+
+-- Alternatively, if you are 100% certain that 'hibernate_sequence' is NOT used by any other tables
+-- in your database, you can rename and adjust it directly instead:
+-- ALTER SEQUENCE hibernate_sequence RENAME TO aggregate_event_global_index_sequence;
+-- ALTER SEQUENCE aggregate_event_global_index_sequence INCREMENT BY 1;
+
+-- MySQL example (uses AUTO_INCREMENT, no sequence migration needed, but verify the column is configured correctly):
+-- ALTER TABLE aggregate_event_entry MODIFY COLUMN globalIndex BIGINT AUTO_INCREMENT;
+----
+
+[IMPORTANT]
+====
+Always test your migration script on a non-production database first!
+Ensure you have a backup before running any schema alterations.
+====
+
+[#configuring_jpa_storage_engine]
+=== Configuring the JPA event storage engine
+
+Having taken care of the <<jpa_database_migration,database migration>> was the hard part.
+Now, we can configure the `AggregateBasedJpaEventStorageEngine` in the application:
+
+[tabs]
+====
+Configuration API::
++
+--
+Firstly, be sure to adjust the persistence context. Replace the `DomainEventEntry` entity registration with the `AggregateEventEntry`.
+Once done, we can register the `AggregateBasedJpaEventStorageEngine` with the `EventSourcingConfigurer`:
+
+[source,java]
+----
+import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(
+            EventSourcingConfigurer configurer,
+            EntityManagerFactory factory,
+            EventConverter eventConverter
+    ) {
+        configurer.registerEventStorageEngine(
+                config -> new AggregateBasedJpaEventStorageEngine(
+                        new JpaTransactionalExecutorProvider(factory),
+                        eventConverter,
+                        engineConfig -> engineConfig
+                )
+        );
+    }
+}
+----
+
+If you had customized the `JpaEventStorageEngine` in Axon Framework 4 to, for example, have a different gap cleaning threshold, you can now move that customization to the `AggregateBasedJpaEventStorageEngineConfiguration` lambda:
+
+[source,java]
+----
+import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaTransactionalExecutorProvider;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
+public class AxonConfig {
+
+    public void configureStorageEngine(
+            EventSourcingConfigurer configurer,
+            EntityManagerFactory factory,
+            EventConverter eventConverter
+    ) {
+        configurer.registerEventStorageEngine(
+                config -> new AggregateBasedJpaEventStorageEngine(
+                        new JpaTransactionalExecutorProvider(factory),
+                        eventConverter,
+                        engineConfig -> engineConfig
+                                .batchSize(100)
+                                .gapCleaningThreshold(250)
+                                .gapTimeout(10000)
+                                .lowestGlobalSequence(1)
+                                .maxGapOffset(60000)
+                                .persistenceExceptionResolver(
+                                        config.getComponent(PersistenceExceptionResolver.class)
+                                )
+                )
+        );
+    }
+}
+----
+--
+
+Spring Boot::
++
+--
+With Spring Boot, the `AggregateBasedJpaEventStorageEngine` is automatically configured when Axon Server is disabled:
+
+[source,properties]
+----
+# Disable Axon Server to fall back to JPA storage
+axon.axonserver.enabled=false
+----
+
+If you had customized the `JpaEventStorageEngine` in Axon Framework 4 to, for example, have a different gap cleaning threshold, you can now move that customization to the properties file:
+
+[source,properties]
+----
+# Batch size to retrieve events (default: 100)
+axon.eventstorage.jpa.batch-size=100
+# Threshold for gap cleanup (default: 250)
+axon.eventstorage.jpa.gap-cleaning-threshold=250
+# Gap timeout in milliseconds (default: 10000)
+axon.eventstorage.jpa.gap-timeout=10000
+# Minimum global index value (default: 1)
+axon.eventstorage.jpa.lowest-global-sequence=1
+# Max gap distance from highest index (default: 60000)
+axon.eventstorage.jpa.max-gap-offset=60000
+# Polling interval in ms for new events (default: 1000)
+axon.eventstorage.jpa.polling-interval=1000
+----
+--
+====
+
+== PostgreSQL event storage migration
+
+If you are using PostgreSQL as your database for event storage—whether through the `JpaEventStorageEngine` or `JdbcEventStorageEngine` in Axon Framework 4—you would benefit from migrating to the dedicated `PostgresqlEventStorageEngine`.
+
+This storage engine is optimized specifically for PostgreSQL and provides full support for xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[DCB].
+As such, unlike the `AggregateBasedJpaEventStorageEngine`, the `PostgresqlEventStorageEngine` allows you to leverage the flexible consistency boundaries with event tagging and criteria-based querying.
+
+[NOTE]
+====
+The `PostgresqlEventStorageEngine` is scheduled for release in Q1 2026.
+This section will be updated with detailed migration instructions, schema changes, and configuration examples once the extension is available.
+====
