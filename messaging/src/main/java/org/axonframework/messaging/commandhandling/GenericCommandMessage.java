@@ -16,14 +16,14 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -163,6 +163,23 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
                                                convertedPayload,
                                                delegate.metadata());
         return new GenericCommandMessage(converted, routingKey, priority);
+    }
+
+    /**
+     * Returns a new {@code GenericCommandMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericCommandMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericCommandMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericCommandMessage(updated, routingKey, priority);
     }
 
     @Override
