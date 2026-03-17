@@ -145,6 +145,6 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
                                 ps -> ps.processor(studentRegisteredCoursesProcessor)
                         )
                 )
-        ).componentRegistry(cr -> cr.disableEnhancer(AxonServerConfigurationEnhancer.class));
+        );
     }
 }
