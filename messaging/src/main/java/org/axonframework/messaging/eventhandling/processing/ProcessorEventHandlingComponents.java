@@ -203,9 +203,16 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
     }
 
     /**
-     * todo
-     * @param context
-     * @return
+     * Handles the start of a replay for all components.
+     * <p>
+     * This method invokes the
+     * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangedHandlers}
+     * on each component. All handlers must complete successfully for the operation to succeed.
+     *
+     * @param context the processing context
+     * @return a future that completes when all
+     * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangedHandlers}
+     * have completed
      */
     public CompletableFuture<Void> replayStarted(ProcessingContext context) {
         MessageStream<Message> result = MessageStream.empty();
