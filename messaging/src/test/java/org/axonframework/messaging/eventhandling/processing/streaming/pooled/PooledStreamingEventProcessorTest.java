@@ -46,6 +46,8 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Repl
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.replay.ReplayBlockingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.jspecify.annotations.NonNull;
@@ -1648,6 +1650,62 @@ class PooledStreamingEventProcessorTest {
             // Verify the reset context is stored in the ReplayToken
             assertThat(convertedContext).containsSequence(((ReplayToken) token0).resetContext());
             assertThat(convertedContext).containsSequence(((ReplayToken) token1).resetContext());
+        }
+
+        @Test
+        void replayStatusChangedHandlerIsInvokedWhenResetTokensResultsInReplayToken() {
+            // given
+            AtomicReference<ReplayStatus> capturedStatus = new AtomicReference<>();
+            simpleEhc.subscribe((ReplayStatusChangedHandler) (statusChange, ctx) -> {
+                capturedStatus.set(statusChange.status());
+                return MessageStream.empty();
+            });
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> MessageStream.empty());
+
+            TrackingToken initialToken = new GlobalSequenceTrackingToken(42);
+            withTestSubject(
+                    List.of(),
+                    c -> c.initialSegmentCount(2)
+                          .initialToken(source -> CompletableFuture.completedFuture(initialToken))
+            );
+
+            // when - Start and stop the processor to initialize tracking tokens with a non-null value
+            startEventProcessor();
+            assertWithin(2, TimeUnit.SECONDS, () -> {
+                List<Segment> segments = joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME, null));
+                assertThat(segments).isNotNull();
+                assertThat(segments).hasSize(2);
+            });
+            joinAndUnwrap(testSubject.shutdown());
+
+            // when - Reset tokens. Since tokens are non-null, ReplayToken.createReplayToken creates a ReplayToken.
+            joinAndUnwrap(testSubject.resetTokens());
+
+            // then
+            assertThat(capturedStatus.get()).isEqualTo(ReplayStatus.REPLAY);
+        }
+
+        @Test
+        void replayStatusChangedHandlerIsNotInvokedWhenResetTokensDoesNotResultInReplayToken() {
+            // given
+            AtomicBoolean replayStatusHandlerInvoked = new AtomicBoolean(false);
+            simpleEhc.subscribe((ReplayStatusChangedHandler) (statusChange, ctx) -> {
+                replayStatusHandlerInvoked.set(true);
+                return MessageStream.empty();
+            });
+            simpleEhc.subscribe((ResetHandler) (resetContext, ctx) -> MessageStream.empty());
+
+            withTestSubject(List.of(), c -> c.initialSegmentCount(1));
+
+            // Manually initialize segments with null tokens (simulating a processor that never processed events)
+            joinAndUnwrap(tokenStore.initializeTokenSegments(PROCESSOR_NAME, 1, null, createProcessingContext()));
+
+            // when - Reset tokens to firstToken position. Since current tokens are null,
+            //        ReplayToken.createReplayToken(null, startPosition) returns startPosition directly (not a ReplayToken).
+            joinAndUnwrap(testSubject.resetTokens(source -> source.firstToken(null)));
+
+            // then
+            assertThat(replayStatusHandlerInvoked.get()).isFalse();
         }
     }
 

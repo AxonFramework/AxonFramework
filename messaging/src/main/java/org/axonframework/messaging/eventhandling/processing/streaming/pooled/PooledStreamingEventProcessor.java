@@ -359,7 +359,6 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                       .thenApply(ignored -> segmentTokens);
     }
 
-    // TODO add test for this to PSEP
     private static boolean replayHasStarted(List<SegmentToken> segmentTokens) {
         return segmentTokens.stream()
                             .map(SegmentToken::token)
