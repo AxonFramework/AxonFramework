@@ -108,6 +108,7 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 ----
 
 Spring Boot auto-configuration will automatically detect whether JPA or JDBC is available and create the appropriate `SequencedDeadLetterQueueFactory` bean.
+If both JPA and JDBC are available, the auto-configuration creates a JPA-based queue by default.
 No additional bean definitions are needed for the default setup.
 
 [NOTE]
@@ -215,9 +216,10 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 
 === Sequence identifier caching
 
-The dead-letter queue is automatically wrapped with a `CachingSequencedDeadLetterQueue` to optimize `contains()` lookups.
-Before processing each event, the framework checks whether that event's sequence is already in the dead-letter queue. If it is, the event must be enqueued rather than processed normally.
-The cache keeps this information in memory, avoiding a database round-trip for every healthy event that is _not_ dead-lettered.
+To speed up event processing, the framework caches the sequence identifiers of sequences that are currently in the dead-letter queue.
+Before processing each event, it checks this cache to determine whether the event's sequence is already dead-lettered. If it is, the event must be enqueued rather than processed normally.
+This avoids a database round-trip for every healthy event that is _not_ dead-lettered.
+Internally, the dead-letter queue is wrapped with a `CachingSequencedDeadLetterQueue` to provide this optimization.
 
 Size the cache to match the maximum number of distinct failing sequences you expect at any given time.
 Increase it if you regularly have more concurrent failing sequences than the default of 1024.
@@ -355,13 +357,13 @@ Returns `true` if a matching sequence was processed successfully.
 If the processing of a dead letter fails, the event will be offered to the dead-letter queue again.
 How the dead-lettering process reacts to this depends on the <<Enqueue policy,enqueue policy>>.
 
-You can retrieve `SequencedDeadLetterProcessor` instances from the `Configuration` based on a processor name.
+You can retrieve `SequencedDeadLetterProcessor` instances from the `Configuration` based on the processor name and the component name.
 Each Event Handling Component with DLQ enabled is registered as a `SequencedDeadLetterProcessor`.
-Below are examples of how to process dead-letter sequences:
+Below are examples of how to process dead-letter sequences for a specific component:
 
 [tabs]
 ====
-Process the oldest dead-letter sequence matching a message type::
+Process the oldest dead-letter sequence matching a message name::
 +
 --
 [source,java]
@@ -375,23 +377,22 @@ import java.util.concurrent.TimeUnit;
 
 public class DeadLetterProcessor {
 
-    // ErrorEvent is your application-defined event class
-    private static final QualifiedName ERROR_EVENT_TYPE =
-            new QualifiedName(ErrorEvent.class);
+    private static final QualifiedName ERROR_EVENT_NAME =
+            new QualifiedName("YourApplicationEvent");
 
     private final Configuration configuration;
 
-    public void retryErrorEventSequence(String processorName) {
-        // Retrieve all SequencedDeadLetterProcessors for the processor module
+    public void retryErrorEventSequence(String processorName, String componentName) {
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .ifPresent(processors -> processors.values().forEach(dlp ->
+                .map(processors -> processors.get(componentName))
+                .ifPresent(dlp ->
                         dlp.process(letter -> letter.message()
                                                     .type()
                                                     .qualifiedName()
                                                     .equals(ERROR_EVENT_TYPE))
                            .orTimeout(30, TimeUnit.SECONDS)
-                           .join()));
+                           .join());
     }
 }
 ----
@@ -409,13 +410,14 @@ public class DeadLetterProcessor {
 
     private final Configuration configuration;
 
-    public void retryAnySequence(String processorName) {
+    public void retryAnySequence(String processorName, String componentName) {
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .ifPresent(processors -> processors.values().forEach(dlp ->
+                .map(processors -> processors.get(componentName))
+                .ifPresent(dlp ->
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
-                           .join()));
+                           .join());
     }
 }
 ----
@@ -433,11 +435,11 @@ public class DeadLetterProcessor {
 
     private final Configuration configuration;
 
-    public void retryAllSequences(String processorName) {
+    public void retryAllSequences(String processorName, String componentName) {
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .ifPresent(processors -> processors.values()
-                        .forEach(this::processUntilEmpty));
+                .map(processors -> processors.get(componentName))
+                .ifPresent(this::processUntilEmpty);
     }
 
     private void processUntilEmpty(SequencedDeadLetterProcessor<?> dlp) {
@@ -453,44 +455,6 @@ public class DeadLetterProcessor {
 --
 ====
 
-=== Scheduling retries
-
-A common pattern is to schedule periodic retries, giving the system time to recover between attempts.
-The following Spring Boot example retries the oldest dead-letter sequence every 30 seconds:
-
-[source,java]
-----
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
-@Component
-public class DeadLetterRetryScheduler {
-
-    private final Configuration configuration;
-
-    public DeadLetterRetryScheduler(Configuration configuration) {
-        this.configuration = configuration;
-    }
-
-    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000) // <1>
-    public void retryDeadLetters() {
-        configuration.getComponents(SequencedDeadLetterProcessor.class) // <2>
-                .values()
-                .forEach(processor ->
-                        processor.processAny() // <3>
-                                .orTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                                .join());
-    }
-}
-----
-
-<1> Wait 30 seconds after startup, then retry every 30 seconds.
-Use a generous interval to avoid stressing a system that may already be under pressure.
-<2> Retrieves all registered `SequencedDeadLetterProcessor` instances across all processors and components.
-<3> `processAny()` picks the oldest unprocessed sequence and returns `true` if it was processed successfully.
-
 === Detecting dead-letter processing in handlers
 
 Some event handlers benefit from knowing whether the event being processed is a dead letter, for example to adjust logging or apply different recovery logic.
@@ -505,11 +469,9 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 
-// SomeEvent is your application-defined event class.
-// Register MyEventHandler with a processor via EventProcessorModule (Configuration API)
-// or EventProcessorDefinition.assigningHandlers() (Spring Boot).
 class MyEventHandler {
 
+    // SomeEvent is your application-defined event class.
     @EventHandler
     public void on(SomeEvent event, DeadLetter<EventMessage> deadLetter) {
         if (deadLetter != null) {
@@ -576,8 +538,12 @@ However, you might not want all event failures to result in dead-lettered entrie
 Similarly, when <<Processing sequences,letter processing>> fails, you might want to reconsider whether you want to enqueue the letter again.
 
 Configure an `EnqueuePolicy` to control this behavior.
-The policy receives a `DeadLetter` and the failure cause (`Throwable`), and returns an `EnqueueDecision` that tells the framework whether to enqueue, re-queue, or evict the letter.
-You can also modify the stored exception, for example to truncate a cause that would otherwise exceed a database column limit.
+The policy receives a `DeadLetter` and the failure cause (`Throwable`), and returns an `EnqueueDecision`.
+The `EnqueueDecision` tells the framework whether to enqueue, re-queue, or evict the letter.
+You can also modify the stored exception, for example, to truncate a cause that would otherwise exceed a database column limit.
+
+You can customize the policy to exclude some events when handling fails.
+As a consequence, these events will be skipped.
 
 Axon Framework evaluates the policy at two points: when initial event handling fails, and again when <<Processing sequences,dead-letter processing>> fails.
 This means a letter that keeps failing can be evicted or enriched with additional diagnostic metadata (such as a retry count) rather than staying in the queue forever.
@@ -640,42 +606,6 @@ Use this when a letter has exhausted its retries or is otherwise no longer relev
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
 
 You are free to construct your own `EnqueueDecision` implementation when none of these fits.
-
-=== Cause-type and time-based eviction
-
-Skip enqueuing for errors that are guaranteed to recur (such as programming errors), and evict events that have been in the queue too long.
-For example, if a processor sends real-time alerts, retrying a five-minute-old alert might be pointless:
-
-[source,java]
-----
-import org.axonframework.messaging.deadletter.DeadLetter;
-import org.axonframework.messaging.deadletter.Decisions;
-import org.axonframework.messaging.deadletter.EnqueueDecision;
-import org.axonframework.messaging.deadletter.EnqueuePolicy;
-import org.axonframework.messaging.eventhandling.EventMessage;
-
-import java.time.Duration;
-import java.time.Instant;
-
-public class CauseAndTimeBasedPolicy implements EnqueuePolicy<EventMessage> {
-
-    @Override
-    public EnqueueDecision<EventMessage> decide(DeadLetter<? extends EventMessage> letter,
-                                                Throwable cause) {
-        if (cause instanceof NullPointerException) {
-            return Decisions.doNotEnqueue(); // <1>
-        }
-        if (letter.enqueuedAt().isBefore(Instant.now().minus(Duration.ofMinutes(5)))) {
-            return Decisions.evict(); // <2>
-        }
-        return Decisions.enqueue(cause); // <3>
-    }
-}
-----
-
-<1> No need to dead-letter this: the same `NullPointerException` will always recur.
-<2> If the event has been in the queue for over 5 minutes, evict it: it is no longer relevant.
-<3> Default: keep the letter in the queue for a future retry.
 
 See the following example for configuring a custom policy:
 
