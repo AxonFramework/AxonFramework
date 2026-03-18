@@ -40,7 +40,8 @@ import java.util.UUID;
 
 import static io.axoniq.axonserver.grpc.ProcessingKey.*;
 import static io.axoniq.axonserver.grpc.query.QueryResponse.newBuilder;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.createProcessingInstruction;
 import static org.mockito.Mockito.*;
 
@@ -209,6 +210,7 @@ class QueryConverterTest {
 
     @Test
     void convertsQueryUpdateToSubscriptionQueryUpdateMessage() {
+        String exObjectPayload = "exObjectPayload";
         var qu = QueryUpdate.newBuilder()
                             .setMessageIdentifier(messageIdentifier)
                             .setPayload(SerializedObject.newBuilder()
@@ -219,12 +221,18 @@ class QueryConverterTest {
                             .putMetaData("m", MetaDataValue.newBuilder().setTextValue("v").build())
                             .build();
 
-        var updateMessage = QueryConverter.convertQueryUpdate(qu);
+        when(converter.convert(any(), eq((Type) String.class)))
+                .thenReturn(exObjectPayload);
+
+        var updateMessage = QueryConverter.convertQueryUpdate(qu, converter);
 
         assertThat(updateMessage.identifier()).isEqualTo(messageIdentifier);
         assertThat(updateMessage.type().name()).isEqualTo("java.lang.String");
         assertThat(updateMessage.metadata()).containsEntry("m", "v");
         assertThat(updateMessage.payloadAs(byte[].class)).isEqualTo("ok".getBytes());
+        assertThat(updateMessage.payloadAs(String.class)).isEqualTo(exObjectPayload);
+
+        verify(converter).convert(updateMessage.payload(), (Type) String.class);
     }
 
     @Test

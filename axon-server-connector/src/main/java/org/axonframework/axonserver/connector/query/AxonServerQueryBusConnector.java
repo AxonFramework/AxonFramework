@@ -182,7 +182,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                       updateBufferSize,
                                                       Math.min(updateBufferSize / 4, 8));
             return new QueryResponseMessageStream(result.initialResults(), converter)
-                    .concatWith(new QueryUpdateMessageStream(result.updates()))
+                    .concatWith(new QueryUpdateMessageStream(result.updates(), converter))
                     .onClose(queryInTransit::end);
         }
     }

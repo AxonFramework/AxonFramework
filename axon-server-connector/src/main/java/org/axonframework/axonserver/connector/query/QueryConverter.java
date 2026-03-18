@@ -256,9 +256,11 @@ public final class QueryConverter {
      * Converts a {@link QueryUpdate} object into a {@link SubscriptionQueryUpdateMessage}.
      *
      * @param queryUpdate The {@link QueryUpdate} object to be converted; must not be null.
+     * @param converter the converter to be used for payload conversion
      * @return A {@link SubscriptionQueryUpdateMessage} created from the provided {@link QueryUpdate}.
      */
-    public static SubscriptionQueryUpdateMessage convertQueryUpdate(QueryUpdate queryUpdate) {
+    public static SubscriptionQueryUpdateMessage convertQueryUpdate(QueryUpdate queryUpdate,
+                                                                    @Nullable Converter converter) {
         SerializedObject payload = queryUpdate.getPayload();
         var message = new GenericMessage(
                 queryUpdate.getMessageIdentifier(),
@@ -267,7 +269,8 @@ public final class QueryConverter {
                 MetadataConverter.convertMetadataValuesToGrpc(queryUpdate.getMetaDataMap())
         );
 
-        return new GenericSubscriptionQueryUpdateMessage(message);
+        return new GenericSubscriptionQueryUpdateMessage(message)
+                .withConverter(converter);
     }
 
     /**
