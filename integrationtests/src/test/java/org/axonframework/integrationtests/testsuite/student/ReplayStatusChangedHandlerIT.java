@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
@@ -34,6 +33,8 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +46,8 @@ import static org.awaitility.Awaitility.await;
  * Test class validating that
  * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangeHandlers} are
  * invoked when a {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken} is about to
- * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken#concludesReplay(TrackingToken)
+ * {@link
+ * org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken#concludesReplay(TrackingToken)
  * finish}.
  *
  * @author Simon Zambrovski
@@ -60,12 +62,14 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
     static AtomicInteger eventHandlerInvocations;
     static AtomicBoolean resetHandlerInvoked;
     static AtomicReference<ReplayStatus> replayStatusReference;
+    static CountDownLatch statusChangedInvoked;
 
     @BeforeEach
     void setUp() {
         eventHandlerInvocations = new AtomicInteger(0);
         resetHandlerInvoked = new AtomicBoolean(false);
         replayStatusReference = new AtomicReference<>(null);
+        statusChangedInvoked = new CountDownLatch(0);
     }
 
     @Test
@@ -106,12 +110,14 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         }
         psep.start().join();
 
-        // then we expect the reset handler and events to be handled...
+        // then we expect the reset handler and first set of events to be handled...
         assertThat(resetHandlerInvoked).isTrue();
         await().atMost(Duration.ofMillis(5000))
-               .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValueGreaterThanOrEqualTo(startEventCount));
-        // ...once the original number of events are handled, the switch from REPLAY to REGULAR should happen
+               .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(startEventCount));
+        // ...once handled and blocked by a latch, the switch from REPLAY to REGULAR should happen
         assertThat(replayStatusReference).hasValue(ReplayStatus.REGULAR);
+        // ...now we can unlock the latch to handle the remaining events
+        statusChangedInvoked.countDown();
         await().atMost(Duration.ofMillis(5000))
                .untilAsserted(() -> assertThat(eventHandlerInvocations).hasValue(finalEventCount));
     }
@@ -120,8 +126,10 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
     static class Projector {
 
         @EventHandler
-        public void on(StudentEnrolledEvent event, TrackingToken token) {
-            eventHandlerInvocations.incrementAndGet();
+        public void on(StudentEnrolledEvent event, TrackingToken token) throws InterruptedException {
+            if (statusChangedInvoked.await(500, TimeUnit.MILLISECONDS)) {
+                eventHandlerInvocations.incrementAndGet();
+            }
         }
 
         @ResetHandler
@@ -132,6 +140,9 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         @ReplayStatusChangedHandler
         public void on(ReplayStatusChanged context) {
             replayStatusReference.set(context.status());
+            if (context.status() == ReplayStatus.REGULAR) {
+                statusChangedInvoked = new CountDownLatch(1);
+            }
         }
     }
 
