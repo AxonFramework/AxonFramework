@@ -107,7 +107,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         // purge events to restart with an empty eventstore and avoid processing historic events
-        purgeEvents();
+        purgeEventStorage();
 
         // a noop setup that allows verification of ignored event
         configurer.messaging(mc -> mc

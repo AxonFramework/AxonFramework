@@ -17,9 +17,9 @@
 package org.axonframework.integrationtests.testsuite;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -75,21 +75,6 @@ public abstract class AbstractAxonServerIT {
     }
 
     /**
-     * Purge all events from the Axon Server container
-     */
-    protected void purgeEvents() {
-        try {
-            logger.info("Purging events from Axon Server.");
-            AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                               container.getHttpPort(),
-                                                               "default",
-                                                               AxonServerContainerUtils.DCB_CONTEXT);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Creates the {@link ApplicationConfigurer} defining the Axon Framework test context.
      *
      * @return The {@link ApplicationConfigurer} defining the Axon Framework test context.
@@ -108,6 +93,7 @@ public abstract class AbstractAxonServerIT {
      */
     protected void purgeEventStorage() {
         try {
+            logger.info("Purging events from Axon Server.");
             AxonServerContainerUtils.purgeEventsFromAxonServer(
                     container.getHost(),
                     container.getHttpPort(),

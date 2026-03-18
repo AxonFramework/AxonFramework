@@ -70,6 +70,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         resetHandlerInvoked = new AtomicBoolean(false);
         replayStatusReference = new AtomicReference<>(null);
         statusChangedInvoked = new CountDownLatch(0);
+        purgeEventStorage();
     }
 
     @Test
