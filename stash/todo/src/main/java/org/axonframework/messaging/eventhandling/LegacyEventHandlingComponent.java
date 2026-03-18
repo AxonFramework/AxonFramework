@@ -22,6 +22,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Optional;
@@ -101,8 +102,14 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Override
     public MessageStream.Empty<Message> handle(ResetContext resetContext,
-                                                        ProcessingContext context) {
+                                               ProcessingContext context) {
         eventHandlerInvoker.performReset(resetContext, context);
+        return MessageStream.empty();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
         return MessageStream.empty();
     }
 

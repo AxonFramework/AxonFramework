@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.conversion.Converter;
 import org.jspecify.annotations.Nullable;
-import org.axonframework.conversion.Converter;
+
 import java.beans.ConstructorProperties;
 import java.util.Arrays;
 import java.util.Objects;
@@ -147,6 +147,21 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     public static boolean isReplay(TrackingToken trackingToken) {
         return WrappedToken.unwrap(trackingToken, ReplayToken.class)
                            .map(rt -> rt.isReplay())
+                           .orElse(false);
+    }
+
+    /**
+     * Indicates whether the given {@code trackingToken} is (1) a {@code ReplayToken} and (2) will conclude the replay.
+     * <p>
+     * A replay will be concluded when the {@link #getTokenAtReset()} {@link #covers(TrackingToken) covers} the
+     * {@link #getCurrentToken()}.
+     *
+     * @param trackingToken the token to verify
+     * @return {@code true} if the token is (1) a {@code ReplayToken} and (2) will conclude the replay.
+     */
+    public static boolean concludesReplay(TrackingToken trackingToken) {
+        return WrappedToken.unwrap(trackingToken, ReplayToken.class)
+                           .map(rt -> rt.getCurrentToken().covers(rt.getTokenAtReset()))
                            .orElse(false);
     }
 

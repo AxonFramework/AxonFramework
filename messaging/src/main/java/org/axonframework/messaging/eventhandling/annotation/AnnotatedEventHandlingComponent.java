@@ -35,6 +35,8 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
@@ -95,6 +97,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
         initializeEventHandlersBasedOnModel();
         initializeResetHandlersBasedOnModel();
+        initializeReplayStatusChangeHandlersBasedOnModel();
     }
 
     private void initializeEventHandlersBasedOnModel() {
@@ -214,6 +217,33 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     public MessageStream.Empty<Message> handle(ResetContext resetContext,
                                                         ProcessingContext context) {
         return handlingComponent.handle(resetContext, context);
+    }
+    // endregion
+
+    // region [ReplayStatusChangeHandlers]
+    private void initializeReplayStatusChangeHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), ReplayStatusChanged.class)
+             .forEach(this::registerReplayStatusChangeHandler);
+    }
+
+    private void registerReplayStatusChangeHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(constructReplayStatusChangedHandlerFor(handler, interceptorChain));
+    }
+
+    private ReplayStatusChangedHandler constructReplayStatusChangedHandlerFor(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        return (statusChange, ctx) -> interceptorChain.handle(statusChange, ctx, target, handler)
+                                                      .ignoreEntries()
+                                                      .cast();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
+        return handlingComponent.handle(statusChange, context);
     }
     // endregion
 
