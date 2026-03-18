@@ -267,7 +267,7 @@ public OrderDetails handle(FetchOrderDetailsQuery query,
 
 === `QueryUpdateEmitter`
 
-For subscription queries, you can inject a `QueryUpdateEmitter` to emit updates to subscribers:
+For subscription queries, you can inject a `QueryUpdateEmitter` to an xref:messaging-concepts:supported-parameters-annotated-handlers.adoc#supported-parameters-for-event-handlers[event handler] to emit updates to subscribers as a projection changes or new data becomes available:
 
 [source,java]
 ----
