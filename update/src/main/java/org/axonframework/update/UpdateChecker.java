@@ -144,7 +144,7 @@ public class UpdateChecker implements Runnable {
      */
     public void stop() {
         if (started.compareAndSet(true, false)) {
-            logger.info("Stopped the AxonIQ UpdateChecker. No further update will be checked.");
+            logger.debug("Stopped the AxonIQ UpdateChecker. No further update will be checked.");
             if (this.delayedTask != null) {
                 delayedTask.cancel();
                 delayedTask = null;

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.gateway;
 
 import org.jspecify.annotations.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -28,14 +29,14 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Interface towards the Event Handling components of an application.
  * <p>
- * This interface provides a friendlier API toward the {@link EventSink} and allows for
- * components to easily publish events.
+ * This interface provides a friendlier API toward the {@link EventSink} and allows for components to easily publish
+ * events.
  *
  * @author Bert Laverman
  * @see DefaultEventGateway
  * @since 4.1.0
  */
-public interface EventGateway {
+public interface EventGateway extends DescribableComponent {
 
     /**
      * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
