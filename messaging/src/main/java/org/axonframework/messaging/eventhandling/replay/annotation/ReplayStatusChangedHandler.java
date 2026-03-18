@@ -31,8 +31,8 @@ import java.lang.annotation.Target;
  * <p>
  * In doing so, this handler has two concrete moments when it is invoked:
  * <ol>
- *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REGULAR} to {@link ReplayStatus#REPLAY}</li>
- *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REPLAY} to {@link ReplayStatus#REGULAR}</li>
+ *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REGULAR} to {@link ReplayStatus#REPLAY}, exactly before the first replayed event is processed</li>
+ *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REPLAY} to {@link ReplayStatus#REGULAR}, exactly after processing the final event of the replay</li>
  * </ol>
  * <p>
  * Methods annotated with this annotation thus process replay status changes, typically to prepare for and finalize an event

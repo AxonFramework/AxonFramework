@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 
 /**
  * Functional interface for handling {@link ReplayStatusChanged} messages.
@@ -62,9 +61,11 @@ public interface ReplayStatusChangedHandler extends MessageHandler {
      * {@link ReplayStatus#REPLAY replay starts} and {@link ReplayStatus#REGULAR ends}.
      * <p>
      * This method is invoked on the moment the {@code ReplayStatus} is about to change as part of the event handling
-     * {@link ProcessingContext}. For example, when {@link StreamingEventProcessor#resetTokens() resetting} would cause
-     * a switch from regular handling to a replay. Furthermore, this method will be invoked when the
-     * {@code ReplayStatus} is <b>about</b> to change from replay to regular.
+     * {@link ProcessingContext}. In doing so, this handler has two concrete moments when it is invoked:
+     * <ol>
+     *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REGULAR} to {@link ReplayStatus#REPLAY}, exactly before the first replayed event is processed</li>
+     *     <li>When the {@code ReplayStatus} changes from {@link ReplayStatus#REPLAY} to {@link ReplayStatus#REGULAR}, exactly after processing the final event of the replay</li>
+     * </ol>
      * <p>
      * If this operation returns a {@link MessageStream#failed(Throwable) failed MessageStream}, event handling that
      * occurs within the given {@code context} is impacted. The failure will be passed to the
