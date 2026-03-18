@@ -2,7 +2,7 @@
 
 [WARNING]
 ====
-Deadlines do not have a replacement yet in Axon Framework 5.
+Event schedulers do not have a replacement yet in Axon Framework 5.
 Once the intended replacement is in place the documentation will be adjusted accordingly.
 ====
 
