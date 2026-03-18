@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.FluxUtils;
@@ -35,6 +34,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
@@ -428,8 +428,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         MessageStream<EventMessage> result = testSubject.source(testCondition);
         // then...
         StepVerifier.create(FluxUtils.of(result))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
         assertEquals(expected, actual);
@@ -463,10 +463,10 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
         // then...
         StepVerifier.create(FluxUtils.of(source))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.message().payloadAs(String.class)))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
         assertEquals(expected, actual);
@@ -685,13 +685,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     private void assertEvent(EventMessage actual, EventMessage expected) {
-        assertEquals(expected.payload(), convertPayload(actual).payload());
+        assertEquals(expected.payload(), actual.payloadAs(String.class));
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.timestamp().toEpochMilli(), actual.timestamp().toEpochMilli());
         assertEquals(expected.metadata(), actual.metadata());
     }
-
-    protected abstract EventMessage convertPayload(EventMessage original);
 
     private static boolean assertMarkerEntry(Entry<EventMessage> entry) {
         return entry.getResource(ConsistencyMarker.RESOURCE_KEY) instanceof AggregateBasedConsistencyMarker
@@ -719,7 +717,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     private @NonNull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
                                                                                int expectedSequence) {
-        return e -> expectedPayload.equals(convertPayload(e.message()).payload())
+        return e -> expectedPayload.equals(e.message().payloadAs(String.class))
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))
                 && e.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY) == expectedSequence
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));

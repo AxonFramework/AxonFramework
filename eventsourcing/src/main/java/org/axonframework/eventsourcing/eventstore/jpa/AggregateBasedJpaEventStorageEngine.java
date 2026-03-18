@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.axonframework.common.TypeReference;
@@ -54,6 +53,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -420,7 +420,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                        new MessageType(event.type(), event.version()),
                                        event.payload(),
                                        converter.convert(event.metadata(), METADATA_MAP_TYPE_REF.getType()),
-                                       event.timestamp());
+                                       event.timestamp()
+        ).withConverter(converter);
     }
 
     private static Context buildTrackedContext(TokenAndEvent tokenAndEvent) {

@@ -23,9 +23,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,10 +48,7 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract class providing a generic test suite every {@link SequencedDeadLetterQueue} implementation should comply
@@ -589,6 +583,41 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
             assertLetter(letter, resultLetter.get());
 
             Iterator<DeadLetter<? extends M>> resultLetters = joinAndUnwrap(testSubject.deadLetterSequence(testId, null)).iterator();
+            assertFalse(resultLetters.hasNext());
+        }
+
+        @Test
+        void processInvocationAllowsInlinePayloadConversion() {
+            Assumptions.assumeFalse(testSubject instanceof InMemorySequencedDeadLetterQueue<M>,
+                                    "InMemorySequencedDeadLetterQueue does not support inline payload conversion");
+            // given
+            AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
+            Function<DeadLetter<? extends M>, CompletableFuture<EnqueueDecision<M>>> testTask = letter -> {
+                resultLetter.set(letter);
+                return CompletableFuture.completedFuture(Decisions.evict());
+            };
+
+            Object testId = generateId();
+            var letter = generateInitialLetter();
+            enqueue(testId, letter);
+
+            // when
+            boolean result = joinAndUnwrap(testSubject.process(testTask, null));
+
+            // then
+            assertTrue(result);
+            DeadLetter<? extends M> actualResultLetter = resultLetter.get();
+            assertLetter(letter, actualResultLetter);
+
+            // the acual payload is serialized to byte during deadlettering
+            assertEquals(byte[].class, actualResultLetter.message().payloadType());
+            assertNotEquals(letter.message().payload(), actualResultLetter.message().payload());
+            // since the converter is attached, we can inline convert back to the expected payload
+            assertEquals(letter.message().payload(),
+                         actualResultLetter.message().payloadAs(letter.message().payloadType()));
+
+            Iterator<DeadLetter<? extends M>> resultLetters = joinAndUnwrap(testSubject.deadLetterSequence(testId,
+                                                                                                           null)).iterator();
             assertFalse(resultLetters.hasNext());
         }
 

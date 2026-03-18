@@ -22,13 +22,13 @@ import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -132,7 +132,8 @@ public class TaggedEventConverter implements DescribableComponent {
                                        new MessageType(event.getName(), event.getVersion()),
                                        event.getPayload().toByteArray(),
                                        event.getMetadataMap(),
-                                       Instant.ofEpochMilli(event.getTimestamp()));
+                                       Instant.ofEpochMilli(event.getTimestamp())
+        ).withConverter(converter);
     }
 
     @Override

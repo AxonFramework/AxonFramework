@@ -20,9 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.conversion.PassThroughConverter;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -153,20 +150,6 @@ public abstract class DeadLetteringEventIntegrationTest {
     protected abstract SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue();
 
     /**
-     * Returns the {@link EventConverter} used for event payload deserialization via {@link Message#payloadAs}.
-     * <p>
-     * Returns a {@link DelegatingEventConverter} wrapping {@link PassThroughConverter} by default, which is sufficient
-     * for in-memory implementations where the payload is already the expected type. Subclasses backed by serialized
-     * storage (e.g. JDBC, JPA) should override this to return an {@link EventConverter} capable of deserializing the
-     * stored payload bytes.
-     *
-     * @return An {@link EventConverter} for event payload conversion.
-     */
-    protected EventConverter eventConverter() {
-        return new DelegatingEventConverter(PassThroughConverter.INSTANCE);
-    }
-
-    /**
      * Builds the {@link UnitOfWorkFactory} used by both the {@link DeadLetteringEventHandlingComponent} and the
      * {@link StreamingEventProcessor} in this integration test.
      * <p>
@@ -188,7 +171,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        eventHandler = new ProblematicEventHandler(eventConverter());
+        eventHandler = new ProblematicEventHandler();
         deadLetterQueue = buildDeadLetterQueue();
 
         // A policy that ensures a letter is only retried once by adding diagnostics.
@@ -213,7 +196,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         // Create a SimpleEventHandlingComponent with custom sequencing policy
         SequencingPolicy<? super EventMessage> sequencingPolicy = (event, context) ->
-                Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class, eventConverter())
+                Optional.of(event.<DeadLetterableEvent>payloadAs(DeadLetterableEvent.class)
                                   .getAggregateIdentifier());
 
         SimpleEventHandlingComponent simpleComponent =
@@ -323,7 +306,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                     deadLetterQueue.deadLetterSequence("failure", null).join().iterator();
             assertTrue(sequence.hasNext());
             assertEquals(failedEvent.payload(),
-                         sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                         sequence.next().message().payloadAs(DeadLetterableEvent.class));
             assertFalse(sequence.hasNext());
         }
 
@@ -367,13 +350,13 @@ public abstract class DeadLetteringEventIntegrationTest {
                         deadLetterQueue.deadLetterSequence(aggregateId, null).join().iterator();
                 assertTrue(sequence.hasNext());
                 assertEquals(firstDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class));
                 assertTrue(sequence.hasNext());
                 assertEquals(secondDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class));
                 assertTrue(sequence.hasNext());
                 assertEquals(thirdDeadLetter,
-                             sequence.next().message().payloadAs(DeadLetterableEvent.class, eventConverter()));
+                             sequence.next().message().payloadAs(DeadLetterableEvent.class));
                 assertFalse(sequence.hasNext());
             });
         }
@@ -809,7 +792,6 @@ public abstract class DeadLetteringEventIntegrationTest {
      */
     private static class ProblematicEventHandler implements EventHandler {
 
-        private final EventConverter converter;
         private final Set<String> handledEvent = new ConcurrentSkipListSet<>();
         private final Map<String, Integer> firstTrySuccesses = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> evaluationSuccesses = new ConcurrentSkipListMap<>();
@@ -818,14 +800,10 @@ public abstract class DeadLetteringEventIntegrationTest {
         private final Map<String, Integer> deadLetterFoundInContext = new ConcurrentSkipListMap<>();
         private final Map<String, Integer> tokenFoundInContextOnRetry = new ConcurrentSkipListMap<>();
 
-        ProblematicEventHandler(EventConverter converter) {
-            this.converter = converter;
-        }
-
         @Override
         public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
                                                             @NonNull ProcessingContext context) {
-            DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class, converter);
+            DeadLetterableEvent payload = event.payloadAs(DeadLetterableEvent.class);
             String sequenceId = payload.getAggregateIdentifier();
             String eventIdentifier = event.identifier();
 
