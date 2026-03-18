@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  * This module is automatically loaded via {@link java.util.ServiceLoader} from
  * {@code META-INF/services/org.axonframework.config.ConfigurerModule} and does not require any user configuration.
  *
- * @author Axon Framework Contributors
+ * @author wadhwaroh-lang
  * @see AxonTaskJanitor
  * @since 4.13.1
  */
