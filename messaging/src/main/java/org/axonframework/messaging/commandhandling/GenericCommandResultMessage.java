@@ -16,14 +16,14 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.GenericResultMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -133,6 +133,23 @@ public class GenericCommandResultMessage extends GenericResultMessage implements
                                                convertedPayload,
                                                delegate.metadata());
         return new GenericCommandResultMessage(converted);
+    }
+
+    /**
+     * Returns a new {@code GenericCommandResultMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericCommandResultMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericCommandResultMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericCommandResultMessage(updated);
     }
 
     @Override
