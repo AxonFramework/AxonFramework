@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -42,13 +42,13 @@ public interface EventGateway extends DescribableComponent {
      * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
      * published as part of the {@code context's} lifecycle.
      * <p>
-     * The {@code events} are mapped to {@link EventMessage EventMessages} before they
-     * are given to an {@link EventSink}.
+     * The {@code events} are mapped to {@link EventMessage EventMessages} before they are given to an
+     * {@link EventSink}.
      *
      * @param context The processing context, if any, to publish the given {@code events} in.
      * @param events  The collection of events to publish.
-     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
-     * {@link EventSink} used by this gateway.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the {@link EventSink}
+     * used by this gateway.
      */
     default CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                             Object... events) {
@@ -59,13 +59,13 @@ public interface EventGateway extends DescribableComponent {
      * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
      * published as part of the {@code context's} lifecycle.
      * <p>
-     * The {@code events} are mapped to {@link EventMessage EventMessages} before they
-     * are given to an {@link EventSink}.
+     * The {@code events} are mapped to {@link EventMessage EventMessages} before they are given to an
+     * {@link EventSink}.
      *
      * @param context The processing context, if any, to publish the given {@code events} in.
      * @param events  The collection of events to publish.
-     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
-     * {@link EventSink} used by this gateway.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the {@link EventSink}
+     * used by this gateway.
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                     List<?> events);
@@ -74,12 +74,12 @@ public interface EventGateway extends DescribableComponent {
      * Publishes the given {@code events} within the given {@code context}. When present, the {@code events} should be
      * published as part of the {@code context's} lifecycle.
      * <p>
-     * The {@code events} are mapped to {@link EventMessage EventMessages} before they
-     * are given to an {@link EventSink}.
+     * The {@code events} are mapped to {@link EventMessage EventMessages} before they are given to an
+     * {@link EventSink}.
      *
-     * @param events  The collection of events to publish.
-     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the
-     * {@link EventSink} used by this gateway.
+     * @param events The collection of events to publish.
+     * @return A {@link CompletableFuture} of {@link Void}. Completion of the future depends on the {@link EventSink}
+     * used by this gateway.
      * @see #publish(ProcessingContext, List)
      */
     default CompletableFuture<Void> publish(List<?> events) {

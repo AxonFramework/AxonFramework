@@ -69,7 +69,7 @@ public class DefaultEventGateway implements EventGateway {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventSink", eventSink);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }
