@@ -263,6 +263,13 @@ Spring Boot's `InterceptorAutoConfiguration` automatically:
 3. Registers them with the appropriate components based on their generic `Message` type
 4. Applies them to the corresponding message buses
 
+[IMPORTANT]
+====
+Be aware that interceptors are registered on all applicable components based on their generic type.
+That means, defining a `MessageDispatchInterceptor<Message<?>>` or `MessageHandlerInterceptor<Message<?>>` with for
+example `Message` as the generic type will register the interceptor for commands, events and queries.
+====
+
 [TIP]
 ====
 You can control interceptor application order using Spring's `@Order` annotation:
