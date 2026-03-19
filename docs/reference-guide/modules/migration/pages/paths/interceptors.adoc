@@ -14,6 +14,65 @@ The most significant changes are:
 
 While the interfaces have changed, the fundamental concepts and use cases remain the same.
 ====
+== MessageDispatchInterceptor interface changes
+
+Dispatch interceptors are invoked when a message is dispatched/published on a bus, eventually even before a `ProcessingContext` is created.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
+
+    @Override
+    public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
+            List<? extends CommandMessage<?>> messages) {
+        return (index, message) -> {
+            // Modify or enrich message
+            return message.andMetaData(Collections.singletonMap("dispatchTime", Instant.now()));
+        };
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
+
+    @Override
+    public MessageStream<?> interceptOnDispatch(CommandMessage message,
+                                                @Nullable ProcessingContext context,
+                                                MessageDispatchInterceptorChain<CommandMessage> chain) {
+        // Modify or enrich message
+        CommandMessage enrichedMessage = message.andMetaData(
+            Collections.singletonMap("dispatchTime", Instant.now())
+        );
+
+        // Continue chain with modified message
+        return chain.proceed(enrichedMessage, context);
+    }
+}
+----
++
+Key changes:
++
+* **Method name**: `handle()` → `interceptOnDispatch()`
+* **Single message**: Processes one message at a time instead of batching
+* **Return type**: `MessageStream<?>` for async-first design
+* **ProcessingContext**: `@Nullable` - may not exist during dispatch
+* **Chain proceed**: Must pass (possibly modified) message to continue
+====
+
+[IMPORTANT]
+====
+The `ProcessingContext` parameter is `@Nullable` for dispatch interceptors because they run **before** message handling begins, potentially before any context exists.
+
+If dispatching from within a handler (where context exists), pass it along to propagate correlation data. If dispatching from outside a handler (for example, HTTP endpoint), context will be `null`.
+====
 
 == MessageHandlerInterceptor interface changes
 
@@ -78,70 +137,9 @@ Key changes:
 +
 The `ProcessingContext` provides lifecycle hooks similar to `UnitOfWork`:
 +
-* `runOnStart(Consumer<ProcessingContext>)` - Execute when context starts
+* `runOnPreInvocation(Consumer<ProcessingContext>)` - Execute when context starts
 * `runOnAfterCommit(Consumer<ProcessingContext>)` - Execute after successful commit
-* `runOnRollback(Consumer<ProcessingContext>)` - Execute on rollback
 * `onError(ProcessingErrorHandler)` - Handle errors during processing
-====
-
-== MessageDispatchInterceptor interface changes
-
-Dispatch interceptors intercept messages **before** they reach the handler, even before a `ProcessingContext` is created.
-
-[tabs]
-====
-Axon Framework 4::
-+
-[source,java]
-----
-public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
-
-    @Override
-    public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
-            List<? extends CommandMessage<?>> messages) {
-        return (index, message) -> {
-            // Modify or enrich message
-            return message.andMetaData(Collections.singletonMap("dispatchTime", Instant.now()));
-        };
-    }
-}
-----
-
-Axon Framework 5::
-+
-[source,java]
-----
-public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
-
-    @Override
-    public MessageStream<?> interceptOnDispatch(CommandMessage message,
-                                                @Nullable ProcessingContext context,
-                                                MessageDispatchInterceptorChain<CommandMessage> chain) {
-        // Modify or enrich message
-        CommandMessage enrichedMessage = message.andMetaData(
-            Collections.singletonMap("dispatchTime", Instant.now())
-        );
-
-        // Continue chain with modified message
-        return chain.proceed(enrichedMessage, context);
-    }
-}
-----
-+
-Key changes:
-+
-* **Method name**: `handle()` → `interceptOnDispatch()`
-* **Single message**: Processes one message at a time instead of batching
-* **Return type**: `MessageStream<?>` for async-first design
-* **ProcessingContext**: `@Nullable` - may not exist during dispatch
-* **Chain proceed**: Must pass (possibly modified) message to continue
-====
-
-[IMPORTANT]
-====
-The `ProcessingContext` parameter is `@Nullable` for dispatch interceptors because they run **before** message handling begins, potentially before any context exists.
-
-If dispatching from within a handler (where context exists), pass it along to propagate correlation data. If dispatching from outside a handler (for example, HTTP endpoint), context will be `null`.
 ====
 
 == Declarative interceptor registration
@@ -264,6 +262,13 @@ Spring Boot's `InterceptorAutoConfiguration` automatically:
 2. Discovers all beans implementing `MessageDispatchInterceptor<T>`
 3. Registers them with the appropriate components based on their generic `Message` type
 4. Applies them to the corresponding message buses
+
+[IMPORTANT]
+====
+Be aware that interceptors are registered on all applicable components based on their generic type.
+That means, defining a `MessageDispatchInterceptor<Message<?>>` or `MessageHandlerInterceptor<Message<?>>` with for
+example `Message` as the generic type will register the interceptor for commands, events and queries.
+====
 
 [TIP]
 ====
