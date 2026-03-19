@@ -245,7 +245,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                 .registerComponent(
                         StateManager.class,
                         c -> {
-                            var repository = new EventSourcingRepository<>(
+                            var repository = new EventSourcingRepository<String, Student>(
                                     String.class,
                                     Student.class,
                                     c.getComponent(EventStore.class),

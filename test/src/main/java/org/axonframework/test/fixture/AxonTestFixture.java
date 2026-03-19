@@ -16,12 +16,8 @@
 
 package org.axonframework.test.fixture;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.eventhandling.EventSink;
-import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -96,38 +92,7 @@ import java.util.function.UnaryOperator;
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    private final AxonConfiguration configuration;
-    private final Customization customization;
-
-    /**
-     * The outermost {@link CommandBus} from the decorator chain, obtained via
-     * {@code configuration.getComponent(CommandBus.class)}. Used by the given-phase and when-phase to dispatch
-     * commands so they traverse the full decorator chain, including all registered
-     * {@link org.axonframework.messaging.core.MessageDispatchInterceptor MessageDispatchInterceptors}.
-     */
-    private final CommandBus commandBus;
-
-    /**
-     * The outermost {@link EventSink} from the decorator chain, obtained via
-     * {@code configuration.getComponent(EventSink.class)}. Used by the given-phase and when-phase to publish events
-     * so they traverse the full decorator chain, including all registered event dispatch interceptors.
-     * <p>
-     * Depending on the configuration, the actual runtime type is either an {@code EventStore} (when using
-     * {@code EventSourcingConfigurer}) or an {@code EventBus} (when using {@code MessagingConfigurer}).
-     */
-    private final EventSink eventSink;
-
-    /**
-     * Registry holding the innermost recording decorators created by
-     * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Contains the
-     * {@link RecordingCommandBus} and {@link RecordingEventSink} used by the then-phase for assertions. Because they
-     * are the innermost decorators, they capture messages <em>after</em> all dispatch interceptors have enriched them
-     * with metadata.
-     */
-    private final RecordingComponentsRegistry recordings;
-
-    private final MessageTypeResolver messageTypeResolver;
-    private final UnitOfWorkFactory unitOfWorkFactory;
+    private final TestContext testContext;
 
     /**
      * Creates a new fixture.
@@ -140,6 +105,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *       {@link RecordingComponentsRegistry} (populated by {@link MessagesRecordingConfigurationEnhancer}) and
      *       used by the then-phase for assertions.</li>
      * </ul>
+     * <p>
+     * This constructor creates a new {@link TestContext}, which invokes the {@link FixtureCustomizer} (if registered)
+     * to set up per-test state such as the test isolation identifier. Use the package-private
+     * {@link #AxonTestFixture(TestContext)} constructor to reuse an existing context (e.g., in {@code and()} chains).
      *
      * @param configuration The configuration to obtain components from.
      * @param customization Collection of customizations for this fixture.
@@ -149,23 +118,19 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             AxonConfiguration configuration,
             Customization customization
     ) {
-        this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
-        this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
-        this.commandBus = configuration.getComponent(CommandBus.class);
-        this.eventSink = configuration.getComponent(EventSink.class);
-        this.recordings = configuration.getOptionalComponent(RecordingComponentsRegistry.class)
-                .orElseThrow(() -> new FixtureExecutionException(
-                        "RecordingComponentsRegistry not found in Configuration. "
-                                + "Ensure MessagesRecordingConfigurationEnhancer is registered."
-                ));
-        Objects.requireNonNull(recordings.commandBus(),
-                "RecordingCommandBus is not available. "
-                        + "Ensure CommandBus is resolved before constructing AxonTestFixture.");
-        Objects.requireNonNull(recordings.eventSink(),
-                "RecordingEventSink is not available. "
-                        + "Ensure EventSink is resolved before constructing AxonTestFixture.");
-        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
+        this(TestContext.create(configuration, customization));
+    }
+
+    /**
+     * Creates a new fixture reusing an existing {@link TestContext}.
+     * <p>
+     * This constructor is used by {@code and()} to continue a test phase chain without re-invoking the
+     * {@link FixtureCustomizer}, preserving the same test isolation identifier across phases.
+     *
+     * @param testContext The per-test context to reuse.
+     */
+    AxonTestFixture(TestContext testContext) {
+        this.testContext = Objects.requireNonNull(testContext, "TestContext may not be null.");
     }
 
     /**
@@ -214,33 +179,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     @Override
     public AxonTestPhase.Given given() {
-        return new AxonTestGiven(
-                configuration,
-                customization,
-                commandBus,
-                eventSink,
-                recordings,
-                messageTypeResolver,
-                unitOfWorkFactory
-        );
+        return new AxonTestGiven(testContext);
     }
 
     @Override
     public AxonTestPhase.When when() {
-        return new AxonTestWhen(
-                configuration,
-                customization,
-                commandBus,
-                eventSink,
-                recordings,
-                messageTypeResolver,
-                unitOfWorkFactory
-        );
+        return new AxonTestWhen(testContext);
     }
 
     @Override
     public void stop() {
-        configuration.shutdown();
+        testContext.configuration().shutdown();
     }
 
     /**

@@ -17,7 +17,6 @@
 package org.axonframework.test.fixture;
 
 import org.jspecify.annotations.Nullable;
-import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
 /**
@@ -32,19 +31,15 @@ class AxonTestThenNothing
         implements AxonTestPhase.Then.Nothing {
 
     /**
-     * Constructs an {@code AxonTestThenNothing} for the given parameters.
+     * Constructs an {@code AxonTestThenNothing} for the given {@link TestContext}.
      *
-     * @param configuration   The configuration which this test fixture phase is based on.
-     * @param customization   Collection of customizations made for this test fixture.
-     * @param recordings      The registry holding recording components for assertions.
+     * @param testContext     The per-test context holding all resolved fixture components.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenNothing(
-            AxonConfiguration configuration,
-            AxonTestFixture.Customization customization,
-            RecordingComponentsRegistry recordings,
+            TestContext testContext,
             @Nullable Throwable actualException
     ) {
-        super(configuration, customization, recordings, actualException);
+        super(testContext, actualException);
     }
 }
