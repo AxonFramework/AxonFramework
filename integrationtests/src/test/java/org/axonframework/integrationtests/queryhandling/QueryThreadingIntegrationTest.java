@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
 import org.axonframework.common.util.MockException;
+import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.core.MessageStream;
@@ -84,11 +85,10 @@ class QueryThreadingIntegrationTest {
     private DistributedQueryBus queryBus1;
     private AxonServerQueryBusConnector connector2;
     private DistributedQueryBus queryBus2;
-    private JacksonConverter converter;
 
     @BeforeEach
     void setUp() {
-        converter = new JacksonConverter();
+        Converter converter = new JacksonConverter();
         var messageConverter = new DelegatingMessageConverter(converter);
 
         String server = axonServer.getHost() + ":" + axonServer.getGrpcPort();
@@ -358,6 +358,6 @@ class QueryThreadingIntegrationTest {
     }
 
     private String messagePayloadAsString(MessageStream.Entry<QueryResponseMessage> entry) {
-        return entry.message().payloadAs(String.class, converter);
+        return entry.message().payloadAs(String.class);
     }
 }
