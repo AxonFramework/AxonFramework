@@ -10,7 +10,6 @@ The most significant changes are:
 
 * **Async-first design**: Interceptors now return `MessageStream<?>` instead of synchronous values
 * **Explicit ProcessingContext**: Replaces the ThreadLocal-based `UnitOfWork` pattern from AF4
-* **Clear separation**: Distinct interfaces for dispatch vs. handler interception
 * **Simplified registration**: Unified registration approach across all message types
 
 While the interfaces have changed, the fundamental concepts and use cases remain the same.
@@ -263,7 +262,7 @@ Spring Boot's `InterceptorAutoConfiguration` automatically:
 
 1. Discovers all beans implementing `MessageHandlerInterceptor<T>`
 2. Discovers all beans implementing `MessageDispatchInterceptor<T>`
-3. Registers them with the appropriate registries based on their generic type
+3. Registers them with the appropriate components based on their generic `Message` type
 4. Applies them to the corresponding message buses
 
 [TIP]
@@ -308,7 +307,7 @@ configurer.registerCommandHandlerInterceptor(
 The factory receives:
 
 * `Configuration config` - Access to framework configuration
-* `Class<?> componentType` - The component class (for example, aggregate, projection)
+* `Class<?> componentType` - The component class (for example, entity, projection)
 * `String componentName` - The component's registered name (may be null)
 
 Return `null` to skip interceptor registration for that component.
