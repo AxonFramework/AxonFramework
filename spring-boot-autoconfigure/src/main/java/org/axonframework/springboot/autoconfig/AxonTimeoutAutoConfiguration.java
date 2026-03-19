@@ -108,4 +108,5 @@ public class AxonTimeoutAutoConfiguration {
             return Integer.MIN_VALUE;
         }
     }
+
 }
