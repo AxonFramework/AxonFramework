@@ -78,9 +78,8 @@ Key changes:
 +
 The `ProcessingContext` provides lifecycle hooks similar to `UnitOfWork`:
 +
-* `runOnStart(Consumer<ProcessingContext>)` - Execute when context starts
+* `runOnPreInvocation(Consumer<ProcessingContext>)` - Execute when context starts
 * `runOnAfterCommit(Consumer<ProcessingContext>)` - Execute after successful commit
-* `runOnRollback(Consumer<ProcessingContext>)` - Execute on rollback
 * `onError(ProcessingErrorHandler)` - Handle errors during processing
 ====
 
