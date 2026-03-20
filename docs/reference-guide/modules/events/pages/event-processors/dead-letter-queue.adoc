@@ -11,6 +11,7 @@ xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] provides insight
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
 You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of Axoniq Platform].
 
+[#_queue_scoping_and_naming]
 == Queue scoping and naming
 
 Each Event Handling Component within a processor receives its own dead-letter queue instance.
@@ -214,6 +215,7 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 --
 ====
 
+[#_sequence_identifier_caching]
 === Sequence identifier caching
 
 To speed up event processing, the framework caches the sequence identifiers of sequences that are currently in the dead-letter queue.
@@ -272,6 +274,7 @@ axon.eventhandling.processors.my-processor.dlq.cache.size=0
 --
 ====
 
+[#_applying_defaults_across_processors]
 === Applying defaults across processors
 
 [NOTE]
@@ -601,16 +604,16 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
 
 The `Decisions` utility class provides factory methods for the five possible outcomes:
 
-* `Decisions.enqueue(cause)`:Create a new dead letter for an event that failed during initial handling.
+* `Decisions.enqueue(cause)`: Create a new dead letter for an event that failed during initial handling.
 Pass the failure `Throwable` so it is stored as the letter's `cause` for inspection during retries.
-* `Decisions.requeue(cause, diagnosticsUpdater)`:Re-queue a letter that failed again during retry processing.
+* `Decisions.requeue(cause, diagnosticsUpdater)`: Re-queue a letter that failed again during retry processing.
 The `diagnosticsUpdater` function transforms the letter's current diagnostics metadata, making it the right place to track retry counts or other state.
 The key difference from `enqueue`: `requeue` updates an _existing_ letter, whereas `enqueue` creates a new one.
-* `Decisions.ignore()`:Leave an existing letter in the queue unchanged.
+* `Decisions.ignore()`: Leave an existing letter in the queue unchanged.
 Use this when you want to keep the letter for future retry without updating its cause or diagnostics.
-* `Decisions.doNotEnqueue()`:Skip the failed event entirely during initial handling.
+* `Decisions.doNotEnqueue()`: Skip the failed event entirely during initial handling.
 The event is never added to the queue; handlers that already succeeded keep their results.
-* `Decisions.evict()`:Remove an existing letter from the queue permanently during retry processing.
+* `Decisions.evict()`: Remove an existing letter from the queue permanently during retry processing.
 Use this when a letter has exhausted its retries or is otherwise no longer relevant.
 
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
