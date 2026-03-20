@@ -16,15 +16,24 @@
 
 package org.axonframework.eventsourcing.snapshot.api;
 
+import org.axonframework.messaging.eventhandling.EventMessage;
+
 import java.time.Duration;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Defines a policy for determining when an event-sourced entity should be snapshotted.
  * <p>
  * A {@code SnapshotPolicy} encapsulates the logic that decides whether a snapshot
- * is required based on metrics collected during sourcing, such as the number of events
- * applied since the last snapshot or the total time taken to source the entity.
+ * is required based on events seen and metrics collected during sourcing.
+ * <p>
+ * A {@code SnapshotPolicy} can trigger snapshotting in two ways:
+ * <ul>
+ *     <li>During sourcing, by inspecting each event through {@link #shouldSnapshot(EventMessage)}</li>
+ *     <li>After sourcing completes, by evaluating the {@link EvolutionResult} through
+ *         {@link #shouldSnapshot(EvolutionResult)}</li>
+ * </ul>
  * <p>
  * Policies are <strong>immutable and thread-safe</strong>, so a single instance
  * can be shared across multiple entities and asynchronous operations.
@@ -73,25 +82,48 @@ public interface SnapshotPolicy {
     }
 
     /**
-     * Creates a policy that triggers a snapshot when specifically requested
-     * by an {@link Snapshotter#onEventApplied(Object, Object, org.axonframework.messaging.eventhandling.EventMessage)}
-     * implementation. The {@link EvolutionResult#snapshotRequested()} will return {@code true} in that case.
+     * Creates a policy that triggers a snapshot when the predicate matches
+     * an event encountered during sourcing.
      *
-     * @return a snapshot policy that triggers when specifically requested, never {@code null}
-     * @see EvolutionResult#snapshotRequested()
+     * @param predicate an event message predicate, cannot be {@code null}
+     * @return a snapshot policy that triggers when the predicate matches, never {@code null}
+     * @throws NullPointerException when {@code predicate} is {@code null}
      */
-    static SnapshotPolicy whenRequested() {
-        return EvolutionResult::snapshotRequested;
+    static SnapshotPolicy whenEventMatches(Predicate<EventMessage> predicate) {
+        Objects.requireNonNull(predicate, "The predicate parameter must not be null.");
+
+        return new SnapshotPolicy() {
+            @Override
+            public boolean shouldSnapshot(EvolutionResult evolutionResult) {
+                return false;
+            }
+
+            @Override
+            public boolean shouldSnapshot(EventMessage event) {
+                return predicate.test(event);
+            }
+        };
     }
 
     /**
-     * Determines whether a snapshot is needed given an evolution result.
+     * Allows triggering a snapshot when sourcing completes, based on the final evolution result.
      *
      * @param evolutionResult information about the sourcing process to base the decision on, cannot be {@code null}
      * @return {@code true} if a snapshot should be made, {@code false} otherwise
      * @implNote implementations should be thread-safe and side-effect free
      */
-    boolean needsSnapshot(EvolutionResult evolutionResult);
+    boolean shouldSnapshot(EvolutionResult evolutionResult);
+
+    /**
+     * Allows triggering a snapshot when sourcing completes, based on an event seen during sourcing.
+     *
+     * @param event the event seen, never {@code null}
+     * @return {@code true} if a snapshot should be created when sourcing completes, otherwise {@code false}
+     * @implNote implementations should be thread-safe and side-effect free
+     */
+    default boolean shouldSnapshot(EventMessage event) {
+        return false;
+    }
 
     /**
      * Composes this policy with another policy using logical OR.
@@ -106,6 +138,16 @@ public interface SnapshotPolicy {
     default SnapshotPolicy or(SnapshotPolicy other) {
         Objects.requireNonNull(other, "The other parameter must not be null.");
 
-        return result -> this.needsSnapshot(result) || other.needsSnapshot(result);
+        return new SnapshotPolicy() {
+            @Override
+            public boolean shouldSnapshot(EventMessage event) {
+                return SnapshotPolicy.this.shouldSnapshot(event) || other.shouldSnapshot(event);
+            }
+
+            @Override
+            public boolean shouldSnapshot(EvolutionResult evolutionResult) {
+                return SnapshotPolicy.this.shouldSnapshot(evolutionResult) || other.shouldSnapshot(evolutionResult);
+            }
+        };
     }
 }

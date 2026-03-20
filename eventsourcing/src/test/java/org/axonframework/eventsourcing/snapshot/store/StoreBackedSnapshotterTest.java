@@ -23,9 +23,7 @@ import org.apache.logging.log4j.core.test.junit.Named;
 import org.apache.logging.log4j.message.Message;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.Position;
-import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
 import org.axonframework.eventsourcing.snapshot.api.Snapshot;
-import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
 import org.axonframework.messaging.core.MessageType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +32,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,13 +53,12 @@ class StoreBackedSnapshotterTest {
 
     @Mock private SnapshotStore store;
     @Mock private Converter converter;
-    @Mock private SnapshotPolicy policy;
 
     private StoreBackedSnapshotter<String, String> snapshotter;
 
     @BeforeEach
     void beforeEach() {
-        this.snapshotter = new StoreBackedSnapshotter<>(store, TYPE, converter, String.class, policy);
+        this.snapshotter = new StoreBackedSnapshotter<>(store, TYPE, converter, String.class);
     }
 
     @Test
@@ -108,40 +103,22 @@ class StoreBackedSnapshotterTest {
     }
 
     @Test
-    void shouldNotStoreSnapshotWhenNotRequestedByPolicy() {
-        EvolutionResult evolutionResult = new EvolutionResult(1, Duration.ZERO, false);
-
-        when(policy.needsSnapshot(evolutionResult)).thenReturn(false);
-
-        snapshotter.onEvolutionCompleted("1", "payload", Position.START, evolutionResult);
-
-        verifyNoInteractions(store);
-    }
-
-    @Test
-    void succesfulSnapshotStoreShouldLogNothing(@Named("TestAppender") ListAppender appender) {
-        EvolutionResult evolutionResult = new EvolutionResult(1, Duration.ZERO, false);
-
-        when(policy.needsSnapshot(evolutionResult)).thenReturn(true);
-
+    void successfulSnapshotStoreShouldLogNothing(@Named("TestAppender") ListAppender appender) {
         appender.clear();
 
-        snapshotter.onEvolutionCompleted("1", "payload", Position.START, evolutionResult);
+        snapshotter.store("1", "payload", Position.START);
 
         assertThat(appender.getEvents()).isEmpty();
     }
 
     @Test
     void failureToStoreSnapshotShouldOnlyLogWarning(@Named("TestAppender") ListAppender appender) {
-        EvolutionResult evolutionResult = new EvolutionResult(1, Duration.ZERO, false);
-
-        when(policy.needsSnapshot(evolutionResult)).thenReturn(true);
         when(store.store(eq(TYPE.qualifiedName()), eq("1"), any(Snapshot.class)))
             .thenReturn(CompletableFuture.failedFuture(new IOException("busy")));
 
         appender.clear();
 
-        snapshotter.onEvolutionCompleted("1", "payload", Position.START, evolutionResult);
+        snapshotter.store("1", "payload", Position.START);
 
         assertThat(appender.getEvents())
             .extracting(LogEvent::getMessage)

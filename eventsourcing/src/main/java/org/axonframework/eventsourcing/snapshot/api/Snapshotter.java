@@ -16,66 +16,21 @@
 
 package org.axonframework.eventsourcing.snapshot.api;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.eventstore.Position;
-import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A {@code Snapshotter} is responsible for managing snapshots of event-sourced entities.
- * <p>
- * Its primary responsibilities are:
- * <ul>
- *     <li>Retrieve the current snapshot for a given entity (if any).</li>
- *     <li>Observe the evolution of an entity as events are applied during replay, allowing the snapshotter
- *         to decide whether a snapshot should be created at the end of replay.</li>
- *     <li>Persist a snapshot if it determines one should be created, based on the signals received
- *         during evolution.</li>
- * </ul>
- * <p>
- * The snapshotter does not control sourcing; it only reacts to evolution signals and
- * decides if and when a snapshot should be created.</p>
+ * A {@code Snapshotter} is responsible for loading and storing snapshots of event-sourced entities.
  *
  * @param <I> the type of the entity identifier
  * @param <E> the type of the entity being snapshotted
  * @author John Hendrikx
  * @since 5.1.0
  */
+@Internal
 public interface Snapshotter<I, E> {
-
-    /**
-     * A {@link Snapshotter} which never loads snapshots and never creates
-     * snapshots.
-     */
-    static final Snapshotter<?, ?> NO_OP = new Snapshotter<>() {
-        @Override
-        public CompletableFuture<Snapshot> load(Object identifier) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
-        public void onEvolutionCompleted(
-            Object identifier,
-            Object entity,
-            Position position,
-            EvolutionResult loadStatistics
-        ) {
-            // do nothing when evolution completes for the no-op snapshotter
-        }
-    };
-
-    /**
-     * Creates a {@link Snapshotter} which never loads snapshots and never creates
-     * snapshots.
-     *
-     * @param <I> the type of the entity identifier
-     * @param <E> the type of the entity being snapshotted
-     * @return a {@link Snapshotter}, never {@code null}
-     */
-    @SuppressWarnings("unchecked")
-    static <I, E> Snapshotter<I, E> noSnapshotter() {
-        return (Snapshotter<I, E>) NO_OP;
-    }
 
     /**
      * Asynchronously retrieves the snapshot for the given {@code identifier}, if one exists.
@@ -90,39 +45,12 @@ public interface Snapshotter<I, E> {
     CompletableFuture<Snapshot> load(I identifier);
 
     /**
-     * Called after an event has been applied to the entity while sourcing it to its current state.
-     * <p>
-     * Implementations can use this callback to request a snapshot of the fully sourced entity
-     * once the sourcing is complete. The boolean return value is a latching signal:
-     * returning {@code true} indicates a snapshot should be taken at the end of sourcing.
+     * Stores the given entity as a snapshot asynchronously.
      *
      * @param identifier the identifier of the entity, cannot be {@code null}
-     * @param entity the entity state after the event has been applied, cannot be {@code null}
-     * @param event the event that was just applied, cannot be {@code null}
-     * @return {@code true} to request a snapshot at the end of sourcing, {@code false} otherwise
+     * @param entity the entity state, cannot be {@code null}
+     * @param position the position in the event stream for this entity state, cannot be {@code null}
      * @throws NullPointerException if any argument is {@code null}
      */
-    default boolean onEventApplied(I identifier, E entity, EventMessage event) {
-        return false;
-    }
-
-    /**
-     * Called immediately after an entity has been fully sourced from its snapshot and any subsequent events.
-     * <p>
-     * Implementations can use this callback to decide whether to create and persist a snapshot of the entity.
-     * At this point, the entity has reached its current state, and all evolution metrics are available
-     * in {@link EvolutionResult}. This method should not block; any I/O should be performed asynchronously.
-     *
-     * @param identifier the identifier of the entity, cannot be {@code null}
-     * @param entity the fully sourced entity state, cannot be {@code null}
-     * @param position the last processed position in the event stream, cannot be {@code null}
-     * @param evolutionResult the metrics and signals collected during sourcing, cannot be {@code null}
-     * @throws NullPointerException if any argument is {@code null}
-     */
-    void onEvolutionCompleted(
-        I identifier,
-        E entity,
-        Position position,
-        EvolutionResult evolutionResult
-    );
+    void store(I identifier, E entity, Position position);
 }

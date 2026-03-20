@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.snapshot.store;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.Position;
 import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
@@ -60,6 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author John Hendrikx
  * @since 5.1.0
  */
+@Internal
 public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
     private static final Logger LOGGER = LoggerFactory.getLogger(StoreBackedSnapshotter.class);
 
@@ -67,7 +69,6 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
     private final MessageType type;
     private final Converter converter;
     private final Class<?> entityType;
-    private final SnapshotPolicy snapshotPolicy;
     private final ConcurrentHashMap<I, Snapshot> inFlightSnapshots = new ConcurrentHashMap<>();
 
     /**
@@ -77,21 +78,18 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
      * @param type a versioned type to distinguish the snapshot in the store, cannot be {@code null}
      * @param converter a {@link Converter} used to deserialize snapshots, cannot be {@code null}
      * @param entityType the entity type, cannot be {@code null}
-     * @param snapshotPolicy a {@link SnapshotPolicy} which determines when to create a new snapshot, cannot be {@code null}
      * @throws NullPointerException when any argument is {@code null}
      */
     public StoreBackedSnapshotter(
         SnapshotStore store,
         MessageType type,
         Converter converter,
-        Class<E> entityType,
-        SnapshotPolicy snapshotPolicy
+        Class<E> entityType
     ) {
         this.store = Objects.requireNonNull(store, "The store parameter must not be null.");
         this.type = Objects.requireNonNull(type, "The type parameter must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter parameter must not be null.");
         this.entityType = Objects.requireNonNull(entityType, "The entityType parameter must not be null.");
-        this.snapshotPolicy = Objects.requireNonNull(snapshotPolicy, "The snapshotPolicy parameter must not be null.");
     }
 
     @Override
@@ -121,29 +119,25 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
     }
 
     @Override
-    public void onEvolutionCompleted(
+    public void store(
         I identifier,
         E entity,
-        Position position,
-        EvolutionResult evolutionResult
+        Position position
     ) {
         Objects.requireNonNull(identifier, "The identifier parameter must not be null.");
         Objects.requireNonNull(entity, "The entity parameter must not be null.");
         Objects.requireNonNull(position, "The position parameter must not be null.");
-        Objects.requireNonNull(evolutionResult, "The evolutionResult parameter must not be null.");
 
-        if (snapshotPolicy.needsSnapshot(evolutionResult)) {
-            Snapshot newSnapshot = new Snapshot(position, type.version(), entity, GenericEventMessage.clock.instant(), Map.of());
+        Snapshot newSnapshot = new Snapshot(position, type.version(), entity, GenericEventMessage.clock.instant(), Map.of());
 
-            inFlightSnapshots.put(identifier, newSnapshot);
-            store.store(type.qualifiedName(), identifier, newSnapshot).whenComplete((voidResult, ex) -> {
-                // note: only remove inflight snapshot from cache if not replaced concurrently
-                inFlightSnapshots.remove(identifier, newSnapshot);
+        inFlightSnapshots.put(identifier, newSnapshot);
+        store.store(type.qualifiedName(), identifier, newSnapshot).whenComplete((voidResult, ex) -> {
+            // note: only remove inflight snapshot from cache if not replaced concurrently
+            inFlightSnapshots.remove(identifier, newSnapshot);
 
-                if (ex != null) {
-                    LOGGER.warn("Snapshotting failed for {} with identifier {}", type, identifier, ex);
-                }
-            });
-        }
+            if (ex != null) {
+                LOGGER.warn("Snapshotting failed for {} with identifier {}", type, identifier, ex);
+            }
+        });
     }
 }
