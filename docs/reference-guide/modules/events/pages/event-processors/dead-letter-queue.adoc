@@ -358,7 +358,8 @@ If the processing of a dead letter fails, the event will be offered to the dead-
 How the dead-lettering process reacts to this depends on the <<Enqueue policy,enqueue policy>>.
 
 You can retrieve `SequencedDeadLetterProcessor` instances from the `Configuration` based on the processor name and the component name.
-Each Event Handling Component with DLQ enabled is registered as a `SequencedDeadLetterProcessor`.
+Each Event Handling Component with DLQ enabled is registered as a `SequencedDeadLetterProcessor`. The name to retrieve the processor follows the pattern
+`EventHandlingComponent[processorName][componentName]`.
 Below are examples of how to process dead-letter sequences for a specific component:
 
 [tabs]
@@ -383,9 +384,11 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryErrorEventSequence(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .map(processors -> processors.get(dlqName))
                 .ifPresent(dlp ->
                         dlp.process(letter -> letter.message()
                                                     .type()
@@ -411,9 +414,11 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryAnySequence(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .map(processors -> processors.get(dlqName))
                 .ifPresent(dlp ->
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
@@ -436,9 +441,11 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryAllSequences(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
                 .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .map(processors -> processors.get(dlqName))
                 .ifPresent(this::processUntilEmpty);
     }
 
