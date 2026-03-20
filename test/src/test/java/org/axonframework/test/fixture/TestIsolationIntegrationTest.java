@@ -26,6 +26,7 @@ import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
+import org.axonframework.eventsourcing.handler.SimpleSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
@@ -167,18 +168,21 @@ class TestIsolationIntegrationTest {
                 .registerComponent(
                         StateManager.class,
                         c -> {
+                            var eventStore = c.getComponent(EventStore.class);
                             var repository = new EventSourcingRepository<String, Student>(
                                     String.class,
                                     Student.class,
-                                    c.getComponent(EventStore.class),
+                                    eventStore,
                                     EventSourcedEntityFactory.fromIdentifier(Student::new),
-                                    (id, context) -> EventCriteria.havingTags("Student", id),
                                     new AnnotationBasedEntityEvolvingComponent<>(
                                             Student.class,
                                             c.getComponent(EventConverter.class),
                                             c.getComponent(MessageTypeResolver.class)
                                     ),
-                                    null
+                                    new SimpleSourcingHandler<>(
+                                            eventStore,
+                                            (id, context) -> EventCriteria.havingTags("Student", id)
+                                    )
                             );
                             return SimpleStateManager.named("testfixture")
                                                      .register(repository);

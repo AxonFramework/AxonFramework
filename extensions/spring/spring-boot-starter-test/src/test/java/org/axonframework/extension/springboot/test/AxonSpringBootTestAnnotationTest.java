@@ -91,14 +91,18 @@ class AxonSpringBootTestAnnotationTest {
      * {@link AxonTestFixture.Customization} bean is present, {@link AxonTestConfiguration} derives the default
      * customization from the property, resulting in Axon Server being disabled in the fixture.
      * <p>
-     * Uses reflection to access the private {@code customization} field because
-     * {@link AxonTestFixture} does not expose a public accessor for it.
+     * Uses reflection to access the private {@code testContext} field and then extract the customization,
+     * because {@link AxonTestFixture} does not expose a public accessor for it.
      */
     @Test
     void defaultCustomizationDisablesAxonServerWhenPropertyIsFalse() throws Exception {
-        Field customizationField = AxonTestFixture.class.getDeclaredField("customization");
+        Field testContextField = AxonTestFixture.class.getDeclaredField("testContext");
+        testContextField.setAccessible(true);
+        Object testContext = testContextField.get(fixture);
+
+        Field customizationField = testContext.getClass().getDeclaredField("customization");
         customizationField.setAccessible(true);
-        var customization = (AxonTestFixture.Customization) customizationField.get(fixture);
+        var customization = (AxonTestFixture.Customization) customizationField.get(testContext);
 
         assertFalse(customization.axonServerEnabled(),
                     "Axon Server should be disabled in the default Customization when axon.axonserver.enabled=false");
