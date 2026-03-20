@@ -1,0 +1,183 @@
+= Sequencing Policy Migration
+
+Axon Framework 5 refines the `SequencingPolicy` concept, moving it from event-only processing to a shared abstraction for both events and commands.
+This path covers the migration of sequencing policies from Axon Framework 4 to Axon Framework 5.
+For a complete understanding of how sequencing policies work in Axon Framework 5, see xref:events:event-processors/streaming.adoc#sequencing_policies[Sequencing Policies].
+
+[NOTE]
+====
+The most notable changes are:
+
+* **Package move**: Policies moved from `org.axonframework.eventhandling.async` to `org.axonframework.messaging.core.sequencing`
+* **Method signature**: The signature of `Object SequencingPolicy#getSequenceIdentifierFor(T event)` changed to `Optional<Object> SequencingPolicy#sequenceIdentifierFor(M message, ProcessingContext context)`, the semantics stay the same: messages with the same identifier are processed sequentially, `null` / `Optional#empty()` indicates no sequencing requirements for the message
+* **Changed default**: If you are using the aggregate-based event storage engines, the sequencing policy for event handlers still defaults to `SequentialPerAggregatePolicy`.
+However, if you are using DCB support, the default policy falls back to the `SequentialPolicy`, which processes **all events sequentially**.
+In that case it is highly recommended to explicitly configure a suitable `SequencingPolicy`.
+====
+
+== API changes
+
+The `SequencingPolicy` interface has been redesigned to be reusable for message sequencing in general (not only event sequencing) and fit the context-aware architecture of Axon Framework 5.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+package org.axonframework.eventhandling.async;
+
+public interface SequencingPolicy<T> {
+
+    Object getSequenceIdentifierFor(T event);
+}
+----
++
+Key characteristics:
++
+* The type parameter `T` refers to the event type directly
+* Returns `null` to indicate no sequencing requirement (full concurrency for that message)
+* No access to processing context
+
+Axon Framework 5::
++
+[source,java]
+----
+package org.axonframework.messaging.core.sequencing;
+
+public interface SequencingPolicy<M extends Message> {
+
+    Optional<Object> sequenceIdentifierFor(M message, ProcessingContext context);
+}
+----
++
+Key changes:
++
+* The type parameter `M` is bound to `Message`, making the policy applicable to any message type
+* Returns `Optional.empty()` instead of `null` to indicate no need for sequencing
+* Receives an explicit `ProcessingContext` for resource access
+
+====
+
+When migrating a custom `SequencingPolicy`, apply the following changes:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class CustomerIdSequencingPolicy implements SequencingPolicy<EventMessage<?>> {
+
+    @Override
+    public Object getSequenceIdentifierFor(EventMessage<?> event) {
+        if (event.getPayload() instanceof CustomerEvent customerEvent) {
+            return customerEvent.getCustomerId();
+        }
+        return null;
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+public class CustomerIdSequencingPolicy implements SequencingPolicy<EventMessage> {
+
+    @Override
+    public Optional<Object> sequenceIdentifierFor(EventMessage message, ProcessingContext context) {
+        if (message.payload() instanceof CustomerEvent customerEvent) {
+            return Optional.of(customerEvent.customerId());
+        }
+        return Optional.empty();
+    }
+}
+----
+====
+
+== Changed default: from `SequentialPerAggregatePolicy` to `HierarchicalSequencingPolicy`
+
+In Axon Framework 4, the default sequencing policy for streaming event processors was `SequentialPerAggregatePolicy`.
+This policy groups events by aggregate identifier, so events from the same aggregate are processed sequentially, while events from different aggregates can be processed concurrently.
+For non-domain events (events without an aggregate identifier), the policy returned `null`, resulting in full concurrency for those events.
+
+In Axon Framework 5, the default is a `HierarchicalSequencingPolicy` that wraps `SequentialPerAggregatePolicy` as its primary policy, with `SequentialPolicy` as the fallback.
+This means that when the primary policy returns `Optional.empty()`—which happens when no aggregate identifier is found in the processing context—the fallback `SequentialPolicy` is applied instead.
+
+The practical impact depends on your event store solution:
+
+* **Aggregate-based event store solution**: Events carry an aggregate identifier that is placed in the processing context.
+`SequentialPerAggregatePolicy` can find it, so the behavior is identical to Axon Framework 4—events from the same aggregate are handled sequentially, events from different aggregates can be processed concurrently.
+Users migrating from Axon Framework 4 without migrating their event store to DCB should observe no behavioral difference.
+
+* **DCB (tag-based) event store solution**: Events are stored using tags rather than aggregate identifiers.
+No aggregate identifier is placed in the processing context, so `SequentialPerAggregatePolicy` returns `Optional.empty()` for every event.
+The `HierarchicalSequencingPolicy` then falls back to `SequentialPolicy`, processing all events sequentially within a single segment (allowing no concurrency at all within the processing segment).
+This is the safe default, but limits parallelism—see the section below on defining an explicit policy.
+
+== Define an explicit event sequencing policy
+
+Because the default policy adapts automatically to your event store type, it can introduce unexpected performance implications when migrating to a DCB-based event store.
+We therefore strongly recommend always defining a sequencing policy that explicitly matches your application's ordering requirements.
+
+For the available built-in policies and configuration options, see xref:events:event-processors/streaming.adoc#sequencing_policies[Sequencing Policies].
+The two main configuration approaches are shown below.
+
+=== Annotation-based configuration
+
+Use `@SequencingPolicy` on an event handling component class or on individual `@EventHandler` methods.
+Method-level annotations take precedence over class-level ones.
+
+[source,java]
+----
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.core.annotation.SequencingPolicy;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+
+@SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"customerId"})
+class OrderEventHandler {
+
+    @EventHandler
+    public void on(OrderPlacedEvent event) {
+        // handled sequentially per customerId
+    }
+}
+----
+
+=== Declarative configuration
+
+Register the sequencing policy programmatically through the `MessagingConfigurer`.
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.sequencing.PropertySequencingPolicy;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+
+public void configureEventProcessing(MessagingConfigurer configurer) {
+    configurer.eventProcessing(eventConfigurer ->
+            eventConfigurer.pooledStreaming(pooledStreamingConfigurer ->
+                    pooledStreamingConfigurer.processor("order-processor", customizer ->
+                                    customizer.eventHandlingComponents(ehc ->
+                                            ehc.declarative(cfg ->
+                                                    SimpleEventHandlingComponent.create("orders",
+                                                            new PropertySequencingPolicy<>(Order.class, "customerId")
+                                                    )
+                                            )
+                                    ).notCustomized()
+                    )
+            )
+    );
+}
+----
+
+== Sequencing policies for commands
+
+In Axon Framework 4, sequencing policies exclusively applied to event processing.
+
+In Axon Framework 5, the `SequencingPolicy` abstraction is also used for command handling.
+By default, the `RoutingKeySequencingPolicy` sequences commands by their routing key, ensuring that commands targeting the same entity are handled sequentially and eliminating optimistic locking failures in high-throughput scenarios.
+
+This change does not introduce migration issues for existing applications, as command sequencing is new functionality that operates transparently in the background and reflects the aggregate locking behaviour that was the default in Axon Framework 4.
+If you need to customize or disable command sequencing, see xref:tuning:command-processing.adoc#command-sequencing[Command sequencing].
