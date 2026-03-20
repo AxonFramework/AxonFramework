@@ -1,0 +1,322 @@
+= Interceptor Migration
+
+Axon Framework 5 introduces significant changes to how interceptors work, reflecting the broader shift to async-first APIs and the move away from ThreadLocal-based patterns.
+
+This path covers the migration of message interceptors from Axon Framework 4 to Axon Framework 5. For a complete understanding of how interceptors work in Axon Framework 5, see xref:messaging-concepts:message-intercepting.adoc[Message Intercepting].
+
+[NOTE]
+====
+The most significant changes are:
+
+* **Async-first design**: Interceptors now return `MessageStream<?>` instead of synchronous values
+* **Explicit ProcessingContext**: Replaces the ThreadLocal-based `UnitOfWork` pattern from AF4
+* **Simplified registration**: Unified registration approach across all message types
+
+While the interfaces have changed, the fundamental concepts and use cases remain the same.
+====
+== MessageDispatchInterceptor interface changes
+
+Dispatch interceptors are invoked when a message is dispatched/published on a bus, eventually even before a `ProcessingContext` is created.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
+
+    @Override
+    public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
+            List<? extends CommandMessage<?>> messages) {
+        return (index, message) -> {
+            // Modify or enrich message
+            return message.andMetaData(Collections.singletonMap("dispatchTime", Instant.now()));
+        };
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+public class MyDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
+
+    @Override
+    public MessageStream<?> interceptOnDispatch(CommandMessage message,
+                                                @Nullable ProcessingContext context,
+                                                MessageDispatchInterceptorChain<CommandMessage> chain) {
+        // Modify or enrich message
+        CommandMessage enrichedMessage = message.andMetaData(
+            Collections.singletonMap("dispatchTime", Instant.now())
+        );
+
+        // Continue chain with modified message
+        return chain.proceed(enrichedMessage, context);
+    }
+}
+----
++
+Key changes:
++
+* **Method name**: `handle()` → `interceptOnDispatch()`
+* **Single message**: Processes one message at a time instead of batching
+* **Return type**: `MessageStream<?>` for async-first design
+* **ProcessingContext**: `@Nullable` - may not exist during dispatch
+* **Chain proceed**: Must pass (possibly modified) message to continue
+====
+
+[IMPORTANT]
+====
+The `ProcessingContext` parameter is `@Nullable` for dispatch interceptors because they run **before** message handling begins, potentially before any context exists.
+
+If dispatching from within a handler (where context exists), pass it along to propagate correlation data. If dispatching from outside a handler (for example, HTTP endpoint), context will be `null`.
+====
+
+== MessageHandlerInterceptor interface changes
+
+The `MessageHandlerInterceptor` interface has been redesigned to support async-first processing and explicit context management.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class MyHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+
+    @Override
+    public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                        InterceptorChain interceptorChain) throws Exception {
+        // Pre-processing
+        unitOfWork.onCommit(uow -> {
+            // Post-commit logic
+        });
+
+        // Continue chain synchronously
+        return interceptorChain.proceed();
+    }
+}
+----
++
+Key characteristics:
++
+* `UnitOfWork` provided via ThreadLocal (`CurrentUnitOfWork.get()`)
+* Synchronous `proceed()` method
+* Direct return of handler result
+
+Axon Framework 5::
++
+[source,java]
+----
+public class MyHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
+
+    @Override
+    public MessageStream<?> interceptOnHandle(CommandMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<CommandMessage> chain) {
+        // Pre-processing
+        context.runOnAfterCommit(ctx -> {
+            // Post-commit logic
+        });
+
+        // Continue chain - returns MessageStream
+        return chain.proceed(message, context);
+    }
+}
+----
++
+Key changes:
++
+* **Method name**: `handle()` → `interceptOnHandle()`
+* **Parameters**: Receives `message` and `context` explicitly
+* **Return type**: `MessageStream<?>` instead of `Object`
+* **Chain proceed**: Must pass `message` and `context` to `chain.proceed()`
+* **ProcessingContext**: Mandatory parameter, never null during handling
++
+The `ProcessingContext` provides lifecycle hooks similar to `UnitOfWork`:
++
+* `runOnPreInvocation(Consumer<ProcessingContext>)` - Execute when context starts
+* `runOnAfterCommit(Consumer<ProcessingContext>)` - Execute after successful commit
+* `onError(ProcessingErrorHandler)` - Handle errors during processing
+====
+
+== Declarative interceptor registration
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+configurer.registerCommandHandlerInterceptor(
+    config -> new MyCommandHandlerInterceptor()
+);
+
+configurer.registerDispatchInterceptor(
+    config -> new MyCommandDispatchInterceptor()
+);
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Register handler interceptor for commands
+configurer.registerCommandHandlerInterceptor(
+    config -> new MyCommandHandlerInterceptor()
+);
+
+// Register dispatch interceptor for commands
+configurer.registerCommandDispatchInterceptor(
+    config -> new MyCommandDispatchInterceptor()
+);
+----
+====
+
+The following registration methods are available:
+
+**Handler Interceptors:**
+
+* `registerMessageHandlerInterceptor(ComponentBuilder)` - All message types
+* `registerCommandHandlerInterceptor(ComponentBuilder)` - Commands only
+* `registerEventHandlerInterceptor(ComponentBuilder)` - Events only
+* `registerQueryHandlerInterceptor(ComponentBuilder)` - Queries only
+
+**Dispatch Interceptors:**
+
+* `registerDispatchInterceptor(ComponentBuilder)` - All message types
+* `registerCommandDispatchInterceptor(ComponentBuilder)` - Commands only
+* `registerEventDispatchInterceptor(ComponentBuilder)` - Events only
+* `registerQueryDispatchInterceptor(ComponentBuilder)` - Queries only
+
+[source,java]
+----
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Register for multiple message types
+configurer.registerCommandHandlerInterceptor(config -> new LoggingInterceptor("Command"))
+          .registerEventHandlerInterceptor(config -> new LoggingInterceptor("Event"))
+          .registerQueryHandlerInterceptor(config -> new LoggingInterceptor("Query"));
+
+Configuration configuration = configurer.build();
+----
+
+== Spring Boot interceptor registration
+
+Spring Boot auto-configuration automatically discovers and registers interceptors declared as Spring beans.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+@Component
+public class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+    // Implementation
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+@Component
+public class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
+
+    @Override
+    public MessageStream<?> interceptOnHandle(CommandMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<CommandMessage> chain) {
+        logger.info("Handling command: {}", message.type().name());
+        return chain.proceed(message, context);
+    }
+}
+----
++
+[source,java]
+----
+@Component
+public class MyCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
+
+    @Override
+    public MessageStream<?> interceptOnDispatch(CommandMessage message,
+                                                @Nullable ProcessingContext context,
+                                                MessageDispatchInterceptorChain<CommandMessage> chain) {
+        logger.info("Dispatching command: {}", message.type().name());
+        return chain.proceed(message, context);
+    }
+}
+----
+====
+
+Spring Boot's `InterceptorAutoConfiguration` automatically:
+
+1. Discovers all beans implementing `MessageHandlerInterceptor<T>`
+2. Discovers all beans implementing `MessageDispatchInterceptor<T>`
+3. Registers them with the appropriate components based on their generic `Message` type
+4. Applies them to the corresponding message buses
+
+[IMPORTANT]
+====
+Be aware that interceptors are registered on all applicable components based on their generic type.
+That means, defining a `MessageDispatchInterceptor<Message<?>>` or `MessageHandlerInterceptor<Message<?>>` with for
+example `Message` as the generic type will register the interceptor for commands, events and queries.
+====
+
+[TIP]
+====
+You can control interceptor application order using Spring's `@Order` annotation:
+
+[source,java]
+----
+@Component
+@Order(1)
+public class FirstInterceptor implements MessageHandlerInterceptor<CommandMessage> {
+    // Applied first
+}
+
+@Component
+@Order(2)
+public class SecondInterceptor implements MessageHandlerInterceptor<CommandMessage> {
+    // Applied second
+}
+----
+====
+
+== Component-specific interceptor registration
+
+For advanced scenarios where interceptors should only apply to specific components, use the factory pattern:
+
+[source,java]
+----
+configurer.registerCommandHandlerInterceptor(
+    HandlerInterceptorFactory.of(
+        (config, componentType, componentName) -> {
+            // Only intercept OrderAggregate commands
+            if (componentType.equals(OrderAggregate.class)) {
+                return new OrderValidationInterceptor();
+            }
+            return null; // No interceptor for other components
+        }
+    )
+);
+----
+
+The factory receives:
+
+* `Configuration config` - Access to framework configuration
+* `Class<?> componentType` - The component class (for example, entity, projection)
+* `String componentName` - The component's registered name (may be null)
+
+Return `null` to skip interceptor registration for that component.
+
+== Annotation-based interceptors
+
+Although the `@MessageHandlerInterceptor` annotation is present in Axon Framework 5, using it to declare interceptor methods directly within handler classes is not yet supported. This feature will be fully functional in **Axon Framework 5.2.0**.
