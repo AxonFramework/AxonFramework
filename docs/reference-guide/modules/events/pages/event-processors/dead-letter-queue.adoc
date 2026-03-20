@@ -34,7 +34,7 @@ A typical example is handling events for the same entity in publishing order: if
 Therefore, a Dead-Letter Queue must enqueue both the failed event and all subsequent events in the same sequence.
 To that end, the supported dead-letter queue is a `SequencedDeadLetterQueue`.
 
-It tracks sequences by associating each event with a sequence identifier, which is determined by the xref:event-processors/streaming.adoc#sequential-processing[sequencing policy].
+It tracks sequences by associating each event with a sequence identifier, which is determined by the xref:event-processors/streaming.adoc#sequential_processing[sequencing policy].
 
 == Implementations
 
