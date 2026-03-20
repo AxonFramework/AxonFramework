@@ -573,11 +573,14 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
             return Decisions.doNotEnqueue();
         }
 
-        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
+
         if (letter.message().type().qualifiedName().equals(ERROR_EVENT_TYPE)) {
-            // Important and new entry:
+            // Always enqueue this:
             return Decisions.enqueue(cause);
         }
+
+        // All others retry max 10 times:
+        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
         if (retries < 10) {
             // Let's continue and increase retries:
             return Decisions.requeue(cause, l -> l.diagnostics().and("retries", retries + 1));
