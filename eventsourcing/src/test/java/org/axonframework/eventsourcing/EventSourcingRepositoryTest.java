@@ -18,12 +18,9 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
-import org.axonframework.eventsourcing.eventstore.GlobalIndexPosition;
-import org.axonframework.eventsourcing.eventstore.Position;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
-import org.axonframework.eventsourcing.snapshot.api.Snapshot;
-import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
+import org.axonframework.eventsourcing.handler.InitializingEntityEvolver;
+import org.axonframework.eventsourcing.handler.SourcingHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -31,46 +28,56 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.messaging.eventhandling.EventTestUtils.createEvent;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating the {@link EventSourcingRepository}.
  *
  * @author Allard Buijze
+ * @author John Hendrikx
  */
 @ExtendWith(MockitoExtension.class)
 class EventSourcingRepositoryTest {
 
     private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("aggregateId", "id");
 
     private EventStore eventStore = mock();
     private EventStoreTransaction eventStoreTransaction = mock();
-    private Snapshotter<String, String> snapshotter = mock();
+    private SourcingHandler<String, String> sourcingHandler = mock();
     private EventSourcedEntityFactory<String, String> factory;
 
     private EventSourcingRepository<String, String> testSubject;
+    private List<EventMessage> eventsToLoad = new ArrayList<>(List.of(createEvent(0), createEvent(1)));
 
     @BeforeEach
     void setUp() {
@@ -87,80 +94,44 @@ class EventSourcingRepositoryTest {
                 String.class,
                 eventStore,
                 (id, event, context) -> factory.create(id, event, context),
-                (identifier, ctx) -> TEST_CRITERIA,
                 (entity, event, context) -> entity + "-" + event.payload(),
-                snapshotter
+                sourcingHandler
         );
+
+        // Simulate event evolution:
+        when(sourcingHandler.source(eq("test"), any(), any())).thenAnswer(invocation -> {
+            if (invocation.getArgument(0) instanceof String id
+                && invocation.getArgument(1) instanceof InitializingEntityEvolver e
+                && invocation.getArgument(2) instanceof ProcessingContext pc
+            ) {
+                return CompletableFuture.supplyAsync(() -> {
+                    String result = null;
+
+                    for (EventMessage event : eventsToLoad) {
+                        @SuppressWarnings("unchecked")
+                        String evolved = (String) e.evolve(id, result, event, pc);
+
+                        result = evolved;
+                    }
+
+                    return result;
+                });
+            }
+
+            throw new AssertionError("Unexpected invocation: " + invocation);
+        });
     }
 
     @Test
     void loadEventSourcedEntity() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
+        ManagedEntity<String, String> result = testSubject.load("test", processingContext).join();
 
-        assertTrue(result.isDone());
-        assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
-        verify(eventStore, times(2)).transaction(processingContext);
+        assertEquals("test(0)-0-1", result.entity());
+
+        verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
-        verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-        verify(snapshotter).load("test");
-
-        assertEquals("test(0)-0-1", result.resultNow().entity());
-    }
-
-    @Test
-    void loadEventSourcedEntityFromSnapshot(@Captor ArgumentCaptor<EvolutionResult> evolutionResult) {
-        ProcessingContext processingContext = new StubProcessingContext();
-        EventMessage event1 = createEvent(0);
-        EventMessage event2 = createEvent(1);
-
-        doAnswer(m -> {
-            @SuppressWarnings("unchecked")
-            Consumer<Position> consumer = (Consumer<Position>)m.getArgument(1);
-
-            consumer.accept(new GlobalIndexPosition(10));
-
-            return MessageStream.fromStream(Stream.of(event1, event2));
-        })
-        .when(eventStoreTransaction)
-        .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-
-        when(snapshotter.load("test")).thenReturn(CompletableFuture.completedFuture(new Snapshot(
-            new GlobalIndexPosition(5),
-            "1",
-            "payload",
-            Instant.now(),
-            Map.of()
-        )));
-
-        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
-
-        assertTrue(result.isDone());
-        assertFalse(result.isCompletedExceptionally(), () -> result.exceptionNow().toString());
-        verify(eventStore, times(2)).transaction(processingContext);
-        verify(eventStoreTransaction).onAppend(any());
-        verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-        verify(snapshotter).load("test");
-        verify(snapshotter).onEventApplied("test", "payload-0", event1);
-        verify(snapshotter).onEventApplied("test", "payload-0-1", event2);
-        verify(snapshotter).onEvolutionCompleted(
-            eq("test"),
-            eq("payload-0-1"),
-            eq(new GlobalIndexPosition(10)),
-            evolutionResult.capture()
-        );
-
-        assertThat(evolutionResult.getValue().eventsApplied()).isEqualTo(2);
-        assertThat(evolutionResult.getValue().sourcingTime()).isLessThan(Duration.ofSeconds(1));
-        assertThat(evolutionResult.getValue().snapshotRequested()).isFalse();
-
-        assertEquals("payload-0-1", result.resultNow().entity());
     }
 
     @Test
@@ -191,28 +162,23 @@ class EventSourcingRepositoryTest {
     void assigningEntityToOtherProcessingContextInExactFormat() throws Exception {
         ProcessingContext processingContext = new StubProcessingContext();
         ProcessingContext processingContext2 = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
+        // Attaches entity of correct internal type:
         testSubject.attach(result, processingContext2);
 
         verify(eventStoreTransaction, times(2)).onAppend(any());
-        verify(snapshotter).load("test");
     }
 
     @Test
     void assigningEntityToOtherProcessingContextInOtherFormat() throws Exception {
         ProcessingContext processingContext = new StubProcessingContext();
         ProcessingContext processingContext2 = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
+        // Attaches entity of incorrect internal type (which will then be recreated):
         testSubject.attach(new ManagedEntity<>() {
             @Override
             public String identifier() {
@@ -232,64 +198,54 @@ class EventSourcingRepositoryTest {
         }, processingContext2);
 
         verify(eventStoreTransaction, times(2)).onAppend(any());
-        verify(snapshotter).load("test");
     }
 
     @Test
     void updateLoadedEventSourcedEntity() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
+        ManagedEntity<String, String> result = testSubject.load("test", processingContext).join();
 
-        assertTrue(result.isDone());
-        assertFalse(result.isCompletedExceptionally());
-        verify(eventStore, times(2)).transaction(processingContext);
+        assertEquals("test(0)-0-1", result.entity());
+
+        verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
-        verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-        verify(snapshotter).load("test");
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Consumer<EventMessage>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
-        assertEquals("test(0)-0-1", result.resultNow().entity());
 
         callback.getValue().accept(new GenericEventMessage(new MessageType("event"), "live"));
-        assertEquals("test(0)-0-1-live", result.resultNow().entity());
+        assertEquals("test(0)-0-1-live", result.entity());
     }
 
     @Test
     void loadOrCreateShouldLoadWhenEventsAreReturned() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0), createEvent(1))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
         CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.load("test", processingContext);
 
-        assertEquals("test(0)-0-1", result.resultNow().entity());
+        assertEquals("test(0)-0-1", result.join().entity());
     }
 
     @Test
     void loadOrCreateThrowsExceptionWhenEventStreamIsEmptyAndNullEntityIsCreated() {
         ProcessingContext processingContext = new StubProcessingContext();
+
+        eventsToLoad = List.of();
+
         factory = (id, event, ctx) -> {
             if (event != null) {
                 return id + "(" + event.payload() + ")";
             }
             return null; // Simulating a null entity creation
         };
-        doReturn(MessageStream.fromStream(Stream.of()))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> result = testSubject.loadOrCreate("test", processingContext);
-        assertTrue(result.isCompletedExceptionally());
-        assertInstanceOf(EntityMissingAfterLoadOrCreateException.class, result.exceptionNow());
+        assertThatThrownBy(() -> testSubject.loadOrCreate("test", processingContext).join())
+            .isInstanceOf(CompletionException.class)
+            .cause()
+            .isInstanceOf(EntityMissingAfterLoadOrCreateException.class);
     }
 
     @Test
@@ -298,56 +254,43 @@ class EventSourcingRepositoryTest {
         factory = (id, event, ctx) -> {
             return null; // Simulating a null entity creation
         };
-        doReturn(MessageStream.fromStream(Stream.of(createEvent(0))))
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
-
-        assertTrue(result.isCompletedExceptionally());
-        assertInstanceOf(EntityMissingAfterFirstEventException.class, result.exceptionNow());
+        assertThatThrownBy(() -> testSubject.load("test", processingContext).join())
+            .isInstanceOf(CompletionException.class)
+            .cause()
+            .isInstanceOf(EntityMissingAfterFirstEventException.class);
     }
 
     @Test
     void loadShouldReturnNullEntityWhenNoEventsAreReturned() {
         StubProcessingContext processingContext = new StubProcessingContext();
+
+        when(sourcingHandler.source(eq("test"), any(), eq(processingContext))).thenReturn(CompletableFuture.completedFuture(null));
+
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> loaded =
-                testSubject.load("test", processingContext);
+        ManagedEntity<String, String> loaded = testSubject.load("test", processingContext).join();
 
-        assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally());
-        verify(eventStore, times(2)).transaction(processingContext);
+        assertNull(loaded.entity());
+
+        verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
-        verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-        verify(snapshotter).load("test");
-
-        assertNull(loaded.resultNow().entity());
     }
 
     @Test
     void loadOrCreateShouldReturnNoEventMessageConstructorEntityWhenNoEventsAreReturned() {
         ProcessingContext processingContext = new StubProcessingContext();
-        doReturn(MessageStream.empty())
-                .when(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
 
-        CompletableFuture<ManagedEntity<String, String>> loaded =
-                testSubject.loadOrCreate("test", processingContext);
+        eventsToLoad = List.of();
 
-        assertTrue(loaded.isDone());
-        assertFalse(loaded.isCompletedExceptionally());
-        verify(eventStore, times(2)).transaction(processingContext);
+        ManagedEntity<String, String> loaded = testSubject.loadOrCreate("test", processingContext).join();
+
+        assertEquals("test()", loaded.entity());
+
+        verify(eventStore).transaction(processingContext);
         verify(eventStoreTransaction).onAppend(any());
-        verify(eventStoreTransaction)
-                .source(argThat(EventSourcingRepositoryTest::conditionPredicate), any());
-        verify(snapshotter).load("test");
-
-        assertEquals("test()", loaded.resultNow().entity());
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {

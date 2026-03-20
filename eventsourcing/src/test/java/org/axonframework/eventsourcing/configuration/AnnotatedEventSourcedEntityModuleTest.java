@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.StubLifecycleRegistry;
@@ -29,12 +27,19 @@ import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.handler.SourcingHandler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.repository.Repository;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -45,7 +50,10 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test class validating the {@link AnnotatedEventSourcedEntityModule}.
@@ -54,6 +62,7 @@ import static org.mockito.Mockito.*;
  * @author Steven van Beelen
  * @author Simon Zambrovski
  */
+@ExtendWith(MockitoExtension.class)
 class AnnotatedEventSourcedEntityModuleTest {
 
     private StubLifecycleRegistry lifecycleRegistry;
@@ -112,7 +121,9 @@ class AnnotatedEventSourcedEntityModuleTest {
     }
 
     @Test
-    void customCriteriaResolverIsPresentOnResultingEventSourcingRepository() {
+    void customCriteriaResolverIsPresentOnResultingEventSourcingRepository(
+        @Captor ArgumentCaptor<SourcingHandler<CourseId, CustomCriteriaResolverCourse>> sourcingHandlerCaptor
+    ) {
         componentRegistry.registerModule(
                 EventSourcedEntityModule.autodetected(CourseId.class, CustomCriteriaResolverCourse.class)
         );
@@ -128,6 +139,11 @@ class AnnotatedEventSourcedEntityModuleTest {
         assertThat(result).isNotNull()
                           .isInstanceOf(EventSourcingRepository.class);
         result.describeTo(componentDescriptor);
+
+        verify(componentDescriptor).describeProperty(eq("sourcingHandler"), sourcingHandlerCaptor.capture());
+
+        sourcingHandlerCaptor.getValue().describeTo(componentDescriptor);
+
         verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
     }
 

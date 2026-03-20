@@ -17,10 +17,12 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
+import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
+import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.core.MessageStream;
@@ -36,13 +38,20 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.repository.Repository;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test class validating the {@link SimpleEventSourcedEntityModule}.
@@ -55,12 +64,12 @@ class SimpleEventSourcedEntityModuleTest {
     private CriteriaResolver<CourseId> testCriteriaResolver;
     private EntityMetamodel<Course> testEntityModel;
     private EntityIdResolver<CourseId> testEntityIdResolver;
-    private Snapshotter<CourseId, Course> testSnapshotter;
+    private SnapshotPolicy testSnapshotPolicy;
     private AtomicBoolean constructedEntityModel = new AtomicBoolean(false);
     private AtomicBoolean constructedEntityFactory = new AtomicBoolean(false);
     private AtomicBoolean constructedCriteriaResolver = new AtomicBoolean(false);
     private AtomicBoolean constructedEntityIdResolver = new AtomicBoolean(false);
-    private AtomicBoolean constructedSnapshotter = new AtomicBoolean(false);
+    private AtomicBoolean constructedSnapshotPolicy = new AtomicBoolean(false);
 
     private EventSourcedEntityModule<CourseId, Course> testSubject;
 
@@ -77,7 +86,7 @@ class SimpleEventSourcedEntityModuleTest {
                                          .creationalCommandHandler(new QualifiedName("creational"),
                                                                    (command, context) -> MessageStream.empty().cast())
                                          .build();
-        testSnapshotter = Snapshotter.noSnapshotter();
+        testSnapshotPolicy = SnapshotPolicy.afterEvents(5);
 
         testSubject = EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                               .messagingModel((c, b) -> {
@@ -96,9 +105,9 @@ class SimpleEventSourcedEntityModuleTest {
                                                   constructedEntityIdResolver.set(true);
                                                   return testEntityIdResolver;
                                               })
-                                              .snapshotter(c -> {
-                                                  constructedSnapshotter.set(true);
-                                                  return testSnapshotter;
+                                              .snapshotPolicy(c -> {
+                                                  constructedSnapshotPolicy.set(true);
+                                                  return testSnapshotPolicy;
                                               })
                                               .build();
     }
@@ -154,13 +163,13 @@ class SimpleEventSourcedEntityModuleTest {
     }
 
     @Test
-    void snapshotterThrowsNullPointerExceptionForNullSnapshotter() {
+    void snapshotPolicyThrowsNullPointerExceptionForNullSnapshotPolicy() {
         assertThrows(NullPointerException.class,
             () -> EventSourcedEntityModule.declarative(CourseId.class, Course.class)
                                           .messagingModel((c, b) -> testEntityModel)
                                           .entityFactory(c -> testEntityFactory)
                                           .criteriaResolver(c -> testCriteriaResolver)
-                                          .snapshotter(null)
+                                          .snapshotPolicy(null)
         );
     }
 
@@ -174,8 +183,9 @@ class SimpleEventSourcedEntityModuleTest {
     @Test
     void registersAnEventSourcingRepositoryWithTheStateManager() {
         AxonConfiguration configuration = EventSourcingConfigurer.create()
-                                                                 .componentRegistry(cr -> cr.registerModule(testSubject))
-                                                                 .start();
+            .componentRegistry(cr -> cr.registerComponent(SnapshotStore.class, c -> mock(SnapshotStore.class)))
+            .componentRegistry(cr -> cr.registerModule(testSubject))
+            .start();
         Repository<CourseId, Course> result = configuration.getComponent(StateManager.class)
                                                            .repository(Course.class, CourseId.class);
 
@@ -184,7 +194,21 @@ class SimpleEventSourcedEntityModuleTest {
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEntityModel.get());
         assertTrue(constructedEntityIdResolver.get());
-        assertTrue(constructedSnapshotter.get());
+        assertTrue(constructedSnapshotPolicy.get());
+    }
+
+    @Test
+    void shouldRejectIncompleteConfigurationWhenConfiguringSnapshotting() {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create()
+            .componentRegistry(cr -> cr.registerModule(testSubject));
+
+        assertThatThrownBy(() -> configurer.start())
+            .isInstanceOf(LifecycleHandlerInvocationException.class)
+            .cause()
+            .isInstanceOf(ExecutionException.class)
+            .cause()
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("A SnapshotStore must be configured to use snapshotting.");
     }
 
     @Test
@@ -201,6 +225,7 @@ class SimpleEventSourcedEntityModuleTest {
                                .componentRegistry(cr -> cr.registerComponent(SequencingPolicy.class,
                                                                              MessagingConfigurationDefaults.COMMAND_SEQUENCING_POLICY,
                                                                              c -> NoOpSequencingPolicy.INSTANCE))
+                               .componentRegistry(cr -> cr.registerComponent(SnapshotStore.class, c -> mock(SnapshotStore.class)))
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();
