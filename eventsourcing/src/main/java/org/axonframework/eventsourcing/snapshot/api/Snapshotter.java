@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.snapshot.api;
 
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.eventstore.Position;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -39,10 +40,11 @@ public interface Snapshotter<I, E> {
      * or the snapshot cannot be used. It may complete exceptionally if snapshot retrieval fails.
      *
      * @param identifier the identifier of the entity, cannot be {@code null}
+     * @param context the current {@link ProcessingContext}, cannot be {@code null}
      * @return a {@link CompletableFuture} that completes with the entity's snapshot or {@code null}
      * @throws NullPointerException if {@code identifier} is {@code null}
      */
-    CompletableFuture<Snapshot> load(I identifier);
+    CompletableFuture<Snapshot> load(I identifier, ProcessingContext context);
 
     /**
      * Stores the given entity as a snapshot asynchronously.
@@ -50,7 +52,8 @@ public interface Snapshotter<I, E> {
      * @param identifier the identifier of the entity, cannot be {@code null}
      * @param entity the entity state, cannot be {@code null}
      * @param position the position in the event stream for this entity state, cannot be {@code null}
+     * @param context the current {@link ProcessingContext}, cannot be {@code null}
      * @throws NullPointerException if any argument is {@code null}
      */
-    void store(I identifier, E entity, Position position);
+    void store(I identifier, E entity, Position position, ProcessingContext context);
 }
