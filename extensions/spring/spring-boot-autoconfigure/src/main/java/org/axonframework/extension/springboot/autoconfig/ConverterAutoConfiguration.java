@@ -31,15 +31,12 @@ import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import tools.jackson.databind.ObjectMapper;
@@ -48,7 +45,6 @@ import tools.jackson.dataformat.cbor.CBORMapper;
 import java.util.Map;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
@@ -62,10 +58,7 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @EnableConfigurationProperties(ConverterProperties.class)
-public class ConverterAutoConfiguration implements ApplicationContextAware, BeanClassLoaderAware {
-
-    private ApplicationContext applicationContext;
-    private ClassLoader classLoader;
+public class ConverterAutoConfiguration {
 
     /**
      * Bean creation method constructing the "general" {@link Converter} to be used by Axon Framework.
@@ -74,12 +67,13 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      *
      * @param converterProperties The properties dictating the type of {@link Converter} this bean creation method will
      *                            construct.
+     * @param applicationContext  The application context used to look up required beans for converter construction.
      * @return The "general" {@link Converter} to be used by Axon Framework.
      */
     @Bean
     @Primary
     @ConditionalOnMissingBean
-    public Converter converter(ConverterProperties converterProperties) {
+    public Converter converter(ConverterProperties converterProperties, ApplicationContext applicationContext) {
         ConverterProperties.ConverterType generalConverterType = converterProperties.getGeneral();
         if (ConverterProperties.ConverterType.AVRO == generalConverterType) {
             throw new AxonConfigurationException(format(
@@ -88,7 +82,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                     generalConverterType.name()
             ));
         }
-        return buildConverter(generalConverterType);
+        return buildConverter(generalConverterType, applicationContext);
     }
 
     /**
@@ -99,17 +93,20 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      *                            {@link ConverterProperties#getGeneral()} type.
      * @param converterProperties The properties dictating the type of {@link MessageConverter} this bean creation
      *                            method will construct.
+     * @param applicationContext  The application context used to look up required beans for converter construction.
      * @return The {@link MessageConverter} to be used by Axon Framework.
      */
     @Bean
     @ConditionalOnMissingBean
-    public MessageConverter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {
+    public MessageConverter messageConverter(Converter generalConverter,
+                                             ConverterProperties converterProperties,
+                                             ApplicationContext applicationContext) {
         ConverterProperties.ConverterType messagesConverterType = converterProperties.getMessages();
         if (ConverterProperties.ConverterType.DEFAULT == messagesConverterType
                 || converterProperties.getGeneral() == messagesConverterType) {
             return new DelegatingMessageConverter(generalConverter);
         } else {
-            return new DelegatingMessageConverter(buildConverter(messagesConverterType));
+            return new DelegatingMessageConverter(buildConverter(messagesConverterType, applicationContext));
         }
     }
 
@@ -124,13 +121,15 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
      *                            {@link ConverterProperties#getMessages()} type.
      * @param converterProperties The properties dictating the type of {@link Converter} this bean creation method will
      *                            construct.
+     * @param applicationContext  The application context used to look up required beans for converter construction.
      * @return The {@link EventConverter} to be used by Axon Framework.
      */
     @Bean
     @ConditionalOnMissingBean
     public EventConverter eventConverter(Converter generalConverter,
                                          MessageConverter messageConverter,
-                                         ConverterProperties converterProperties) {
+                                         ConverterProperties converterProperties,
+                                         ApplicationContext applicationContext) {
         ConverterProperties.ConverterType eventsConverterType = converterProperties.getEvents();
         if (ConverterProperties.ConverterType.DEFAULT == eventsConverterType
                 || converterProperties.getMessages() == eventsConverterType) {
@@ -138,10 +137,12 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         } else if (converterProperties.getGeneral() == eventsConverterType) {
             return new DelegatingEventConverter(generalConverter);
         }
-        return new DelegatingEventConverter(buildConverter(eventsConverterType));
+        return new DelegatingEventConverter(buildConverter(eventsConverterType, applicationContext));
     }
 
-    private Converter buildConverter(ConverterProperties.ConverterType converterType) {
+    private static Converter buildConverter(ConverterProperties.ConverterType converterType,
+                                              ApplicationContext applicationContext) {
+        ClassLoader classLoader = applicationContext.getClassLoader();
         switch (converterType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans =
@@ -206,29 +207,5 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                                            .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
                 return new JacksonConverter(objectMapper, new ChainingContentTypeConverter(classLoader));
         }
-    }
-
-    /**
-     * Sets the application context used to validate for the existence of other required properties to construct the
-     * specified {@link Converter Converters}.
-     *
-     * @param applicationContext The application context used to validate for the existence of other required properties
-     *                           to construct the specified {@link Converter Converters}.
-     */
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = requireNonNull(applicationContext, "The ApplicationContext cannot be null.");
-    }
-
-    /**
-     * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
-     * {@link ContentTypeConverter ContentTypeConverters}.
-     *
-     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
-     *                    {@link ContentTypeConverter ContentTypeConverters}.
-     */
-    @Override
-    public void setBeanClassLoader(ClassLoader classLoader) {
-        this.classLoader = requireNonNull(classLoader, "The ClassLoader cannot be null.");
     }
 }
