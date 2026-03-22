@@ -32,7 +32,6 @@ import org.axonframework.extension.springboot.TagsConfigurationProperties;
 import org.axonframework.extension.springboot.service.connection.AxonServerConnectionDetails;
 import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
-import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -40,7 +39,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.lang.Nullable;
 
@@ -62,7 +60,7 @@ import java.util.List;
         AxonServerConfiguration.class,
         TagsConfigurationProperties.class
 })
-public class AxonServerAutoConfiguration implements ApplicationContextAware {
+public class AxonServerAutoConfiguration {
 
     /**
      * Constant specifying the order used to
@@ -71,8 +69,6 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * autoconfiguration.
      */
     public static final int AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER = -100;
-
-    private ApplicationContext applicationContext;
 
     /**
      * Bean creation method constructing a {@link ConfigurationEnhancer} that disables Axon Server that is only
@@ -113,7 +109,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
-    public ConfigurationEnhancer axonServerConfigurationEnhancer() {
+    public ConfigurationEnhancer axonServerConfigurationEnhancer(ApplicationContext applicationContext) {
         return registry -> registry.registerDecorator(
                                            AxonServerConfiguration.class,
                                            AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER,
@@ -219,8 +215,4 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return registry -> registry.registerDecorator(topologyRegistrationDecorator);
     }
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
 }
