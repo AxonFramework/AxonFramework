@@ -36,10 +36,13 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -56,10 +59,7 @@ import java.util.List;
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @ConditionalOnClass(AxonServerConfiguration.class)
-@EnableConfigurationProperties(value = {
-        AxonServerConfiguration.class,
-        TagsConfigurationProperties.class
-})
+@EnableConfigurationProperties(TagsConfigurationProperties.class)
 public class AxonServerAutoConfiguration {
 
     /**
@@ -69,6 +69,22 @@ public class AxonServerAutoConfiguration {
      * autoconfiguration.
      */
     public static final int AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER = -100;
+
+    /**
+     * Creates the {@link AxonServerConfiguration} by manually binding properties from the {@link Environment}.
+     * <p>
+     * This avoids using {@link EnableConfigurationProperties} for {@code AxonServerConfiguration},
+     * which in Spring Boot 4 causes a circular dependency between {@code BoundConfigurationProperties}
+     * and the configuration properties bean during servlet web server auto-configuration.
+     *
+     * @param environment The Spring {@link Environment} to bind properties from.
+     * @return The {@link AxonServerConfiguration} bound from {@code axon.axonserver.*} properties.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AxonServerConfiguration axonServerConfiguration(Environment environment) {
+        return Binder.get(environment).bindOrCreate("axon.axonserver", AxonServerConfiguration.class);
+    }
 
     /**
      * Bean creation method constructing a {@link ConfigurationEnhancer} that disables Axon Server that is only
