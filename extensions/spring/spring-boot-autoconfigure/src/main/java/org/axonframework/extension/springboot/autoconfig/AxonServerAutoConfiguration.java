@@ -80,7 +80,7 @@ public class AxonServerAutoConfiguration {
      * @param environment The Spring {@link Environment} to bind properties from.
      * @return The {@link AxonServerConfiguration} bound from {@code axon.axonserver.*} properties.
      */
-    @Bean
+    @Bean("axon.axonserver-" + "org.axonframework.axonserver.connector.AxonServerConfiguration")
     @ConditionalOnMissingBean
     public AxonServerConfiguration axonServerConfiguration(Environment environment) {
         return Binder.get(environment).bindOrCreate("axon.axonserver", AxonServerConfiguration.class);
