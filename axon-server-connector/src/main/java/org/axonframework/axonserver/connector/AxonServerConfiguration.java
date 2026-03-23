@@ -27,12 +27,16 @@ import java.util.Map;
 
 /**
  * Configuration class provided configurable fields and defaults for anything Axon Server related.
+ * <p>
+ * Property binding from {@code axon.axonserver.*} is handled manually via
+ * {@link org.springframework.boot.context.properties.bind.Binder} in the autoconfiguration,
+ * rather than through {@code @ConfigurationProperties}, to avoid circular dependencies
+ * with {@code BoundConfigurationProperties} in Spring Boot 4.
  *
  * @author Marc Gathier
  * @author Steven van Beelen
  * @since 4.0
  */
-@ConfigurationProperties(prefix = "axon.axonserver")
 public class AxonServerConfiguration {
 
     private static final String DEFAULT_SERVERS = "localhost";
