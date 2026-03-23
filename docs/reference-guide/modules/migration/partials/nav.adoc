@@ -15,4 +15,5 @@
 *** xref:migration:paths/test-fixtures.adoc[]
 *** xref:migration:paths/serializers.adoc[]
 *** xref:migration:paths/interceptors.adoc[]
+*** xref:migration:paths/configuration.adoc[]
 *** xref:migration:paths/sequencing-policies.adoc[]

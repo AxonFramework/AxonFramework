@@ -1,0 +1,340 @@
+= Configuration Migration
+:navtitle: Configuration Migration
+
+Axon Framework 5 restructures the configuration system, splitting the monolithic `Configurer` into focused configurers and replacing the `ConfigurerModule` with the `ConfigurationEnhancer`.
+
+This path covers the migration of configuration-related code from Axon Framework 4 to Axon Framework 5.
+
+[NOTE]
+====
+The most significant changes are:
+
+* **Configurer split**: The single `Configurer` has been replaced by `MessagingConfigurer`, `ModellingConfigurer`, and `EventSourcingConfigurer`
+* **ConfigurerModule removal**: `ConfigurerModule` has been replaced by `ConfigurationEnhancer`, which operates on a `ComponentRegistry`
+* **Component registration**: Many `Configurer` registration methods have moved to the `ComponentRegistry`
+* **Lifecycle registration**: Lifecycle handlers are now registered through the `LifecycleRegistry`
+====
+
+== Configurer replacement
+
+The `Configurer` and `DefaultConfigurer` from Axon Framework 4 have been replaced by three focused configurers in Axon Framework 5, each corresponding to a layer of the framework.
+Choose the one that matches the highest-level feature your application uses:
+
+* `MessagingConfigurer` — for applications that only require messaging (commands, events, queries)
+* `ModellingConfigurer` — adds entity (formerly aggregate) and repository support on top of messaging
+* `EventSourcingConfigurer` — adds event sourcing and event store support on top of modelling
+
+These configurers form a delegation chain: `EventSourcingConfigurer` wraps `ModellingConfigurer`, which wraps `MessagingConfigurer`.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.Configuration;
+
+Configurer configurer = DefaultConfigurer.defaultConfiguration();
+// Register components, aggregates, event handlers...
+
+Configuration configuration = configurer.buildConfiguration();
+configuration.start();
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.common.configuration.AxonConfiguration;
+
+EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+// Register components, entities, event handlers...
+
+AxonConfiguration configuration = configurer.build();
+configuration.start();
+----
++
+If your application does not use event sourcing, use the configurer that matches your needs:
++
+[source,java]
+----
+// Messaging only
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Messaging + entity modelling (no event sourcing)
+ModellingConfigurer configurer = ModellingConfigurer.create();
+----
+====
+
+Each configurer provides escape-hatch methods to access the underlying layer when needed:
+
+[source,java]
+----
+EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+// Access the modelling layer
+configurer.modelling(mc -> mc.registerEntity(myEntityModule));
+
+// Access the messaging layer
+configurer.messaging(mc -> mc.registerCommandBus(config -> myCommandBus));
+----
+
+== ConfigurerModule to ConfigurationEnhancer
+
+The `ConfigurerModule` interface from Axon Framework 4 allowed modules to hook into the configuration process.
+In Axon Framework 5, this concept has been replaced by the `ConfigurationEnhancer`, which operates directly on the `ComponentRegistry`.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.Configurer;
+
+public class MyConfigurerModule implements ConfigurerModule {
+
+    @Override
+    public void configureModule(Configurer configurer) {
+        configurer.registerComponent(MyService.class, config -> new MyService());
+        configurer.eventProcessing(ep -> ep.registerDefaultHandlerInterceptor(
+            (config, name) -> new MyInterceptor()
+        ));
+    }
+}
+----
++
+Registered via Spring auto-discovery or manually through `configurer.registerModule(new MyConfigurerModule())`.
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.axonframework.common.configuration.ComponentRegistry;
+
+public class MyConfigurationEnhancer implements ConfigurationEnhancer {
+
+    @Override
+    public void enhance(@Nonnull ComponentRegistry registry) {
+        registry.registerComponent(MyService.class, config -> new MyService());
+    }
+
+    @Override
+    public int order() {
+        return 0; // Controls execution order; lower values run first
+    }
+}
+----
++
+Registered programmatically or discovered automatically via `ServiceLoader`:
++
+[source,java]
+----
+// Programmatic registration
+configurer.componentRegistry(cr -> cr.registerEnhancer(new MyConfigurationEnhancer()));
+
+// ServiceLoader: place in META-INF/services/org.axonframework.common.configuration.ConfigurationEnhancer
+----
+====
+
+Key differences:
+
+* **Operates on `ComponentRegistry`** instead of `Configurer`, providing direct component registration
+* **Supports ordering** via `order()` to control the sequence of enhancer execution
+* **ServiceLoader support** enables automatic discovery without explicit registration
+* **Enhancer scanning** can be selectively disabled:
+
+[source,java]
+----
+configurer.componentRegistry(cr -> {
+    // Disable all automatic enhancer scanning
+    cr.disableEnhancerScanning();
+    // Or disable a specific enhancer
+    cr.disableEnhancer(UnwantedEnhancer.class);
+});
+----
+
+== Component registration via ComponentRegistry
+
+In Axon Framework 4, components were registered through dedicated methods on the `Configurer`.
+In Axon Framework 5, many of these methods have moved to the `ComponentRegistry`, accessible from any configurer.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+// Register a custom component
+configurer.registerComponent(MyService.class, config -> new MyService());
+
+// Register a command bus
+configurer.configureCommandBus(config -> SimpleCommandBus.builder().build());
+
+// Register with a decorator
+configurer.onInitialize(config -> {
+    // Post-initialization logic
+});
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Register a custom component via ComponentRegistry
+configurer.componentRegistry(cr ->
+    cr.registerComponent(MyService.class, config -> new MyService())
+);
+
+// Register a command bus (dedicated method on MessagingConfigurer)
+configurer.registerCommandBus(config -> SimpleCommandBus.builder().build());
+
+// Register a component with a decorator
+configurer.componentRegistry(cr ->
+    cr.registerDecorator(MyService.class, 0, (config, original) -> new DecoratedService(original))
+);
+----
+====
+
+The `ComponentRegistry` also supports conditional registration, which prevents overwriting previously registered components:
+
+[source,java]
+----
+configurer.componentRegistry(cr -> {
+    // Only registers if no MyService is already present
+    cr.registerIfNotPresent(MyService.class, config -> new DefaultMyService());
+});
+----
+
+For richer component definitions with lifecycle hooks, use `ComponentDefinition`:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ComponentDefinition;
+
+configurer.componentRegistry(cr ->
+    cr.registerComponent(
+        ComponentDefinition.ofType(MyService.class)
+                           .withBuilder(config -> new MyService())
+                           .onStart(0, MyService::start)
+                           .onShutdown(0, MyService::shutdown)
+    )
+);
+----
+
+== Lifecycle handler registration
+
+In Axon Framework 4, lifecycle handlers were registered directly on the `Configurer`.
+In Axon Framework 5, these have moved to the `LifecycleRegistry`, accessible from any configurer via the `lifecycleRegistry` method.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+configurer.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+    // Startup logic
+    return CompletableFuture.completedFuture(null);
+});
+
+configurer.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+    // Shutdown logic
+    return CompletableFuture.completedFuture(null);
+});
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+configurer.lifecycleRegistry(lr -> {
+    lr.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+        // Startup logic
+        return CompletableFuture.completedFuture(null);
+    });
+
+    lr.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+        // Shutdown logic
+        return CompletableFuture.completedFuture(null);
+    });
+});
+----
+====
+
+The `LifecycleRegistry` provides several convenience overloads:
+
+[source,java]
+----
+configurer.lifecycleRegistry(lr -> {
+    // Simple runnable (phase defaults to 0)
+    lr.onStart(() -> System.out.println("Started"));
+
+    // With explicit phase
+    lr.onStart(Phase.EXTERNAL_CONNECTIONS, () -> connectToExternalService());
+
+    // Async start handler
+    lr.onStart(Phase.EXTERNAL_CONNECTIONS, () -> CompletableFuture.runAsync(() -> warmUpCache()));
+
+    // With Configuration access
+    lr.onShutdown(0, config -> config.getComponent(MyService.class).close());
+
+    // Configure the phase timeout (default is 5 seconds)
+    lr.registerLifecyclePhaseTimeout(10, TimeUnit.SECONDS);
+});
+----
+
+Start handlers execute in ascending phase order; shutdown handlers execute in descending phase order.
+
+== Spring Boot configuration
+
+When using Spring Boot, the auto-configuration automatically sets up the appropriate configurer.
+Custom `ConfigurationEnhancer` beans are automatically discovered and applied.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+@Configuration
+public class MyAxonConfig {
+
+    @Bean
+    public ConfigurerModule myModule() {
+        return configurer -> {
+            configurer.registerComponent(MyService.class, config -> new MyService());
+        };
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+@Configuration
+public class MyAxonConfig {
+
+    @Bean
+    public ConfigurationEnhancer myEnhancer() {
+        return registry -> {
+            registry.registerComponent(MyService.class, config -> new MyService());
+        };
+    }
+}
+----
+====
