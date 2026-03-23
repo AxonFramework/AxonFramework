@@ -58,10 +58,11 @@ The Pooled Streaming Event Processor has several additional components that you 
 For other features that are configurable, we refer to their respective sections for more details.
 This section covers how to configure the basics of a Pooled Streaming Event Processor.
 
-To configure a Pooled Streaming Event Processor you have roughly two approaches:
+To configure a Pooled Streaming Event Processor you have roughly three approaches:
 
 1. <<declarative_config_pooled,Declarative configuration>>
 2. <<autodetected_config_spring_properties_pooled,Autodetected configuration>>, like Spring
+3. <<event_processor_definition_based_config,`EventProcessorDefinition` configuration>>, like Spring
 
 Both solutions have examples drafted below, showing how to configure the "example-processor" with a specific event source.
 
@@ -184,8 +185,8 @@ axon.eventhandling.processors[example.processor].mode=pooled-streaming
 axon.eventhandling.processors[example.processor].source=eventStore
 ----
 
-[#bean_based_config_pooled]
-=== Bean-based configuration - Spring Boot with EventProcessorDefinition
+[#event_processor_definition_based_config]
+=== Autodetected configuration - `EventProcessorDefinition` based configuration
 
 For programmatic, type-safe configuration of event processors, Spring Boot users can define `EventProcessorDefinition` beans.
 This approach provides several advantages:
@@ -194,6 +195,45 @@ This approach provides several advantages:
 * Fine-grained handler assignment control
 * Full access to processor configuration options
 * Better IDE support with autocompletion
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreaming("example-processor")
+                                       .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(
+                                               "orders"
+                                       ))
+                                       .customized(config -> config
+                                               .initialSegmentCount(4)
+                                               .batchSize(100)
+                                               .claimExtensionThreshold(5000)
+                                               .tokenClaimInterval(5000)
+                                       );
+    }
+}
+----
+
+The `assigningHandlers` method uses the `EventHandlerSelector` to receive an `EventHandlerDescriptor` that provides access to:
+
+* `beanName()` - The Spring bean name
+* `beanType()` - The event handler class
+* `beanDefinition()` - The Spring bean definition
+* `component()` - The component builder
+
+This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
+
+In the example above, we use the convenience `EventHandlerSelector#matchesNamespaceOnType` method that assigns handlers that are annotated with `@Namespace("orders")` to an `PooledStreamingEventProcessor` with the name `"example-processor"`.
+Event Handlers can describe their `@Namespace` on several levels, as described xref:ROOT:spring-boot-integration.adoc#namespace-based-handler-selection[here].
+When the Event Processor name and namespace are identical, you can use the `EventProcessorDefinition.pooledStreamingMatching()` to skip the `assigningHandlers` method automatically:
 
 [source,java]
 ----
@@ -206,35 +246,34 @@ public class EventProcessorConfig {
 
     @Bean
     public EventProcessorDefinition exampleProcessorDefinition() {
-        return EventProcessorDefinition.pooledStreaming("example-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .equals("com.example.orders"))
-                .customized(config -> config
-                    .initialSegmentCount(4)
-                    .batchSize(100)
-                    .claimExtensionThreshold(5000)
-                    .tokenClaimInterval(5000));
+        return EventProcessorDefinition.pooledStreamingMatching("orders")
+                                       .customized(config -> config
+                                               .initialSegmentCount(4)
+                                               .batchSize(100)
+                                               .claimExtensionThreshold(5000)
+                                               .tokenClaimInterval(5000)
+                                       );
     }
 }
 ----
-
-The `assigningHandlers` method receives an `EventHandlerDescriptor` that provides access to:
-
-* `beanName()` - The Spring bean name
-* `beanType()` - The event handler class
-* `beanDefinition()` - The Spring bean definition
-* `component()` - The component builder
-
-This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
 Use `notCustomized()` instead of `customized()` when you don't need custom processor settings but still want explicit handler assignment:
 
 [source,java]
 ----
-EventProcessorDefinition.pooledStreaming("example-processor")
-        .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
-        .notCustomized();
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.pooledStreamingMatching("orders")
+                                       .notCustomized();
+    }
+}
 ----
 
 [IMPORTANT]
@@ -422,6 +461,7 @@ public class EventProcessorConfig {
     }
 }
 ----
+--
 ====
 
 [NOTE]
@@ -1043,6 +1083,42 @@ public class AxonConfig {
 }
 ----
 --
+
+Autodetected Sequencing Policy configuration - Spring Boot::
++
+--
+
+[source,java]
+----
+// TODO #4053 - Introduce Event Processor Specification bean example.
+----
+--
+
+Autodetected Sequencing Policy configuration - Spring Boot properties::
++
+--
+When we want to configure the `SequencingPolicy` in a properties file, we should provide a bean name:
+
+[source,properties]
+----
+axon.eventhandling.processors.example-processor.mode=tracking
+axon.eventhandling.processors.example-processor.sequencing-policy=customSequencingPolicy
+----
+
+This approach does require the bean name to be present in the Application Context of course:
+
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+    // omitting other configuration methods...
+    @Bean
+    public SequencingPolicy<EventMessage<?>> customSequencingPolicy() {
+        return new FullConcurrencyPolicy();
+    }
+}
+----
+--
 ====
 
 If the available policies do not suffice, you can define your own.
@@ -1615,14 +1691,6 @@ public class AxonConfig {
 [#_multiple_event_sources]
 == Multiple event sources
 
-[WARNING]
-.Multiple event sources not available in Axon Framework 5.0
-====
-The `MultiStreamableEventSource` feature is not yet available in Axon Framework 5.0.
-It will be reintroduced in Axon Framework 5.2.0.
-The documentation below describes the multiple event sources concepts for reference and future use.
-====
-
 You can configure a Streaming Event Processor to use multiple sources to process events from.
 When required to process events from several sources, we can configure a specific type of `StreamableEventSource`: the `MultiStreamableEventSource`.
 The `MultiStreamableEventSource` is useful when a streaming processor should act on the events from:
@@ -1635,12 +1703,6 @@ Having multiple sources means that there might be a choice of multiple events th
 Therefore, you can specify a `Comparator` to choose between them.
 The default implementation chooses the event with the oldest timestamp (that is, the event waiting for the longest).
 
-Using multiple sources also means that the streaming processor's polling interval needs to be divided between sources.
-Some sources might use a strategy to optimize event discovery, thus minimizing overhead in establishing costly connections to the data sources.
-To that end, you can choose which source the processor does most of the polling on using the `longPollingSource()` method in the builder.
-This operation ensures one source consumes most of the polling interval while also checking intermittently for events on the other sources.
-The `MultiStreamableEventSource` defaults the `longPollingSource` to the last configured source.
-
 Consider the following sample when constructing a `MultiStreamableEventSource`:
 
 [source,java]
@@ -1648,21 +1710,29 @@ Consider the following sample when constructing a `MultiStreamableEventSource`:
 public class AxonConfig {
     // omitting other configuration methods...
     public MultiStreamableEventSource buildMultiStreamableEventSource(
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceA,
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceB,
-            Comparator<Map.Entry<String, TrackedEventMessage<?>>> priorityA
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB,
+            Comparator<MessageStream.Entry<EventMessage>> priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addMessageSource("eventSourceA", eventSourceA)
-                                           .addMessageSource("eventSourceB", eventSourceB)
-                                           .longPollingSource("eventSourceA") // Overrides eventSourceB as the longPollingStream
-                                           .trackedEventComparator(priorityA) // Where 'priorityA' is a comparator prioritizing events from eventSourceA
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA); // Where 'priorityA' is a comparator prioritizing events from eventSourceA
     }
 }
 ----
 
-Assuming a `buildMultiStreamableEventSource(...)` method is present, we can use the outcome to register a processor with the configuring `EventProcessingConfigurer`:
+For simple cases using the default timestamp-based comparison, you can use the `comparingTimestamps()` method:
+
+[source,java]
+----
+// Simple case using default timestamp comparison
+MultiStreamableEventSource source = MultiStreamableEventSource
+    .combining("localEventStore", localEventStore)
+    .and("remoteEventStore", remoteEventStore)
+    .comparingTimestamps();
+----
+
+Assuming a `buildMultiStreamableEventSource(...)` method is present, we can use the outcome to register a processor with the `PooledStreamingEventProcessorsConfigurer`:
 
 [tabs]
 ====
@@ -1674,12 +1744,15 @@ Configuration API::
 ----
 public class AxonConfig {
     // omitting other configuration methods...
-    public void configurePooledStreamingProcessor(EventProcessingConfigurer processingConfigurer) {
-        processingConfigurer.pooledStreaming(
-                pooledStreaming -> pooledStreaming.defaultProcessor(
-                        "example-processor",
-                        components -> components.autodetected(config -> buildMultiStreamableEventSource(/*...*/))
-                )
+    private PooledStreamingEventProcessorsConfigurer configurePooledStreamingProcessor(
+            PooledStreamingEventProcessorsConfigurer pooledStreamingConfigurer
+    ) {
+        return pooledStreamingConfigurer.processor(
+                "example-processor",
+                config -> config.eventHandlingComponents(this::configureHandlingComponent)
+                                .customize((c, pooledStreamingConfig) -> pooledStreamingConfig
+                                        .eventSource(buildMultiStreamableEventSource(/*...*/))
+                                )
         );
     }
 }
@@ -1695,9 +1768,8 @@ When using `EventProcessorDefinition`, first create a `MultiStreamableEventSourc
 [source,java]
 ----
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
-import org.axonframework.messaging.eventhandling.MultiStreamableEventSource;
-import org.axonframework.messaging.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.eventhandling.tokenstore.StreamableEventSource;
+import org.axonframework.messaging.eventstreaming.MultiStreamableEventSource;
+import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -1706,14 +1778,12 @@ public class EventProcessorConfig {
 
     @Bean
     public MultiStreamableEventSource multiEventSource(
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceA,
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceB
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB
     ) {
-        return MultiStreamableEventSource.builder()
-                .addMessageSource("eventSourceA", eventSourceA)
-                .addMessageSource("eventSourceB", eventSourceB)
-                .longPollingSource("eventSourceA")
-                .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                .and("eventSourceB", eventSourceB)
+                .comparingTimestamps();
     }
 
     @Bean
@@ -1751,16 +1821,13 @@ public class AxonConfig {
     // omitting other configuration methods...
     @Bean
     public MultiStreamableEventSource multiStreamableEventSource(
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceA,
-            StreamableEventSource<TrackedEventMessage<?>> eventSourceB,
-            Comparator<Map.Entry<String, TrackedEventMessage<?>>> priorityA
+            StreamableEventSource eventSourceA,
+            StreamableEventSource eventSourceB,
+            Comparator<MessageStream.Entry<EventMessage>> priorityA
     ) {
-        return MultiStreamableEventSource.builder()
-                                           .addMessageSource("eventSourceA", eventSourceA)
-                                           .addMessageSource("eventSourceB", eventSourceB)
-                                           .longPollingSource("eventSourceA")
-                                           .trackedEventComparator(priorityA)
-                                           .build();
+        return MultiStreamableEventSource.combining("eventSourceA", eventSourceA)
+                                           .and("eventSourceB", eventSourceB)
+                                           .comparingUsing(priorityA);
     }
 }
 ----

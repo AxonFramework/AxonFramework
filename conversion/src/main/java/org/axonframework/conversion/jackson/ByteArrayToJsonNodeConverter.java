@@ -16,19 +16,18 @@
 
 package org.axonframework.conversion.jackson;
 
+import org.axonframework.conversion.ContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
+import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.ContentTypeConverter;
 
 import java.util.Objects;
 
 /**
- * A {@link ContentTypeConverter} implementation for Jackson 3 that converts {@code byte[]} containing UTF8 encoded
- * JSON string to a {@link JsonNode}.
+ * A {@link ContentTypeConverter} implementation for Jackson 3 that converts {@code byte[]} containing UTF8 encoded JSON
+ * string to a {@link JsonNode}.
  *
  * @author Allard Buijze
  * @since 2.2.0
@@ -42,18 +41,16 @@ public class ByteArrayToJsonNodeConverter implements ContentTypeConverter<byte[]
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */
-    public ByteArrayToJsonNodeConverter(@Nonnull ObjectMapper objectMapper) {
+    public ByteArrayToJsonNodeConverter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
-    @Nonnull
     public Class<byte[]> expectedSourceType() {
         return byte[].class;
     }
 
     @Override
-    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }

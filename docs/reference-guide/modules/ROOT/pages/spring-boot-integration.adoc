@@ -85,6 +85,7 @@ If Axon Server is not available or disabled, Axon will use JPA-based implementat
 **Extension-based implementations**::
 Other extensions can provide additional implementations:
 * PostgreSQL event store (via the PostgreSQL extension)
+* Reactive gateways for commands, events, and queries (via the xref:modules.adoc#axon-reactor[Reactor extension])
 
 == Component detection
 
@@ -180,6 +181,67 @@ This allows flexible handler assignment based on naming conventions, package str
 // By bean name pattern
 .assigningHandlers(d -> d.beanName().contains("Handler"))
 ----
+
+[#namespace-based-handler-selection]
+For easy matching of Event Handling Components to Event Processors purely based on the Event Processor name, you can use the `@Namespace` annotation in combination with the `EventHandlerSelector.matchesNamespaceOnType()`.
+
+The `@Namespace` annotation can be placed on the Event Handling Component, where the value of the annotation determines the Event Processor name it belongs to. Handlers will be automatically matched when defining an `EventProcessorDefinition` using the `EventHandlerSelector.matchesNamespaceOnType()` with the same name as defined in the `@Namespace`.
+
+Let's take a look at a concrete example:
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventHandlerSelector;
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+
+@Bean
+public EventProcessorDefinition ordersProcessor() {
+    return EventProcessorDefinition.pooledStreaming("orders")
+            .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType("orders"))
+            .notCustomized();
+}
+
+@Namespace("orders")
+public class OrderEventHandler {
+    // omitted event handlers for brevity
+}
+----
+
+With `@Namespace` on the `OrderEventHandler`, the `OrderEventHandler` signals it **belongs** to the Event Processor named `orders`. Note that the `@Namespace` annotation can be placed on a class (as shown above), on an enclosing class, on a `package-info.java` file, or on a `module-info.java` file. The `@Namespace` annotation is searched for in the order defined above.
+
+1. On the type
+2. On the enclosing class
+3. On the `package-info.java` file
+4. On the `module-info.java` file
+
+This allows you to use `@Namespace` to describe multiple event handlers belonging to a package, as shown below:
+
+[source,java]
+----
+@Namespace("orders")
+package com.example.orders;
+
+import org.axonframework.messaging.core.annotation.Namespace;
+----
+
+[TIP]
+.Convenience `EventProcessorDefinition` methods
+====
+For the common case of matching handlers by namespace, `EventProcessorDefinition` provides convenience methods that combine processor creation with `@Namespace`-based handler selection:
+
+[source,java]
+----
+// Equivalent to pooledStreaming("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.pooledStreamingMatching("orders")
+        .notCustomized();
+
+// Equivalent to subscribing("orders").assigningHandlers(matchesNamespaceOnType("orders"))
+EventProcessorDefinition.subscribingMatching("orders")
+        .notCustomized();
+----
+
+These methods use the processor name as the namespace to match, making it easy to organize processors by namespace or bounded context.
+====
 
 ===== Configuration options
 

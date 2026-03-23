@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -57,7 +56,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
 //        configurer.eventProcessing()
 //                  .registerSaga(sagaType,
 //                                sagaConfigurer -> {
@@ -71,7 +70,7 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.EventTag;
@@ -74,7 +73,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
     private static final Class<EventTags> CONTAINING_ANNOTATION_TYPE = EventTags.class;
 
     @Override
-    public Set<Tag> resolve(@Nonnull EventMessage event) {
+    public Set<Tag> resolve(EventMessage event) {
         Objects.requireNonNull(event, "Event cannot be null");
         var payload = event.payload();
         return Stream.concat(resolveFieldTags(payload), resolveMethodTags(payload))

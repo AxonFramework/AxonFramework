@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.axonframework.conversion.ConversionException;
@@ -43,9 +42,9 @@ public interface SchemaIncompatibilityChecker {
      * @throws ConversionException if the schema check has not passed.
      */
     default void assertSchemaCompatibility(
-            @Nonnull Class<?> readerType,
-            @Nonnull Schema readerSchema,
-            @Nonnull Schema writerSchema,
+            Class<?> readerType,
+            Schema readerSchema,
+            Schema writerSchema,
             boolean includeSchemasInStackTraces) {
         List<SchemaCompatibility.Incompatibility> incompatibilities = checkCompatibility(
                 readerSchema, writerSchema
@@ -74,10 +73,9 @@ public interface SchemaIncompatibilityChecker {
      * @param writerSchema writer schema to check.
      * @return list of compatibilities if any, or empty list
      */
-    @Nonnull
     default List<SchemaCompatibility.Incompatibility> checkCompatibility(
-            @Nonnull Schema readerSchema,
-            @Nonnull Schema writerSchema
+            Schema readerSchema,
+            Schema writerSchema
     ) {
         return AvroUtil.checkCompatibility(
                 readerSchema,

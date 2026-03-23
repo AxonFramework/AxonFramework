@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.SimpleEntry;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -45,6 +45,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
+
 /**
  * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
  * {@link PooledStreamingEventProcessor}.
@@ -58,7 +60,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * This implementation intentionally matches the destructive behavior of the original
  * {@code InMemoryStreamableEventSource} for testing purposes:
  * <ul>
- *   <li><strong>All events are deleted when any stream is closed</strong> - This provides test isolation
+ *   <li><strong>All events are deleted when any stream is closed and the `clearOnClose` property is false</strong> - This provides test isolation
  *       and simulates recovery scenarios where processing continues with fresh events published after errors.</li>
  * </ul>
  * <p>
@@ -84,21 +86,24 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * An {@link EventMessage} representing a failed event.
      */
     public static final EventMessage FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
+    private boolean clearOnClose = true;
 
     private volatile NavigableMap<Long, EventMessage> eventStorage = new ConcurrentSkipListMap<>();
     private final AtomicLong nextIndex = new AtomicLong(0);
     private final boolean streamCallbackSupported;
     private final List<EventMessage> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
-    private Runnable onOpen = () -> {};
-    private Runnable onClose = () -> {};
+    private Runnable onOpen = () -> {
+    };
+    private Runnable onClose = () -> {
+    };
 
     /**
      * Construct a default {@link AsyncInMemoryStreamableEventSource}. If stream callbacks should be supported for
-     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean)}.
+     * testing, use {@link AsyncInMemoryStreamableEventSource#AsyncInMemoryStreamableEventSource(boolean, boolean)}.
      */
     public AsyncInMemoryStreamableEventSource() {
-        this(false);
+        this(false, true);
     }
 
     /**
@@ -107,12 +112,14 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * @param streamCallbackSupported A {@code boolean} dictating whether the {@link StreamableEventSource} should
      *                                support callbacks.
      */
-    public AsyncInMemoryStreamableEventSource(boolean streamCallbackSupported) {
+    public AsyncInMemoryStreamableEventSource(boolean streamCallbackSupported, boolean clearOnClose) {
         this.streamCallbackSupported = streamCallbackSupported;
+        this.clearOnClose = clearOnClose;
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+    public @NonNull MessageStream<EventMessage> open(@NonNull StreamingCondition condition,
+                                            @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
         onOpen.run();
@@ -120,7 +127,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
@@ -129,12 +136,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+    public @NonNull CompletableFuture<TrackingToken> tokenAt(@NonNull Instant at, @Nullable ProcessingContext context) {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
@@ -183,18 +190,22 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
     /**
      * Set a handler to be called whenever a stream is opened.
+     *
      * @param onOpen the handler to call
      */
     public void setOnOpen(Runnable onOpen) {
-        this.onOpen = onOpen != null ? onOpen : () -> {};
+        this.onOpen = onOpen != null ? onOpen : () -> {
+        };
     }
 
     /**
      * Set a handler to be called whenever a stream is closed.
+     *
      * @param onClose the handler to call
      */
     public void setOnClose(Runnable onClose) {
-        this.onClose = onClose != null ? onClose : () -> {};
+        this.onClose = onClose != null ? onClose : () -> {
+        };
     }
 
     /**
@@ -215,8 +226,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     private class AsyncMessageStream implements MessageStream<EventMessage> {
 
         private final AtomicLong currentPosition;
-        private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-        });
+        private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
         private final StreamingCondition condition;
         private volatile boolean closed = false;
 
@@ -242,7 +252,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> next() {
+        public @NonNull Optional<Entry<EventMessage>> next() {
             if (closed) {
                 return Optional.empty();
             }
@@ -274,7 +284,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage>> peek() {
+        public @NonNull Optional<Entry<EventMessage>> peek() {
             if (closed) {
                 return Optional.empty();
             }
@@ -321,7 +331,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public void setCallback(@Nonnull Runnable callback) {
+        public void setCallback(@NonNull Runnable callback) {
             this.callback.set(callback);
             if (streamCallbackSupported && hasNextAvailable()) {
                 callback.run();
@@ -329,7 +339,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Throwable> error() {
+        public @NonNull Optional<Throwable> error() {
             return Optional.empty();
         }
 
@@ -354,10 +364,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
             closed = true;
             openStreams.remove(this);
 
-            // DESTRUCTIVE BEHAVIOR: Clear all messages when ANY stream is closed
-            // This matches the original InMemoryStreamableEventSource behavior and provides
-            // test isolation, allowing recovery scenarios where new events are published after errors
-            clearAllMessages();
+            if (clearOnClose) {
+                // DESTRUCTIVE BEHAVIOR: Clear all messages when ANY stream is closed
+                // This matches the original InMemoryStreamableEventSource behavior and provides
+                // test isolation, allowing recovery scenarios where new events are published after errors
+                clearAllMessages();
+            }
             onClose.run();
         }
 

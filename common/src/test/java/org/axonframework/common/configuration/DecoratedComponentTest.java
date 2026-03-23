@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -70,7 +69,6 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
 
     @Test
     void delegateReusesPreviouslyCreatedInstance() {
-        //noinspection unchecked
         ComponentBuilder<String> mock = mock();
         when(mock.build(any())).thenReturn(TEST_COMPONENT);
         Component<String> target = new LazyInitializedComponentDefinition<>(identifier, mock);

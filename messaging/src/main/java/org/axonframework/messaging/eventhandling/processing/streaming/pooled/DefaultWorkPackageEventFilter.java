@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -26,6 +25,10 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorH
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SegmentMatcher;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -46,14 +49,16 @@ import java.util.Optional;
 @Internal
 class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultWorkPackageEventFilter.class);
+
     private final String eventProcessor;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final ErrorHandler errorHandler;
 
     DefaultWorkPackageEventFilter(
-            @Nonnull String eventProcessor,
-            @Nonnull ProcessorEventHandlingComponents eventHandlingComponents,
-            @Nonnull ErrorHandler errorHandler
+            String eventProcessor,
+            ProcessorEventHandlingComponents eventHandlingComponents,
+            ErrorHandler errorHandler
     ) {
         this.eventProcessor = Objects.requireNonNull(eventProcessor, "EventProcessor name may not be null");
         this.eventHandlingComponents = Objects.requireNonNull(eventHandlingComponents,
@@ -74,16 +79,30 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      */
     @Override
     public boolean canHandle(
-            @Nonnull EventMessage eventMessage,
-            @Nonnull ProcessingContext context,
-            @Nonnull Segment segment
+            EventMessage eventMessage,
+            ProcessingContext context,
+            Segment segment
     ) throws Exception {
         try {
             var eventMessageQualifiedName = eventMessage.type().qualifiedName();
             var eventSupported = eventHandlingComponents.supports(eventMessageQualifiedName);
             if (!eventSupported) {
+                logger.trace("Processor [{}] filtered out event [{}] of type [{}]: "
+                                     + "event type not supported by event handling components.",
+                             eventProcessor, eventMessage.identifier(), eventMessageQualifiedName);
                 return false;
             }
+
+            var isReplay = TrackingToken.fromContext(context)
+                                        .filter(ReplayToken::isReplay)
+                                        .isPresent();
+            if (isReplay && !eventHandlingComponents.supportsReset()) {
+                logger.trace("Processor [{}] filtered out event [{}] of type [{}] during replay: "
+                                     + "event handling components do not support reset.",
+                             eventProcessor, eventMessage.identifier(), eventMessage.type().qualifiedName());
+                return false;
+            }
+
             var sequenceIdentifiers = eventHandlingComponents.sequenceIdentifiersFor(eventMessage, context);
             return sequenceIdentifiers.stream().anyMatch(identifier -> new SegmentMatcher(
                     (e, ctx) -> Optional.of(identifier)).matches(segment, eventMessage, context)

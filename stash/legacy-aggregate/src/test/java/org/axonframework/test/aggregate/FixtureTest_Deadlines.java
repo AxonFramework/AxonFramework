@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package org.axonframework.test.aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
-
-import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 /**
  * Test class intended to validate all methods in regards to scheduling and validating deadlines.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
-import javax.annotation.Nonnull;
 import java.beans.ConstructorProperties;
 import java.util.Collection;
 import java.util.Collections;
@@ -221,7 +220,6 @@ public class GapAwareTrackingToken implements TrackingToken {
                 && otherToken.gaps.containsAll(this.gaps.headSet(otherToken.index));
     }
 
-    @Nonnull
     private static GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken other) {
         Assert.isTrue(
                 other instanceof GapAwareTrackingToken,

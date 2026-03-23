@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.axonframework.update.detection;
 
 import org.junit.jupiter.api.*;
+
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,7 +39,9 @@ class AxonVersionDetectorTest {
     void detectsFilePomProperties() {
         var versions = AxonVersionDetector.safeDetectAxonModules();
         assertFalse(versions.isEmpty(), "Expected at least one Axon module version to be detected");
-        assertTrue(versions.stream().anyMatch(v -> v.groupId().equals("org.axonframework") &&
+        assertTrue(versions.stream()
+                           .filter(Objects::nonNull)
+                           .anyMatch(v -> v.groupId().equals("org.axonframework") &&
                            v.artifactId().equals("axon-modelling") &&
                            v.version().equals("2.1-SNAPSHOT")),
                    "Expected Axon Modelling module to be detected");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
@@ -185,7 +184,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
      */
     CompletableFuture<Void> resetTokens(
-            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     );
 
     /**
@@ -204,7 +203,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param <R>                          the type of the provided {@code resetContext}
      */
     <R> CompletableFuture<Void> resetTokens(
-            @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
+            Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext
     );
 
@@ -220,7 +219,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      *
      * @param startPosition the token representing the position to reset the processor to
      */
-    default CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition) {
+    default CompletableFuture<Void> resetTokens(TrackingToken startPosition) {
         return resetTokens(startPosition, null);
     }
 
@@ -239,7 +238,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param resetContext  a {@code R} used to support the reset operation
      * @param <R>           the type of the provided {@code resetContext}
      */
-    <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext);
+    <R> CompletableFuture<Void> resetTokens(TrackingToken startPosition, @Nullable R resetContext);
 
     /**
      * Specifies the maximum amount of segments this {@link EventProcessor} can process at the same time.

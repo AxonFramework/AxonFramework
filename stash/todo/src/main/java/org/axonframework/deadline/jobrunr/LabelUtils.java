@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.axonframework.common.digest.Digester;
 import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.conversion.Serializer;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Utility to create labels for use with JobRunr. As labels have a maximum length of 44, we hash a label whenever it
@@ -50,7 +49,7 @@ public abstract class LabelUtils {
         }
     }
 
-    private static String getScopeLabel(@Nonnull Serializer serializer, @Nonnull ScopeDescriptor scope) {
+    private static String getScopeLabel(Serializer serializer, ScopeDescriptor scope) {
         return getLabel(serializer.serialize(scope, String.class).getData());
     }
 
@@ -62,8 +61,8 @@ public abstract class LabelUtils {
      * @param scope        scope a {@link ScopeDescriptor} of which a label is needed
      * @return a {@link String} which can be used as a label
      */
-    public static String getCombinedLabel(@Nonnull Serializer serializer, @Nonnull String deadlineName,
-                                          @Nonnull ScopeDescriptor scope) {
+    public static String getCombinedLabel(Serializer serializer, String deadlineName,
+                                          ScopeDescriptor scope) {
         String scopeLabel = getScopeLabel(serializer, scope);
         return getLabel(deadlineName + scopeLabel);
     }

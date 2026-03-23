@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.jspecify.annotations.Nullable;
 
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryUpdate;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
@@ -36,34 +37,35 @@ import static org.axonframework.axonserver.connector.util.ExceptionConverter.con
  */
 public class QueryUpdateMessageStream extends AbstractQueryResponseMessageStream<QueryUpdate> {
 
+    private final @Nullable MessageConverter converter;
+
     /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
      * {@link QueryUpdate} objects.
      *
      * @param stream the {@link ResultStream} of {@link QueryUpdate} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
+     * @param converter the converter used for {@link QueryResponseMessage} inline payload conversion
      */
-    public QueryUpdateMessageStream(@Nonnull ResultStream<QueryUpdate> stream) {
+    public QueryUpdateMessageStream(ResultStream<QueryUpdate> stream, @Nullable MessageConverter converter) {
         super(stream);
+        this.converter = converter;
     }
 
-    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryUpdate queryUpdate) {
-        return convertQueryUpdate(queryUpdate);
+    protected QueryResponseMessage buildResponseMessage(QueryUpdate queryUpdate) {
+        return convertQueryUpdate(queryUpdate, converter);
     }
 
-
-    @Nonnull
     @Override
-    protected AxonException createAxonException(@Nonnull QueryUpdate queryUpdate) {
+    protected AxonException createAxonException(QueryUpdate queryUpdate) {
         return convertToAxonException(queryUpdate.getErrorCode(),
                                       queryUpdate.getErrorMessage(),
                                       queryUpdate.getPayload());
     }
 
     @Override
-    protected boolean isError(@Nonnull QueryUpdate queryUpdate) {
+    protected boolean isError(QueryUpdate queryUpdate) {
         return queryUpdate.hasErrorMessage();
     }
 }

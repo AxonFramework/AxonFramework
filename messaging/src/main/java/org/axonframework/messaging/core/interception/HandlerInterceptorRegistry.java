@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -30,6 +28,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -64,9 +63,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param interceptorBuilder the generic {@link Message} {@link MessageHandlerInterceptor} builder to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     );
 
     /**
@@ -82,8 +80,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param interceptorFactory the generic {@link Message} {@link MessageHandlerInterceptor} factory to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
-    HandlerInterceptorRegistry registerInterceptor(@Nonnull HandlerInterceptorFactory<Message> interceptorFactory);
+
+    HandlerInterceptorRegistry registerInterceptor(HandlerInterceptorFactory<Message> interceptorFactory);
 
     /**
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage} {@link MessageHandlerInterceptor} for
@@ -95,9 +93,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
@@ -114,9 +111,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
+
     HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
+            HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
     );
 
     /**
@@ -129,9 +126,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -148,9 +144,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super EventMessage> interceptorFactory
+            HandlerInterceptorFactory<? super EventMessage> interceptorFactory
     );
 
     /**
@@ -163,9 +158,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**
@@ -182,9 +176,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super QueryMessage> interceptorFactory
+            HandlerInterceptorFactory<? super QueryMessage> interceptorFactory
     );
 
     /**
@@ -200,10 +193,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param componentName the name of the component being intercepted to retrieve a handler interceptor for
      * @return the list of {@link CommandMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      */
-    @Nonnull
     List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -220,10 +212,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param componentName the name of the component being intercepted to retrieve a handler interceptor for
      * @return the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      */
-    @Nonnull
     List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -240,10 +231,9 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      * @param componentName the name of the component being intercepted to retrieve a handler interceptor for
      * @return the list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      */
-    @Nonnull
     List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 }

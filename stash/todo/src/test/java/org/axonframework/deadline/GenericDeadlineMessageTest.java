@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.deadline;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
@@ -53,13 +53,13 @@ class GenericDeadlineMessageTest extends MessageTestSuite<DeadlineMessage> {
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull DeadlineMessage result) {
+    protected void validateDefaultMessage(@NonNull DeadlineMessage result) {
         assertThat(TEST_DEADLINE_NAME).isEqualTo(result.getDeadlineName());
         assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull DeadlineMessage actual, @Nonnull DeadlineMessage result) {
+    protected void validateMessageSpecifics(@NonNull DeadlineMessage actual, @NonNull DeadlineMessage result) {
         assertThat(actual.getDeadlineName()).isEqualTo(result.getDeadlineName());
         assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,24 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -132,17 +139,106 @@ class SimpleEventHandlingComponentTest {
 
             AtomicBoolean invoked = new AtomicBoolean();
 
-            public SampleDecoration(@Nonnull EventHandlingComponent delegate) {
+            public SampleDecoration(@NonNull EventHandlingComponent delegate) {
                 super(delegate);
             }
 
-            @Nonnull
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                                @NonNull ProcessingContext context) {
                 invoked.set(true);
                 return super.handle(event, context);
             }
+        }
+    }
+
+    @Nested
+    class ResetHandlerTest {
+
+        @Test
+        void subscribedResetHandlerIsInvoked() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
+        }
+
+        @Test
+        void sameResetHandlerSubscribedTwiceIsInvokedOnlyOnce() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ResetHandler resetHandler = (resetContext, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(resetHandler);
+            component.subscribe(resetHandler);
+
+            // when
+            var resetContext = new GenericResetContext(new MessageType(String.class), "reset-payload");
+            component.handle(resetContext, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
+        }
+    }
+
+    @Nested
+    class ReplayStatusChangedHandlerTest {
+
+        @Test
+        void subscribedReplayStatusChangeHandlerIsInvoked() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ReplayStatusChangedHandler handler = (statusChange, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(handler);
+
+            // when
+            var statusChange = new GenericReplayStatusChanged(ReplayStatus.REPLAY, (Object) null);
+            component.handle(statusChange, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
+        }
+
+        @Test
+        void sameReplayStatusChangeHandlerSubscribedTwiceIsInvokedOnlyOnce() {
+            // given
+            var invocationCount = new AtomicInteger(0);
+            ReplayStatusChangedHandler handler = (statusChange, context) -> {
+                invocationCount.incrementAndGet();
+                return MessageStream.empty();
+            };
+
+            var component = SimpleEventHandlingComponent.create("test");
+            component.subscribe(handler);
+            component.subscribe(handler);
+
+            // when
+            var statusChange = new GenericReplayStatusChanged(ReplayStatus.REPLAY, (Object) null);
+            component.handle(statusChange, STUB_PROCESSING_CONTEXT);
+
+            // then
+            assertThat(invocationCount.get()).isEqualTo(1);
         }
     }
 }

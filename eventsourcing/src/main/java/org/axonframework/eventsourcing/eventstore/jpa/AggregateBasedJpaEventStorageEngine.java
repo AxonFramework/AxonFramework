@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.axonframework.common.Assert;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -56,6 +53,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,9 +158,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      * @param configurer            A unary operator of the {@link AggregateBasedJpaEventStorageEngineConfiguration}
      *                              that customizes the {@code AggregateBasedJpaEventStorageEngine} under construction.
      */
-    public AggregateBasedJpaEventStorageEngine(@Nonnull TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
-                                               @Nonnull EventConverter converter,
-                                               @Nonnull UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
+    public AggregateBasedJpaEventStorageEngine(TransactionalExecutorProvider<EntityManager> transactionalExecutorProvider,
+                                               EventConverter converter,
+                                               UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
         this.transactionalExecutorProvider =
                 requireNonNull(transactionalExecutorProvider, "The transactionalExecutorProvider may not be null.");
         this.converter = requireNonNull(converter, "The converter may not be null.");
@@ -184,9 +182,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext processingContext,
-                                                                @Nonnull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -255,7 +253,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -279,7 +277,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     private AggregateSource aggregateSourceForCriterion(SourcingCondition condition, EventCriterion criterion) {
-        AtomicReference<AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
+        AtomicReference<@Nullable AggregateBasedConsistencyMarker> markerReference = new AtomicReference<>();
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         long firstSequenceNumber = AggregateSequenceNumberPosition.toSequenceNumber(condition.start());
         //noinspection DataFlowIssue
@@ -333,33 +331,27 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
-        GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
+        AtomicReference<GapAwareTrackingToken> cursorRef = new AtomicReference<>(tokenOperations.assertGapAwareTrackingToken(condition.position()));
 
         return new ContinuousMessageStream<TokenAndEvent>(
-                last -> queryTokensAndEventsBy(last == null ? trackingToken : last.token, condition),
+                () -> queryTokensAndEventsBy(cursorRef, condition),
                 tae -> new SimpleEntry<>(convertToEventMessage(tae.event), buildTrackedContext(tae)),
                 (ms, r) -> {
                     streamCallbacks.put(ms, r);
-
                     return () -> streamCallbacks.remove(ms) != null;
                 }
         );
     }
 
-    private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start, StreamingCondition condition) {
-        Assert.isTrue(
-                start == null || start instanceof GapAwareTrackingToken,
-                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
-                                    start, GapAwareTrackingToken.class.getSimpleName())
-        );
-
+    private List<TokenAndEvent> queryTokensAndEventsBy(AtomicReference<GapAwareTrackingToken> cursorRef, StreamingCondition condition) {
         return entityManagerExecutor(null).apply(em -> {
             List<TokenAndEvent> result = new ArrayList<>();
-            GapAwareTrackingToken cleanedToken = cleanedToken(em, (GapAwareTrackingToken) start);
+            GapAwareTrackingToken cleanedToken = cleanedToken(em, cursorRef.get());
             List<AggregateEventEntry> events = queryEventsBy(em, cleanedToken);
 
             GapAwareTrackingToken token = cleanedToken;
+
             Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
             for (AggregateEventEntry event : events) {
                 String type = event.aggregateType();
@@ -368,8 +360,11 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 // A null type or identifier is allowed, but those cannot form a valid tag:
                 Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
 
+                // Always advance the cursor to track the furthest scanned position, regardless of match:
+                token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
+                cursorRef.set(token);
+
                 if (condition.matches(new QualifiedName(event.type()), tags)) {
-                    token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
                     result.add(new TokenAndEvent(token, event));
                 }
             }
@@ -404,15 +399,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private GapAwareTrackingToken calculateToken(@Nullable GapAwareTrackingToken token,
                                                  long globalIndex,
-                                                 @Nonnull Instant timestamp,
-                                                 @Nonnull Instant gapTimeoutThreshold) {
+                                                 Instant timestamp,
+                                                 Instant gapTimeoutThreshold) {
         boolean allowGaps = timestamp.isAfter(gapTimeoutThreshold);
         return token == null
                 ? GapAwareTrackingToken.newInstance(globalIndex, calculateGaps(globalIndex, allowGaps))
                 : token.advanceTo(globalIndex, allowGaps ? maxGapOffset : 0);
     }
 
-    @Nonnull
     private Collection<Long> calculateGaps(long globalIndex, boolean allowGaps) {
         return allowGaps
                 ? LongStream.range(Math.min(lowestGlobalSequence, globalIndex), globalIndex)
@@ -426,10 +420,11 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                        new MessageType(event.type(), event.version()),
                                        event.payload(),
                                        converter.convert(event.metadata(), METADATA_MAP_TYPE_REF.getType()),
-                                       event.timestamp());
+                                       event.timestamp()
+        ).withConverter(converter);
     }
 
-    private static Context buildTrackedContext(@Nonnull TokenAndEvent tokenAndEvent) {
+    private static Context buildTrackedContext(TokenAndEvent tokenAndEvent) {
         AggregateEventEntry entry = tokenAndEvent.event();
         Context context = buildContext(Objects.requireNonNullElse(entry.aggregateIdentifier(), entry.identifier()),
                                        Objects.requireNonNullElse(entry.aggregateSequenceNumber(), 0L),
@@ -437,8 +432,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return context.withResource(TrackingToken.RESOURCE_KEY, tokenAndEvent.token);
     }
 
-    private static Context buildContext(@Nonnull String aggregateIdentifier,
-                                        @Nonnull Long aggregateSequenceNumber,
+    private static Context buildContext(String aggregateIdentifier,
+                                        Long aggregateSequenceNumber,
                                         @Nullable String aggregateType) {
         Context context = Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier)
                                  .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, aggregateSequenceNumber);
@@ -457,7 +452,6 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return queryToken(LATEST_TOKEN_QUERY);
     }
 
-    @Nonnull
     private CompletableFuture<TrackingToken> queryToken(String firstTokenQuery) {
         return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(firstTokenQuery, Long.class).getSingleResult(),
@@ -466,7 +460,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         return entityManagerExecutor(null).apply(entityManager -> new GapAwareTrackingToken(
             entityManager.createQuery(TOKEN_AT_QUERY, Long.class)
                          .setParameter("dateTime", formatInstant(at))
@@ -476,7 +470,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("transactionalExecutorProvider", transactionalExecutorProvider);
         descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);

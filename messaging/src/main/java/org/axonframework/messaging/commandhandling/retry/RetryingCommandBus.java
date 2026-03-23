@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.commandhandling.retry;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -55,21 +54,21 @@ public class RetryingCommandBus implements CommandBus {
      * @param delegate       The delegate {@code CommandBus} that will handle all dispatching and handling logic.
      * @param retryScheduler The retry scheduler to use to reschedule failed commands.
      */
-    public RetryingCommandBus(@Nonnull CommandBus delegate,
-                              @Nonnull RetryScheduler retryScheduler) {
+    public RetryingCommandBus(CommandBus delegate,
+                              RetryScheduler retryScheduler) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.retryScheduler = requireNonNull(retryScheduler, "the RetryScheduler must not be null.");
     }
 
     @Override
-    public RetryingCommandBus subscribe(@Nonnull QualifiedName name,
-                                        @Nonnull CommandHandler handler) {
+    public RetryingCommandBus subscribe(QualifiedName name,
+                                        CommandHandler handler) {
         delegate.subscribe(name, handler);
         return this;
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         return dispatchToDelegate(command, processingContext)
                 .exceptionallyCompose(e -> performRetry(command, processingContext, unwrap(e)));
@@ -94,7 +93,7 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("retryScheduler", retryScheduler);
     }

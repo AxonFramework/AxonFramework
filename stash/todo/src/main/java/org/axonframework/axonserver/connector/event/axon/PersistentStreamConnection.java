@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Glob
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +65,7 @@ public class PersistentStreamConnection {
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
 
-    private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
+    private final AtomicReference<@Nullable PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
     private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
     };

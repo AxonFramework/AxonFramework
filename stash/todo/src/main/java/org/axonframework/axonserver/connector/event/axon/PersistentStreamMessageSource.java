@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -95,7 +94,7 @@ public class PersistentStreamMessageSource implements SubscribableEventSource {
 
     @Override
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.core;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -58,7 +56,7 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
+    public Optional<MessageType> resolve(Class<?> payloadType) {
         Objects.requireNonNull(payloadType, "payloadType may not be null");
         return Optional.of(new MessageType(payloadType.getName(), version));
     }

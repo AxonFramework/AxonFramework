@@ -16,10 +16,11 @@
 
 package org.axonframework.common.tx;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingConsumer;
 import org.axonframework.common.function.ThrowingFunction;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -55,13 +56,11 @@ public interface TransactionalExecutor<T> {
      * @return A {@link CompletableFuture} with a void result, never {@code null}.
      * @throws NullPointerException When {@code consumer} is {@code null}.
      */
-    @Nonnull
-    default CompletableFuture<Void> accept(@Nonnull ThrowingConsumer<T, Exception> consumer) {
+    default CompletableFuture<Void> accept(ThrowingConsumer<T, Exception> consumer) {
         Objects.requireNonNull(consumer, "consumer");
 
         return apply(r -> {
             consumer.accept(r);
-
             return null;
         });
     }
@@ -79,6 +78,5 @@ public interface TransactionalExecutor<T> {
      *     the provided function, never {@code null}.
      * @throws NullPointerException When {@code function} is {@code null}.
      */
-    @Nonnull
-    <R> CompletableFuture<R> apply(@Nonnull ThrowingFunction<T, R, Exception> function);
+    <R> CompletableFuture<@Nullable R> apply(ThrowingFunction<T, R, Exception> function);
 }

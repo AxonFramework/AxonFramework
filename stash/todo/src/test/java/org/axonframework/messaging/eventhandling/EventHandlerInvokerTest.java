@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.segmenting
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -34,13 +34,13 @@ class EventHandlerInvokerTest {
 
     private final org.axonframework.messaging.eventhandling.EventHandlerInvoker testSubject = spy(new EventHandlerInvoker() {
         @Override
-        public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+        public boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context, @NonNull Segment segment) {
             return true;
         }
 
         @Override
-        public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext processingContext,
-                           @Nonnull Segment segment) throws Exception {
+        public void handle(@NonNull EventMessage message, @NonNull ProcessingContext processingContext,
+                           @NonNull Segment segment) throws Exception {
             // Do nothing
         }
     });

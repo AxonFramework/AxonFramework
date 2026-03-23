@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -54,10 +53,10 @@ class AxonTestThenCommand
      * @param lastCommandException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenCommand(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingComponentsRegistry recordings,
-            @Nonnull Message lastCommandResult,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingComponentsRegistry recordings,
+            Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
         super(configuration, customization, recordings, lastCommandException);
@@ -71,7 +70,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer) {
+    public AxonTestPhase.Then.Command resultMessageSatisfies(Consumer<? super CommandResultMessage> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -85,7 +84,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Object expectedPayload) {
+    public AxonTestPhase.Then.Command resultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
         PayloadMatcher<CommandResultMessage> expectedMatcher =
@@ -108,7 +107,7 @@ class AxonTestThenCommand
 
     @Deprecated(since = "5.1.0", forRemoval = true)
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer) {
+    public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -125,8 +124,8 @@ class AxonTestThenCommand
 
     @Override
     public <T> AxonTestPhase.Then.Command resultMessagePayloadSatisfies(
-            @Nonnull Class<T> type,
-            @Nonnull Consumer<T> consumer
+            Class<T> type,
+            Consumer<T> consumer
     ) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
@@ -144,7 +143,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
+    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
@@ -153,7 +152,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> type, String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);
@@ -162,7 +161,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Command exceptionSatisfies(Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.payload(), description);

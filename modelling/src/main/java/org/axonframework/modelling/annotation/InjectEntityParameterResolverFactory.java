@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.modelling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -59,14 +58,14 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
      *
      * @param configuration The {@link Configuration} to use for loading entities.
      */
-    public InjectEntityParameterResolverFactory(@Nonnull Configuration configuration) {
+    public InjectEntityParameterResolverFactory(Configuration configuration) {
         this.configuration = requireNonNull(configuration, "The Configuration is required");
     }
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
-                                               @Nonnull Parameter[] parameters,
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
                                                int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (!parameter.isAnnotationPresent(InjectEntity.class)) {

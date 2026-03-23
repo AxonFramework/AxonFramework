@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,150 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nullable;
+import org.assertj.core.api.Assertions;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.TypeReference;
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.*;
+
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link GenericCommandResultMessage}.
  *
  * @author Steven van Beelen
  */
-class GenericCommandResultMessageTest extends MessageTestSuite<CommandResultMessage> {
+class GenericCommandResultMessageTest extends MessageTestSuite<GenericCommandResultMessage> {
 
     @Override
-    protected CommandResultMessage buildDefaultMessage() {
+    protected GenericCommandResultMessage buildDefaultMessage() {
         return new GenericCommandResultMessage(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA
         ));
     }
 
     @Override
-    protected <P> CommandResultMessage buildMessage(@Nullable P payload) {
+    protected <P> GenericCommandResultMessage buildMessage(@Nullable P payload) {
         return new GenericCommandResultMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    }
+
+    @Nested
+    class WithConverter {
+
+        private Converter converter;
+        private String exStringPayload = "payload";
+        private byte[] exBytePayload = exStringPayload.getBytes(StandardCharsets.UTF_8);
+
+        @BeforeEach
+        void setUp() {
+            converter = spy(new ChainingContentTypeConverter());
+        }
+
+        @AfterEach
+        void tearDown() {
+            verifyNoMoreInteractions(converter);
+        }
+
+        @Test
+        void payloadAsClassReturnsPayloadWithoutConversionOnSameType() {
+            GenericCommandResultMessage exMessage = buildMessage(exStringPayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+        }
+
+        @Test
+        void payloadAsClassInvokesConverterOnDifferentType() {
+            GenericCommandResultMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            verify(converter).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void payloadAsClassFailsWithConversionExceptionWithoutConverter() {
+            GenericCommandResultMessage exMessage = buildMessage(exBytePayload);
+
+            // test
+            Assertions.assertThatThrownBy(() -> exMessage.payloadAs(Integer.class))
+                      .isInstanceOf(ConversionException.class);
+        }
+
+        @Test
+        void payloadAsTypeRefInvokesConverter() {
+            GenericCommandResultMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(new TypeReference<String>() {
+            });
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            verify(converter).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void payloadAsCachesConversion() {
+            GenericCommandResultMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+            String acPayload2 = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            assertThat(acPayload2).isEqualTo(exStringPayload);
+            verify(converter, times(1)).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void withConverterReturnsNewInstanceOfSameConcreteType() {
+            // given
+            GenericCommandResultMessage original = buildMessage(exBytePayload);
+
+            // when
+            GenericCommandResultMessage result = original.withConverter(converter);
+
+            // then
+            assertThat(result)
+                    .isInstanceOf(GenericCommandResultMessage.class)
+                    .isNotSameAs(original);
+        }
+
+        @Test
+        void withConverterPreservesMembers() {
+            // given
+            GenericCommandResultMessage original = buildMessage(exBytePayload);
+
+            // when
+            GenericCommandResultMessage result = original.withConverter(converter);
+
+            // then
+            assertThat(result)
+                    .isInstanceOf(GenericCommandResultMessage.class)
+                    .isNotSameAs(original);
+            assertThat(result.identifier()).isEqualTo(original.identifier());
+            assertThat(result.type()).isEqualTo(original.type());
+            assertThat(result.payload()).isEqualTo(original.payload());
+            assertThat(result.payloadType()).isEqualTo(original.payloadType());
+            assertThat(result.metadata()).isEqualTo(original.metadata());
+        }
     }
 }

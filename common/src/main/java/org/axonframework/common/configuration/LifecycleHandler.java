@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.configuration;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,5 +35,5 @@ public interface LifecycleHandler {
      * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler}
      * calls.
      */
-    CompletableFuture<?> run(@Nonnull Configuration configuration);
+    CompletableFuture<?> run(Configuration configuration);
 }

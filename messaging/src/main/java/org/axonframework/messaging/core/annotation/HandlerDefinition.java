@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -47,9 +46,9 @@ public interface HandlerDefinition {
      * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise.
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(
-            @Nonnull Class<T> declaringType,
-            @Nonnull Method method,
-            @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
+            Class<T> declaringType,
+            Method method,
+            ParameterResolverFactory parameterResolverFactory,
+            Function<Object, MessageStream<?>> messageStreamResolver
     );
 }

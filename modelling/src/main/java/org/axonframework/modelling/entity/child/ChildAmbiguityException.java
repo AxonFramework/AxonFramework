@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -41,7 +40,7 @@ public class ChildAmbiguityException extends RuntimeException {
      *
      * @param message The message describing the cause of this exception.
      */
-    public ChildAmbiguityException(@Nonnull String message) {
+    public ChildAmbiguityException(String message) {
         super(message);
     }
 }

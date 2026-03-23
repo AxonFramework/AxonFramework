@@ -36,6 +36,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.ObjectMapper;
 
+
 import java.sql.SQLException;
 import javax.sql.DataSource;
 
@@ -55,7 +56,7 @@ import javax.sql.DataSource;
 @EnableConfigurationProperties(TokenStoreProperties.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa",
-        //  "org.axonframework.eventhandling.deadletter.jpa", // TODO re-enable as part of #3097
+        "org.axonframework.messaging.eventhandling.deadletter.jpa",
         // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
 public class JpaAutoConfiguration {

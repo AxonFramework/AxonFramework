@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
@@ -314,8 +314,7 @@ class LegacyEventHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private static LegacyMessageSupportingContext processingContextWith(EventMessage event) {
+    static @NonNull LegacyMessageSupportingContext processingContextWith(EventMessage event) {
         return new LegacyMessageSupportingContext(event);
     }
 }

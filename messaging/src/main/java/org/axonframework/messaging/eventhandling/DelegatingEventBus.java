@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -44,23 +43,23 @@ public abstract class DelegatingEventBus implements EventBus {
      *
      * @param delegate The {@link EventBus} instance to delegate calls to.
      */
-    public DelegatingEventBus(@Nonnull EventBus delegate) {
+    public DelegatingEventBus(EventBus delegate) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate EventBus may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<? extends EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegate.publish(context, events);
     }
 
     @Override
-    public Registration subscribe(@Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+    public Registration subscribe(BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
         return delegate.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         delegate.describeTo(descriptor);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.Objects;
 import java.util.Set;
 
@@ -33,7 +31,7 @@ public final class OrEventCriteriaBuilder {
 
     private final EventCriteria orCriteria;
 
-    OrEventCriteriaBuilder(@Nonnull EventCriteria orCriteria) {
+    OrEventCriteriaBuilder(EventCriteria orCriteria) {
         this.orCriteria = Objects.requireNonNull(orCriteria, "orCriteria may not be null");
     }
 
@@ -47,7 +45,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull Set<Tag> tags) {
+    public EventTypeRestrictableEventCriteria havingTags(Set<Tag> tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 
@@ -61,7 +59,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull Tag... tags) {
+    public EventTypeRestrictableEventCriteria havingTags(Tag... tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 
@@ -75,7 +73,7 @@ public final class OrEventCriteriaBuilder {
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
      */
-    public EventTypeRestrictableEventCriteria havingTags(@Nonnull String... tags) {
+    public EventTypeRestrictableEventCriteria havingTags(String... tags) {
         return wrap(EventCriteria.havingTags(tags));
     }
 

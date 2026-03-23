@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
@@ -37,6 +35,8 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import org.axonframework.messaging.monitoring.MessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +77,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from
      */
     @Internal
-    public EventProcessorConfiguration(@Nonnull String processorName,
+    public EventProcessorConfiguration(String processorName,
                                        @Nullable Configuration config) {
         this.processorName = Assert.nonEmpty(processorName, "The processor name cannot be null or empty.");
         if (config != null) {
@@ -94,7 +94,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      * @param base the {@code EventProcessorConfiguration} to copy properties from
      */
     @Internal
-    public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+    public EventProcessorConfiguration(EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         this.processorName = base.processorName;
         this.errorHandler = base.errorHandler();
@@ -112,7 +112,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *                     processing
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public EventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
         assertNonNull(errorHandler, "ErrorHandler may not be null");
         this.errorHandler = errorHandler;
         return this;
@@ -124,7 +124,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork}.
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public EventProcessorConfiguration unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
         this.unitOfWorkFactory = unitOfWorkFactory;
         return this;
@@ -168,7 +168,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("errorHandler", errorHandler);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("interceptors", interceptors);

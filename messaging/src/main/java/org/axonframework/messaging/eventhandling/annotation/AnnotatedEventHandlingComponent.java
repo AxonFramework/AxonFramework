@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -24,6 +23,7 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -35,8 +35,13 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -75,11 +80,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param converter                The converter to use for converting the payload of the event to the type expected
      *                                 by the handling method.
      */
-    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                           @Nonnull HandlerDefinition handlerDefinition,
-                                           @Nonnull MessageTypeResolver messageTypeResolver,
-                                           @Nonnull EventConverter converter) {
+    public AnnotatedEventHandlingComponent(T annotatedEventHandler,
+                                           ParameterResolverFactory parameterResolverFactory,
+                                           HandlerDefinition handlerDefinition,
+                                           MessageTypeResolver messageTypeResolver,
+                                           EventConverter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null.");
         this.handlingComponent = SimpleEventHandlingComponent.create(
                 "AnnotatedEventHandlingComponent[%s]".formatted(annotatedEventHandler.getClass().getName())
@@ -90,10 +95,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
         this.converter = requireNonNull(converter, "The EventConverter may not be null.");
 
-        initializeHandlersBasedOnModel();
+        initializeEventHandlersBasedOnModel();
+        initializeResetHandlersBasedOnModel();
+        initializeReplayStatusChangeHandlersBasedOnModel();
     }
 
-    private void initializeHandlersBasedOnModel() {
+    private void initializeEventHandlersBasedOnModel() {
         model.getUniqueHandlers(target.getClass(), EventMessage.class)
              .forEach(handler -> {
                  // Verify handler can handle EventMessage but don't unwrap - preserve wrapper chain
@@ -151,10 +158,9 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                       .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }
 
@@ -163,14 +169,86 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         return Set.copyOf(handlingComponent.supportedEvents());
     }
 
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return handlingComponent.sequenceIdentifierFor(event, context);
     }
 
+    // region [ResetHandlers]
+    private void initializeResetHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), ResetContext.class)
+             .forEach(this::registerResetHandler);
+    }
+
+    private void registerResetHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(constructResetHandlerFor(handler, interceptorChain));
+    }
+
+        private ResetHandler constructResetHandlerFor(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        return (resetContext, ctx) -> interceptorChain.handle(resetContext, ctx, target, handler)
+                                                      .ignoreEntries()
+                                                      .cast();
+    }
+
+    /**
+     * @implNote This implementation will consider any class that has a single handler that accepts a replay, to support
+     * reset. If no handlers explicitly indicate whether replay is supported, the method returns {@code true}.
+     */
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public boolean supportsReset() {
+        return model.getAllHandlers()
+                    .values()
+                    .stream()
+                    .flatMap(Collection::stream)
+                    .anyMatch(AnnotatedEventHandlingComponent::supportsReplay);
+    }
+
+    private static boolean supportsReplay(MessageHandlingMember<?> h) {
+        return h.attribute(HandlerAttributes.ALLOW_REPLAY)
+                .map(Boolean.TRUE::equals)
+                .orElse(Boolean.TRUE);
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                                        ProcessingContext context) {
+        return handlingComponent.handle(resetContext, context);
+    }
+    // endregion
+
+    // region [ReplayStatusChangeHandlers]
+    private void initializeReplayStatusChangeHandlersBasedOnModel() {
+        model.getUniqueHandlers(target.getClass(), ReplayStatusChanged.class)
+             .forEach(this::registerReplayStatusChangeHandler);
+    }
+
+    private void registerReplayStatusChangeHandler(MessageHandlingMember<? super T> handler) {
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(constructReplayStatusChangedHandlerFor(handler, interceptorChain));
+    }
+
+    private ReplayStatusChangedHandler constructReplayStatusChangedHandlerFor(
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        return (statusChange, ctx) -> interceptorChain.handle(statusChange, ctx, target, handler)
+                                                      .ignoreEntries()
+                                                      .cast();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
+        return handlingComponent.handle(statusChange, context);
+    }
+    // endregion
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("target", target);
         descriptor.describeWrapperOf(handlingComponent);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

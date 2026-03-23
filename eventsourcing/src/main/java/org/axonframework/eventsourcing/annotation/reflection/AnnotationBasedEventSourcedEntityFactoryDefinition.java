@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation.reflection;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -44,10 +43,10 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
 
     @Override
     public EventSourcedEntityFactory<Object, Object> createFactory(
-            @Nonnull Class<Object> entityType,
-            @Nonnull Set<Class<? extends Object>> entitySubTypes,
-            @Nonnull Class<Object> idType,
-            @Nonnull Configuration configuration
+            Class<Object> entityType,
+            Set<Class<? extends Object>> entitySubTypes,
+            Class<Object> idType,
+            Configuration configuration
     ) {
         return new AnnotationBasedEventSourcedEntityFactory<>(
                 entityType,

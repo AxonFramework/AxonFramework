@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa;
 
-import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -30,9 +29,11 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.ConfigToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.UnableToClaimTokenException;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -45,7 +46,6 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -117,7 +117,9 @@ class JpaTokenStoreTest {
 
     @Test
     void identifierReadIfAvailable() {
-        entityManager.persist(new TokenEntry("__config", Segment.ROOT_SEGMENT, new ConfigToken(Collections.singletonMap("id", "test")),
+        entityManager.persist(new TokenEntry("__config",
+                                             Segment.ROOT_SEGMENT,
+                                             new ConfigToken(Collections.singletonMap("id", "test")),
                                              jpaTokenStore.converter()));
         String id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertNotNull(id1);
@@ -148,7 +150,10 @@ class JpaTokenStoreTest {
 
     @Test
     void initializeTokens() {
-        List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test1", 7, null, createProcessingContext()));
+        List<Segment> createdSegments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test1",
+                                                                                            7,
+                                                                                            null,
+                                                                                            createProcessingContext()));
         List<Segment> actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1", null));
 
         assertThat(actual).containsExactlyInAnyOrderElementsOf(createdSegments);
@@ -245,7 +250,10 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegment() {
-        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 2, null, createProcessingContext()));
+        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test",
+                                                                                     2,
+                                                                                     null,
+                                                                                     createProcessingContext()));
         Segment segmentToFetch = segments.get(1);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
@@ -253,7 +261,10 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegmentSegment0() {
-        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, createProcessingContext()));
+        List<Segment> segments = joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test",
+                                                                                     1,
+                                                                                     null,
+                                                                                     createProcessingContext()));
         Segment segmentToFetch = segments.get(0);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch, null)));
@@ -481,6 +492,37 @@ class JpaTokenStoreTest {
         assertEquals(new GlobalSequenceTrackingToken(1), actual);
     }
 
+    @Test
+    void storeAndLoadReplayTokenWithCustomContext() {
+        // given
+        var ctx = createProcessingContext();
+        var converter = TestConverter.JACKSON.getConverter();
+        var resetContext = new MyResetContext(List.of(1L, 2L, 3L));
+        var replayToken = ReplayToken.createReplayToken(
+                new GlobalSequenceTrackingToken(10L),
+                new GlobalSequenceTrackingToken(5L),
+                converter.convert(resetContext, byte[].class)
+        );
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("replay-context-test", 1, null, ctx));
+        newTransaction();
+
+        // when
+        joinAndUnwrap(jpaTokenStore.fetchToken("replay-context-test", 0, null));
+        joinAndUnwrap(jpaTokenStore.storeToken(replayToken, "replay-context-test", 0, ctx));
+        newTransaction();
+
+        TrackingToken loadedToken = joinAndUnwrap(jpaTokenStore.fetchToken("replay-context-test", 0, null));
+
+        // then
+        assertThat(loadedToken).isInstanceOf(ReplayToken.class);
+        var loadedReplayContext = ReplayToken.replayContext(loadedToken, MyResetContext.class, converter);
+        assertThat(loadedReplayContext).isPresent();
+        assertThat(loadedReplayContext.get().sequences()).containsExactly(1L, 2L, 3L);
+    }
+
+    private record MyResetContext(List<Long> sequences) {
+
+    }
 
     private ProcessingContext createProcessingContext() {
         return new StubProcessingContext();

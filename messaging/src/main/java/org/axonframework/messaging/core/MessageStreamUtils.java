@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.core;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +32,16 @@ public abstract class MessageStreamUtils {
 
     private MessageStreamUtils() {
     }
+
+    /**
+     * A reusable no-operation {@code Runnable} instance.
+     * <p>
+     * This constant can be used in contexts where a non-null callback is required, but no specific action
+     * needs to be performed. When executed, it performs no operation and immediately returns.
+     */
+    public static final Runnable NO_OP_CALLBACK = () -> {
+    };
+
 
     /**
      * Returns a {@code CompletableFuture} that completes with the given reduction of messages read from the
@@ -60,9 +68,9 @@ public abstract class MessageStreamUtils {
      * @param <R>         The type of result expected from the reduction operation.
      * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
-    public static <M extends Message, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
-                                                                     @Nonnull R identity,
-                                                                     @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
+    public static <M extends Message, R> CompletableFuture<R> reduce(MessageStream<M> source,
+                                                                     R identity,
+                                                                     BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
         source.setCallback(reducer::process);
         return reducer.result();
@@ -85,7 +93,7 @@ public abstract class MessageStreamUtils {
      * stream.
      */
     public static <M extends Message> CompletableFuture<MessageStream.Entry<M>> asCompletableFuture(
-            @Nonnull MessageStream<M> source
+            MessageStream<M> source
     ) {
         FirstResult<M> firstResult = new FirstResult<>(source);
         source.setCallback(firstResult::process);

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
@@ -84,8 +84,7 @@ class SequentialPerAggregatePolicyTest {
         assertNull(sequenceIdentifier);
     }
 
-    @Nonnull
-    private EventWithProcessingContext eventWithProcessingContext(String aggregateIdentifier) {
+        private @NonNull EventWithProcessingContext eventWithProcessingContext(String aggregateIdentifier) {
         EventMessage event = EventTestUtils.asEventMessage("payload");
         StubProcessingContext processingContext = new StubProcessingContext();
         processingContext.putResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.common.util.StubDomainEvent;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -197,8 +198,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        public SimpleAggregateRoot doCreateAggregate(String aggregateIdentifier,
-                                                     DomainEventMessage firstEvent) {
+        public @NonNull SimpleAggregateRoot doCreateAggregate(@NonNull String aggregateIdentifier,
+                                                              @NonNull DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
     }

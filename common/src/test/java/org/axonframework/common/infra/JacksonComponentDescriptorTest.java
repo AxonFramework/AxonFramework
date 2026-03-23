@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.common.infra;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -104,7 +104,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         ) implements DescribableComponent {
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 descriptor.describeProperty("stringValue", stringValue);
                 descriptor.describeProperty("numberValue", numberValue);
                 descriptor.describeProperty("booleanValue", booleanValue);

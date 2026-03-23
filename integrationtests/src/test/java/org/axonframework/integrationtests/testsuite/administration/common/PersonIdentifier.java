@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package org.axonframework.integrationtests.testsuite.administration.common;
 
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 public record PersonIdentifier(
         PersonType type,
         String key
 ) {
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return key;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.axonframework.examples.university.shared.CourseId;
-import org.axonframework.messaging.commandhandling.annotation.Command;
 import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record CreateCourse(

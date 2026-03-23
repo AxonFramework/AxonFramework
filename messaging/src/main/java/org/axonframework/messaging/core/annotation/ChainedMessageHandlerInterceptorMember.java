@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
@@ -58,10 +57,10 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message,
-                                   @Nonnull ProcessingContext context,
-                                   @Nonnull T target,
-                                   @Nonnull MessageHandlingMember<? super T> handler) {
+    public MessageStream<?> handle(Message message,
+                                   ProcessingContext context,
+                                   T target,
+                                   MessageHandlingMember<? super T> handler) {
 
         // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
@@ -88,10 +87,10 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+    public Object handleSync(Message message,
+                             ProcessingContext context,
+                             T target,
+                             MessageHandlingMember<? super T> handler) throws Exception {
         // TODO #3485 - Implement this accordingly for annotated interception.
         //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandleSync(message, context, target, handler);

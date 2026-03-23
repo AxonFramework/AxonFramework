@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -95,7 +94,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     }
 
     @Override
-    public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception {
+    public Object handle(Message message, ProcessingContext context) throws Exception {
         Object result = wrappedAggregate.handle(message, context);
         // we need to ensure the lock is acquired, as this may not have happened earlier
         lock.acquire();

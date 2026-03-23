@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.Message;
@@ -102,8 +102,7 @@ final class PropertySequencingPolicyTest {
         return StubProcessingContext.withComponent(EventConverter.class, eventConverter());
     }
 
-    @Nonnull
-    private static EventConverter eventConverter() {
+    static @NonNull EventConverter eventConverter() {
         return new DelegatingEventConverter(new JacksonConverter());
     }
 

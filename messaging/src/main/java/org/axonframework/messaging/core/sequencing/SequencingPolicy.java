@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -43,7 +43,7 @@ import java.util.Optional;
  * <li>{@link PropertySequencingPolicy}: Message processing policy that extracts the sequence identifier from the
  * message payload based on a given property</li>
  * <li>{@link FallbackSequencingPolicy}: Message processing policy that allows two policies in an exception-based
- * fallback behavior for sequence identifier exctraction.</li>
+ * fallback behavior for sequence identifier extraction.</li>
  * <li>{@link HierarchicalSequencingPolicy}: Message processing policy that allows to combine two policies in a
  * fallback pattern (similar to {@code FallbackSequencingPolicy}, but not exception based).</li>
  * </ul>
@@ -68,11 +68,11 @@ public interface SequencingPolicy<M extends Message> {
      * @param message the message for which to get the sequencing identifier.
      * @param context the processing context in which the message is being handled. There might be limitations to the
      *                instance of the {@link ProcessingContext} depending on where the {@code SequencingPolicy} is being
-     *                applied. When handling Events for exapmple, the {@link ProcessingContext} doesn't allow you to
+     *                applied. When handling Events for example, the {@link ProcessingContext} doesn't allow you to
      *                register phases actions by for example {@link ProcessingContext#on} or retrieving components by
      *                {@link ProcessingContext#component}.
      * @return a sequence identifier for the given message, or {@code Optional#empty()} if this policy cannot determine
      * a sequence identifier for the given message.
      */
-    Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context);
+    Optional<Object> sequenceIdentifierFor(M message, @Nullable ProcessingContext context);
 }

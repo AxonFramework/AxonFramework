@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -54,5 +53,5 @@ public interface ErrorHandler {
      * @param errorContext Contextual information describing the error.
      * @throws Exception If this handler decides to propagate the error.
      */
-    void handleError(@Nonnull ErrorContext errorContext) throws Exception;
+    void handleError(ErrorContext errorContext) throws Exception;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -68,21 +68,21 @@ class DefaultMessageDispatchInterceptorChainTest {
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageDispatchInterceptor<Message> interceptorOne = spy(new MessageDispatchInterceptor<Message>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
+            public MessageStream<?> interceptOnDispatch(@NonNull Message message,
                                                         @Nullable ProcessingContext context,
-                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+                                                        @NonNull MessageDispatchInterceptorChain<Message> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
         MessageDispatchInterceptor<Message> interceptorTwo = spy(new MessageDispatchInterceptor<Message>() {
-            @Nonnull
+            @NonNull
             @Override
-            public MessageStream<?> interceptOnDispatch(@Nonnull Message message, @Nullable ProcessingContext context,
-                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+            public MessageStream<?> interceptOnDispatch(@NonNull Message message, @Nullable ProcessingContext context,
+                                                        @NonNull MessageDispatchInterceptorChain<Message> chain) {
                 invocationCount.incrementAndGet();
                 return chain.proceed(message, context);
             }

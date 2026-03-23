@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.GenericResultMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param payload The payload of type {@code U} for this {@link SubscriptionQueryUpdateMessage} representing an
      *                incremental update.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                  @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()));
     }
@@ -66,9 +65,9 @@ public class GenericSubscriptionQueryUpdateMessage
      *                           representing an incremental update.
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                      @Nullable P payload,
-                                                     @Nonnull Class<P> declaredUpdateType) {
+                                                     Class<P> declaredUpdateType) {
         this(type, payload, declaredUpdateType, Metadata.emptyInstance());
     }
 
@@ -83,10 +82,10 @@ public class GenericSubscriptionQueryUpdateMessage
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      * @param metadata           The metadata for this {@link SubscriptionQueryUpdateMessage}.
      */
-    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+    public <P> GenericSubscriptionQueryUpdateMessage(MessageType type,
                                                      @Nullable P payload,
-                                                     @Nonnull Class<P> declaredUpdateType,
-                                                     @Nonnull Map<String, String> metadata) {
+                                                     Class<P> declaredUpdateType,
+                                                     Map<String, @Nullable String> metadata) {
         super(new GenericMessage(type, payload, declaredUpdateType, metadata));
     }
 
@@ -101,26 +100,23 @@ public class GenericSubscriptionQueryUpdateMessage
      *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull Message delegate) {
+    public GenericSubscriptionQueryUpdateMessage(Message delegate) {
         super(delegate);
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public SubscriptionQueryUpdateMessage withMetadata(Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public SubscriptionQueryUpdateMessage andMetadata(Map<String, String> metadata) {
         return new GenericSubscriptionQueryUpdateMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type,
-                                                               @Nonnull Converter converter) {
+        public SubscriptionQueryUpdateMessage withConvertedPayload(Type type,
+                                                               Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;
@@ -130,6 +126,23 @@ public class GenericSubscriptionQueryUpdateMessage
                                                                             delegate.type(),
                                                                             convertedPayload,
                                                                             delegate.metadata()));
+    }
+
+    /**
+     * Returns a new {@code GenericSubscriptionQueryUpdateMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericSubscriptionQueryUpdateMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericSubscriptionQueryUpdateMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericSubscriptionQueryUpdateMessage(updated);
     }
 
     @Override

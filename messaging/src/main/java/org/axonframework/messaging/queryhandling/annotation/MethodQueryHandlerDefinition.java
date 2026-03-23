@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.queryhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.util.ClasspathResolver;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
@@ -57,7 +56,7 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
 public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.<String>attribute(HandlerAttributes.QUERY_NAME)
                        .map(queryName -> (MessageHandlingMember<T>) new MethodQueryHandlingMember<>(
                                original, queryName
@@ -90,8 +89,8 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message,
-                                 @Nonnull ProcessingContext context,
+        public Object handleSync(Message message,
+                                 ProcessingContext context,
                                  @Nullable T target) throws Exception {
             Object result = super.handleSync(message, context, target);
             if (result instanceof Optional) {
@@ -133,7 +132,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return super.canHandle(message, context) && message instanceof QueryMessage;
         }
 

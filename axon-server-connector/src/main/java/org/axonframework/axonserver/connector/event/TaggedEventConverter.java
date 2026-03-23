@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ package org.axonframework.axonserver.connector.event;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.dcb.Event;
 import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.Metadata;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -59,7 +58,7 @@ public class TaggedEventConverter implements DescribableComponent {
      * @param converter The converter used to {@link EventConverter#convert(Object, Class)} the
      *                  {@link EventMessage#payload()} for the {@link Event}.
      */
-    public TaggedEventConverter(@Nonnull EventConverter converter) {
+    public TaggedEventConverter(EventConverter converter) {
         this.converter = Objects.requireNonNull(converter, "The EventConverter cannot be null.");
     }
 
@@ -71,7 +70,7 @@ public class TaggedEventConverter implements DescribableComponent {
      * @param taggedEvent The tagged event message to convert into a {@link TaggedEvent}.
      * @return A {@code TaggedEvent} based on the given {@code taggedEvent}.
      */
-    public TaggedEvent convertTaggedEventMessage(@Nonnull TaggedEventMessage<?> taggedEvent) {
+    public TaggedEvent convertTaggedEventMessage(TaggedEventMessage<?> taggedEvent) {
         return TaggedEvent.newBuilder()
                           .setEvent(convertEventMessage(taggedEvent.event()))
                           .addAllTag(convertTags(taggedEvent.tags()))
@@ -128,16 +127,17 @@ public class TaggedEventConverter implements DescribableComponent {
      * @param event The event to convert into an {@link EventMessage}.
      * @return An {@code EventMessage} based on the given {@code event}.
      */
-    public EventMessage convertEvent(@Nonnull Event event) {
+    public EventMessage convertEvent(Event event) {
         return new GenericEventMessage(event.getIdentifier(),
                                        new MessageType(event.getName(), event.getVersion()),
                                        event.getPayload().toByteArray(),
                                        event.getMetadataMap(),
-                                       Instant.ofEpochMilli(event.getTimestamp()));
+                                       Instant.ofEpochMilli(event.getTimestamp())
+        ).withConverter(converter);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("converter", converter);
     }
 }

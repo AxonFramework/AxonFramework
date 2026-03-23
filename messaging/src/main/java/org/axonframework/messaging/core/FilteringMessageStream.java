@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -31,9 +29,8 @@ import java.util.function.Predicate;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FilteringMessageStream<M extends Message> implements MessageStream<M> {
+class FilteringMessageStream<M extends Message> extends DelegatingMessageStream<M,M> {
 
-    private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
     private Entry<M> peeked = null;
 
@@ -46,9 +43,9 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
      * @param filter   The {@link MessageStream.Entry entry} filter that will validate if the {@link #next()} invocation
      *                 should return the entry, yes or no.
      */
-    FilteringMessageStream(@Nonnull MessageStream<M> delegate,
-                           @Nonnull Predicate<Entry<M>> filter) {
-        this.delegate = delegate;
+    FilteringMessageStream(MessageStream<M> delegate,
+                           Predicate<Entry<M>> filter) {
+        super(delegate);
         this.filter = filter;
     }
 
@@ -59,9 +56,9 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
             peeked = null;
             return Optional.of(result);
         }
-        Optional<Entry<M>> result = delegate.next();
+        Optional<Entry<M>> result = delegate().next();
         while (result.isPresent() && !filter.test(result.get())) {
-            result = delegate.next();
+            result = delegate().next();
         }
         return result;
     }
@@ -71,9 +68,9 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
         if (peeked != null) {
             return Optional.of(peeked);
         }
-        Optional<Entry<M>> result = delegate.next();
+        Optional<Entry<M>> result = delegate().next();
         while (result.isPresent() && !filter.test(result.get())) {
-            result = delegate.next();
+            result = delegate().next();
         }
         if (result.isPresent()) {
             peeked = result.get();
@@ -83,28 +80,13 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        delegate.setCallback(callback);
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        return delegate.error();
-    }
-
-    @Override
     public boolean isCompleted() {
-        return delegate.isCompleted() && peeked == null;
+        return delegate().isCompleted() && peeked == null;
     }
 
     @Override
     public boolean hasNextAvailable() {
         return peeked != null || peek().isPresent();
-    }
-
-    @Override
-    public void close() {
-        delegate.close();
     }
 
     /**
@@ -123,7 +105,7 @@ class FilteringMessageStream<M extends Message> implements MessageStream<M> {
          *                 given {@code mapper}.
          * @param filter   The {@link Predicate} filtering the first {@link Entry} from the given {@code delegate}.
          */
-        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Predicate<Entry<M>> filter) {
+        Single(MessageStream.Single<M> delegate, Predicate<Entry<M>> filter) {
             super(delegate, filter);
         }
     }

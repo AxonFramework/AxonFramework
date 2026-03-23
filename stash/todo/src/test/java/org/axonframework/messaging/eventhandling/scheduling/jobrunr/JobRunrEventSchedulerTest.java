@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventhandling.scheduling.jobrunr;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -37,6 +37,7 @@ import org.jobrunr.server.JobActivator;
 import org.jobrunr.storage.InMemoryStorageProvider;
 import org.jobrunr.storage.StorageProvider;
 import org.junit.jupiter.api.*;
+
 
 import java.time.Duration;
 import java.time.Instant;
@@ -220,20 +221,20 @@ class JobRunrEventSchedulerTest {
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<? extends EventMessage> events) {
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                        @NonNull List<? extends EventMessage> events) {
             publishedMessages.addAll(events);
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+        public @NonNull Registration subscribe(
+                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
     }

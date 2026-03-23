@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
@@ -44,10 +44,10 @@ import java.util.Optional;
 public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<String> optionalEventName = original.attribute(HandlerAttributes.EVENT_NAME);
         return original.unwrap(Method.class)
-                       .filter(method -> method.isAnnotationPresent(EventHandler.class))
+                       .filter(method -> AnnotationUtils.isAnnotationPresent(method, EventHandler.class))
                        .filter(method -> optionalEventName.isPresent())
                        .map(method -> (MessageHandlingMember<T>)
                                new MethodEventHandlerDefinition.MethodEventMessageHandlingMember<>(
@@ -82,7 +82,7 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return super.canHandle(message, context) && message instanceof EventMessage;
         }
 

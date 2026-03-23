@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.tracing;
 
 import org.axonframework.common.FutureUtils;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -239,7 +241,7 @@ public interface Span {
      * @param value The value of the attribute.
      * @return The span for fluent interfacing.
      */
-    default Span addAttribute(String key, String value) {
+    default Span addAttribute(String key, @Nullable String value) {
         return this;
     }
 }

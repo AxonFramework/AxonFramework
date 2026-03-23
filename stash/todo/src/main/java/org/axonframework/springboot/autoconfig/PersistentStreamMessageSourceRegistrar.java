@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Post-processor to create Spring beans for persistent streams defined in the application context.
@@ -62,7 +61,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
 
     @Override
     public void postProcessBeanDefinitionRegistry(
-            @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
+            BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
 //        persistentStreams.forEach((name, settings) -> {
 //            BeanDefinitionBuilder beanDefinition =
@@ -91,7 +90,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
 
     @Override
     public void postProcessBeanFactory(
-            @Nonnull ConfigurableListableBeanFactory configurableListableBeanFactory
+            ConfigurableListableBeanFactory configurableListableBeanFactory
     ) throws BeansException {
         // No actions needed here
     }

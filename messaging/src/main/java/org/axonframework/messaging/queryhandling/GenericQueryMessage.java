@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
  */
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -39,7 +37,7 @@ import java.util.OptionalInt;
  */
 public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
-    private final Integer priority;
+    private final @Nullable Integer priority;
 
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
@@ -48,9 +46,9 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * expected {@code responseType}.
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
-     * @param payload      The payload expressing the query for this {@link CommandMessage}.
+     * @param payload      The payload expressing the query for this {@link QueryMessage}.
      */
-    public GenericQueryMessage(@Nonnull MessageType type,
+    public GenericQueryMessage(MessageType type,
                                @Nullable Object payload) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()),
              null);
@@ -71,7 +69,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @see GenericQueryMessage(Message, MessageType, Integer)
      */
-    public GenericQueryMessage(@Nonnull Message delegate) {
+    public GenericQueryMessage(Message delegate) {
         this(delegate, null);
     }
 
@@ -90,27 +88,24 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @param priority     The priority of this query message. May be {@code null} to indicate no priority.
      */
-    public GenericQueryMessage(@Nonnull Message delegate,
+    public GenericQueryMessage(Message delegate,
                                @Nullable Integer priority) {
         super(delegate);
         this.priority = priority;
     }
 
     @Override
-    @Nonnull
-    public QueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public QueryMessage withMetadata(Map<String, String> metadata) {
         return new GenericQueryMessage(delegate().withMetadata(metadata), priority);
     }
 
     @Override
-    @Nonnull
-    public QueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public QueryMessage andMetadata(Map<String, @Nullable String> metadata) {
         return new GenericQueryMessage(delegate().andMetadata(metadata), priority);
     }
 
     @Override
-    @Nonnull
-    public QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public QueryMessage withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;
@@ -122,6 +117,24 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
                                                delegate.metadata());
         return new GenericQueryMessage(converted, priority);
     }
+
+    /**
+     * Returns a new {@code GenericQueryMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericQueryMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericQueryMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericQueryMessage(updated, priority);
+    }
+
 
     @Override
     public OptionalInt priority() {

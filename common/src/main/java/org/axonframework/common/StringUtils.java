@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.common;
 
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -42,7 +42,7 @@ public final class StringUtils {
      * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
      * otherwise
      */
-    public static boolean nonEmptyOrNull(String s) {
+    public static boolean nonEmptyOrNull(@Nullable String s) {
         return Objects.nonNull(s) && !EMPTY_STRING.equals(s);
     }
 
@@ -54,7 +54,7 @@ public final class StringUtils {
      * @return {@code true} if the given {@link String} {@code s} is not {@code null} and not empty, {@code false}
      * otherwise.
      */
-    public static boolean emptyOrNull(String s) {
+    public static boolean emptyOrNull(@Nullable String s) {
         return Objects.isNull(s) || EMPTY_STRING.equals(s);
     }
 
@@ -82,10 +82,14 @@ public final class StringUtils {
 
     /**
      * Return the given {@code string}, with its first character uppercase.
+     * <p>
+     * When the given {@code string} is {@code null}, the returned value is also {@code null}.
      *
-     * @param string The input string to adjust to a version with the first character as uppercase.
-     * @return The input string, with first character in uppercase.
+     * @param string the input string to adjust to a version with the first character as uppercase
+     * @return the input string, with first character in uppercase, or {@code null} if the given {@code string} is
+     * {@code null}
      */
+    @Nullable
     public static String capitalize(@Nullable String string) {
         if (string == null || string.isEmpty()) {
             return string;

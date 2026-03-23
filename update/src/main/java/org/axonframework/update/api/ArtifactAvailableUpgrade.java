@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.update.api;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 /**
@@ -30,9 +29,9 @@ import org.axonframework.common.annotation.Internal;
  */
 @Internal
 public record ArtifactAvailableUpgrade(
-        @Nonnull String groupId,
-        @Nonnull String artifactId,
-        @Nonnull String latestVersion
+        String groupId,
+        String artifactId,
+        String latestVersion
 ) {
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.isNull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -249,7 +248,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return eventMessage;
     }
 
-    private EventMessage asEventMessage(@Nonnull Object event) {
+    private EventMessage asEventMessage(Object event) {
         if (event instanceof EventMessage e) {
             return e;
         }

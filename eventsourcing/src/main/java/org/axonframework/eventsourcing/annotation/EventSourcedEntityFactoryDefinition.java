@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 
@@ -47,8 +46,8 @@ public interface EventSourcedEntityFactoryDefinition<E, ID> {
      * @param configuration  The configuration to use for creating the factory.
      * @return A new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      */
-    EventSourcedEntityFactory<ID, E> createFactory(@Nonnull Class<E> entityType,
-                                                   @Nonnull Set<Class<? extends E>> entitySubTypes,
-                                                   @Nonnull Class<ID> idType,
-                                                   @Nonnull Configuration configuration);
+    EventSourcedEntityFactory<ID, E> createFactory(Class<E> entityType,
+                                                   Set<Class<? extends E>> entitySubTypes,
+                                                   Class<ID> idType,
+                                                   Configuration configuration);
 }

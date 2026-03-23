@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
@@ -59,7 +59,7 @@ class EventProcessorMonitoringTest {
             }
 
             @Override
-            public void reportFailure(Throwable cause) {
+            public void reportFailure(@NonNull Throwable cause) {
                 fail("Test expects 'reportSuccess' to be called");
             }
 
@@ -100,17 +100,17 @@ class EventProcessorMonitoringTest {
         }
 
         @Override
-        public String name() {
+        public @NonNull String name() {
             return "test";
         }
 
         @Override
-        public CompletableFuture<Void> start() {
+        public @NonNull CompletableFuture<Void> start() {
             return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public CompletableFuture<Void> shutdown() {
+        public @NonNull CompletableFuture<Void> shutdown() {
             return FutureUtils.emptyCompletedFuture();
         }
 
@@ -134,7 +134,7 @@ class EventProcessorMonitoringTest {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException("Not required for tests.");
         }
     }

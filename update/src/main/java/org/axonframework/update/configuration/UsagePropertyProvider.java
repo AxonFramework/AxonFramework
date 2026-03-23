@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.update.configuration;
 
 import org.axonframework.common.annotation.Internal;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +50,7 @@ public interface UsagePropertyProvider {
      *
      * @return The URL as a {@link String}, or {@code null} if not specified.
      */
-    String getUrl();
+    @Nullable String getUrl();
 
     /**
      * Returns the priority of this property provider. Higher values indicate higher priority. Providers with higher

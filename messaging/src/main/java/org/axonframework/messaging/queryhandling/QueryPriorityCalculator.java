@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.queryhandling;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Calculate the priority of {@link QueryMessage} based on its content.
@@ -35,15 +33,14 @@ public interface QueryPriorityCalculator {
      * @param query a {@link QueryMessage} to prioritize
      * @return an {@code int} defining the priority of the given {@code query}
      */
-    int determinePriority(@Nonnull QueryMessage query);
+    int determinePriority(QueryMessage query);
 
     /**
      * Returns a default implementation of the {@code QueryPriorityCalculator}, always returning priority {@code 0}.
      *
      * @return A lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}.
      */
-    @Nonnull
-    static QueryPriorityCalculator defaultCalculator() {
+        static QueryPriorityCalculator defaultCalculator() {
         return query -> 0;
     }
 }

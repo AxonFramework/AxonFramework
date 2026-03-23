@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.LifecycleHandler;
 import org.springframework.context.SmartLifecycle;
@@ -50,7 +49,7 @@ public class SpringLifecycleStartHandler implements SmartLifecycle {
      * @param task  The task to execute on start-up.
      */
     SpringLifecycleStartHandler(int phase,
-                                @Nonnull Supplier<CompletableFuture<?>> task) {
+                                Supplier<CompletableFuture<?>> task) {
         this.phase = phase;
         this.task = task;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,8 @@ import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.messaging.tracing.TestSpanFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1189,9 +1189,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @Override
-        public @NotNull MessageStream<?> interceptOnDispatch(@NotNull Message message,
+        public @NonNull MessageStream<?> interceptOnDispatch(@NonNull Message message,
                                                              @Nullable ProcessingContext context,
-                                                             @NotNull MessageDispatchInterceptorChain<Message> interceptorChain) {
+                                                             @NonNull MessageDispatchInterceptorChain<Message> interceptorChain) {
             return interceptorChain.proceed(message.andMetadata(Metadata.with(CUSTOM_CORRELATION_DATA_KEY,
                                                                               correlationData)), context);
         }

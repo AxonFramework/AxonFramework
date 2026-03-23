@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,21 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ExceptionConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionUtils;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
@@ -54,9 +54,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@link AxonServerCommandBusConnector}.
  * <p>
  * The operations {@link #convertCommandMessage(CommandMessage, String, String) convert}
- * {@link CommandMessage CommandMessages} and {@link #convertCommandResponse(CommandResponse) convert}
+ * {@link CommandMessage CommandMessages} and {@link #convertCommandResponse(CommandResponse, Converter) convert}
  * {@link CommandResponse CommandResponses} are used during dispatching. The operations
- * {@link #convertCommand(Command) convert} {@link Command Commands} and
+ * {@link #convertCommand(Command, Converter) convert} {@link Command Commands} and
  * {@link #convertResultMessage(CommandResultMessage, String) convert} result messages are used during handling.
  * <p>
  * This utility class is marked as {@link Internal} as it is specific for the {@link AxonServerCommandBusConnector}.
@@ -82,9 +82,9 @@ public final class CommandConverter {
      *                      {@link org.axonframework.axonserver.connector.AxonServerConfiguration}.
      * @return The given {@code command} converted to a {@link Command}.
      */
-    public static Command convertCommandMessage(@Nonnull CommandMessage command,
-                                                @Nonnull String clientId,
-                                                @Nonnull String componentName) {
+    public static Command convertCommandMessage(CommandMessage command,
+                                                String clientId,
+                                                String componentName) {
         Object payload = command.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -115,12 +115,14 @@ public final class CommandConverter {
      * {@link CompletableFuture} for convenience when dealing with {@link CommandResponse CommandResponses} during
      * {@link AxonServerCommandBusConnector#dispatch(CommandMessage, ProcessingContext) dispatching}.
      *
-     * @param commandResponse The command response to convert to a {@link CommandResultMessage}.
-     * @return The {@code commandResponse} converted to a {@link CommandResultMessage}, wrapped in a
-     * {@link CompletableFuture} for convenience.
+     * @param commandResponse the command response to convert to a {@link CommandResultMessage}
+     * @param converter the converter to use for payload conversion in the resulting {@link CommandResultMessage}
+     * @return the {@code commandResponse} converted to a {@link CommandResultMessage}, wrapped in a
+     * {@link CompletableFuture} for convenience
      */
     public static CompletableFuture<CommandResultMessage> convertCommandResponse(
-            @Nonnull CommandResponse commandResponse
+            CommandResponse commandResponse,
+            @Nullable Converter converter
     ) {
         if (commandResponse.hasErrorMessage()) {
             return CompletableFuture.failedFuture(ExceptionConverter.convertToAxonException(
@@ -142,7 +144,7 @@ public final class CommandConverter {
                 messageType,
                 commandResponse.getPayload().getData().toByteArray(),
                 metadata
-        )));
+        )).withConverter(converter));
     }
 
 
@@ -150,10 +152,11 @@ public final class CommandConverter {
      * Converts the given {@code command} into a {@link CommandMessage} for handling in
      * {@link AxonServerCommandBusConnector#subscribe(QualifiedName, int) subscribed} command handlers.
      *
-     * @param command The command to convert to a {@link CommandMessage}.
-     * @return The given {@code command} converted into a {@link CommandMessage}.
+     * @param command the command to convert to a {@link CommandMessage}
+     * @param converter the converter to use for payload conversion in the resulting {@link CommandMessage}
+     * @return the given {@code command} converted into a {@link CommandMessage}
      */
-    public static CommandMessage convertCommand(@Nonnull Command command) {
+    public static CommandMessage convertCommand(Command command, @Nullable Converter converter) {
         SerializedObject commandPayload = command.getPayload();
         int priority = priority(command.getProcessingInstructionsList());
         String routingKey = ProcessingInstructionUtils.routingKey(command.getProcessingInstructionsList());
@@ -166,7 +169,7 @@ public final class CommandConverter {
                 ),
                 routingKey,
                 priority
-        );
+        ).withConverter(converter);
     }
 
     /**
@@ -183,7 +186,7 @@ public final class CommandConverter {
      * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier}.
      */
     public static CommandResponse convertResultMessage(@Nullable CommandResultMessage resultMessage,
-                                                       @Nonnull String requestIdentifier) {
+                                                       String requestIdentifier) {
         if (resultMessage == null) {
             return CommandResponse.newBuilder()
                                   .setMessageIdentifier(UUID.randomUUID().toString())

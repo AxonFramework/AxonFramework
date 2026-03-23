@@ -16,16 +16,14 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.config.BeanDefinition;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Defines the configuration for an event processor, including which event handlers it should process and how it should
@@ -36,7 +34,7 @@ import java.util.function.Predicate;
  *     <li>Start with a static factory method (e.g., {@link #pooledStreaming(String)} or
  *     {@link #subscribing(String)})</li>
  *     <li>Define which event handlers should be assigned to this processor using
- *     {@link SelectorStep#assigningHandlers(Predicate)}</li>
+ *     {@link SelectorStep#assigningHandlers(EventHandlerSelector)}</li>
  *     <li>Either apply custom configuration using {@link ConfigurationStep#customized(Function)}
  *     or use default settings with {@link ConfigurationStep#notCustomized()}</li>
  * </ol>
@@ -47,7 +45,7 @@ import java.util.function.Predicate;
  *     .assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
  *     .customized(config -> config.maxClaimedSegments(4));
  * }</pre>
- *
+ * <p>
  * Any configuration set by the `.customized` method will override any configuration provided using properties
  * files.
  *
@@ -57,36 +55,77 @@ import java.util.function.Predicate;
 public interface EventProcessorDefinition {
 
     /**
-     * Creates a new processor definition for a pooled streaming event processor with the given name.
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor pooled
+     * streaming event processor} with the given {@code name}.
      * <p>
      * Pooled streaming event processors distribute event processing across multiple threads, allowing for parallel
      * processing of events within a single processor instance.
      *
-     * @param name The name of the processor.
-     * @return The next step in the fluent API to define the handler selection criteria.
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
      */
-    @Nonnull
-    static SelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(
-            @Nonnull String name
-    ) {
+    static SelectorStep<PooledStreamingEventProcessorConfiguration> pooledStreaming(String name) {
         return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.POOLED);
     }
 
     /**
-     * Creates a new processor definition for a subscribing event processor with the given name.
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor pooled
+     * streaming event processor} with the given {@code name}, automatically selecting any event handler with
+     * a namespace matching the {@code name}, and adding them to the pooled streaming event processor.
+     * <p>
+     * Pooled streaming event processors distribute event processing across multiple threads, allowing for parallel
+     * processing of events within a single processor instance.
+     * <p>
+     * Selecting the event handlers is done based on the presence and contents of the
+     * {@link org.axonframework.messaging.core.annotation.Namespace}.
+     *
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
+     */
+    static ConfigurationStep<PooledStreamingEventProcessorConfiguration> pooledStreamingMatching(String name) {
+        return new EventProcessorDefinitionBuilder<PooledStreamingEventProcessorConfiguration>(
+                name, EventProcessorSettings.ProcessorMode.POOLED
+        ).assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(name));
+    }
+
+    /**
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor subscribing
+     * event processor} with the given {@code name}.
      * <p>
      * With Subscribing event processors, the processor relies on the threading model of the
      * {@link org.axonframework.messaging.core.SubscribableEventSource}, potentially providing low-latency processing
      * but without the ability to replay events or track progress.
      *
-     * @param name The name of the processor.
-     * @return The next step in the fluent API to define the handler selection criteria.
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
      */
-    @Nonnull
-    static SelectorStep<SubscribingEventProcessorConfiguration> subscribing(
-            @Nonnull String name
-    ) {
+    static SelectorStep<SubscribingEventProcessorConfiguration> subscribing(String name) {
         return new EventProcessorDefinitionBuilder<>(name, EventProcessorSettings.ProcessorMode.SUBSCRIBING);
+    }
+
+    /**
+     * Creates a new processor definition for a
+     * {@link org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor subscribing
+     * event processor} with the given {@code name}, automatically selecting any event handler with a 
+     * namespace matching the {@code name}, and adding them to the subscribing event processor.
+     * <p>
+     * With Subscribing event processors, the processor relies on the threading model of the
+     * {@link org.axonframework.messaging.core.SubscribableEventSource}, potentially providing low-latency processing
+     * but without the ability to replay events or track progress.
+     * <p>
+     * Selecting the event handlers is done based on the presence and contents of the
+     * {@link org.axonframework.messaging.core.annotation.Namespace}.
+     *
+     * @param name the name of the processor
+     * @return the next step in the fluent API to define the handler selection criteria
+     */
+    static ConfigurationStep<SubscribingEventProcessorConfiguration> subscribingMatching(String name) {
+        return new EventProcessorDefinitionBuilder<SubscribingEventProcessorConfiguration>(
+                name, EventProcessorSettings.ProcessorMode.SUBSCRIBING
+        ).assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(name));
     }
 
     /**
@@ -95,7 +134,7 @@ public interface EventProcessorDefinition {
      * @param eventHandlerDescriptor The descriptor of the event handler to check.
      * @return {@code true} if the event handler should be assigned to this processor, {@code false} otherwise.
      */
-    boolean matchesSelector(@Nonnull EventHandlerDescriptor eventHandlerDescriptor);
+    boolean matchesSelector(EventHandlerDescriptor eventHandlerDescriptor);
 
     /**
      * Applies this processor's configuration settings to the given settings object.
@@ -103,15 +142,13 @@ public interface EventProcessorDefinition {
      * @param settings The base settings to apply configuration to.
      * @return The configured settings, potentially modified by this processor's configuration.
      */
-    @Nonnull
-    EventProcessorConfiguration applySettings(@Nonnull EventProcessorConfiguration settings);
+    EventProcessorConfiguration applySettings(EventProcessorConfiguration settings);
 
     /**
      * Returns the name of this processor.
      *
      * @return The processor name.
      */
-    @Nonnull
     String name();
 
     /**
@@ -119,7 +156,6 @@ public interface EventProcessorDefinition {
      *
      * @return The processor mode.
      */
-    @Nonnull
     EventProcessorSettings.ProcessorMode mode();
 
     /**
@@ -135,7 +171,6 @@ public interface EventProcessorDefinition {
          *
          * @return The bean name.
          */
-        @Nonnull
         String beanName();
 
         /**
@@ -158,7 +193,6 @@ public interface EventProcessorDefinition {
          *
          * @return The event handler bean.
          */
-        @Nonnull
         Object resolveBean();
 
         /**
@@ -166,7 +200,6 @@ public interface EventProcessorDefinition {
          *
          * @return The component builder.
          */
-        @Nonnull
         ComponentBuilder<Object> component();
     }
 
@@ -181,19 +214,21 @@ public interface EventProcessorDefinition {
         /**
          * Defines the selection criteria for event handlers to be assigned to this processor.
          * <p>
-         * The provided predicate will be evaluated for each event handler component discovered in the Spring context.
-         * Handlers for which the predicate returns {@code true} will be assigned to this processor.
+         * The provided {@code selector} will be evaluated for each event handler component discovered in the Spring
+         * context. Handlers for which the {@code selector} returns {@code true} will be assigned to this processor.
+         * Note that the {@link EventHandlerSelector} describes a number of out-of-the-box selector options that you can
+         * use for convenience.
          * <p>
          * Example:
          * <pre>{@code
          * assigningHandlers(descriptor -> descriptor.beanName().startsWith("order"))
          * }</pre>
          *
-         * @param selector A predicate that determines which event handlers to assign to this processor.
-         * @return The next step in the fluent API to configure the processor settings.
+         * @param selector a selector that determines which event handlers to assign to this processor
+         * @return the next step in the fluent API to configure the processor settings
+         * @see EventHandlerSelector
          */
-        @Nonnull
-        ConfigurationStep<T> assigningHandlers(@Nonnull Predicate<EventHandlerDescriptor> selector);
+        ConfigurationStep<T> assigningHandlers(EventHandlerSelector selector);
     }
 
     /**
@@ -201,7 +236,7 @@ public interface EventProcessorDefinition {
      *
      * @param <T> The type of {@link EventProcessorConfiguration} for this processor.
      */
-    interface ConfigurationStep<T extends EventProcessorConfiguration> {
+    interface ConfigurationStep<T extends EventProcessorConfiguration> extends EventProcessorDefinition {
 
         /**
          * Applies custom configuration to the processor using the provided configuration function.
@@ -220,8 +255,7 @@ public interface EventProcessorDefinition {
          * @param configurer A function that modifies the processor configuration.
          * @return The completed processor definition.
          */
-        @Nonnull
-        EventProcessorDefinition customized(@Nonnull Function<T, T> configurer);
+        EventProcessorDefinition customized(Function<T, T> configurer);
 
         /**
          * Completes the processor definition using default settings for this processor type.
@@ -231,7 +265,6 @@ public interface EventProcessorDefinition {
          *
          * @return The completed processor definition.
          */
-        @Nonnull
         EventProcessorDefinition notCustomized();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.queryhandling.QueryMessage;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Inspects message handler and wraps it in a {@link TimeoutWrappedMessageHandlingMember} if the handler should have a
@@ -53,7 +51,7 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         TaskTimeoutSettings config = getConfigurationForMember(original);
         if (config == null) {
             // Unknown type of message. Don't enhance the handler.
@@ -95,7 +93,7 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
      * @return The configuration for the message handler
      */
     private TaskTimeoutSettings getConfigurationForMember(
-            @Nonnull MessageHandlingMember<?> original
+            MessageHandlingMember<?> original
     ) {
         if (original.canHandleMessageType(EventMessage.class)) {
             return configuration.getEvents();

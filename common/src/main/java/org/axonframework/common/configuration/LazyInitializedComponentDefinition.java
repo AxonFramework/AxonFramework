@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
 
     private final ComponentBuilder<A> builder;
-    private final AtomicReference<A> instanceReference = new AtomicReference<>();
+    private final AtomicReference<@Nullable A> instanceReference = new AtomicReference<>();
 
     /**
      * Create the definition for a component with given {@code identifier} and given {@code instance}.
@@ -46,14 +47,14 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
      * @param identifier The identifier of the component.
      * @param builder    The function used to create an instance of this component.
      */
-    public LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                              @Nonnull ComponentBuilder<A> builder) {
+    public LazyInitializedComponentDefinition(Component.Identifier<C> identifier,
+                                              ComponentBuilder<A> builder) {
         super(identifier);
         this.builder = Objects.requireNonNull(builder, "The builder must not be null.");
     }
 
     @Override
-    public A doResolve(@Nonnull Configuration configuration) {
+    public A doResolve(Configuration configuration) {
         A resolvedInstance = instanceReference.get();
         if (resolvedInstance != null) {
             return resolvedInstance;
@@ -74,7 +75,7 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         C instance = instanceReference.get();
         if (instance != null) {

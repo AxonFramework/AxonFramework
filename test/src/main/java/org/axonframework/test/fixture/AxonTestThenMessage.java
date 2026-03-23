@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.awaitility.Awaitility;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -61,7 +60,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final RecordingComponentsRegistry recordings;
 
     private final CommandValidator commandValidator;
-    protected final Throwable actualException;
+    protected final @Nullable Throwable actualException;
 
     /**
      * Constructs an {@code AxonTestThenMessage} for the given parameters.
@@ -72,9 +71,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenMessage(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull RecordingComponentsRegistry recordings,
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            RecordingComponentsRegistry recordings,
             @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
@@ -87,7 +86,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Object... expectedEvents) {
+    public T events(Object... expectedEvents) {
         var publishedEvents = recordings.eventSink().recorded();
 
         if (expectedEvents.length != publishedEvents.size()) {
@@ -105,7 +104,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull EventMessage... expectedEvents) {
+    public T events(EventMessage... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(Message::payload).toArray());
 
         var publishedEvents = recordings.eventSink().recorded();
@@ -122,7 +121,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
+    public T eventsSatisfy(Consumer<List<EventMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         var publishedEvents = recordings.eventSink().recorded();
         try {
@@ -134,7 +133,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
+    public T eventsMatch(Predicate<List<EventMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
         var publishedEvents = recordings.eventSink().recorded();
         var result = predicate.test(publishedEvents);
@@ -145,13 +144,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Object... expectedCommands) {
+    public T commands(Object... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(expectedCommands);
         return self();
     }
 
     @Override
-    public T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout) {
+    public T await(Consumer<T> assertion, Duration timeout) {
         Objects.requireNonNull(assertion, "The assertion may not be null.");
         Objects.requireNonNull(timeout, "The timeout may not be null.");
         Awaitility.waitAtMost(timeout)
@@ -161,13 +160,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull CommandMessage... expectedCommands) {
+    public T commands(CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
     }
 
     @Override
-    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer) {
+    public T commandsSatisfy(Consumer<List<CommandMessage>> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         var dispatchedCommands = recordings.commandBus().recordedCommands();
         try {
@@ -179,7 +178,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate) {
+    public T commandsMatch(Predicate<List<CommandMessage>> predicate) {
         Objects.requireNonNull(predicate, "The predicate may not be null.");
         var dispatchedCommands = recordings.commandBus().recordedCommands();
         var result = predicate.test(dispatchedCommands);
@@ -196,7 +195,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+    public T exceptionSatisfies(Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer, "The consumer may not be null.");
         try {
             consumer.accept(actualException);
@@ -207,7 +206,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+    public T exception(Class<? extends Throwable> type, String message) {
         Objects.requireNonNull(type, "The type may not be null.");
         Objects.requireNonNull(message, "The message may not be null.");
         if (actualException == null) {
@@ -222,7 +221,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Class<? extends Throwable> type) {
+    public T exception(Class<? extends Throwable> type) {
         Objects.requireNonNull(type, "The type may not be null.");
         if (actualException == null) {
             throw new AxonAssertionError(
@@ -236,7 +235,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+    protected boolean verifyPayloadEquality(@Nullable Object expectedPayload, @Nullable Object actualPayload) {
         if (Objects.equals(expectedPayload, actualPayload)) {
             return true;
         }
@@ -258,8 +257,8 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean verifyMetadataEquality(Class<?> eventType,
-                                             Map<String, String> expectedMetadata,
-                                             Map<String, String> actualMetadata) {
+                                             Map<String, @Nullable String> expectedMetadata,
+                                             Map<String, @Nullable String> actualMetadata) {
         MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
         if (!matcher.matches(actualMetadata)) {
             reporter.reportDifferentMetadata(eventType,
@@ -275,14 +274,14 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T expect(@Nonnull Consumer<Configuration> function) {
+    public T expect(Consumer<Configuration> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.accept(configuration);
         return self();
     }
 
     @Override
-    public T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+    public T expectAsync(Function<Configuration, CompletableFuture<?>> function) {
         Objects.requireNonNull(function, "The function may not be null.");
         function.apply(configuration).join();
         return self();

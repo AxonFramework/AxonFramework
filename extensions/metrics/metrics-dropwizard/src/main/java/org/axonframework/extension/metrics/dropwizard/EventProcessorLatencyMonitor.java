@@ -20,7 +20,6 @@ import io.dropwizard.metrics5.Gauge;
 import io.dropwizard.metrics5.Metric;
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricSet;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -69,7 +68,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull EventMessage message) {
+    public MonitorCallback onMessageIngested(EventMessage message) {
         //noinspection ConstantConditions
         if (message != null) {
             this.processTime.set(Duration.between(message.timestamp(), clock.instant()).toMillis());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -28,6 +27,9 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -79,29 +81,41 @@ class SequenceOverridingEventHandlingComponentTest {
         assertThat(result).isEqualTo(delegateSequenceId);
     }
 
-    @Nonnull
-    private EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
+    private @NonNull EventHandlingComponent getEventHandlingComponentWithSequenceId(String delegateSequenceId) {
         return new EventHandlingComponent() {
-            @Nonnull
+            @NonNull
             @Override
-            public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+            public Object sequenceIdentifierFor(@NonNull EventMessage event, @NonNull ProcessingContext context) {
                 return delegateSequenceId;
             }
 
+            @NonNull
             @Override
             public Set<QualifiedName> supportedEvents() {
                 return Set.of();
             }
 
             @Override
-            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                       @Nonnull ProcessingContext context) {
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event,
+                                                                @NonNull ProcessingContext context) {
                 return MessageStream.empty();
             }
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 // Not important for this test to implement
+            }
+
+            @Override
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                                @NonNull ProcessingContext context) {
+                return MessageStream.empty();
+            }
+
+            @Override
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChanged statusChange,
+                                                                @NonNull ProcessingContext context) {
+                return MessageStream.empty();
             }
         };
     }

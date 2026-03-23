@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.axonframework.common;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -73,21 +75,23 @@ public final class Assert {
     /**
      * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is thrown.
      *
-     * @param value           The value not to be {@code null}.
-     * @param messageSupplier Supplier of the exception message if the assertion fails.
+     * @param value           the value not to be {@code null}
+     * @param messageSupplier supplier of the exception message if the assertion fails
      */
-    public static void notNull(Object value, Supplier<String> messageSupplier) {
+    public static void notNull(@Nullable Object value, Supplier<String> messageSupplier) {
         isTrue(value != null, messageSupplier);
     }
 
     /**
      * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is thrown.
      *
-     * @param value           The value not to be {@code null}.
-     * @param messageSupplier Supplier of the exception message if the assertion fails.
-     * @return The provided {@code value}.
+     * @param value           the value not to be {@code null}
+     * @param messageSupplier supplier of the exception message if the assertion fails
+     * @param <T>             a generic specifying the type of the {@code value}, which is the input for the
+     *                        {@code assertion}
+     * @return the provided {@code value}
      */
-    public static <T> T nonNull(T value, Supplier<String> messageSupplier) {
+    public static <T> T nonNull(@Nullable T value, Supplier<String> messageSupplier) {
         isTrue(value != null, messageSupplier);
         return value;
     }
@@ -96,19 +100,18 @@ public final class Assert {
      * Assert that the given {@code value} will result to {@code true} through the {@code assertion} {@link Predicate}.
      * If not, the {@code exceptionSupplier} provides an exception to be thrown.
      *
-     * @param value             A {@code T} specifying the value to assert.
-     * @param assertion         A {@link Predicate} to test {@code value} against.
-     * @param exceptionSupplier A {@link Supplier} of the exception {@code X} if {@code assertion} evaluates to
-     *                          {@code false}.
-     * @param <T>               A generic specifying the type of the {@code value}, which is the input for the
-     *                          {@code assertion}.
-     * @param <X>               A generic extending {@link Throwable} which will be provided by the
-     *                          {@code exceptionSupplier}.
-     * @throws X If the {@code value} asserts to {@code false} by the {@code assertion}.
+     * @param value             a {@code T} specifying the value to assert
+     * @param assertion         a {@link Predicate} to test {@code value} against
+     * @param exceptionSupplier a {@link Supplier} of the exception {@code X} if {@code assertion} evaluates to
+     *                          {@code false}
+     * @param <T>               a generic specifying the type of the {@code value}, which is the input for the
+     *                          {@code assertion}
+     * @param <X>               a generic extending {@link Throwable} which will be provided by the
+     *                          {@code exceptionSupplier}
+     * @throws X if the {@code value} asserts to {@code false} by the {@code assertion}
      */
-    @SuppressWarnings("RedundantThrows") // Throws signature required for correct compilation
-    public static <T, X extends Throwable> void assertThat(T value,
-                                                           Predicate<T> assertion,
+    public static <T, X extends Throwable> void assertThat(@Nullable T value,
+                                                           Predicate<@Nullable T> assertion,
                                                            Supplier<? extends X> exceptionSupplier) throws X {
         if (!assertion.test(value)) {
             throw exceptionSupplier.get();
@@ -119,15 +122,15 @@ public final class Assert {
      * Assert that the given {@code value} is non-null. If not, the {@code exceptionSupplier} provides an exception to
      * be thrown.
      *
-     * @param value             A {@code T} specifying the value to assert.
-     * @param exceptionSupplier A {@link Supplier} of the exception {@code X} if {@code value} equals {@code null}.
-     * @param <T>               A generic specifying the type of the {@code value}, which is the input for the
-     *                          {@code assertion}.
-     * @param <X>               A generic extending {@link Throwable} which will be provided by the
-     *                          {@code exceptionSupplier}.
-     * @throws X If the {@code value} equals {@code null}.
+     * @param value             a {@code T} specifying the value to assert
+     * @param exceptionSupplier a {@link Supplier} of the exception {@code X} if {@code value} equals {@code null}
+     * @param <T>               a generic specifying the type of the {@code value}, which is the input for the
+     *                          {@code assertion}
+     * @param <X>               a generic extending {@link Throwable} which will be provided by the
+     *                          {@code exceptionSupplier}
+     * @throws X if the {@code value} equals {@code null}
      */
-    public static <T, X extends Throwable> void assertNonNull(T value,
+    public static <T, X extends Throwable> void assertNonNull(@Nullable T value,
                                                               Supplier<? extends X> exceptionSupplier) throws X {
         assertThat(value, Objects::nonNull, exceptionSupplier);
     }
@@ -137,12 +140,13 @@ public final class Assert {
      * <p>
      * If not, an {@link IllegalArgumentException} is thrown containing the provided {@code exceptionMessage}.
      *
-     * @param string           The value to assert.
-     * @param exceptionMessage The message for the exception.
-     * @return The given {@code string} when it was not {@code null} or empty.
+     * @param string           the value to assert
+     * @param exceptionMessage the message for the exception
+     * @return the given {@code string} when it was not {@code null} or empty
      */
-    public static String nonEmpty(String string, String exceptionMessage) {
+    public static String nonEmpty(@Nullable String string, String exceptionMessage) {
         assertThat(string, StringUtils::nonEmptyOrNull, () -> new IllegalArgumentException(exceptionMessage));
+        //noinspection DataFlowIssue
         return string;
     }
 

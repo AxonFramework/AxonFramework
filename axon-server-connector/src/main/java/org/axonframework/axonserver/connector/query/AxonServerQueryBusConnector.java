@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import io.axoniq.axonserver.connector.query.QueryHandler;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.common.FutureUtils;
@@ -36,11 +34,13 @@ import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.common.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +73,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     private final String clientId;
     private final String componentName;
     private final LocalSegmentAdapter localSegmentAdapter;
+    private final @Nullable MessageConverter converter;
 
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
@@ -86,14 +87,27 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
      * @param connection    The connection to AxonServer
      * @param configuration The configuration containing local settings for this connector
      */
-    public AxonServerQueryBusConnector(@Nonnull AxonServerConnection connection,
-                                       @Nonnull AxonServerConfiguration configuration) {
+    public AxonServerQueryBusConnector(AxonServerConnection connection,
+                                       AxonServerConfiguration configuration) {
+        this(connection, configuration, null);
+    }
+
+    /**
+     * Creates a QueryBusConnector implementation that connects to AxonServer for dispatching and receiving queries.
+     *
+     * @param connection    The connection to AxonServer
+     * @param configuration The configuration containing local settings for this connector
+     * @param converter     The converter to be used for payload conversion
+     */
+    public AxonServerQueryBusConnector(AxonServerConnection connection,
+                                       AxonServerConfiguration configuration, @Nullable MessageConverter converter) {
         this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
         requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
 
         this.clientId = configuration.getClientId();
         this.componentName = configuration.getComponentName();
         this.localSegmentAdapter = new LocalSegmentAdapter();
+        this.converter = converter;
     }
 
     /**
@@ -106,7 +120,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
     // region [Connector]
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName name) {
+    public CompletableFuture<Void> subscribe(QualifiedName name) {
         logger.debug("Subscribing to query handler [{}].",
                      name);
         QueryDefinition definition = new QueryDefinition(name.fullName(), "");
@@ -121,7 +135,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName name) {
+    public boolean unsubscribe(QualifiedName name) {
         Registration subscription = subscriptions.remove(name);
         if (subscription != null) {
             subscription.cancel();
@@ -131,16 +145,15 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public void onIncomingQuery(@Nonnull Handler handler) {
+    public void onIncomingQuery(Handler handler) {
         this.incomingHandler = requireNonNull(handler, "The incoming query handler must not be null.");
     }
 
     // endregion
 
     // region [QueryBus]
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> query(QueryMessage query,
                                                      @Nullable ProcessingContext context) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
 
@@ -151,13 +164,12 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                                          clientId,
                                                                          componentName)
                                                                  );
-            return new QueryResponseMessageStream(resultStream).onClose(queryInTransit::end);
+            return new QueryResponseMessageStream(resultStream, converter).onClose(queryInTransit::end);
         }
     }
 
-    @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> subscriptionQuery(@Nonnull QueryMessage query,
+    public MessageStream<QueryResponseMessage> subscriptionQuery(QueryMessage query,
                                                                  @Nullable ProcessingContext context,
                                                                  int updateBufferSize) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new queries as this bus is being shut down");
@@ -169,8 +181,8 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
                                                                                          componentName),
                                                       updateBufferSize,
                                                       Math.min(updateBufferSize / 4, 8));
-            return new QueryResponseMessageStream(result.initialResults())
-                    .concatWith(new QueryUpdateMessageStream(result.updates()))
+            return new QueryResponseMessageStream(result.initialResults(), converter)
+                    .concatWith(new QueryUpdateMessageStream(result.updates(), converter))
                     .onClose(queryInTransit::end);
         }
     }
@@ -213,7 +225,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("clientId", clientId);
         descriptor.describeProperty("componentName", componentName);
@@ -234,7 +246,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         @Override
         public FlowControl stream(QueryRequest query, ReplyChannel<QueryResponse> responseHandler) {
-            var result = incomingHandler.query(QueryConverter.convertQueryRequest(query));
+            var result = incomingHandler.query(QueryConverter.convertQueryRequest(query, converter));
             var previous = queriesInProgress.put(query.getMessageIdentifier(), result::close);
             if (previous != null) {
                 previous.run();
@@ -247,7 +259,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         @Override
         public Registration registerSubscriptionQuery(SubscriptionQuery query, UpdateHandler sendUpdate) {
             var registration = incomingHandler.registerUpdateHandler(QueryConverter.convertSubscriptionQueryMessage(
-                    query), new AxonServerUpdateCallback(sendUpdate));
+                    query, converter), new AxonServerUpdateCallback(sendUpdate));
             return () -> {
                 registration.cancel();
                 return FutureUtils.emptyCompletedFuture();
@@ -281,13 +293,12 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
 
         private final QueryHandler.UpdateHandler updateHandler;
 
-        public AxonServerUpdateCallback(@Nonnull QueryHandler.UpdateHandler updateHandler) {
+        public AxonServerUpdateCallback(QueryHandler.UpdateHandler updateHandler) {
             this.updateHandler = updateHandler;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Void> sendUpdate(@Nonnull SubscriptionQueryUpdateMessage update) {
+        public CompletableFuture<Void> sendUpdate(SubscriptionQueryUpdateMessage update) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(update));
             return FutureUtils.emptyCompletedFuture();
         }
@@ -299,7 +310,7 @@ public class AxonServerQueryBusConnector implements QueryBusConnector {
         }
 
         @Override
-        public CompletableFuture<Void> completeExceptionally(@Nonnull Throwable error) {
+        public CompletableFuture<Void> completeExceptionally(Throwable error) {
             updateHandler.sendUpdate(QueryConverter.convertQueryUpdate(clientId, ErrorCode.QUERY_EXECUTION_ERROR, error));
             updateHandler.complete();
             return FutureUtils.emptyCompletedFuture();

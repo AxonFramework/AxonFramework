@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventsourcing.AggregateFactory;
@@ -117,7 +116,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
 //    }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -181,7 +180,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
         }
 
         @Override
-        public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
+        public Builder spanFactory(SnapshotterSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }

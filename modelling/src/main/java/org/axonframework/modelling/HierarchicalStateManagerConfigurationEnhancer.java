@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 
@@ -44,7 +43,7 @@ public class HierarchicalStateManagerConfigurationEnhancer implements Configurat
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+    public void enhance(ComponentRegistry componentRegistry) {
         componentRegistry.registerDecorator(
                 StateManager.class,
                 Integer.MAX_VALUE,

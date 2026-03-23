@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+
 
 import java.util.Objects;
 import java.util.Optional;
@@ -50,8 +50,8 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy<Messag
      * @param identifierExtractor The function to extract the sequence identifier from the payload.
      */
     public ExtractionSequencingPolicy(
-            @Nonnull Class<T> payloadClass,
-            @Nonnull Function<T, K> identifierExtractor
+            Class<T> payloadClass,
+            Function<T, K> identifierExtractor
     ) {
         this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
         this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
@@ -60,8 +60,8 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy<Messag
 
     @Override
     public Optional<Object> sequenceIdentifierFor(
-            @Nonnull final Message message,
-            @Nonnull ProcessingContext context
+            final Message message,
+            ProcessingContext context
     ) {
         Objects.requireNonNull(message, "Message may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");

@@ -18,14 +18,13 @@ package org.axonframework.conversion.jackson2;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +61,7 @@ public class Jackson2Converter implements Converter {
      *
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
-    public Jackson2Converter(@Nonnull ObjectMapper objectMapper) {
+    public Jackson2Converter(ObjectMapper objectMapper) {
         this(objectMapper, new ChainingContentTypeConverter());
     }
 
@@ -77,8 +76,8 @@ public class Jackson2Converter implements Converter {
      * @param converter    The converter used for simpler conversions.
      */
     @Internal
-    public Jackson2Converter(@Nonnull ObjectMapper objectMapper,
-                             @Nonnull ChainingContentTypeConverter converter) {
+    public Jackson2Converter(ObjectMapper objectMapper,
+                             ChainingContentTypeConverter converter) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
         this.converter = Objects.requireNonNull(converter, "The ChainingContentTypeConverter may not be null.");
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
@@ -90,7 +89,7 @@ public class Jackson2Converter implements Converter {
     @Nullable
     @Override
     public <T> T convert(@Nullable Object input,
-                         @Nonnull Type targetType) {
+                         Type targetType) {
         if (input == null) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Input to convert is null, so returning null immediately.");
@@ -147,7 +146,7 @@ public class Jackson2Converter implements Converter {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("objectMapper", objectMapper);
         descriptor.describeProperty("chaining-content-type-converter", converter);
     }

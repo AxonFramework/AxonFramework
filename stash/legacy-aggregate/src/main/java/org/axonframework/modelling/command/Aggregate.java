@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -84,7 +83,7 @@ public interface Aggregate<T> {
      * {@link CommandMessage} yields no results.
      * @throws Exception in case one is triggered during message processing.
      */
-    Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception;
+    Object handle(Message message, ProcessingContext context) throws Exception;
 
     /**
      * Invoke a method on the underlying aggregate root or one of its instances. Use this over

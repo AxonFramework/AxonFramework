@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
 
@@ -70,7 +69,7 @@ public class PayloadBasedTagResolver<P> implements TagResolver {
      * @param resolver An additional {@code Function} from the event of type {@code P} to a {@link Tag}.
      * @return A copy of {@code this SimpleTagResolver}, adding the given {@code resolver} to the set.
      */
-    public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, Tag> resolver) {
+    public PayloadBasedTagResolver<P> withResolver(Function<P, Tag> resolver) {
         List<Function<P, Tag>> copy = new ArrayList<>(resolvers);
         copy.add(Objects.requireNonNull(resolver, "A TagResolver cannot be null"));
         return new PayloadBasedTagResolver<>(payloadType, copy);
@@ -85,8 +84,8 @@ public class PayloadBasedTagResolver<P> implements TagResolver {
      * @return A copy of {@code this SimpleTagResolver}, combining the given {@code keyResolver} and
      * {@code valueResolver} into a lambda constructing a {@link Tag}.
      */
-    public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, String> keyResolver,
-                                                   @Nonnull Function<P, String> valueResolver) {
+    public PayloadBasedTagResolver<P> withResolver(Function<P, String> keyResolver,
+                                                   Function<P, String> valueResolver) {
         Function<P, String> keyLambda = Objects.requireNonNull(keyResolver, "A key resolver cannot be null");
         Function<P, String> valueLambda = Objects.requireNonNull(valueResolver,
                                                                  "A valueLambda resolver cannot be null");
@@ -94,7 +93,7 @@ public class PayloadBasedTagResolver<P> implements TagResolver {
     }
 
     @Override
-    public Set<Tag> resolve(@Nonnull EventMessage event) {
+    public Set<Tag> resolve(EventMessage event) {
         //noinspection unchecked - suppressing cast warning
         return payloadType.isAssignableFrom(event.payload().getClass())
                 ? resolvers.stream()

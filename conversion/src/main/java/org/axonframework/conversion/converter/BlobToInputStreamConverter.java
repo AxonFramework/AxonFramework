@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.conversion.converter;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.conversion.ContentTypeConverter;
 
@@ -34,20 +33,17 @@ import java.sql.SQLException;
 public class BlobToInputStreamConverter implements ContentTypeConverter<Blob, InputStream> {
 
     @Override
-    @Nonnull
     public Class<Blob> expectedSourceType() {
         return Blob.class;
     }
 
     @Override
-    @Nonnull
     public Class<InputStream> targetType() {
         return InputStream.class;
     }
 
     @Override
-    @Nullable
-    public InputStream convert(@Nullable Blob input) {
+    public @Nullable InputStream convert(@Nullable Blob input) {
         if (input == null) {
             return null;
         }

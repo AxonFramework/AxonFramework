@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
@@ -74,7 +73,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
      * @param moduleName The name of the {@code CommandHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
-    static SetupPhase named(@Nonnull String moduleName) {
+    static SetupPhase named(String moduleName) {
         return new SimpleCommandHandlingModule(moduleName);
     }
 
@@ -101,7 +100,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          *                            right away.
          * @return The command handler phase of this module, for a fluent API.
          */
-        default CommandHandlerPhase commandHandlers(@Nonnull Consumer<CommandHandlerPhase> configurationLambda) {
+        default CommandHandlerPhase commandHandlers(Consumer<CommandHandlerPhase> configurationLambda) {
             CommandHandlerPhase commandHandlerPhase = commandHandlers();
             requireNonNull(configurationLambda, "The command handler configuration lambda cannot be null.")
                     .accept(commandHandlerPhase);
@@ -136,8 +135,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @param commandHandler The command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
-        default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                                   @Nonnull CommandHandler commandHandler) {
+        default CommandHandlerPhase commandHandler(QualifiedName commandName,
+                                                   CommandHandler commandHandler) {
             requireNonNull(commandHandler, "The command handler cannot be null.");
             return commandHandler(commandName, cfg -> commandHandler);
         }
@@ -159,8 +158,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandler(
-                @Nonnull QualifiedName commandName,
-                @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder);
+                QualifiedName commandName,
+                ComponentBuilder<CommandHandler> commandHandlerBuilder);
 
         /**
          * Registers the given {@code handlingComponentBuilder} within this module.
@@ -178,7 +177,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandlingComponent(
-                @Nonnull ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
+                ComponentBuilder<CommandHandlingComponent> handlingComponentBuilder
         );
 
         /**
@@ -194,7 +193,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * @return The command handler phase of this builder, for a fluent API.
          */
         default CommandHandlerPhase autodetectedCommandHandlingComponent(
-                @Nonnull ComponentBuilder<Object> handlingComponentBuilder
+                ComponentBuilder<Object> handlingComponentBuilder
         ) {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(

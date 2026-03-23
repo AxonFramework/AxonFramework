@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -60,9 +59,9 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
      * @param idResolver The {@link EntityIdResolver} to resolve the identifier of the entity.
      */
     public EntityCommandHandlingComponent(
-            @Nonnull Repository<ID, E> repository,
-            @Nonnull EntityMetamodel<E> metamodel,
-            @Nonnull EntityIdResolver<ID> idResolver
+            Repository<ID, E> repository,
+            EntityMetamodel<E> metamodel,
+            EntityIdResolver<ID> idResolver
     ) {
         this.repository = Objects.requireNonNull(repository, "The repository may not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel may not be null.");
@@ -74,10 +73,9 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
         return metamodel.supportedCommands();
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                             @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                             ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
             QualifiedName messageName = command.type().qualifiedName();
@@ -132,7 +130,7 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("repository", repository);
         descriptor.describeProperty("metamodel", metamodel);
         descriptor.describeProperty("idResolver", idResolver);

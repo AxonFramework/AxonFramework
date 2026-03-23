@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.deadline.quartz;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.core.Scope;
@@ -37,6 +36,7 @@ import org.axonframework.conversion.Serializer;
 import org.axonframework.messaging.tracing.NoOpSpanFactory;
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanFactory;
+import org.jspecify.annotations.Nullable;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -134,10 +134,10 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Instant triggerDateTime,
-                           @Nonnull String deadlineName,
-                           Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+    public String schedule(Instant triggerDateTime,
+                           String deadlineName,
+                           @Nullable Object messageOrPayload,
+                           ScopeDescriptor deadlineScope) {
         DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineId = JOB_NAME_PREFIX + deadlineMessage.identifier();
 
@@ -158,21 +158,21 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public String schedule(@Nonnull Duration triggerDuration,
-                           @Nonnull String deadlineName,
-                           Object messageOrPayload,
-                           @Nonnull ScopeDescriptor deadlineScope) {
+    public String schedule(Duration triggerDuration,
+                           String deadlineName,
+                           @Nullable Object messageOrPayload,
+                           ScopeDescriptor deadlineScope) {
         return schedule(Instant.now().plus(triggerDuration), deadlineName, messageOrPayload, deadlineScope);
     }
 
     @Override
-    public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
+    public void cancelSchedule(String deadlineName, String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> cancelSchedule(jobKey(scheduleId, deadlineName))));
     }
 
     @Override
-    public void cancelAll(@Nonnull String deadlineName) {
+    public void cancelAll(String deadlineName) {
         Span span = spanFactory.createCancelAllSpan(deadlineName);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
             try {
@@ -185,7 +185,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     }
 
     @Override
-    public void cancelAllWithinScope(@Nonnull String deadlineName, @Nonnull ScopeDescriptor scope) {
+    public void cancelAllWithinScope(String deadlineName, ScopeDescriptor scope) {
         // By serializing and deserializing the ScopeDescriptor we make certain that the givenScope is in the right
         // format to compare with the outcome from the
         // DeadlineJob.DeadlineJobDataBinder#deadlineScope(Serializer, JobDataMap) operation.
@@ -330,7 +330,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder spanFactory(@Nonnull DeadlineManagerSpanFactory spanFactory) {
+        public Builder spanFactory(DeadlineManagerSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
             return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
@@ -42,7 +41,6 @@ public interface CommandHandler extends MessageHandler {
      * @param context The context to the given {@code command} is handled in.
      * @return A {@code MessagesStream.Single} of a {@link CommandResultMessage}.
      */
-    @Nonnull
-    MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                      @Nonnull ProcessingContext context);
+    MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+                                                      ProcessingContext context);
 }

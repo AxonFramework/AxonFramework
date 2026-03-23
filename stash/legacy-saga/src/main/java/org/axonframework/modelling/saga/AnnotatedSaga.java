@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
@@ -98,7 +97,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public final boolean canHandle(EventMessage event, ProcessingContext context) {
         return isActive && metaModel.findHandlerMethods(event, context).stream()
                                     .anyMatch(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
                                                     .map(sh -> getAssociationValues().contains(
@@ -109,7 +108,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public final Object handleSync(EventMessage event, ProcessingContext context) {
         if (isActive) {
             return metaModel.findHandlerMethods(event, context).stream()
                             .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)

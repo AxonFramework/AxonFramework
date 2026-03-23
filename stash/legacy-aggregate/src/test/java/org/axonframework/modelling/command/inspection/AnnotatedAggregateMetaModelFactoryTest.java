@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.axonframework.messaging.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -921,7 +921,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
             this.contents = contents;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<T> iterator() {
             return contents.iterator();

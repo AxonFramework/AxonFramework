@@ -16,9 +16,9 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -37,6 +37,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+
 
 import java.util.List;
 import java.util.Map;
@@ -57,11 +58,12 @@ import java.util.stream.Collectors;
  * @since 4.6.0
  */
 @Internal
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
     private final List<String> handlerBeansRefs;
-    private ApplicationContext applicationContext;
+    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
@@ -76,7 +78,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         switch (type) {
             case EVENT:
                 configureEventHandlers(registry);
@@ -142,11 +144,11 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         return handlerBeansRefs
                 .stream()
                 .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                .collect(Collectors.groupingBy( nbd -> BeanDefinitionUtils.extractPackageName(nbd.definition)));
+                .collect(Collectors.groupingBy(nbd -> BeanDefinitionUtils.extractPackageName(nbd.definition)));
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
@@ -157,8 +159,8 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      * @param definition bean definition.
      */
     record NamedBeanDefinition(
-            @Nonnull String name,
-            @Nonnull BeanDefinition definition
+            String name,
+            BeanDefinition definition
     ) {
 
     }
@@ -197,8 +199,10 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
     }
 
-    private record SimpleEventHandlerDescriptor(String beanName, ConfigurableListableBeanFactory beanFactory)
-                implements EventProcessorDefinition.EventHandlerDescriptor {
+    private record SimpleEventHandlerDescriptor(
+            String beanName,
+            ConfigurableListableBeanFactory beanFactory
+    ) implements EventProcessorDefinition.EventHandlerDescriptor {
 
         @Override
         public BeanDefinition beanDefinition() {
@@ -212,13 +216,11 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
 
         @Override
-        @Nonnull
         public Object resolveBean() {
             return beanFactory.getBean(beanName);
         }
 
         @Override
-        @Nonnull
         public ComponentBuilder<Object> component() {
             return c -> resolveBean();
         }

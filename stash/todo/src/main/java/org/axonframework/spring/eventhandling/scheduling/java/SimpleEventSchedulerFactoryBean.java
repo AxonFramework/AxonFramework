@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Spring FactoryBean that creates a SimpleEventScheduler instance using resources found in the Spring Application
@@ -144,7 +143,7 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

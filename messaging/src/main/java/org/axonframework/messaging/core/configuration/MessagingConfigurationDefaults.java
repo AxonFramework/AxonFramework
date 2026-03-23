@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -85,6 +84,7 @@ import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
+
 
 import java.util.List;
 
@@ -157,12 +157,12 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registerComponents(registry);
         registerDecorators(registry);
     }
 
-    private static void registerComponents(@Nonnull ComponentRegistry registry) {
+    private static void registerComponents(ComponentRegistry registry) {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
@@ -380,7 +380,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultMessageMonitorRegistry();
     }
 
-    private static void registerDecorators(@Nonnull ComponentRegistry registry) {
+    private static void registerDecorators(ComponentRegistry registry) {
         registry.registerDecorator(
                 CommandGateway.class,
                 CONVERTING_COMMAND_GATEWAY_ORDER,

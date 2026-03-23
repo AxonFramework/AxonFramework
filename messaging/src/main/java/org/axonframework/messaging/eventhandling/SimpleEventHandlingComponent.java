@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -29,6 +28,12 @@ import org.axonframework.messaging.core.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandlerRegistry;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.eventhandling.replay.ResetHandler;
+import org.axonframework.messaging.eventhandling.replay.ResetHandlerRegistry;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,15 +42,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Simple implementation of the {@link EventHandlingComponent}, containing a collection of
- * {@link EventHandler EventHandlers} to invoke on {@link #handle(EventMessage, ProcessingContext)}.
+ * Simple implementation of the {@link EventHandlingComponent}, {@link EventHandlerRegistry}, and
+ * {@link ResetHandlerRegistry}.
+ * <p>
+ * As such, it contains a collection of {@link EventHandler EventHandlers} to invoke on
+ * {@link #handle(EventMessage, ProcessingContext) handle}, and a set of {@link ResetHandler ResetHandlers} to invoke on
+ * {@link #handle(ResetContext, ProcessingContext) reset}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class SimpleEventHandlingComponent implements
         EventHandlingComponent,
-        EventHandlerRegistry<SimpleEventHandlingComponent> {
+        EventHandlerRegistry<SimpleEventHandlingComponent>,
+        ResetHandlerRegistry<SimpleEventHandlingComponent>,
+        ReplayStatusChangedHandlerRegistry<SimpleEventHandlingComponent> {
 
     private static final SequencingPolicy<? super EventMessage> DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy<>(
             SequentialPerAggregatePolicy.INSTANCE,
@@ -55,6 +66,8 @@ public class SimpleEventHandlingComponent implements
     private final String name;
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
     private final SequencingPolicy<? super EventMessage> sequencingPolicy;
+    private final Set<ResetHandler> resetHandlers = ConcurrentHashMap.newKeySet();
+    private final Set<ReplayStatusChangedHandler> replayStatusChangedHandlers = ConcurrentHashMap.newKeySet();
 
     /**
      * Instantiates a simple {@link EventHandlingComponent} that is able to handle events and delegate them to
@@ -66,7 +79,7 @@ public class SimpleEventHandlingComponent implements
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleEventHandlingComponent create(@Nonnull String name) {
+    public static SimpleEventHandlingComponent create(String name) {
         return create(name, DEFAULT_SEQUENCING_POLICY);
     }
 
@@ -80,21 +93,20 @@ public class SimpleEventHandlingComponent implements
      *                         {@link #sequenceIdentifierFor(EventMessage, ProcessingContext)}.
      * @return A simple {@link EventHandlingComponent} instance with the given {@code name}.
      */
-    public static SimpleEventHandlingComponent create(@Nonnull String name,
-                                                      @Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
+    public static SimpleEventHandlingComponent create(String name,
+                                                      SequencingPolicy<? super EventMessage> sequencingPolicy) {
         return new SimpleEventHandlingComponent(name, sequencingPolicy);
     }
 
-    private SimpleEventHandlingComponent(@Nonnull String name,
-                                         @Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
+    protected SimpleEventHandlingComponent(String name,
+                                           SequencingPolicy<? super EventMessage> sequencingPolicy) {
         this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
         this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
         List<EventHandler> handlers = eventHandlers.get(name);
         if (handlers == null || handlers.isEmpty()) {
@@ -103,6 +115,7 @@ public class SimpleEventHandlingComponent implements
             );
         }
         MessageStream<Message> result = MessageStream.empty();
+
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);
             result = result.concatWith(handlerResult);
@@ -111,8 +124,8 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public SimpleEventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                                  @Nonnull EventHandler handler) {
+    public SimpleEventHandlingComponent subscribe(Set<QualifiedName> names,
+                                                  EventHandler handler) {
         Objects.requireNonNull(handler, "The given handler cannot be null.");
         names.forEach(name -> eventHandlers.compute(name, (q, handlers) -> {
             if (handlers == null) {
@@ -125,8 +138,8 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public SimpleEventHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                                  @Nonnull EventHandler handler) {
+    public SimpleEventHandlingComponent subscribe(QualifiedName name,
+                                                  EventHandler handler) {
         return subscribe(Set.of(name), handler);
     }
 
@@ -154,9 +167,8 @@ public class SimpleEventHandlingComponent implements
      * <p>
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         var qualifiedName = event.type().qualifiedName();
         List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
@@ -173,9 +185,48 @@ public class SimpleEventHandlingComponent implements
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public MessageStream.Empty<Message> handle(ResetContext resetContext, ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (ResetHandler handler : resetHandlers) {
+            MessageStream<Message> handlerResult = handler.handle(resetContext, context);
+            result = result.concatWith(handlerResult);
+        }
+
+        return result.ignoreEntries().cast();
+    }
+
+    @Override
+    public SimpleEventHandlingComponent subscribe(ResetHandler resetHandler) {
+        resetHandlers.add(resetHandler);
+        return this;
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+
+        for (ReplayStatusChangedHandler handler : replayStatusChangedHandlers) {
+            MessageStream<Message> handlerResult = handler.handle(statusChange, context);
+            result = result.concatWith(handlerResult);
+        }
+
+        return result.ignoreEntries().cast();
+    }
+
+    @Override
+    public SimpleEventHandlingComponent subscribe(ReplayStatusChangedHandler replayStatusChangedHandler) {
+        replayStatusChangedHandlers.add(replayStatusChangedHandler);
+        return this;
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("eventHandlers", eventHandlers);
+        descriptor.describeProperty("resetHandlers", resetHandlers);
+        descriptor.describeProperty("replayStatusChangedHandlers", replayStatusChangedHandlers);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }
 }

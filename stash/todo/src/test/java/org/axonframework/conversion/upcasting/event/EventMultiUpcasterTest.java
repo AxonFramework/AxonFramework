@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.axonframework.common.util.SecondStubEvent;
 import org.axonframework.common.util.StubDomainEvent;
 import org.axonframework.util.TestDomainEventEntry;
 import org.axonframework.common.util.ThirdStubEvent;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -235,7 +236,7 @@ class EventMultiUpcasterTest {
         }
 
         @Override
-        protected Stream<IntermediateEventRepresentation> doUpcast(IntermediateEventRepresentation ir) {
+        protected @NonNull Stream<IntermediateEventRepresentation> doUpcast(@NonNull IntermediateEventRepresentation ir) {
             return Stream.of(
                     ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"),
                                      JsonNode.class,

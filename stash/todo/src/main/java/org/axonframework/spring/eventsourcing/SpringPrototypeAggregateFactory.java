@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventsourcing.AbstractAggregateFactory;
@@ -125,12 +124,12 @@ public class SpringPrototypeAggregateFactory<T>
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
+    public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
     @Override
-    public void setBeanName(@Nonnull String beanName) {
+    public void setBeanName(String beanName) {
         this.beanName = beanName;
     }
 

@@ -24,8 +24,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.conversion.ChainingContentTypeConverter;
@@ -42,6 +41,7 @@ import org.axonframework.conversion.jackson2.JsonNodeToByteArrayConverter;
 import org.axonframework.conversion.jackson2.JsonNodeToObjectNodeConverter;
 import org.axonframework.conversion.jackson2.ObjectNodeToJsonNodeConverter;
 import org.axonframework.messaging.core.Metadata;
+
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -143,12 +143,12 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public <T> T convert(@Nullable Object source, @Nonnull Type targetRepresentation) {
+    public <T> T convert(@Nullable Object source, Type targetRepresentation) {
         return converter.convert(source, targetRepresentation);
     }
 
     @Override
-    public <T> SerializedObject<T> serialize(Object object, @Nonnull Class<T> expectedRepresentation) {
+    public <T> SerializedObject<T> serialize(@Nullable Object object, Class<T> expectedRepresentation) {
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
@@ -196,7 +196,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public <T> boolean canSerializeTo(@Nonnull Class<T> expectedRepresentation) {
+    public <T> boolean canSerializeTo(Class<T> expectedRepresentation) {
         return JsonNode.class.equals(expectedRepresentation)
                 || String.class.equals(expectedRepresentation)
                 || (converter instanceof ChainingContentTypeConverter
@@ -204,7 +204,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public <S, T> T deserialize(@Nonnull SerializedObject<S> serializedObject) {
+    public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         try {
             if (SerializedType.emptyType().equals(serializedObject.getType())) {
                 return null;
@@ -234,7 +234,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     @Override
-    public Class classForType(@Nonnull SerializedType type) {
+    public Class classForType(SerializedType type) {
         if (SimpleSerializedType.emptyType().equals(type)) {
             return Void.class;
         }

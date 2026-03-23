@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,10 +67,10 @@ class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message> {
         var processed = new AtomicBoolean(false);
         var messages = List.of(createRandomMessage());
 
-        var result = MessageStream.fromIterable(messages)
-                                  .ignoreEntries()
-                                  .onNext(e -> processed.set(true))
-                                  .asCompletableFuture();
+        var testSubject = MessageStream.fromIterable(messages).ignoreEntries();
+
+        var result = testSubject.onNext(e -> processed.set(true)).asCompletableFuture();
+
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(processed.get());

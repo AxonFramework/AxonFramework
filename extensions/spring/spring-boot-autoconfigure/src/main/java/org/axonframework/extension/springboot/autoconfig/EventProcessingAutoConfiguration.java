@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
@@ -51,7 +50,7 @@ public class EventProcessingAutoConfiguration {
      * @see EventProcessorProperties#getProcessors(Environment)
      */
     @Bean
-    public EventProcessorSettings.MapWrapper eventProcessorSettings(@Nonnull Environment environment) {
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(Environment environment) {
         Map<String, EventProcessorSettings> map = EventProcessorProperties.getProcessors(environment);
         // Retain the default behavior
         map.putIfAbsent(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
@@ -61,11 +60,10 @@ public class EventProcessingAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    ProcessorModuleFactory processorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
-                                                  EventProcessorSettings.MapWrapper eventProcessorSettings,
-                                                  Configuration axonConfiguration) {
-        return new DefaultProcessorModuleFactory(eventProcessorDefinitions,
-                                                 eventProcessorSettings.settings(),
-                                                 axonConfiguration);
+    ProcessorModuleFactory processorModuleFactory(
+            List<EventProcessorDefinition> eventProcessorDefinitions,
+            EventProcessorSettings.MapWrapper eventProcessorSettings
+    ) {
+        return new DefaultProcessorModuleFactory(eventProcessorDefinitions, eventProcessorSettings.settings());
     }
 }

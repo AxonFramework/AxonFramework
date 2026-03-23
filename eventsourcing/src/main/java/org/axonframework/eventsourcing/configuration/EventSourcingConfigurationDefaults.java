@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -72,7 +71,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.disableEnhancer(EventBusConfigurationDefaults.class);
         // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)

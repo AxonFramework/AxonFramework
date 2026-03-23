@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.deadline;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.core.ScopeDescriptor;
+import org.jspecify.annotations.NonNull;
+
 
 import java.util.Objects;
 
@@ -42,7 +44,7 @@ public class TestScopeDescriptor implements ScopeDescriptor {
     }
 
     @Override
-    public String scopeDescription() {
+    public @NonNull String scopeDescription() {
         return String.format("TestScopeDescriptor for type [%s] and identifier [%s]", type, identifier);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.conversion.avro;
 
-import jakarta.annotation.Nonnull;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
@@ -56,8 +55,8 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
      * @param schemaIncompatibilityChecker stateful utility to perform compatibility checks.
      */
     public SpecificRecordBaseConverterStrategy(
-            @Nonnull SchemaStore schemaStore,
-            @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker
+            SchemaStore schemaStore,
+            SchemaIncompatibilityChecker schemaIncompatibilityChecker
     ) {
         this.schemaStore = Objects.requireNonNull(
                 schemaStore,
@@ -68,8 +67,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    @Nonnull
-    public byte[] convertToSingleObjectEncoded(@Nonnull Object object) {
+    public byte [] convertToSingleObjectEncoded(Object object) {
         if (!(object instanceof SpecificRecordBase record)) {
             throw new ConversionException(
                     "Expected object to be instance of SpecificRecordBase but it was " + object.getClass()
@@ -89,9 +87,8 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    @Nonnull
-    public <T> T convertFromSingleObjectEncoded(@Nonnull byte[] bytes,
-                                                @Nonnull Class<T> readerType) {
+    public <T> T convertFromSingleObjectEncoded(byte [] bytes,
+                                                Class<T> readerType) {
         if (!test(readerType)) {
             throw new ConversionException("Expected reader type to be assignable from SpecificRecordBase but it was "
                                                   + readerType.getCanonicalName());
@@ -137,9 +134,8 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    @Nonnull
-    public <T> T convertFromGenericRecord(@Nonnull GenericRecord genericRecord,
-                                          @Nonnull Class<T> readerType) {
+    public <T> T convertFromGenericRecord(GenericRecord genericRecord,
+                                          Class<T> readerType) {
         if (!test(readerType)) {
             throw new ConversionException("Expected reader type to be assignable from SpecificRecordBase but it was "
                                                   + readerType.getCanonicalName());
@@ -165,18 +161,18 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     }
 
     @Override
-    public boolean test(@Nonnull Class<?> payloadType) {
+    public boolean test(Class<?> payloadType) {
         return SpecificRecordBase.class.isAssignableFrom(payloadType);
     }
 
     @Override
-    public void applyStrategyConfiguration(@Nonnull AvroConverterStrategyConfiguration avroConverterConfiguration) {
+    public void applyStrategyConfiguration(AvroConverterStrategyConfiguration avroConverterConfiguration) {
         assertNonNull(avroConverterConfiguration, "AvroConverterConfiguration must not be null");
         this.config = avroConverterConfiguration;
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("avroConverterStrategyConfiguration", this.config);
         descriptor.describeProperty("schemaIncompatibilityChecker", this.schemaIncompatibilityChecker);
         descriptor.describeProperty("schemaStore", this.schemaStore);

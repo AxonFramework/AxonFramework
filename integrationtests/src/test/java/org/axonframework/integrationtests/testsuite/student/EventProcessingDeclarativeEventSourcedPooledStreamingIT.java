@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -34,7 +33,6 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
@@ -42,6 +40,7 @@ import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -96,15 +95,14 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
         }
     }
 
-    @Nonnull
-    private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
+    static @NonNull EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
         SimpleEventHandlingComponent handlingComponent =
                 SimpleEventHandlingComponent.create("studentEnrolledAutomation", SequentialPolicy.INSTANCE);
         handlingComponent.subscribe(
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
-                    var converter = context.component(EventConverter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    // direct conversion via message-attached converter
+                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class);
                     var studentId = studentEnrolled.studentId();
                     var state = context.component(StateManager.class);
                     var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
@@ -145,6 +143,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
                 EventProcessorModule
                         .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                         .eventHandlingComponents(components -> components.declarative(
+                                "maxCoursesAutomation",
                                 cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
                         )).notCustomized();
         return configurer.messaging(
@@ -190,13 +189,12 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends Abs
 
     private static EntityEvolver<StudentCoursesAutomationState> automationStateEvolver() {
         return (entity, event, context) -> {
-            var converter = context.component(EventConverter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
+                var payload = event.payloadAs(StudentEnrolledEvent.class);
                 return entity.evolve(payload);
             }
             if (event.type().qualifiedName().equals(new QualifiedName(MaxCoursesNotificationSentEvent.class))) {
-                var payload = event.payloadAs(MaxCoursesNotificationSentEvent.class, converter);
+                var payload = event.payloadAs(MaxCoursesNotificationSentEvent.class);
                 return entity.evolve(payload);
             }
             return entity;

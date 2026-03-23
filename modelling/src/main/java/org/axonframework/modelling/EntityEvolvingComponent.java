@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.QualifiedName;
 
@@ -39,6 +38,5 @@ public interface EntityEvolvingComponent<E> extends EntityEvolver<E> {
      *
      * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
-    @Nonnull
     Set<QualifiedName> supportedEvents();
 }

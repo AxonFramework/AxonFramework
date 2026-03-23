@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnec
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.axonserver.connector.event.EventProcessorControlService;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.axonserver.connector.snapshot.AxonServerSnapshotStore;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentDecorator;
@@ -32,14 +31,17 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.configuration.SearchScope;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.conversion.Converter;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
@@ -57,7 +59,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerIfNotPresent(AxonServerConfiguration.class,
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)
@@ -78,7 +80,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 )
                 .registerDecorator(topologyChangeListenerRegistration())
                 .registerFactory(new AxonServerEventStorageEngineFactory())
-                .registerIfNotPresent(eventProcessorControlService());
+                .registerIfNotPresent(eventProcessorControlService())
+                .registerIfNotPresent(axonServerSnapshotStore());
     }
 
     private static ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
@@ -116,7 +119,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection(),
-                                          config.getComponent(AxonServerConfiguration.class)
+                                          config.getComponent(AxonServerConfiguration.class),
+                                          config.getComponent(MessageConverter.class)
                                   ))
                                   .onStart(Phase.INBOUND_COMMAND_CONNECTOR,
                                            connector -> ((AxonServerCommandBusConnector) connector).start())
@@ -132,7 +136,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         return ComponentDefinition.ofType(QueryBusConnector.class)
                                   .withBuilder(config -> new AxonServerQueryBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection(),
-                                          config.getComponent(AxonServerConfiguration.class)
+                                          config.getComponent(AxonServerConfiguration.class),
+                                          config.getComponent(MessageConverter.class)
                                   ))
                                   .onStart(Phase.INBOUND_QUERY_CONNECTOR,
                                            connector -> ((AxonServerQueryBusConnector) connector).start())
@@ -188,6 +193,14 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       );
                                   })
                                   .onStart(Phase.INSTRUCTION_COMPONENTS, EventProcessorControlService::start);
+    }
+
+    private static ComponentDefinition<SnapshotStore> axonServerSnapshotStore() {
+        return ComponentDefinition.ofType(SnapshotStore.class)
+                                  .withBuilder(c -> new AxonServerSnapshotStore(
+                                          c.getComponent(AxonServerConnectionManager.class).getConnection(),
+                                          c.getComponent(Converter.class)
+                                  ));
     }
 
     @Override

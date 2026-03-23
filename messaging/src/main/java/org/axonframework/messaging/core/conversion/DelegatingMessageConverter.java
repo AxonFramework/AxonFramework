@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.conversion.Converter;
@@ -43,31 +42,30 @@ public class DelegatingMessageConverter implements MessageConverter {
      *
      * @param delegate The converter to delegate all conversion operations to.
      */
-    public DelegatingMessageConverter(@Nonnull Converter delegate) {
+    public DelegatingMessageConverter(Converter delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
     }
 
     @Nullable
     @Override
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> T convert(@Nullable Object input, Type targetType) {
         return delegate.convert(input, targetType);
     }
 
     @Override
     @Nullable
-    public <M extends Message, T> T convertPayload(@Nonnull M message, @Nonnull Type targetType) {
+    public <M extends Message, T> T convertPayload(M message, Type targetType) {
         return message.payloadAs(targetType, delegate);
     }
 
     @Override
-    @Nonnull
-    public <M extends Message> M convertMessage(@Nonnull M message, @Nonnull Type targetType) {
+    public <M extends Message> M convertMessage(M message, Type targetType) {
         //noinspection unchecked
         return (M) message.withConvertedPayload(targetType, delegate);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
     }
 

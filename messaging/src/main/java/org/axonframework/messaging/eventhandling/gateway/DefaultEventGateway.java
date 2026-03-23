@@ -16,14 +16,13 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -50,15 +49,15 @@ public class DefaultEventGateway implements EventGateway {
      * @param eventSink           the {@link EventSink} to publish events to
      * @param messageTypeResolver the {@link MessageTypeResolver} to resolve the type of the event
      */
-    public DefaultEventGateway(@Nonnull EventSink eventSink,
-                               @Nonnull MessageTypeResolver messageTypeResolver) {
+    public DefaultEventGateway(EventSink eventSink,
+                               MessageTypeResolver messageTypeResolver) {
         this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<?> events) {
+                                           List<?> events) {
         List<EventMessage> eventMessages =
                 events.stream()
                       .map(event -> EventPublishingUtils.asEventMessage(event, messageTypeResolver))
@@ -69,7 +68,7 @@ public class DefaultEventGateway implements EventGateway {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventSink", eventSink);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }

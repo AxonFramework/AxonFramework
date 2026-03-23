@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.query;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
@@ -202,8 +202,7 @@ class StatefulQueryHandlingComponentTest {
         }
     }
 
-    @Nonnull
-    private ProcessingContext messageProcessingContext(QueryMessage query) {
+        private @NonNull ProcessingContext messageProcessingContext(QueryMessage query) {
         return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(query);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
@@ -32,14 +30,17 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An implementation of the {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
@@ -57,10 +58,11 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private final String clientId;
     private final String componentName;
 
-    private Handler incomingHandler;
+    private @Nullable Handler incomingHandler;
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ConcurrentHashMap<String, CompletableFuture<?>> commandsInProgress = new ConcurrentHashMap<>();
+    private final @Nullable MessageConverter converter;
 
     /**
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
@@ -71,12 +73,29 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      *                      {@link AxonServerConfiguration#getClientId()} to be set when
      *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
      */
-    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection,
-                                         @Nonnull AxonServerConfiguration configuration) {
-        this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
-        Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
+    public AxonServerCommandBusConnector(AxonServerConnection connection,
+                                         AxonServerConfiguration configuration) {
+        this(connection, configuration, null);
+    }
+
+    /**
+     * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
+     * {@code connection}.
+     *
+     * @param connection    The {@code AxonServerConnection} to communicate to Axon Server with.
+     * @param configuration The Axon Server configuration, used to retrieve (e.g.) the
+     *                      {@link AxonServerConfiguration#getClientId()} to be set when
+     *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
+     * @param converter     The {@link MessageConverter} that should be attached to received
+     *                      {@link CommandMessage}s and {@link CommandResultMessage} for inline payload conversion.
+     */
+    public AxonServerCommandBusConnector(AxonServerConnection connection,
+                                         AxonServerConfiguration configuration, @Nullable MessageConverter converter) {
+        this.connection = requireNonNull(connection, "The AxonServerConnection must not be null.");
+        requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
         this.clientId = configuration.getClientId();
         this.componentName = configuration.getComponentName();
+        this.converter = converter;
     }
 
     /**
@@ -87,21 +106,22 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         logger.trace("The AxonServerCommandBusConnector started.");
     }
 
-    @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+    public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
                                                             @Nullable ProcessingContext processingContext) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
             return connection.commandChannel()
                              .sendCommand(CommandConverter.convertCommandMessage(command, clientId, componentName))
-                             .thenCompose(CommandConverter::convertCommandResponse)
+                             .thenCompose((CommandResponse commandResponse) -> CommandConverter.convertCommandResponse(
+                                     commandResponse,
+                                     converter))
                              .whenComplete((commandResponse, throwable) -> commandInTransit.end());
         }
     }
 
     @Override
-    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
@@ -119,8 +139,10 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             CompletableFuture<CommandResponse> result = new CompletableFuture<CommandResponse>()
                     .whenComplete((r, e) -> commandsInProgress.remove(command.getMessageIdentifier()));
             commandsInProgress.put(command.getMessageIdentifier(), result);
-            incomingHandler.handle(CommandConverter.convertCommand(command),
-                                   new FutureResultCallback(result, command));
+
+            requireNonNull(incomingHandler, "incomingHandler not configured")
+                   .handle(CommandConverter.convertCommand(command, converter), new FutureResultCallback(result, command));
+
             return result;
         } catch (Exception e) {
             logger.error("Error processing incoming command: {}", command.getName(), e);
@@ -132,7 +154,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public boolean unsubscribe(@Nonnull QualifiedName commandName) {
+    public boolean unsubscribe(QualifiedName commandName) {
         Registration subscription = subscriptions.remove(commandName);
         if (subscription != null) {
             subscription.cancel();
@@ -142,7 +164,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull Handler handler) {
+    public void onIncomingCommand(Handler handler) {
         this.incomingHandler = handler;
     }
 
@@ -184,25 +206,25 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
         descriptor.describeProperty("clientId", clientId);
         descriptor.describeProperty("componentName", componentName);
     }
 
     private record FutureResultCallback(
-            @Nonnull CompletableFuture<CommandResponse> result,
-            @Nonnull Command command
+            CompletableFuture<CommandResponse> result,
+            Command command
     ) implements ResultCallback {
 
         @Override
-        public void onSuccess(CommandResultMessage resultMessage) {
+        public void onSuccess(@Nullable CommandResultMessage resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }
 
         @Override
-        public void onError(@Nonnull Throwable cause) {
+        public void onError(Throwable cause) {
             logger.info("Command [{}] raised an exception [{}]", command.getName(), cause.getMessage());
             result.completeExceptionally(cause);
         }

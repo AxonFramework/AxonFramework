@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
-import org.axonframework.common.configuration.*;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
@@ -206,28 +205,24 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @Test
     void initializationRegistersStartupAndShutdownHandlers() {
         D testComponent = createComponent(identifier, TEST_COMPONENT);
-        //noinspection unchecked
         registerStartHandler(testComponent, 1, mock());
-        //noinspection unchecked
         registerStartHandler(testComponent, 10, mock());
-        //noinspection unchecked
         registerShutdownHandler(testComponent, 20, mock());
-        //noinspection unchecked
         registerShutdownHandler(testComponent, 42, mock());
 
         testComponent.initLifecycle(configuration, new LifecycleRegistry() {
             @Override
-            public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+            public @NonNull LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @NonNull TimeUnit timeUnit) {
                 return lifecycleRegistry.registerLifecyclePhaseTimeout(timeout, timeUnit);
             }
 
             @Override
-            public LifecycleRegistry onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+            public @NonNull LifecycleRegistry onStart(int phase, @NonNull LifecycleHandler startHandler) {
                 return lifecycleRegistry.onStart(phase, startHandler);
             }
 
             @Override
-            public LifecycleRegistry onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+            public @NonNull LifecycleRegistry onShutdown(int phase, @NonNull LifecycleHandler shutdownHandler) {
                 return lifecycleRegistry.onShutdown(phase, shutdownHandler);
             }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.common.configuration;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.function.Consumer;
 
@@ -41,7 +39,7 @@ public interface ApplicationConfigurer {
      * @param componentRegistrar The actions to take on the component registry.
      * @return This {@code ApplicationConfigurer} for a fluent API.
      */
-    ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar);
+    ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar);
 
     /**
      * Executes the given {@code lifecycleRegistrar} on the lifecycle registry associated with this
@@ -50,7 +48,7 @@ public interface ApplicationConfigurer {
      * @param lifecycleRegistrar The actions to take on the lifecycle registry.
      * @return This {@code ApplicationConfigurer} for a fluent API.
      */
-    ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar);
+    ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar);
 
     /**
      * Returns the completely initialized {@link Configuration} instance of type {@code C} built using this

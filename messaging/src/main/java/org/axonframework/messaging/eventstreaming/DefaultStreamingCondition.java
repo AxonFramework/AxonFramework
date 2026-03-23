@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 import static java.util.Objects.requireNonNull;
@@ -30,8 +29,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultStreamingCondition(
-        @Nonnull TrackingToken position,
-        @Nonnull EventCriteria criteria
+        TrackingToken position,
+        EventCriteria criteria
 ) implements StreamingCondition {
 
     DefaultStreamingCondition {
@@ -40,7 +39,7 @@ record DefaultStreamingCondition(
     }
 
     @Override
-    public StreamingCondition or(@Nonnull EventCriteria criteria) {
+    public StreamingCondition or(EventCriteria criteria) {
         return new DefaultStreamingCondition(this.position, this.criteria.or(criteria));
     }
 }

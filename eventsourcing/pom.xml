@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2025. Axon Framework
+  ~ Copyright (c) 2010-2026. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon-parent</artifactId>
-        <version>5.0.5-SNAPSHOT</version>
+        <version>5.1.0-SNAPSHOT</version>
         <relativePath>../build/parent/pom.xml</relativePath>
     </parent>
 
@@ -44,13 +44,6 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-messaging</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- Annotations -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Database -->
@@ -97,6 +90,11 @@
             <artifactId>axon-common</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -263,8 +261,4 @@
             </plugin>
         </plugins>
     </build>
-
-  <scm>
-    <tag>axon-5.0.4</tag>
-  </scm>
 </project>

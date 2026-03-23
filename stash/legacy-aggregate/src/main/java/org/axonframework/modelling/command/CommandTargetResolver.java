@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -42,5 +41,5 @@ public interface CommandTargetResolver {
      * @see AggregateCreationPolicy#ALWAYS
      * @see AggregateCreationPolicy#CREATE_IF_MISSING
      */
-    String resolveTarget(@Nonnull CommandMessage command);
+    String resolveTarget(CommandMessage command);
 }

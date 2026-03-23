@@ -59,6 +59,46 @@ Beyond their technical purpose, these annotations serve as documentation in your
 They make it immediately clear that a class represents a command, event, or query, improving code readability and making your domain model's intent explicit.
 ====
 
+[[namespace-annotation]]
+=== Defining the namespace with `@Namespace`
+
+You can use the `@Namespace` annotation as a convenient way to define the `namespace` of the `MessageType` for multiple message classes at once.
+As such, it acts as a fallback for whenever you are (1) using annotations and (2) have **not** specified the `namespace` attribute directly on each `@Command`, `@Event`, or `@Query` annotation.
+
+The `@Namespace` annotation can be applied at different levels:
+
+* **On a class** - Defines the namespace for that specific message class. Technically no different from using the `@Command`, `@Event`, or `@Query` annotation.
+* **On an enclosing class** - Defines the namespace for all nested classes within it
+* **On a package** (via `package-info.java`) - Defines the namespace for all classes in that package
+* **On a module** (via `module-info.java`) - Defines the namespace for all classes in that module
+
+To automatically set the namespace for several messages inside the same package, we could annotate the `package-info.java` file as shown below:
+
+[source,java]
+----
+@Namespace("orders")
+package com.example.orders.api;
+
+import org.axonframework.messaging.core.annotation.Namespace;
+----
+
+The different levels described also represent the search order. When resolving the namespace for a class, the following order is used until a non-empty value is found:
+
+1. The `@Namespace` annotation on the class itself
+2. The `namespace` attribute on the message annotation (`@Command`, `@Event`, or `@Query`)
+3. The `@Namespace` annotation on enclosing classes (from innermost to outermost)
+4. The `@Namespace` annotation on the package (via `package-info.java`)
+5. The `@Namespace` annotation on the module (via `module-info.java`)
+6. The package name of the class (default fallback)
+
+This layered approach allows you to set a default namespace at a broad level (package or module) while still overriding it for specific classes when needed.
+
+[TIP]
+====
+Using `@Namespace` at the package level is particularly useful for Domain-Driven Design (DDD) applications, where you can align the namespace with your bounded context.
+All messages within a bounded context can share the same namespace, making it explicit to which context they belong to.
+====
+
 === Payload conversion at handling time
 
 Because message identity is decoupled from Java classes, **payloads are converted to the handler's expected type at handling time**.
@@ -155,7 +195,8 @@ public class FindUserByIdQuery {
 
 **Default values:**
 
-* If you don't specify a `namespace`, Axon uses the package name of the class.
+* If you don't specify a `namespace`, Axon searches for the `@Namespace` annotation (as described xref:namespace-annotation[here]) to use its value as the `namespace`.
+The fallback for when that is not present too is the package name of the class.
 * If you don't specify a `name`, Axon uses the simple class name.
 * If you don't specify a `version`, Axon uses `0.0.1` as the version.
 * The fully qualified name is always: `namespace + "." + name`.
@@ -211,10 +252,20 @@ public void retrievePayload(Message message) {
 }
 ----
 
-The `payloadAs(Type)` method converts the payload to the required type at the moment you need it.
-In most cases, you don't need to pass a `Converter` explicitly - if the message has passed through converter-aware components (which is typical in Axon), the conversion happens automatically.
+The `payloadAs(Class<T>)` method attempts to convert the message payload into the required type as you access it.
 
-If you need explicit control over conversion, you can provide a converter:
+In cases where a message originates outside the JVM (Axon Server, Database, Store), Axon attaches an applicable xref:ROOT:conversion.adoc#converter_attachment_at_message_loading_time[converter] to the message before passing it on for handling. This applies for `CommandMessages`, `CommandResultMessages`, `EventMessages`, `QueryMessages` and `QueryResponseMessages` and makes those messages conversion aware, so handler code usually does not need to reference a converter directly when using a generic message type for handling:
+
+[source,java]
+----
+@EventHandler
+public void on(EventMessage event) {
+    // Converter is already attached — no need to pass it explicitly
+    OrderPlacedEvent order = event.payloadAs(OrderPlacedEvent.class);
+}
+----
+
+If you need explicit control over conversion or if you are working with a message that was not produced by Axon's infrastructure, you can still supply a converter directly:
 
 [source,java]
 ----
@@ -223,7 +274,12 @@ public void retrieveConvertedPayload(Message message, Converter converter) {
 }
 ----
 
-This is useful when you need the same message in different formats at different points in your processing logic.
+When building custom infrastructure that produces `Message` instances (for example `GenericMessage`, `GenericCommandMessage`, `GenericEventMessage`, `GenericQueryMessage`, etc.), you can call `withConverter(Converter)` to attach the converter so downstream handlers benefit from the same automatic conversion:
+
+[source,java]
+----
+GenericEventMessage messageWithConverter = rawMessage.withConverter(eventConverter);
+----
 
 === Converting message payloads
 

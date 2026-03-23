@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 /**
@@ -38,6 +37,5 @@ public interface AnnotatedEntityMetamodelFactory {
      * @param <C>        The type of the entity.
      * @return An {@link AnnotatedEntityMetamodel} for the given entity type.
      */
-    @Nonnull
-    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(@Nonnull Class<C> entityType);
+    <C> AnnotatedEntityMetamodel<C> createMetamodelForType(Class<C> entityType);
 }

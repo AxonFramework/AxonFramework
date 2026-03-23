@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
@@ -288,8 +288,8 @@ class SagaManagerTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context,
-                                 @Nonnull Segment segment) {
+        public boolean canHandle(@NonNull EventMessage eventMessage, @NonNull ProcessingContext context,
+                                 @NonNull Segment segment) {
             return true;
         }
 

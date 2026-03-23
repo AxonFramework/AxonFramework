@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 
 import static java.util.Objects.requireNonNull;
@@ -31,8 +30,8 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        @Nonnull ConsistencyMarker consistencyMarker,
-        @Nonnull EventCriteria criteria
+        ConsistencyMarker consistencyMarker,
+        EventCriteria criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {

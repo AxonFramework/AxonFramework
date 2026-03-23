@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
@@ -178,7 +177,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         @Override
-        public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
+        public Builder spanFactory(SnapshotterSpanFactory spanFactory) {
             super.spanFactory(spanFactory);
             return this;
         }
@@ -355,7 +354,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 //        }
 //
 //        @Override
-//        public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+//        public Object handle(Message message, ProcessingContext context) {
 //            throw new UnsupportedOperationException("Aggregate instance is read-only");
 //        }
 //

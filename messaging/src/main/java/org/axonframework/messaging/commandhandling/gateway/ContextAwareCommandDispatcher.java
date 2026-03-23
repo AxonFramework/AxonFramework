@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling.gateway;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.Configuration;
@@ -42,24 +41,24 @@ public class ContextAwareCommandDispatcher implements CommandDispatcher {
     private final CommandGateway commandGateway;
     private final ProcessingContext context;
 
-    ContextAwareCommandDispatcher(@Nonnull CommandGateway commandGateway,
-                                  @Nonnull ProcessingContext context) {
+    ContextAwareCommandDispatcher(CommandGateway commandGateway,
+                                  ProcessingContext context) {
         this.commandGateway = Objects.requireNonNull(commandGateway, "The Command Gateway must not be null.");
         this.context = Objects.requireNonNull(context, "The Processing Context must not be null.");
     }
 
     @Override
-    public CommandResult send(@Nonnull Object command) {
+    public CommandResult send(Object command) {
         return commandGateway.send(command, context);
     }
 
     @Override
-    public CommandResult send(@Nonnull Object command, @Nonnull Metadata metadata) {
+    public CommandResult send(Object command, Metadata metadata) {
         return commandGateway.send(command, metadata, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("processingContext", context);
         descriptor.describeProperty("commandGateway", commandGateway);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * JPA Implementation of the EventStore. This package contains all classes needed to provide such an implementation
+ * Part of the Axon Eventsourcing module. Contains {@code JPA} based event storage engines.
  */
+@NullMarked
 package org.axonframework.eventsourcing.eventstore.jpa;
+
+import org.jspecify.annotations.NullMarked;

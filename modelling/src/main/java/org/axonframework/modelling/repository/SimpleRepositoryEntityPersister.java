@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.repository;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,5 +38,5 @@ public interface SimpleRepositoryEntityPersister<I, T> {
      * @param context The context in which the entity should be persisted.
      * @return a CompletableFuture that completes when the entity has been persisted.
      */
-    CompletableFuture<Void> persist(@Nonnull I id, @Nonnull T entity, @Nonnull ProcessingContext context);
+    CompletableFuture<Void> persist(I id, T entity, ProcessingContext context);
 }

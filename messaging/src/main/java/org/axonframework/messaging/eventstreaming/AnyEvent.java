@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.QualifiedName;
 
 import java.util.Collections;
@@ -49,7 +48,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
     }
 
     @Override
-    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
+    public boolean matches(QualifiedName type, Set<Tag> tags) {
         return true;
     }
 
@@ -75,7 +74,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
     }
 
     @Override
-    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(Set<QualifiedName> types) {
         Objects.requireNonNull(types, "The provided types should not be null");
         return new TagAndTypeFilteredEventCriteria(types, Collections.emptySet());
     }

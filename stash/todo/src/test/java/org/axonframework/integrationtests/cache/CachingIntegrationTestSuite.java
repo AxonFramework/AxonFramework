@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -475,7 +476,7 @@ public abstract class CachingIntegrationTestSuite {
         }
 
         @Override
-        public void onEntryCreated(Object key, Object value) {
+        public void onEntryCreated(@NonNull Object key, @NonNull Object value) {
             String keyAsString = key.toString();
             created.add(keyAsString);
             //noinspection unchecked
@@ -483,28 +484,28 @@ public abstract class CachingIntegrationTestSuite {
         }
 
         @Override
-        public void onEntryUpdated(Object key, Object value) {
+        public void onEntryUpdated(@NonNull Object key, @NonNull Object value) {
             //noinspection unchecked
             updates.put(key.toString(), (V) value);
         }
 
         @Override
-        public void onEntryRemoved(Object key) {
+        public void onEntryRemoved(@NonNull Object key) {
             removed.add(key.toString());
         }
 
         @Override
-        public void onEntryExpired(Object key) {
+        public void onEntryExpired(@NonNull Object key) {
             expired.add(key.toString());
         }
 
         @Override
-        public void onEntryRead(Object key, Object value) {
+        public void onEntryRead(@NonNull Object key, @NonNull Object value) {
             // Not used for validation, as the EhCacheAdapter does not support this.
         }
 
         @Override
-        public Object clone() {
+        public @NonNull Object clone() {
             throw new UnsupportedOperationException();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,10 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message> {
     @Override
     protected MessageStream<Message> failingTestSubject(List<Message> messages,
                                                         RuntimeException failure) {
-        Assumptions.abort("EmptyMessageStream doesn't support failed streams");
-        return MessageStream.empty();
+        Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream doesn't support content");
+        MessageStream<Message> empty = MessageStream.empty();
+        empty.setCallback(() -> {throw failure;});
+        return empty;
     }
 
     @Override
@@ -93,5 +95,25 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message> {
 
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
+    }
+
+    @Test
+    void shouldProvideFutureWithIsDone() {
+        var invoked = new AtomicBoolean(false);
+        var cf = MessageStream.empty().onComplete(() -> invoked.set(true)).asCompletableFuture();
+        assertTrue(cf.isDone());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldNotProcessOnNext() {
+        var processed = new AtomicBoolean(false);
+        var testSubject = MessageStream.empty();
+
+        var result = testSubject.onNext(e -> processed.set(true))
+                                .asCompletableFuture();
+        assertTrue(result.isDone());
+        assertNull(result.join());
+        assertFalse(processed.get());
     }
 }

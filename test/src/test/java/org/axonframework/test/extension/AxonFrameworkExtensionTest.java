@@ -16,12 +16,12 @@
 
 package org.axonframework.test.extension;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.fixture.AxonTestFixture.Customization;
 import org.axonframework.test.fixture.sampledomain.CourseCreated;
 import org.axonframework.test.fixture.sampledomain.CourseEntity;
 import org.axonframework.test.fixture.sampledomain.CreateCourse;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 
@@ -53,7 +53,7 @@ public class AxonFrameworkExtensionTest {
                                                                              Customization::disableAxonServer);
 
         @Test
-        void creatingNewCourseIssuesEvent(@Nonnull AxonTestFixture fixture) {
+        void creatingNewCourseIssuesEvent(@NonNull AxonTestFixture fixture) {
             assertCreateNewCourse(fixture);
         }
     }

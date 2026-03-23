@@ -21,12 +21,10 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.core.ScopeDescriptor;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.axonframework.test.matchers.Matchers.*;
 
 /**
  * Test class validating a {@link ScopeDescriptor}, specifically an {@link

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.TypeReference;
 
 import java.util.Objects;
@@ -77,7 +76,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      * @see #ofTypeAndName(Class, String)
      */
-    static <C> IncompleteComponentDefinition<C> ofType(@Nonnull Class<C> type) {
+    static <C> IncompleteComponentDefinition<C> ofType(Class<C> type) {
         return ofTypeAndName(type, null);
     }
 
@@ -93,16 +92,16 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nullable String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(Class<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
 
             @Override
-            public ComponentDefinition<C> withInstance(@Nonnull C instance) {
+            public ComponentDefinition<C> withInstance(C instance) {
                 return new InstantiatedComponentDefinition<>(new Component.Identifier<>(type, name), instance);
             }
 
             @Override
-            public ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder) {
+            public ComponentDefinition<C> withBuilder(ComponentBuilder<? extends C> builder) {
                 return new LazyInitializedComponentDefinition<>(new Component.Identifier<>(type, name), builder);
             }
         };
@@ -125,7 +124,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      * @see #ofTypeAndName(Class, String)
      */
-    static <C> IncompleteComponentDefinition<C> ofType(@Nonnull TypeReference<C> type) {
+    static <C> IncompleteComponentDefinition<C> ofType(TypeReference<C> type) {
         return ofTypeAndName(type, null);
     }
 
@@ -142,17 +141,17 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param <C>  The declared type of this component.
      * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull TypeReference<C> type, @Nullable String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(TypeReference<C> type, @Nullable String name) {
         return new IncompleteComponentDefinition<>() {
             private final Component.Identifier<C> identifier = new Component.Identifier<>(type, name);
 
             @Override
-            public ComponentDefinition<C> withInstance(@Nonnull C instance) {
+            public ComponentDefinition<C> withInstance(C instance) {
                 return new InstantiatedComponentDefinition<>(identifier, instance);
             }
 
             @Override
-            public ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder) {
+            public ComponentDefinition<C> withBuilder(ComponentBuilder<? extends C> builder) {
                 return new LazyInitializedComponentDefinition<>(identifier, builder);
             }
         };
@@ -166,7 +165,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    ComponentDefinition<C> onStart(int phase, @Nonnull ComponentLifecycleHandler<C> handler);
+    ComponentDefinition<C> onStart(int phase, ComponentLifecycleHandler<C> handler);
 
     /**
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
@@ -176,7 +175,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    default ComponentDefinition<C> onStart(int phase, @Nonnull Consumer<C> handler) {
+    default ComponentDefinition<C> onStart(int phase, Consumer<C> handler) {
         return onStart(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The start handler cannot be null.")
                    .accept(component);
@@ -192,7 +191,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    default ComponentDefinition<C> onStart(int phase, @Nonnull BiConsumer<Configuration, C> handler) {
+    default ComponentDefinition<C> onStart(int phase, BiConsumer<Configuration, C> handler) {
         return onStart(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The start handler cannot be null.")
                    .accept(config, component);
@@ -208,7 +207,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    ComponentDefinition<C> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<C> handler);
+    ComponentDefinition<C> onShutdown(int phase, ComponentLifecycleHandler<C> handler);
 
     /**
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
@@ -218,7 +217,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    default ComponentDefinition<C> onShutdown(int phase, @Nonnull Consumer<C> handler) {
+    default ComponentDefinition<C> onShutdown(int phase, Consumer<C> handler) {
         return onShutdown(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
                    .accept(component);
@@ -234,7 +233,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    default ComponentDefinition<C> onShutdown(int phase, @Nonnull BiConsumer<Configuration, C> handler) {
+    default ComponentDefinition<C> onShutdown(int phase, BiConsumer<Configuration, C> handler) {
         return onShutdown(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
                    .accept(config, component);
@@ -297,7 +296,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * @param instance The instance to declare as the implementation of this component.
          * @return A {@code ComponentDefinition} for further configuration.
          */
-        ComponentDefinition<C> withInstance(@Nonnull C instance);
+        ComponentDefinition<C> withInstance(C instance);
 
         /**
          * Creates a {@code ComponentDefinition} that creates an instance on-demand using the given {@code builder}
@@ -308,6 +307,6 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * @param builder The builder used to create an instance, when required.
          * @return A {@code ComponentDefinition} for further configuration.
          */
-        ComponentDefinition<C> withBuilder(@Nonnull ComponentBuilder<? extends C> builder);
+        ComponentDefinition<C> withBuilder(ComponentBuilder<? extends C> builder);
     }
 }

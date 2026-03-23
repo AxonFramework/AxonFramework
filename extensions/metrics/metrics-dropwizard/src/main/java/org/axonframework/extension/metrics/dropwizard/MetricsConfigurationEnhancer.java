@@ -18,7 +18,6 @@ package org.axonframework.extension.metrics.dropwizard;
 
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricRegistry;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -32,6 +31,7 @@ import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.monitoring.configuration.MessageMonitorRegistry;
 import org.axonframework.messaging.queryhandling.QueryBus;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -77,12 +77,12 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
      *
      * @param registry the {@link MetricRegistry} which will record the metrics
      */
-    public MetricsConfigurationEnhancer(@Nonnull MetricRegistry registry) {
+    public MetricsConfigurationEnhancer(MetricRegistry registry) {
         this.registry = Objects.requireNonNull(registry, "The MetricRegistry must not be null.");
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerDecorator(
                 MessageMonitorRegistry.class, 0,
                 (config, name, delegate) -> delegate.registerCommandMonitor(
@@ -181,7 +181,7 @@ public class MetricsConfigurationEnhancer implements ConfigurationEnhancer {
         return new MultiMessageMonitor<>(countingMonitor, timerMonitor, capacityMonitor);
     }
 
-    private static String resolveToMonitorName(Class<?> componentType, String componentName) {
+    private static String resolveToMonitorName(Class<?> componentType, @Nullable String componentName) {
         return StringUtils.emptyOrNull(componentName) ? componentType.getSimpleName() : componentName;
     }
 

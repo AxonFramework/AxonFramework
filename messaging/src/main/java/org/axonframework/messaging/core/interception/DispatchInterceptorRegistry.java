@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -32,6 +30,8 @@ import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.List;
 
@@ -66,9 +66,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @param interceptorBuilder the generic {@link Message} {@link MessageDispatchInterceptor} builder to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     );
 
     /**
@@ -84,8 +83,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @param interceptorFactory the generic {@link Message} {@link MessageDispatchInterceptor} factory to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
-    DispatchInterceptorRegistry registerInterceptor(@Nonnull DispatchInterceptorFactory<Message> interceptorFactory);
+
+    DispatchInterceptorRegistry registerInterceptor(DispatchInterceptorFactory<Message> interceptorFactory);
 
     /**
      * Registers the given {@code interceptorBuilder} for a {@link CommandMessage}-specific
@@ -97,9 +96,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
@@ -116,9 +114,9 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
+
     DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
+            DispatchInterceptorFactory<? super CommandMessage> interceptorFactory
     );
 
     /**
@@ -131,9 +129,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -150,9 +147,9 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
+
     DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super EventMessage> interceptorFactory
+            DispatchInterceptorFactory<? super EventMessage> interceptorFactory
     );
 
     /**
@@ -165,9 +162,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**
@@ -184,9 +180,9 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
+
     DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
+            DispatchInterceptorFactory<? super QueryMessage> interceptorFactory
     );
 
     /**
@@ -199,9 +195,8 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           builder to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
     DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> interceptorBuilder
     );
 
     /**
@@ -218,9 +213,9 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      *                           factory to register
      * @return this {@code InterceptorRegistry}, for fluent interfacing
      */
-    @Nonnull
+
     DispatchInterceptorRegistry registerSubscriptionQueryUpdateInterceptor(
-            @Nonnull DispatchInterceptorFactory<? super SubscriptionQueryUpdateMessage> interceptorFactory
+            DispatchInterceptorFactory<? super SubscriptionQueryUpdateMessage> interceptorFactory
     );
 
     /**
@@ -239,10 +234,10 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @return the list of {@link CommandMessage}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors}
      */
-    @Nonnull
+
     List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -260,10 +255,10 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @param componentName the name of the component to retrieve a dispatch interceptor for
      * @return the list of {@link EventMessage}-specific {@link MessageDispatchInterceptor MessageDispatchInterceptors}
      */
-    @Nonnull
+
     List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -281,10 +276,10 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @param componentName the name of the component to retrieve a dispatch interceptor for
      * @return the list of {@link QueryMessage}-specific {@link MessageDispatchInterceptor MessageDispatchInterceptors}
      */
-    @Nonnull
+
     List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -304,10 +299,10 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      * @return the list of {@link SubscriptionQueryUpdateMessage}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors}
      */
-    @Nonnull
+
     List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 }

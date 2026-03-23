@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 
 
@@ -57,8 +56,8 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
      * @return A simple {@code  StreamingCondition} that starts streaming from the given {@code position}, only
      * returning events matching the given {@code criteria}.
      */
-    static StreamingCondition conditionFor(@Nonnull TrackingToken position,
-                                           @Nonnull EventCriteria criteria) {
+    static StreamingCondition conditionFor(TrackingToken position,
+                                           EventCriteria criteria) {
         return new DefaultStreamingCondition(position, criteria);
     }
 
@@ -82,5 +81,5 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
      * @return A {@code  StreamingCondition} that {@link EventCriteria#or() "or-ed"} the given {@code criteria} with the
      * {@link #criteria()} of {@code this} {@code  StreamingCondition}.
      */
-    StreamingCondition or(@Nonnull EventCriteria criteria);
+    StreamingCondition or(EventCriteria criteria);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,29 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.pooled;
 
-import jakarta.annotation.Nonnull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.util.AssertUtils.assertWithin;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.messaging.core.Context;
+import org.axonframework.messaging.core.EmptyApplicationContext;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.SimpleEntry;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
@@ -29,32 +49,10 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.stor
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.core.EmptyApplicationContext;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.SimpleEntry;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.mockito.stubbing.*;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
-import static org.axonframework.common.util.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyLong;
 
 /**
  * Test class validating the {@link Coordinator}.
@@ -80,8 +78,7 @@ class CoordinatorTest {
                 Context.empty(), token);
     }
 
-    @Nonnull
-    private static StreamingCondition streamingFrom(TrackingToken testToken) {
+    static @NonNull StreamingCondition streamingFrom(TrackingToken testToken) {
         return StreamingCondition.conditionFor(testToken, EventCriteria.havingAnyTag());
     }
 

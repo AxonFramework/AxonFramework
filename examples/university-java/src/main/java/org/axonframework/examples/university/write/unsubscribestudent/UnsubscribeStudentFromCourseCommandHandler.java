@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.examples.university.write.unsubscribestudent;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -89,8 +89,7 @@ class UnsubscribeStudentFromCourseCommandHandler {
     private static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
         @Override
-        @Nonnull
-        public SubscriptionId resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+        public @NonNull SubscriptionId resolve(@NonNull Message command, @NonNull ProcessingContext context) {
             var converter = context.component(MessageConverter.class);
             UnsubscribeStudentFromCourse payload = command.payloadAs(UnsubscribeStudentFromCourse.class, converter);
             if (payload == null) {

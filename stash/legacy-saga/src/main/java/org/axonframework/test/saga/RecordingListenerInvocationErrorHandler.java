@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.messaging.eventhandling.EventMessageHandler;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
 
 import java.util.Optional;
-import jakarta.annotation.Nonnull;
 
 /**
  * A wrapper around a {@link ListenerInvocationErrorHandler} that in itself also implements
@@ -53,8 +52,8 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     }
 
     @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
-                        @Nonnull EventMessageHandler eventHandler) throws Exception {
+    public void onError(Exception exception, EventMessage event,
+                        EventMessageHandler eventHandler) throws Exception {
         if (!started && failOnErrorInPreparation) {
             throw exception;
         }

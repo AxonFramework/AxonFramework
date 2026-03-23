@@ -17,7 +17,6 @@
 package org.axonframework.extension.metrics.dropwizard.springboot;
 
 import io.dropwizard.metrics5.MetricRegistry;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.extension.metrics.dropwizard.MetricsConfigurationEnhancer;
@@ -89,7 +88,7 @@ public class DropwizardMetricsAutoConfiguration {
     public ConfigurationEnhancer disableMetricsConfigurationEnhancer() {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.disableEnhancer(MetricsConfigurationEnhancer.class);
             }
 

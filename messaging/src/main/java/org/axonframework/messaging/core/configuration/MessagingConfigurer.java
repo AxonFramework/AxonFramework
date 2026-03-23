@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.Component;
@@ -54,6 +53,7 @@ import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule;
+
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -93,7 +93,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based on.
      */
-    private MessagingConfigurer(@Nonnull ApplicationConfigurer delegate) {
+    private MessagingConfigurer(ApplicationConfigurer delegate) {
         this.delegate =
                 requireNonNull(delegate, "The Application Configurer cannot be null.");
         this.eventProcessing = new EventProcessingConfigurer(this);
@@ -108,7 +108,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
      */
-    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
+    public static MessagingConfigurer enhance(ApplicationConfigurer applicationConfigurer) {
         return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
                         .registerEnhancer(new EventBusConfigurationDefaults())
@@ -122,7 +122,8 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurationEnhancer enhancers}, and {@link org.axonframework.common.configuration.Module modules} for a message-driven application.
+     * {@link ConfigurationEnhancer enhancers}, and {@link org.axonframework.common.configuration.Module modules} for a
+     * message-driven application.
      *
      * @return A {@code MessagingConfigurer} instance for further configuring.
      * @see #enhance(ApplicationConfigurer)
@@ -143,7 +144,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerMessageTypeResolver(
-            @Nonnull ComponentBuilder<MessageTypeResolver> messageTypeResolverFactory
+            ComponentBuilder<MessageTypeResolver> messageTypeResolverFactory
     ) {
         delegate.componentRegistry(cr -> cr.registerComponent(
                 MessageTypeResolver.class, messageTypeResolverFactory
@@ -160,7 +161,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param commandBusBuilder The builder constructing the {@link CommandBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerCommandBus(@Nonnull ComponentBuilder<CommandBus> commandBusBuilder) {
+    public MessagingConfigurer registerCommandBus(ComponentBuilder<CommandBus> commandBusBuilder) {
         delegate.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusBuilder));
         return this;
     }
@@ -174,7 +175,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param eventSinkBuilder The builder constructing the {@link EventSink}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerEventSink(@Nonnull ComponentBuilder<EventSink> eventSinkBuilder) {
+    public MessagingConfigurer registerEventSink(ComponentBuilder<EventSink> eventSinkBuilder) {
         delegate.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkBuilder));
         return this;
     }
@@ -188,7 +189,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param queryBusBuilder The builder constructing the {@link QueryBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerQueryBus(@Nonnull ComponentBuilder<QueryBus> queryBusBuilder) {
+    public MessagingConfigurer registerQueryBus(ComponentBuilder<QueryBus> queryBusBuilder) {
         delegate.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusBuilder));
         return this;
     }
@@ -203,7 +204,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerParameterResolverFactory(
-            @Nonnull ComponentBuilder<ParameterResolverFactory> parameterResolverFactoryBuilder
+            ComponentBuilder<ParameterResolverFactory> parameterResolverFactoryBuilder
     ) {
         delegate.componentRegistry(registry -> registerToComponentRegistry(
                 registry,
@@ -222,7 +223,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerUnitOfWorkFactory(
-            @Nonnull ComponentBuilder<UnitOfWorkFactory> unitOfWorkFactoryBuilder
+            ComponentBuilder<UnitOfWorkFactory> unitOfWorkFactoryBuilder
     ) {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(UnitOfWorkFactory.class, unitOfWorkFactoryBuilder)
@@ -243,7 +244,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCorrelationDataProvider(
-            @Nonnull ComponentBuilder<CorrelationDataProvider> providerBuilder
+            ComponentBuilder<CorrelationDataProvider> providerBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 CorrelationDataProviderRegistry.class,
@@ -268,7 +269,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -293,7 +294,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -318,7 +319,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -343,7 +344,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -368,7 +369,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerMessageHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -391,7 +392,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -414,7 +415,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -437,7 +438,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -451,18 +452,16 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * Registers the given {@link ModuleBuilder builder} for a {@link CommandHandlingModule} to use in this
      * configuration.
      * <p>
-     * As a {@link org.axonframework.common.configuration.Module} implementation, any components registered with the result of the given {@code moduleBuilder}
-     * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
-     * {@code Modules} registered with the resulting {@link CommandHandlingModule} itself.
+     * As a {@link org.axonframework.common.configuration.Module} implementation, any components registered with the
+     * result of the given {@code moduleBuilder} will not be accessible from other {@code Modules} to enforce
+     * encapsulation. The sole exception to this, are {@code Modules} registered with the resulting
+     * {@link CommandHandlingModule} itself.
      *
      * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API
      */
-    @Nonnull
-    public MessagingConfigurer registerCommandHandlingModule(
-            @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
-    ) {
+    public MessagingConfigurer registerCommandHandlingModule(ModuleBuilder<CommandHandlingModule> moduleBuilder) {
         Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
         delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
         return this;
@@ -480,10 +479,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *                      {@code this MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API
      */
-    @Nonnull
-    public MessagingConfigurer registerQueryHandlingModule(
-            @Nonnull ModuleBuilder<QueryHandlingModule> moduleBuilder
-    ) {
+    public MessagingConfigurer registerQueryHandlingModule(ModuleBuilder<QueryHandlingModule> moduleBuilder) {
         Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
         delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
         return this;
@@ -498,9 +494,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param monitorBuilder a builder for creating a {@link MessageMonitor} instance to monitor messages.
      * @return the current instance of the {@code Configurer} for a fluent API
      */
-    public MessagingConfigurer registerMessageMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder
-    ) {
+    public MessagingConfigurer registerMessageMonitor(ComponentBuilder<MessageMonitor<Message>> monitorBuilder) {
         return registerWithRegistry(registry -> registry.registerMonitor(monitorBuilder));
     }
 
@@ -514,9 +508,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param monitorFactory a factory for creating a {@link MessageMonitor} instance to monitor messages
      * @return the current instance of the {@code Configurer} for a fluent API
      */
-    public MessagingConfigurer registerMessageMonitor(
-            @Nonnull MessageMonitorFactory<Message> monitorFactory
-    ) {
+    public MessagingConfigurer registerMessageMonitor(MessageMonitorFactory<Message> monitorFactory) {
         return registerWithRegistry(registry -> registry.registerMonitor(monitorFactory));
     }
 
@@ -532,7 +524,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerCommandMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
     ) {
         return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorBuilder));
     }
@@ -548,9 +540,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
-    public MessagingConfigurer registerCommandMonitor(
-            @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
-    ) {
+    public MessagingConfigurer registerCommandMonitor(MessageMonitorFactory<? super CommandMessage> monitorFactory) {
         return registerWithRegistry(registry -> registry.registerCommandMonitor(monitorFactory));
     }
 
@@ -566,7 +556,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerEventMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
     ) {
         return registerWithRegistry(registry -> registry.registerEventMonitor(monitorBuilder));
     }
@@ -582,9 +572,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      *                       instance
      * @return the current instance of the {@code Configurer} for a fluent API
      */
-    public MessagingConfigurer registerEventMonitor(
-            @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
-    ) {
+    public MessagingConfigurer registerEventMonitor(MessageMonitorFactory<? super EventMessage> monitorFactory) {
         return registerWithRegistry(registry -> registry.registerEventMonitor(monitorFactory));
     }
 
@@ -599,7 +587,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
     ) {
         return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorBuilder));
     }
@@ -616,7 +604,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerQueryMonitor(
-            @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory
+            MessageMonitorFactory<? super QueryMessage> monitorFactory
     ) {
         return registerWithRegistry(registry -> registry.registerQueryMonitor(monitorFactory));
     }
@@ -633,7 +621,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
     ) {
         return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorBuilder));
     }
@@ -652,7 +640,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return the current instance of the {@code Configurer} for a fluent API
      */
     public MessagingConfigurer registerSubscriptionQueryUpdateMonitor(
-            @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
+            MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     ) {
         return registerWithRegistry(registry -> registry.registerSubscriptionQueryUpdateMonitor(monitorFactory));
     }
@@ -665,7 +653,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public MessagingConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
         delegate.componentRegistry(
                 requireNonNull(componentRegistrar, "The configure task must no be null.")
         );
@@ -673,7 +661,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public MessagingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public MessagingConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
         delegate.lifecycleRegistry(
                 requireNonNull(lifecycleRegistrar, "The lifecycle registrar must not be null.")
         );
@@ -688,7 +676,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @param configurerTask Lambda consuming the {@link EventProcessingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> configurerTask) {
+    public MessagingConfigurer eventProcessing(Consumer<EventProcessingConfigurer> configurerTask) {
         Objects.requireNonNull(configurerTask, "The configurerTask may not be null");
         configurerTask.accept(eventProcessing);
         return this;

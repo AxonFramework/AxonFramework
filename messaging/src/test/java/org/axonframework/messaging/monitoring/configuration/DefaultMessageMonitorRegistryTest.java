@@ -30,6 +30,7 @@ import org.axonframework.messaging.monitoring.NoOpMessageMonitorCallback;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -379,7 +380,7 @@ class DefaultMessageMonitorRegistryTest {
             }
 
             @Override
-            public void reportFailure(Throwable cause) {
+            public void reportFailure(@NonNull Throwable cause) {
                 // noop
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.List;
 import java.util.Objects;
@@ -49,13 +49,13 @@ public class RecordingEventSink implements EventSink {
      *
      * @param delegate The {@link EventSink} to which events will be published.
      */
-    public RecordingEventSink(@Nonnull EventSink delegate) {
+    public RecordingEventSink(EventSink delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<? extends EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }
@@ -82,7 +82,7 @@ public class RecordingEventSink implements EventSink {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("recorded", recorded);
     }

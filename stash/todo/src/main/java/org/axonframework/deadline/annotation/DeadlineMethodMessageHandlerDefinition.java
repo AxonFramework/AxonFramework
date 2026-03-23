@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import jakarta.annotation.Nonnull;
-
 /**
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link DeadlineHandler} annotated methods.
  *
@@ -36,7 +34,7 @@ import jakarta.annotation.Nonnull;
 public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         //noinspection rawtypes,unchecked
         return original.<String>attribute(HandlerAttributes.DEADLINE_NAME)
                        .map(deadlineName -> (MessageHandlingMember<T>) new DeadlineMethodMessageHandlingMember(
@@ -57,7 +55,7 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(Message message, ProcessingContext context) {
             return message instanceof DeadlineMessage dm
                     && deadlineNameMatch(dm)
                     && super.canHandle(message, context);

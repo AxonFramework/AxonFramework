@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDecorator;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param type    The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload The payload for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
+    public GenericCommandMessage(MessageType type,
                                  @Nullable Object payload) {
         this(type, payload, Metadata.emptyInstance());
     }
@@ -63,9 +62,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param payload  The payload for this {@link CommandMessage}.
      * @param metadata The metadata for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
+    public GenericCommandMessage(MessageType type,
                                  @Nullable Object payload,
-                                 @Nonnull Map<String, String> metadata) {
+                                 Map<String, String> metadata) {
         this(new GenericMessage(type, payload, metadata));
     }
 
@@ -81,9 +80,9 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull MessageType type,
-                                 @Nonnull Object payload,
-                                 @Nonnull Map<String, String> metadata,
+    public GenericCommandMessage(MessageType type,
+                                 Object payload,
+                                 Map<String, String> metadata,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         this(new GenericMessage(type, payload, metadata), routingKey, priority);
@@ -103,7 +102,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
      *                 {@link Message#metadata() metadata} for the {@link CommandMessage} to reconstruct.
      */
-    public GenericCommandMessage(@Nonnull Message delegate) {
+    public GenericCommandMessage(Message delegate) {
         this(delegate, null, null);
     }
 
@@ -124,7 +123,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
-    public GenericCommandMessage(@Nonnull Message delegate,
+    public GenericCommandMessage(Message delegate,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
         super(delegate);
@@ -143,20 +142,17 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
     }
 
     @Override
-    @Nonnull
-    public CommandMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public CommandMessage withMetadata(Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().withMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public CommandMessage andMetadata(Map<String, String> metadata) {
         return new GenericCommandMessage(delegate().andMetadata(metadata));
     }
 
     @Override
-    @Nonnull
-    public CommandMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        public CommandMessage withConvertedPayload(Type type, Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             return this;
@@ -167,6 +163,23 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
                                                convertedPayload,
                                                delegate.metadata());
         return new GenericCommandMessage(converted, routingKey, priority);
+    }
+
+    /**
+     * Returns a new {@code GenericCommandMessage} with the same properties as this message and the given
+     * {@code converter} set for use in {@link #payloadAs(Class)}.
+     * <p>
+     * Note: if called from a subtype, the message will lose subtype information because this method creates a new
+     * instance of {@code GenericCommandMessage}.
+     *
+     * @param converter the converter for the new message
+     * @return a copy of this instance with the converter set
+     */
+    public GenericCommandMessage withConverter(@Nullable Converter converter) {
+        Message updated = delegate() instanceof GenericMessage gm
+                ? gm.withConverter(converter)
+                : delegate();
+        return new GenericCommandMessage(updated, routingKey, priority);
     }
 
     @Override

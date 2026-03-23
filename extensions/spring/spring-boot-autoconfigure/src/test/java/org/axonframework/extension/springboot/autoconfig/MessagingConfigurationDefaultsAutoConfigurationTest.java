@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -131,9 +130,15 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
+    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because
+    // its Converter parameter cannot be resolved when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = ConverterAutoConfiguration.class
+            exclude = {
+                    ConverterAutoConfiguration.class,
+                    JpaDeadLetterQueueAutoConfiguration.class,
+                    JdbcDeadLetterQueueAutoConfiguration.class
+            }
     )
     public static class TestContext {
 
@@ -142,7 +147,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             return new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@NotNull ComponentRegistry registry) {
+                public void enhance(@NonNull ComponentRegistry registry) {
                     registry.disableEnhancer(EventSourcingConfigurationDefaults.class);
                 }
 
@@ -155,9 +160,15 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
+    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
+    // when multiple custom Converter beans are registered without @Primary.
     @Configuration
     @EnableAutoConfiguration(
-            exclude = ConverterAutoConfiguration.class
+            exclude = {
+                    ConverterAutoConfiguration.class,
+                    JpaDeadLetterQueueAutoConfiguration.class,
+                    JdbcDeadLetterQueueAutoConfiguration.class
+            }
     )
     public static class CustomContext {
 
@@ -225,7 +236,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     private static final class CustomSequencingPolicy implements SequencingPolicy<CommandMessage> {
 
         @Override
-        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message, @NonNull ProcessingContext context) {
+        public Optional<Object> sequenceIdentifierFor(@NonNull CommandMessage message,
+                                                      @NonNull ProcessingContext context) {
             return Optional.empty();
         }
     }

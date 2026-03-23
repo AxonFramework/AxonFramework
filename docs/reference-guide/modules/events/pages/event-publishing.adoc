@@ -241,6 +241,12 @@ public CompletableFuture<Void> publishEvent() {
 ----
 ====
 
+[TIP]
+.Reactive event publishing
+====
+If your application uses Project Reactor, the xref:axon-framework-reference:ROOT:modules.adoc#axon-reactor[Reactor extension] provides a `ReactorEventGateway` that returns `Mono<Void>` and supports reactive dispatch interceptors with access to Reactor context.
+====
+
 [#low_level_event_publication]
 == Event sink, bus, and store: Low-level event publication
 

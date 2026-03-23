@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.monitoring.interception;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
@@ -44,15 +43,14 @@ public class MonitoringEventHandlerInterceptor implements MessageHandlerIntercep
      *
      * @param messageMonitor The {@link MessageMonitor} instance used for reporting.
      */
-    public MonitoringEventHandlerInterceptor(final @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
+    public MonitoringEventHandlerInterceptor(final MessageMonitor<? super EventMessage> messageMonitor) {
         this.messageMonitor = messageMonitor;
     }
 
-    @Nonnull
     @Override
-    public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message,
-                                              @Nonnull ProcessingContext context,
-                                              @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(EventMessage message,
+                                              ProcessingContext context,
+                                              MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
         if (context.isStarted()) {
             final var monitorCallback = messageMonitor.onMessageIngested(message);
 

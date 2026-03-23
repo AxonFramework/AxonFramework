@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.conversion.*;

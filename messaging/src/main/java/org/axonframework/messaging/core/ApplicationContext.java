@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ComponentNotFoundException;
@@ -51,8 +50,7 @@ public interface ApplicationContext {
      * @return The component registered for the given type.
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
-    @Nonnull
-    default <C> C component(@Nonnull Class<C> type) {
+    default <C> C component(Class<C> type) {
         return component(type, (String) null);
     }
 
@@ -68,6 +66,5 @@ public interface ApplicationContext {
      * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
      *                                    {@code name}.
      */
-    @Nonnull
-    <C> C component(@Nonnull Class<C> type, @Nullable String name);
+    <C> C component(Class<C> type, @Nullable String name);
 }

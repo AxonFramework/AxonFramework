@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ComponentDefinition;
@@ -33,6 +31,7 @@ import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A registry of {@link MessageMonitor MessageMonitors}, acting as a collection of
@@ -67,10 +66,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for generic {@link Message} types
      * @return the updated {@code MessageMonitorRegistry} instance for fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerMonitor(
-            final @Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder
-    );
+    MessageMonitorRegistry registerMonitor(final ComponentBuilder<MessageMonitor<Message>> monitorBuilder);
 
     /**
      * Registers a component-aware {@link MessageMonitor} for generic {@link Message} types using the given
@@ -86,8 +82,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       instance for generic {@link Message} types
      * @return the updated {@code MessageMonitorRegistry} instance for fluent configuration
      */
-    @Nonnull
-    MessageMonitorRegistry registerMonitor(final @Nonnull MessageMonitorFactory<Message> monitorFactory);
+    MessageMonitorRegistry registerMonitor(final MessageMonitorFactory<Message> monitorFactory);
 
     /**
      * Registers a {@link MessageMonitor} specifically for monitoring the processing of {@link CommandMessage}
@@ -99,9 +94,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link CommandMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerCommandMonitor(
-            final @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
+            final ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
     );
 
     /**
@@ -118,9 +112,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link CommandMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerCommandMonitor(
-            final @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
+            final MessageMonitorFactory<? super CommandMessage> monitorFactory
     );
 
     /**
@@ -132,9 +125,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       for {@link EventMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerEventMonitor(
-            final @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
+            final ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
     );
 
     /**
@@ -151,9 +143,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       instance for {@link EventMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerEventMonitor(
-            final @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
+            final MessageMonitorFactory<? super EventMessage> monitorFactory
     );
 
     /**
@@ -166,9 +157,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link QueryMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerQueryMonitor(
-            final @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
+            final ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
     );
 
     /**
@@ -185,9 +175,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link QueryMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
-    MessageMonitorRegistry registerQueryMonitor(
-            final @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory);
+    MessageMonitorRegistry registerQueryMonitor(final MessageMonitorFactory<? super QueryMessage> monitorFactory);
 
     /**
      * Registers a {@link MessageMonitor} specifically for {@link SubscriptionQueryUpdateMessage} types using the
@@ -200,7 +188,7 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
     MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            final @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
+            final ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
     );
 
     /**
@@ -217,9 +205,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      *                       {@link SubscriptionQueryUpdateMessage} types
      * @return the updated {@code MessageMonitorRegistry} instance, allowing for a fluent configuration approach
      */
-    @Nonnull
     MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            final @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
+            final MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     );
 
     /**
@@ -236,8 +223,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * {@link NoOpMessageMonitor}
      */
     MessageMonitor<? super CommandMessage> commandMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -256,8 +243,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * {@link NoOpMessageMonitor}
      */
     MessageMonitor<? super EventMessage> eventMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -276,8 +263,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * {@link NoOpMessageMonitor}
      */
     MessageMonitor<? super QueryMessage> queryMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 
@@ -296,8 +283,8 @@ public interface MessageMonitorRegistry extends DescribableComponent {
      * {@link NoOpMessageMonitor}
      */
     MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     );
 }

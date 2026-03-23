@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.Context;
@@ -57,6 +56,6 @@ public interface StreamableEventSource extends TrackingTokenSource {
      * @param context   The current {@link ProcessingContext}, if any.
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
-    MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
+    MessageStream<EventMessage> open(StreamingCondition condition, @Nullable ProcessingContext context);
 
 }

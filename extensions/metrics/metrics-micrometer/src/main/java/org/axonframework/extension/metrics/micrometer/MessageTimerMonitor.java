@@ -21,7 +21,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
@@ -82,7 +81,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         Iterable<Tag> tags = tagsBuilder.apply(message);
         Timer allTimer = buildTimer(meterNamePrefix, "messageTimer.all", meterRegistry, tags, timerCustomization);
         Timer successTimer = buildTimer(meterNamePrefix, "messageTimer.success", meterRegistry, tags, timerCustomization);

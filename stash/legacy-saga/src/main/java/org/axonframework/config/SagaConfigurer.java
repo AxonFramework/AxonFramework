@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,6 @@
  */
 
 package org.axonframework.config;
-
-import org.axonframework.modelling.saga.AbstractSagaManager;
-import org.axonframework.modelling.saga.AnnotatedSagaManager;
-import org.axonframework.modelling.saga.SagaManagerSpanFactory;
-import org.axonframework.modelling.saga.SagaRepository;
-import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.modelling.saga.repository.SagaStore;
 
 /**
  * Provides mechanisms to configure the components used to manage and store Saga.

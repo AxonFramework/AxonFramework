@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface to describe a way to create Aggregate instances based on an identifier when an instance has to be created
@@ -37,6 +36,5 @@ public interface CreationPolicyAggregateFactory<A> {
      * @param identifier the identifier extracted from the command message
      * @return an identifier initialized aggregate root instance ready to handle commands
      */
-    @Nonnull
     A create(@Nullable Object identifier);
 }

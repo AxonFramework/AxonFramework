@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 /**
- * JDBC Implementation of the EventStore. This package contains all classes needed to provide such an implementation
+ * This is part of a stashed module that is not actively maintained and just kept for reference.
  */
+@NullMarked
 package org.axonframework.messaging.eventsourcing.eventstore.jdbc;
+
+import org.jspecify.annotations.NullMarked;

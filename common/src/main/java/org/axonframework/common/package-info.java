@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,4 +18,7 @@
  * Contains common utility classes needed in different components of the framework. Components placed
  * here cannot generally be included in one of the other component's packages.
  */
+@NullMarked
 package org.axonframework.common;
+
+import org.jspecify.annotations.NullMarked;

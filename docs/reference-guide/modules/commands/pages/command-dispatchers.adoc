@@ -208,6 +208,13 @@ Use these methods only when you genuinely need to wait for the result.
 For most use cases, the asynchronous `send` methods are preferred.
 ====
 
+[TIP]
+.Reactive command dispatching
+====
+If your application uses Project Reactor (for example, Spring WebFlux), the xref:axon-framework-reference:ROOT:modules.adoc#axon-reactor[Reactor extension] provides a `ReactorCommandGateway` that returns `Mono<R>` instead of `CompletableFuture`.
+Reactive dispatch interceptors run inside the Reactor subscription, enabling access to Reactor context such as `ReactiveSecurityContextHolder`.
+====
+
 [[command-dispatcher]]
 == The `CommandDispatcher`
 

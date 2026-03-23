@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * Implementation of the {@link MessageStream} that when the stream completes exceptionally will continue on a
@@ -31,13 +34,11 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M> {
+class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
-    private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();
+    private final AtomicReference<@Nullable MessageStream<M>> onErrorStream = new AtomicReference<>();
     private final Function<Throwable, MessageStream<M>> onError;
-    private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
-    });
+    private final AtomicReference<Runnable> callback = new AtomicReference<>(NO_OP_CALLBACK);
 
     /**
      * Construct an {@link MessageStream stream} that will proceed on the resulting {@code MessageStream} from the given
@@ -48,9 +49,9 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
      * @param onError  A {@link Function} providing the replacement {@link MessageStream stream} to continue from if the
      *                 given {@code delegate} completes exceptionally.
      */
-    OnErrorContinueMessageStream(@Nonnull MessageStream<M> delegate,
-                                 @Nonnull Function<Throwable, MessageStream<M>> onError) {
-        this.delegate = delegate;
+    OnErrorContinueMessageStream(MessageStream<M> delegate,
+                                 Function<Throwable, MessageStream<M>> onError) {
+        super(delegate);
         this.onError = onError;
     }
 
@@ -60,7 +61,7 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
+    public void setCallback(Runnable callback) {
         resolveCurrentDelegate().setCallback(callback);
         this.callback.set(callback);
     }
@@ -71,15 +72,15 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     }
 
     private MessageStream<M> resolveCurrentDelegate() {
-        if (!delegate.isCompleted() || delegate.error().isEmpty()) {
-            return delegate;
+        if (!delegate().isCompleted() || delegate().error().isEmpty()) {
+            return delegate();
         } else if (onErrorStream.get() != null) {
             return onErrorStream.get();
         } else {
             synchronized (this) {
                 MessageStream<M> newMessageStream = onErrorStream.updateAndGet((c) -> {
                     if (c == null) {
-                        return onError.apply(delegate.error().orElse(null));
+                        return onError.apply(delegate().error().orElse(null));
                     }
                     return c;
                 });
@@ -108,5 +109,4 @@ class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M
     public void close() {
         resolveCurrentDelegate().close();
     }
-
 }

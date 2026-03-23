@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.axonframework.examples.university;
 
-import lombok.extern.slf4j.Slf4j;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -38,7 +36,6 @@ class UniversityTestApplicationITest {
   @Testcontainers
   class DefaultTests {
 
-    @ServiceConnection
     @Container
     private static final AxonServerContainer axonServer = new AxonServerContainer()
       .withAxonServerHostname("localhost")

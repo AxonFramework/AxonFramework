@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.axonframework.messaging.tracing;
 
 import org.axonframework.messaging.tracing.Span;
 import org.axonframework.messaging.tracing.SpanScope;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -199,13 +201,13 @@ class SpanTest {
         Throwable exception;
 
         @Override
-        public Span start() {
+        public @NonNull Span start() {
             this.started = true;
             return this;
         }
 
         @Override
-        public SpanScope makeCurrent() {
+        public @NonNull SpanScope makeCurrent() {
             return () -> {};
         }
 
@@ -215,13 +217,13 @@ class SpanTest {
         }
 
         @Override
-        public Span recordException(Throwable t) {
+        public @NonNull Span recordException(@NonNull Throwable t) {
             this.exception = t;
             return this;
         }
 
         @Override
-        public Span addAttribute(String key, String value) {
+        public @NonNull Span addAttribute(@NonNull String key, @Nullable String value) {
             return this;
         }
     }

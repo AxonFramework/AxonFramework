@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

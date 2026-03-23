@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 
 /**
  * An immutable implementation of {@link Position} which represents positions
@@ -37,7 +37,7 @@ public final class GlobalIndexPosition implements Position {
      * @throws NullPointerException When any argument is {@code null}.
      * @throws IllegalArgumentException When the given position could not be converted.
      */
-    public static long toIndex(@Nonnull Position position) {
+    public static long toIndex(Position position) {
         return switch (position) {
             case GlobalIndexPosition gip -> gip.index;
             case Position p when p == Position.START -> MINIMUM_INDEX;
@@ -47,13 +47,18 @@ public final class GlobalIndexPosition implements Position {
 
     private final long index;
 
-    GlobalIndexPosition(long index) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param index an index
+     */
+    @Internal
+    public GlobalIndexPosition(long index) {
         this.index = index;
     }
 
-    @Nonnull
     @Override
-    public Position min(@Nonnull Position other) {
+    public Position min(Position other) {
         return switch (other) {
             case Position p when p == Position.START -> Position.START;
             case GlobalIndexPosition gip -> index < gip.index ? this : gip;

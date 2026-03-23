@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -31,6 +29,7 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +61,9 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     private final List<HandlerInterceptorFactory<? super EventMessage>> eventInterceptorFactories = new ArrayList<>();
     private final List<HandlerInterceptorFactory<? super QueryMessage>> queryInterceptorFactories = new ArrayList<>();
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
@@ -93,10 +91,9 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         });
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerInterceptor(
-            @Nonnull HandlerInterceptorFactory<Message> interceptorFactory
+            HandlerInterceptorFactory<Message> interceptorFactory
     ) {
         registerCommandInterceptor(interceptorFactory);
         registerEventInterceptor(interceptorFactory);
@@ -104,94 +101,86 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
         return this;
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         ComponentDefinition<MessageHandlerInterceptor<? super CommandMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
         return registerCommandInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
+            HandlerInterceptorFactory<? super CommandMessage> interceptorFactory
     ) {
         this.commandInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         ComponentDefinition<MessageHandlerInterceptor<? super EventMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
         return registerEventInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super EventMessage> interceptorFactory
+            HandlerInterceptorFactory<? super EventMessage> interceptorFactory
     ) {
         this.eventInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
+            ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         ComponentDefinition<MessageHandlerInterceptor<? super QueryMessage>> interceptorDefinition =
                 ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF).withBuilder(interceptorBuilder);
         return registerQueryInterceptor(factoryFromDefinition(interceptorDefinition));
     }
 
-    @Nonnull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull HandlerInterceptorFactory<? super QueryMessage> interceptorFactory
+            HandlerInterceptorFactory<? super QueryMessage> interceptorFactory
     ) {
         this.queryInterceptorFactories.add(interceptorFactory);
         return this;
     }
 
-    @Nonnull
     @Override
     public List<MessageHandlerInterceptor<? super CommandMessage>> commandInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveInterceptors(commandInterceptorFactories, config, componentType, componentName);
     }
 
-    @Nonnull
     @Override
     public List<MessageHandlerInterceptor<? super EventMessage>> eventInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveInterceptors(eventInterceptorFactories, config, componentType, componentName);
     }
 
-    @Nonnull
+
     @Override
     public List<MessageHandlerInterceptor<? super QueryMessage>> queryInterceptors(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveInterceptors(queryInterceptorFactories, config, componentType, componentName);
     }
 
-    @Nonnull
+
     private static <M extends Message> HandlerInterceptorFactory<M> factoryFromDefinition(
             ComponentDefinition<MessageHandlerInterceptor<? super M>> interceptorDefinition
     ) {
@@ -233,7 +222,7 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandHandlerInterceptorsFactories", commandInterceptorFactories);
         descriptor.describeProperty("eventHandlerInterceptorsFactories", eventInterceptorFactories);
         descriptor.describeProperty("queryHandlerInterceptorsFactories", queryInterceptorFactories);

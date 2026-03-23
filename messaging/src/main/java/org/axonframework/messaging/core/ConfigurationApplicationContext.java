@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 
@@ -39,20 +38,18 @@ public class ConfigurationApplicationContext implements ApplicationContext {
      *
      * @param configuration The configuration to retrieve components from.
      */
-    public ConfigurationApplicationContext(@Nonnull Configuration configuration) {
+    public ConfigurationApplicationContext(Configuration configuration) {
         Objects.requireNonNull(configuration, "configuration may not be null");
         this.configuration = configuration;
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+    public <C> C component(Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
     }
 
-    @Nonnull
     @Override
-    public <C> C component(@Nonnull Class<C> type) {
+    public <C> C component(Class<C> type) {
         return configuration.getComponent(type);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 
@@ -32,9 +31,9 @@ public class AnnotationBasedEventCriteriaResolverDefinition implements CriteriaR
 
     @Override
     public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(
-            @Nonnull Class<E> entityType,
-            @Nonnull Class<ID> idType,
-            @Nonnull Configuration configuration
+            Class<E> entityType,
+            Class<ID> idType,
+            Configuration configuration
     ) {
         return new AnnotationBasedEventCriteriaResolver<>(entityType, idType, configuration);
     }

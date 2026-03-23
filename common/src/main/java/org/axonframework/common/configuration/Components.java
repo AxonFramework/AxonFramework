@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component.Identifier;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -58,14 +57,13 @@ public class Components implements DescribableComponent {
      * Note: Generic type parameters are not taken into account for retrieving components via this method.
      *
      * @param identifier the {@link Identifier} to retrieve a {@link Component} for
-     * @param <C>  the type of the component to retrieve
+     * @param <C>        the type of the component to retrieve
      * @return an {@link Optional} on the {@link Component} registered under the given {@code identifier}
      * @throws AmbiguousComponentMatchException when multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}
      */
-    @Nonnull
-    @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> get(Identifier<C> identifier) {
+        //noinspection unchecked
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
                            List<Component<C>> matches = getComponentsAssignableTo(identifier);
@@ -101,9 +99,8 @@ public class Components implements DescribableComponent {
      * @throws AmbiguousComponentMatchException When multiple matching {@link Component Components} are found for the
      *                                          given {@code identifier}.
      */
-    @Nonnull
     @SuppressWarnings("unchecked")
-    public <C> Optional<Component<C>> getByTypeReference(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> getByTypeReference(Identifier<C> identifier) {
         return Optional.ofNullable((Component<C>) components.get(identifier))
                        .or(() -> {
                            List<Component<C>> matches = getComponentsTypeRefAssignableTo(identifier);
@@ -134,7 +131,7 @@ public class Components implements DescribableComponent {
      * @return A previous component registered under the given {@code identifier}, if present.
      */
     @Nullable
-    public <C> Component<C> put(@Nonnull Component<C> component) {
+    public <C> Component<C> put(Component<C> component) {
         //noinspection unchecked
         return (Component<C>) components.put(component.identifier(), component);
     }
@@ -152,10 +149,9 @@ public class Components implements DescribableComponent {
      * @return The previously {@link #put(Component) put Component} identifier by the given {@code identifier}. When
      * absent, the outcome of the {@code compute} operation is returned
      */
-    @Nonnull
     public <C> Component<C> computeIfAbsent(
-            @Nonnull Identifier<C> identifier,
-            @Nonnull Supplier<Component<C>> compute
+            Identifier<C> identifier,
+            Supplier<Component<C>> compute
     ) {
         //noinspection unchecked
         return (Component<C>) components.computeIfAbsent(identifier, i -> compute.get());
@@ -172,7 +168,7 @@ public class Components implements DescribableComponent {
      * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
      * {@code false} otherwise.
      */
-    public boolean contains(@Nonnull Identifier<?> identifier) {
+    public boolean contains(Identifier<?> identifier) {
         return identifier.name() != null
                 ? components.containsKey(identifier)
                 : components.keySet()
@@ -201,8 +197,8 @@ public class Components implements DescribableComponent {
      * @return {@code true} if a component is present and has been replaced, {@code false} if no component was present,
      * or has been removed by the replacement function.
      */
-    public <C> boolean replace(@Nonnull Identifier<C> identifier,
-                               @Nonnull UnaryOperator<Component<C>> replacement) {
+    public <C> boolean replace(Identifier<C> identifier,
+                               UnaryOperator<Component<C>> replacement) {
         //noinspection unchecked
         Component<?> newValue = components.computeIfPresent(identifier,
                                                             (i, c) -> replacement.apply((Component<C>) c));
@@ -216,13 +212,13 @@ public class Components implements DescribableComponent {
      *
      * @param processor The action to invoke for each component.
      */
-    public void postProcessComponents(@Nonnull Consumer<Component<?>> processor) {
+    public void postProcessComponents(Consumer<Component<?>> processor) {
         requireNonNull(processor, "The component post processor must be null.");
         components.values().forEach(processor);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("components", components);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package org.axonframework.axonserver.connector.query;
 
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
+import org.jspecify.annotations.Nullable;
 
-import static java.util.Objects.requireNonNull;
 import static org.axonframework.axonserver.connector.query.QueryConverter.convertQueryResponse;
 import static org.axonframework.axonserver.connector.util.ExceptionConverter.convertToAxonException;
 
@@ -38,33 +38,35 @@ import static org.axonframework.axonserver.connector.util.ExceptionConverter.con
 @Internal
 public class QueryResponseMessageStream extends AbstractQueryResponseMessageStream<QueryResponse> {
 
+    private final @Nullable MessageConverter converter;
+
     /**
      * Initializes a new instance of the {@code QueryResponseMessageStream} which wraps a {@link ResultStream} of
      * {@link QueryResponse} objects.
      *
      * @param stream the {@link ResultStream} of {@link QueryResponse} instances to be wrapped; must not be null. If
      *               {@code null}, a {@link NullPointerException} will be thrown.
+     * @param converter the converter to be used for payload conversion
      */
-    public QueryResponseMessageStream(@Nonnull ResultStream<QueryResponse> stream) {
+    public QueryResponseMessageStream(ResultStream<QueryResponse> stream, @Nullable MessageConverter converter) {
         super(stream);
+        this.converter = converter;
     }
 
-    @Nonnull
     @Override
-    protected QueryResponseMessage buildResponseMessage(@Nonnull QueryResponse queryResponse) {
-        return convertQueryResponse(queryResponse);
+    protected QueryResponseMessage buildResponseMessage(QueryResponse queryResponse) {
+        return convertQueryResponse(queryResponse, converter);
     }
 
-    @Nonnull
     @Override
-    protected AxonException createAxonException(@Nonnull QueryResponse queryResponse) {
+    protected AxonException createAxonException(QueryResponse queryResponse) {
         return convertToAxonException(queryResponse.getErrorCode(),
                                       queryResponse.getErrorMessage(),
                                       queryResponse.getPayload());
     }
 
     @Override
-    protected boolean isError(@Nonnull QueryResponse queryResponse) {
+    protected boolean isError(QueryResponse queryResponse) {
         return queryResponse.hasErrorMessage();
     }
 }

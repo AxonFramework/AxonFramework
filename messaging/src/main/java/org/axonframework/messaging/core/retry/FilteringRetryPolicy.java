@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.List;
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
 
 /**
  * A RetryPolicy that delegates to another RetryPolicy when the latest exception matches a given predicate.
@@ -44,8 +43,8 @@ public class FilteringRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable cause,
-                             @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(Message message, Throwable cause,
+                             List<Class<? extends Throwable>[]> previousFailures) {
         if (retryableErrorPredicate.test(cause)) {
             return delegate.defineFor(message, cause, previousFailures);
         }
@@ -53,7 +52,7 @@ public class FilteringRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("filter", retryableErrorPredicate.toString());
     }

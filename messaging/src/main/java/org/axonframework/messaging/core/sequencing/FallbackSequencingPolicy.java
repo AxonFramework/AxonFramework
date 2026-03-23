@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.Objects;
 import java.util.Optional;
@@ -51,16 +51,16 @@ public class FallbackSequencingPolicy<E extends Exception, M extends Message> im
      * @param exceptionType The type of exception to catch from the delegate policy, not {@code null}.
      * @throws NullPointerException When any of the parameters is {@code null}.
      */
-    public FallbackSequencingPolicy(@Nonnull SequencingPolicy<? super M> delegate,
-                                    @Nonnull SequencingPolicy<? super M> fallback,
-                                    @Nonnull Class<E> exceptionType) {
+    public FallbackSequencingPolicy(SequencingPolicy<? super M> delegate,
+                                    SequencingPolicy<? super M> fallback,
+                                    Class<E> exceptionType) {
         this.delegate = Objects.requireNonNull(delegate, "Delegate may not be null.");
         this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
         this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");
     }
 
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(M message, ProcessingContext context) {
         try {
             return delegate.sequenceIdentifierFor(message, context);
         } catch (Exception e) {

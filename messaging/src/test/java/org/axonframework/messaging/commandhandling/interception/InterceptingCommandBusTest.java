@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.commandhandling.*;
 import org.axonframework.messaging.core.Message;
@@ -282,10 +282,10 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+        @NonNull
+        public MessageStream<?> interceptOnDispatch(@NonNull M message,
                                                     @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+                                                    @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)
@@ -293,10 +293,10 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        @Nonnull
-        public MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                                  @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+        @NonNull
+        public MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                  @NonNull ProcessingContext context,
+                                                  @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)

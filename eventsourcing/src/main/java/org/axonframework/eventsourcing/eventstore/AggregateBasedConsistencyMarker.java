@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.CollectionUtils;
 
 import java.util.HashMap;
@@ -202,7 +201,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
             );
         }
 
-        private long positionOf(@Nonnull String aggregateIdentifier) {
+        private long positionOf(String aggregateIdentifier) {
             return aggregatePositions.getOrDefault(aggregateIdentifier, 0L);
         }
     }

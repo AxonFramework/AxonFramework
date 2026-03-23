@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.Optional;
 
@@ -46,12 +46,12 @@ public class MetadataSequencingPolicy implements SequencingPolicy<Message> {
      *
      * @param metadataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
      */
-    public MetadataSequencingPolicy(@Nonnull String metadataKey) {
+    public MetadataSequencingPolicy(String metadataKey) {
         this.metadataKey = assertNonBlank(metadataKey, "MetadataKey value may not be null or blank.");
     }
 
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(Message message, ProcessingContext context) {
         return Optional.ofNullable(message.metadata().get(metadataKey));
     }
 }

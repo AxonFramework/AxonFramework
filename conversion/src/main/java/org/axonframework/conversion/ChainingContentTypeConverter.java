@@ -16,8 +16,7 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +76,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param classLoader The class loader used to load the {@link ContentTypeConverter ContentTypeConverters}.
      */
-    public ChainingContentTypeConverter(@Nonnull ClassLoader classLoader) {
+    public ChainingContentTypeConverter(ClassLoader classLoader) {
         //noinspection rawtypes
         ServiceLoader<ContentTypeConverter> converterLoader =
                 ServiceLoader.load(ContentTypeConverter.class, classLoader);
@@ -94,7 +93,7 @@ public class ChainingContentTypeConverter implements Converter {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    public boolean canConvert(@Nonnull Class<?> sourceType, @Nonnull Class<?> targetType) {
+    public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
         return canConvert(sourceType, (Type) targetType);
     }
 
@@ -106,7 +105,7 @@ public class ChainingContentTypeConverter implements Converter {
      * @param targetType The type of data to convert to.
      * @return {@code true} if conversion is possible, {@code false} otherwise.
      */
-    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
+    public boolean canConvert(Type sourceType, Type targetType) {
         if (sourceType.equals(targetType)) {
             return true;
         }
@@ -124,8 +123,7 @@ public class ChainingContentTypeConverter implements Converter {
     }
 
     @Override
-    @Nullable
-    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+    public <T> @Nullable T convert(@Nullable Object input, Type targetType) {
         if (input == null) {
             return null;
         }
@@ -188,7 +186,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param converter The converter to register with this {@code ChainingConverter}.
      */
-    public void registerConverter(@Nonnull ContentTypeConverter<?, ?> converter) {
+    public void registerConverter(ContentTypeConverter<?, ?> converter) {
         converters.addFirst(converter);
     }
 
@@ -210,7 +208,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param converterType The type of converter to register.
      */
-    public void registerConverter(@Nonnull Class<? extends ContentTypeConverter<?, ?>> converterType) {
+    public void registerConverter(Class<? extends ContentTypeConverter<?, ?>> converterType) {
         try {
             ContentTypeConverter<?, ?> converter = converterType.getConstructor().newInstance();
             converter.targetType();
@@ -233,7 +231,7 @@ public class ChainingContentTypeConverter implements Converter {
      * @param additionalConverters The additional {@link ContentTypeConverter converters} to register with this
      *                             {@code ChainingConverter}.
      */
-    public void setAdditionalConverters(@Nonnull List<ContentTypeConverter<?, ?>> additionalConverters) {
+    public void setAdditionalConverters(List<ContentTypeConverter<?, ?>> additionalConverters) {
         additionalConverters.forEach(this::registerConverter);
     }
 
@@ -244,13 +242,12 @@ public class ChainingContentTypeConverter implements Converter {
      * @return Unmodified list of all {@link ContentTypeConverter ContentTypeConverters} registered with this
      * {@code ChainingConverter}.
      */
-    @Nonnull
     public List<ContentTypeConverter<?, ?>> getContentTypeConverters() {
         return Collections.unmodifiableList(this.converters);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("content-type-converters", converters);
     }
 }

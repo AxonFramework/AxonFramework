@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.configuration.reflection;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -51,8 +50,8 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
-                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
+    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
+                                                   Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         registerToComponentRegistry(componentRegistry, 0, factory);
@@ -67,9 +66,9 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link Configuration}.
      */
-    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
+    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
                                                    int order,
-                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
+                                                   Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");

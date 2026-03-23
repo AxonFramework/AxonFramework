@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.core.Message;
-
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
+
+
 import org.axonframework.messaging.core.Message;
 
 /**
@@ -32,7 +31,7 @@ import org.axonframework.messaging.core.Message;
 public class ForwardNone<T extends Message> implements ForwardingMode<T> {
 
     @Override
-    public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
+    public <E> Stream<E> filterCandidates(T message, Stream<E> candidates) {
         return Stream.empty();
     }
 }

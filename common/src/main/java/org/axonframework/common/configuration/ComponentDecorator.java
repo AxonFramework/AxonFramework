@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A functional interface describing how to decorate a component of type {@code C}.
@@ -55,7 +54,7 @@ public interface ComponentDecorator<C, D> {
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      * @throws ClassCastException When this decorator does not return a subclass of {@code C}.
      */
-    D decorate(@Nonnull Configuration config,
+    D decorate(Configuration config,
                @Nullable String name,
-               @Nonnull C delegate);
+               C delegate);
 }

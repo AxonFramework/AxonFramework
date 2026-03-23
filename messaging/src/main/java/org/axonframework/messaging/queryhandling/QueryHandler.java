@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageHandler;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -40,7 +39,6 @@ public interface QueryHandler extends MessageHandler {
      * @param context The context to the given {@code command} is handled in.
      * @return A {@code MessagesStream} of zero, one, or N {@link QueryResponseMessage response messages}.
      */
-    @Nonnull
-    MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                               @Nonnull ProcessingContext context);
+    MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                               ProcessingContext context);
 }

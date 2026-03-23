@@ -32,7 +32,10 @@ public class CourseStatsConfiguration {
         PooledStreamingEventProcessorModule projectionProcessor = EventProcessorModule
                 .pooledStreaming(NAME)
                 .eventHandlingComponents(
-                        c -> c.autodetected(cfg -> new CoursesStatsProjector(cfg.getComponent(CourseStatsRepository.class)))
+                        c -> c.autodetected(
+                                "coursesStatsProjector",
+                                cfg -> new CoursesStatsProjector(cfg.getComponent(CourseStatsRepository.class))
+                        )
                 )
                 .notCustomized();
 

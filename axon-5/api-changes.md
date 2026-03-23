@@ -2203,6 +2203,7 @@ per class described) approach.
 | Class                                          |
 |------------------------------------------------|
 | org.axonframework.modelling.command.Repository |
+| org.axonframework.modelling.command.EntityId   |
 
 ### Changed implements or extends
 

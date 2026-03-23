@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.annotation.InterceptorChainParameterReso
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Annotated command handler interceptor on aggregate. Will invoke the delegate to the real interceptor method.
@@ -50,12 +49,11 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
-    @Nonnull
     @Override
     public MessageStream<?> interceptOnHandle(
-            @Nonnull CommandMessage message,
-            @Nonnull ProcessingContext context,
-            @Nonnull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
+            CommandMessage message,
+            ProcessingContext context,
+            MessageHandlerInterceptorChain<CommandMessage> interceptorChain
     ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,

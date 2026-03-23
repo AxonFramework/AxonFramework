@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -99,13 +98,13 @@ public class SimpleEventBus implements EventBus {
 
     @Override
     public Registration subscribe(
-            @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
+            BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer
     ) {
         return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
     @Override
-    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<? extends EventMessage> events) {
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context, List<? extends EventMessage> events) {
         if (context == null) {
             // No processing context, publish immediately
             eventSubscribers.notifySubscribers(events, context);
@@ -116,7 +115,7 @@ public class SimpleEventBus implements EventBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void registerEventPublishingHooks(@Nonnull ProcessingContext context, @Nonnull List<? extends EventMessage> events) {
+    private void registerEventPublishingHooks(ProcessingContext context, List<? extends EventMessage> events) {
         // Check if we're already in or past the commit phase - publishing is forbidden at this point
         if (context.isCommitted()) {
             throw new IllegalStateException(
@@ -175,7 +174,7 @@ public class SimpleEventBus implements EventBus {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventsKey", eventsKey);
         descriptor.describeProperty("eventSubscribers", eventSubscribers);
     }

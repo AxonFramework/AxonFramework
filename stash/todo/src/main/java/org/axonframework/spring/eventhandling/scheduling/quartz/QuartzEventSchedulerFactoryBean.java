@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Spring FactoryBean that creates a QuartzEventScheduler instance using resources found in the Spring Application
@@ -100,7 +99,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 

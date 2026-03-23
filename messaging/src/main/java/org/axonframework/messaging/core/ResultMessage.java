@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.conversion.Converter;
 
@@ -32,26 +31,21 @@ import java.util.Map;
 public interface ResultMessage extends Message {
 
     @Override
-    @Nonnull
-    ResultMessage withMetadata(@Nonnull Map<String, String> metadata);
+    ResultMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    ResultMessage andMetadata(@Nonnull Map<String, String> metadata);
+    ResultMessage andMetadata(Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    default ResultMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+    default ResultMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default ResultMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
+    default ResultMessage withConvertedPayload(TypeReference<?> type, Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    ResultMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    ResultMessage withConvertedPayload(Type type, Converter converter);
 }

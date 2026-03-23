@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -34,7 +33,7 @@ public class SubscriptionQueryAlreadyRegisteredException extends RuntimeExceptio
      * @param queryId The {@link SubscriptionQueryMessage#identifier()} of the subscription query accidentally being
      *                registered multiple times.
      */
-    public SubscriptionQueryAlreadyRegisteredException(@Nonnull String queryId) {
+    public SubscriptionQueryAlreadyRegisteredException(String queryId) {
         super("There is already a subscription query with query identifier [" + queryId + "] present.");
     }
 }

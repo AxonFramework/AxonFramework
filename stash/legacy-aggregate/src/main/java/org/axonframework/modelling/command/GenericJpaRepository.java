@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -230,19 +229,19 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
-        public Builder<T> parameterResolverFactory(@Nonnull ParameterResolverFactory parameterResolverFactory) {
+        public Builder<T> parameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
             super.parameterResolverFactory(parameterResolverFactory);
             return this;
         }
 
         @Override
-        public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
+        public Builder<T> handlerDefinition(HandlerDefinition handlerDefinition) {
             super.handlerDefinition(handlerDefinition);
             return this;
         }
 
         @Override
-        public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
+        public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {
             super.aggregateModel(aggregateModel);
             return this;
         }
@@ -254,13 +253,13 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         @Override
-        public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
+        public Builder<T> subtypes(Set<Class<? extends T>> subtypes) {
             super.subtypes(subtypes);
             return this;
         }
 
         @Override
-        public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
+        public Builder<T> subtype(Class<? extends T> subtype) {
             super.subtype(subtype);
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.RegistrationScope;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
  * @since 4.6.0
  */
 @Internal
+@RegistrationScope("Don't copy this enhancer in order to avoid cyclic module build in Spring Boot.")
 public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationEnhancer {
 
     private final Class<T> entityType;
@@ -46,13 +47,13 @@ public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationE
      * @param entityType The declared type of the entity.
      * @param idType        The type of id.
      */
-    public SpringEventSourcedEntityConfigurer(@Nonnull Class<T> entityType, @Nonnull Class<ID> idType) {
+    public SpringEventSourcedEntityConfigurer(Class<T> entityType, Class<ID> idType) {
         this.entityType = entityType;
         this.idType = idType;
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         var eventSourcedEntityModule = EventSourcedEntityModule.autodetected(this.idType, this.entityType);
         registry.registerModule(eventSourcedEntityModule);
     }

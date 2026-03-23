@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.spring.config.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -88,12 +87,12 @@ public class SpringParameterResolverFactoryBean implements
     }
 
     @Override
-    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
+    public void setBeanClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

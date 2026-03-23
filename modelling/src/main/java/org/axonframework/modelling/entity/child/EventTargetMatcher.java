@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.child;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -46,9 +45,9 @@ public interface EventTargetMatcher<E> {
      * @param processingContext The {@link ProcessingContext} in which the message is being processed.
      * @return {@code true} if the entity should be invoked for the message, {@code false} otherwise.
      */
-    boolean matches(@Nonnull E targetEntity,
-                    @Nonnull EventMessage message,
-                    @Nonnull ProcessingContext processingContext);
+    boolean matches(E targetEntity,
+                    EventMessage message,
+                    ProcessingContext processingContext);
 
 
     /**

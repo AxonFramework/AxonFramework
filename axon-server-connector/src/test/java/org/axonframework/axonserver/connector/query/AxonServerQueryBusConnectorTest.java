@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,21 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.google.protobuf.ByteString.copyFrom;
 import static com.google.protobuf.ByteString.copyFromUtf8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AxonServerQueryBusConnectorTest {
@@ -58,8 +61,10 @@ class AxonServerQueryBusConnectorTest {
                                                                                  .clientId(clientId)
                                                                                  .componentName(componentName)
                                                                                  .build();
+    private final MessageConverter mockConverter = mock(MessageConverter.class);
 
-    private final AxonServerQueryBusConnector testSubject = new AxonServerQueryBusConnector(connection, configuration);
+    private final AxonServerQueryBusConnector testSubject = new AxonServerQueryBusConnector(connection, configuration,
+                                                                                            mockConverter);
 
     @BeforeEach
     void setUp() {
@@ -154,6 +159,8 @@ class AxonServerQueryBusConnectorTest {
                                                   .build();
             ResultStream<QueryResponse> resultStream = spy(new StubResultStream<>(response));
             when(mockQueryChannel.query(any())).thenReturn(resultStream);
+            when(mockConverter.convert(any(), eq((Type)String.class)))
+                    .thenReturn("ok");
 
             QueryMessage query = new GenericQueryMessage(
                     new GenericMessage(new MessageType("QueryType", "1"),
@@ -167,10 +174,12 @@ class AxonServerQueryBusConnectorTest {
             Optional<MessageStream.Entry<QueryResponseMessage>> next = stream.next();
             assertThat(next).isPresent();
             assertThat(next.get().message().payloadAs(byte[].class)).isEqualTo("ok".getBytes());
+            assertThat(next.get().message().payloadAs(String.class)).isEqualTo("ok");
 
             // Closing the stream should close the underlying ResultStream
             stream.close();
             verify(resultStream).close();
+            verify(mockConverter).convert(any(), eq((Type)String.class));
         }
     }
 
@@ -181,13 +190,18 @@ class AxonServerQueryBusConnectorTest {
         void subscriptionQueryDelegatesToQueryChannelWithCalculatedBufferSegmentAndEmitsInitialAndUpdates() {
             // Given a subscription result with one initial result and two update
             String initialPayloadId = UUID.randomUUID().toString();
+            String initialConvertedPayload = "result";
+            byte[] initialResultPayload = initialConvertedPayload.getBytes(StandardCharsets.UTF_8);
+            String u1ConvertedPayload = "u1";
+            byte[] u1ResultPayload = u1ConvertedPayload.getBytes(StandardCharsets.UTF_8);
+            String u2ConvertedPayload = "u2";
+            byte[] u2ResultPayload = u2ConvertedPayload.getBytes(StandardCharsets.UTF_8);
             QueryResponse initial = QueryResponse.newBuilder()
                                                  .setMessageIdentifier(initialPayloadId)
                                                  .setPayload(SerializedObject.newBuilder()
                                                                              .setType("java.lang.String")
                                                                              .setRevision("1")
-                                                                             .setData(copyFromUtf8(
-                                                                                     "result"))
+                                                                             .setData(copyFrom(initialResultPayload))
                                                                              .build())
                                                  .build();
             StubResultStream<QueryUpdate> updates = new StubResultStream<>(
@@ -195,17 +209,20 @@ class AxonServerQueryBusConnectorTest {
                                .setPayload(SerializedObject.newBuilder()
                                                            .setType("java.lang.String")
                                                            .setRevision("1")
-                                                           .setData(copyFromUtf8("u1"))
+                                                           .setData(copyFrom(u1ResultPayload))
                                                            .build()).build(),
                     QueryUpdate.newBuilder().setMessageIdentifier(UUID.randomUUID().toString())
                                .setPayload(SerializedObject.newBuilder()
                                                            .setType("java.lang.String")
                                                            .setRevision("1")
-                                                           .setData(copyFromUtf8("u2"))
+                                                           .setData(copyFrom(u2ResultPayload))
                                                            .build()).build()
             );
             SimpleSubscriptionQueryResult sqr = new SimpleSubscriptionQueryResult(initial, updates);
             when(mockQueryChannel.subscriptionQuery(any(), anyInt(), anyInt())).thenReturn(sqr);
+            when(mockConverter.convert(initialResultPayload, (Type) String.class)).thenReturn(initialConvertedPayload);
+            when(mockConverter.convert(u1ResultPayload, (Type) String.class)).thenReturn(u1ConvertedPayload);
+            when(mockConverter.convert(u2ResultPayload, (Type) String.class)).thenReturn(u2ConvertedPayload);
 
             // Build a subscription query message
             QueryMessage query = new GenericQueryMessage(
@@ -229,15 +246,22 @@ class AxonServerQueryBusConnectorTest {
             // First entry is the initial result
             Optional<MessageStream.Entry<QueryResponseMessage>> first = responses.next();
             assertThat(first).isPresent();
-            assertThat(first.get().message().payloadAs(byte[].class)).isEqualTo("result".getBytes());
+            assertThat(first.get().message().payloadAs(byte[].class)).isEqualTo(initialResultPayload);
+            assertThat(first.get().message().payloadAs(String.class)).isEqualTo(initialConvertedPayload);
+            verify(mockConverter).convert(first.get().message().payload(), (Type) String.class);
+
 
             // Then update
             Optional<MessageStream.Entry<QueryResponseMessage>> second = responses.next();
             Optional<MessageStream.Entry<QueryResponseMessage>> third = responses.next();
             assertThat(second).isPresent();
             assertThat(third).isPresent();
-            assertThat(second.get().message().payloadAs(byte[].class)).isEqualTo("u1".getBytes());
-            assertThat(third.get().message().payloadAs(byte[].class)).isEqualTo("u2".getBytes());
+            assertThat(second.get().message().payloadAs(byte[].class)).isEqualTo(u1ResultPayload);
+            assertThat(second.get().message().payloadAs(String.class)).isEqualTo(u1ConvertedPayload);
+            verify(mockConverter).convert(second.get().message().payload(), (Type) String.class);
+            assertThat(third.get().message().payloadAs(byte[].class)).isEqualTo(u2ResultPayload);
+            assertThat(third.get().message().payloadAs(String.class)).isEqualTo(u2ConvertedPayload);
+            verify(mockConverter).convert(third.get().message().payload(), (Type) String.class);
 
             responses.close();
         }

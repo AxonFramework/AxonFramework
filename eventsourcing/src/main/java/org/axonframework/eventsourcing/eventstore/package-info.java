@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,4 +18,7 @@
  * Definitions and implementations of the Event store, the mechanism that can load event streams and append events to
  * them.
  */
+@NullMarked
 package org.axonframework.eventsourcing.eventstore;
+
+import org.jspecify.annotations.NullMarked;

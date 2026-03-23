@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.unitofwork.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -43,7 +42,7 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     @Nullable
     @Override
-    public ParameterResolver<ProcessingContext> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+    public ParameterResolver<ProcessingContext> createInstance(Executable executable, Parameter[] parameters,
                                                                int parameterIndex) {
 
         Parameter parameter = parameters[parameterIndex];
@@ -55,14 +54,13 @@ public class ProcessingContextParameterResolverFactory implements ParameterResol
 
     private static class ProcessingContextParameterResolver implements ParameterResolver<ProcessingContext> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<ProcessingContext> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<ProcessingContext> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(context);
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return true;
         }
     }

@@ -20,7 +20,6 @@ import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Metric;
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricSet;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 
@@ -42,7 +41,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message>, MetricSe
     private final Counter ignoredCounter = new Counter();
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         ingestedCounter.inc();
         return new MessageMonitor.MonitorCallback() {
             @Override

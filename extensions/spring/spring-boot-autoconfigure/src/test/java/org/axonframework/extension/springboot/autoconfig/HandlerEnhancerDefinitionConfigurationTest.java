@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
@@ -103,8 +103,8 @@ class HandlerEnhancerDefinitionConfigurationTest {
     private static class CustomHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
         @Override
-        public @Nonnull
-        <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        public @NonNull
+        <T> MessageHandlingMember<T> wrapHandler(@NonNull MessageHandlingMember<T> original) {
             VERIFY_ENHANCER.set(true);
             return original;
         }

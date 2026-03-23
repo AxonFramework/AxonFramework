@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.monitoring.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Component;
@@ -34,6 +32,7 @@ import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.axonframework.messaging.monitoring.NoOpMessageMonitor;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,10 +73,9 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private final List<MessageMonitorFactory<? super QueryMessage>> queryMonitorFactories = new ArrayList<>();
     private final List<MessageMonitorFactory<? super SubscriptionQueryUpdateMessage>> subscriptionQueryUpdateMonitorFactories = new ArrayList<>();
 
-    @Nonnull
     @Override
     public MessageMonitorRegistry registerMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<Message>> monitorBuilder
+            ComponentBuilder<MessageMonitor<Message>> monitorBuilder
     ) {
         final var genericMonitorDef = new GenericMonitorDefinition(monitorBuilder);
 
@@ -89,9 +87,8 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @Nonnull
     @Override
-    public MessageMonitorRegistry registerMonitor(@Nonnull MessageMonitorFactory<Message> monitorFactory) {
+    public MessageMonitorRegistry registerMonitor(MessageMonitorFactory<Message> monitorFactory) {
         registerCommandMonitor(monitorFactory);
         registerEventMonitor(monitorFactory);
         registerQueryMonitor(monitorFactory);
@@ -99,58 +96,56 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
         return this;
     }
 
-    @Nonnull
     @Override
     public MessageMonitorRegistry registerCommandMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super CommandMessage>> monitorBuilder
     ) {
         ComponentDefinition<MessageMonitor<? super CommandMessage>> monitorDefinition =
                 ComponentDefinition.ofType(COMMAND_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
         return registerCommandMonitor(factoryFromDefinition(monitorDefinition));
     }
 
-    @Nonnull
+
     @Override
     public MessageMonitorRegistry registerCommandMonitor(
-            @Nonnull MessageMonitorFactory<? super CommandMessage> monitorFactory
+            MessageMonitorFactory<? super CommandMessage> monitorFactory
     ) {
         this.commandMonitorFactories.add(monitorFactory);
         return this;
     }
 
-    @Nonnull
+
     @Override
     public MessageMonitorRegistry registerEventMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super EventMessage>> monitorBuilder
     ) {
         ComponentDefinition<MessageMonitor<? super EventMessage>> monitorDefinition =
                 ComponentDefinition.ofType(EVENT_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
         return registerEventMonitor(factoryFromDefinition(monitorDefinition));
     }
 
-    @Nonnull
+
     @Override
     public MessageMonitorRegistry registerEventMonitor(
-            @Nonnull MessageMonitorFactory<? super EventMessage> monitorFactory
+            MessageMonitorFactory<? super EventMessage> monitorFactory
     ) {
         this.eventMonitorFactories.add(monitorFactory);
         return this;
     }
 
-    @Nonnull
     @Override
     public MessageMonitorRegistry registerQueryMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super QueryMessage>> monitorBuilder
     ) {
         ComponentDefinition<MessageMonitor<? super QueryMessage>> monitorDefinition =
                 ComponentDefinition.ofType(QUERY_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
         return registerQueryMonitor(factoryFromDefinition(monitorDefinition));
     }
 
-    @Nonnull
+
     @Override
     public MessageMonitorRegistry registerQueryMonitor(
-            @Nonnull MessageMonitorFactory<? super QueryMessage> monitorFactory
+            MessageMonitorFactory<? super QueryMessage> monitorFactory
     ) {
         this.queryMonitorFactories.add(monitorFactory);
         return this;
@@ -158,17 +153,17 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            @Nonnull ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
+            ComponentBuilder<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorBuilder
     ) {
         ComponentDefinition<MessageMonitor<? super SubscriptionQueryUpdateMessage>> monitorDefinition =
                 ComponentDefinition.ofType(SUBSCRIPTION_QUERY_UPDATE_MONITOR_TYPE_REF).withBuilder(monitorBuilder);
         return registerSubscriptionQueryUpdateMonitor(factoryFromDefinition(monitorDefinition));
     }
 
-    @Nonnull
+
     @Override
     public MessageMonitorRegistry registerSubscriptionQueryUpdateMonitor(
-            @Nonnull MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
+            MessageMonitorFactory<? super SubscriptionQueryUpdateMessage> monitorFactory
     ) {
         this.subscriptionQueryUpdateMonitorFactories.add(monitorFactory);
         return this;
@@ -176,8 +171,8 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public MessageMonitor<? super CommandMessage> commandMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveMonitor(commandMonitorFactories, config, componentType, componentName);
@@ -185,8 +180,8 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public MessageMonitor<? super EventMessage> eventMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveMonitor(eventMonitorFactories, config, componentType, componentName);
@@ -194,8 +189,8 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public MessageMonitor<? super QueryMessage> queryMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveMonitor(queryMonitorFactories, config, componentType, componentName);
@@ -203,14 +198,14 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
 
     @Override
     public MessageMonitor<? super SubscriptionQueryUpdateMessage> subscriptionQueryUpdateMonitor(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            Configuration config,
+            Class<?> componentType,
             @Nullable String componentName
     ) {
         return resolveMonitor(subscriptionQueryUpdateMonitorFactories, config, componentType, componentName);
     }
 
-    @Nonnull
+
     private static <M extends Message> MessageMonitorFactory<M> factoryFromDefinition(
             ComponentDefinition<MessageMonitor<? super M>> monitorDefinition
     ) {
@@ -260,7 +255,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("commandMonitorFactories", commandMonitorFactories);
         descriptor.describeProperty("eventMonitorFactories", eventMonitorFactories);
         descriptor.describeProperty("queryMonitorFactories", queryMonitorFactories);
@@ -271,7 +266,7 @@ public class DefaultMessageMonitorRegistry implements MessageMonitorRegistry {
     private static class GenericMonitorDefinition
             extends LazyInitializedComponentDefinition<MessageMonitor<Message>, MessageMonitor<Message>> {
 
-        GenericMonitorDefinition(@Nonnull ComponentBuilder<MessageMonitor<Message>> builder) {
+        GenericMonitorDefinition(ComponentBuilder<MessageMonitor<Message>> builder) {
             super(new Component.Identifier<>(MONITOR_TYPE_REF, null), builder);
         }
     }

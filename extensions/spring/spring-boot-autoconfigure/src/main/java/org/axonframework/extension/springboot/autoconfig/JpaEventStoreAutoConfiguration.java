@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -40,6 +39,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
+
 
 import java.time.Duration;
 import java.util.function.UnaryOperator;
@@ -98,7 +98,7 @@ public class JpaEventStoreAutoConfiguration {
     ) implements ConfigurationEnhancer {
 
         @Override
-        public void enhance(@Nonnull ComponentRegistry registry) {
+        public void enhance(ComponentRegistry registry) {
             UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer = config ->
                     config
                             .batchSize(properties.batchSize())

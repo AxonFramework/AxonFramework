@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.core.ResultMessage;
 import org.axonframework.conversion.Converter;
@@ -33,27 +32,22 @@ import java.util.Map;
 public interface QueryResponseMessage extends ResultMessage {
 
     @Override
-    @Nonnull
-    QueryResponseMessage withMetadata(@Nonnull Map<String, String> metadata);
+    QueryResponseMessage withMetadata(Map<String, String> metadata);
 
     @Override
-    @Nonnull
-    QueryResponseMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
+    QueryResponseMessage andMetadata(Map<String, String> additionalMetadata);
 
     @Override
-    @Nonnull
-    default QueryResponseMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+    default QueryResponseMessage withConvertedPayload(Class<?> type, Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
-    @Nonnull
-    default QueryResponseMessage withConvertedPayload(@Nonnull TypeReference<?> type,
-                                                      @Nonnull Converter converter) {
+    default QueryResponseMessage withConvertedPayload(TypeReference<?> type,
+                                                      Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
-    @Nonnull
-    QueryResponseMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    QueryResponseMessage withConvertedPayload(Type type, Converter converter);
 }

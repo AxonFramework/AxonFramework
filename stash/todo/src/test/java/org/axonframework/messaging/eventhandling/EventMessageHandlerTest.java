@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventMessageHandler;
-import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the default implemented methods of the {@link org.axonframework.messaging.eventhandling.EventMessageHandler}.
@@ -35,7 +34,7 @@ class EventMessageHandlerTest {
     @SuppressWarnings("Convert2Lambda") // Cannot spy a lambda
     private final org.axonframework.messaging.eventhandling.EventMessageHandler testSubject = spy(new EventMessageHandler() {
         @Override
-        public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception {
+        public @NonNull Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) throws Exception {
             return null;
         }
     });

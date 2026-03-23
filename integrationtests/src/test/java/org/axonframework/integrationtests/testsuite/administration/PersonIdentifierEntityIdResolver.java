@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.configuration.Configuration;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -29,7 +27,7 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityIdResolver;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,15 +36,9 @@ import static java.lang.String.format;
 
 class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentifier> {
 
-    private final Configuration config;
-
-    PersonIdentifierEntityIdResolver(Configuration config) {
-        this.config = config;
-    }
-
-    @Nonnull
+    @NonNull
     @Override
-    public PersonIdentifier resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public PersonIdentifier resolve(@NonNull Message message, @NonNull ProcessingContext context) {
         List<Class<? extends PersonCommand>> personCommandTypes = List.of(
                 AssignTaskCommand.class,
                 CreateCustomer.class,
@@ -62,6 +54,6 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
                                               "Unknown command type: %s",
                                               message.type().name()
                                       )));
-        return Objects.requireNonNull(message.payloadAs(clazz, config.getComponent(Converter.class))).identifier();
+        return Objects.requireNonNull(message.payloadAs(clazz)).identifier();
     }
 }

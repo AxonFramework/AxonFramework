@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.interception;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.DecoratorDefinition;
@@ -72,25 +71,24 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
      * @param interceptors the list of interceptors to initialize with
      */
     public InterceptingEventHandlingComponent(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
-            @Nonnull EventHandlingComponent delegate
+            List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
+            EventHandlingComponent delegate
     ) {
         super(delegate);
         this.interceptors = new ArrayList<>(Objects.requireNonNull(interceptors, "The interceptors must not be null."));
         this.interceptorChain = new EventMessageHandlerInterceptorChain(interceptors, delegate);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return interceptorChain.proceed(event, context)
                                .ignoreEntries()
                                .cast();
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("interceptors", interceptors);
     }

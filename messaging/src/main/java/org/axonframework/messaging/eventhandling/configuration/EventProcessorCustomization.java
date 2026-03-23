@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.configuration.Configuration;
 
 import java.util.Objects;
@@ -54,7 +53,7 @@ public interface EventProcessorCustomization extends
      * @param other The customization to apply after this one.
      * @return A composed customization that applies both customizations in sequence.
      */
-    default EventProcessorCustomization andThen(@Nonnull EventProcessorCustomization other) {
+    default EventProcessorCustomization andThen(EventProcessorCustomization other) {
         Objects.requireNonNull(other, "other may not be null");
         return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
     }

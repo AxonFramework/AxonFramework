@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.queryhandling.interception;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
@@ -52,8 +51,8 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interception that are part of this chain.
      * @param queryHandler The query handler to be invoked at the end of the interceptor chain.
      */
-    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<? super QueryMessage>> interceptors,
-                                               @Nonnull QueryHandler queryHandler) {
+    public QueryMessageHandlerInterceptorChain(List<MessageHandlerInterceptor<? super QueryMessage>> interceptors,
+                                               QueryHandler queryHandler) {
         Iterator<MessageHandlerInterceptor<? super QueryMessage>> interceptorIterator =
                 new LinkedList<>(interceptors).descendingIterator();
         QueryHandler handler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
@@ -63,9 +62,8 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
         this.interceptingHandler = handler;
     }
 
-    @Nonnull
     @Override
-    public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
+    public MessageStream<?> proceed(QueryMessage query, ProcessingContext context) {
         try {
             return interceptingHandler.handle(query, context);
         } catch (Exception e) {
@@ -78,17 +76,15 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
             QueryHandler next
     ) implements QueryHandler, MessageHandlerInterceptorChain<QueryMessage> {
 
-        @Nonnull
         @Override
-        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                          @Nonnull ProcessingContext context) {
+        public MessageStream<QueryResponseMessage> handle(QueryMessage query,
+                                                          ProcessingContext context) {
             // noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(query, context, (MessageHandlerInterceptorChain) this);
         }
 
-        @Nonnull
         @Override
-        public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
+        public MessageStream<?> proceed(QueryMessage query, ProcessingContext context) {
             return next.handle(query, context);
         }
     }

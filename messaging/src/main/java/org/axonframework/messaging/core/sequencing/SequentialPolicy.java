@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.Optional;
 
@@ -49,7 +49,7 @@ public class SequentialPolicy implements SequencingPolicy<Message> {
     }
 
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(Message message, ProcessingContext context) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

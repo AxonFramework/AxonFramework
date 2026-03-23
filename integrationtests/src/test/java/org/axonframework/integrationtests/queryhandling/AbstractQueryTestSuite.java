@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
@@ -75,10 +75,10 @@ public abstract class AbstractQueryTestSuite {
 
         private final List<QueryMessage> recordedQueries = new CopyOnWriteArrayList<>();
 
-        @Nonnull
+        @NonNull
         @Override
-        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage message,
-                                                          @Nonnull ProcessingContext context) {
+        public MessageStream<QueryResponseMessage> handle(@NonNull QueryMessage message,
+                                                          @NonNull ProcessingContext context) {
             recordedQueries.add(message);
             return MessageStream.just(
                     new GenericQueryResponseMessage(TEST_RESPONSE_TYPE,
@@ -105,9 +105,9 @@ public abstract class AbstractQueryTestSuite {
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         @Override
-        public MessageStream<?> interceptOnDispatch(M message,
-                                                    ProcessingContext context,
-                                                    MessageDispatchInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnDispatch(@NonNull M message,
+                                                             ProcessingContext context,
+                                                             @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to next interceptor/handler
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(java.util.Map.of(key, buildValue(message)));
@@ -119,9 +119,9 @@ public abstract class AbstractQueryTestSuite {
         }
 
         @Override
-        public MessageStream<?> interceptOnHandle(M message,
-                                                  ProcessingContext context,
-                                                  MessageHandlerInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             // STEP 1: Modify the REQUEST message before passing to handler
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(java.util.Map.of(key, buildValue(message)));

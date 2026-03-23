@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.core.interception;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Functional interface for building a {@link MessageHandlerInterceptor} for a specific component type and component
@@ -47,8 +47,8 @@ public interface HandlerInterceptorFactory<M extends Message> {
      */
     @Nullable
     MessageHandlerInterceptor<? super M> build(
-            @Nonnull Configuration config,
-            @Nonnull Class<?> componentType,
+            @NonNull Configuration config,
+            @NonNull Class<?> componentType,
             @Nullable String componentName
     );
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
@@ -58,6 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
+import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
 /**
  * Thread-safe {@link EventStorageEngine} implementation storing events in memory.
@@ -100,9 +100,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    public CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                 @Nullable ProcessingContext processingContext,
-                                                                @Nonnull List<TaggedEventMessage<?>> events) {
+                                                                List<TaggedEventMessage<?>> events) {
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
             return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
@@ -149,7 +149,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             }
 
             @Override
-            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull ConsistencyMarker marker) {
+            public CompletableFuture<ConsistencyMarker> afterCommit(ConsistencyMarker marker) {
                 return CompletableFuture.completedFuture(marker);
             }
 
@@ -179,7 +179,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -196,7 +196,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -240,7 +240,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(Instant at) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -258,11 +258,11 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(() -> latestToken());
+                           .orElseGet(this::latestToken);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("offset", offset);
     }
 
@@ -279,8 +279,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             this.position = new AtomicLong(start);
             this.end = end;
             this.condition = condition;
-            this.callback = new AtomicReference<>(() -> {
-            });
+            this.callback = new AtomicReference<>(NO_OP_CALLBACK);
         }
 
         @Override
@@ -320,9 +319,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
-        public void setCallback(@Nonnull Runnable callback) {
+        public void setCallback(Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.isEmpty() || hasNextAvailable()) {
+            if (isCompleted() || hasNextAvailable()) {
                 callback.run();
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.axonframework.common.property;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -82,7 +84,8 @@ class PropertyAccessStrategyTest {
         }
 
         @Override
-        protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+        @NonNull
+        protected <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property) {
             return new StubProperty<>("testGetterInvoked");
         }
 
@@ -132,7 +135,8 @@ class PropertyAccessStrategyTest {
         }
 
         @Override
-        protected <T> Property<T> propertyFor(Class<? extends T> targetClass, String property) {
+        @NonNull
+        protected <T> Property<T> propertyFor(@NonNull Class<? extends T> targetClass, @Nullable String property) {
             return new TestPropertyAccessStrategy.StubProperty<>(value);
         }
     }

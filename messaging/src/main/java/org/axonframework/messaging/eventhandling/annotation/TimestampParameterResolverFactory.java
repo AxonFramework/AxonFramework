@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,17 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Priority;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 /**
  * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
@@ -62,9 +60,8 @@ public final class TimestampParameterResolverFactory
      */
     static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
-        @Nonnull
         @Override
-        public CompletableFuture<Instant> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Instant> resolveParameterValue(ProcessingContext context) {
             if (Message.fromContext(context) instanceof EventMessage eventMessage) {
                 return CompletableFuture.completedFuture(eventMessage.timestamp());
             }
@@ -72,7 +69,7 @@ public final class TimestampParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return Message.fromContext(context) instanceof EventMessage;
         }
     }

@@ -56,13 +56,7 @@ The examples below show how to configure the "example-processor" with a specific
 For generic configuration options for any Event Processor, we refer to the xref:event-processors/index.adoc#general_processor_configuration[general processor configuration section].
 
 [#declarative_config_plain]
-=== Configuration approaches
-
-[tabs]
-====
-Configuration API::
-+
---
+=== Declarative configuration
 
 When using Axon's configuration API directly, you should invoke the `MessagingConfigurer#eventProcessing(Consumer<EventProcessingConfigurer>)` operation.
 The `EventProcessingConfigurer` lambda guides users towards:
@@ -106,18 +100,36 @@ public class AxonConfig {
     }
 }
 ----
---
 
-Spring Boot::
-+
---
+[#autodetected_config_spring_properties_plain]
+=== Properties-based configuration - Spring Boot properties file
+
+A properties file allows the configuration of several fields for the Subscribing Event Processor.
+If more flexibility is required, like concretely defining the event handling components to attach, we recommend use of the <<declarative_config_plain,declarative configuration>> instead.
+
+[source,text]
+----
+axon.eventhandling.processors.example-processor.mode=subscribing
+axon.eventhandling.processors.example-processor.source=eventBus
+----
+
+If the name of an event processor contains periods `.`, use the map notation:
+
+[source,text]
+----
+axon.eventhandling.processors[example.processor].mode=subscribing
+axon.eventhandling.processors[example.processor].source=eventBus
+----
 
 [#bean_based_config_spring]
+=== Autodetected configuration - `EventProcessorDefinition` based configuration
+
 When using Spring Boot, you can define `EventProcessorDefinition` beans to configure subscribing event processors.
 This approach provides programmatic control over which event handlers are assigned to each processor and how each processor is configured.
 
 [source,java]
 ----
+import org.axonframework.extension.spring.config.EventHandlerSelector;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.springframework.context.annotation.Bean;
@@ -129,16 +141,17 @@ public class EventProcessorConfig {
     @Bean
     public EventProcessorDefinition exampleProcessorDefinition(EventBus eventBus) {
         return EventProcessorDefinition.subscribing("example-processor")
-                .assigningHandlers(descriptor ->
-                    descriptor.beanType().getPackageName()
-                              .equals("com.example.eventhandlers"))
-                .customized(config -> config
-                    .eventSource(eventBus));
+                                       .assigningHandlers(EventHandlerSelector.matchesNamespaceOnType(
+                                               "orders"
+                                       ))
+                                       .customized(config -> config
+                                               .eventSource(eventBus)
+                                       );
     }
 }
 ----
 
-The `assigningHandlers` method receives an `EventHandlerDescriptor` that provides access to:
+The `assigningHandlers` method uses the `EventHandlerSelector` to receive an `EventHandlerDescriptor` that provides access to:
 
 * `beanName()` - The Spring bean name
 * `beanType()` - The event handler class
@@ -147,19 +160,46 @@ The `assigningHandlers` method receives an `EventHandlerDescriptor` that provide
 
 This allows flexible handler selection based on naming conventions, packages, types, or other criteria.
 
-**Handler selection examples:**
+In the example above, we use the convenience `EventHandlerSelector#matchesNamespaceOnType` method that assigns handlers that are annotated with `@Namespace("orders")` to an `SubscribingEventProcessor` with the name `"example-processor"`.
+Event Handlers can describe their `@Namespace` on several levels, as described xref:ROOT:spring-boot-integration.adoc#namespace-based-handler-selection[here].
+When the Event Processor name and namespace are identical, you can use the `EventProcessorDefinition.subscribingMatching()` to skip the `assigningHandlers` method automatically:
 
 [source,java]
 ----
-// By bean name prefix
-.assigningHandlers(d -> d.beanName().startsWith("order"))
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-// By package name
-.assigningHandlers(d -> d.beanType().getPackageName()
-                        .startsWith("com.example.orders"))
+@Configuration
+public class EventProcessorConfig {
 
-// By custom logic
-.assigningHandlers(d -> d.beanName().contains("Subscriber"))
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.subscribingMatching("orders")
+                                       .customized(config -> config
+                                               .eventSource(eventBus)
+                                       );
+    }
+}
+----
+
+Use `notCustomized()` instead of `customized()` when you don't need custom processor settings but still want explicit handler assignment:
+
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class EventProcessorConfig {
+
+    @Bean
+    public EventProcessorDefinition exampleProcessorDefinition() {
+        return EventProcessorDefinition.subscribingMatching("orders")
+                                       .notCustomized();
+    }
+}
 ----
 
 **Advanced configuration with interceptors and error handling:**
@@ -204,28 +244,6 @@ When using multiple configuration approaches:
 
 The `eventSource()` configuration is **required** for subscribing processors. Without it, the processor cannot subscribe to events.
 ====
---
-====
-
-[#autodetected_config_spring_properties_plain]
-=== Properties-based configuration - Spring Boot properties file
-
-A properties file allows the configuration of several fields for the Subscribing Event Processor.
-If more flexibility is required, like concretely defining the event handling components to attach, we recommend use of the <<declarative_config_plain,declarative configuration>> instead.
-
-[source,text]
-----
-axon.eventhandling.processors.example-processor.mode=subscribing
-axon.eventhandling.processors.example-processor.source=eventBus
-----
-
-If the name of an event processor contains periods `.`, use the map notation:
-
-[source,text]
-----
-axon.eventhandling.processors[example.processor].mode=subscribing
-axon.eventhandling.processors[example.processor].source=eventBus
-----
 
 [[error-mode]]
 == Error mode

@@ -188,7 +188,7 @@ This allows you to explicitly define its name, namespace, and version:
 [source,java]
 ----
 @Event(
-    namespace = "com.example.orders",   // Defaults to package name
+    namespace = "orders",               // <1>
     name = "OrderPlaced",               // Local name; defaults to simple class name
     version = "1.0.0"                   // Defaults to "0.0.1"
 )
@@ -199,7 +199,9 @@ public record OrderPlacedEvent(
 }
 ----
 
-The event handler's name is composed of `namespace` + `name` (for example, `"com.example.orders.OrderPlaced"`).
+<1> When `namespace` is not specified on `@Event`, Axon first searches for the presence of the `@Namespace` annotation (as described xref:messaging-concepts:anatomy-message.adoc#namespace-annotation[here]). When no `@Namespace` annotation is found, it falls back to the package name of the class.
+
+The event handler's name is composed of `namespace` and `name` (for example, `"orders.OrderPlaced"`).
 Now let's assume we have an `@EventHandler` handling the `OrderPlacedEvent`:
 
 [source,java]
@@ -218,9 +220,9 @@ If you need to override the name used to register the event handler or if the ev
 
 [source,java]
 ----
-@EventHandler(eventName = "com.example.orders.OrderPlaced")
+@EventHandler(eventName = "orders.OrderPlaced")
 public void handleOrderPlaced(Map<String, Object> eventData) {
-    // Handles events with qualified name "com.example.orders.OrderPlaced"
+    // Handles events with qualified name "orders.OrderPlaced"
     // Payload is converted to Map at handling time
 }
 ----

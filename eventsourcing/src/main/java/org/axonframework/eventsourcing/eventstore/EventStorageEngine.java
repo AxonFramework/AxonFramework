@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
@@ -71,9 +70,9 @@ public interface EventStorageEngine extends DescribableComponent {
      * @param events    One or more {@link EventMessage events} to append to the underlying storage solution.
      * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    default CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    default CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                                  @Nullable ProcessingContext context,
-                                                                 @Nonnull TaggedEventMessage<?>... events) {
+                                                                 TaggedEventMessage<?>... events) {
         return appendEvents(condition, context, asList(events));
     }
 
@@ -95,9 +94,9 @@ public interface EventStorageEngine extends DescribableComponent {
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
      * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+    CompletableFuture<AppendTransaction<?>> appendEvents(AppendCondition condition,
                                                          @Nullable ProcessingContext context,
-                                                         @Nonnull List<TaggedEventMessage<?>> events);
+                                                         List<TaggedEventMessage<?>> events);
 
     /**
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -120,7 +119,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> source(@Nonnull SourcingCondition condition);
+    MessageStream<EventMessage> source(SourcingCondition condition);
 
     /**
      * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -135,7 +134,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition);
+    MessageStream<EventMessage> stream(StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the first position of an event stream.
@@ -165,7 +164,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
      * matching this criteria {@code null} is returned
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
+    CompletableFuture<TrackingToken> tokenAt(Instant at);
 
     /**
      * Interface representing the transaction of an appendEvents invocation.

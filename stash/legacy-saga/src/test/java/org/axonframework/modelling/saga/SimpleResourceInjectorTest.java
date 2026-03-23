@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.saga;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.inject.Inject;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -111,12 +111,12 @@ class SimpleResourceInjectorTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return true;
         }
 
         @Override
-        public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public Object handleSync(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return null;
         }
 

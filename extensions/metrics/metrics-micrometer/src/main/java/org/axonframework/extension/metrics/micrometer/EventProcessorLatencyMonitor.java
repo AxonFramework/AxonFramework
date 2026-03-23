@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
@@ -93,7 +92,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
     @SuppressWarnings("PackageAccessibility")
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull EventMessage message) {
+    public MonitorCallback onMessageIngested(EventMessage message) {
         //noinspection ConstantConditions
         if (message != null) {
             Tags tags = Tags.of(tagsBuilder.apply(message));

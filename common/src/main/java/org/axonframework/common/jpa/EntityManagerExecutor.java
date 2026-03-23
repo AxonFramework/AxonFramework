@@ -16,7 +16,6 @@
 
 package org.axonframework.common.jpa;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.function.ThrowingFunction;
@@ -41,12 +40,12 @@ public class EntityManagerExecutor implements TransactionalExecutor<EntityManage
      * @param provider An {@link EntityManagerProvider}, cannot be {@code null}.
      * @throws NullPointerException If any argument is {@code null}.
      */
-    public EntityManagerExecutor(@Nonnull EntityManagerProvider provider) {
+    public EntityManagerExecutor(EntityManagerProvider provider) {
         this.provider = Objects.requireNonNull(provider, "provider");
     }
 
     @Override
-    public <R> CompletableFuture<R> apply(@Nonnull ThrowingFunction<EntityManager, R, Exception> function) {
+    public <R> CompletableFuture<R> apply(ThrowingFunction<EntityManager, R, Exception> function) {
         try {
             return CompletableFuture.completedFuture(function.apply(provider.getEntityManager()));
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.ConversionException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
+
 
 import java.util.Optional;
 
@@ -46,6 +47,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy<Message> fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> new FallbackSequencingPolicy<>(null, fallback, RuntimeException.class));
         }
@@ -56,6 +58,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy<Message> delegate = (event, context) -> Optional.of("delegate");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> new FallbackSequencingPolicy<>(delegate, null, RuntimeException.class));
         }
@@ -67,6 +70,7 @@ final class FallbackSequencingPolicyTest {
             SequencingPolicy<Message> fallback = (event, context) -> Optional.of("fallback");
 
             // when / then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> new FallbackSequencingPolicy<>(delegate, fallback, null));
         }
@@ -180,7 +184,7 @@ final class FallbackSequencingPolicyTest {
             assertThat(resultForWrongType).hasValue("default-sequence");
         }
 
-        @Nonnull
+        @NonNull
         private FallbackSequencingPolicy<ConversionException, EventMessage> getConversionExceptionFallbackSequencingPolicy() {
             SequencingPolicy<EventMessage> propertyBasedPolicy = (event, context) -> {
                 if (event.payload() instanceof TestEvent(String id)) {

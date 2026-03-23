@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package org.axonframework.common.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -59,7 +58,7 @@ public interface Component<C> extends DescribableComponent {
      * @param configuration The configuration that declared this component.
      * @return The resolved instance defined in this component.
      */
-    C resolve(@Nonnull Configuration configuration);
+    C resolve(Configuration configuration);
 
     /**
      * Indicates whether the component has been {@link #resolve(Configuration) resolved}.
@@ -80,8 +79,8 @@ public interface Component<C> extends DescribableComponent {
      *                          during the component's lifecycle.
      * @param lifecycleRegistry The registry in which to register the lifecycle handlers.
      */
-    void initLifecycle(@Nonnull Configuration configuration,
-                       @Nonnull LifecycleRegistry lifecycleRegistry);
+    void initLifecycle(Configuration configuration,
+                       LifecycleRegistry lifecycleRegistry);
 
     /**
      * Indicates whether the {@link #initLifecycle(Configuration, LifecycleRegistry)} method has already been invoked
@@ -99,7 +98,7 @@ public interface Component<C> extends DescribableComponent {
      *             throw an {@link IllegalArgumentException} for an empty {@code name}.
      * @param <C>  The type of the component this object identifies, typically an interface.
      */
-    record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
+    record Identifier<C>(TypeReference<C> type, @Nullable String name) {
 
         /**
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code clazz} and {@code name}.
@@ -108,7 +107,7 @@ public interface Component<C> extends DescribableComponent {
          * @param name  The name of the component this object identifies, potentially {@code null} when unimportant.
          *              Will throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
-        public Identifier(@Nonnull Class<C> clazz,
+        public Identifier(Class<C> clazz,
                           @Nullable String name) {
             this(TypeReference.fromClass(clazz), name);
         }
@@ -120,7 +119,7 @@ public interface Component<C> extends DescribableComponent {
          * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
          *             throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
-        public Identifier(@Nonnull Type type,
+        public Identifier(Type type,
                           @Nullable String name) {
             this(TypeReference.fromType(type), name);
         }
@@ -149,7 +148,7 @@ public interface Component<C> extends DescribableComponent {
          * {@link Class#isAssignableFrom(Class) assignable from} the {@code other} type <b>and</b> the {@link #name()}
          * is identical, {@code false} otherwise
          */
-        public boolean matches(@Nonnull Identifier<?> other) {
+        public boolean matches(Identifier<?> other) {
             return matchesType(other) && Objects.equals(other.name(), name);
         }
 
@@ -162,7 +161,7 @@ public interface Component<C> extends DescribableComponent {
          * @return {@code true} if the {@link #typeAsClass() raw type} is
          * {@link Class#isAssignableFrom(Class) assignable from} the {@code other} type, {@code false} otherwise.
          */
-        public boolean matchesType(@Nonnull Identifier<?> other) {
+        public boolean matchesType(Identifier<?> other) {
             return type.getTypeAsClass().isAssignableFrom(other.type().getTypeAsClass());
         }
 
@@ -191,7 +190,7 @@ public interface Component<C> extends DescribableComponent {
          * {@link TypeReference#isAssignableFrom(TypeReference) assignable from} the {@code other} type, {@code false}
          * otherwise.
          */
-        public boolean matchesTypeByTypeRef(@Nonnull Identifier<?> other) {
+        public boolean matchesTypeByTypeRef(Identifier<?> other) {
             return type.isAssignableFrom(other.type());
         }
 

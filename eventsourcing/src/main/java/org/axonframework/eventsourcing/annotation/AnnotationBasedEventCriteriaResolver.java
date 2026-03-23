@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -88,9 +87,9 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
      * @param idType        The identifier type to resolve criteria for.
      * @param configuration The configuration to use for resolving the criteria.
      */
-    public AnnotationBasedEventCriteriaResolver(@Nonnull Class<E> entityType,
-                                                @Nonnull Class<ID> idType,
-                                                @Nonnull Configuration configuration) {
+    public AnnotationBasedEventCriteriaResolver(Class<E> entityType,
+                                                Class<ID> idType,
+                                                Configuration configuration) {
         this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
         this.idType = Objects.requireNonNull(idType, "The id type cannot be null.");
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
@@ -206,9 +205,8 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         }
     }
 
-    @Nonnull
     @Override
-    public EventCriteria resolve(@Nonnull Object id, @Nonnull ProcessingContext context) {
+    public EventCriteria resolve(Object id, ProcessingContext context) {
         Optional<Object> builderResult = builderMap
                 .keySet()
                 .stream()
@@ -224,7 +222,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("idType", idType.getName());
         descriptor.describeProperty("entityType", entityType.getName());
         descriptor.describeProperty("tagKey", tagKey);

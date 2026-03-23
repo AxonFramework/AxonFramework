@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.eventhandling.DelegatingEventBus;
 import org.axonframework.messaging.eventhandling.DomainEventMessage;
@@ -92,13 +92,13 @@ class CommandHandlingTest {
             super(new SimpleEventBus());
         }
 
-        public DomainEventStream readEvents(@Nonnull String identifier) {
+        public DomainEventStream readEvents(@NonNull String identifier) {
             return DomainEventStream.of(new ArrayList<>(storedEvents));
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<? extends EventMessage> events) {
+        public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                        @NonNull List<? extends EventMessage> events) {
             if (context == null) {
                 storeEvents(events);
             } else {
@@ -107,7 +107,7 @@ class CommandHandlingTest {
             return super.publish(context, events);
         }
 
-        private void storeEvents(@Nonnull List<? extends EventMessage> events) {
+        private void storeEvents(@NonNull List<? extends EventMessage> events) {
             storedEvents.addAll(
                     events.stream()
                           .map(StubEventStore::asDomainEventMessage)
@@ -122,8 +122,8 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(
-                @Nonnull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
+        public @NonNull Registration subscribe(
+                @NonNull BiFunction<List<? extends EventMessage>, ProcessingContext, CompletableFuture<?>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
     }

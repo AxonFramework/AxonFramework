@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -136,7 +135,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception {
+    public Object handleSync(EventMessage event, ProcessingContext context) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType).stream()
                          .filter(h -> h.canHandle(event, context))
@@ -149,7 +148,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public boolean canHandle(EventMessage event, ProcessingContext context) {
         return inspector.getHandlers(listenerType).stream()
                         .anyMatch(h -> h.canHandle(event, context));
     }

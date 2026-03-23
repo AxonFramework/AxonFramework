@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 
@@ -48,7 +47,7 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
     }
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<String> keyName = original.attribute("SagaEventHandler.keyName");
         Optional<String> associationProperty = original.attribute("SagaEventHandler.associationProperty");
         Optional<Class<? extends AssociationResolver>> associationResolver = original.attribute(

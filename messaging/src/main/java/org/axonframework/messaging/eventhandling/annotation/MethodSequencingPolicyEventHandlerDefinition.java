@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.annotation.HandlerAttributes;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
@@ -25,6 +24,7 @@ import org.axonframework.messaging.core.annotation.SequencingPolicy;
 import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.eventhandling.EventMessage;
+
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
@@ -47,7 +47,7 @@ import java.util.Optional;
 public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         // Only wrap event handlers - check the message type to work through any existing wrappers
         if (!original.canHandleMessageType(EventMessage.class)) {
             return original;

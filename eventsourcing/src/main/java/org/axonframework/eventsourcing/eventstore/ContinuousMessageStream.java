@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,26 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * A {@link MessageStream} implementation that continuously fetches event messages
- * from a configurable data source. This stream has no defined end and will
- * continue retrieving new batches of data as they become available.
+ * A {@link MessageStream} implementation that continuously fetches event messages from a configurable data source. This
+ * stream has no defined end and will continue retrieving new batches of data as they become available.
  * <p>
- * The stream relies on externally provided functional strategies to control its
- * behavior:
+ * The stream relies on externally provided functional strategies to control its behavior:
  * <ul>
- *     <li>A {@code fetcher} to obtain the next batch of elements based on the last item fetched.</li>
+ *     <li>A {@code fetcher} to obtain the next batch of elements. The fetcher owns all cursor/position
+ *          state internally and is simply called each time more data is needed.</li>
  *     <li>A {@code converter} to transform fetched elements into {@link Entry} instances.</li>
  *     <li>A {@code callbackTracker} to manage callback registration for new data availability.</li>
  * </ul>
@@ -47,11 +46,11 @@ import java.util.function.Function;
  */
 @Internal
 public final class ContinuousMessageStream<E> implements MessageStream<EventMessage> {
-    private final Function<E, List<E>> fetcher;
+
+    private final Supplier<List<E>> fetcher;
     private final BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker;
     private final Function<E, Entry<EventMessage>> converter;
 
-    private E lastItem;
     private List<E> data = List.of();
     private Entry<EventMessage> nextEntry;
     private Throwable error;
@@ -63,16 +62,18 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     /**
      * Creates a new {@code ContinuousMessageStream} instance configured with the given strategies.
      *
-     * @param fetcher          a function that, given the last fetched element (or {@code null} for the first call),
-     *                         retrieves the next batch of elements; must not return {@code null}
-     * @param converter        a function converting each fetched element into an {@link Entry} containing an {@link EventMessage}
-     * @param callbackTracker  a function that, given this stream and a callback {@link Runnable}, registers
-     *                         a listener and returns a {@link Registration} allowing it to be canceled
+     * @param fetcher         a supplier that returns the next batch of elements to emit. The fetcher is responsible
+     *                        for tracking its own position; it is called repeatedly whenever the stream needs more data.
+     *                        Must not return {@code null}, but may return an empty list to indicate no new data is currently available.
+     * @param converter       a function converting each fetched element into an {@link Entry} containing an
+     *                        {@link EventMessage}
+     * @param callbackTracker a function that, given this stream and a callback {@link Runnable}, registers a listener
+     *                        and returns a {@link Registration} allowing it to be canceled
      */
     public ContinuousMessageStream(
-        @Nonnull Function<E, List<E>> fetcher,
-        @Nonnull Function<E, Entry<EventMessage>> converter,
-        @Nonnull BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
+            Supplier<List<E>> fetcher,
+            Function<E, Entry<EventMessage>> converter,
+            BiFunction<ContinuousMessageStream<?>, Runnable, Registration> callbackTracker
     ) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetcher");
         this.converter = Objects.requireNonNull(converter, "converter");
@@ -87,8 +88,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
             if (callback == null) {
                 callbackRegistration.cancel();
                 callbackRegistration = null;
-            }
-            else if (callbackRegistration == null) {
+            } else if (callbackRegistration == null) {
                 this.callbackRegistration = callbackTracker.apply(this, this::invokeCallback);
             }
 
@@ -100,8 +100,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
     public synchronized Optional<Entry<EventMessage>> next() {
         try {
             return peek();
-        }
-        finally {
+        } finally {
             nextEntry = null;
         }
     }
@@ -164,8 +163,7 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
             if (callback != null) {
                 callback.run();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             error = e;
             close();
         }
@@ -173,14 +171,9 @@ public final class ContinuousMessageStream<E> implements MessageStream<EventMess
 
     private void fetchMore() {
         try {
-            this.data = fetcher.apply(lastItem);
+            this.data = fetcher.get();
             this.position = 0;
-
-            if (!data.isEmpty()) {
-                this.lastItem = data.getLast();
-            }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             error = e;
             close();
         }

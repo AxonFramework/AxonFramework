@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,7 @@ import org.axonframework.conversion.SimpleSerializedObject;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static java.lang.String.format;
 
@@ -72,14 +71,14 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      * @param metadata             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
-    public DbSchedulerBinaryDeadlineDetails(@Nonnull String deadlineName,
-                                            @Nonnull String type,
-                                            @Nonnull byte[] scopeDescriptor,
-                                            @Nonnull String scopeDescriptorClass,
-                                            @Nullable byte[] payload,
+    public DbSchedulerBinaryDeadlineDetails(String deadlineName,
+                                            String type,
+                                            byte[] scopeDescriptor,
+                                            String scopeDescriptorClass,
+                                            byte @Nullable [] payload,
                                             @Nullable String payloadClass,
                                             @Nullable String payloadRevision,
-                                            @Nullable byte[] metadata) {
+                                            byte @Nullable [] metadata) {
         this.d = deadlineName;
         this.t = type;
         this.s = scopeDescriptor;
@@ -101,10 +100,10 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      *                     {@code metadata}, as well as the whole {@link DbSchedulerBinaryDeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    static DbSchedulerBinaryDeadlineDetails serialized(@Nonnull String deadlineName,
-                                                       @Nonnull ScopeDescriptor descriptor,
-                                                       @Nonnull DeadlineMessage message,
-                                                       @Nonnull Serializer serializer) {
+    static DbSchedulerBinaryDeadlineDetails serialized(String deadlineName,
+                                                       ScopeDescriptor descriptor,
+                                                       DeadlineMessage message,
+                                                       Serializer serializer) {
         SerializedObject<byte[]> serializedDescriptor = serializer.serialize(descriptor, byte[].class);
         SerializedObject<byte[]> serializedPayload = serializer.serialize(message.payload(), byte[].class);
         SerializedObject<byte[]> serializedMetadata = serializer.serialize(message.metadata(), byte[].class);

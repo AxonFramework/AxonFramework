@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
@@ -42,8 +41,8 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable,
-                                            @Nonnull Parameter[] parameters,
+    public ParameterResolver createInstance(Executable executable,
+                                            Parameter[] parameters,
                                             int parameterIndex) {
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
@@ -81,9 +80,8 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Object> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Object> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(
                     Message.fromContext(context)
                            .metadata()
@@ -92,7 +90,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             Message message = Message.fromContext(context);
             if (message == null) {
                 return false;
@@ -113,15 +111,14 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         private MetadataParameterResolver() {
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Metadata> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Metadata> resolveParameterValue(ProcessingContext context) {
             Message message = Message.fromContext(context);
             return CompletableFuture.completedFuture(message.metadata());
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             return Message.fromContext(context) != null;
         }
     }
@@ -134,14 +131,13 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             this.parameterType = parameterType;
         }
 
-        @Nonnull
         @Override
-        public CompletableFuture<Message> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public CompletableFuture<Message> resolveParameterValue(ProcessingContext context) {
             return CompletableFuture.completedFuture(Message.fromContext(context));
         }
 
         @Override
-        public boolean matches(@Nonnull ProcessingContext context) {
+        public boolean matches(ProcessingContext context) {
             Message message = Message.fromContext(context);
             if (message == null) {
                 return false;

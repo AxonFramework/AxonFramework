@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.examples.university.read.coursestats.projection.CourseStatsConfiguration;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ public class UniversityExampleApplication {
                     configuration.getComponent(QueryGateway.class)
             );
 
-            var processor = configuration.getComponents(PooledStreamingEventProcessor.class).get(CourseStatsConfiguration.NAME);
+            var processor = configuration.getComponents(StreamingEventProcessor.class).get(CourseStatsConfiguration.NAME);
             logger.info("Waiting for course statistics projection replay to finish...");
             executeUntilTrue(
                     () -> !processor.isReplaying(),

@@ -21,7 +21,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
-import org.axonframework.common.util.StubLifecycleRegistry;
+import org.axonframework.common.configuration.StubLifecycleRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;

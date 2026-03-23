@@ -16,8 +16,14 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
@@ -27,8 +33,13 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+
 
 import java.util.List;
 import java.util.Map;
@@ -42,12 +53,12 @@ class ProcessingContextEventAppenderTest {
     private final EventSink mockEventSink = spy(new EventSink() {
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<? extends EventMessage> events) {
+                                               @NonNull List<? extends EventMessage> events) {
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             // not needed for tests
         }
     });

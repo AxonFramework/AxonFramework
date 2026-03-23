@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -94,7 +93,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+    public boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment) {
         // The segment is used to filter Saga instances, so all events match when there's a handler
         return sagaMetaModel.hasHandlerMethod(eventMessage, context);
     }

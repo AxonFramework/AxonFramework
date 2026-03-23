@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
@@ -60,7 +59,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base) {
         super(base);
     }
 
@@ -73,13 +72,13 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base,
-                                                  @Nonnull Configuration configuration) {
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base,
+                                                  Configuration configuration) {
         super(base);
     }
 
     @Override
-    public SubscribingEventProcessorConfiguration errorHandler(@Nonnull ErrorHandler errorHandler) {
+    public SubscribingEventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
         super.errorHandler(errorHandler);
         return this;
     }
@@ -92,7 +91,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                    {@link EventProcessor} implementation will subscribe itself to receive {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration eventSource(@Nonnull SubscribableEventSource eventSource) {
+    public SubscribingEventProcessorConfiguration eventSource(SubscribableEventSource eventSource) {
         assertNonNull(eventSource, "SubscribableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
@@ -116,7 +115,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     @Override
-    public SubscribingEventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
+    public SubscribingEventProcessorConfiguration unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
         return this;
     }
@@ -129,9 +128,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *                    {@link SubscribingEventProcessor} under construction.
      * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
      */
-    @Nonnull
-    public SubscribingEventProcessorConfiguration withInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
+        public SubscribingEventProcessorConfiguration withInterceptor(
+            MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         //noinspection unchecked | Casting to EventMessage is safe.
         this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
@@ -191,7 +189,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("eventSource", eventSource);
     }

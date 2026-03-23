@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventsourcing.snapshotting;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing instances that are capable of creating snapshot events for aggregates. Although snapshotting is
@@ -34,5 +33,5 @@ public interface Snapshotter {
      * @param aggregateType       the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(@Nonnull Class<?> aggregateType, @Nonnull String aggregateIdentifier);
+    void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier);
 }

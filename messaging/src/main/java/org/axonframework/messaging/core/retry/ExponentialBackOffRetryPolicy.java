@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.Nonnull;
 
 /**
  * A RetryScheduler that uses a backoff strategy, doubling the retry delay after each attempt.
@@ -44,8 +43,8 @@ public class ExponentialBackOffRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable failure,
-                             @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
+    public Outcome defineFor(Message message, Throwable failure,
+                             List<Class<? extends Throwable>[]> previousFailures) {
         if (Long.numberOfLeadingZeros(initialWaitTime) <= previousFailures.size()) {
             return Outcome.rescheduleIn(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
@@ -54,7 +53,7 @@ public class ExponentialBackOffRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialWaitTime", initialWaitTime);
     }
 }

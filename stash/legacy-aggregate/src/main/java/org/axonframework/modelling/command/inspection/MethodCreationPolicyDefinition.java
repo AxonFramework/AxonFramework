@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 
-import jakarta.annotation.Nonnull;
 
 /**
  * Implementation of {@link HandlerEnhancerDefinition} used for {@link CreationPolicy} annotated methods.
@@ -34,7 +33,7 @@ import jakarta.annotation.Nonnull;
 public class MethodCreationPolicyDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         return original.<AggregateCreationPolicy>attribute(HandlerAttributes.AGGREGATE_CREATION_POLICY)
                        .map(creationPolicy -> (MessageHandlingMember<T>) new MethodCreationPolicyHandlingMember<>(
                                original, creationPolicy

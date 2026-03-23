@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -194,13 +194,11 @@ class SequencingEventHandlingComponentTest {
                 .withMessage("Test exception");
     }
 
-    @Nonnull
-    private static EventMessage testEvent(String payload) {
+    static @NonNull EventMessage testEvent(String payload) {
         return EventTestUtils.asEventMessage(new TestPayload(payload));
     }
 
-    @Nonnull
-    private EventHandlingComponent sequencingEventHandlingComponent() {
+        private @NonNull EventHandlingComponent sequencingEventHandlingComponent() {
         return new SequencingEventHandlingComponent(
                 new SequenceOverridingEventHandlingComponent(
                         (event, context) -> Optional.of(sequenceOf((EventMessage) event)),
@@ -209,7 +207,7 @@ class SequencingEventHandlingComponentTest {
         );
     }
 
-    @Nonnull
+    @NonNull
     private List<String> payloadsOfSequence(List<EventMessage> handledEvents, String sequence) {
         return handledEvents.stream()
                             .filter(event -> event.payload().toString().contains("seq-" + sequence))
@@ -266,7 +264,7 @@ class SequencingEventHandlingComponentTest {
 
     record TestPayload(String value) {
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return value;

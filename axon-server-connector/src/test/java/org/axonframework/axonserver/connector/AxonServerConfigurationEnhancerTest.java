@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.axonserver.connector.snapshot.AxonServerSnapshotStore;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
+import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.PayloadConvertingQueryBusConnector;
 import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 import org.junit.jupiter.api.*;
@@ -73,6 +75,7 @@ class AxonServerConfigurationEnhancerTest {
         assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(EventStorageEngine.class));
         assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
         assertInstanceOf(PayloadConvertingQueryBusConnector.class, result.getComponent(QueryBusConnector.class));
+        assertInstanceOf(AxonServerSnapshotStore.class, result.getComponent(SnapshotStore.class));
     }
 
     @Test

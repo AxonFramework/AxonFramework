@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.ScopeAware;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -45,7 +44,7 @@ public interface Repository<T> extends ScopeAware {
      * @return The aggregate root with the given identifier.
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
-    Aggregate<T> load(@Nonnull String aggregateIdentifier);
+    Aggregate<T> load(String aggregateIdentifier);
 
     /**
      * Creates a new managed instance for the aggregate, using the given {@code factoryMethod} to instantiate the
@@ -55,7 +54,7 @@ public interface Repository<T> extends ScopeAware {
      * @return an Aggregate instance describing the aggregate's state
      * @throws Exception when the factoryMethod throws an exception
      */
-    Aggregate<T> newInstance(@Nonnull Callable<T> factoryMethod) throws Exception;
+    Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception;
 
     /**
      * Creates a new managed instance for the aggregate, using the given {@code factoryMethod} to instantiate the
@@ -80,8 +79,8 @@ public interface Repository<T> extends ScopeAware {
      * @param factoryMethod       The method to create the aggregate's root instance
      * @return The aggregate root with the given identifier.
      */
-    default Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier,
-                                      @Nonnull Callable<T> factoryMethod) throws Exception {
+    default Aggregate<T> loadOrCreate(String aggregateIdentifier,
+                                      Callable<T> factoryMethod) throws Exception {
         throw new UnsupportedOperationException("loadOrCreate not implemented on this repository");
     }
 }

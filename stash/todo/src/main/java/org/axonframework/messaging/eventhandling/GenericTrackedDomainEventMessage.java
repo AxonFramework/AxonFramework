@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.Message;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.MessageStream;
 
 /**
@@ -91,16 +90,14 @@ public class GenericTrackedDomainEventMessage
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        public GenericTrackedDomainEventMessage withMetadata(Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().withMetadata(metadata),
                                                       timestamp());
     }
 
     @Override
-    @Nonnull
-    public GenericTrackedDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        public GenericTrackedDomainEventMessage andMetadata(Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().andMetadata(metadata),
                                                       timestamp());

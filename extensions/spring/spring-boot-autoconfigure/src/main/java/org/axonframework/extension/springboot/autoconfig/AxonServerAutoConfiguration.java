@@ -18,7 +18,6 @@ package org.axonframework.extension.springboot.autoconfig;
 
 
 import io.axoniq.axonserver.connector.control.ControlChannel;
-import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -87,7 +86,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     public ConfigurationEnhancer disableAxonServerConfigurationEnhancer() {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
             }
 
@@ -139,11 +138,12 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                            (config, name, distributedQueryBusConfig) -> {
                                                AxonServerConfiguration serverConfig =
                                                        config.getComponent(AxonServerConfiguration.class);
-                                               int queryThreads = serverConfig.getQueryThreads();
-                                               int queryResponseThreads = serverConfig.getQueryResponseThreads();
-                                               return distributedQueryBusConfig
-                                                       .queryThreads(queryThreads)
-                                                       .queryResponseThreads(queryResponseThreads);
+                                               Integer queryThreads = serverConfig.getQueryThreads();
+                                               if (queryThreads != null && queryThreads > 0) {
+                                                   return distributedQueryBusConfig
+                                                           .queryThreads(queryThreads);
+                                               }
+                                               return distributedQueryBusConfig;
                                            }
                                    );
     }
@@ -220,7 +220,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 }

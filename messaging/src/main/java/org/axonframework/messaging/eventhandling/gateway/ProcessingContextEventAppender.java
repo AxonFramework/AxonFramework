@@ -16,15 +16,13 @@
 
 package org.axonframework.messaging.eventhandling.gateway;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
 
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +31,7 @@ import java.util.stream.Collectors;
 /**
  * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
  * will be published in the context this appender was created for. You can construct one through the
- * {@link EventAppender#forContext(ProcessingContext, Configuration)} method.
+ * {@link EventAppender#forContext(ProcessingContext)} method.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -65,7 +63,7 @@ public class ProcessingContextEventAppender implements EventAppender {
     }
 
     @Override
-    public void append(@Nonnull List<?> events) {
+    public void append(List<?> events) {
         Objects.requireNonNull(events, "Events may not be null");
         List<EventMessage> eventMessages = events
                 .stream()
@@ -76,17 +74,18 @@ public class ProcessingContextEventAppender implements EventAppender {
     }
 
     @Override
-    public void append(@Nonnull List<?> events, @Nonnull Metadata metadata) {
+    public void append(List<?> events, Metadata metadata) {
         Objects.requireNonNull(events, "Events may not be null");
         Objects.requireNonNull(metadata, "Metadata may not be null");
-        List<EventMessage> eventMessages = events.stream()
-                .map(e -> EventPublishingUtils.asEventMessage(e, metadata, messageTypeResolver))
-                .toList();
+        List<EventMessage> eventMessages =
+                events.stream()
+                      .map(e -> EventPublishingUtils.asEventMessage(e, metadata, messageTypeResolver))
+                      .toList();
         eventSink.publish(processingContext, eventMessages).join();
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeProperty("processingContext", processingContext);
         descriptor.describeProperty("eventSink", eventSink);
         descriptor.describeProperty("messageTypeResolver", messageTypeResolver);

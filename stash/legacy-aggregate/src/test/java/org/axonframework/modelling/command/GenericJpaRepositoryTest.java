@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
 import jakarta.persistence.LockModeType;
@@ -228,10 +227,10 @@ class GenericJpaRepositoryTest {
 
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .executeWithResult((ctx) -> {
-                                   Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
+                                   Aggregate<StubJpaAggregate> aggregate1 = testSubject.newInstance(
                                            () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
                                    );
-                                   aggregate.execute(e -> e.doSomething(expectedThirdPayload));
+                                   aggregate1.execute(e -> e.doSomething(expectedThirdPayload));
                                    return null;
                                });
         CurrentUnitOfWork.commit();
@@ -346,7 +345,7 @@ class GenericJpaRepositoryTest {
 
         @Override
         public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                               @Nonnull List<? extends EventMessage> events) {
+                                               List<? extends EventMessage> events) {
             publishedEvents.addAll(events);
             return super.publish(context, events);
         }
@@ -366,7 +365,7 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(ComponentDescriptor descriptor) {
 
         }
     }

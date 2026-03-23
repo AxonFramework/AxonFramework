@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SpringSagaLookup.class);
 
     @Override
-    public void postProcessBeanFactory(@Nonnull ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         if (!(beanFactory instanceof BeanDefinitionRegistry)) {
             logger.warn("Given bean factory is not a BeanDefinitionRegistry. Cannot auto-configure Sagas");
             return;
@@ -70,7 +69,7 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
 
     @Override
     public void postProcessBeanDefinitionRegistry(
-            @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
+            BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
         // No action required.
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.errorhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Context;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
@@ -38,10 +37,10 @@ import java.util.Objects;
  * @since 3.0.0
  */
 public record ErrorContext(
-        @Nonnull String eventProcessor,
-        @Nonnull Throwable error,
-        @Nonnull List<? extends EventMessage> failedEvents,
-        @Nonnull Context context
+        String eventProcessor,
+        Throwable error,
+        List<? extends EventMessage> failedEvents,
+        Context context
 ) {
 
     /**

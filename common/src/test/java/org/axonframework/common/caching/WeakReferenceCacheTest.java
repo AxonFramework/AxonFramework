@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -55,7 +56,7 @@ class WeakReferenceCacheTest {
         final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
         testSubject.registerCacheEntryListener(new Cache.EntryListenerAdapter() {
             @Override
-            public void onEntryExpired(Object key) {
+            public void onEntryExpired(@NonNull Object key) {
                 expiredEntries.add(key.toString());
             }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
@@ -50,8 +49,7 @@ public interface MessageHandlerInterceptor<M extends Message> {
      * @return The resulting message stream from
      * {@link MessageHandlerInterceptorChain#proceed(Message, ProcessingContext)}.
      */
-    @Nonnull
-    MessageStream<?> interceptOnHandle(@Nonnull M message,
-                                       @Nonnull ProcessingContext context,
-                                       @Nonnull MessageHandlerInterceptorChain<M> interceptorChain);
+    MessageStream<?> interceptOnHandle(M message,
+                                       ProcessingContext context,
+                                       MessageHandlerInterceptorChain<M> interceptorChain);
 }

@@ -16,8 +16,7 @@
 
 package org.axonframework.conversion;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
@@ -41,9 +40,10 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
      * @return A converted version of the given {@code input} into the given {@code targetType}.
+     * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    default <T> T convert(@Nullable Object input, @Nonnull Class<T> targetType) {
+    default <T> T convert(@Nullable Object input, Class<T> targetType) {
         return convert(input, (Type) targetType);
     }
 
@@ -54,7 +54,8 @@ public interface Converter extends DescribableComponent {
      * @param targetType The type to convert the given {@code input} into.
      * @param <T>        The target data type.
      * @return A converted version of the given {@code input} into the given {@code targetType}.
+     * @throws ConversionException If the {@code input} cannot be converted to the given {@code targetType}.
      */
     @Nullable
-    <T> T convert(@Nullable Object input, @Nonnull Type targetType);
+    <T> T convert(@Nullable Object input, Type targetType);
 }

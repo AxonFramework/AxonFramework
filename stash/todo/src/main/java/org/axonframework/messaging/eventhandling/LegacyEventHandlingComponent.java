@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Optional;
 import java.util.Set;
@@ -49,14 +50,13 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      *
      * @param eventHandlerInvoker The {@link EventHandlerInvoker} to wrap.
      */
-    public LegacyEventHandlingComponent(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
+    public LegacyEventHandlingComponent(EventHandlerInvoker eventHandlerInvoker) {
         this.eventHandlerInvoker = eventHandlerInvoker;
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                                        ProcessingContext context) {
         try {
             Segment segment = Segment.fromContext(context).orElse(Segment.ROOT_SEGMENT);
             eventHandlerInvoker.handle(event, context, segment);
@@ -75,14 +75,13 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         Set<QualifiedName> supportedEvents = supportedEvents();
         return supportedEvents.contains(eventName);
     }
 
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())
@@ -96,6 +95,29 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
         };
     }
 
+    @Override
+    public boolean supportsReset() {
+        return eventHandlerInvoker.supportsReset();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                               ProcessingContext context) {
+        eventHandlerInvoker.performReset(resetContext, context);
+        return MessageStream.empty();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
+        return MessageStream.empty();
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        // Unimplemented as this is legacy flow.
+    }
+
     /**
      * Returns the wrapped {@link EventHandlerInvoker}.
      *
@@ -103,10 +125,5 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
      */
     public EventHandlerInvoker getEventHandlerInvoker() {
         return eventHandlerInvoker;
-    }
-
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        // Unimplemented as this is legacy flow.
     }
 }

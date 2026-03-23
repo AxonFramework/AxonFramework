@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.core;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +32,6 @@ import java.util.function.BiFunction;
  */
 class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
-    private final MessageStream<M> delegate;
     private final Runnable completeHandler;
     private final AtomicBoolean invoked = new AtomicBoolean(false);
 
@@ -46,17 +43,16 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
      *                        given {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
-    CompletionCallbackMessageStream(@Nonnull MessageStream<M> delegate,
-                                    @Nonnull Runnable completeHandler) {
+    CompletionCallbackMessageStream(MessageStream<M> delegate,
+                                    Runnable completeHandler) {
         super(delegate);
-        this.delegate = delegate;
         this.completeHandler = completeHandler;
         delegate.setCallback(this::invokeCompletionHandlerIfCompleted);
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        Optional<Entry<M>> next = delegate.next();
+        Optional<Entry<M>> next = delegate().next();
         if (next.isEmpty()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -65,7 +61,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
 
     @Override
     public Optional<Entry<M>> peek() {
-        Optional<Entry<M>> peek = delegate.peek();
+        Optional<Entry<M>> peek = delegate().peek();
         if (peek.isEmpty()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -73,14 +69,14 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     private void invokeCompletionHandlerIfCompleted() {
-        if (delegate.isCompleted() && delegate.error().isEmpty() && !invoked.getAndSet(true)) {
+        if (delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
         }
     }
 
     @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        delegate.setCallback(() -> {
+    public void setCallback(Runnable callback) {
+        delegate().setCallback(() -> {
             callback.run();
             invokeCompletionHandlerIfCompleted();
         });
@@ -89,12 +85,12 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     @Override
     public Optional<Throwable> error() {
         invokeCompletionHandlerIfCompleted();
-        return delegate.error();
+        return delegate().error();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        boolean b = delegate.hasNextAvailable();
+        boolean b = delegate().hasNextAvailable();
         if (!b && delegate().isCompleted()) {
             invokeCompletionHandlerIfCompleted();
         }
@@ -102,19 +98,19 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
-        return delegate.reduce(identity, accumulator)
-                       .whenComplete((result, exception) -> {
-                           if (exception == null) {
-                               completeHandler.run();
-                           }
-                       });
+    public <R> CompletableFuture<R> reduce(R identity,
+                                           BiFunction<R, Entry<M>, R> accumulator) {
+        return delegate().reduce(identity, accumulator)
+                         .whenComplete((result, exception) -> {
+                             if (exception == null) {
+                                 completeHandler.run();
+                             }
+                         });
     }
 
     /**
-     * A {@link CompletionCallbackMessageStream} implementation completing on only the first
-     * {@link MessageStream.Entry} of this stream.
+     * A {@link CompletionCallbackMessageStream} implementation completing on only the first {@link MessageStream.Entry}
+     * of this stream.
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
@@ -129,14 +125,14 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
          *                        given {@code completeHandler}.
          * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
          */
-        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Runnable completeHandler) {
+        Single(MessageStream.Single<M> delegate, Runnable completeHandler) {
             super(delegate, completeHandler);
         }
     }
 
     /**
-     * A {@link CompletionCallbackMessageStream} implementation completing on no
-     * {@link MessageStream.Entry} of this stream.
+     * A {@link CompletionCallbackMessageStream} implementation completing on no {@link MessageStream.Entry} of this
+     * stream.
      *
      * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
      */
@@ -151,7 +147,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
          *                        given {@code completeHandler}.
          * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
          */
-        Empty(@Nonnull MessageStream.Empty<M> delegate, @Nonnull Runnable completeHandler) {
+        Empty(MessageStream.Empty<M> delegate, Runnable completeHandler) {
             super(delegate, completeHandler);
         }
     }

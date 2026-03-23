@@ -16,13 +16,12 @@
 
 package org.axonframework.conversion.jackson;
 
+import org.axonframework.conversion.ContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
+import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ConversionException;
-import org.axonframework.conversion.ContentTypeConverter;
 
 import java.util.Objects;
 
@@ -44,18 +43,16 @@ public class JsonNodeToByteArrayConverter implements ContentTypeConverter<JsonNo
      *
      * @param objectMapper The object mapper to serialize the {@link JsonNode} into {@code byte[].
      */
-    public JsonNodeToByteArrayConverter(@Nonnull ObjectMapper objectMapper) {
+    public JsonNodeToByteArrayConverter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
     }
 
     @Override
-    @Nonnull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
-    @Nonnull
     public Class<byte[]> targetType() {
         return byte[].class;
     }

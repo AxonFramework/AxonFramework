@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+
 
 import java.util.Objects;
 
@@ -36,9 +36,9 @@ import static org.axonframework.messaging.commandhandling.distributed.Distribute
  * so that they capture messages <em>after</em> dispatch interceptors have enriched them (e.g., with correlation
  * metadata).
  * <p>
- * The recording instances are stored in a {@link RecordingComponentsRegistry} that is registered as a regular component.
- * The fixture resolves the registry via {@code configuration.getComponent(RecordingComponentsRegistry.class)} and reads
- * the recording instances from it.
+ * The recording instances are stored in a {@link RecordingComponentsRegistry} that is registered as a regular
+ * component. The fixture resolves the registry via
+ * {@code configuration.getComponent(RecordingComponentsRegistry.class)} and reads the recording instances from it.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -59,7 +59,7 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
     private static final int COMMANDS_RECORDER_DECORATION_ORDER = DISTRIBUTED_COMMAND_BUS_ORDER + 1;
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
         var recordings = new RecordingComponentsRegistry();

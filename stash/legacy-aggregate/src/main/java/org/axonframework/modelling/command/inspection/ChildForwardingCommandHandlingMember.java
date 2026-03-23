@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.StringUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
@@ -103,23 +102,23 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public boolean canForward(@Nonnull CommandMessage message, @Nonnull P target) {
+    public boolean canForward(CommandMessage message, P target) {
         return childEntityResolver.apply(message, target) != null;
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(Message message, ProcessingContext context) {
         return childHandler.canHandle(message, context);
     }
 
     @Override
-    public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
+    public boolean canHandleMessageType(Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message,
-                             @Nonnull ProcessingContext context,
+    public Object handleSync(Message message,
+                             ProcessingContext context,
                              @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
@@ -132,7 +131,7 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) {
+    public MessageStream<?> handle(Message message, ProcessingContext context, @Nullable P target) {
         try {
             Object result = handleSync(message, context, target);
             return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));

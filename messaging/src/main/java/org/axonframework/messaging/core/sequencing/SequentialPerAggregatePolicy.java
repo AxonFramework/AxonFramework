@@ -16,10 +16,11 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
+
 
 import java.util.Objects;
 import java.util.Optional;
@@ -41,8 +42,8 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessa
     public static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
 
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull EventMessage message,
-                                                  @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(EventMessage message,
+                                                  ProcessingContext context) {
         Objects.requireNonNull(message, "Message may not be null.");
         Objects.requireNonNull(context, "ProcessingContext may not be null.");
         return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));

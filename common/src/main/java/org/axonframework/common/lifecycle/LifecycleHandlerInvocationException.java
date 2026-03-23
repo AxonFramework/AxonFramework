@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.common.lifecycle;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception indicating a failure occurred during a lifecycle handler method invocation.
@@ -34,7 +33,7 @@ public class LifecycleHandlerInvocationException extends RuntimeException {
      * @param message The message describing the exception.
      * @param cause   The underlying cause of the exception.
      */
-    public LifecycleHandlerInvocationException(@Nonnull String message, @Nullable Throwable cause) {
+    public LifecycleHandlerInvocationException(String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

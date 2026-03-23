@@ -23,10 +23,10 @@ import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricSet;
 import io.dropwizard.metrics5.Reservoir;
 import io.dropwizard.metrics5.Timer;
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +78,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final Timer.Context allTimerContext = this.allTimer.time();
         final Timer.Context successTimerContext = this.successTimer.time();
         final Timer.Context failureTimerContext = this.failureTimer.time();

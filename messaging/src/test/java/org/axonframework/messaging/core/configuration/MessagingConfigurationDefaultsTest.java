@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultAxonApplication;
@@ -433,18 +433,18 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+        public @NonNull CompletableFuture<CommandResultMessage> dispatch(@NonNull CommandMessage command,
                                                                 @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
+        public @NonNull CommandBus subscribe(@NonNull QualifiedName name, @NonNull CommandHandler commandHandler) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        public void describeTo(@NonNull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
     }

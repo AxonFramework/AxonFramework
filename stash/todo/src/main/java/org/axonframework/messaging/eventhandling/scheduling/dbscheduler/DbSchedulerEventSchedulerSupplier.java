@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Default supplier for an {@link DbSchedulerEventScheduler}. This makes it easier to use in context without more
@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  */
 public class DbSchedulerEventSchedulerSupplier implements Supplier<DbSchedulerEventScheduler> {
 
-    private final AtomicReference<DbSchedulerEventScheduler> eventScheduler = new AtomicReference<>();
+    private final AtomicReference<@Nullable DbSchedulerEventScheduler> eventScheduler = new AtomicReference<>();
 
     /**
      * Returns the set {@link DbSchedulerEventScheduler}, or {@code null} if it hasn't been set yet.
@@ -50,7 +50,7 @@ public class DbSchedulerEventSchedulerSupplier implements Supplier<DbSchedulerEv
      *
      * @param eventScheduler the {@link DbSchedulerEventScheduler}
      */
-    public void set(@Nonnull DbSchedulerEventScheduler eventScheduler) {
+    public void set(DbSchedulerEventScheduler eventScheduler) {
         this.eventScheduler.set(eventScheduler);
     }
 }

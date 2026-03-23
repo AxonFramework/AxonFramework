@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.ModuleBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
+import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.EntityIdResolver;
@@ -55,14 +55,13 @@ import org.axonframework.modelling.repository.Repository;
  * approach to building the event-sourced entity, where the user can provide the required components.
  * <p>
  * There are several phases of the building process of the declarative event-sourced entity module:
- *     <ul>
- *         <li> {@link MessagingModelPhase} - Provides the {@link EntityMetamodel} of the event-sourced entity being built.</li>
- *         <li> {@link EntityFactoryPhase} - Provides the {@link EventSourcedEntityFactory} for the event-sourced entity
- *         being built.</li>
- *         <li> {@link CriteriaResolverPhase} - Provides the {@link CriteriaResolver} for the event-sourced entity being
- *         built.</li>
- *         <li> {@link EntityIdResolverPhase} - Provides the {@link EntityIdResolver} for the event-sourced entity being
- *         built, or provides the user with a choice to not have a {@link EntityCommandHandlingComponent}.</li>
+ * <ul>
+ *     <li>{@link MessagingModelPhase} – configure the {@link EntityMetamodel} used to evolve and handle commands.</li>
+ *     <li>{@link EntityFactoryPhase} – provide the {@link EventSourcedEntityFactory} to create entities.</li>
+ *     <li>{@link CriteriaResolverPhase} – provide the {@link CriteriaResolver} used to source events from the
+ *         {@link org.axonframework.eventsourcing.eventstore.EventStore}.</li>
+ *     <li>{@link OptionalPhase} – configure optional parameters, such as {@link SnapshotPolicy} and
+ *         {@link EntityIdResolver}.</li>
  * </ul>
  *
  * <h2>Module hierarchy</h2>
@@ -75,6 +74,7 @@ import org.axonframework.modelling.repository.Repository;
  * @param <E>  The type of the event-sourced entity.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
+ * @author John Hendrikx
  * @since 5.0.0
  */
 public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
@@ -88,7 +88,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @param <E>        The type of the event-sourced entity being built.
      * @return The {@link MessagingModelPhase} phase of this builder, for a fluent API.
      */
-    static <ID, E> MessagingModelPhase<ID, E> declarative(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
+    static <ID, E> MessagingModelPhase<ID, E> declarative(Class<ID> idType, Class<E> entityType) {
         return new SimpleEventSourcedEntityModule<>(idType, entityType);
     }
 
@@ -105,7 +105,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
      * @throws IllegalArgumentException When the given {@code entityType} is not annotated with
      *                                  {@link EventSourcedEntity}.
      */
-    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
+    static <ID, E> EventSourcedEntityModule<ID, E> autodetected(Class<ID> idType, Class<E> entityType) {
         return new AnnotatedEventSourcedEntityModule<>(idType, entityType);
     }
 
@@ -128,7 +128,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          *                         {@link EntityMetamodel} for the event-sourced entity.
          * @return The {@link EntityFactoryPhase} phase of this builder, for a fluent API.
          */
-        EntityFactoryPhase<ID, E> messagingModel(@Nonnull EntityMetamodelConfigurationBuilder<E> metamodelFactory);
+        EntityFactoryPhase<ID, E> messagingModel(EntityMetamodelConfigurationBuilder<E> metamodelFactory);
     }
 
     /**
@@ -153,7 +153,7 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          * @return The {@link CriteriaResolver} phase of this builder, for a fluent API.
          */
         CriteriaResolverPhase<ID, E> entityFactory(
-                @Nonnull ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
+                ComponentBuilder<EventSourcedEntityFactory<ID, E>> entityFactory
         );
     }
 
@@ -180,27 +180,21 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          *
          * @param criteriaResolver A {@link ComponentBuilder} constructing the {@link CriteriaResolver} for the
          *                         event-sourced entity.
-         * @return The {@link EntityIdResolverPhase} phase of this builder, for a fluent API.
+         * @return The {@link OptionalPhase} phase of this builder, for a fluent API.
          */
-        EntityIdResolverPhase<ID, E> criteriaResolver(
-                @Nonnull ComponentBuilder<CriteriaResolver<ID>> criteriaResolver
-        );
+        OptionalPhase<ID, E> criteriaResolver(ComponentBuilder<CriteriaResolver<ID>> criteriaResolver);
     }
 
     /**
-     * Phase of the module's building process in which a {@link ComponentBuilder} for an {@link EntityIdResolver} should
-     * be provided. This resolver is responsible for resolving the identifier of the event-sourced entity being built.
-     * If no {@link EntityIdResolver} is provided by calling the {@link ModuleBuilder#build()} method, no command
-     * handling component will be registered, but the entity will still be registered to the {@link StateManager} so it
-     * can be loaded in stateful command handlers.
+     * Phase of the module's building process in which optional parameters can be provided.
      *
      * @param <ID> The type of identifier used to identify the event-sourced entity.
      * @param <E>  The type of the event-sourced entity being built.
      */
-    interface EntityIdResolverPhase<ID, E> extends ModuleBuilder<EventSourcedEntityModule<ID, E>> {
+    interface OptionalPhase<ID, E> extends ModuleBuilder<EventSourcedEntityModule<ID, E>> {
 
         /**
-         * Registers the given {@link ComponentBuilder} of an {@link EntityIdResolver} as the resolver for the
+         * Registers an optional {@link ComponentBuilder} of an {@link EntityIdResolver} as the resolver for the
          * event-sourced entity being built. This resolver is responsible for resolving the identifier of the
          * event-sourced entity being built.
          * <p>
@@ -209,10 +203,19 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
          *
          * @param entityIdResolver A {@link ComponentBuilder} constructing the {@link EntityIdResolver} for the
          *                         event-sourced entity.
-         * @return The finished module.
+         * @return The {@link OptionalPhase} phase of this builder, for a fluent API.
          */
-        EventSourcedEntityModule<ID, E> entityIdResolver(
-                @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
-        );
+        OptionalPhase<ID, E> entityIdResolver(ComponentBuilder<EntityIdResolver<ID>> entityIdResolver);
+
+        /**
+         * Registers an optional {@link ComponentBuilder} of a {@link SnapshotPolicy} for the
+         * event-sourced entity being built. The snapshot policy determines under which conditions
+         * the entity state should be snapshotted during sourcing.
+         *
+         * @param snapshotPolicy A {@link ComponentBuilder} constructing the {@link SnapshotPolicy}
+         *                       for the event-sourced entity.
+         * @return The {@link OptionalPhase} phase of this builder, for a fluent API.
+         */
+        OptionalPhase<ID, E> snapshotPolicy(ComponentBuilder<SnapshotPolicy> snapshotPolicy);
     }
 }

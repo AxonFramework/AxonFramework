@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This test verifies that both implementations produce equivalent results when processing the same sequence of events,
- * including error scenarios.
+ * Test class for {@link AsyncInMemoryStreamableEventSource}.
  */
 class AsyncInMemoryStreamableEventSourceTest {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
@@ -68,7 +67,6 @@ public sealed interface EventProcessorSettings {
      *
      * @return processor mode.
      */
-    @Nonnull
     ProcessorMode processorMode();
 
     /**
@@ -84,7 +82,6 @@ public sealed interface EventProcessorSettings {
      */
     non-sealed interface SubscribingEventProcessorSettings extends EventProcessorSettings {
 
-        @Nonnull
         @Override
         default ProcessorMode processorMode() {
             return ProcessorMode.SUBSCRIBING;
@@ -101,8 +98,7 @@ public sealed interface EventProcessorSettings {
          *
          * @return processor mode.
          */
-        @Nonnull
-        default ProcessorMode processorMode() {
+                default ProcessorMode processorMode() {
             return ProcessorMode.POOLED;
         }
 
@@ -139,7 +135,71 @@ public sealed interface EventProcessorSettings {
          *
          * @return Name of the bean acting as token store for this pooled streaming processor.
          */
-        @Nonnull
         String tokenStore();
+
+        /**
+         * Dead Letter Queue settings for this pooled processor.
+         *
+         * @return settings controlling whether the DLQ is enabled and how its cache behaves.
+         */
+        default DlqSettings dlq() {
+            return DlqSettings.DISABLED;
+        }
+    }
+
+    /**
+     * Settings for the {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue}
+     * on a {@link PooledEventProcessorSettings pooled} processor.
+     */
+    interface DlqSettings {
+
+        /**
+         * Singleton representing a disabled (default) DLQ configuration.
+         */
+        DlqSettings DISABLED = new DlqSettings() {
+            @Override
+            public boolean enabled() {
+                return false;
+            }
+
+            @Override
+            public CacheSettings cache() {
+                return CacheSettings.DEFAULT;
+            }
+        };
+
+        /**
+         * Whether the Dead Letter Queue should be created for this processor. Defaults to {@code false}.
+         *
+         * @return {@code true} if the DLQ should be created, {@code false} otherwise.
+         */
+        boolean enabled();
+
+        /**
+         * Cache settings for the DLQ sequence identifier cache.
+         *
+         * @return cache configuration.
+         */
+        CacheSettings cache();
+
+        /**
+         * Cache settings for the DLQ sequence identifier in-memory cache.
+         */
+        interface CacheSettings {
+
+            /**
+             * Default cache settings: size 1024.
+             */
+            CacheSettings DEFAULT = () -> 1024;
+
+            /**
+             * Maximum number of sequence identifiers kept in memory per segment.
+             * Setting this to {@code 0} disables the caching wrapper entirely.
+             * Defaults to {@code 1024}.
+             *
+             * @return maximum cache size per segment, or {@code 0} to disable caching.
+             */
+            int size();
+        }
     }
 }

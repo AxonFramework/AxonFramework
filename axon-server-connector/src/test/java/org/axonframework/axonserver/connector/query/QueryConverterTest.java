@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,18 @@ import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.ErrorCode;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
+import org.axonframework.messaging.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.junit.jupiter.*;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,16 +43,30 @@ import static io.axoniq.axonserver.grpc.query.QueryResponse.newBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionUtils.createProcessingInstruction;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class QueryConverterTest {
 
     private final String messageIdentifier = UUID.randomUUID().toString();
     private final byte[] payload = "payload".getBytes();
     private final String clientId = "clientId";
     private final String componentName = "componentName";
+    private Converter converter;
+
+    @BeforeEach
+    void setUp() {
+        converter = mock(Converter.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        verifyNoMoreInteractions(converter);
+    }
 
     @Test
     void convertsQueryRequestToQueryMessage() {
+        String exObjectPayload = "exObjectPayload";
         var queryRequest = QueryRequest
                 .newBuilder()
                 .setMessageIdentifier(messageIdentifier)
@@ -60,13 +78,19 @@ class QueryConverterTest {
                 .addProcessingInstructions(createProcessingInstruction(PRIORITY, 5))
                 .build();
 
-        var queryMessage = QueryConverter.convertQueryRequest(queryRequest);
+        when(converter.convert(any(), eq((Type)String.class)))
+                .thenReturn(exObjectPayload);
+
+        var queryMessage = QueryConverter.convertQueryRequest(queryRequest, converter);
 
         assertThat(queryMessage).isNotNull();
         assertThat(queryMessage.identifier()).isEqualTo(messageIdentifier);
         assertThat(queryMessage.type().name()).isEqualTo("QueryType");
         assertThat(queryMessage.payloadAs(byte[].class)).isEqualTo(payload);
         assertThat(queryMessage.priority()).hasValue(5);
+        assertThat(queryMessage.payloadAs(String.class)).isEqualTo(exObjectPayload);
+
+        verify(converter).convert(queryMessage.payload(), (Type) String.class);
     }
 
     @Test
@@ -97,6 +121,7 @@ class QueryConverterTest {
 
     @Test
     void convertsQueryResponseToQueryResponseMessage() {
+        String exObjectPayload = "exObjectPayload";
         var response = newBuilder()
                 .setMessageIdentifier(messageIdentifier)
                 .setPayload(SerializedObject.newBuilder()
@@ -110,14 +135,19 @@ class QueryConverterTest {
                                                .build()
                 )
                 .build();
+        when(converter.convert(any(), eq((Type)String.class)))
+                .thenReturn(exObjectPayload);
 
-        var responseMessage = QueryConverter.convertQueryResponse(response);
+        var responseMessage = QueryConverter.convertQueryResponse(response, converter);
 
         assertThat(responseMessage).isNotNull();
         assertThat(responseMessage.identifier()).isEqualTo(messageIdentifier);
         assertThat(responseMessage.type().name()).isEqualTo("java.lang.String");
         assertThat(responseMessage.payloadAs(byte[].class)).isEqualTo("ok".getBytes());
         assertThat(responseMessage.metadata()).containsEntry("m", "v");
+        assertThat(responseMessage.payloadAs(String.class)).isEqualTo(exObjectPayload);
+
+        verify(converter).convert(responseMessage.payload(), (Type) String.class);
     }
 
     @Test
@@ -137,6 +167,7 @@ class QueryConverterTest {
 
     @Test
     void convertsSubscriptionQueryToSubscriptionQueryMessage() {
+        String exObjectPayload = "exObjectPayload";
         var qr = QueryRequest.newBuilder()
                              .setPayload(SerializedObject.newBuilder()
                                                          .setType("QueryType")
@@ -149,12 +180,17 @@ class QueryConverterTest {
                                                                                          messageIdentifier)
                                                                                  .setQueryRequest(qr)
                                                                                  .build();
+        when(converter.convert(any(), eq((Type)String.class)))
+                .thenReturn(exObjectPayload);
 
-        var sqm = QueryConverter.convertSubscriptionQueryMessage(subscriptionQuery);
+        var sqm = QueryConverter.convertSubscriptionQueryMessage(subscriptionQuery, converter);
 
         assertThat(sqm).isNotNull();
         assertThat(sqm.identifier()).isEqualTo(messageIdentifier);
         assertThat(sqm.type().name()).isEqualTo("QueryType");
+        assertThat(sqm.payloadAs(String.class)).isEqualTo(exObjectPayload);
+
+        verify(converter).convert(sqm.payload(), (Type) String.class);
     }
 
     @Test
@@ -174,6 +210,7 @@ class QueryConverterTest {
 
     @Test
     void convertsQueryUpdateToSubscriptionQueryUpdateMessage() {
+        String exObjectPayload = "exObjectPayload";
         var qu = QueryUpdate.newBuilder()
                             .setMessageIdentifier(messageIdentifier)
                             .setPayload(SerializedObject.newBuilder()
@@ -184,12 +221,18 @@ class QueryConverterTest {
                             .putMetaData("m", MetaDataValue.newBuilder().setTextValue("v").build())
                             .build();
 
-        var updateMessage = QueryConverter.convertQueryUpdate(qu);
+        when(converter.convert(any(), eq((Type) String.class)))
+                .thenReturn(exObjectPayload);
+
+        var updateMessage = QueryConverter.convertQueryUpdate(qu, converter);
 
         assertThat(updateMessage.identifier()).isEqualTo(messageIdentifier);
         assertThat(updateMessage.type().name()).isEqualTo("java.lang.String");
         assertThat(updateMessage.metadata()).containsEntry("m", "v");
         assertThat(updateMessage.payloadAs(byte[].class)).isEqualTo("ok".getBytes());
+        assertThat(updateMessage.payloadAs(String.class)).isEqualTo(exObjectPayload);
+
+        verify(converter).convert(updateMessage.payload(), (Type) String.class);
     }
 
     @Test
@@ -225,7 +268,7 @@ class QueryConverterTest {
                 )
                 .build();
 
-        assertThatThrownBy(() -> QueryConverter.convertQueryResponse(response))
+        assertThatThrownBy(() -> QueryConverter.convertQueryResponse(response, converter))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("contained an error");
     }

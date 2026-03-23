@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -71,9 +70,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link Tag Tags}, before it is added to the
      *                           transaction.
      */
-    public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext,
-                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
+    public DefaultEventStoreTransaction(EventStorageEngine eventStorageEngine,
+                                        ProcessingContext processingContext,
+                                        Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
@@ -85,8 +84,13 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
+    public MessageStream<? extends EventMessage> source(SourcingCondition condition) {
+        return source(condition, null);
+    }
+
+    @Override
     public MessageStream<? extends EventMessage> source(
-        @Nonnull SourcingCondition condition,
+        SourcingCondition condition,
         @Nullable Consumer<Position> resumePositionCallback
     ) {
         var appendCondition = processingContext.updateResource(
@@ -138,7 +142,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage eventMessage) {
+    public void appendEvent(EventMessage eventMessage) {
         List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
@@ -190,7 +194,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void onAppend(@Nonnull Consumer<EventMessage> callback) {
+    public void onAppend(Consumer<EventMessage> callback) {
         callbacks.add(callback);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.Objects;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**

@@ -16,8 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -73,8 +72,8 @@ public class InterceptingEventSink implements EventSink {
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
      * @param interceptors The interceptors to invoke before publishing an event.
      */
-    public InterceptingEventSink(@Nonnull EventSink delegate,
-                                 @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
+    public InterceptingEventSink(EventSink delegate,
+                                 List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventSink may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interception must not be null.");
         this.interceptingPublisher = new InterceptingPublisher();
@@ -82,12 +81,12 @@ public class InterceptingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<? extends EventMessage> events) {
+                                           List<? extends EventMessage> events) {
         return interceptingPublisher.interceptAndPublish(events, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
     }
@@ -101,7 +100,7 @@ public class InterceptingEventSink implements EventSink {
         }
 
         private CompletableFuture<Void> interceptAndPublish(
-                @Nonnull List<? extends EventMessage> events,
+                List<? extends EventMessage> events,
                 @Nullable ProcessingContext context
         ) {
 

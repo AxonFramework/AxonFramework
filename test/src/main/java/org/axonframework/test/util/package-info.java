@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
 /**
- * A collection of classes which may prove useful when testing Axon-based classes.
+ * Part of the Axon Test module. Contains classes related to utility.
  */
+@NullMarked
 package org.axonframework.test.util;
+
+import org.jspecify.annotations.NullMarked;

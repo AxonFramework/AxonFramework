@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -147,8 +146,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @see MessagesRecordingConfigurationEnhancer
      */
     public AxonTestFixture(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull Customization customization
+            AxonConfiguration configuration,
+            Customization customization
     ) {
         this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
         this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
@@ -176,7 +175,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *                   needed for test execution.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer) {
+    public static AxonTestFixture with(ApplicationConfigurer configurer) {
         return with(configurer, c -> c);
     }
 
@@ -196,8 +195,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @return A new fixture instance
      */
     public static AxonTestFixture with(
-            @Nonnull ApplicationConfigurer configurer,
-            @Nonnull UnaryOperator<Customization> customization
+            ApplicationConfigurer configurer,
+            UnaryOperator<Customization> customization
     ) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
@@ -253,7 +252,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      */
     public record Customization(
             boolean axonServerEnabled,
-            @Nonnull List<FieldFilter> fieldFilters
+            List<FieldFilter> fieldFilters
     ) {
 
         /**
@@ -285,7 +284,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @param fieldFilter The FieldFilter that defines which fields to include in the comparison.
          * @return the current Customization, for fluent interfacing.
          */
-        public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
+        public Customization registerFieldFilter(FieldFilter fieldFilter) {
             List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
             fieldFiltersCopy.add(fieldFilter);
             return new Customization(axonServerEnabled, fieldFiltersCopy);
@@ -310,7 +309,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @return the current Customization, for fluent interfacing
          * @throws FixtureExecutionException when no such field is declared
          */
-        public Customization registerIgnoredField(@Nonnull Class<?> declaringClass, @Nonnull String fieldName) {
+        public Customization registerIgnoredField(Class<?> declaringClass, String fieldName) {
             return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
         }
 

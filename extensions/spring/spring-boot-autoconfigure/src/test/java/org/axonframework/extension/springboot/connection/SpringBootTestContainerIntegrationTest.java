@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package org.axonframework.extension.springboot.connection;
 
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Duration;
+
+
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
@@ -27,11 +33,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.time.Duration;
-
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Testcontainers
@@ -54,7 +55,7 @@ class SpringBootTestContainerIntegrationTest {
     void verifyApplicationStartsNormallyWithAxonServerInstance() {
         assertTrue(axonServer.isRunning());
         assertNotNull(connectionDetails);
-        assertTrue(connectionDetails.routingServers().endsWith("" + axonServer.getGrpcPort()));
+        assertEquals(axonServer.getHost() + ":" + axonServer.getGrpcPort(), connectionDetails.routingServers());
         assertNotNull(axonServerConfiguration);
 
         assertNotEquals("localhost:8024", axonServerConfiguration.getServers());

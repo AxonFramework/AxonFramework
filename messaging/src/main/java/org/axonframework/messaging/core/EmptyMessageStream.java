@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.core.MessageStream.Entry;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -27,44 +27,22 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream stream} implementation that contains no {@link Entry entries} at all.
  *
+ * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream implements MessageStream.Empty<Message> {
+class EmptyMessageStream<M extends Message> extends AbstractMessageStream<M> implements MessageStream.Empty<M> {
 
-    private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
-
-    private EmptyMessageStream() {
-        // Private no-arg constructor to enforce use of INSTANCE constant.
-    }
-
-    /**
-     * Return a singular instance of the {@code EmptyMessageStream} to be used throughout.
-     *
-     * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
-     */
-    public static Empty<Message> instance() {
-        return INSTANCE;
+    @Override
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
+        return (error().isPresent())
+                ? CompletableFuture.failedFuture(error().get())
+                : FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public CompletableFuture<Entry<Message>> asCompletableFuture() {
-        return FutureUtils.emptyCompletedFuture();
-    }
-
-    @Override
-    public Optional<Entry<Message>> next() {
-        return Optional.empty();
-    }
-
-    @Override
-    public void setCallback(@Nonnull Runnable callback) {
-        callback.run();
-    }
-
-    @Override
-    public Optional<Throwable> error() {
+    public Optional<Entry<M>> next() {
         return Optional.empty();
     }
 
@@ -84,17 +62,22 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message>, R> accumulator) {
-        return CompletableFuture.completedFuture(identity);
+    public <R> CompletableFuture<R> reduce(R identity, BiFunction<R, Entry<M>, R> accumulator) {
+        return (error().isPresent())
+                ? CompletableFuture.failedFuture(error().get())
+                : CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<Message> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message>> onError) {
+    public MessageStream<M> onErrorContinue(Function<Throwable, MessageStream<M>> onError) {
         return this;
     }
 
     @Override
-    public Empty<Message> onComplete(@Nonnull Runnable completeHandler) {
+    public Empty<M> onComplete(Runnable completeHandler) {
+        if (error().isPresent()) {
+            return MessageStream.failed(error().get());
+        }
         try {
             completeHandler.run();
             return this;
@@ -104,7 +87,7 @@ class EmptyMessageStream implements MessageStream.Empty<Message> {
     }
 
     @Override
-    public Optional<Entry<Message>> peek() {
+    public Optional<Entry<M>> peek() {
         return Optional.empty();
     }
 }

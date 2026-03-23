@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nonnull;
+import static org.axonframework.common.configuration.ComponentDefinition.ofType;
+
+
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.lifecycle.Phase;
@@ -28,17 +30,13 @@ import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.UsagePropertyProvider;
 import org.axonframework.update.detection.TestEnvironmentDetector;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-
-import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 
 /**
  * Autoconfiguration class constructing the {@link UsagePropertyProvider} that will end up in the
@@ -53,6 +51,11 @@ import static org.axonframework.common.configuration.ComponentDefinition.ofType;
 @EnableConfigurationProperties(UpdateCheckerProperties.class)
 public class UpdateCheckerAutoConfiguration {
 
+    /**
+     * Constructs a usage property provider based on update checker properties, if no other provider is in place.
+     * @param properties The update checker properties to use.
+     * @return Constructed usage property provider.
+     */
     @Bean
     @ConditionalOnMissingBean
     @Conditional(NotTestEnvironmentCondition.class)
@@ -81,7 +84,7 @@ public class UpdateCheckerAutoConfiguration {
     public ConfigurationEnhancer springUpdateCheckerConfigEnhancer(UsagePropertyProvider usagePropertyProvider) {
         return new ConfigurationEnhancer() {
             @Override
-            public void enhance(@Nonnull ComponentRegistry registry) {
+            public void enhance(ComponentRegistry registry) {
                 registry.registerIfNotPresent(ofType(UpdateCheckerHttpClient.class).withBuilder(
                                 c -> new UpdateCheckerHttpClient(usagePropertyProvider)
                         ))

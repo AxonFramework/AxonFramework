@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.polymorphic;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import jakarta.persistence.EntityManager;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.modelling.command.GenericJpaRepository;
@@ -51,7 +51,7 @@ public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
                 .entityManagerProvider(() -> entityManager)
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
-                    public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+                    public @NonNull <R> Repository<R> repositoryFor(@NonNull Class<R> aggregateType) {
                         //noinspection unchecked
                         return (Repository<R>) repositories.get(aggregateType);
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.PriorityAnnotationComparator;
 
 import java.util.ArrayList;
@@ -107,7 +106,7 @@ public class MultiHandlerEnhancerDefinition implements HandlerEnhancerDefinition
     }
 
     @Override
-    public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         MessageHandlingMember<T> resolver = original;
         for (HandlerEnhancerDefinition enhancer : enhancers) {
             resolver = enhancer.wrapHandler(resolver);

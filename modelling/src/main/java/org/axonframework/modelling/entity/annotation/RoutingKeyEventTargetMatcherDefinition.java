@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
@@ -40,10 +39,9 @@ import static org.axonframework.common.ReflectionUtils.getMemberValueType;
  */
 public class RoutingKeyEventTargetMatcherDefinition implements EventTargetMatcherDefinition {
 
-    @Nonnull
     @Override
-    public <E> EventTargetMatcher<E> createChildEntityMatcher(@Nonnull AnnotatedEntityMetamodel<E> entity,
-                                                              @Nonnull Member member) {
+    public <E> EventTargetMatcher<E> createChildEntityMatcher(AnnotatedEntityMetamodel<E> entity,
+                                                              Member member) {
         String routingKey = RoutingKeyUtils.getMessageRoutingKey((AnnotatedElement) member).orElse(null);
         if (routingKey != null) {
             return new RoutingKeyEventTargetMatcher<>(entity, routingKey, routingKey);

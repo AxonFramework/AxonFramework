@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.unitofwork;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.ApplicationContext;
 
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param applicationContext The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
      *                           instances.
      */
-    public SimpleUnitOfWorkFactory(@Nonnull ApplicationContext applicationContext) {
+    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
         this(applicationContext, c -> c);
     }
 
@@ -56,8 +55,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      *                             {@link UnitOfWork} instances.
      */
     public SimpleUnitOfWorkFactory(
-            @Nonnull ApplicationContext applicationContext,
-            @Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization
+            ApplicationContext applicationContext,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> factoryCustomization
     ) {
         Objects.requireNonNull(applicationContext, "The applicationContext may not be null.");
         Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null.");
@@ -65,18 +64,24 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         this.factoryCustomization = factoryCustomization;
     }
 
-    @Nonnull
     @Override
     public UnitOfWork create(
-            @Nonnull String identifier,
-            @Nonnull Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
+            String identifier,
+            Function<UnitOfWorkConfiguration, UnitOfWorkConfiguration> customization
     ) {
         Objects.requireNonNull(identifier, "The identifier may not be null.");
         Objects.requireNonNull(customization, "The customization may not be null.");
         var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
-        return new UnitOfWork(identifier,
-                              configuration.workScheduler(),
-                              !configuration.allowAsyncProcessing(),
-                              applicationContext);
+
+        UnitOfWork uow = new UnitOfWork(
+            identifier,
+            configuration.workScheduler(),
+            !configuration.allowAsyncProcessing(),
+            applicationContext
+        );
+
+        configuration.processingLifecycleEnhancers().forEach(enhancer -> enhancer.accept(uow));
+
+        return uow;
     }
 }

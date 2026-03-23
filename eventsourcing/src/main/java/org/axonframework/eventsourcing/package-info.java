@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+
 /**
- * Classes related to event sourcing. This includes repositories that use event stores to store and load events, as
- * well as the aggregates that support state reconstruction based on event streams.
+ * Root package for Axon Eventsourcing. Provides support for Event Sourcing,
+ * storing application state as a sequence of immutable events.
  */
+@NullMarked
 package org.axonframework.eventsourcing;
+
+import org.jspecify.annotations.NullMarked;

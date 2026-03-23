@@ -38,6 +38,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,13 +110,16 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void distributedQueryBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
-        testContext.withPropertyValues("axon.server.query-threads=42").run(context -> {
+        testContext.withPropertyValues("axon.axonserver.query-threads=42").run(context -> {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
             assertThat(context).hasSingleBean(DistributedQueryBusConfiguration.class);
 
-            int numberOfThreads = context.getBean(DistributedQueryBusConfiguration.class).queryThreads();
             int queryThreads = context.getBean(AxonServerConfiguration.class).getQueryThreads();
-            assertThat(numberOfThreads).isEqualTo(queryThreads);
+            assertThat(queryThreads).isEqualTo(42);
+            ExecutorService executorService = context.getBean(DistributedQueryBusConfiguration.class)
+                                                     .queryExecutorService();
+            assertThat(executorService).isInstanceOf(ThreadPoolExecutor.class)
+                                       .hasFieldOrPropertyWithValue("corePoolSize", queryThreads);
         });
     }
 

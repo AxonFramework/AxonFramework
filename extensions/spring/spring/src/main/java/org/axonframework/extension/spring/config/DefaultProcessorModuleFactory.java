@@ -16,11 +16,9 @@
 
 package org.axonframework.extension.spring.config;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
@@ -53,13 +51,13 @@ import java.util.stream.Collectors;
  * @see EventProcessorDefinition
  * @since 5.0.2
  */
+@Internal
 public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultProcessorModuleFactory.class);
 
     private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
-    private final Configuration axonConfiguration;
 
     /**
      * Creates a new factory with the given processor definitions, settings, and Axon configuration.
@@ -68,12 +66,10 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * @param settings             The map of processor settings, keyed by processor name.
      * @param axonConfiguration    The Axon configuration to retrieve components from.
      */
-    public DefaultProcessorModuleFactory(@Nonnull List<EventProcessorDefinition> eventProcessorDefinitions,
-                                         @Nonnull Map<String, EventProcessorSettings> settings,
-                                         @Nonnull Configuration axonConfiguration) {
+    public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
+                                         Map<String, EventProcessorSettings> settings) {
         this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
-        this.axonConfiguration = axonConfiguration;
     }
 
     /**
@@ -83,9 +79,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * {@link #assignedProcessor(EventProcessorDefinition.EventHandlerDescriptor)}), then creates an
      * {@link EventProcessorModule} for each processor with its assigned handlers.
      */
-    @Nonnull
     @Override
-    public Set<EventProcessorModule> buildProcessorModules(@Nonnull Set<EventProcessorDefinition.EventHandlerDescriptor> handlers) {
+    public Set<EventProcessorModule> buildProcessorModules(Set<EventProcessorDefinition.EventHandlerDescriptor> handlers) {
 
         Set<EventProcessorModule> modules = new LinkedHashSet<>();
 
@@ -101,7 +96,10 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
                 for (EventProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = resultOfRegistration.autodetected(namedBeanDefinition.component());
+                    resultOfRegistration = resultOfRegistration.autodetected(
+                            namedBeanDefinition.beanName(),
+                            namedBeanDefinition.component()
+                    );
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
@@ -115,14 +113,12 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             var module = switch (processorMode) {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
+                    var customization = SpringCustomizations.pooledStreamingCustomizations(processorName, moduleSettings)
+                                                            .andThen(customizeConfiguration(processorName));
                     yield EventProcessorModule
                             .pooledStreaming(processorModuleName)
                             .eventHandlingComponents(componentRegistration)
-                            .customized(SpringCustomizations.pooledStreamingCustomizations(processorName,
-                                                                                           moduleSettings)
-                                                            .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
-                                                                    UnitOfWorkFactory.class)))
-                                                            .andThen(customizeConfiguration(processorName)))
+                            .customized(customization)
                             .build();
                 }
                 case SUBSCRIBING -> {
@@ -130,12 +126,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                     yield EventProcessorModule
                             .subscribing(processorModuleName)
                             .eventHandlingComponents(componentRegistration)
-                            .customized(SpringCustomizations.subscribingCustomizations(
-                                                                    processorName,
-                                                                    moduleSettings
-                                                            )
-                                                            .andThen(c -> c.unitOfWorkFactory(axonConfiguration.getComponent(
-                                                                    UnitOfWorkFactory.class)))
+                            .customized(SpringCustomizations.subscribingCustomizations(processorName, moduleSettings)
                                                             .andThen(customizeConfiguration(processorName)))
                             .build();
                 }

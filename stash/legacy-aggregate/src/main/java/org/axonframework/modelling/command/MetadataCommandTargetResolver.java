@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 
 /**
@@ -46,7 +45,7 @@ public class MetadataCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public String resolveTarget(@Nonnull CommandMessage command) {
+    public String resolveTarget(CommandMessage command) {
         String identifier = command.metadata().get(identifierKey).toString();
         if (identifier == null) {
             throw new IdentifierMissingException(

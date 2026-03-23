@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.LegacyResources;
@@ -248,9 +248,8 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
 
     private static class PlainEventHandler implements EventHandler {
 
-        @Nonnull
         @Override
-        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull EventMessage event, @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }
     }

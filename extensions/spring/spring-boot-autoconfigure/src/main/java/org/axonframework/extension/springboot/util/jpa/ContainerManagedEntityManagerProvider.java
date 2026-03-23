@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
+
+
+import java.util.Objects;
 
 /**
  * EntityManagerProvider implementation that expects the container to inject the default container managed
@@ -35,12 +38,11 @@ import jakarta.annotation.Nonnull;
  */
 public class ContainerManagedEntityManagerProvider implements EntityManagerProvider {
 
-    private EntityManager entityManager;
+    private @Nullable EntityManager entityManager;
 
-    @Nonnull
     @Override
     public EntityManager getEntityManager() {
-        return entityManager;
+        return Objects.requireNonNull(entityManager);
     }
 
     /**

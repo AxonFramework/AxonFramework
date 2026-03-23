@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.test.util.MessageMonitorReport;
 import org.axonframework.test.util.RecordingMessageMonitor;
 import org.junit.jupiter.api.*;
+
 
 import java.util.UUID;
 
@@ -106,7 +107,7 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         // purge events to restart with an empty eventstore and avoid processing historic events
-        purgeEvents();
+        purgeEventStorage();
 
         // a noop setup that allows verification of ignored event
         configurer.messaging(mc -> mc
@@ -128,7 +129,10 @@ public class MonitoringPooledEventProcessingReportIT extends AbstractStudentIT {
                                                                         return MessageStream.empty();
                                                                     }
                                                             );
-                                                            return components.declarative(cfg -> handlingComponent);
+                                                            return components.declarative(
+                                                                    "handlingComponent",
+                                                                    cfg -> handlingComponent
+                                                            );
                                                         }
                                                 )
                                                 .customized((cfg, customization) -> customization.eventCriteria(

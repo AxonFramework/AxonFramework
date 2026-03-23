@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.MessageDispatchInterceptorChain;
@@ -31,8 +30,9 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.conversion.Converter;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -74,7 +74,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -107,7 +107,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -152,7 +152,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -185,7 +185,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -228,7 +228,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -270,7 +270,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -324,7 +324,7 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
-                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                            command.payloadAs(ChangeStudentNameCommand.class);
                     StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
                     eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
@@ -360,18 +360,18 @@ class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         @Override
-        public MessageStream<?> interceptOnDispatch(M message,
-                                                    ProcessingContext context,
-                                                    MessageDispatchInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnDispatch(@NonNull M message,
+                                                             ProcessingContext context,
+                                                             @NonNull MessageDispatchInterceptorChain<M> interceptorChain) {
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, value));
             return interceptorChain.proceed(intercepted, context);
         }
 
         @Override
-        public MessageStream<?> interceptOnHandle(M message,
-                                                  ProcessingContext context,
-                                                  MessageHandlerInterceptorChain<M> interceptorChain) {
+        public @NonNull MessageStream<?> interceptOnHandle(@NonNull M message,
+                                                           @NonNull ProcessingContext context,
+                                                           @NonNull MessageHandlerInterceptorChain<M> interceptorChain) {
             @SuppressWarnings("unchecked")
             var intercepted = (M) message.andMetadata(Map.of(key, value));
             return interceptorChain.proceed(intercepted, context);

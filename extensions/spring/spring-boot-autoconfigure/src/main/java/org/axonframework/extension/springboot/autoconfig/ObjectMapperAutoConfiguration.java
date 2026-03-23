@@ -16,7 +16,9 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -27,19 +29,26 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.data.domain.Page;
+import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
  * {@link org.axonframework.conversion.jackson.JacksonConverter}.
  *
  * @author Steven van Beelen
+ * @author Theo Emanuelsson
  * @since 3.4.0
  */
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
-@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
+        "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
+})
 @ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
@@ -52,13 +61,38 @@ public class ObjectMapperAutoConfiguration {
      * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
      * {@code ConverterType}.
      *
+     * @param modules An {@link ObjectProvider} of {@link JacksonModule} beans to register with the
+     *                {@link ObjectMapper}.
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
     @Bean("defaultAxonObjectMapper")
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
-    public ObjectMapper defaultAxonObjectMapper() {
-        return JsonMapper.builder().findAndAddModules().build();
+    public ObjectMapper defaultAxonObjectMapper(ObjectProvider<JacksonModule> modules) {
+        JsonMapper.Builder builder = JsonMapper.builder().findAndAddModules();
+        modules.orderedStream().forEach(builder::addModule);
+        return builder.build();
+    }
+
+    /**
+     * Returns a Jackson {@link Module} that provides a custom deserializer for the Spring Data {@link Page} interface.
+     * <p>
+     * This {@code Module} bean is only created when the Spring Data {@link Page} interface is on the classpath
+     * <b>and</b> whenever the user specified either the {@link ConverterProperties.ConverterType#DEFAULT} or
+     * {@link ConverterProperties.ConverterType#JACKSON} {@code ConverterType}. The module deserializes {@link Page}
+     * instances into {@link org.springframework.data.domain.PageImpl PageImpl} objects.
+     *
+     * @return A Jackson {@link Module} that deserializes {@link Page} into
+     * {@link org.springframework.data.domain.PageImpl PageImpl}.
+     * @see JacksonPageDeserializer
+     * @since 5.1.0
+     */
+    @Bean
+    @ConditionalOnClass(Page.class)
+    @Conditional(JacksonConfiguredCondition.class)
+    public JacksonModule springDataPageJacksonModule() {
+        return new SimpleModule()
+                .addDeserializer(Page.class, new JacksonPageDeserializer());
     }
 
     /**

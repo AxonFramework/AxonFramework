@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.messaging.tracing;
 
 import org.axonframework.messaging.core.Message;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.function.Supplier;
 
@@ -116,7 +118,7 @@ public interface SpanFactory {
      * @return The created {@link Span}.
      */
     Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage, boolean isChildTrace,
-                           Message... linkedParents);
+                           Message @Nullable... linkedParents);
 
     /**
      * Creates a new {@link Span} linked to dispatching a {@link Message}, for example when sending a command to Axon
@@ -136,7 +138,7 @@ public interface SpanFactory {
      * @param linkedSiblings Optional parameter, providing this will link the provided messages to the current.
      * @return The created {@link Span}.
      */
-    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage, Message... linkedSiblings);
+    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage, Message @Nullable ... linkedSiblings);
 
     /**
      * Creates a new {@link Span} linked to the currently active span. This is useful for tracing different parts of

@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.commandhandling.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.core.MessageType;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -129,7 +129,6 @@ class AnnotationRoutingStrategyTest {
 
     public record SomeObject(String target) {
 
-        @Nonnull
         @Override
         public String toString() {
             return target;

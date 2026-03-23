@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.Segment;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -54,7 +53,7 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
      *
      * @param delegates which will be used to do the actual event handling
      */
-    public MultiEventHandlerInvoker(@Nonnull List<EventHandlerInvoker> delegates) {
+    public MultiEventHandlerInvoker(List<EventHandlerInvoker> delegates) {
         this.delegates = flatten(delegates);
     }
 
@@ -70,13 +69,12 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
         return flattened;
     }
 
-    @Nonnull
     public List<EventHandlerInvoker> delegates() {
         return Collections.unmodifiableList(delegates);
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+    public boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment) {
         return delegates.stream().anyMatch(i -> canHandle(i, eventMessage, context, segment));
     }
 
@@ -85,12 +83,12 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandleType(@Nonnull Class<?> payloadType) {
+    public boolean canHandleType(Class<?> payloadType) {
         return delegates.stream().anyMatch(i -> i.canHandleType(payloadType));
     }
 
     @Override
-    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
+    public void handle(EventMessage message, ProcessingContext context, Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
             if (canHandle(i, message, context, segment)) {
                 i.handle(message, context, segment);

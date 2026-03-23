@@ -149,7 +149,7 @@ class StreamingQueryIT {
         return new DistributedQueryBus(
                 localSegment,
                 payloadConvertingQueryBusConnector,
-                DistributedQueryBusConfiguration.DEFAULT
+                new DistributedQueryBusConfiguration()
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.saga;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.eventhandling.EventHandlerInvoker;
@@ -80,7 +79,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker, Sco
     }
 
     @Override
-    public void handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context, @Nonnull Segment segment)
+    public void handle(EventMessage event, ProcessingContext context, Segment segment)
             throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event, context);
         List<String> sagaIds =

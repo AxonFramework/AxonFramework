@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 
 import java.lang.reflect.AnnotatedElement;
@@ -46,7 +45,7 @@ public class RoutingKeyUtils {
      * @param member The member to retrieve the routing key for.
      * @return An {@link Optional} containing the routing key if present, otherwise empty.
      */
-    public static Optional<String> getMessageRoutingKey(@Nonnull AnnotatedElement member) {
+    public static Optional<String> getMessageRoutingKey(AnnotatedElement member) {
         Objects.requireNonNull(member, "The member must not be null.");
         Optional<Map<String, Object>> attributes = findAnnotationAttributes(member, EntityMember.class);
         if (attributes.isEmpty()) {

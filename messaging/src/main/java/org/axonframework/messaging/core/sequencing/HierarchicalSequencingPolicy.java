@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.core.sequencing;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+
 
 import java.util.Objects;
 import java.util.Optional;
@@ -47,13 +47,13 @@ public class HierarchicalSequencingPolicy<M extends Message> implements Sequenci
      * @param secondary The fallback policy to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
-    public HierarchicalSequencingPolicy(@Nonnull SequencingPolicy<? super M> primary, @Nonnull SequencingPolicy<? super M> secondary) {
+    public HierarchicalSequencingPolicy(SequencingPolicy<? super M> primary, SequencingPolicy<? super M> secondary) {
         this.primary = Objects.requireNonNull(primary, "Primary may not be null.");
         this.secondary = Objects.requireNonNull(secondary, "Secondary may not be null.");
     }
 
     @Override
-    public Optional<Object> sequenceIdentifierFor(@Nonnull M message, @Nonnull ProcessingContext context) {
+    public Optional<Object> sequenceIdentifierFor(M message, ProcessingContext context) {
         return primary.sequenceIdentifierFor(message, context)
                       .or(() -> secondary.sequenceIdentifierFor(message, context));
     }

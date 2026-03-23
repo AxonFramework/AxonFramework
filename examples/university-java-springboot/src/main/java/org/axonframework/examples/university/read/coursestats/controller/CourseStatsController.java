@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.examples.university.read.coursestats.controller;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.examples.university.read.coursestats.api.CoursesQueryResult;
@@ -65,7 +64,6 @@ public class CourseStatsController {
      * <p>
      * Usage: GET /api/courses/stats/stream
      */
-    @Hidden // Swagger UI doesn't support SSE
     @GetMapping(value = "/stats/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<CoursesQueryResult>> streamCoursesStats() {
         return Flux
@@ -121,7 +119,6 @@ public class CourseStatsController {
      * eventSource.onmessage = (event) => { const stats = JSON.parse(event.data); console.log('Course stats:', stats);
      * };
      */
-    @Hidden // Swagger UI doesn't support SSE
     @GetMapping(value = "/{courseId}/stats/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<CoursesQueryResult>> streamCourseStats(
             @PathVariable(name = "courseId") String courseId) {

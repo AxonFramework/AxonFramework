@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -72,13 +71,13 @@ class AxonTestWhen implements AxonTestPhase.When {
      *                            execute every test in.
      */
     public AxonTestWhen(
-            @Nonnull AxonConfiguration configuration,
-            @Nonnull AxonTestFixture.Customization customization,
-            @Nonnull CommandBus commandBus,
-            @Nonnull EventSink eventSink,
-            @Nonnull RecordingComponentsRegistry recordings,
-            @Nonnull MessageTypeResolver messageTypeResolver,
-            @Nonnull UnitOfWorkFactory unitOfWorkFactory
+            AxonConfiguration configuration,
+            AxonTestFixture.Customization customization,
+            CommandBus commandBus,
+            EventSink eventSink,
+            RecordingComponentsRegistry recordings,
+            MessageTypeResolver messageTypeResolver,
+            UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
@@ -92,7 +91,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Command command(@Nonnull Object payload, @Nonnull Metadata metadata) {
+    public Command command(Object payload, Metadata metadata) {
         CommandMessage message;
         if (payload instanceof CommandMessage commandMessage) {
             message = commandMessage.andMetadata(metadata);
@@ -116,7 +115,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event event(@Nonnull Object payload, @Nonnull Metadata metadata) {
+    public Event event(Object payload, Metadata metadata) {
         if (payload instanceof EventMessage message) {
             return events(message.andMetadata(metadata));
         }
@@ -134,7 +133,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(@Nonnull List<?> events) {
+    public Event events(List<?> events) {
         var messages = events.stream()
                              .map(e -> e instanceof EventMessage message
                                      ? message
@@ -144,7 +143,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(@Nonnull EventMessage... messages) {
+    public Event events(EventMessage... messages) {
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
     }

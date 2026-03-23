@@ -19,8 +19,7 @@ package org.axonframework.conversion.jackson2;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.conversion.ContentTypeConverter;
 import org.axonframework.conversion.ConversionException;
 
@@ -38,13 +37,11 @@ import org.axonframework.conversion.ConversionException;
 public class JsonNodeToObjectNodeConverter implements ContentTypeConverter<JsonNode, ObjectNode> {
 
     @Override
-    @Nonnull
     public Class<JsonNode> expectedSourceType() {
         return JsonNode.class;
     }
 
     @Override
-    @Nonnull
     public Class<ObjectNode> targetType() {
         return ObjectNode.class;
     }

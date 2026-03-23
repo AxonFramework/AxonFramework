@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
-import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -99,11 +98,6 @@ class AggregateBasedAxonServerEventStorageEngineIT extends
     @Override
     protected TrackingToken trackingTokenAt(long position) {
         return new GlobalSequenceTrackingToken(globalSequenceOfEvent(position));
-    }
-
-    @Override
-    protected EventMessage convertPayload(EventMessage original) {
-        return original.withConvertedPayload(String.class, converter);
     }
 
     @Test

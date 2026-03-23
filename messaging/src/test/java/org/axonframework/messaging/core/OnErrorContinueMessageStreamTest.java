@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,5 +60,11 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message> {
     protected Message createRandomMessage() {
         return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
+    }
+
+    @Disabled("OnErrorContinueMessageStream is supposed to continue without error.")
+    @Override
+    void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asFlux() {
+
     }
 }

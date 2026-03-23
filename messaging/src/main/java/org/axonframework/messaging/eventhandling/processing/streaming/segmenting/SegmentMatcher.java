@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
@@ -45,7 +44,7 @@ public class SegmentMatcher {
      *
      * @param sequencingPolicy A policy that provides the sequence identifier for a given event message.
      */
-    public SegmentMatcher(@Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy) {
+    public SegmentMatcher(SequencingPolicy<? super EventMessage> sequencingPolicy) {
         Objects.requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.sequencingPolicy = sequencingPolicy;
     }
@@ -60,7 +59,7 @@ public class SegmentMatcher {
 
      * @return {@code true} if the event matches the segment, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull Segment segment, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public boolean matches(Segment segment, EventMessage event, ProcessingContext context) {
         Objects.requireNonNull(segment, "Segment may not be null");
         Objects.requireNonNull(event, "EventMessage may not be null");
         return segment.matches(Objects.hashCode(sequenceIdentifier(event, context)));
@@ -74,7 +73,7 @@ public class SegmentMatcher {
      * @param context The processing context in which the event is being handled.
      * @return The sequence identifier for the event, never {@code null}.
      */
-    public Object sequenceIdentifier(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifier(EventMessage event, ProcessingContext context) {
         Objects.requireNonNull(event, "EventMessage may not be null");
         return sequencingPolicy.sequenceIdentifierFor(event, context).orElseGet(event::identifier);
     }

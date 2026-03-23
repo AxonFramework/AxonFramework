@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.command;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.messaging.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
@@ -1217,7 +1217,7 @@ class AggregateAnnotationCommandHandlerTest {
         @Nullable
         @SuppressWarnings("rawtypes")
         @Override
-        public ParameterResolver createInstance(@Nonnull Executable member, @Nonnull Parameter[] params, int index) {
+        public ParameterResolver createInstance(@NonNull Executable member, @NonNull Parameter[] params, int index) {
             if (String.class.equals(params[index].getType())) {
                 return new FixedValueParameterResolver<>("It works");
             }

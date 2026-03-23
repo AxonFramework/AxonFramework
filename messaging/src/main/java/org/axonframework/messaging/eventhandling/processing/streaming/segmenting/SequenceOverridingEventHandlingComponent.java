@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.streaming.segmenting;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.Message;
@@ -26,6 +25,8 @@ import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ResetContext;
 
 import java.util.Optional;
 import java.util.Set;
@@ -53,7 +54,6 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     private final SequencingPolicy<? super EventMessage> sequencingPolicy;
     private final EventHandlingComponent delegate;
 
-
     /**
      * Creates a new {@code SequenceOverridingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
      * override sequence identification while delegating all other operations to the {@code delegate} component.
@@ -61,15 +61,14 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
      * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
      * @param delegate         The underlying event handling component to delegate operations to.
      */
-    public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy<? super EventMessage> sequencingPolicy,
-                                                    @Nonnull EventHandlingComponent delegate) {
+    public SequenceOverridingEventHandlingComponent(SequencingPolicy<? super EventMessage> sequencingPolicy,
+                                                    EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
         this.delegate = requireNonNull(delegate, "Delegate EventHandlingComponent may not be null");
     }
 
-    @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(EventMessage event, ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
         return sequencingPolicy.sequenceIdentifierFor(event, context)
                                .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
@@ -81,19 +80,35 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
     }
 
     @Override
-    public boolean supports(@Nonnull QualifiedName eventName) {
+    public boolean supports(QualifiedName eventName) {
         return delegate.supports(eventName);
     }
 
-    @Nonnull
     @Override
-    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                               @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(EventMessage event,
+                                               ProcessingContext context) {
         return delegate.handle(event, context);
     }
 
     @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+    public boolean supportsReset() {
+        return delegate.supportsReset();
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ResetContext resetContext,
+                                               ProcessingContext context) {
+        return delegate.handle(resetContext, context);
+    }
+
+    @Override
+    public MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange,
+                                               ProcessingContext context) {
+        return delegate.handle(statusChange, context);
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("sequencingPolicy", sequencingPolicy);
     }

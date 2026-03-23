@@ -19,9 +19,9 @@ package org.axonframework.extension.metrics.dropwizard;
 import io.dropwizard.metrics5.Metric;
 import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricSet;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
+
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,7 +76,7 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message> 
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         String monitorName = monitorNameBuilder.apply(message.payloadType());
 
         MessageMonitor<Message> messageMonitorForPayloadType =

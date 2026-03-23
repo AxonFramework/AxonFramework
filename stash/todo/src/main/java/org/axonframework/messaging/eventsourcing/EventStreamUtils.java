@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.upcasting.event.EventUpcaster;
 import org.axonframework.conversion.upcasting.event.InitialEventRepresentation;
 import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
+import org.jspecify.annotations.Nullable;
+
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -68,7 +70,7 @@ public abstract class EventStreamUtils {
             Serializer serializer,
             EventUpcaster upcasterChain
     ) {
-        AtomicReference<Long> currentSequenceNumber = new AtomicReference<>();
+        AtomicReference<@Nullable Long> currentSequenceNumber = new AtomicReference<>();
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcastAndDeserialize(eventEntryStream, upcasterChain, entry -> {
                     InitialEventRepresentation result = new InitialEventRepresentation(entry, serializer);

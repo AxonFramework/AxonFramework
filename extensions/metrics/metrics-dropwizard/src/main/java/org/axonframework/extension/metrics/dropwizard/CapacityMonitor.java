@@ -24,7 +24,6 @@ import io.dropwizard.metrics5.MetricName;
 import io.dropwizard.metrics5.MetricSet;
 import io.dropwizard.metrics5.SlidingTimeWindowReservoir;
 import io.dropwizard.metrics5.Snapshot;
-import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.monitoring.MessageMonitor;
 
@@ -88,7 +87,7 @@ public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message message) {
+    public MonitorCallback onMessageIngested(Message message) {
         final long start = clock.getTime();
         return new MonitorCallback() {
             @Override

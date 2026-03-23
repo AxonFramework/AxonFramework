@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 
 import java.lang.reflect.Member;
@@ -42,9 +41,8 @@ public interface EventTargetMatcherDefinition {
      * @param <E>    The type of the child entity.
      * @return An {@link EventTargetMatcher} that can be used to match child entities against messages.
      */
-    @Nonnull
     <E> EventTargetMatcher<E> createChildEntityMatcher(
-            @Nonnull AnnotatedEntityMetamodel<E> entity,
-            @Nonnull Member member
+            AnnotatedEntityMetamodel<E> entity,
+            Member member
     );
 }

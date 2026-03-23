@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 
 /**
- * Package containing a Caching abstraction, while waiting for the JSR 107 to be fully specified and implemented.
- *
- * @author Allard Buijze
- * @since 2.1.2
+ * Caching abstractions and helpers.
  */
+@NullMarked
 package org.axonframework.common.caching;
+
+import org.jspecify.annotations.NullMarked;

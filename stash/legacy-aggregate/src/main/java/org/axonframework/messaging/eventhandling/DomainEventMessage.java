@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.axonframework.messaging.eventhandling;
-
-import jakarta.annotation.Nonnull;
 
 import java.util.Map;
 
@@ -67,8 +65,7 @@ public interface DomainEventMessage extends EventMessage {
      * @return a copy of this message with the given Metadata
      */
     @Override
-    @Nonnull
-    DomainEventMessage withMetadata(@Nonnull Map<String, String> metadata);
+    DomainEventMessage withMetadata(Map<String, String> metadata);
 
     /**
      * Returns a copy of this DomainEventMessage with its Metadata merged with the given {@code metadata}. The payload,
@@ -80,6 +77,5 @@ public interface DomainEventMessage extends EventMessage {
      * @return a copy of this message with the given Metadata
      */
     @Override
-    @Nonnull
-    DomainEventMessage andMetadata(@Nonnull Map<String, String> metadata);
+    DomainEventMessage andMetadata(Map<String, String> metadata);
 }

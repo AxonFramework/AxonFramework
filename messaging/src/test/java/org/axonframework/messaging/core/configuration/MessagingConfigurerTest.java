@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.core.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.common.configuration.Configuration;
@@ -60,6 +60,7 @@ import org.axonframework.messaging.queryhandling.gateway.DefaultQueryGateway;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -177,13 +178,13 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerEventSinkOverridesDefault() {
         EventSink expected = new EventSink() {
             @Override
-            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                                   @Nonnull List<? extends EventMessage> events) {
+            public @NonNull CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                            @NonNull List<? extends EventMessage> events) {
                 return FutureUtils.emptyCompletedFuture();
             }
 
             @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            public void describeTo(@NonNull ComponentDescriptor descriptor) {
                 throw new UnsupportedOperationException("Unimportant for this test case");
             }
         };

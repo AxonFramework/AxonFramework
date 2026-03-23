@@ -16,11 +16,10 @@
 
 package org.axonframework.conversion.jackson;
 
+import org.axonframework.conversion.ContentTypeConverter;
+import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.conversion.ContentTypeConverter;
 
 /**
  * A {@link ContentTypeConverter} implementation for Jackson 3 that converts an {@link ObjectNode} object
@@ -35,13 +34,11 @@ import org.axonframework.conversion.ContentTypeConverter;
 public class ObjectNodeToJsonNodeConverter implements ContentTypeConverter<ObjectNode, JsonNode> {
 
     @Override
-    @Nonnull
     public Class<ObjectNode> expectedSourceType() {
         return ObjectNode.class;
     }
 
     @Override
-    @Nonnull
     public Class<JsonNode> targetType() {
         return JsonNode.class;
     }

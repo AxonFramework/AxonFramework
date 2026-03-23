@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.common.jdbc;
 import org.axonframework.messaging.core.ExecutionException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+
 
 import java.sql.Connection;
 import java.sql.SQLException;

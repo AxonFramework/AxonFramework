@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,13 +172,13 @@ class AnnotationMessageTypeResolverTest {
 
             assertThat(result).isPresent();
             assertThat(result.get()).isEqualTo(expectedType);
-
         }
 
         @Query(name = "non-of-your-business-query-response-name", version = "9002")
         private record TestQueryResponse(String id) {
 
         }
+
         @Query(name = "non-of-your-business-query-response-name", version = "9002", namespace = "context")
         private record TestQueryResponseWithNamespace(String id) {
 
@@ -217,7 +217,9 @@ class AnnotationMessageTypeResolverTest {
         void customAnnotationSpecificationIsHonored() {
             AnnotationSpecification specification = new AnnotationSpecification(CustomMessageAnnotation.class,
                                                                                 "customName",
+                                                                                CustomMessageAnnotation.class,
                                                                                 "customVersion",
+                                                                                CustomMessageAnnotation.class,
                                                                                 "customNamespace");
             AnnotationMessageTypeResolver customAnnotationTestSubject =
                     new AnnotationMessageTypeResolver(null, specification);
@@ -305,6 +307,7 @@ class AnnotationMessageTypeResolverTest {
         private record EventWithDefaultParameters(String id) {
 
         }
+
         @Event(version = "42")
         private record EventWithVersionParameter(String id) {
 
@@ -314,10 +317,71 @@ class AnnotationMessageTypeResolverTest {
         private record EventWithNameParameter(String id) {
 
         }
+
         @Event(namespace = "custom.namespace")
         private record EventWithNamespaceParameter(String id) {
 
         }
+    }
 
+    @Nested
+    class NamespaceResolution {
+
+        @Test
+        void namespaceAnnotationIsHonoredNamespaceAttribute() {
+            Optional<MessageType> result = testSubject.resolve(MessageWithNamespace.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get().qualifiedName().namespace()).isEqualTo("namespace");
+        }
+
+        @Test
+        void namespaceAnnotationTakesPrecedenceOverMessageAnnotationForNamespaceAttribute() {
+            Optional<MessageType> result = testSubject.resolve(MessageWithNamespaceAndMessageNamespaceAttribute.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get().qualifiedName().namespace()).isEqualTo("overrule");
+        }
+
+        @Test
+        void namespaceAnnotationOnContainerClassResultsInNamespace() {
+            Optional<MessageType> resultOne = testSubject.resolve(MessageContainer.MessageOne.class);
+
+            assertThat(resultOne).isPresent();
+            assertThat(resultOne.get().qualifiedName().namespace()).isEqualTo("container");
+
+            Optional<MessageType> resultTwo = testSubject.resolve(MessageContainer.MessageTwo.class);
+
+            assertThat(resultTwo).isPresent();
+            assertThat(resultTwo.get().qualifiedName().namespace()).isEqualTo("container");
+        }
+
+        @Namespace("namespace")
+        @Event(name = "event")
+        private record MessageWithNamespace(String id) {
+
+        }
+
+        // @Event#namespace is unused as @Event is meta-annotated with @Namespace.
+        // Axon will first check for direct annotations, only if those aren't present does it fallback to meta-annotations.
+        @Namespace("overrule")
+        @Event(name = "event", namespace = "unused")
+        private record MessageWithNamespaceAndMessageNamespaceAttribute(String id) {
+
+        }
+
+        @Namespace("container")
+        private static class MessageContainer {
+
+            @Event
+            private record MessageOne(String id) {
+
+            }
+
+            @Event
+            private record MessageTwo(String id) {
+
+            }
+        }
     }
 }

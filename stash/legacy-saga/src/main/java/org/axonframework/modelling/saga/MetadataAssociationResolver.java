@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2026. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 
-import jakarta.annotation.Nonnull;
-
 /**
  * Used to derive the value of an association property by looking it up the event message's {@link
  * Metadata}.
@@ -34,7 +32,7 @@ public class MetadataAssociationResolver implements AssociationResolver {
      * Does nothing because we can only check for existence of property in the metadata during event handling.
      */
     @Override
-    public <T> void validate(@Nonnull String associationPropertyName, @Nonnull MessageHandlingMember<T> handler) {
+    public <T> void validate(String associationPropertyName, MessageHandlingMember<T> handler) {
         // Do nothing
     }
 
@@ -43,8 +41,8 @@ public class MetadataAssociationResolver implements AssociationResolver {
      * Metadata}.
      */
     @Override
-    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,
-                              @Nonnull MessageHandlingMember<T> handler) {
+    public <T> Object resolve(String associationPropertyName, EventMessage message,
+                              MessageHandlingMember<T> handler) {
         return message.metadata().get(associationPropertyName);
     }
 }

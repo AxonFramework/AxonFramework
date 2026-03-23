@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
@@ -25,6 +24,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -36,7 +36,13 @@ import javax.sql.DataSource;
  * @author John Hendrikx
  * @since 5.0.2
  */
-@AutoConfiguration
+@AutoConfiguration(
+        after = JpaTransactionAutoConfiguration.class,
+        afterName = {
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration",
+                "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration"
+        }
+)
 @ConditionalOnBean({DataSource.class, PlatformTransactionManager.class})
 public class JdbcTransactionAutoConfiguration {
 
@@ -53,9 +59,9 @@ public class JdbcTransactionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TransactionManager axonTransactionManager(
-        PlatformTransactionManager transactionManager,
-        @Nullable EntityManagerProvider entityManagerProvider,
-        @Nullable ConnectionProvider connectionProvider
+            PlatformTransactionManager transactionManager,
+            @Nullable EntityManagerProvider entityManagerProvider,
+            @Nullable ConnectionProvider connectionProvider
     ) {
         return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);
     }
