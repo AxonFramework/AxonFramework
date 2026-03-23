@@ -23,7 +23,6 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -37,7 +36,13 @@ import javax.sql.DataSource;
  * @author John Hendrikx
  * @since 5.0.2
  */
-@AutoConfiguration(after = {DataSourceTransactionManagerAutoConfiguration.class, JpaTransactionAutoConfiguration.class})
+@AutoConfiguration(
+        after = JpaTransactionAutoConfiguration.class,
+        afterName = {
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration",
+                "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration"
+        }
+)
 @ConditionalOnBean({DataSource.class, PlatformTransactionManager.class})
 public class JdbcTransactionAutoConfiguration {
 
