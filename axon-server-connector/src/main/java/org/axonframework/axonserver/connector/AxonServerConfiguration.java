@@ -266,7 +266,7 @@ public class AxonServerConfiguration {
      * Properties describing the settings for the
      * {@link org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine AxonServerEventStorageEngine}.
      */
-    private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
+    private EventStoreConfiguration eventStore = new EventStoreConfiguration();
 
     /**
      * The configuration of each of the persistent streams. The key is the identifier of the message source, the value
@@ -1097,18 +1097,17 @@ public class AxonServerConfiguration {
      *
      * @return The configured {@link EventStoreConfiguration} of this application for Axon Server.
      */
-    @ConfigurationProperties(prefix = "axon.axonserver.event-store")
-    public EventStoreConfiguration getEventStoreConfiguration() {
-        return eventStoreConfiguration;
+    public EventStoreConfiguration getEventStore() {
+        return eventStore;
     }
 
     /**
      * Set the {@link EventStoreConfiguration} of this application for Axon Server
      *
-     * @param eventStoreConfiguration The {@link EventStoreConfiguration} to set for this application.
+     * @param eventStore The {@link EventStoreConfiguration} to set for this application.
      */
-    public void setEventStoreConfiguration(EventStoreConfiguration eventStoreConfiguration) {
-        this.eventStoreConfiguration = eventStoreConfiguration;
+    public void setEventStore(EventStoreConfiguration eventStore) {
+        this.eventStore = eventStore;
     }
 
     /**
