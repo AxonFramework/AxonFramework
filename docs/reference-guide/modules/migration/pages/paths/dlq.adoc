@@ -17,46 +17,56 @@ The most significant changes are:
 ====
 
 == Database schema changes
+Dead letters persisted by Axon Framework 4 cannot be read directly by Axon Framework 5.
+If you have existing dead letters in an Axon Framework 4 database, the best way to move forward is to fully process them before migrating to Axon Framework 5.
+
+If that however is not possible, you must migrate the data to the new schema before switching to Axon Framework 5.
+
+If your dead-letter queue is empty, or you are comfortable discarding existing dead letters you can simply drop and recreate the `dead_letter_entry` table to move to the new schema.
 
 The `dead_letter_entry` table exists in both Axon Framework 4 and 5.
-However, the embedded event entry columns have changed, making the schemas **not backward compatible**.
+However, the structure of the embedded event entry has changed, making the schema **not backwards compatible**.
 
-The following columns in the embedded event entry were renamed or removed:
+The following table explains the changes to the embedded event entry schema:
 
 |===
 |Axon Framework 4 column |Axon Framework 5 column |Change
 
-|`message_type`
+|(not present)
 |`type`
-|Renamed
+|Added to hold the newly introduced xref:messaging-concepts:anatomy-message.adoc#message_type[message type]
 
 |`event_identifier`
 |`identifier`
-|Renamed
+|Renamed for consistency
 
 |`time_stamp`
 |`timestamp`
-|Renamed
+|Renamed for consistency
 
 |`meta_data`
 |`metadata`
-|Renamed
+|Renamed for consistency
 
 |`type` (aggregate type)
 |`aggregate_type`
-|Renamed
+|Renamed for consistency and to make it explicit it holds aggregate specific type information
 
 |`sequence_number`
 |`aggregate_sequence_number`
-|Renamed
+|Renamed for consistency and to make it explicit it holds aggregate specific sequence information
+
+|`message_type`
+|(removed)
+|Removed in favor of the new `type` column
 
 |`payload_type`
 |(removed)
-|Removed—no longer stored separately
+|Removed since the information is now contained in the new `type` column
 
 |`payload_revision`
 |(removed)
-|Removed—no longer stored separately
+|Removed since the information is now contained in the new `type` column
 |===
 
 The following columns in the embedded event entry remain unchanged:
@@ -76,15 +86,7 @@ The following columns in the embedded event entry remain unchanged:
 |`token`
 |===
 
-[IMPORTANT]
-====
-Dead letters persisted by Axon Framework 4 cannot be read directly by Axon Framework 5.
-If you have existing dead letters in an Axon Framework 4 database that you want to preserve, you must migrate those rows before switching to Axon Framework 5.
-
-If your dead-letter queue is empty or you are comfortable discarding existing dead letters, drop the `dead_letter_entry` table and let Axon Framework 5 recreate it.
-====
-
-The outer `DeadLetterEntry` table structure (columns `dead_letter_id`, `processing_group`, `sequence_identifier`, `sequence_index`, `enqueued_at`, `last_touched`, `processing_started`, `cause_type`, `cause_message`, `diagnostics`) is unchanged.
+The outer `DeadLetterEntry` table structure (columns `dead_letter_id`, `processing_group`, `sequence_identifier`, `sequence_index`, `enqueued_at`, `last_touched`, `processing_started`, `cause_type`, `cause_message`, `diagnostics`) remains unchanged.
 
 [#_queue_scoping_changes]
 == Queue scoping changes
