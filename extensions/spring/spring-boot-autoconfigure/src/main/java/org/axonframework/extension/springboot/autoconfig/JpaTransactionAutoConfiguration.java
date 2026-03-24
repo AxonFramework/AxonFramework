@@ -24,7 +24,6 @@ import org.axonframework.messaging.core.unitofwork.transaction.TransactionManage
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -36,7 +35,10 @@ import org.springframework.transaction.PlatformTransactionManager;
  * @author Allard Buijze
  * @since 3.0.3
  */
-@AutoConfiguration(after = HibernateJpaAutoConfiguration.class)
+@AutoConfiguration(afterName = {
+        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+        "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
+})
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 public class JpaTransactionAutoConfiguration {
 

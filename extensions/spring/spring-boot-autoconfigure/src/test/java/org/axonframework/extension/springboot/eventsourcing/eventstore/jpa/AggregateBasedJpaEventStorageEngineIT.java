@@ -32,7 +32,6 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTrans
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
-import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Entry;
@@ -40,6 +39,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GapAwareTrackingToken;
@@ -49,9 +49,8 @@ import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,7 +78,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.LongStream;
-
 import javax.sql.DataSource;
 
 import static java.util.Collections.emptySet;
@@ -180,11 +178,6 @@ class AggregateBasedJpaEventStorageEngineIT
         return GapAwareTrackingToken.newInstance(globalSequenceOfEvent(position), emptySet());
     }
 
-    @Override
-    protected EventMessage convertPayload(EventMessage original) {
-        return original.withConvertedPayload(String.class, converter);
-    }
-
     @Test
     void closedStreamingShouldReturnEmptyResults() throws InterruptedException, ExecutionException {
         TrackingToken position = testSubject.firstToken().get();
@@ -239,7 +232,6 @@ class AggregateBasedJpaEventStorageEngineIT
         // Verify there indeed is a new message:
         assertThat(stream.next())
                 .isNotEmpty()
-                .map(e -> e.map(this::convertPayload))
                 .map(Entry::message)
                 .map(m -> m.payloadAs(String.class))
                 .contains("event");
@@ -408,6 +400,65 @@ class AggregateBasedJpaEventStorageEngineIT
         assertThat(resultToken.getGaps().size()).isEqualTo(2);
 
         transaction.commit();
+    }
+
+    @Nested
+    class StreamingWithNonMatchingBatchTest {
+
+        private AggregateBasedJpaEventStorageEngine localEngine;
+
+        @BeforeEach
+        void setUp() {
+            localEngine = new AggregateBasedJpaEventStorageEngine(
+                    new JpaTransactionalExecutorProvider(entityManagerFactory),
+                    converter,
+                    config -> config
+                            .batchSize(2)
+                            .eventCoordinator(new JpaPollingEventCoordinator(
+                                    new FactoryBasedEntityManagerProvider(entityManagerFactory),
+                                    Duration.ofMillis(500)))
+                            .persistenceExceptionResolver(new PersistenceExceptionResolver() {
+                                @Override
+                                public boolean isDuplicateKeyViolation(@NonNull Exception exception) {
+                                    return causeIsEntityExistsException(exception);
+                                }
+
+                                private boolean causeIsEntityExistsException(Throwable exception) {
+                                    return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+                                            || (exception.getCause() != null
+                                            && causeIsEntityExistsException(exception.getCause()));
+                                }
+                            })
+            );
+        }
+
+        @AfterEach
+        void tearDown() {
+            if (localEngine != null) {
+                localEngine.close();
+                localEngine = null;
+            }
+        }
+
+        @Test
+        void stream_shouldAdvancePastNonMatchingBatch_whenBatchContainsOnlyNonMatchingEvents() {
+            // given — fill one full batch (size=2) with OTHER_AGGREGATE events so the
+            // matching TEST_AGGREGATE event sits beyond the first fetch window
+            appendCommitAndWait(localEngine, AppendCondition.none(),
+                                taggedEventMessage("other-1", OTHER_AGGREGATE_TAGS),
+                                taggedEventMessage("other-2", OTHER_AGGREGATE_TAGS));
+            appendCommitAndWait(localEngine, AppendCondition.none(),
+                                taggedEventMessage("test-1", TEST_AGGREGATE_TAGS));
+
+            // when — stream filtered to TEST_AGGREGATE_CRITERIA starting from position 0
+            MessageStream<EventMessage> stream = localEngine.stream(
+                    StreamingCondition.conditionFor(trackingTokenAt(0), TEST_AGGREGATE_CRITERIA)
+            );
+
+            // then — the stream must eventually surface the matching test event despite the
+            // non-matching batch preceding it
+            await().untilAsserted(() -> assertThat(stream.peek()).isNotEmpty());
+        }
     }
 
     private void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,

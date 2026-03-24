@@ -20,17 +20,19 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.segmenting.SequencingEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.ReplayToken;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventhandling.replay.GenericReplayStatusChanged;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatus;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-
 
 import java.util.List;
 import java.util.Objects;
@@ -119,6 +121,12 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
                 var componentResult = component.handle(event, context);
                 result = result.concatWith(componentResult);
             }
+            // Validated deliberately AFTER handling the event; that's the point handling switches from REPLAY to REGULAR
+            if (token.isPresent() && ReplayToken.concludesReplay(token.get())) {
+                ReplayStatusChanged replayStatusChanged =
+                        new GenericReplayStatusChanged(ReplayStatus.REGULAR, (Object) null);
+                result = result.concatWith(component.handle(replayStatusChanged, context));
+            }
         }
         return result.ignoreEntries().cast();
     }
@@ -192,6 +200,34 @@ public class ProcessorEventHandlingComponents implements DescribableComponent {
     public boolean supportsReset() {
         return components.stream()
                          .anyMatch(EventHandlingComponent::supportsReset);
+    }
+
+    /**
+     * Handles the start of a replay for all components.
+     * <p>
+     * This method invokes the
+     * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangedHandlers}
+     * on each component. All handlers must complete successfully for the operation to succeed.
+     *
+     * @param context the processing context
+     * @return a future that completes when all
+     * {@link org.axonframework.messaging.eventhandling.replay.ReplayStatusChangedHandler ReplayStatusChangedHandlers}
+     * have completed
+     */
+    public CompletableFuture<Void> replayStarted(ProcessingContext context) {
+        MessageStream<Message> result = MessageStream.empty();
+        ReplayStatusChanged replayStarted =
+                new GenericReplayStatusChanged(ReplayStatus.REPLAY, (Object) null);
+
+        for (var component : components) {
+            if (component.supportsReset()) {
+                result = result.concatWith(component.handle(replayStarted, context).cast());
+            }
+        }
+
+        return result.ignoreEntries()
+                     .asCompletableFuture()
+                     .thenApply(FutureUtils::ignoreResult);
     }
 
     @Override

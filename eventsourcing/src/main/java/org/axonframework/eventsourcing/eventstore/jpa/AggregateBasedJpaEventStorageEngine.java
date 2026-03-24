@@ -16,10 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import org.jspecify.annotations.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.axonframework.common.Assert;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -55,6 +53,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriterion;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -333,32 +332,26 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     @Override
     public MessageStream<EventMessage> stream(StreamingCondition condition) {
-        GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
+        AtomicReference<GapAwareTrackingToken> cursorRef = new AtomicReference<>(tokenOperations.assertGapAwareTrackingToken(condition.position()));
 
         return new ContinuousMessageStream<TokenAndEvent>(
-                last -> queryTokensAndEventsBy(last == null ? trackingToken : last.token, condition),
+                () -> queryTokensAndEventsBy(cursorRef, condition),
                 tae -> new SimpleEntry<>(convertToEventMessage(tae.event), buildTrackedContext(tae)),
                 (ms, r) -> {
                     streamCallbacks.put(ms, r);
-
                     return () -> streamCallbacks.remove(ms) != null;
                 }
         );
     }
 
-    private List<TokenAndEvent> queryTokensAndEventsBy(TrackingToken start, StreamingCondition condition) {
-        Assert.isTrue(
-                start == null || start instanceof GapAwareTrackingToken,
-                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
-                                    start, GapAwareTrackingToken.class.getSimpleName())
-        );
-
+    private List<TokenAndEvent> queryTokensAndEventsBy(AtomicReference<GapAwareTrackingToken> cursorRef, StreamingCondition condition) {
         return entityManagerExecutor(null).apply(em -> {
             List<TokenAndEvent> result = new ArrayList<>();
-            GapAwareTrackingToken cleanedToken = cleanedToken(em, (GapAwareTrackingToken) start);
+            GapAwareTrackingToken cleanedToken = cleanedToken(em, cursorRef.get());
             List<AggregateEventEntry> events = queryEventsBy(em, cleanedToken);
 
             GapAwareTrackingToken token = cleanedToken;
+
             Instant gapTimeoutThreshold = tokenOperations.gapTimeoutThreshold();
             for (AggregateEventEntry event : events) {
                 String type = event.aggregateType();
@@ -367,8 +360,11 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 // A null type or identifier is allowed, but those cannot form a valid tag:
                 Set<Tag> tags = type == null || identifier == null ? Set.of() : Set.of(new Tag(type, identifier));
 
+                // Always advance the cursor to track the furthest scanned position, regardless of match:
+                token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
+                cursorRef.set(token);
+
                 if (condition.matches(new QualifiedName(event.type()), tags)) {
-                    token = calculateToken(token, event.globalIndex(), event.timestamp(), gapTimeoutThreshold);
                     result.add(new TokenAndEvent(token, event));
                 }
             }
@@ -424,7 +420,8 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                                        new MessageType(event.type(), event.version()),
                                        event.payload(),
                                        converter.convert(event.metadata(), METADATA_MAP_TYPE_REF.getType()),
-                                       event.timestamp());
+                                       event.timestamp()
+        ).withConverter(converter);
     }
 
     private static Context buildTrackedContext(TokenAndEvent tokenAndEvent) {

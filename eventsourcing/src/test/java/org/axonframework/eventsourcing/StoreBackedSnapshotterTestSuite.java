@@ -95,7 +95,8 @@ public abstract class StoreBackedSnapshotterTestSuite {
             .build();
 
         DelegatingEventConverter eventConverter = new DelegatingEventConverter(new JacksonConverter(objectMapper));
-        SnapshotPolicy snapshotPolicy = SnapshotPolicy.afterEvents(5).or(SnapshotPolicy.whenRequested());
+        SnapshotPolicy snapshotPolicy = SnapshotPolicy.afterEvents(5)
+            .or(SnapshotPolicy.whenEventMatches(msg -> msg.type().qualifiedName().equals(new QualifiedName(AccountClosed.class))));
 
         AxonConfiguration configuration = EventSourcingConfigurer.create()
             .componentRegistry(cr -> cr.registerComponent(Converter.class, c -> eventConverter))
@@ -109,20 +110,7 @@ public abstract class StoreBackedSnapshotterTestSuite {
                         return new Account(ac.id, ac.name, 0);
                     })
                     .criteriaResolver(c -> (id, ctx) -> EventCriteria.havingTags(Tag.of("account", id)))
-                    .snapshotter(c ->
-                        new StoreBackedSnapshotter<>(
-                            c.getComponent(SnapshotStore.class),
-                            MessageType.fromString("my-snapshot#1"),
-                            new JacksonConverter(),
-                            Account.class,
-                            snapshotPolicy
-                        ) {
-                            @Override
-                            public boolean onEventApplied(String identifier, Account entity, EventMessage event) {
-                                return event instanceof GenericEventMessage gem ? gem.type().qualifiedName().equals(new QualifiedName(AccountClosed.class)) : false;
-                            }
-                        }
-                    )
+                    .snapshotPolicy(c -> snapshotPolicy)
                     .build()
             )
             .build();
@@ -239,8 +227,10 @@ public abstract class StoreBackedSnapshotterTestSuite {
             new FundsDeposited(ACCOUNT_ID, 10050)
         );
 
+        QualifiedName qualifiedName = new QualifiedName(Account.class);
+
         snapshotStore.store(
-            new QualifiedName("my-snapshot"),
+            qualifiedName,
             ACCOUNT_ID,
             new Snapshot(
                 new GlobalIndexPosition(3),
@@ -263,7 +253,7 @@ public abstract class StoreBackedSnapshotterTestSuite {
             assertThat(appender.getEvents())
                 .extracting(LogEvent::getMessage)
                 .extracting(Message::getFormattedMessage)
-                .containsExactly("Unsupported snapshot version. Snapshot of my-snapshot#1 for identifier " + ACCOUNT_ID + " had unsupported version: 42");
+                .containsExactly("Unsupported snapshot version. Snapshot of " + qualifiedName + "#0.0.1 for identifier " + ACCOUNT_ID + " had unsupported version: 42");
         }
 
         publish(
@@ -299,12 +289,14 @@ public abstract class StoreBackedSnapshotterTestSuite {
             new FundsDeposited(ACCOUNT_ID, 10050)
         );
 
+        QualifiedName qualifiedName = new QualifiedName(Account.class);
+
         snapshotStore.store(
-            new QualifiedName("my-snapshot"),
+            qualifiedName,
             ACCOUNT_ID,
             new Snapshot(
                 new GlobalIndexPosition(3),
-                "1",  // correct version
+                "0.0.1",  // correct version
                 "Junk",  // incorrect data, which leads to deserialization error
                 Instant.now(),
                 Map.of()
@@ -324,7 +316,7 @@ public abstract class StoreBackedSnapshotterTestSuite {
             assertThat(appender.getEvents())
                 .extracting(LogEvent::getMessage)
                 .extracting(Message::getFormattedMessage)
-                .containsExactly("Snapshot loading failed, falling back to full reconstruction for: class org.axonframework.eventsourcing.StoreBackedSnapshotterTestSuite$Account(class java.lang.String=" + ACCOUNT_ID + ")");
+                .containsExactly("Snapshot loading failed, falling back to full reconstruction for: " + qualifiedName + "#0.0.1 (" + ACCOUNT_ID + ")");
         }
     }
 

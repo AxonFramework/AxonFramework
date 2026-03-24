@@ -33,11 +33,10 @@ import java.util.Objects;
  * @param eventsApplied the number of events applied while sourcing the entity,
  *                      never negative
  * @param sourcingTime the total time spent sourcing the entity, never {@code null}
- * @param snapshotRequested whether a snapshot was requested during sourcing
  * @author John Hendrikx
  * @since 5.1.0
  */
-public record EvolutionResult(long eventsApplied, Duration sourcingTime, boolean snapshotRequested) {
+public record EvolutionResult(long eventsApplied, Duration sourcingTime) {
 
     /**
      * Creates a new {@code EvolutionResult}.

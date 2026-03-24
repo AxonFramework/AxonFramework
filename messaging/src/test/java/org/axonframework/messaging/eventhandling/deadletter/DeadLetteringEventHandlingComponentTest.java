@@ -20,6 +20,8 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
@@ -34,14 +36,10 @@ import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.QualifiedName;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -53,11 +51,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DeadLetteringEventHandlingComponent}.
@@ -965,6 +961,12 @@ class DeadLetteringEventHandlingComponentTest {
 
         @Override
         public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                            @NonNull ProcessingContext context) {
+            return MessageStream.empty();
+        }
+
+        @Override
+        public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChanged statusChange,
                                                             @NonNull ProcessingContext context) {
             return MessageStream.empty();
         }

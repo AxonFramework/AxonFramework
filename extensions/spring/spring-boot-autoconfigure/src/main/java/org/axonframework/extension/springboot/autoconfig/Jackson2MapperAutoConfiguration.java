@@ -38,7 +38,10 @@ import org.springframework.context.annotation.Conditional;
  */
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
-@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
+        "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
+})
 @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class Jackson2MapperAutoConfiguration {

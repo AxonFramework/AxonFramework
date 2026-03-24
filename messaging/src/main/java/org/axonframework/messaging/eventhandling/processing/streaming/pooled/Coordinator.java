@@ -184,7 +184,7 @@ class Coordinator {
                                                  .shutdownHandle();
         CoordinationTask task = coordinationTask.getAndSet(null);
         if (task != null) {
-            logger.info("Processor [{}]. Stop requested. Scheduling immediate coordination task.", name);
+            logger.debug("Processor [{}]. Stop requested. Scheduling immediate coordination task.", name);
             task.scheduleImmediateCoordinationTask();
         }
         return handle;
@@ -763,7 +763,7 @@ class Coordinator {
                         .filter(entry -> isSegmentBlockedFromClaim(entry.getKey()))
                         .map(Map.Entry::getValue)
                         .forEach(workPackage -> {
-                            logger.info(
+                            logger.debug(
                                     "Processor [{}] (Coordination Task [{}]) was requested and will comply with releasing claim for segment {}.",
                                     name,
                                     generation,
@@ -1028,7 +1028,7 @@ class Coordinator {
             int maxSegmentsPerNode = maxSegmentProvider.apply(name);
             boolean tooManySegmentsClaimed = workPackages.size() > maxSegmentsPerNode;
             if (tooManySegmentsClaimed) {
-                logger.info(
+                logger.debug(
                         "Processor [{}] (Coordination Task [{}]). Total segments [{}] is above maxSegmentsPerNode = [{}], "
                                 + "going to release surplus claimed segments.",
                         name,
@@ -1082,10 +1082,10 @@ class Coordinator {
                                 context -> tokenStore.fetchToken(name, segment, context)
                         ));
                         newClaims.put(segment, token);
-                        logger.info("Processor [{}] (Coordination Task [{}]) claimed the token for segment {}.",
-                                    name,
-                                    generation,
-                                    segmentId);
+                        logger.debug("Processor [{}] (Coordination Task [{}]) claimed the token for segment {}.",
+                                     name,
+                                     generation,
+                                     segmentId);
                     } catch (UnableToClaimTokenException e) {
                         processingStatusUpdater.accept(segmentId, u -> null);
                         logger.debug(
@@ -1368,7 +1368,7 @@ class Coordinator {
                                                     .thenCompose(unused -> segmentChangeListener.onSegmentReleased(work.segment()))
                        )))
                        .exceptionally(throwable -> {
-                           logger.info(
+                           logger.warn(
                                    "Processor [{}] (Coordination Task [{}]). An exception occurred during the abort of work package [{}].",
                                    name,
                                    generation,

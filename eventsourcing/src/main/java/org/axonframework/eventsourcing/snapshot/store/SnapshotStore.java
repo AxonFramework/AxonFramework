@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.snapshot.store;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.snapshot.api.Snapshot;
 import org.axonframework.messaging.core.QualifiedName;
 import org.jspecify.annotations.Nullable;
@@ -34,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * @author John Hendrikx
  * @since 5.1.0
  */
+@Internal
 public interface SnapshotStore {
 
     /**

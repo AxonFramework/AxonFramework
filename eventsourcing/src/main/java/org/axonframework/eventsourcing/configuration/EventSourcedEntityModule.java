@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
+import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventstreaming.EventCriteria;
@@ -30,7 +30,6 @@ import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityMetamodelConfigurationBuilder;
 import org.axonframework.modelling.configuration.EntityModule;
-import org.axonframework.modelling.configuration.StateBasedEntityModule.EntityIdResolverPhase;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.repository.Repository;
@@ -56,14 +55,13 @@ import org.axonframework.modelling.repository.Repository;
  * approach to building the event-sourced entity, where the user can provide the required components.
  * <p>
  * There are several phases of the building process of the declarative event-sourced entity module:
- *     <ul>
- *         <li> {@link MessagingModelPhase} - Provides the {@link EntityMetamodel} of the event-sourced entity being built.</li>
- *         <li> {@link EntityFactoryPhase} - Provides the {@link EventSourcedEntityFactory} for the event-sourced entity
- *         being built.</li>
- *         <li> {@link CriteriaResolverPhase} - Provides the {@link CriteriaResolver} for the event-sourced entity being
- *         built.</li>
- *         <li> {@link EntityIdResolverPhase} - Provides the {@link EntityIdResolver} for the event-sourced entity being
- *         built, or provides the user with a choice to not have a {@link EntityCommandHandlingComponent}.</li>
+ * <ul>
+ *     <li>{@link MessagingModelPhase} – configure the {@link EntityMetamodel} used to evolve and handle commands.</li>
+ *     <li>{@link EntityFactoryPhase} – provide the {@link EventSourcedEntityFactory} to create entities.</li>
+ *     <li>{@link CriteriaResolverPhase} – provide the {@link CriteriaResolver} used to source events from the
+ *         {@link org.axonframework.eventsourcing.eventstore.EventStore}.</li>
+ *     <li>{@link OptionalPhase} – configure optional parameters, such as {@link SnapshotPolicy} and
+ *         {@link EntityIdResolver}.</li>
  * </ul>
  *
  * <h2>Module hierarchy</h2>
@@ -76,6 +74,7 @@ import org.axonframework.modelling.repository.Repository;
  * @param <E>  The type of the event-sourced entity.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
+ * @author John Hendrikx
  * @since 5.0.0
  */
 public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
@@ -209,15 +208,14 @@ public interface EventSourcedEntityModule<ID, E> extends EntityModule<ID, E> {
         OptionalPhase<ID, E> entityIdResolver(ComponentBuilder<EntityIdResolver<ID>> entityIdResolver);
 
         /**
-         * Registers an optional {@link ComponentBuilder} of a {@link Snapshotter} as the snapshotter for the
-         * event-sourced entity being built. This snapshotter is responsible for storing snapshots when it
-         * is triggered during the loading of an entity.
-         * <p>
-         * If no {@link Snapshotter} is provided, there will be no snapshotting functionality.
+         * Registers an optional {@link ComponentBuilder} of a {@link SnapshotPolicy} for the
+         * event-sourced entity being built. The snapshot policy determines under which conditions
+         * the entity state should be snapshotted during sourcing.
          *
-         * @param snapshotter A {@link ComponentBuilder} constructing the {@link Snapshotter} for the event-sourced entity.
+         * @param snapshotPolicy A {@link ComponentBuilder} constructing the {@link SnapshotPolicy}
+         *                       for the event-sourced entity.
          * @return The {@link OptionalPhase} phase of this builder, for a fluent API.
          */
-        OptionalPhase<ID, E> snapshotter(ComponentBuilder<Snapshotter<ID, E>> snapshotter);
+        OptionalPhase<ID, E> snapshotPolicy(ComponentBuilder<SnapshotPolicy> snapshotPolicy);
     }
 }

@@ -45,7 +45,10 @@ import tools.jackson.databind.module.SimpleModule;
  */
 @AutoConfiguration
 @AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
-@AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
+        "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
+})
 @ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {

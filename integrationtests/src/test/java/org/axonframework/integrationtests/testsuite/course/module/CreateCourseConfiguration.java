@@ -16,17 +16,16 @@
 
 package org.axonframework.integrationtests.testsuite.course.module;
 
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.course.commands.CreateCourse;
 import org.axonframework.integrationtests.testsuite.course.events.CourseCreated;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 
 public class CreateCourseConfiguration {
 
@@ -38,9 +37,8 @@ public class CreateCourseConfiguration {
                 .named("CreateCourse")
                 .commandHandlers()
                 .commandHandler(new QualifiedName(CreateCourse.class), config -> ((command, context) -> {
-                    var converter = context.component(MessageConverter.class);
                     var eventAppender = EventAppender.forContext(context);
-                    var payload = command.payloadAs(CreateCourse.class, converter);
+                    var payload = command.payloadAs(CreateCourse.class);
                     eventAppender.append(new CourseCreated(payload.courseId()));
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT);
                 }));

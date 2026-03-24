@@ -89,7 +89,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                 entry.getPayload(),
                 Metadata.from(metadataMap),
                 Instant.parse(entry.getTimestamp())
-        );
+        ).withConverter(eventConverter);
     }
 
     private Context restoreContext(DeadLetterEventEntry entry, Converter genericConverter) {

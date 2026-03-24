@@ -255,8 +255,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                             Student.class,
                                             c.getComponent(EventConverter.class),
                                             c.getComponent(MessageTypeResolver.class)
-                                    ),
-                                    null
+                                    )
                             );
                             return SimpleStateManager.named("testfixture")
                                                      .register(repository);

@@ -34,6 +34,7 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.cbor.CBORMapper;
 
@@ -329,6 +330,7 @@ class ConverterAutoConfigurationTest {
     public static class CustomContext {
 
         @Bean
+        @Primary
         public Converter customConverter() {
             return mock(Converter.class);
         }

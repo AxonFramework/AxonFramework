@@ -134,23 +134,36 @@ public void on(OrderPlacedEvent event,
 }
 ----
 
-=== Query handler with subscription query support
-
+=== Query handler with `ProcessingContext`
 [source,java]
 ----
 @QueryHandler
-public OrderSummary handle(OrderQuery query,
-                           QueryUpdateEmitter updateEmitter) {
-    OrderSummary summary = loadSummary(query.orderId());
+public CardSummary handle(FetchCardSummaryQuery query, ProcessingContext context) {
+    // Access correlation data
+    String correlationId = context.correlationId();
 
-    OrderUpdate update = createUpdate(summary);
+    // Access resources
+    SomeService service = context.resource(SomeService.RESOURCE_KEY);
 
-    // Register for updates to send incremental changes
-    updateEmitter.emit(OrderQuery.class,
-                       q -> q.orderId().equals(query.orderId()),
-                       update);
+    return cardSummaryStorage.get(query.getCardSummaryId());
+}
+----
 
-    return summary;
+=== Event handler with `QueryUpdateEmitter` for subscription query support
+
+[source,java]
+----
+@EventHandler
+public void on(CardRedeemedEvent event, QueryUpdateEmitter emitter) {
+
+    // Update the model
+    CardSummary summary = cardSummaryStorage.get(event.getCardId());
+    summary.setRemainingValue(event.getRemainingValue());
+
+    // Emit update to subscription queries
+    emitter.emit(FetchCardSummaryQuery.class,
+                query -> query.getCardSummaryId().equals(event.getCardId()),
+                summary);
 }
 ----
 

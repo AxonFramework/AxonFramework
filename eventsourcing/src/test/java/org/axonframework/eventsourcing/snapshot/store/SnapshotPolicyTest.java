@@ -18,6 +18,8 @@ package org.axonframework.eventsourcing.snapshot.store;
 
 import org.axonframework.eventsourcing.snapshot.api.EvolutionResult;
 import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
+import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -39,13 +41,17 @@ class SnapshotPolicyTest {
     }
 
     @Test
+    void whenEventMatchesPolicyShouldRejectInvalidParameters() {
+        assertThatThrownBy(() -> SnapshotPolicy.whenEventMatches(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     void afterEventsPolicyShouldWorkWithValidParameters() {
         SnapshotPolicy policy = SnapshotPolicy.afterEvents(5);
 
-        assertThat(policy.needsSnapshot(new EvolutionResult(6, Duration.ZERO, false))).isTrue();
-        assertThat(policy.needsSnapshot(new EvolutionResult(5, Duration.ZERO, false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(5, Duration.ofDays(1), false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(5, Duration.ZERO, true))).isFalse();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(6, Duration.ZERO))).isTrue();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(5, Duration.ZERO))).isFalse();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(5, Duration.ofDays(1)))).isFalse();
     }
 
     @Test
@@ -57,19 +63,16 @@ class SnapshotPolicyTest {
     void whenSourcingTimeExceedsPolicyShouldWorkWithValidParameters() {
         SnapshotPolicy policy = SnapshotPolicy.whenSourcingTimeExceeds(Duration.ofSeconds(1));
 
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ofMillis(1001), false))).isTrue();
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ofMillis(1000), false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(1000, Duration.ofMillis(1000), false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ofMillis(1000), true))).isFalse();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(0, Duration.ofMillis(1001)))).isTrue();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(0, Duration.ofMillis(1000)))).isFalse();
+        assertThat(policy.shouldSnapshot(new EvolutionResult(1000, Duration.ofMillis(1000)))).isFalse();
     }
 
     @Test
     void whenRequestedPolicyShouldWork() {
-        SnapshotPolicy policy = SnapshotPolicy.whenRequested();
+        SnapshotPolicy policy = SnapshotPolicy.whenEventMatches(msg -> msg.payload() instanceof String s && s.equals("Hi"));
 
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ZERO, true))).isTrue();
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ZERO, false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(1000, Duration.ZERO, false))).isFalse();
-        assertThat(policy.needsSnapshot(new EvolutionResult(0, Duration.ofDays(1), false))).isFalse();
+        assertThat(policy.shouldSnapshot(new GenericEventMessage(MessageType.fromString("a#1"), "Hi"))).isTrue();
+        assertThat(policy.shouldSnapshot(new GenericEventMessage(MessageType.fromString("a#1"), "Bye"))).isFalse();
     }
 }

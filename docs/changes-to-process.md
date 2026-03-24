@@ -499,10 +499,25 @@ The following files in `axon-5/` describe the API changes:
 - Remove EventProcessingModule/Configurer references
 
 ### modules/events/pages/event-processors/dead-letter-queue.adoc
-**Changes to apply:**
-- Update stored format changes (column renames)
-- Document MessageType usage in DLQ entries
-- Update code examples
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Removed AF4 "not available in 5.0" warning — DLQ is now available in AF5
+- Replaced all AF4 configuration examples with AF5 `MessagingConfigurer`/`EventProcessorModule` API
+- Added Spring Boot configuration via properties (`axon.eventhandling.processors.<name>.dlq.enabled=true`)
+- Added Spring Boot `EventProcessorDefinition` bean examples
+- Documented `DeadLetterQueueConfiguration` fluent API (enabled/disabled/factory/enqueuePolicy/clearOnReset/cacheMaxSize)
+- Documented `SequencedDeadLetterQueueFactory` custom factory pattern
+- Documented defaults cascade (shared → type-specific → instance-specific)
+- Documented sequence identifier caching with `CachingSequencedDeadLetterQueue`
+- Updated `SequencedDeadLetterProcessor` API to async (`CompletableFuture<Boolean>`)
+- Updated dead-letter retrieval to use `Configuration.getModuleConfiguration()` + `getComponents()`
+- Added `context` attribute to dead-letter attributes table
+- Updated `diagnostics` type from `MetaData` to `Metadata`
+- Updated `EnqueuePolicy` examples with AF5 API (`payload()` instead of `getPayload()`)
+- Removed MongoDB implementation reference (not yet available in AF5)
+- Removed Saga limitation note (Sagas not available in AF5)
+- Removed old `EventProcessingConfigurer.registerDeadLetterQueue/registerDeadLetterQueueProvider` API
+- Removed old `EventProcessingConfiguration.sequencedDeadLetterProcessor/deadLetterQueue` API
 
 ### modules/events/pages/event-processors/streaming.adoc
 **CRITICAL CHANGES:**

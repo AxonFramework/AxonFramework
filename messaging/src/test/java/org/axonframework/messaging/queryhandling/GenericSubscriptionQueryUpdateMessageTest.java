@@ -16,33 +16,41 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.TypeReference;
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.ConversionException;
+import org.axonframework.conversion.Converter;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.queryhandling.GenericSubscriptionQueryUpdateMessage;
-import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link GenericSubscriptionQueryUpdateMessage}.
  *
  * @author Milan Savic
  */
-class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite<SubscriptionQueryUpdateMessage> {
+class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite<GenericSubscriptionQueryUpdateMessage> {
 
     @Override
-    protected SubscriptionQueryUpdateMessage buildDefaultMessage() {
+    protected GenericSubscriptionQueryUpdateMessage buildDefaultMessage() {
         return new GenericSubscriptionQueryUpdateMessage(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA
         ));
     }
 
     @Override
-    protected <P> SubscriptionQueryUpdateMessage buildMessage(@Nullable P payload) {
+    protected <P> GenericSubscriptionQueryUpdateMessage buildMessage(@Nullable P payload) {
         return new GenericSubscriptionQueryUpdateMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                                          payload);
     }
@@ -56,5 +64,115 @@ class GenericSubscriptionQueryUpdateMessageTest extends MessageTestSuite<Subscri
         );
 
         assertNull(result.payload());
+    }
+
+    @Nested
+    class WithConverter {
+
+        private Converter converter;
+        private String exStringPayload = "payload";
+        private byte[] exBytePayload = exStringPayload.getBytes(StandardCharsets.UTF_8);
+
+        @BeforeEach
+        void setUp() {
+            converter = spy(new ChainingContentTypeConverter());
+        }
+
+        @AfterEach
+        void tearDown() {
+            verifyNoMoreInteractions(converter);
+        }
+
+        @Test
+        void payloadAsClassReturnsPayloadWithoutConversionOnSameType() {
+            GenericSubscriptionQueryUpdateMessage exMessage = buildMessage(exStringPayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+        }
+
+        @Test
+        void payloadAsClassInvokesConverterOnDifferentType() {
+            GenericSubscriptionQueryUpdateMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            verify(converter).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void payloadAsClassFailsWithConversionExceptionWithoutConverter() {
+            GenericSubscriptionQueryUpdateMessage exMessage = buildMessage(exBytePayload);
+
+            // test
+            assertThatThrownBy(() -> exMessage.payloadAs(Integer.class))
+                    .isInstanceOf(ConversionException.class);
+        }
+
+        @Test
+        void payloadAsTypeRefInvokesConverter() {
+            GenericSubscriptionQueryUpdateMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(new TypeReference<String>() {
+            });
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            verify(converter).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void payloadAsCachesConversion() {
+            GenericSubscriptionQueryUpdateMessage exMessage = buildMessage(exBytePayload)
+                    .withConverter(converter);
+
+            // test
+            String acPayload = exMessage.payloadAs(String.class);
+            String acPayload2 = exMessage.payloadAs(String.class);
+
+            assertThat(acPayload).isEqualTo(exStringPayload);
+            assertThat(acPayload2).isEqualTo(exStringPayload);
+            verify(converter, times(1)).convert(exBytePayload, (Type) String.class);
+        }
+
+        @Test
+        void withConverterReturnsNewInstanceOfSameConcreteType() {
+            // given
+            GenericSubscriptionQueryUpdateMessage original = buildMessage(exBytePayload);
+
+            // when
+            GenericSubscriptionQueryUpdateMessage result = original.withConverter(converter);
+
+            // then
+            assertThat(result)
+                    .isInstanceOf(GenericSubscriptionQueryUpdateMessage.class)
+                    .isNotSameAs(original);
+        }
+
+        @Test
+        void withConverterPreservesMembers() {
+            // given
+            GenericSubscriptionQueryUpdateMessage original = buildMessage(exBytePayload);
+
+            // when
+            GenericSubscriptionQueryUpdateMessage result = original.withConverter(converter);
+
+            // then
+            assertThat(result)
+                    .isInstanceOf(GenericSubscriptionQueryUpdateMessage.class)
+                    .isNotSameAs(original);
+            assertThat(result.identifier()).isEqualTo(original.identifier());
+            assertThat(result.type()).isEqualTo(original.type());
+            assertThat(result.payload()).isEqualTo(original.payload());
+            assertThat(result.payloadType()).isEqualTo(original.payloadType());
+            assertThat(result.metadata()).isEqualTo(original.metadata());
+        }
     }
 }

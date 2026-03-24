@@ -281,7 +281,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public <R> CompletableFuture<Void> resetTokens(TrackingToken startPosition, R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(TrackingToken startPosition, @Nullable R resetContext) {
         Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
         Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 
@@ -289,7 +289,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         var unitOfWork = unitOfWorkFactory.create();
         return unitOfWork.executeWithResult(
                 processingContext ->
-                        fetchSegmentsWithTokens(processingContext)
+                        fetchSegmentsWithTokens(startPosition, resetContext, processingContext)
                                 .thenCompose(segmentTokens -> performReset(
                                         segmentTokens,
                                         resetContext,
@@ -297,20 +297,22 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                 ))
                                 .thenCompose(segmentTokens -> storeReplayTokens(
                                         segmentTokens,
-                                        startPosition,
-                                        resetContext,
                                         processingContext
                                 ))
         );
     }
 
-    private CompletableFuture<List<SegmentToken>> fetchSegmentsWithTokens(ProcessingContext processingContext) {
+    private <R> CompletableFuture<List<SegmentToken>> fetchSegmentsWithTokens(
+            TrackingToken startPosition,
+            @Nullable R resetContext,
+            ProcessingContext processingContext
+    ) {
         return tokenStore.fetchSegments(name, processingContext)
                          .thenCompose(segments -> {
-                             logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
                              var tokenFutures = segments.stream()
-                                                        .map(segment -> fetchTokenForSegment(segment,
-                                                                                             processingContext))
+                                                        .map(segment -> fetchTokenForSegment(
+                                                                segment, processingContext, startPosition, resetContext
+                                                        ))
                                                         .toList();
                              return CompletableFuture.allOf(tokenFutures.toArray(CompletableFuture[]::new))
                                                      .thenApply(ignored -> tokenFutures.stream()
@@ -319,54 +321,72 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                          });
     }
 
-    private CompletableFuture<SegmentToken> fetchTokenForSegment(Segment segment, ProcessingContext processingContext) {
+    private <R> CompletableFuture<SegmentToken> fetchTokenForSegment(
+            Segment segment,
+            ProcessingContext processingContext,
+            TrackingToken startPosition,
+            @Nullable R resetContext
+    ) {
         return tokenStore.fetchToken(name, segment.getSegmentId(), processingContext)
-                         .thenApply(token -> new SegmentToken(segment, token));
+                         .thenApply(token -> new SegmentToken(
+                                 segment,
+                                 ReplayToken.createReplayToken(
+                                         token,
+                                         startPosition,
+                                         convertedResetContext(
+                                                 resetContext,
+                                                 processingContext.component(Converter.class)
+                                         )
+                                 )
+                         ));
+    }
+
+    private <R> byte[] convertedResetContext(@Nullable R resetContext, Converter converter) {
+        byte[] convertedResetContext = converter.convert(resetContext, byte[].class);
+        return convertedResetContext == null ? new byte[0] : convertedResetContext;
     }
 
     private <R> CompletableFuture<List<SegmentToken>> performReset(
             List<SegmentToken> segmentTokens,
-            R resetContext,
-            ProcessingContext processingContext
+            @Nullable R resetContext,
+            ProcessingContext context
     ) {
         var resetMessage = new GenericResetContext(new MessageType(ResetContext.class), resetContext);
-        return eventHandlingComponents.handleReset(resetMessage, processingContext)
+        return eventHandlingComponents.handleReset(resetMessage, context)
+                                      .thenCompose(ignored -> replayHasStarted(segmentTokens)
+                                              ? eventHandlingComponents.replayStarted(context)
+                                              : FutureUtils.emptyCompletedFuture())
                                       .thenApply(ignored -> segmentTokens);
     }
 
-    private <R> CompletableFuture<Void> storeReplayTokens(
+    private static boolean replayHasStarted(List<SegmentToken> segmentTokens) {
+        return segmentTokens.stream()
+                            .map(SegmentToken::token)
+                            .anyMatch(token -> token instanceof ReplayToken);
+    }
+
+    private CompletableFuture<Void> storeReplayTokens(
             List<SegmentToken> segmentTokens,
-            TrackingToken startPosition,
-            R resetContext,
             ProcessingContext processingContext
     ) {
+        List<Segment> segments = segmentTokens.stream().map(SegmentToken::segment).toList();
+        logger.debug("Processor [{}] will try to reset tokens for segments [{}].", name, segments);
         var storeFutures = segmentTokens.stream()
                                         .map(st -> tokenStore.storeToken(
-                                                ReplayToken.createReplayToken(
-                                                        st.token(),
-                                                        startPosition,
-                                                        convertedResetContext(
-                                                                resetContext,
-                                                                processingContext.component(Converter.class)
-                                                        )
-                                                ),
+                                                st.token(),
                                                 name,
                                                 st.segment().getSegmentId(),
                                                 processingContext
                                         ))
                                         .toList();
         return CompletableFuture.allOf(storeFutures.toArray(CompletableFuture[]::new))
-                                .thenRun(() -> logger.info("Processor [{}] successfully reset tokens for segments [{}].",
-                                                           name,
-                                                           segmentTokens.stream().map(SegmentToken::segment).toList()));
+                                .thenRun(() -> logger.info(
+                                        "Processor [{}] successfully reset tokens for segments [{}].",
+                                        name, segments
+                                ));
     }
 
-    private <R> byte[] convertedResetContext(R resetContext, Converter converter) {
-        byte[] convertedResetContext = converter.convert(resetContext, byte[].class);
-        return convertedResetContext == null ? new byte[0] : convertedResetContext;
-    }
-
-    private record SegmentToken(Segment segment, TrackingToken token) {
+    private record SegmentToken(Segment segment, @Nullable TrackingToken token) {
 
     }
 

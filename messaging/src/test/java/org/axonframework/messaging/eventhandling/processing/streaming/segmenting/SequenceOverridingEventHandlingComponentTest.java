@@ -27,6 +27,7 @@ import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
@@ -107,6 +108,12 @@ class SequenceOverridingEventHandlingComponentTest {
 
             @Override
             public MessageStream.@NonNull Empty<Message> handle(@NonNull ResetContext resetContext,
+                                                                @NonNull ProcessingContext context) {
+                return MessageStream.empty();
+            }
+
+            @Override
+            public MessageStream.@NonNull Empty<Message> handle(@NonNull ReplayStatusChanged statusChange,
                                                                 @NonNull ProcessingContext context) {
                 return MessageStream.empty();
             }

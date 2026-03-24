@@ -18,14 +18,13 @@ package org.axonframework.extension.springboot.messaging.deadletter.jdbc;
 
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.GenericDeadLetterTableFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -41,7 +40,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
-
 import javax.sql.DataSource;
 
 /**
@@ -112,15 +110,6 @@ class SpringBootJdbcDeadLetteringIntegrationTest extends DeadLetteringEventInteg
     @Override
     protected UnitOfWorkFactory buildUnitOfWorkFactory() {
         return unitOfWorkFactory;
-    }
-
-    /**
-     * Returns the autowired {@link EventConverter} since the JDBC DLQ serializes event payloads to JSON, so
-     * deserialization requires a converter that understands the JSON format.
-     */
-    @Override
-    protected EventConverter eventConverter() {
-        return eventConverter;
     }
 
     /**

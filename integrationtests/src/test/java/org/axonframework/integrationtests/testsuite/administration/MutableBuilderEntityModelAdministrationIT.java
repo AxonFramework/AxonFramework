@@ -17,12 +17,9 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -37,9 +34,11 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableSalaryInformation;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableTask;
-import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -57,7 +56,6 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
     EntityMetamodel<MutablePerson> buildEntityMetamodel(Configuration configuration,
                                                         EntityMetamodelBuilder<MutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
-        MessageConverter messageConverter = configuration.getComponent(MessageConverter.class);
         EventConverter eventConverter = configuration.getComponent(EventConverter.class);
 
         // Task is the list-based child-model of Employee
@@ -70,7 +68,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             CompleteTaskCommand convertedPayload =
-                                                    command.payloadAs(CompleteTaskCommand.class, messageConverter);
+                                                    command.payloadAs(CompleteTaskCommand.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -86,7 +84,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             GiveRaise convertedPayload =
-                                                    command.payloadAs(GiveRaise.class, messageConverter);
+                                                    command.payloadAs(GiveRaise.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -102,7 +100,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             CreateEmployee convertedPayload =
-                                                    command.payloadAs(CreateEmployee.class, messageConverter);
+                                                    command.payloadAs(CreateEmployee.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -110,7 +108,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             AssignTaskCommand convertedPayload =
-                                                    command.payloadAs(AssignTaskCommand.class, messageConverter);
+                                                    command.payloadAs(AssignTaskCommand.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -121,9 +119,8 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                   ))
                                   .commandTargetResolver((candidates, commandMessage, ctx) -> {
                                       if (commandMessage.type().name().equals(CompleteTaskCommand.class.getName())) {
-                                          CompleteTaskCommand assignTaskCommand = messageConverter.convertPayload(
-                                                  commandMessage, CompleteTaskCommand.class
-                                          );
+                                          CompleteTaskCommand assignTaskCommand = commandMessage.payloadAs(
+                                                  CompleteTaskCommand.class);
                                           Objects.requireNonNull(assignTaskCommand,
                                                                  "AssignTaskCommand payload cannot be null");
                                           return candidates.stream()
@@ -167,7 +164,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                         ((command, entity, context) -> {
                             EventAppender eventAppender = EventAppender.forContext(context);
                             CreateCustomer convertedPayload =
-                                    command.payloadAs(CreateCustomer.class, messageConverter);
+                                    command.payloadAs(CreateCustomer.class);
                             entity.handle(convertedPayload, eventAppender);
                             return MessageStream.empty().cast();
                         }))
@@ -185,7 +182,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             ChangeEmailAddress convertedPayload =
-                                                    command.payloadAs(ChangeEmailAddress.class, messageConverter);
+                                                    command.payloadAs(ChangeEmailAddress.class);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -206,7 +203,7 @@ public class MutableBuilderEntityModelAdministrationIT extends AbstractAdministr
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
-                .entityIdResolver(PersonIdentifierEntityIdResolver::new)
+                .entityIdResolver(config -> new PersonIdentifierEntityIdResolver())
                 .build();
         return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
     }
