@@ -10,8 +10,8 @@ This path covers the migration of configuration-related code from Axon Framework
 The most significant changes are:
 
 * **Configurer split**: The single `Configurer` has been replaced by `MessagingConfigurer`, `ModellingConfigurer`, and `EventSourcingConfigurer`
-* **ConfigurerModule removal**: `ConfigurerModule` has been replaced by `ConfigurationEnhancer`, which operates on a `ComponentRegistry`
-* **Component registration**: Many `Configurer` registration methods have moved to the `ComponentRegistry`
+* **ConfigurerModule replacement**: `ConfigurerModule` has been replaced by `ConfigurationEnhancer`, which operates on a `ComponentRegistry`
+* **Component registration**: Several component-specific `Configurer` registration methods have been replaced for generic registration methods on the `ComponentRegistry`
 * **Lifecycle registration**: Lifecycle handlers are now registered through the `LifecycleRegistry`
 ====
 
