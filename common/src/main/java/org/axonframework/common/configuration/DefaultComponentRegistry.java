@@ -277,7 +277,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * parent chain, so that lazy component definitions stored in the shared {@link Components} are always resolved
      * through a single entry point.
      *
-     * @param parent The parent configuration to serve as parent for the created result.
+     * @param parent The optional parent configuration to serve as parent for the created result
      * @return A configuration backed by this registry. Either a new {@link LocalConfiguration} wrapping the given
      * {@code parent}, or the {@code parent} itself if it already belongs to this registry.
      */
