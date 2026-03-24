@@ -26,24 +26,22 @@
 
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin-extension</artifactId>
+    <packaging>pom</packaging>
 
     <name>Axon Extension - Kotlin - Parent</name>
-    <description>
-        Module providing parent for Axon Framework Kotlin Extension.
-    </description>
+    <description>Module providing parent for Axon Framework Kotlin Extension.</description>
 
-    <packaging>pom</packaging>
     <modules>
         <module>kotlin</module>
         <module>kotlin-test</module>
     </modules>
 
     <properties>
-        <kotlin.version>2.2.21</kotlin.version>
-        <kotlin-serialization.version>1.9.0</kotlin-serialization.version>
+        <kotlin.version>2.3.20</kotlin.version>
+        <kotlin-serialization.version>1.10.0</kotlin-serialization.version>
         <!-- Logging -->
         <mockk.version>1.12.4</mockk.version>
-        <dokka.version>2.0.0</dokka.version>
+        <dokka.version>2.1.0</dokka.version>
 
         <!--
         Deactivate dokka by default, and make the build faster for all projects.
@@ -132,15 +130,6 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
         </dependency>
-        <!-- Serialization -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-serialization-core</artifactId>
-        </dependency>
         <!-- Testing -->
 
         <dependency>
@@ -182,9 +171,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
-
         <plugins>
             <!-- compile -->
             <plugin>
@@ -192,6 +178,7 @@
                 <!--suppress KotlinMavenPluginPhase -->
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
+                <extensions>true</extensions>
                 <configuration>
                     <jvmTarget>21</jvmTarget>
                     <args>
@@ -202,37 +189,8 @@
                         <plugin>all-open</plugin>
                         <plugin>kotlinx-serialization</plugin>
                     </compilerPlugins>
-                    <pluginOptions>
-                        <!-- Axon specific classes -->
-                        <option>all-open:annotation=org.axonframework.modelling.command.AggregateRoot</option>
-                    </pluginOptions>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
+
                 <dependencies>
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
@@ -251,36 +209,22 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler.version}</version>
-                <executions>
-                    <!-- Replacing default-compile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <!-- Replacing default-testCompile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>java-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>java-test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!-- test -->
+<!--            <plugin>-->
+<!--                <artifactId>maven-surefire-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <includes>-->
+<!--                        <include>**/*Test.java</include>-->
+<!--                        <include>**/*Tests.java</include>-->
+<!--                        <include>**/*Test_*.java</include>-->
+<!--                        <include>**/*Tests_*.java</include>-->
+<!--                    </includes>-->
+<!--                    <systemPropertyVariables>-->
+<!--                        <slf4j.version>${slf4j.version}</slf4j.version>-->
+<!--                        <log4j.version>${log4j.version}</log4j.version>-->
+<!--                    </systemPropertyVariables>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <!-- prepare package -->
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>

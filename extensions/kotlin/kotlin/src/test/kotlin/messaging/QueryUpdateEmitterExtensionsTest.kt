@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.extensions.kotlin
+package org.axonframework.extension.kotlin.messaging
 
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.axonframework.queryhandling.QueryUpdateEmitter
+import org.axonframework.extension.kotlin.ExampleQuery
+import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 /**
- * Tests [org.axonframework.queryhandling.QueryUpdateEmitter] extensions.
+ * Tests [org.axonframework.messaging.queryhandling.QueryUpdateEmitter] extensions.
  *
  * @author Stefan Andjelkovic
  */
