@@ -90,6 +90,11 @@ public interface EventHandlingComponent
     }
 
     @Override
+    default MessageStream.Empty<Message> handle(ResetContext resetContext, ProcessingContext context) {
+        return MessageStream.empty();
+    }
+
+    @Override
     default MessageStream.Empty<Message> handle(ReplayStatusChanged statusChange, ProcessingContext context) {
         return MessageStream.empty();
     }
