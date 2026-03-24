@@ -378,7 +378,7 @@ class AxonApp {
 == Spring Boot configuration
 
 When using Spring Boot, the auto-configuration automatically sets up the appropriate configurer.
-Custom `ConfigurationEnhancer` beans are automatically discovered and applied.
+Moving from the `ConfigurerModule` to the `ConfigurationEnhancer` (as explained <<configurermodule_to_configurationenhancer,here>>) in your beans is arguably most important:
 
 [tabs]
 ====
@@ -386,14 +386,19 @@ Axon Framework 4::
 +
 [source,java]
 ----
+import org.axonframework.config.ConfigurerModule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 @Configuration
-public class MyAxonConfig {
+class AxonConfig {
 
     @Bean
     public ConfigurerModule myModule() {
-        return configurer -> {
-            configurer.registerComponent(MyService.class, config -> new MyService());
-        };
+        return configurer -> configurer.registerComponent(
+                MyService.class,
+                config -> new MyService()
+        );
     }
 }
 ----
@@ -402,14 +407,19 @@ Axon Framework 5::
 +
 [source,java]
 ----
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 @Configuration
-public class MyAxonConfig {
+class AxonConfig {
 
     @Bean
     public ConfigurationEnhancer myEnhancer() {
-        return registry -> {
-            registry.registerComponent(MyService.class, config -> new MyService());
-        };
+        return registry -> registry.registerComponent(
+                MyService.class,
+                config -> new MyService()
+        );
     }
 }
 ----
