@@ -1,13 +1,13 @@
-package io.axoniq.demo.university.faculty.write.subscribe_student
+package org.axonframework.examples.university.faculty.write.subscribe_student
 
-import io.axoniq.demo.university.faculty.FacultyTags
-import io.axoniq.demo.university.faculty.events.CourseCreated
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
-import io.axoniq.demo.university._ext.evolveIf
-import io.axoniq.demo.university.shared.ids.CourseId
-import io.axoniq.demo.university.shared.ids.StudentId
-import io.axoniq.demo.university.shared.ids.SubscriptionId
+import org.axonframework.examples.university.faculty.FacultyTags
+import org.axonframework.examples.university.faculty.events.CourseCreated
+import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
+import org.axonframework.examples.university.faculty.events.StudentSubscribedToCourse
+import org.axonframework.examples.university._ext.evolveIf
+import org.axonframework.examples.university.shared.ids.CourseId
+import org.axonframework.examples.university.shared.ids.StudentId
+import org.axonframework.examples.university.shared.ids.SubscriptionId
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler

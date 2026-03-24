@@ -65,11 +65,6 @@
         <!-- region [Kotlin] -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
         </dependency>
         <dependency>
@@ -101,6 +96,16 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.axonframework.extensions.kotlin</groupId>
+            <artifactId>axon-kotlin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework.extensions.kotlin</groupId>
+            <artifactId>axon-kotlin-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- endregion [Axon Framework] -->
 
@@ -165,15 +170,13 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
-
         <plugins>
             <plugin>
                 <!-- KAPT is optional and has to be configured in modules using it -->
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
+                <extensions>true</extensions>
 
                 <configuration>
                     <jvmTarget>${java.version}</jvmTarget>
@@ -189,41 +192,9 @@
                     </compilerPlugins>
                     <pluginOptions>
                         <!-- annotations that open kotlin files. don't hurt even if unused in kotlin project -->
-                        <!--              <option>all-open:annotation=javax.persistence.Entity</option>-->
-                        <!--              <option>all-open:annotation=javax.persistence.MappedSuperclass</option>-->
-                        <!--              <option>all-open:annotation=javax.persistence.Embeddable</option>-->
                         <option>all-open:annotation=io.toolisticon.testing.jgiven.JGivenKotlinStage</option>
                     </pluginOptions>
                 </configuration>
-
-                <executions>
-                    <!-- KOTLIN COMPILE -->
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-
-                    <!-- KOTLIN TEST -->
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-
-                    <!-- KOTLIN ITEST -->
-                    <execution>
-                        <id>integration-test-compile</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
 
                 <dependencies>
                     <!-- KOTLIN ALL-OPEN -->
@@ -241,44 +212,6 @@
                 </dependencies>
             </plugin>
 
-            <!-- JAVA (from kotlin maven doc) -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.1</version>
-                <configuration>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <parameters>true</parameters>
-                </configuration>
-                <executions>
-                    <!-- Replacing default-compile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <!-- Replacing default-testCompile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>java-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>java-test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

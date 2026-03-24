@@ -1,8 +1,8 @@
-package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
+package org.axonframework.examples.university.faculty.write.subscribe_student_polymorph
 
-import io.axoniq.demo.university.shared.ids.CourseId
-import io.axoniq.demo.university.shared.ids.StudentId
-import io.axoniq.demo.university.shared.ids.SubscriptionId
+import org.axonframework.examples.university.shared.ids.CourseId
+import org.axonframework.examples.university.shared.ids.StudentId
+import org.axonframework.examples.university.shared.ids.SubscriptionId
 import org.axonframework.messaging.commandhandling.annotation.Command
 import org.axonframework.modelling.annotation.TargetEntityId
 

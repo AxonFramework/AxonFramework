@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty
+package org.axonframework.examples.university.faculty
 
 data object FacultyTags {
     const val STUDENT: String = "student"

@@ -1,6 +1,6 @@
-package io.axoniq.demo.university.faculty.write.subscribe_student_polymorph
+package org.axonframework.examples.university.faculty.write.subscribe_student_polymorph
 
-import io.axoniq.demo.university.shared.ids.SubscriptionId
+import org.axonframework.examples.university.shared.ids.SubscriptionId
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.gateway.EventAppender

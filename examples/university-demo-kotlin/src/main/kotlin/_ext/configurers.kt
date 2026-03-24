@@ -1,6 +1,3 @@
-package io.axoniq.demo.university._ext
-
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
-import kotlin.reflect.KClass
+package org.axonframework.examples.university._ext
 
 //fun EventSourcedEntityModule.Companion.create(type: KClass<*>)

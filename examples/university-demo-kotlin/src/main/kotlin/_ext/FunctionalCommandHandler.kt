@@ -1,19 +1,15 @@
-package io.axoniq.demo.university._ext
+package org.axonframework.examples.university._ext
 
 import org.axonframework.common.annotation.AnnotationUtils
 import org.axonframework.common.configuration.Configuration
 import org.axonframework.common.infra.ComponentDescriptor
-import org.axonframework.messaging.*
 import org.axonframework.messaging.commandhandling.*
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule.CommandHandlerPhase
 import org.axonframework.messaging.core.*
+import org.axonframework.messaging.core.Message
+import org.axonframework.messaging.core.annotation.*
 import org.axonframework.messaging.core.annotation.MessageHandler
-import org.axonframework.messaging.core.annotation.MessageHandlerInvocationException
-import org.axonframework.messaging.core.annotation.MessageHandlingMember
 import org.axonframework.messaging.core.annotation.MessageStreamResolverUtils.resolveToStream
-import org.axonframework.messaging.core.annotation.ParameterResolver
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory
-import org.axonframework.messaging.core.annotation.UnsupportedHandlerException
 import org.axonframework.messaging.core.conversion.MessageConverter
 import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import java.lang.reflect.InvocationTargetException
@@ -22,10 +18,6 @@ import java.util.*
 import java.util.Objects.requireNonNull
 import java.util.concurrent.ExecutionException
 import java.util.function.Function
-import kotlin.collections.Set
-import kotlin.collections.filterNotNull
-import kotlin.collections.isNotEmpty
-import kotlin.collections.toTypedArray
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.extensionReceiverParameter
 import kotlin.reflect.full.instanceParameter

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalStdlibApi::class)
 
-package io.axoniq.demo.university.shared.ids
+package org.axonframework.examples.university.shared.ids
 
 import java.util.*
 

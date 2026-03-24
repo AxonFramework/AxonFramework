@@ -1,7 +1,6 @@
-package io.axoniq.demo.university.faculty.write.create_course
+package org.axonframework.examples.university.faculty.write.create_course
 
-import io.axoniq.demo.university.shared.ids.CourseId
-import org.axonframework.modelling.annotation.TargetEntityId
+import org.axonframework.examples.university.shared.ids.CourseId
 
 data class CreateCourse(
     val courseId: CourseId,

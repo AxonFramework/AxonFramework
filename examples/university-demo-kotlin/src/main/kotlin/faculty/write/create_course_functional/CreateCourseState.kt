@@ -1,7 +1,7 @@
-package io.axoniq.demo.university.faculty.write.create_course_functional
+package org.axonframework.examples.university.faculty.write.create_course_functional
 
-import io.axoniq.demo.university.faculty.FacultyTags.COURSE
-import io.axoniq.demo.university.faculty.events.CourseCreated
+import org.axonframework.examples.university.faculty.FacultyTags.COURSE
+import org.axonframework.examples.university.faculty.events.CourseCreated
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator

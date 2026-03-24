@@ -1,11 +1,11 @@
-package io.axoniq.demo.university.faculty.write
+package org.axonframework.examples.university.faculty.write
 
-import io.axoniq.demo.university.UniversityKotlinApplication
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
-import io.axoniq.demo.university.faculty.write.create_course.registerCreateCourse
-import io.axoniq.demo.university.faculty.write.enroll_student.EnrollStudent
-import io.axoniq.demo.university.faculty.write.enroll_student.registerEnrollStudent
-import io.axoniq.demo.university.shared.ids.StudentId
+import org.axonframework.examples.university.UniversityKotlinApplication
+import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
+import org.axonframework.examples.university.faculty.write.create_course.registerCreateCourse
+import org.axonframework.examples.university.faculty.write.enroll_student.EnrollStudent
+import org.axonframework.examples.university.faculty.write.enroll_student.registerEnrollStudent
+import org.axonframework.examples.university.shared.ids.StudentId
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach

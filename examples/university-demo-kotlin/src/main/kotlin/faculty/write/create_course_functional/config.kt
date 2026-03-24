@@ -1,7 +1,7 @@
-package io.axoniq.demo.university.faculty.write.create_course_functional
+package org.axonframework.examples.university.faculty.write.create_course_functional
 
-import io.axoniq.demo.university._ext.functionalHandler
-import io.axoniq.demo.university.shared.ids.CourseId
+import org.axonframework.examples.university._ext.functionalHandler
+import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.gateway.EventAppender

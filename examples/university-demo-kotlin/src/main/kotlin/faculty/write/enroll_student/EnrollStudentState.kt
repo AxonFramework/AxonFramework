@@ -1,7 +1,7 @@
-package io.axoniq.demo.university.faculty.write.enroll_student
+package org.axonframework.examples.university.faculty.write.enroll_student
 
-import io.axoniq.demo.university.faculty.FacultyTags
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
+import org.axonframework.examples.university.faculty.FacultyTags
+import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator

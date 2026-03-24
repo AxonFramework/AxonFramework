@@ -1,10 +1,10 @@
-package io.axoniq.demo.university.faculty.write.subscribe_student_fmodel
+package org.axonframework.examples.university.faculty.write.subscribe_student_fmodel
 
-import io.axoniq.demo.university.faculty.events.CourseCreated
-import io.axoniq.demo.university.faculty.events.FacultyEvent
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse
-import io.axoniq.demo.university.shared.ids.SubscriptionId
+import org.axonframework.examples.university.faculty.events.CourseCreated
+import org.axonframework.examples.university.faculty.events.FacultyEvent
+import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
+import org.axonframework.examples.university.faculty.events.StudentSubscribedToCourse
+import org.axonframework.examples.university.shared.ids.SubscriptionId
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.gateway.EventAppender

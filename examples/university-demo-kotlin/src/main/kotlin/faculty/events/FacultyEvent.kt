@@ -1,3 +1,3 @@
-package io.axoniq.demo.university.faculty.events
+package org.axonframework.examples.university.faculty.events
 
 sealed interface FacultyEvent

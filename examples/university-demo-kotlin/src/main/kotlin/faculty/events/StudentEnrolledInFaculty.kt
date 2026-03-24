@@ -1,7 +1,7 @@
-package io.axoniq.demo.university.faculty.events
+package org.axonframework.examples.university.faculty.events
 
-import io.axoniq.demo.university.faculty.FacultyTags
-import io.axoniq.demo.university.shared.ids.StudentId
+import org.axonframework.examples.university.faculty.FacultyTags
+import org.axonframework.examples.university.shared.ids.StudentId
 import org.axonframework.eventsourcing.annotation.EventTag
 
 data class StudentEnrolledInFaculty(

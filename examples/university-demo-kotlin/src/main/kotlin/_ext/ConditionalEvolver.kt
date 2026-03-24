@@ -1,4 +1,4 @@
-package io.axoniq.demo.university._ext
+package org.axonframework.examples.university._ext
 
 /**
  * Conditionally evolves current instance.

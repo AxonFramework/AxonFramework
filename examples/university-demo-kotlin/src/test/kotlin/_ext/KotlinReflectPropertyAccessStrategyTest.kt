@@ -1,4 +1,4 @@
-package io.axoniq.demo.university._ext
+package org.axonframework.examples.university._ext
 
 import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.common.property.PropertyAccessStrategy

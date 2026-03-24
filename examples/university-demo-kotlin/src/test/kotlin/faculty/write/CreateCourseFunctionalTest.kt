@@ -1,10 +1,10 @@
-package io.axoniq.demo.university.faculty.write
+package org.axonframework.examples.university.faculty.write
 
-import io.axoniq.demo.university.UniversityKotlinApplication
-import io.axoniq.demo.university.faculty.events.CourseCreated
-import io.axoniq.demo.university.faculty.write.create_course_functional.CreateCourse
-import io.axoniq.demo.university.faculty.write.create_course_functional.registerCreateCourseFunctional
-import io.axoniq.demo.university.shared.ids.CourseId
+import org.axonframework.examples.university.UniversityKotlinApplication
+import org.axonframework.examples.university.faculty.events.CourseCreated
+import org.axonframework.examples.university.faculty.write.create_course_functional.CreateCourse
+import org.axonframework.examples.university.faculty.write.create_course_functional.registerCreateCourseFunctional
+import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach

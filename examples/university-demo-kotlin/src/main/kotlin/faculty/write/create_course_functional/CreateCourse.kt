@@ -1,6 +1,6 @@
-package io.axoniq.demo.university.faculty.write.create_course_functional
+package org.axonframework.examples.university.faculty.write.create_course_functional
 
-import io.axoniq.demo.university.shared.ids.CourseId
+import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.modelling.annotation.TargetEntityId
 
 data class CreateCourse(

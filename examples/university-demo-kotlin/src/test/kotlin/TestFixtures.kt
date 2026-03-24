@@ -1,4 +1,4 @@
-package io.axoniq.demo.university
+package org.axonframework.examples.university
 
 data object TestFixtures {
 

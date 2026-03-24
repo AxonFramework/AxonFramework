@@ -1,6 +1,6 @@
-package io.axoniq.demo.university.faculty.write.create_course
+package org.axonframework.examples.university.faculty.write.create_course
 
-import io.axoniq.demo.university.shared.ids.CourseId
+import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.gateway.EventAppender
