@@ -104,10 +104,18 @@ class AxonApp {
 }
 ----
 
-== ConfigurerModule to ConfigurationEnhancer
+[#configurermodule_to_configurationenhancer]
+== `ConfigurerModule` to `ConfigurationEnhancer`
 
 The `ConfigurerModule` interface from Axon Framework 4 allowed modules to hook into the configuration process.
-In Axon Framework 5, this concept has been replaced by the `ConfigurationEnhancer`, which operates directly on the `ComponentRegistry`.
+This feature was especially useful for Axon applications that integrate with <<spring_boot_configuration,Spring>>, as it allows for a hook to customize the configuration.
+In Axon Framework 5, this concept has been renamed and slightly adjust to the `ConfigurationEnhancer`.
+
+Largest difference between both, is that the latter deals with the `ComponentRegistry` (used under the hood by the `ApplicationConfigurer` as defined <<configurer_adjustments,here>>).
+The `ConfigurationEnhancer` has an `order()` method, just as the `ConfiguerModule` did, which dictates the order in which the module acts on the configurer directly.
+Furthermore, just as the `ConfigurerModule`, the `ConfigurationEnhancer` can be registered through the Service Loader mechanism, directly with the configurer, or as a Spring bean.
+
+Let us look at an example use of the `ConfigurerModule` and what this would look like as a `ConfigurationEnhancer`:
 
 [tabs]
 ====
@@ -115,53 +123,35 @@ Axon Framework 4::
 +
 [source,java]
 ----
-import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
 
 public class MyConfigurerModule implements ConfigurerModule {
 
     @Override
     public void configureModule(Configurer configurer) {
         configurer.registerComponent(MyService.class, config -> new MyService());
-        configurer.eventProcessing(ep -> ep.registerDefaultHandlerInterceptor(
-            (config, name) -> new MyInterceptor()
-        ));
     }
 }
 ----
 +
-Registered via Spring auto-discovery or manually through `configurer.registerModule(new MyConfigurerModule())`.
 
 Axon Framework 5::
 +
 [source,java]
 ----
-import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
 
 public class MyConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry registry) {
+    public void enhance(ComponentRegistry registry) {
         registry.registerComponent(MyService.class, config -> new MyService());
-    }
-
-    @Override
-    public int order() {
-        return 0; // Controls execution order; lower values run first
     }
 }
 ----
 +
-Registered programmatically or discovered automatically via `ServiceLoader`:
-+
-[source,java]
-----
-// Programmatic registration
-configurer.componentRegistry(cr -> cr.registerEnhancer(new MyConfigurationEnhancer()));
-
-// ServiceLoader: place in META-INF/services/org.axonframework.common.configuration.ConfigurationEnhancer
-----
 ====
 
 Key differences:
