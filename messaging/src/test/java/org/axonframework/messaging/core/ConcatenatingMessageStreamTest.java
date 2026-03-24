@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -197,5 +199,20 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
 
             assertTrue(callbackCalled.getAndSet(false));
         }
+    }
+
+    @Test
+    void transitionToSecondaryStreamShouldBeImmediate() {
+        Message msg1 = createRandomMessage();
+        Message msg2 = createRandomMessage();
+
+        ConcatenatingMessageStream<Message> ms = new ConcatenatingMessageStream<>(
+            MessageStream.fromIterable(List.of(msg1)),
+            MessageStream.fromIterable(List.of(msg2))
+        );
+
+        assertThat(ms.next()).map(Entry::message).contains(msg1);
+        assertThat(ms.next()).map(Entry::message).contains(msg2);
+        assertThat(ms.next()).isEmpty();
     }
 }
