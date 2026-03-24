@@ -154,27 +154,20 @@ public class MyConfigurationEnhancer implements ConfigurationEnhancer {
 +
 ====
 
-Key differences:
-
-* **Operates on `ComponentRegistry`** instead of `Configurer`, providing direct component registration
-* **Supports ordering** via `order()` to control the sequence of enhancer execution
-* **ServiceLoader support** enables automatic discovery without explicit registration
-* **Enhancer scanning** can be selectively disabled:
-
-[source,java]
-----
-configurer.componentRegistry(cr -> {
-    // Disable all automatic enhancer scanning
-    cr.disableEnhancerScanning();
-    // Or disable a specific enhancer
-    cr.disableEnhancer(UnwantedEnhancer.class);
-});
-----
-
-== Component registration via ComponentRegistry
+[#component_registration_via_componentregistry]
+== Component registration via `ComponentRegistry`
 
 In Axon Framework 4, components were registered through dedicated methods on the `Configurer`.
-In Axon Framework 5, many of these methods have moved to the `ComponentRegistry`, accessible from any configurer.
+In Axon Framework 5, some of these methods have been replaced for generic methods on the `ComponentRegistry`, accessible from any configurer.
+Exception to this rule are made, like registration of the `CommandBus` or `EventStore`.
+Registration methods for these reside on their respective `ApplicationConfigurer` level (as explained shortly <<configurer_adjustments,here>>).
+As such, the `CommandBus` has a dedicated registration method on the `MessagingConfigurer`, whereas the `EventStore` has one on the `EventSourcingConfigurer`.
+
+If you are unable to find the specific registration methods, do not worry.
+At the core of Axon's configuration sits the `ComponentRegistry` with its generic registration operation.
+The specific registration methods are thus just convenience methods, or syntactic sugar, overlaying the `ComponentRegistry`.
+
+Let's look at some configuration solutions in Axon Framework 4 to see what they should look like in Axon Framework 5:
 
 [tabs]
 ====
@@ -182,67 +175,92 @@ Axon Framework 4::
 +
 [source,java]
 ----
-Configurer configurer = DefaultConfigurer.defaultConfiguration();
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
 
-// Register a custom component
-configurer.registerComponent(MyService.class, config -> new MyService());
+class AxonApp {
 
-// Register a command bus
-configurer.configureCommandBus(config -> SimpleCommandBus.builder().build());
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
-// Register with a decorator
-configurer.onInitialize(config -> {
-    // Post-initialization logic
-});
+        // Register a custom component
+        configurer.registerComponent(MyService.class, config -> new MyService());
+
+        // Register a command bus
+        configurer.configureCommandBus(config -> SimpleCommandBus.builder().build());
+    }
+}
 ----
 
 Axon Framework 5::
 +
 [source,java]
 ----
-MessagingConfigurer configurer = MessagingConfigurer.create();
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 
-// Register a custom component via ComponentRegistry
-configurer.componentRegistry(cr ->
-    cr.registerComponent(MyService.class, config -> new MyService())
-);
+class AxonApp {
 
-// Register a command bus (dedicated method on MessagingConfigurer)
-configurer.registerCommandBus(config -> SimpleCommandBus.builder().build());
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
 
-// Register a component with a decorator
-configurer.componentRegistry(cr ->
-    cr.registerDecorator(MyService.class, 0, (config, original) -> new DecoratedService(original))
-);
+        // Register a custom component via ComponentRegistry
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                MyService.class,
+                config -> new MyService())
+        );
+
+        // Register a command bus (dedicated method on MessagingConfigurer)
+        configurer.registerCommandBus(config -> new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class)));
+    }
+}
 ----
 ====
 
-The `ComponentRegistry` also supports conditional registration, which prevents overwriting previously registered components:
+Besides plain registration, the `ComponentRegistry` supports conditional registration to prevents overwriting previously registered components:
 
 [source,java]
 ----
-configurer.componentRegistry(cr -> {
-    // Only registers if no MyService is already present
-    cr.registerIfNotPresent(MyService.class, config -> new DefaultMyService());
-});
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        configurer.componentRegistry(cr -> {
+            // Only registers if no MyService is already present
+            cr.registerIfNotPresent(MyService.class, config -> new MyService());
+        });
+    }
+}
 ----
 
-For richer component definitions with lifecycle hooks, use `ComponentDefinition`:
+For richer component definitions with <<lifecycle_handler_registration,lifecycle hooks>>, use `ComponentDefinition`:
 
 [source,java]
 ----
 import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 
-configurer.componentRegistry(cr ->
-    cr.registerComponent(
-        ComponentDefinition.ofType(MyService.class)
-                           .withBuilder(config -> new MyService())
-                           .onStart(0, MyService::start)
-                           .onShutdown(0, MyService::shutdown)
-    )
-);
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition.ofType(MyService.class)
+                                   .withBuilder(config -> new MyService())
+                                   .onStart(0, MyService::start)
+                                   .onShutdown(0, MyService::shutdown)
+        ));
+    }
+}
 ----
 
+[#lifecycle_handler_registration]
 == Lifecycle handler registration
 
 In Axon Framework 4, lifecycle handlers were registered directly on the `Configurer`.
