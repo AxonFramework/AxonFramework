@@ -191,18 +191,12 @@ class DefaultComponentRegistryTest {
     @Timeout(5)
     void moduleComponentUsingGetComponentWithDefaultFromParentDoesNotCauseStackOverflow() {
         // given
-        // Register a component in the root registry
         testSubject.disableEnhancerScanning();
         testSubject.registerComponent(String.class, c -> "root-value");
         testSubject.registerModule(
                 new TestModule("test-module").componentRegistry(
                         cr -> cr.registerComponent(
                                 TestComponent.class, "child",
-                                // getComponent(type, defaultSupplier) stores a LazyInitializedComponentDefinition
-                                // in the module registry's shared Components. When the lazy def's builder calls
-                                // fromParent, the parent LocalConfiguration (from the same registry) finds
-                                // that same lazy def, tries to resolve it, and re-enters the builder — causing
-                                // infinite recursion between the two LocalConfigurations of the same registry.
                                 c -> new TestComponent(c.getComponent(String.class, () -> "fallback"))
                         )
                 )
