@@ -522,8 +522,6 @@ public class ProcessorConfig {
 ----
 ====
 
-=== Sequence identifier caching
-Axon Framework 5 now supports sequence identifier caching to speed up event processing when using dead letter queues. For details on this feature see the xref:events:event-processors/dead-letter-queue.adoc#_sequence_identifier_caching[reference documentation].
 
 == Changes in the builder API of `JdbcSequencedDeadLetterQueue` and `JpaSequencedDeadLetterQueue`
 The changes between Axon Framework 4 and 5 also affected the builder API of the `JdbcSequencedDeadLetterQueue` and `JpaSequencedDeadLetterQueue`. The most notable changes are:
@@ -536,6 +534,8 @@ Processing dead lettered sequences in Axon Framework 5 works similar to Axon Fra
 The most noticeable changes are
 * the move to an async-first approach for the `SequencedDeadLetterProcessor`, and
 * the change in the queue scoping, changing how to retrieve a `SequencedDeadLetterProcessor` can be retrieved from the configuration.
+
+TIP: https://platform.axoniq.io/[Axoniq Platform] can process dead lettered sequences without the need for custom logic as described below.
 
 [tabs]
 ====
