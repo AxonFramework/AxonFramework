@@ -274,10 +274,10 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 ----
 ====
 
-[NOTE]
-====
-Axon Framework 5 now also allows to xref:events:event-processors/dead-letter-queue.adoc#_applying_defaults_across_processors[apply DLQ defaults across processors] that can be overridden by individual processors.
-====
+
+TIP: Axon Framework 5 now also allows to xref:events:event-processors/dead-letter-queue.adoc#_applying_defaults_across_processors[apply DLQ defaults across processors] that can be overridden by individual processors.
+
+TIP: Axon Framework 5 now caches sequence identifiers per default to speed up event processing when using dead letter queues. For details on this feature see the xref:events:event-processors/dead-letter-queue.adoc#_sequence_identifier_caching[reference documentation].
 
 === Declarative custom DLQ factory configuration
 
