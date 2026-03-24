@@ -16,24 +16,36 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import org.axonframework.conversion.ChainingContentTypeConverter;
+import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.extension.spring.data.JacksonPageDeserializer;
 import org.axonframework.extension.springboot.ConverterProperties;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Autoconfiguration that constructs a default {@link ObjectMapper}, typically to be used by a
@@ -51,7 +63,96 @@ import tools.jackson.databind.module.SimpleModule;
 })
 @ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
 @EnableConfigurationProperties(value = ConverterProperties.class)
-public class ObjectMapperAutoConfiguration {
+public class ObjectMapperAutoConfiguration implements BeanClassLoaderAware {
+
+    private ClassLoader classLoader;
+
+    /**
+     * Bean creation method constructing a {@link JacksonConverter} as the "general" {@link Converter} to be used by
+     * Axon Framework.
+     * <p>
+     * This bean acts as fallback and gets created in case {@code axon.converter.general} is not set or set to
+     * {@code default}.
+     *
+     * @param objectMapper the {@link ObjectMapper} to be used
+     * @return the "general" {@link Converter} to be used by Axon Framework
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(ignored = {MessageConverter.class, EventConverter.class})
+    @ConditionalOnExpression("'${axon.converter.general}' == 'jackson' || '${axon.converter.general:default}' == 'default'")
+    public Converter converter(ObjectMapper objectMapper) {
+        return buildConverter(objectMapper);
+    }
+
+    /**
+     * Bean creation method constructing a {@link MessageConverter} delegating to the "general" {@link Converter} in
+     * case both use {@code jackson/default}.
+     *
+     * @param generalConverter the "general" {@link Converter}, used to construct the {@link MessageConverter} in case
+     *                         both use {@code jackson/default}
+     * @return the {@link MessageConverter} to be used by Axon Framework
+     */
+    @Bean(name = "messageConverter")
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("""
+            '${axon.converter.messages}' == 'jackson'
+            && ('${axon.converter.general}' == 'jackson' || '${axon.converter.general:default}' == 'default')
+            """)
+    public MessageConverter delegatingMessageConverter(Converter generalConverter) {
+        return new DelegatingMessageConverter(generalConverter);
+    }
+
+    /**
+     * Bean creation method constructing a {@link JacksonConverter} as the {@link MessageConverter} to be used by Axon
+     * Framework.
+     *
+     * @param objectMapper the {@link ObjectMapper} to be used
+     * @return The {@link MessageConverter} to be used by Axon Framework.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("""
+            '${axon.converter.messages}' == 'jackson'
+            && !('${axon.converter.general}' == 'jackson' || '${axon.converter.general:default}' == 'default')
+            """)
+    public MessageConverter messageConverter(ObjectMapper objectMapper) {
+        return new DelegatingMessageConverter(buildConverter(objectMapper));
+    }
+
+    /**
+     * Bean creation method constructing an {@link EventConverter} delegating to the {@link MessageConverter} in case
+     * both use {@code jackson}.
+     *
+     * @param messageConverter the {@link MessageConverter}, used to construct the {@link EventConverter} in case both
+     *                         use {@code jackson}
+     * @return the {@link EventConverter} to be used by Axon Framework
+     */
+    @Bean(name = "eventConverter")
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.converter.events}' == 'jackson' && '${axon.converter.messages}' == 'jackson'")
+    public EventConverter delegatingEventConverter(MessageConverter messageConverter) {
+        return new DelegatingEventConverter(messageConverter);
+    }
+
+    /**
+     * Bean creation method constructing a {@link JacksonConverter} as the {@link EventConverter} to be used by Axon
+     * Framework.
+     *
+     * @param objectMapper the {@link ObjectMapper} to be used
+     * @return The {@link EventConverter} to be used by Axon Framework.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.converter.events}' == 'jackson' && '${axon.converter.messages}' != 'jackson'")
+    public EventConverter eventConverter(ObjectMapper objectMapper) {
+        return new DelegatingEventConverter(buildConverter(objectMapper));
+    }
+
+    private Converter buildConverter(ObjectMapper objectMapper) {
+        return new JacksonConverter(objectMapper, new ChainingContentTypeConverter(classLoader));
+    }
+
 
     /**
      * Returns the default Axon Framework {@link ObjectMapper}, if required.
@@ -66,6 +167,7 @@ public class ObjectMapperAutoConfiguration {
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
     @Bean("defaultAxonObjectMapper")
+    @Primary
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper(ObjectProvider<JacksonModule> modules) {
@@ -134,5 +236,17 @@ public class ObjectMapperAutoConfiguration {
         static class EventsJacksonCondition {
 
         }
+    }
+
+    /**
+     * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
+     * {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     *
+     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
+     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     */
+    @Override
+    public void setBeanClassLoader(ClassLoader classLoader) {
+        this.classLoader = requireNonNull(classLoader, "The ClassLoader cannot be null.");
     }
 }

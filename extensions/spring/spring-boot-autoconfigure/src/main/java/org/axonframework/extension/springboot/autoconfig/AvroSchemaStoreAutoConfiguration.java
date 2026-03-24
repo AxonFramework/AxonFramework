@@ -18,11 +18,22 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.apache.avro.Schema;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.conversion.ChainingContentTypeConverter;
 import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.avro.AvroConverter;
+import org.axonframework.conversion.avro.AvroConverterConfiguration;
+import org.axonframework.conversion.avro.AvroConverterStrategy;
 import org.axonframework.extension.spring.conversion.avro.AvroSchemaPackages;
 import org.axonframework.extension.spring.conversion.avro.AvroSchemaScan;
 import org.axonframework.extension.spring.conversion.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.extension.spring.conversion.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
+import org.axonframework.extension.springboot.ConverterProperties;
+import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
@@ -30,16 +41,23 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Autoconfigures required beans for the Avro {@link Converter}.
@@ -51,7 +69,89 @@ import java.util.stream.Collectors;
 @AutoConfiguration
 @AutoConfigureBefore(ConverterAutoConfiguration.class)
 @ConditionalOnClass(name = {"org.apache.avro.message.SchemaStore"})
-public class AvroSchemaStoreAutoConfiguration {
+@EnableConfigurationProperties(ConverterProperties.class)
+public class AvroSchemaStoreAutoConfiguration implements BeanClassLoaderAware {
+
+    private ClassLoader classLoader;
+
+    /**
+     * Bean creation method to throw an {@link AxonConfigurationException}, indicating that the {@link AvroConverter} is
+     * not supported as general converter.
+     *
+     * @return always throws {@link AxonConfigurationException} to indicate misconfiguration
+     */
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(ignored = {MessageConverter.class, EventConverter.class})
+    @ConditionalOnProperty(name = "axon.converter.general", havingValue = "avro")
+    public Converter converter() {
+        throw new AxonConfigurationException(format(
+                "Invalid converter type [%s] configured as general converter. "
+                        + "The Avro Converter can be used as message or event converter only.",
+                ConverterProperties.ConverterType.AVRO
+        ));
+    }
+
+    /**
+     * Bean creation method constructing an {@link AvroConverter} as the {@link MessageConverter} to be used by Axon
+     * Framework.
+     *
+     * @param schemaStore         the Avro {@link SchemaStore} to be used
+     * @param converterStrategies the {@link AvroConverterStrategy AvroConverterStrategies} to be used
+     * @return the {@link MessageConverter} to be used by Axon Framework
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "avro")
+    public MessageConverter messageConverter(SchemaStore schemaStore,
+                                             Map<String, AvroConverterStrategy> converterStrategies) {
+        return new DelegatingMessageConverter(buildConverter(schemaStore, converterStrategies));
+    }
+
+    /**
+     * Bean creation method constructing an {@link EventConverter} delegating to the {@link MessageConverter} in case
+     * both use {@code avro}.
+     *
+     * @param messageConverter the {@link MessageConverter}, used to construct the {@link EventConverter} in case both
+     *                         use {@code cbor}
+     * @return the {@link EventConverter} to be used by Axon Framework
+     */
+    @Bean(name = "eventConverter")
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.converter.events}' == 'avro' && '${axon.converter.messages}' == 'avro'")
+    public EventConverter delegatingEventConverter(MessageConverter messageConverter) {
+        return new DelegatingEventConverter(messageConverter);
+    }
+
+    /**
+     * Bean creation method constructing an {@link AvroConverter} as the {@link EventConverter} to be used by Axon
+     * Framework.
+     *
+     * @param schemaStore         the Avro {@link SchemaStore} to be used
+     * @param converterStrategies the {@link AvroConverterStrategy AvroConverterStrategies} to be used
+     * @return the {@link EventConverter} to be used by Axon Framework
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnExpression("'${axon.converter.events}' == 'avro' && '${axon.converter.messages}' != 'avro'")
+    public EventConverter eventConverter(SchemaStore schemaStore,
+                                         Map<String, AvroConverterStrategy> converterStrategies) {
+        return new DelegatingEventConverter(buildConverter(schemaStore, converterStrategies));
+    }
+
+    private Converter buildConverter(SchemaStore schemaStore, Map<String, AvroConverterStrategy> converterStrategies) {
+        return new AvroConverter(
+                schemaStore,
+                (c) -> {
+                    AvroConverterConfiguration result = c;
+                    for (AvroConverterStrategy strategy : converterStrategies.values()) {
+                        result = result.addConverterStrategy(strategy);
+                    }
+                    return result;
+                },
+                new ChainingContentTypeConverter(classLoader)
+        );
+    }
 
     /**
      * Constructs a simple default in-memory schema store filled with schemas.
@@ -145,5 +245,17 @@ public class AvroSchemaStoreAutoConfiguration {
         static class SchemaStoreIsMissingCondition {
 
         }
+    }
+
+    /**
+     * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
+     * {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     *
+     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
+     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     */
+    @Override
+    public void setBeanClassLoader(ClassLoader classLoader) {
+        this.classLoader = requireNonNull(classLoader, "The ClassLoader cannot be null.");
     }
 }
