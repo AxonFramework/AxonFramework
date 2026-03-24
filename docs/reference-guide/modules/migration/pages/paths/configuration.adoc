@@ -15,9 +15,10 @@ The most significant changes are:
 * **Lifecycle registration**: Lifecycle handlers are now registered through the `LifecycleRegistry`
 ====
 
-== Configurer replacement
+[#configurer_adjustments]
+== `Configurer` adjustments
 
-The `Configurer` and `DefaultConfigurer` from Axon Framework 4 have been replaced by three focused configurers in Axon Framework 5, each corresponding to a layer of the framework.
+The `Configurer` and `DefaultConfigurer` from Axon Framework 4 have been replaced by three focused configurers in Axon Framework 5, called `ApplicationConfigurers`, each corresponding to a layer of the framework.
 Choose the one that matches the highest-level feature your application uses:
 
 * `MessagingConfigurer` — for applications that only require messaging (commands, events, queries)
@@ -25,6 +26,9 @@ Choose the one that matches the highest-level feature your application uses:
 * `EventSourcingConfigurer` — adds event sourcing and event store support on top of modelling
 
 These configurers form a delegation chain: `EventSourcingConfigurer` wraps `ModellingConfigurer`, which wraps `MessagingConfigurer`.
+When Axon Framework is combined with <<spring_boot_configuration,Spring>> you will typically never have to interact with any of these `ApplicationConfigurer` types.Instead, you take Spring's bean creation approach or adjust the configuration through the `ConfigurationEnhancer`, as explained <<configurermodule_to_configurationenhancer,here>> in more detail.
+
+When you are using Axon Framework 4's `Configurer` directly, please check the following examples on how to migrate:
 
 [tabs]
 ====
@@ -32,29 +36,39 @@ Axon Framework 4::
 +
 [source,java]
 ----
+import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.Configuration;
 
-Configurer configurer = DefaultConfigurer.defaultConfiguration();
-// Register components, aggregates, event handlers...
+class AxonApp {
 
-Configuration configuration = configurer.buildConfiguration();
-configuration.start();
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        // Register components, aggregates, event handlers...
+
+        Configuration configuration = configurer.buildConfiguration();
+        configuration.start();
+    }
+}
 ----
 
 Axon Framework 5::
 +
 [source,java]
 ----
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
-EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
-// Register components, entities, event handlers...
+class AxonApp {
 
-AxonConfiguration configuration = configurer.build();
-configuration.start();
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+        // Register components, entities, event handlers...
+
+        AxonConfiguration configuration = configurer.build();
+        configuration.start();
+    }
+}
 ----
 +
 If your application does not use event sourcing, use the configurer that matches your needs:
@@ -73,13 +87,21 @@ Each configurer provides escape-hatch methods to access the underlying layer whe
 
 [source,java]
 ----
-EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
-// Access the modelling layer
-configurer.modelling(mc -> mc.registerEntity(myEntityModule));
+class AxonApp {
 
-// Access the messaging layer
-configurer.messaging(mc -> mc.registerCommandBus(config -> myCommandBus));
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        // Access the modelling layer
+        configurer.modelling(modellingConfigurer -> modellingConfigurer.registerEntity(/*...*/));
+
+        // Access the messaging layer
+        configurer.messaging(messagingConfigurer -> messagingConfigurer.registerCommandBus(config -> /*...*/));
+    }
+}
 ----
 
 == ConfigurerModule to ConfigurationEnhancer
