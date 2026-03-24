@@ -263,8 +263,8 @@ class AxonApp {
 [#lifecycle_handler_registration]
 == Lifecycle handler registration
 
-In Axon Framework 4, lifecycle handlers were registered directly on the `Configurer`.
-In Axon Framework 5, these have moved to the `LifecycleRegistry`, accessible from any configurer via the `lifecycleRegistry` method.
+In Axon Framework 4, lifecycle handlers like `onStart` or `onShutdown` were registered directly on the `Configurer`.
+In Axon Framework 5, these have moved to the `LifecycleRegistry`, accessible from any configurer via the `lifecycleRegistry` method:
 
 [tabs]
 ====
@@ -272,62 +272,107 @@ Axon Framework 4::
 +
 [source,java]
 ----
-Configurer configurer = DefaultConfigurer.defaultConfiguration();
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
 
-configurer.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
-    // Startup logic
-    return CompletableFuture.completedFuture(null);
-});
+import java.util.concurrent.CompletableFuture;
 
-configurer.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
-    // Shutdown logic
-    return CompletableFuture.completedFuture(null);
-});
+class AxonApp {
+
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+        configurer.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {
+            // Startup logic
+            return CompletableFuture.completedFuture(null);
+        });
+
+        configurer.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {
+            // Shutdown logic
+            return CompletableFuture.completedFuture(null);
+        });
+    }
+}
 ----
 
 Axon Framework 5::
 +
 [source,java]
 ----
-EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
-configurer.lifecycleRegistry(lr -> {
-    lr.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
-        // Startup logic
-        return CompletableFuture.completedFuture(null);
-    });
+import java.util.concurrent.CompletableFuture;
 
-    lr.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
-        // Shutdown logic
-        return CompletableFuture.completedFuture(null);
-    });
-});
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        configurer.lifecycleRegistry(lr -> {
+            lr.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+                // Startup logic
+                return CompletableFuture.completedFuture(null);
+            });
+
+            lr.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+                // Shutdown logic
+                return CompletableFuture.completedFuture(null);
+            });
+        });
+    }
+}
 ----
 ====
 
-The `LifecycleRegistry` provides several convenience overloads:
+However, start and shutdown handlers are in most cases tied to the component you want to configure.
+You could configure this in Axon Framework 4 by having a component implement the `Lifecycle` interface.
+This interface no longer exists in Axon Framework 5. Instead, lifecycle handler registration is integrated into component registration:
 
+[tabs]
+====
+Axon Framework 4::
++
 [source,java]
 ----
-configurer.lifecycleRegistry(lr -> {
-    // Simple runnable (phase defaults to 0)
-    lr.onStart(() -> System.out.println("Started"));
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.lifecycle.Lifecycle;
+import org.jetbrains.annotations.NotNull;
 
-    // With explicit phase
-    lr.onStart(Phase.EXTERNAL_CONNECTIONS, () -> connectToExternalService());
+class MyComponent implements Lifecycle {
 
-    // Async start handler
-    lr.onStart(Phase.EXTERNAL_CONNECTIONS, () -> CompletableFuture.runAsync(() -> warmUpCache()));
-
-    // With Configuration access
-    lr.onShutdown(0, config -> config.getComponent(MyService.class).close());
-
-    // Configure the phase timeout (default is 5 seconds)
-    lr.registerLifecyclePhaseTimeout(10, TimeUnit.SECONDS);
-});
+    @Override
+    public void registerLifecycleHandlers(@NotNull Lifecycle.LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {});
+        lifecycle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {});
+    }
+}
 ----
 
-Start handlers execute in ascending phase order; shutdown handlers execute in descending phase order.
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition.ofType(MyComponent.class)
+                                   .withBuilder(config -> new MyComponent())
+                                   .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {})
+                                   .onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {})
+        ));
+    }
+}
+----
+====
 
 [#spring_boot_configuration]
 == Spring Boot configuration
