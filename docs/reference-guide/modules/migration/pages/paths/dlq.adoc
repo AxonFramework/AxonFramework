@@ -181,8 +181,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
@@ -327,9 +326,8 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         var dlqEnabledGroups = List.of(/*...*/);
-        var configurer = MessagingConfigurer.create();
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
@@ -485,8 +483,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
