@@ -21,9 +21,9 @@ The most significant changes are:
 The `Configurer` and `DefaultConfigurer` from Axon Framework 4 have been replaced by three focused configurers in Axon Framework 5, called `ApplicationConfigurers`, each corresponding to a layer of the framework.
 Choose the one that matches the highest-level feature your application uses:
 
-* `MessagingConfigurer` — for applications that only require messaging (commands, events, queries)
-* `ModellingConfigurer` — adds entity (formerly aggregate) and repository support on top of messaging
-* `EventSourcingConfigurer` — adds event sourcing and event store support on top of modelling
+* `MessagingConfigurer` - for applications that only require messaging (commands, events, queries)
+* `ModellingConfigurer` - adds entity (formerly aggregate) and repository support on top of messaging
+* `EventSourcingConfigurer` - adds event sourcing and event store support on top of modelling
 
 These configurers form a delegation chain: `EventSourcingConfigurer` wraps `ModellingConfigurer`, which wraps `MessagingConfigurer`.
 When Axon Framework is combined with <<spring_boot_configuration,Spring>> you will typically never have to interact with any of these `ApplicationConfigurer` types.Instead, you take Spring's bean creation approach or adjust the configuration through the `ConfigurationEnhancer`, as explained <<configurermodule_to_configurationenhancer,here>> in more detail.
