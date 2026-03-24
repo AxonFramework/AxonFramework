@@ -26,7 +26,8 @@ Choose the one that matches the highest-level feature your application uses:
 * `EventSourcingConfigurer` - adds event sourcing and event store support on top of modelling
 
 These configurers form a delegation chain: `EventSourcingConfigurer` wraps `ModellingConfigurer`, which wraps `MessagingConfigurer`.
-When Axon Framework is combined with <<spring_boot_configuration,Spring>> you will typically never have to interact with any of these `ApplicationConfigurer` types.Instead, you take Spring's bean creation approach or adjust the configuration through the `ConfigurationEnhancer`, as explained <<configurermodule_to_configurationenhancer,here>> in more detail.
+When Axon Framework is combined with <<spring_boot_configuration,Spring>> you will typically never have to interact with any of these `ApplicationConfigurer` types.
+Instead, you take Spring's bean creation approach or adjust the configuration through the `ConfigurationEnhancer`, as explained <<configurermodule_to_configurationenhancer,here>> in more detail.
 
 When you are using Axon Framework 4's `Configurer` directly, please check the following examples on how to migrate:
 
