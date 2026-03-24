@@ -30,9 +30,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * Autoconfiguration class dedicated to configuring the {@link Converter}.
- * <p>
- * Users can influence the configuration through the {@link ConverterProperties}.
+ * Autoconfiguration class dedicated to configuring the delegation behaviour for default {@link MessageConverter}
+ * and {@link EventConverter}
  *
  * @author Steven van Beelen
  * @since 5.0.0
