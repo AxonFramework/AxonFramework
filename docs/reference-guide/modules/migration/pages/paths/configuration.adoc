@@ -329,6 +329,7 @@ configurer.lifecycleRegistry(lr -> {
 
 Start handlers execute in ascending phase order; shutdown handlers execute in descending phase order.
 
+[#spring_boot_configuration]
 == Spring Boot configuration
 
 When using Spring Boot, the auto-configuration automatically sets up the appropriate configurer.
