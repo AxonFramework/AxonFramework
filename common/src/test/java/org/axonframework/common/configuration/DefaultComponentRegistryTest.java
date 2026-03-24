@@ -188,6 +188,30 @@ class DefaultComponentRegistryTest {
     }
 
     @Test
+    @Timeout(5)
+    void moduleComponentUsingGetComponentWithDefaultFromParentDoesNotCauseStackOverflow() {
+        // given
+        testSubject.disableEnhancerScanning();
+        testSubject.registerComponent(String.class, c -> "root-value");
+        testSubject.registerModule(
+                new TestModule("test-module").componentRegistry(
+                        cr -> cr.registerComponent(
+                                TestComponent.class, "child",
+                                c -> new TestComponent(c.getComponent(String.class, () -> "fallback"))
+                        )
+                )
+        );
+
+        // when
+        Configuration config = testSubject.build(new StubLifecycleRegistry());
+
+        // then - should resolve "root-value" from parent without StackOverflowError
+        TestComponent result = config.getModuleConfigurations().getFirst()
+                                     .getComponent(TestComponent.class, "child");
+        assertEquals("root-value", result.state());
+    }
+
+    @Test
     void enhancersAreInvokedInOrder() {
         ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
