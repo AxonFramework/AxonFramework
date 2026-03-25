@@ -62,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * This allows disabling specific tests in the subtype, or writing new tests using the
  * existing helper methods.
  *
+ * @param <ESE> the event storage engine type
  * @author Steven van Beelen
  * @author John Hendrikx
  */

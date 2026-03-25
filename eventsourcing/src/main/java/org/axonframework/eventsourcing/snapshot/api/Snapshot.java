@@ -33,7 +33,6 @@ import java.util.Objects;
  * @param payload the payload to associate with the snapshot, never {@code null}
  * @param timestamp the timestamp to associate with the snapshot, never {@code null}
  * @param metadata the metadata to associate with the snapshot, never {@code null}
- * @throws NullPointerException if any argument is {@code null}
  * @author John Hendrikx
  * @since 5.1.0
  */

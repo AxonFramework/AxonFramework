@@ -72,7 +72,6 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final boolean WITH_MARKER = true;
     private static final boolean WITHOUT_MARKER = false;
 
     private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage>> eventStorage =

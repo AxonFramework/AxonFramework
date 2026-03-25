@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * are independent of each other.
  *
  * @author John Hendrikx
+ * @param <E> the event storage engine type
  */
 public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStorageEngine> {
 
@@ -149,6 +150,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
      *
      * @param converter The converter to use, cannot be {@code null}.
      * @return The {@link EventStorageEngine} used in this test suite.
+     * @throws Exception when getting the engine fails
      */
     protected abstract @NonNull E getStorageEngine(@NonNull EventConverter converter) throws Exception;
 

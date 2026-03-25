@@ -112,6 +112,7 @@ class AnnotationBasedTagResolverTest {
             @EventTag(key = "customField")
             private final Integer value;
 
+            @SuppressWarnings("unused")
             private final String nonTagged;
 
             TestClass(String id, Integer value, String nonTagged) {

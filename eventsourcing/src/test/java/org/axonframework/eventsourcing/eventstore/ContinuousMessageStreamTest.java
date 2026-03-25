@@ -41,7 +41,7 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
     @Override
     protected MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
         AtomicBoolean called = new AtomicBoolean(false);
-        return new ContinuousMessageStream<EventMessage>(
+        return new ContinuousMessageStream<>(
             () -> called.getAndSet(true) ? List.of() : messages,
             m -> new SimpleEntry<>(m),
             (ms, r) -> () -> true
@@ -63,7 +63,7 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
     @Override
     protected MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, RuntimeException failure) {
         AtomicBoolean called = new AtomicBoolean(false);
-        return new ContinuousMessageStream<EventMessage>(
+        return new ContinuousMessageStream<>(
             () -> {
                 if (!called.getAndSet(true) && !messages.isEmpty()) {
                     return messages;
