@@ -46,9 +46,11 @@ import static java.util.Objects.requireNonNull;
  * @since 5.1.0
  */
 @AutoConfiguration
-@AutoConfigureBefore({AxonAutoConfiguration.class,
+@AutoConfigureBefore({
+        AxonAutoConfiguration.class,
         ConverterAutoConfiguration.class,
-        CBORConverterAutoConfiguration.class})
+        CBORConverterAutoConfiguration.class
+})
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
         "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
