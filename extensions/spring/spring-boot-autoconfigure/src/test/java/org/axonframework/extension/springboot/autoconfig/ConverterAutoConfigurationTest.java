@@ -56,7 +56,9 @@ class ConverterAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
+        testContext = new ApplicationContextRunner()
+                .withUserConfiguration(TestContext.class)
+                .withPropertyValues("axon.axonserver.enabled=false");
     }
 
     @Test
@@ -92,7 +94,6 @@ class ConverterAutoConfigurationTest {
     void defaultObjectMapperIsUsedForExpectedConverters() {
         // Jackson is used for all Converters.
         testContext.withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson",
                 "axon.converter.messages=jackson",
                 "axon.converter.events=jackson"
@@ -125,7 +126,6 @@ class ConverterAutoConfigurationTest {
     void customObjectMapperIsUsedForExpectedConverters() {
         // Jackson is used for general and events. CBOR for messages.
         testContext.withUserConfiguration(CustomMapperContext.class).withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson",
                 "axon.converter.messages=cbor",
                 "axon.converter.events=jackson"
@@ -155,7 +155,6 @@ class ConverterAutoConfigurationTest {
     void defaultCBORMapperIsUsedForExpectedConverters() {
         // Jackson is used for general, CBOR for messages and events.
         testContext.withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson",
                 "axon.converter.messages=cbor",
                 "axon.converter.events=cbor"
@@ -189,7 +188,6 @@ class ConverterAutoConfigurationTest {
     void customCBORMapperIsUsedForExpectedConverters() {
         // Jackson is used for general and events. CBOR for messages.
         testContext.withUserConfiguration(CustomMapperContext.class).withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson",
                 "axon.converter.messages=cbor",
                 "axon.converter.events=jackson"
@@ -218,7 +216,6 @@ class ConverterAutoConfigurationTest {
     void defaultAxonJackson2MapperIsUsedForExpectedConverters() {
         // Jackson is used for all Converters.
         testContext.withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson2",
                 "axon.converter.messages=jackson2",
                 "axon.converter.events=jackson2"
@@ -252,7 +249,6 @@ class ConverterAutoConfigurationTest {
     void customJackson2ObjectMapperIsUsedForExpectedConverters() {
         // Jackson is used for general and events. CBOR for messages.
         testContext.withUserConfiguration(CustomJackson2MapperContext.class).withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=jackson2",
                 "axon.converter.messages=cbor",
                 "axon.converter.events=jackson2"
@@ -296,7 +292,6 @@ class ConverterAutoConfigurationTest {
     @Test
     void noObjectMapperBeanIsCreatedIfNoJacksonConverterIsSpecified() {
         testContext.withUserConfiguration(JacksonlessTestContext.class).withPropertyValues(
-                "axon.axonserver.enabled=false",
                 "axon.converter.general=cbor",
                 "axon.converter.messages=avro",
                 "axon.converter.events=avro"
@@ -357,6 +352,7 @@ class ConverterAutoConfigurationTest {
     public static class CustomMapperContext {
 
         @Bean("testObjectMapper")
+        @Primary
         public ObjectMapper objectMapper() {
             return new ObjectMapper();
         }

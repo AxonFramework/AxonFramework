@@ -14,17 +14,21 @@
 # limitations under the License.
 #
 
+org.axonframework.extension.springboot.autoconfig.AvroConverterAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.AvroSchemaStoreAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.AxonAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration
 # TODO: include in config, see #3959 - org.axonframework.extension.springboot.autoconfig.AxonTimeoutAutoConfiguration
+org.axonframework.extension.springboot.autoconfig.CBORConverterAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.ConverterAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.CorrelationDataProviderAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.EventProcessingAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.InfrastructureAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.InterceptorAutoConfiguration
+org.axonframework.extension.springboot.autoconfig.JacksonConverterAutoConfiguration
+org.axonframework.extension.springboot.autoconfig.Jackson2ConverterAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.Jackson2MapperAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JdbcAutoConfiguration
 org.axonframework.extension.springboot.autoconfig.JdbcDeadLetterQueueAutoConfiguration
