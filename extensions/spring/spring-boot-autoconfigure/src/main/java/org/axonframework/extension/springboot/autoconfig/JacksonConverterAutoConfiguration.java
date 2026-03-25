@@ -99,7 +99,7 @@ public class JacksonConverterAutoConfiguration implements BeanClassLoaderAware {
      * Framework.
      *
      * @param objectMapper the {@link ObjectMapper} to be used
-     * @return The {@link MessageConverter} to be used by Axon Framework.
+     * @return the {@link MessageConverter} to be used by Axon Framework
      */
     @Bean
     @ConditionalOnMissingBean
@@ -131,7 +131,7 @@ public class JacksonConverterAutoConfiguration implements BeanClassLoaderAware {
      * Framework.
      *
      * @param objectMapper the {@link ObjectMapper} to be used
-     * @return The {@link EventConverter} to be used by Axon Framework.
+     * @return the {@link EventConverter} to be used by Axon Framework
      */
     @Bean
     @ConditionalOnMissingBean
@@ -148,8 +148,8 @@ public class JacksonConverterAutoConfiguration implements BeanClassLoaderAware {
      * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
      * {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
      *
-     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
-     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     * @param classLoader the class loader used by the {@link ChainingContentTypeConverter} to load
+     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}
      */
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {

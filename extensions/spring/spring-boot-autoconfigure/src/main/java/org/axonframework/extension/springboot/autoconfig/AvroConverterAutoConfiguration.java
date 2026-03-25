@@ -97,7 +97,7 @@ public class AvroConverterAutoConfiguration implements BeanClassLoaderAware {
      * both use {@code avro}.
      *
      * @param messageConverter the {@link MessageConverter}, used to construct the {@link EventConverter} in case both
-     *                         use {@code cbor}
+     *                         use {@code avro}
      * @return the {@link EventConverter} to be used by Axon Framework
      */
     @Bean(name = "eventConverter")
@@ -142,7 +142,7 @@ public class AvroConverterAutoConfiguration implements BeanClassLoaderAware {
      * {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
      *
      * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
-     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}
      */
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {

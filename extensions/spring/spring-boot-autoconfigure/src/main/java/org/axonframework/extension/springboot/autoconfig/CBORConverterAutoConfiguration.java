@@ -116,7 +116,7 @@ public class CBORConverterAutoConfiguration implements BeanClassLoaderAware {
      * by Axon Framework.
      *
      * @param cborMapper the {@link CBORMapper} to be used
-     * @return The {@link EventConverter} to be used by Axon Framework.
+     * @return the {@link EventConverter} to be used by Axon Framework
      */
     @Bean
     @ConditionalOnMissingBean
@@ -133,8 +133,8 @@ public class CBORConverterAutoConfiguration implements BeanClassLoaderAware {
      * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
      * {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
      *
-     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
-     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}.
+     * @param classLoader the class loader used by the {@link ChainingContentTypeConverter} to load
+     *                    {@link org.axonframework.conversion.ContentTypeConverter ContentTypeConverters}
      */
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {

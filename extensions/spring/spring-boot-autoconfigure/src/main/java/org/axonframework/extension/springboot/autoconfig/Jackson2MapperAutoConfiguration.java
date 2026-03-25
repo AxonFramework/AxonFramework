@@ -54,7 +54,7 @@ public class Jackson2MapperAutoConfiguration {
      * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
      * {@code ConverterType}.
      *
-     * @return The default Axon Framework {@link ObjectMapper}, if required.
+     * @return the default Axon Framework {@link ObjectMapper}, if required
      */
     @Bean("defaultAxonJackson2Mapper")
     @ConditionalOnMissingBean

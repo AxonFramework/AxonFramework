@@ -46,7 +46,7 @@ public class CBORMapperAutoConfiguration {
      * <b>and</b> whenever the user specified the
      * {@link ConverterProperties.ConverterType#CBOR} {@code ConverterType}.
      *
-     * @return The default Axon Framework {@link CBORMapper}, if required.
+     * @return the default Axon Framework {@link CBORMapper}, if required
      */
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
