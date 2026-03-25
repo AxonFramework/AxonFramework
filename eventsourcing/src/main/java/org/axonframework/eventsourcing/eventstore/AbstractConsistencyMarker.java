@@ -40,8 +40,11 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.lowerBound(this);
         }
-        //noinspection unchecked
-        return doLowerBound((T) other);
+
+        @SuppressWarnings("unchecked")
+        T castMarker = (T) other;
+
+        return doLowerBound(castMarker);
     }
 
     /**
@@ -53,8 +56,11 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
         if (other == ConsistencyMarker.INFINITY || other == ConsistencyMarker.ORIGIN) {
             return other.upperBound(this);
         }
-        //noinspection unchecked
-        return doUpperBound((T) other);
+
+        @SuppressWarnings("unchecked")
+        T castMarker = (T) other;
+
+        return doUpperBound(castMarker);
     }
 
     /**

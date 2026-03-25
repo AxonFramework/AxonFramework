@@ -31,21 +31,25 @@ import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageDispatchInterceptor;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link EventSourcingConfigurationDefaults}.
  *
  * @author Steven van Beelen
  */
+@ExtendWith(MockitoExtension.class)
 class EventSourcingConfigurationDefaultsTest {
 
     private EventSourcingConfigurationDefaults testSubject;
@@ -121,11 +125,10 @@ class EventSourcingConfigurationDefaultsTest {
     }
 
     @Test
-    void decoratorsEventStoreAsInterceptorEventStoreWhenDispatchInterceptorIsPresent() {
-        //noinspection unchecked
+    void decoratorsEventStoreAsInterceptorEventStoreWhenDispatchInterceptorIsPresent(@Mock MessageDispatchInterceptor<Message> mockInterceptor) {
         ApplicationConfigurer configurer = EventSourcingConfigurer
                 .create()
-                .messaging(m -> m.registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class)));
+                .messaging(m -> m.registerDispatchInterceptor(c -> mockInterceptor));
         Configuration resultConfig = configurer.build();
 
         assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(InterceptingEventStore.class);

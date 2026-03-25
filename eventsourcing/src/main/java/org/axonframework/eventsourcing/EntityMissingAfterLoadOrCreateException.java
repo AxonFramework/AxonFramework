@@ -21,7 +21,7 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
  * Exception thrown by the {@link EventSourcedEntityFactory} when the entity returned by
- * {@link EventSourcedEntityFactory#create(Object, EventMessage)} is {@code null} when calling it with a {@code null}
+ * {@link EventSourcedEntityFactory#create(Object, EventMessage, ProcessingContext)} is {@code null} when calling it with a {@code null}
  * {@code firstEventMessage} during the {@link EventSourcingRepository#loadOrCreate(Object, ProcessingContext)}.
  * <p>
  * This indicates that the factory is incapable of creating an entity without an event message, as is the case with
