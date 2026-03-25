@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -55,8 +56,8 @@ public class JpaTransactionAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TransactionManager axonTransactionManager(
-            PlatformTransactionManager transactionManager,
-            @Nullable EntityManagerProvider entityManagerProvider,
+            @Lazy PlatformTransactionManager transactionManager,
+            @Lazy @Nullable EntityManagerProvider entityManagerProvider,
             @Nullable ConnectionProvider connectionProvider
     ) {
         return new SpringTransactionManager(transactionManager, entityManagerProvider, connectionProvider);

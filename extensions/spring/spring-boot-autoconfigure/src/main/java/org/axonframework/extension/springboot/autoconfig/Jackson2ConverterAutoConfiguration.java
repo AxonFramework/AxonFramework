@@ -33,8 +33,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 
 import static java.util.Objects.requireNonNull;
@@ -56,7 +56,6 @@ import static java.util.Objects.requireNonNull;
         "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
 })
 @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
-@EnableConfigurationProperties(value = ConverterProperties.class)
 public class Jackson2ConverterAutoConfiguration implements BeanClassLoaderAware {
 
     private ClassLoader classLoader;
@@ -72,7 +71,7 @@ public class Jackson2ConverterAutoConfiguration implements BeanClassLoaderAware 
     @Primary
     @ConditionalOnMissingBean(ignored = {MessageConverter.class, EventConverter.class})
     @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2")
-    public Converter converter(ObjectMapper objectMapper) {
+    public Converter converter(@Lazy ObjectMapper objectMapper) {
         return buildConverter(objectMapper);
     }
 
@@ -101,7 +100,7 @@ public class Jackson2ConverterAutoConfiguration implements BeanClassLoaderAware 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${axon.converter.messages}' == 'jackson2' && '${axon.converter.general}' != 'jackson2'")
-    public MessageConverter messageConverter(ObjectMapper objectMapper) {
+    public MessageConverter messageConverter(@Lazy ObjectMapper objectMapper) {
         return new DelegatingMessageConverter(buildConverter(objectMapper));
     }
 
@@ -130,7 +129,7 @@ public class Jackson2ConverterAutoConfiguration implements BeanClassLoaderAware 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnExpression("'${axon.converter.events}' == 'jackson2' && '${axon.converter.messages}' != 'jackson2'")
-    public EventConverter eventConverter(ObjectMapper objectMapper) {
+    public EventConverter eventConverter(@Lazy ObjectMapper objectMapper) {
         return new DelegatingEventConverter(buildConverter(objectMapper));
     }
 

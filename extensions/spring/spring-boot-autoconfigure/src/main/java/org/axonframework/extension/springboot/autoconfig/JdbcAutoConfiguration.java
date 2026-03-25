@@ -33,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import tools.jackson.databind.ObjectMapper;
 
 import javax.sql.DataSource;
@@ -64,7 +65,7 @@ public class JdbcAutoConfiguration {
      *
      * @param tokenStoreProperties properties used to configure the JDBC-backed {@link TokenStore}
      */
-    public JdbcAutoConfiguration(TokenStoreProperties tokenStoreProperties) {
+    public JdbcAutoConfiguration(@Lazy TokenStoreProperties tokenStoreProperties) {
         this.tokenStoreProperties = tokenStoreProperties;
     }
 
@@ -79,7 +80,7 @@ public class JdbcAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public ConnectionProvider connectionProvider(DataSource dataSource) {
+    public ConnectionProvider connectionProvider(@Lazy DataSource dataSource) {
         return new SpringDataSourceConnectionProvider(dataSource);
     }
 
