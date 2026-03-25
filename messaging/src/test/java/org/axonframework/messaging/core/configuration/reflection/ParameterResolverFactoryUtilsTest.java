@@ -21,7 +21,6 @@ import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.configuration.reflection.ParameterResolverFactoryUtils;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

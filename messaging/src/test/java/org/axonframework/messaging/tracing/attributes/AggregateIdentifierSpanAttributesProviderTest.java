@@ -17,7 +17,6 @@
 package org.axonframework.messaging.tracing.attributes;
 
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
-import org.axonframework.messaging.tracing.attributes.AggregateIdentifierSpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 @Disabled("TODO #3594")

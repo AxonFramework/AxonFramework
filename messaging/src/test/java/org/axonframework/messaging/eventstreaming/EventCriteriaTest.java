@@ -18,9 +18,6 @@ package org.axonframework.messaging.eventstreaming;
 
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.EventCriterion;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

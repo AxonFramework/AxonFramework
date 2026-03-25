@@ -17,9 +17,6 @@
 package org.axonframework.messaging.eventstreaming;
 
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.StartingFrom;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

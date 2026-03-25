@@ -33,20 +33,12 @@ import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class ProcessingContextEventAppenderTest {
 

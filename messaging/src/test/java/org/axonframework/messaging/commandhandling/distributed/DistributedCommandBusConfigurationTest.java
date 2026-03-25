@@ -17,7 +17,6 @@
 package org.axonframework.messaging.commandhandling.distributed;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;

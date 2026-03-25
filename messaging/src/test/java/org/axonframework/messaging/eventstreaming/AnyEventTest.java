@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.axonframework.messaging.eventstreaming.AnyEvent;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -18,9 +18,6 @@ package org.axonframework.messaging.core.annotation;
 
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
-import org.axonframework.messaging.core.annotation.AggregateType;
-import org.axonframework.messaging.core.annotation.AggregateTypeParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;

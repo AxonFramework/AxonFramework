@@ -17,8 +17,6 @@
 package org.axonframework.messaging.monitoring;
 
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

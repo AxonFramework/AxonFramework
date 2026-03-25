@@ -18,10 +18,6 @@ package org.axonframework.messaging.commandhandling.gateway;
 
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.infra.MockComponentDescriptor;
-import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.commandhandling.gateway.CommandResult;
-import org.axonframework.messaging.commandhandling.gateway.ContextAwareCommandDispatcher;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;

@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.commandhandling.retry.RetryingCommandBus;
 import org.axonframework.messaging.commandhandling.tracing.TracingCommandBus;

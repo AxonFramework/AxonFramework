@@ -19,7 +19,6 @@ package org.axonframework.messaging.core.correlation;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.correlation.SimpleCorrelationDataProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;

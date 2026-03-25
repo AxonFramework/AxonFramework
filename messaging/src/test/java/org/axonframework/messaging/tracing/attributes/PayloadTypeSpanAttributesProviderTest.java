@@ -20,7 +20,6 @@ import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
-import org.axonframework.messaging.tracing.attributes.PayloadTypeSpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

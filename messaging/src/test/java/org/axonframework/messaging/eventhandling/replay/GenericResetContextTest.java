@@ -21,8 +21,6 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageTestSuite;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.eventhandling.replay.GenericResetContext;
-import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
