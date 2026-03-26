@@ -108,7 +108,7 @@ class QueryThreadingIntegrationTest {
         // The application having a query that depends on another one
         QueryBus localQueryBus = QueryBusTestUtils.aQueryBus();
         connector = new AxonServerQueryBusConnector(connectionManager.getConnection(), configuration);
-        DistributedQueryBusConfiguration queryBusConfig = new DistributedQueryBusConfiguration().queryThreads(5);
+        DistributedQueryBusConfiguration queryBusConfig = DistributedQueryBusConfiguration.DEFAULT.queryThreads(5);
         queryBus1 = new DistributedQueryBus(localQueryBus,
                                             new PayloadConvertingQueryBusConnector(connector,
                                                                                    messageConverter,
