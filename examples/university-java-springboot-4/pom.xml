@@ -114,6 +114,10 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
+            <artifactId>axon-server-connector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
         </dependency>
         <dependency>

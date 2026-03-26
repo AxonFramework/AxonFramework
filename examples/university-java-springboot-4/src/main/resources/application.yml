@@ -20,9 +20,8 @@ spring:
 axon:
   converter:
     general: jackson
-  server:
+  axonserver:
     enabled: true
-
 springdoc:
   swagger-ui:
     try-it-out-enabled: true
