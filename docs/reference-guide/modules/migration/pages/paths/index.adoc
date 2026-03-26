@@ -19,9 +19,9 @@ Whether you are performing a straightforward version bump or a deep architectura
 * xref:migration:paths/test-fixtures.adoc[Test Fixture migration]
 * xref:migration:paths/serializers.adoc[Serializer migration]
 * xref:migration:paths/interceptors.adoc[Interceptor migration]
+* xref:migration:paths/configuration.adoc[Configuration migration]
 * xref:migration:paths/sequencing-policies.adoc[Sequencing Policy migration]
 * xref:migration:paths/dlq.adoc[Dead-Letter Queue migration]
-* _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
 3. **What is not yet there**
 4. **Missing a Migration Path?**
 
