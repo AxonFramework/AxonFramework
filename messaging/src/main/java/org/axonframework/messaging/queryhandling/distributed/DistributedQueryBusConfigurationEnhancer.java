@@ -52,7 +52,7 @@ public class DistributedQueryBusConfigurationEnhancer implements ConfigurationEn
             componentRegistry
                     .registerIfNotPresent(
                             DistributedQueryBusConfiguration.class,
-                            (c) -> new DistributedQueryBusConfiguration(),
+                            c -> DistributedQueryBusConfiguration.DEFAULT,
                             SearchScope.ALL
                     )
                     .registerDecorator(forType(QueryBus.class).with(queryBusDecoratorDefinition())

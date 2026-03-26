@@ -79,7 +79,7 @@ import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus
 public class AxonConfig {
     public void configureQueryBus(MessagingConfigurer configurer) {
         // Customize the configuration
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration()
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT
                 .queryThreads(20)                        // Set number of query processing threads
                 .queryQueueCapacity(2000)                // Set queue capacity
                 .preferLocalQueryHandler(true);         // Enable local handler shortcut (default)
@@ -94,7 +94,7 @@ To disable the local handler shortcut:
 
 [source,java]
 ----
-DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration()
+DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT
         .preferLocalQueryHandler(false);  // Force all queries through connector
 ----
 --
@@ -123,7 +123,7 @@ public class AxonConfig {
 
     @Bean
     public DistributedQueryBusConfiguration queryBusConfiguration() {
-        return new DistributedQueryBusConfiguration()
+        return DistributedQueryBusConfiguration.DEFAULT
                 .queryThreads(20)
                 .preferLocalQueryHandler(true);
     }

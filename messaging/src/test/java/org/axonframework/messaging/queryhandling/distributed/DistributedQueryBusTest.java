@@ -69,7 +69,7 @@ class DistributedQueryBusTest {
     void setUp() {
         localSegment = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
         connector = new StubQueryBusConnector();
-        configuration = new DistributedQueryBusConfiguration();
+        configuration = DistributedQueryBusConfiguration.DEFAULT;
     }
 
     @Test
