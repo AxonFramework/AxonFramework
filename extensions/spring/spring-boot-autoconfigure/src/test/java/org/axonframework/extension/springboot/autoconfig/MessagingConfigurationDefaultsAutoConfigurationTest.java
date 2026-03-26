@@ -136,6 +136,10 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     @EnableAutoConfiguration(
             exclude = {
                     ConverterAutoConfiguration.class,
+                    AvroConverterAutoConfiguration.class,
+                    CBORConverterAutoConfiguration.class,
+                    JacksonConverterAutoConfiguration.class,
+                    Jackson2ConverterAutoConfiguration.class,
                     JpaDeadLetterQueueAutoConfiguration.class,
                     JdbcDeadLetterQueueAutoConfiguration.class
             }
@@ -166,6 +170,10 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     @EnableAutoConfiguration(
             exclude = {
                     ConverterAutoConfiguration.class,
+                    AvroConverterAutoConfiguration.class,
+                    CBORConverterAutoConfiguration.class,
+                    JacksonConverterAutoConfiguration.class,
+                    Jackson2ConverterAutoConfiguration.class,
                     JpaDeadLetterQueueAutoConfiguration.class,
                     JdbcDeadLetterQueueAutoConfiguration.class
             }

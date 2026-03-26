@@ -53,12 +53,12 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
-     * {@link #transaction(ProcessingContext) transactions} and {@link #open(StreamingCondition) open event streams}
+     * {@link #transaction(ProcessingContext) transactions} and {@link #open(StreamingCondition, ProcessingContext) open event streams}
      * with.
      *
      * @param eventStorageEngine The {@link EventStorageEngine} used to start
      *                           {@link #transaction(ProcessingContext) transactions} and
-     *                           {@link #open(StreamingCondition) open event streams} with.
+     *                           {@link #open(StreamingCondition, ProcessingContext) open event streams} with.
      * @param eventBus           The {@link EventBus} used to publish events to the subscribers of the event store.
      * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
      *                           {@link EventStoreTransaction}.

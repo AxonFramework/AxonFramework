@@ -84,6 +84,15 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    void disablingEventStoreViaProperty() {
+        testContext.withPropertyValues("axon.axonserver.event-store.enabled=false").run(
+                context -> {
+                    assertThat(context.getBean(AxonServerConfiguration.class).getEventStore().isEnabled())
+                            .isFalse();
+                });
+    }
+
+    @Test
     void axonServerConfigurationContainsApplicationIdAsComponentName() {
         String expectedComponentName = "my-awesome-app";
         testContext.withInitializer(context -> context.setId(expectedComponentName)).run(context -> {

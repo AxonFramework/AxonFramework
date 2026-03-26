@@ -26,9 +26,9 @@ import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
@@ -44,13 +44,14 @@ import tools.jackson.databind.module.SimpleModule;
  * @since 3.4.0
  */
 @AutoConfiguration
-@AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
+@AutoConfigureBefore({AxonAutoConfiguration.class,
+        CBORMapperAutoConfiguration.class,
+        JacksonConverterAutoConfiguration.class})
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
         "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
 })
 @ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
-@EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
 
     /**
@@ -66,6 +67,7 @@ public class ObjectMapperAutoConfiguration {
      * @return The default Axon Framework {@link ObjectMapper}, if required.
      */
     @Bean("defaultAxonObjectMapper")
+    @Primary
     @ConditionalOnMissingBean
     @Conditional(JacksonConfiguredCondition.class)
     public ObjectMapper defaultAxonObjectMapper(ObjectProvider<JacksonModule> modules) {

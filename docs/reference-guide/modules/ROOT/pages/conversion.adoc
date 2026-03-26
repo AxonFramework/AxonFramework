@@ -385,7 +385,7 @@ public class ConverterConfiguration {
 
 [source,properties]
 ----
-# Possible values: 'default', 'java', 'jackson', 'jackson2'
+# Possible values: 'default', 'jackson', 'jackson2', 'avro', 'cbor',
 # 'avro' can be used for 'events' and 'messages' only
 axon.converter.general=jackson
 axon.converter.messages=jackson
@@ -396,7 +396,7 @@ axon.converter.events=jackson
 
 [source,yaml]
 ----
-# Possible values: 'default', 'java', 'jackson', 'jackson2'
+# Possible values: 'default', 'jackson', 'jackson2', 'avro', 'cbor'
 # 'avro' can be used for 'events' and 'messages' only
 axon:
   converter:

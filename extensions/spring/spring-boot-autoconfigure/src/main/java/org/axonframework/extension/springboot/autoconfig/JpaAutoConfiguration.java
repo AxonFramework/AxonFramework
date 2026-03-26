@@ -57,7 +57,6 @@ import javax.sql.DataSource;
 @RegisterDefaultEntities(packages = {
         "org.axonframework.messaging.eventhandling.processing.streaming.token.store.jpa",
         "org.axonframework.messaging.eventhandling.deadletter.jpa",
-        // "org.axonframework.modelling.saga.repository.jpa", // TODO re-enable as part of #3517
 })
 public class JpaAutoConfiguration {
 

@@ -63,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test suite validating implementations of {@link EventStorageEngine} implementations that are aggregate-based.
  *
+ * @param <ESE> the event storage engine type
  * @author Allard Buijze
  * @since 5.0.0
  */
@@ -101,6 +102,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
      * Constructs the {@link EventStorageEngine} used in this test suite.
      *
      * @return The {@link EventStorageEngine} used in this test suite.
+     * @throws Exception when building the engine fails
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 

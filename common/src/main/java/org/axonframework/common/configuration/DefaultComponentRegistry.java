@@ -269,14 +269,24 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Creates a local configuration, for a given parent and current registry as a component.
+     * Creates a local configuration for a given parent, backed by this registry's components.
+     * <p>
+     * This method is idempotent with respect to the owning registry: if the given {@code parent} is already a
+     * {@link LocalConfiguration} belonging to this registry, it is returned as-is rather than being wrapped in an
+     * additional layer. This guarantees that at most one {@code LocalConfiguration} per registry exists in any
+     * parent chain, so that lazy component definitions stored in the shared {@link Components} are always resolved
+     * through a single entry point.
      *
-     * @param parent The parent configuration to serve as parent for the created result.
-     * @return A new local configuration with parent referencing to components of the current registry.
+     * @param parent The optional parent configuration to serve as parent for the created result
+     * @return A configuration backed by this registry. Either a new {@link LocalConfiguration} wrapping the given
+     * {@code parent}, or the {@code parent} itself if it already belongs to this registry.
      */
     @Internal
-    public Configuration createLocalConfiguration(Configuration parent) {
-        Configuration currentConfiguration = new LocalConfiguration(parent);
+    public Configuration createLocalConfiguration(@Nullable Configuration parent) {
+        Configuration currentConfiguration =
+                parent instanceof LocalConfiguration lc && lc.enclosingRegistry() == this
+                        ? parent
+                        : new LocalConfiguration(parent);
         if (!this.hasComponent(ComponentRegistry.class, SearchScope.CURRENT)) {
             registerComponent(ComponentDefinition.ofType(ComponentRegistry.class)
                                                  .withInstance(this)); // register itself
@@ -487,6 +497,15 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         @Override
         public @Nullable Configuration getParent() {
             return parent;
+        }
+
+        /**
+         * Returns the {@link DefaultComponentRegistry} that created this {@code LocalConfiguration}.
+         *
+         * @return The enclosing registry instance.
+         */
+        DefaultComponentRegistry enclosingRegistry() {
+            return DefaultComponentRegistry.this;
         }
 
         @Override

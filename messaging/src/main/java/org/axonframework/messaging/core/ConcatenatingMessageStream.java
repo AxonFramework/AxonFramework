@@ -52,7 +52,8 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> next() {
-        if (first.isCompleted() && first.error().isEmpty()) {
+        if (!first.hasNextAvailable()  // this may trigger a completition state change, so call **before** isCompleted
+                && first.isCompleted() && first.error().isEmpty()) {
             return second.next();
         }
         return first.next();
