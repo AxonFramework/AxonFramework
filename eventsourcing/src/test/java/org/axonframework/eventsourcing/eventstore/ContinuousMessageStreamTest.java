@@ -36,6 +36,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Test for {@link ContinuousMessageStream}.
+ *
+ * @author John Hendrikx
+ */
 public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage> {
 
     @Override
