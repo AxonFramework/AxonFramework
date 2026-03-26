@@ -36,7 +36,6 @@ import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -67,14 +66,6 @@ class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBack
 
     @Autowired
     private SpringTransactionManager springTransactionManager;
-
-    @AfterAll
-    static void afterAll() {
-        if (engine != null) {
-            engine.close();
-            engine = null;
-        }
-    }
 
     @NonNull
     @Override
