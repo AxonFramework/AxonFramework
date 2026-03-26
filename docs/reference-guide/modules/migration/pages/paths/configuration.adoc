@@ -110,7 +110,7 @@ class AxonApp {
 
 The `ConfigurerModule` interface from Axon Framework 4 allowed modules to hook into the configuration process.
 This feature was especially useful for Axon applications that integrate with <<spring_boot_configuration,Spring>>, as it allows for a hook to customize the configuration.
-In Axon Framework 5, this concept has been renamed and slightly adjust to the `ConfigurationEnhancer`.
+In Axon Framework 5, this concept has been renamed and slightly adjusted to the `ConfigurationEnhancer`.
 
 Largest difference between both, is that the latter deals with the `ComponentRegistry` (used under the hood by the `ApplicationConfigurer` as defined <<configurer_adjustments,here>>).
 The `ConfigurationEnhancer` has an `order()` method, just as the `ConfigurerModule.` did, which dictates the order in which the module acts on the configurer directly.
