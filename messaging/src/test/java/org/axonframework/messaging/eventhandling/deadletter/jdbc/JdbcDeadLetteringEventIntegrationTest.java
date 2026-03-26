@@ -102,7 +102,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
      * Builds a {@link UnitOfWorkFactory} that registers a
      * {@link JdbcTransactionalExecutorProvider#SUPPLIER_KEY SUPPLIER_KEY} resource on each
      * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext}, similar to how
-     * {@link org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager} populates this resource
+     * {@code org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager} populates this resource
      * in production.
      * <p>
      * This allows the {@link JdbcTransactionalExecutorProvider} to extract the {@link ConnectionExecutor} from the

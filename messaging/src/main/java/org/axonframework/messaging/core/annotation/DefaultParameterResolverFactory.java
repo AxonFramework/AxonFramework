@@ -41,9 +41,9 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable,
-                                            Parameter[] parameters,
-                                            int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
+                                               int parameterIndex) {
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
             return new MessageParameterResolver(parameterType);

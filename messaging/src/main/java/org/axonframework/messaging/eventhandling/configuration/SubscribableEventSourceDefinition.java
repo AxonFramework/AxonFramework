@@ -17,13 +17,11 @@
 package org.axonframework.messaging.eventhandling.configuration;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.SubscribableEventSource;
 
 /**
  * Definition for a {@link SubscribableEventSource}.
  *
- * @param <M> {@link Message} type of the subscribable message source.
  * @author Marc Gathier
  * @since 4.10.0
  */

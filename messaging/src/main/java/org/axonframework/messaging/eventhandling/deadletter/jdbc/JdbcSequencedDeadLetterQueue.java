@@ -56,7 +56,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
  * A JDBC-based implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
- * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory)} operation to build
+ * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory, ProcessingContext)} operation to build
  * the table and indices required by this {@code SequencedDeadLetterQueue}, providing the desired
  * {@link DeadLetterTableFactory}. The {@link java.sql.PreparedStatement statements} used by this queues methods can be
  * optimized by providing a custom {@link DeadLetterStatementFactory}.

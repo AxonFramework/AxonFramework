@@ -465,7 +465,7 @@ class WorkPackage {
 
     /**
      * Returns the {@link TrackingToken} of the {@link MessageStream.Entry} that was delivered in the last
-     * {@link #scheduleEvent(MessageStream.Entry)} call.
+     * {@link WorkPackage#scheduleEvent(MessageStream.Entry)} call.
      * <p>
      * <b>Threading note:</b> This method is only safe to call from {@link Coordinator} threads. The {@link
      * WorkPackage} threads must not rely on this method.
@@ -481,7 +481,7 @@ class WorkPackage {
      * Indicates whether an abort has been triggered for this {@code WorkPackage}. When {@code true}, any events
      * scheduled for processing by this {@code WorkPackage} are likely to be ignored.
      * <p>
-     * Use {@link #abort(Exception)} (possibly with a {@code null} reason) to obtain a {@link CompletableFuture} with a
+     * Use {@link WorkPackage#abort(Exception)} (possibly with a {@code null} reason) to obtain a {@link CompletableFuture} with a
      * reference to the abort reason.
      *
      * @return {@code true} if an abort was scheduled, otherwise {@code false}
@@ -565,6 +565,7 @@ class WorkPackage {
          * Indicates whether the work package can handle the given {@code eventMessage} for the given {@code segment}.
          *
          * @param eventMessage the message for which to identify if the work package can handle it
+         * @param context      the {@link ProcessingContext} to use
          * @param segment      the segment for which the event can be processed
          * @return {@code true} if the event message can be handled, otherwise {@code false}
          * @throws Exception when validating of the given {@code eventMessage} fails

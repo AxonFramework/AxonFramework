@@ -82,8 +82,9 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
      * Performs the given {@code action} ignoring any parameters expecting a result type. This is typically used to
      * detect whether a handler is suitable for invocation prior to the result value being available.
      *
-     * @param action The action to perform
-     * @param <T>    The type of result expected from the action
+     * @param <T> the type of result expected from the action
+     * @param action            the action to perform
+     * @param processingContext the {@link ProcessingContext} to use
      * @return the result returned by the given action
      */
     public static <T> T ignoringResultParameters(ProcessingContext processingContext,

@@ -110,6 +110,9 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
     /**
      * Converts a {@link Context} to a {@link ProcessingContext} using {@link StubProcessingContext#fromContext(Context)},
      * or returns {@code null} if the given context is {@code null} or empty.
+     *
+     * @param context the {@link Context} to convert
+     * @return the resulting {@link ProcessingContext}
      */
     protected ProcessingContext toProcessingContext(Context context) {
         return context != null && !context.resources().isEmpty()

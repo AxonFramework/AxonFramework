@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * For example, a message monitor can track various things like message processing times, failure and success rates and
  * occurred exceptions. It also can gather information contained in messages headers like timestamps and tracers
  *
+ * @param <T> the type of message to monitor
  * @author Marijn van Zelst
  * @author Nakul Mishra
  * @since 3.0

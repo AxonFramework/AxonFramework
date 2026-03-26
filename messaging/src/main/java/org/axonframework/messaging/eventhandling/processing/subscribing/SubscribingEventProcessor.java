@@ -135,7 +135,8 @@ public class SubscribingEventProcessor implements EventProcessor {
      * <p>
      * This implementation creates a Batching unit of work for the given batch of {@code eventMessages}.
      *
-     * @param eventMessages The messages to process
+     * @param eventMessages the messages to process
+     * @param context the {@link ProcessingContext} to use
      */
     protected void process(List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
         try {

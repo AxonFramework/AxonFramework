@@ -160,11 +160,11 @@ public interface SpanFactory {
      * <p>
      * In monitoring systems, this Span will be part of another trace.
      *
-     * @param operationNameSupplier Supplier of the operation's name.
-     * @return The created {@link Span}.
+     * @param operationNameSupplier supplier of the operation's name
+     * @param message               the message to use to create a clearer name
+     * @return the created {@link Span}
      */
     Span createInternalSpan(Supplier<String> operationNameSupplier, Message message);
-
 
     /**
      * Registers an additional {@link SpanAttributesProvider} to the factory.

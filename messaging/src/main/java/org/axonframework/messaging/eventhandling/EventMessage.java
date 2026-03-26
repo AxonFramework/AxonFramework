@@ -34,7 +34,6 @@ import java.util.Map;
  * event.
  *
  * @author Allard Buijze
- * @see DomainEventMessage
  * @since 2.0.0
  */
 public interface EventMessage extends Message {

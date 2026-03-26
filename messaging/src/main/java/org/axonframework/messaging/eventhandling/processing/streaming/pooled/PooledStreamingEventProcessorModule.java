@@ -150,7 +150,6 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         ));
     }
 
-    @SuppressWarnings("unchecked")
     private void registerDeadLetterQueues() {
         for (String componentName : eventHandlingComponentBuilders.keySet()) {
             var dlqName = processorComponentDlqName(componentName);

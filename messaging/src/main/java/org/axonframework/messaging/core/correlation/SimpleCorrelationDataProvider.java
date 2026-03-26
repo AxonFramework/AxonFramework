@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A {@code CorrelationDataProvider} implementation that defines correlation data by the {@link Message#metaData()} key
+ * A {@code CorrelationDataProvider} implementation that defines correlation data by the {@link Message#metadata()} key
  * names.
  * <p>
  * The metadata entries from {@link Message messages} matching these keys are returned as correlation data.

@@ -142,7 +142,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
             // given
             var component = SimpleEventHandlingComponent.create(
                     "test",
-                    new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class, "orderId")
+                    new PropertySequencingPolicy<>(OrderEvent.class, "orderId")
             );
             var eventPayload = new OrderEvent("order123", "item456");
             var event = EventTestUtils.asEventMessage(eventPayload);
@@ -221,7 +221,7 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
         void should_use_main_component_policy_when_mixed_handlers() {
             // given
             var mainComponent = SimpleEventHandlingComponent.create(
-                    "main", new PropertySequencingPolicy<OrderEvent, String>(OrderEvent.class, "orderId")
+                    "main", new PropertySequencingPolicy<>(OrderEvent.class, "orderId")
             );
             var nestedComponent = SimpleEventHandlingComponent.create("nested", FullConcurrencyPolicy.INSTANCE);
             var nestedEventHandler = createEventHandlerFromComponent(nestedComponent);

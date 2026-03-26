@@ -59,11 +59,12 @@ public record Tag(String key,
     public static final ResourceKey<Set<Tag>> RESOURCE_KEY = ResourceKey.withLabel("tags");
 
     /**
-     * Adds the given {@code token} to the given {@code context} using the {@link #RESOURCE_KEY}.
+     * Adds the given {@code tags} to the given {@code context} using the {@link #RESOURCE_KEY}.
      *
      * @param context The {@link Context} to add the given {@code token} to.
      * @param tags    The {@link Set} of {@link Tag Tags} to add to the given {@code context} using the
      *                {@link #RESOURCE_KEY}.
+     * @return A copy of {@code this} Context with the added given {@code tags}.
      */
     public static Context addToContext(Context context, Set<Tag> tags) {
         return context.withResource(RESOURCE_KEY, tags);

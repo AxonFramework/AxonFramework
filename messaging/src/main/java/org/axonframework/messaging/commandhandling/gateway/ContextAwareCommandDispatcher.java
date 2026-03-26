@@ -18,7 +18,6 @@ package org.axonframework.messaging.commandhandling.gateway;
 
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
@@ -30,7 +29,7 @@ import java.util.Objects;
  * <p>
  * Any commands dispatched through this {@code CommandDispatcher} occur within the {@code context} this dispatcher was
  * created with. You can construct one through the
- * {@link CommandDispatcher#forContext(ProcessingContext, Configuration)} method.
+ * {@link CommandDispatcher#forContext(ProcessingContext)} method.
  *
  * @author Steven van Beelen
  * @since 5.0.0

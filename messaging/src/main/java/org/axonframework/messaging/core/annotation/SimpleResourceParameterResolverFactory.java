@@ -26,8 +26,6 @@ import java.lang.reflect.Parameter;
  * A {@link ParameterResolverFactory} implementation for simple resource injections. Uses the
  * {@link FixedValueParameterResolver} to inject a resource as a fixed value on message handling if the resource equals
  * a message handling method parameter.
- *
- * @author
  */
 @Priority(Priority.LOWER)
 public class SimpleResourceParameterResolverFactory implements ParameterResolverFactory {

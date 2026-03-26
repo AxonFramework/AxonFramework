@@ -1022,7 +1022,6 @@ class PooledStreamingEventProcessorModuleTest {
             );
 
             // and
-            @SuppressWarnings("unchecked")
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
