@@ -25,6 +25,9 @@ import java.util.List;
  * <p>
  * Implementations can notify only within the current process, or coordinate between multiple instances using mechanisms
  * such as polling, messaging, or database notifications.
+ *
+ * @author John Hendrikx
+ * @since 5.0.0
  */
 @Internal
 public interface EventCoordinator {

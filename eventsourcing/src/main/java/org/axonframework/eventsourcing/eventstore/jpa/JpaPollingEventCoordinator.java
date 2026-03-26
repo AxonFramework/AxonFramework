@@ -36,6 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * This coordinator periodically counts all entries in the event table. If the total
  * number of events changes since the last poll, it triggers the provided callback.
+ *
+ * @author John Hendrikx
+ * @since 5.0.0
  */
 @Internal
 public class JpaPollingEventCoordinator implements EventCoordinator {
