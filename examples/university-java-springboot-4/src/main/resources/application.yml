@@ -1,0 +1,14 @@
+spring:
+  docker:
+    compose:
+      file: file:examples/docker-compose.yaml
+      lifecycle-management: start_only
+  main:
+    web-application-type: reactive
+axon:
+  server:
+    enabled: true
+
+springdoc:
+  swagger-ui:
+    try-it-out-enabled: true

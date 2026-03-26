@@ -49,8 +49,9 @@
 
     <modules>
         <module>university-demo</module>
-        <module>university-java-springboot</module>
         <module>university-java</module>
+        <module>university-java-springboot-3</module>
+        <module>university-java-springboot-4</module>
     </modules>
 
     <build>
