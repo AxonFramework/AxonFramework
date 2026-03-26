@@ -112,7 +112,8 @@ Additional modules:
 
 Example applications demonstrating framework features with different setups and stacks:
 - `university-demo` — Plain Java example
-- `university-java-springboot` — Spring Boot example
+- `university-java-springboot3` — Spring Boot 3 example
+- `university-java-springboot4` — Spring Boot 4 example
 - `framework4-springboot4` — Framework 4 compatibility example
 
 When a new feature is implemented, it should be demonstrated in an appropriate example application when possible. This helps validate the feature in a realistic setting and serves as living documentation.
