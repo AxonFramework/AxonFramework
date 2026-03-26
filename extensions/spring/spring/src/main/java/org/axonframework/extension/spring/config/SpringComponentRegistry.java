@@ -323,6 +323,9 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(Object bean,
                                                  String beanName) throws BeansException {
+        if (!initialized.get() && isInfrastructureBean(beanName)) {
+            return bean;
+        }
         // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
         initialize();
         if (!beanFactory.containsBeanDefinition(beanName)) {
@@ -357,6 +360,13 @@ public class SpringComponentRegistry implements
         // This ensures start or shutdown handlers included through a DecoratorDefinition also become SmartLifecycle beans.
         springComponent.initLifecycle(configuration, lifecycleRegistry);
         return springComponent.resolve(configuration);
+    }
+
+    private boolean isInfrastructureBean(String beanName) {
+        if (!beanFactory.containsBeanDefinition(beanName)) {
+            return false;
+        }
+        return beanFactory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE;
     }
 
     /**
