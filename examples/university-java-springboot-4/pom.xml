@@ -24,7 +24,7 @@
         <version>5.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>university-java-springboot</artifactId>
+    <artifactId>university-java-springboot-4</artifactId>
 
     <name>Axon Example - Java/SpringBoot 4 - University</name>
     <description>Spring Boot Example application for demo and integration testing.</description>
