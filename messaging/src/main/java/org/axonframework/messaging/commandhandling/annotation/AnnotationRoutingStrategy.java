@@ -22,10 +22,6 @@ import org.axonframework.messaging.commandhandling.distributed.DistributedComman
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.RoutingStrategy;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

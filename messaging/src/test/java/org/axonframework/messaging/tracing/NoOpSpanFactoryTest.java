@@ -19,8 +19,6 @@ package org.axonframework.messaging.tracing;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.tracing.NoOpSpanFactory;
-import org.axonframework.messaging.tracing.Span;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

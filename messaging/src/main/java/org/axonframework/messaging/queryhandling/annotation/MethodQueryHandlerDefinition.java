@@ -141,6 +141,7 @@ public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
             return queryName;
         }
 
+        @Override
         public Type resultType() {
             return resultType;
         }

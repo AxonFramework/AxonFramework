@@ -17,10 +17,6 @@
 package org.axonframework.messaging.core.correlation;
 
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
-import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
-import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProviderRegistry;
-import org.axonframework.messaging.core.correlation.MessageOriginProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

@@ -62,8 +62,9 @@ public abstract class MessageTestSuite<M extends Message> {
     /**
      * Builds a {@link Message} used by this test suite.
      *
-     * @param <P> The payload type for the {@link Message} implementation under test.
-     * @return A {@link Message} used by this test suite.
+     * @param <P> the payload type for the {@link Message} implementation under test
+     * @param payload the payload to build the message with
+     * @return a {@link Message} used by this test suite
      */
     protected abstract <P> M buildMessage(@Nullable P payload);
 

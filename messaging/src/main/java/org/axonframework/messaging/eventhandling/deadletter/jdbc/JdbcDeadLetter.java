@@ -144,6 +144,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
      *
      * @return The context with restored resources, or an empty context if no resources were stored.
      */
+    @Override
     public Context context() {
         return context != null ? context : Context.empty();
     }

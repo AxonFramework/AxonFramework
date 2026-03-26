@@ -104,7 +104,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @param ignoredMessageHandler The handler, that is invoked when the event is ignored by all
      *                              {@link org.axonframework.messaging.eventhandling.EventHandlingComponent
-     *                              EventHandlingComponents} this {@link {@link SubscribingEventProcessor}} controls.
+     *                              EventHandlingComponents} this {@link SubscribingEventProcessor} controls.
      * @return The current Builder instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration ignoredMessageHandler(
@@ -132,7 +132,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
             MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         //noinspection unchecked | Casting to EventMessage is safe.
-        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
+        this.interceptors.add(interceptor);
         return this;
     }
 

@@ -40,11 +40,17 @@ public abstract class IntermediateSpanFactoryTest<BI, SI> {
 
     /**
      * Creates a new factory builder that also sets the provided span factory.
+     *
+     * @param spanFactory the span factory to set
+     * @return the factory builder
      */
     protected abstract BI createBuilder(SpanFactory spanFactory);
 
     /**
      * Executes the builder method and returns the factory based on the builder.
+     *
+     * @param builder the builder to execute
+     * @return the resulting factory based on the builder
      */
     protected abstract SI createFactoryBasedOnBuilder(BI builder);
 

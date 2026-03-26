@@ -68,7 +68,6 @@ class CoordinatorTest {
     private final Segment SEGMENT_ONE = new Segment(1, 1);
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
-    @SuppressWarnings("unchecked")
     private final StreamableEventSource messageSource = mock(StreamableEventSource.class);
     private final WorkPackage workPackage = mock(WorkPackage.class);
     private Coordinator testSubject;

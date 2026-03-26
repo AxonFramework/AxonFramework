@@ -214,10 +214,6 @@ class AsyncRetrySchedulerTest {
 
         }
 
-        public AtomicReference<Outcome> policyOutcome() {
-            return policyOutcome;
-        }
-
         @Override
         public boolean equals(Object obj) {
             if (obj == this) {

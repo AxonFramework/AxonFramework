@@ -97,6 +97,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param command the actual command to handle
      * @param handler the handler that must be invoked for this command
+     * @return the {@code CompletableFuture} providing the result of the command, once finished
      */
     protected CompletableFuture<CommandResultMessage> handle(CommandMessage command,
                                                              CommandHandler handler) {

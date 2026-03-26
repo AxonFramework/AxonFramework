@@ -129,7 +129,10 @@ public interface Span {
      * rethrown. The span will be started before the execution, and ended after execution. Note that the
      * {@link Callable} will be invoked instantly and synchronously.
      *
+     * @param <T> the callable result type
      * @param callable The {@link Callable} to execute.
+     * @return the result returned by the {@link Callable}
+     * @throws Exception when the {@link Callable} throws an exception
      */
     default <T> T runCallable(Callable<T> callable) throws Exception {
         this.start();
@@ -160,7 +163,9 @@ public interface Span {
      * added to the span, then rethrown. The span will be started before the execution, and ended after execution. Note
      * that the {@link Supplier} will be invoked instantly and synchronously.
      *
+     * @param <T> the supplier result type
      * @param supplier The {@link Supplier} to execute.
+     * @return the result returned by the supplier
      */
     default <T> T runSupplier(Supplier<T> supplier) {
         this.start();
@@ -208,7 +213,9 @@ public interface Span {
      * added to the span, then rethrown. The span will be started before the execution, and ended after execution. Note
      * that the {@link Consumer} will be invoked instantly and synchronously.
      *
+     * @param <T> the type consumed by the consumer
      * @param supplier The {@link Consumer} to execute.
+     * @param consumedObject The object to consume.
      */
     default <T> void runConsumer(Consumer<T> supplier, T consumedObject) {
         this.start();

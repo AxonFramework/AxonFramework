@@ -1044,7 +1044,7 @@ class PooledStreamingEventProcessorTest {
                 return MessageStream.empty();
             });
 
-            var replayBlockingComponent = new ReplayBlockingEventHandlingComponent(innerComponent);
+            var replayBlockingComponent = new ReplayBlockingEventHandlingComponent<>(innerComponent);
 
             // do not clear event source after close
             stubMessageSource = new AsyncInMemoryStreamableEventSource(false, false);
@@ -1750,6 +1750,7 @@ class PooledStreamingEventProcessorTest {
 
         private final Map<Key<?>, Object> components = new HashMap<>();
 
+        @Override
         @SuppressWarnings("unchecked")
         public <C> C component(@NonNull Class<C> type, @Nullable String name) {
             return (C) components.get(new Key<>(type, name));

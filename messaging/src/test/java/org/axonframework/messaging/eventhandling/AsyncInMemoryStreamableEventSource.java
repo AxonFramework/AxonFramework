@@ -51,7 +51,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
  * {@link PooledStreamingEventProcessor}.
  * <p>
- * This implementation provides similar functionality to {@link InMemoryStreamableEventSource} but is adapted to work
+ * This implementation provides similar functionality to {@code InMemoryStreamableEventSource} but is adapted to work
  * with the {@link MessageStream} API used by the pooled processor. It supports event publishing, ignored event
  * tracking, and optional callback mechanisms for testing asynchronous event processing scenarios.
  * <p>
@@ -111,6 +111,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      *
      * @param streamCallbackSupported A {@code boolean} dictating whether the {@link StreamableEventSource} should
      *                                support callbacks.
+     * @param clearOnClose            When {@code true} clears all message when event source is closed.
      */
     public AsyncInMemoryStreamableEventSource(boolean streamCallbackSupported, boolean clearOnClose) {
         this.streamCallbackSupported = streamCallbackSupported;

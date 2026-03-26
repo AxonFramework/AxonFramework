@@ -20,8 +20,6 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.messaging.eventhandling.annotation.SequenceNumberParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.configuration.reflection.ConfigurationParameterResolverConfigurationEnhancer;
 import org.axonframework.messaging.core.configuration.reflection.ConfigurationParameterResolverFactory;
 import org.junit.jupiter.api.*;

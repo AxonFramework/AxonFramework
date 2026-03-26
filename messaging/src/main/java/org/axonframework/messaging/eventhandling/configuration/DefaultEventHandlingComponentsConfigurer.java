@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 @Internal
 public class DefaultEventHandlingComponentsConfigurer
         implements EventHandlingComponentsConfigurer.RequiredComponentPhase,
-        EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
+        EventHandlingComponentsConfigurer.AdditionalComponentPhase {
 
     private Map<String, ComponentBuilder<EventHandlingComponent>> componentBuilders = new LinkedHashMap<>();
     private int componentIndex = 0;

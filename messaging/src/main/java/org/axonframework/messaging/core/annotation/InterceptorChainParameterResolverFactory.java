@@ -75,9 +75,11 @@ public class InterceptorChainParameterResolverFactory
      * Invoke the given {@code action} with the given {@code interceptorChain} being available for parameter injection.
      * Because this parameter is not bound to a message, it is important to invoke handlers using this method.
      *
-     * @param interceptorChain The InterceptorChain to consider for injection as parameter
-     * @param action           The action to invoke
-     * @return The response from the invocation of given {@code action}
+     * @param <M> the message type
+     * @param processingContext the {@link ProcessingContext} to use
+     * @param interceptorChain  the InterceptorChain to consider for injection as parameter
+     * @param action            the action to invoke
+     * @return the response from the invocation of given {@code action}
      */
     public static <M extends Message> MessageStream<?> callWithInterceptorChain(
             ProcessingContext processingContext,

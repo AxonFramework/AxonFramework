@@ -17,10 +17,6 @@
 package org.axonframework.messaging.commandhandling.gateway;
 
 import org.axonframework.common.FutureUtils;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.commandhandling.gateway.CommandResult;
-import org.axonframework.messaging.commandhandling.gateway.ConvertingCommandGateway;
-import org.axonframework.messaging.commandhandling.gateway.FutureCommandResult;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;

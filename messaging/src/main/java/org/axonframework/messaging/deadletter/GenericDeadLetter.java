@@ -30,6 +30,7 @@ import java.util.function.Supplier;
  * Generic implementation of the {@link DeadLetter dead letter} allowing any type of {@link Message} to be dead
  * lettered.
  *
+ * @param <M> the message type
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @since 4.6.0
@@ -213,6 +214,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
         return context;
     }
 
+    @Override
     public DeadLetter<M> markTouched() {
         return new GenericDeadLetter<>(this, clock.instant());
     }

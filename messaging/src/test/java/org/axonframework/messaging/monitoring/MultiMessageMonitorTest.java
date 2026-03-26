@@ -17,22 +17,24 @@
 package org.axonframework.messaging.monitoring;
 
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.monitoring.MessageMonitor;
-import org.axonframework.messaging.monitoring.MultiMessageMonitor;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class MultiMessageMonitorTest {
+
+    @Mock private MessageMonitor<Message> messageMonitorMock;
 
     @Test
     void onMessageIngested_SingleMessageMonitor_failure() {
-        MessageMonitor<Message> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
-        MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
+        MultiMessageMonitor<Message> multiMessageMonitor = new MultiMessageMonitor<>(Arrays.asList(messageMonitorMock));
         Message messageMock = mock(Message.class);
         Mockito.when(messageMonitorMock.onMessageIngested(messageMock)).thenReturn(callback);
 
@@ -46,9 +48,8 @@ class MultiMessageMonitorTest {
 
     @Test
     void onMessageIngested_SingleMessageMonitor_success() {
-        MessageMonitor<Message> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
-        MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
+        MultiMessageMonitor<Message> multiMessageMonitor = new MultiMessageMonitor<>(Arrays.asList(messageMonitorMock));
         Message messageMock = mock(Message.class);
         Mockito.when(messageMonitorMock.onMessageIngested(messageMock)).thenReturn(callback);
 
@@ -60,12 +61,13 @@ class MultiMessageMonitorTest {
     }
 
     @Test
-    void onMessageIngested_MultipleMessageMonitors() {
-        MessageMonitor<Message> messageMonitorMock1 = mock(MessageMonitor.class);
+    void onMessageIngested_MultipleMessageMonitors(
+        @Mock MessageMonitor<Message> messageMonitorMock1,
+        @Mock MessageMonitor<Message> messageMonitorMock2
+    ) {
         MessageMonitor.MonitorCallback callback1 = mock(MessageMonitor.MonitorCallback.class);
-        MessageMonitor<Message> messageMonitorMock2 = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback2 = mock(MessageMonitor.MonitorCallback.class);
-        MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock1, messageMonitorMock2));
+        MultiMessageMonitor<Message> multiMessageMonitor = new MultiMessageMonitor<>(Arrays.asList(messageMonitorMock1, messageMonitorMock2));
         Message messageMock = mock(Message.class);
         Mockito.when(messageMonitorMock1.onMessageIngested(messageMock)).thenReturn(callback1);
         Mockito.when(messageMonitorMock2.onMessageIngested(messageMock)).thenReturn(callback2);

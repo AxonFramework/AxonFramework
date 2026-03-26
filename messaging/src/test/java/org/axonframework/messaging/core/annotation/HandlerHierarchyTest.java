@@ -20,11 +20,6 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.annotation.DefaultParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.HandlerComparator;
-import org.axonframework.messaging.core.annotation.MessageHandlingMember;
-import org.axonframework.messaging.core.annotation.MethodInvokingMessageHandlingMember;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;

@@ -97,8 +97,8 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
      * {@code schema} to deduce the table and column names.
      *
      * @param schema The schema defining the table and column names.
-     * @return The SQL to construct the index for {@link DeadLetterSchema#processingGroupColumn() processing group} and
-     * {@link DeadLetterSchema#sequenceIdentifierColumn() combination for the dead-letter table.
+     * @return The SQL to construct the index for the {@link DeadLetterSchema#processingGroupColumn() processing group} and
+     * {@link DeadLetterSchema#sequenceIdentifierColumn() combination} for the dead-letter table.
      */
     protected String sequenceIdentifierIndexSql(DeadLetterSchema schema) {
         return "CREATE INDEX " + schema.sequenceIdentifierColumn() + "_INDEX "

@@ -23,10 +23,6 @@ import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFac
 import org.axonframework.messaging.core.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.core.timeout.HandlerTimeoutConfiguration;
-import org.axonframework.messaging.core.timeout.HandlerTimeoutHandlerEnhancerDefinition;
-import org.axonframework.messaging.core.timeout.TaskTimeoutSettings;
-import org.axonframework.messaging.core.timeout.TimeoutWrappedMessageHandlingMember;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
 

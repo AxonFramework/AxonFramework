@@ -77,7 +77,7 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
     ) implements CommandHandler, MessageHandlerInterceptorChain<CommandMessage> {
 
         @Override
-                public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+        public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
                                                                  ProcessingContext context) {
             //noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(command, context, (MessageHandlerInterceptorChain) this)

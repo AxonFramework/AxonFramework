@@ -59,6 +59,7 @@ public class Segment implements Comparable<Segment> {
      *
      * @param context The {@link Context} to add the given {@code token} to.
      * @param segment The {@link Segment} to add to the given {@code context} using the {@link #RESOURCE_KEY}.
+     * @return The given {@code context} with the given {@code segment} attached to it.
      */
     public static Context addToContext(Context context, Segment segment) {
         return context.withResource(RESOURCE_KEY, segment);

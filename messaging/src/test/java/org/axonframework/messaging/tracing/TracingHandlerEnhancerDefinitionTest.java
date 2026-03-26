@@ -127,6 +127,7 @@ class TracingHandlerEnhancerDefinitionTest {
 
     }
 
+    @SuppressWarnings("unused")
     private void executable(MyEvent event, CommandGateway commandGateway) {
     }
 }

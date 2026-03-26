@@ -16,10 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.axonframework.messaging.core.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.core.annotation.HierarchicalParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolver;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

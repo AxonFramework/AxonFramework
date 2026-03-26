@@ -27,7 +27,7 @@ import java.util.function.BiFunction;
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -49,7 +49,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
      *                 when it becomes available.
-     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param <M>      The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
      * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
@@ -80,7 +80,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to delegate to
      *                 when it becomes available.
-     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param <M>      The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
      * @return A {@link MessageStream.Single stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
