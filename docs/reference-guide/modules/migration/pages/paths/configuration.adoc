@@ -113,7 +113,7 @@ This feature was especially useful for Axon applications that integrate with <<s
 In Axon Framework 5, this concept has been renamed and slightly adjust to the `ConfigurationEnhancer`.
 
 Largest difference between both, is that the latter deals with the `ComponentRegistry` (used under the hood by the `ApplicationConfigurer` as defined <<configurer_adjustments,here>>).
-The `ConfigurationEnhancer` has an `order()` method, just as the `ConfiguerModule` did, which dictates the order in which the module acts on the configurer directly.
+The `ConfigurationEnhancer` has an `order()` method, just as the `ConfigurerModule.` did, which dictates the order in which the module acts on the configurer directly.
 Furthermore, just as the `ConfigurerModule`, the `ConfigurationEnhancer` can be registered through the Service Loader mechanism, directly with the configurer, or as a Spring bean.
 
 Let us look at an example use of the `ConfigurerModule` and what this would look like as a `ConfigurationEnhancer`:
