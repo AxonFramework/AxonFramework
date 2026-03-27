@@ -19,7 +19,7 @@ package org.axonframework.extension.springboot.autoconfig;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.conversion.jackson.JacksonConverter;
+import org.axonframework.conversion.Converter;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.extension.springboot.TokenStoreProperties;
 import org.axonframework.extension.springboot.util.RegisterDefaultEntities;
@@ -34,10 +34,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import tools.jackson.databind.ObjectMapper;
-
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.function.Predicate;
 import javax.sql.DataSource;
 
 /**
@@ -75,18 +75,21 @@ public class JpaAutoConfiguration {
     /**
      * Builds a JPA Token Store.
      *
-     * @param entityManagerFactory    An entity manager factory to retrieve connections.
-     * @param tokenStoreProperties    A set of properties to configure the token store.
-     * @param defaultAxonObjectMapper An object mapper to use for token conversion to JSON.
-     * @return Instance of JPA token store.
+     * @param entityManagerFactory    an entity manager factory to retrieve connections
+     * @param tokenStoreProperties    a set of properties to configure the token store
+     * @param converters              the available converters to choose the converter to uses to serialize tokens from
+     * @return instance of JPA token store
      */
     @Bean
     @ConditionalOnMissingBean
     public TokenStore tokenStore(EntityManagerFactory entityManagerFactory,
                                  TokenStoreProperties tokenStoreProperties,
-                                 ObjectMapper defaultAxonObjectMapper) {
+                                 List<Converter> converters) {
         var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
-        var converter = new JacksonConverter(defaultAxonObjectMapper);
+        var converter = converters.stream()
+                                  .filter(Predicate.not(c -> Converter.class.equals(c.getClass())))
+                                  .findFirst()
+                                  .orElseThrow();
         return new JpaTokenStore(new JpaTransactionalExecutorProvider(entityManagerFactory), converter, config);
     }
 

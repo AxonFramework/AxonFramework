@@ -19,6 +19,7 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.conversion.Converter;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.extension.springboot.TokenStoreProperties;
@@ -33,8 +34,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import tools.jackson.databind.ObjectMapper;
 
+import java.util.List;
+import java.util.function.Predicate;
 import javax.sql.DataSource;
 
 /**
@@ -105,18 +107,21 @@ public class JdbcAutoConfiguration {
      *
      * @param dataSource              the data source used to execute token store queries
      * @param tokenSchema             the schema describing the token store table layout
-     * @param defaultAxonObjectMapper the object mapper used to serialize tokens
+     * @param converters              the available converters to choose the converter used to serialize tokens from
      * @return a configured {@link JdbcTokenStore}
      */
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
     public TokenStore tokenStore(DataSource dataSource,
                                  TokenSchema tokenSchema,
-                                 ObjectMapper defaultAxonObjectMapper) {
+                                 List<Converter> converters) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
                 .schema(tokenSchema)
                 .claimTimeout(tokenStoreProperties.getClaimTimeout());
-        var converter = new JacksonConverter(defaultAxonObjectMapper);
+        var converter = converters.stream()
+                                  .filter(Predicate.not(c -> Converter.class.equals(c.getClass())))
+                                  .findFirst()
+                                  .orElseThrow();
         return new JdbcTokenStore(new JdbcTransactionalExecutorProvider(dataSource), converter, config);
     }
 
