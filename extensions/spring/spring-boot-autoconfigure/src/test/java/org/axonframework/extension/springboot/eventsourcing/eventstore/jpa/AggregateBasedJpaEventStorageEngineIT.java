@@ -136,14 +136,6 @@ class AggregateBasedJpaEventStorageEngineIT
         return engine;
     }
 
-    @AfterEach
-    void afterEach() {
-        if (engine != null) {
-            engine.close();
-            engine = null;
-        }
-    }
-
     @Override
     protected CompletableFuture<ConsistencyMarker> finishTx(CompletableFuture<AppendTransaction<?>> future, ProcessingContext pc) {
         return super.finishTx(future, pc).whenComplete((v, e) -> finishTx());
@@ -430,14 +422,6 @@ class AggregateBasedJpaEventStorageEngineIT
                                 }
                             })
             );
-        }
-
-        @AfterEach
-        void tearDown() {
-            if (localEngine != null) {
-                localEngine.close();
-                localEngine = null;
-            }
         }
 
         @Test
