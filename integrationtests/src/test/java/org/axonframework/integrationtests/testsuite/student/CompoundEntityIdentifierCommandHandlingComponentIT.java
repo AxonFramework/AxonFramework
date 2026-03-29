@@ -16,24 +16,23 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.messaging.commandhandling.CommandExecutionException;
-import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
+import org.axonframework.messaging.commandhandling.CommandExecutionException;
+import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.conversion.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -62,9 +61,8 @@ class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommand
                                                 Map.of(
                                                         new QualifiedName(MentorAssignedToStudentEvent.class),
                                                         (entity, event, context) -> {
-                                                            Converter converter = c.getComponent(Converter.class);
                                                             MentorAssignedToStudentEvent payload = event.payloadAs(
-                                                                    MentorAssignedToStudentEvent.class, converter
+                                                                    MentorAssignedToStudentEvent.class
                                                             );
                                                             entity.handle(payload);
                                                             return entity;
@@ -101,8 +99,7 @@ class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommand
                 new QualifiedName(AssignMentorCommand.class),
                 c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context);
-                    AssignMentorCommand payload = command.payloadAs(AssignMentorCommand.class,
-                                                                    c.getComponent(Converter.class));
+                    AssignMentorCommand payload = command.payloadAs(AssignMentorCommand.class);
                     StateManager state = context.component(StateManager.class);
                     StudentMentorAssignment assignment = state.loadEntity(
                             StudentMentorAssignment.class, payload.modelIdentifier(), context

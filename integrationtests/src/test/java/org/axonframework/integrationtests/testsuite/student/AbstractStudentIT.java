@@ -16,31 +16,30 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.jspecify.annotations.NonNull;
-import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
+import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.gateway.EventGateway;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
+import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.conversion.Converter;
+import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -124,8 +123,7 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
         return (course, event, context) -> {
             if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
-                Converter converter = config.getComponent(Converter.class);
-                StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
+                StudentEnrolledEvent convert = event.payloadAs(StudentEnrolledEvent.class);
                 Objects.requireNonNull(convert, "The converted payload must not be null.");
                 course.handle(convert);
             }

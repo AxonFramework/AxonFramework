@@ -32,7 +32,7 @@ import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.common.configuration.DecoratorDefinition;
 import org.axonframework.common.configuration.SearchScope;
 import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
 import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
@@ -199,7 +199,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         return ComponentDefinition.ofType(SnapshotStore.class)
                                   .withBuilder(c -> new AxonServerSnapshotStore(
                                           c.getComponent(AxonServerConnectionManager.class).getConnection(),
-                                          c.getComponent(Converter.class)
+                                          c.getComponent(GeneralConverter.class)
                                   ));
     }
 
