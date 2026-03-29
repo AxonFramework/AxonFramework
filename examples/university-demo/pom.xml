@@ -36,7 +36,7 @@
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>6.0.3</junit.version>
         <jackson.version>2.21.2</jackson.version>
-        <log4j.version>2.25.3</log4j.version>
+        <log4j.version>2.25.4</log4j.version>
     </properties>
 
     <dependencyManagement>
