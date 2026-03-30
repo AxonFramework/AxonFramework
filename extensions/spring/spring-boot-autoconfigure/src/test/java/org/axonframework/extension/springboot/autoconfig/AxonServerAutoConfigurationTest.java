@@ -107,13 +107,14 @@ class AxonServerAutoConfigurationTest {
 
     @Test
     void distributedCommandBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
-        testContext.withPropertyValues("axon.server.command-threads=42").run(context -> {
+        testContext.withPropertyValues("axon.axonserver.command-threads=42").run(context -> {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
             assertThat(context).hasSingleBean(DistributedCommandBusConfiguration.class);
 
             int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).commandThreads();
             int commandThreads = context.getBean(AxonServerConfiguration.class).getCommandThreads();
-            assertThat(numberOfThreads).isEqualTo(commandThreads);
+            assertThat(commandThreads).isEqualTo(42);
+            assertThat(numberOfThreads).isEqualTo(42);
         });
     }
 
