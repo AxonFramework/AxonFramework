@@ -210,6 +210,15 @@ public class DeadLetteringEventHandlingComponent extends DelegatingEventHandling
         return delegate.handle(resetContext, context);
     }
 
+    /**
+     * Returns the {@link SequencedDeadLetterQueue} used by this component for dead-lettering.
+     *
+     * @return the dead letter queue
+     */
+    public SequencedDeadLetterQueue<EventMessage> queue() {
+        return queue;
+    }
+
     @Override
     public CompletableFuture<Boolean> process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask = new DeadLetteredEventProcessingTask(
