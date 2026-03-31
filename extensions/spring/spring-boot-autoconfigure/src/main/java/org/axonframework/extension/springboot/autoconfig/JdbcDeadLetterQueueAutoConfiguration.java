@@ -17,7 +17,10 @@
 package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.conversion.Converter;
+import org.axonframework.extension.spring.config.ProcessorConfigurationExtensionCustomizer;
+import org.axonframework.extension.springboot.DeadLetterQueueProcessorProperties;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfigurationExtension;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
@@ -26,6 +29,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import javax.sql.DataSource;
@@ -60,6 +64,7 @@ import javax.sql.DataSource;
 @AutoConfiguration(after = {JdbcAutoConfiguration.class, ConverterAutoConfiguration.class, JpaDeadLetterQueueAutoConfiguration.class})
 @ConditionalOnClass(DataSource.class)
 @ConditionalOnBean(DataSource.class)
+@EnableConfigurationProperties(DeadLetterQueueProcessorProperties.class)
 public class JdbcDeadLetterQueueAutoConfiguration {
 
     /**
@@ -105,5 +110,32 @@ public class JdbcDeadLetterQueueAutoConfiguration {
                                                                                 .genericConverter(genericConverter)
                                                                                 .schema(schema)
                                                                                 .build();
+    }
+
+    /**
+     * Creates a {@link ProcessorConfigurationExtensionCustomizer} that enables the Dead Letter Queue extension
+     * on each processor where {@code axon.eventhandling.processors.<name>.dlq.enabled=true}.
+     * <p>
+     * The customizer uses the {@link DeadLetterQueueProcessorProperties} to read per-processor DLQ settings
+     * and configures the {@link DeadLetterQueueConfigurationExtension} accordingly.
+     *
+     * @param properties The DLQ processor properties.
+     * @param factory    The {@link SequencedDeadLetterQueueFactory} to use for queue creation.
+     * @return A customizer that applies DLQ extension settings per processor.
+     */
+    @Bean
+    ProcessorConfigurationExtensionCustomizer jdbcDlqExtensionCustomizer(
+            DeadLetterQueueProcessorProperties properties,
+            SequencedDeadLetterQueueFactory factory
+    ) {
+        return (axonConfig, processorName, processorConfig) -> {
+            var dlqProps = properties.forProcessor(processorName);
+            if (dlqProps.getDlq().isEnabled()) {
+                processorConfig.extend(DeadLetterQueueConfigurationExtension.class)
+                               .deadLetterQueue(dlq -> dlq.enabled()
+                                                          .factory(factory)
+                                                          .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
+            }
+        };
     }
 }

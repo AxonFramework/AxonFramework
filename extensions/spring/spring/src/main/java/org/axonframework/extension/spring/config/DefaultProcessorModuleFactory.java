@@ -25,9 +25,12 @@ import org.axonframework.messaging.core.annotation.Namespace;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,18 +64,33 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
+    private final List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers;
 
     /**
-     * Creates a new factory with the given processor definitions, settings, and Axon configuration.
+     * Creates a new factory with the given processor definitions and settings.
      *
      * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
-     * @param settings             The map of processor settings, keyed by processor name.
-     * @param axonConfiguration    The Axon configuration to retrieve components from.
+     * @param settings                  The map of processor settings, keyed by processor name.
      */
     public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
                                          Map<String, EventProcessorSettings> settings) {
+        this(eventProcessorDefinitions, settings, Collections.emptyList());
+    }
+
+    /**
+     * Creates a new factory with the given processor definitions, settings, and extension customizers.
+     *
+     * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
+     * @param settings                  The map of processor settings, keyed by processor name.
+     * @param extensionCustomizers      The list of {@link ProcessorConfigurationExtensionCustomizer} beans to apply
+     *                                  to each processor configuration during module creation.
+     */
+    public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
+                                         Map<String, EventProcessorSettings> settings,
+                                         List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers) {
         this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
+        this.extensionCustomizers = extensionCustomizers;
     }
 
     /**
@@ -113,11 +131,23 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                                    .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
             var processorMode = definitionFor(processorName).map(EventProcessorDefinition::mode)
                                                             .orElse(settings.processorMode());
-            var module = switch (processorMode) {
+            EventProcessorModule module = switch (processorMode) {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
-                    var customization = SpringCustomizations.pooledStreamingCustomizations(processorName, moduleSettings)
-                                                            .andThen(customizeConfiguration(processorName));
+                    var baseCustomization = SpringCustomizations.pooledStreamingCustomizations(
+                            processorName, moduleSettings
+                    );
+                    UnaryOperator<PooledStreamingEventProcessorConfiguration> definitionCustomization =
+                            customizeConfiguration(processorName);
+                    PooledStreamingEventProcessorModule.Customization customization =
+                            (axonConfig, processorConfig) -> {
+                                var result = baseCustomization.apply(axonConfig, processorConfig);
+                                result = definitionCustomization.apply(result);
+                                for (var extensionCustomizer : extensionCustomizers) {
+                                    extensionCustomizer.customize(axonConfig, processorName, result);
+                                }
+                                return result;
+                            };
                     yield EventProcessorModule
                             .pooledStreaming(processorModuleName)
                             .eventHandlingComponents(componentRegistration)

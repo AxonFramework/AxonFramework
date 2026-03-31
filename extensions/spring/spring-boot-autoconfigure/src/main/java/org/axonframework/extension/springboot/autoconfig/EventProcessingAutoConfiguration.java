@@ -16,10 +16,10 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
+import org.axonframework.extension.spring.config.ProcessorConfigurationExtensionCustomizer;
 import org.axonframework.extension.spring.config.ProcessorModuleFactory;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -62,8 +62,11 @@ public class EventProcessingAutoConfiguration {
     @Bean
     ProcessorModuleFactory processorModuleFactory(
             List<EventProcessorDefinition> eventProcessorDefinitions,
-            EventProcessorSettings.MapWrapper eventProcessorSettings
+            EventProcessorSettings.MapWrapper eventProcessorSettings,
+            List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers
     ) {
-        return new DefaultProcessorModuleFactory(eventProcessorDefinitions, eventProcessorSettings.settings());
+        return new DefaultProcessorModuleFactory(
+                eventProcessorDefinitions, eventProcessorSettings.settings(), extensionCustomizers
+        );
     }
 }
