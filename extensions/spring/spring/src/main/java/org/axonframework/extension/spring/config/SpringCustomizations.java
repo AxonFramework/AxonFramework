@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.spring.config;
 
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfigurationExtension;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
@@ -165,8 +166,9 @@ interface SpringCustomizations {
                 var dlqFactory = getComponent(configuration, SequencedDeadLetterQueueFactory.class, null, null);
                 require(dlqFactory != null,
                         "DLQ is enabled for processor '" + name + "' but no SequencedDeadLetterQueueFactory bean is available.");
-                config = config.deadLetterQueue(dlq ->
-                        dlq.enabled().factory(dlqFactory).cacheMaxSize(settings.dlq().cache().size()));
+                config.extend(DeadLetterQueueConfigurationExtension.class)
+                      .deadLetterQueue(dlq ->
+                              dlq.enabled().factory(dlqFactory).cacheMaxSize(settings.dlq().cache().size()));
             }
             return config;
         }

@@ -45,12 +45,13 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * <p>
  * Example usage:
  * <pre>{@code
- * config.deadLetterQueue(dlq -> dlq
- *     .enabled()
- *     .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
- *     .clearOnReset(false)
- *     .cacheMaxSize(2048)
- * )
+ * config.extend(DeadLetterQueueConfigurationExtension.class)
+ *       .deadLetterQueue(dlq -> dlq
+ *           .enabled()
+ *           .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
+ *           .clearOnReset(false)
+ *           .cacheMaxSize(2048)
+ *       );
  * }</pre>
  *
  * @author Mateusz Nowak
@@ -113,11 +114,19 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * <pre>{@code
      * // Enable DLQ for all processors by default
      * configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
-     *     .defaults(d -> d.deadLetterQueue(dlq -> dlq.enabled()))
+     *     .defaults(d -> {
+     *         d.extend(DeadLetterQueueConfigurationExtension.class)
+     *          .deadLetterQueue(dlq -> dlq.enabled());
+     *         return d;
+     *     })
      *     // But disable for this specific processor
      *     .processor(EventProcessorModule.pooledStreaming("no-dlq-processor")
      *         .eventHandlingComponents(...)
-     *         .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.disabled())))
+     *         .customized((cfg, c) -> {
+     *             c.extend(DeadLetterQueueConfigurationExtension.class)
+     *              .deadLetterQueue(dlq -> dlq.disabled());
+     *             return c;
+     *         }))
      * ));
      * }</pre>
      *
