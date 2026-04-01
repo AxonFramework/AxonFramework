@@ -77,10 +77,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
                 .eventHandlingComponents(c -> c
                         .declarative("component0", cfg -> components[0])
                         .declarative("component1", cfg -> components[1]))
-                .customized((cfg, c) -> {
-                    c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled());
-                    return c;
-                });
+                .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled()));
 
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
