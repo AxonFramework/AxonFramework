@@ -108,17 +108,20 @@ class ConfigurationExtensionsTest {
     class WhenDescribing {
 
         @Test
-        void describesAllExtensions() {
+        void describesExtensionsNestedUnderTheirTypeName() {
             // given
-            owner.extend(StubExtension.class);
-            owner.extend(AnotherStubExtension.class);
+            var stubExtension = owner.extend(StubExtension.class);
+            var anotherExtension = owner.extend(AnotherStubExtension.class);
             RecordingDescriptor descriptor = new RecordingDescriptor();
 
             // when
             owner.extensions.describeTo(descriptor);
 
             // then
-            assertThat(descriptor.properties).containsEntry("stub", "value");
+            assertThat(descriptor.properties).containsKey("StubExtension");
+            assertThat(descriptor.properties).containsKey("AnotherStubExtension");
+            assertThat(descriptor.properties.get("StubExtension")).isSameAs(stubExtension);
+            assertThat(descriptor.properties.get("AnotherStubExtension")).isSameAs(anotherExtension);
         }
     }
 
