@@ -63,10 +63,10 @@ public class EventProcessingAutoConfiguration {
     ProcessorModuleFactory processorModuleFactory(
             List<EventProcessorDefinition> eventProcessorDefinitions,
             EventProcessorSettings.MapWrapper eventProcessorSettings,
-            List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations
+            List<PooledStreamingEventProcessorModule.Customization> extensionsCustomizations
     ) {
         return new DefaultProcessorModuleFactory(
-                eventProcessorDefinitions, eventProcessorSettings.settings(), additionalCustomizations
+                eventProcessorDefinitions, eventProcessorSettings.settings(), extensionsCustomizations
         );
     }
 }

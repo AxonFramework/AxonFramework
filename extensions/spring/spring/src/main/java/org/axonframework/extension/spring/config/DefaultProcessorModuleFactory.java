@@ -64,7 +64,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
-    private final List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations;
+    private final List<PooledStreamingEventProcessorModule.Customization> extensionsCustomizations;
 
     /**
      * Creates a new factory with the given processor definitions and settings.
@@ -82,15 +82,15 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      *
      * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
      * @param settings                  The map of processor settings, keyed by processor name.
-     * @param additionalCustomizations  Additional {@link PooledStreamingEventProcessorModule.Customization} beans
+     * @param extensionsCustomizations  Additional {@link PooledStreamingEventProcessorModule.Customization} beans
      *                                  (e.g., DLQ configuration) to apply to each processor during module creation.
      */
     public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
                                          Map<String, EventProcessorSettings> settings,
-                                         List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations) {
+                                         List<PooledStreamingEventProcessorModule.Customization> extensionsCustomizations) {
         this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
-        this.additionalCustomizations = additionalCustomizations;
+        this.extensionsCustomizations = extensionsCustomizations;
     }
 
     /**
@@ -143,8 +143,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                             (axonConfig, processorConfig) -> {
                                 var result = baseCustomization.apply(axonConfig, processorConfig);
                                 result = definitionCustomization.apply(result);
-                                for (var additional : additionalCustomizations) {
-                                    result = additional.apply(axonConfig, result);
+                                for (var extension : extensionsCustomizations) {
+                                    result = extension.apply(axonConfig, result);
                                 }
                                 return result;
                             };
