@@ -118,7 +118,9 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         String dlqName = dlqNameFrom(name);
 
-        // Look up the DLQ from the component registry (created by DeadLetterQueueComponentFactory)
+        // Look up the DLQ from the component registry (created by DeadLetterQueueComponentFactory).
+        // Must use Class-based lookup to trigger the ComponentFactory — TypeReference-based lookup
+        // only returns already-registered components.
         @SuppressWarnings("unchecked")
         SequencedDeadLetterQueue<EventMessage> dlq =
                 config.getComponent(SequencedDeadLetterQueue.class, dlqName);
