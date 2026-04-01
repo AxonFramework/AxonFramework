@@ -67,7 +67,22 @@ import java.util.Optional;
  */
 public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
+    /**
+     * The order of this enhancer. Runs late so that the {@link DeadLetteringEventHandlingComponent} wraps
+     * all other decorators, making it discoverable as a {@link SequencedDeadLetterProcessor}.
+     * <p>
+     * Set to {@code Integer.MAX_VALUE - 100} — after all normal enhancers but before
+     * {@link org.axonframework.messaging.core.configuration.MessagingConfigurationDefaults}
+     * ({@code Integer.MAX_VALUE}).
+     */
+    public static final int ENHANCER_ORDER = Integer.MAX_VALUE - 100;
+
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    @Override
+    public int order() {
+        return ENHANCER_ORDER;
+    }
 
     @Override
     public void enhance(ComponentRegistry registry) {
@@ -233,8 +248,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
         }
 
         @Override
-        public Optional<Component<SequencedDeadLetterProcessor<EventMessage>>> construct(String name,
-                                                                                          Configuration config) {
+        public Optional<Component<SequencedDeadLetterProcessor<EventMessage>>> construct(String name, Configuration config) {
             return config.getOptionalComponent(EventHandlingComponent.class, name)
                          .filter(SequencedDeadLetterProcessor.class::isInstance)
                          .map(c -> {
