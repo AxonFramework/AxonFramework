@@ -277,7 +277,10 @@ public class DeadLetterQueueConfiguration
 
     @Override
     public void validate() throws AxonConfigurationException {
-        // DLQ configuration has no hard requirements — it's valid even when disabled
+        if (enabled) {
+            assertNonNull(factory, "A SequencedDeadLetterQueueFactory is required when DLQ is enabled");
+            assertNonNull(enqueuePolicy, "An EnqueuePolicy is required when DLQ is enabled");
+        }
     }
 
     @Override
