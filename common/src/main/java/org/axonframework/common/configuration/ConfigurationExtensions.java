@@ -17,12 +17,11 @@
 package org.axonframework.common.configuration;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -115,26 +114,16 @@ public class ConfigurationExtensions implements DescribableComponent {
         target.extensions.putAll(this.extensions);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private ConfigurationExtension<?> createExtension(Class<? extends ConfigurationExtension<?>> type) {
-        Constructor<?> compatibleConstructor = Arrays.stream(type.getDeclaredConstructors())
-                                                     .filter(c -> c.getParameterCount() == 1)
-                                                     .filter(c -> c.getParameterTypes()[0].isAssignableFrom(
-                                                             owner.getClass()))
-                                                     .findFirst()
-                                                     .orElseThrow(() -> new AxonConfigurationException(
-                                                             "No compatible single-argument constructor found on ["
-                                                                     + type.getName()
-                                                                     + "] for owner type ["
-                                                                     + owner.getClass().getName() + "]"
-                                                     ));
         try {
-            compatibleConstructor.setAccessible(true);
-            return type.cast(compatibleConstructor.newInstance(owner));
-        } catch (AxonConfigurationException e) {
-            throw e;
-        } catch (Exception e) {
+            return (ConfigurationExtension<?>) ConstructorUtils.factoryForTypeWithOptionalArgument(
+                    (Class) type, owner.getClass()
+            ).apply(owner);
+        } catch (IllegalArgumentException e) {
             throw new AxonConfigurationException(
-                    "Failed to create extension [" + type.getName() + "]", e
+                    "No compatible constructor found on [" + type.getName()
+                            + "] for owner type [" + owner.getClass().getName() + "]", e
             );
         }
     }
