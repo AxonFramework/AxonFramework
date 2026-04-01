@@ -276,6 +276,11 @@ public class DeadLetterQueueConfiguration
     }
 
     @Override
+    public String name() {
+        return "deadLetterQueue";
+    }
+
+    @Override
     public void validate() throws AxonConfigurationException {
         if (enabled) {
             assertNonNull(factory, "A SequencedDeadLetterQueueFactory is required when DLQ is enabled");

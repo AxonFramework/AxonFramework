@@ -99,8 +99,8 @@ public class ConfigurationExtensions implements DescribableComponent {
 
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
-        extensions.forEach((type, extension) ->
-                descriptor.describeProperty(type.getSimpleName(), extension));
+        extensions.values().forEach(extension ->
+                descriptor.describeProperty(extension.name(), extension));
     }
 
     /**

@@ -43,6 +43,14 @@ import org.axonframework.common.infra.DescribableComponent;
 public interface ConfigurationExtension<P extends ExtensibleConfiguration> extends DescribableComponent {
 
     /**
+     * Returns the name of this extension, used as the property key when describing
+     * the extension in a {@link org.axonframework.common.infra.ComponentDescriptor}.
+     *
+     * @return The extension name.
+     */
+    String name();
+
+    /**
      * Validates this extension's settings.
      *
      * @throws AxonConfigurationException if any settings are invalid.

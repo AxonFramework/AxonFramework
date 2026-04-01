@@ -18,6 +18,7 @@ package org.axonframework.common.configuration;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -108,7 +109,7 @@ class ConfigurationExtensionsTest {
     class WhenDescribing {
 
         @Test
-        void describesExtensionsNestedUnderTheirTypeName() {
+        void describesExtensionsNestedUnderTheirName() {
             // given
             var stubExtension = owner.extend(StubExtension.class);
             var anotherExtension = owner.extend(AnotherStubExtension.class);
@@ -118,10 +119,23 @@ class ConfigurationExtensionsTest {
             owner.extensions.describeTo(descriptor);
 
             // then
-            assertThat(descriptor.properties).containsKey("StubExtension");
-            assertThat(descriptor.properties).containsKey("AnotherStubExtension");
-            assertThat(descriptor.properties.get("StubExtension")).isSameAs(stubExtension);
-            assertThat(descriptor.properties.get("AnotherStubExtension")).isSameAs(anotherExtension);
+            assertThat(descriptor.properties).containsKey("stubExtension");
+            assertThat(descriptor.properties).containsKey("anotherStubExtension");
+            assertThat(descriptor.properties.get("stubExtension")).isSameAs(stubExtension);
+            assertThat(descriptor.properties.get("anotherStubExtension")).isSameAs(anotherExtension);
+        }
+
+        @Test
+        void extensionDescribesItsOwnProperties() {
+            // given
+            owner.extend(StubExtension.class);
+            var descriptor = new MockComponentDescriptor();
+
+            // when
+            owner.extend(StubExtension.class).describeTo(descriptor);
+
+            // then
+            assertThat(descriptor.getDescribedProperties()).containsEntry("stub", "value");
         }
     }
 
@@ -171,6 +185,11 @@ class ConfigurationExtensionsTest {
         }
 
         @Override
+        public String name() {
+            return "stubExtension";
+        }
+
+        @Override
         public void validate() throws AxonConfigurationException {
             validated = true;
         }
@@ -187,13 +206,18 @@ class ConfigurationExtensionsTest {
         }
 
         @Override
+        public String name() {
+            return "anotherStubExtension";
+        }
+
+        @Override
         public void validate() throws AxonConfigurationException {
             // no-op
         }
 
         @Override
         public void describeTo(ComponentDescriptor descriptor) {
-            // no-op
+            descriptor.describeProperty("another", "data");
         }
     }
 
@@ -203,6 +227,11 @@ class ConfigurationExtensionsTest {
     static class IncompatibleExtension implements ConfigurationExtension<IncompatibleParent> {
 
         protected IncompatibleExtension(IncompatibleParent parent) {
+        }
+
+        @Override
+        public String name() {
+            return "incompatible";
         }
 
         @Override
