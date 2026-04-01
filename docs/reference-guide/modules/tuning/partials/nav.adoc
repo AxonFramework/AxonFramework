@@ -1,5 +1,6 @@
 * xref:tuning:index.adoc[]
-** xref:tuning:event-snapshots.adoc[]
+** xref:tuning:snapshotting.adoc[]
+** xref:tuning:caching.adoc[]
 ** xref:tuning:event-processing.adoc[]
 ** xref:tuning:command-processing.adoc[]
 ** xref:tuning:rdbms-tuning.adoc[]
