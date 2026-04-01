@@ -164,10 +164,6 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         @Override
         public Optional<Component<SequencedDeadLetterQueue>> construct(String name, Configuration config) {
-            if (!name.startsWith("DeadLetterQueue[")) {
-                return Optional.empty();
-            }
-
             Optional<PooledStreamingEventProcessorConfiguration> optionalProcessorConfig =
                     config.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class);
             if (optionalProcessorConfig.isEmpty()) {
