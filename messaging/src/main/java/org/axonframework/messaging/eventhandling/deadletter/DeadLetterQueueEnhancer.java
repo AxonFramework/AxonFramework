@@ -44,29 +44,19 @@ import java.util.Optional;
  * {@link EventHandlingComponent EventHandlingComponents} within a
  * {@link PooledStreamingEventProcessorConfiguration pooled streaming event processor} module.
  * <p>
- * This enhancer registers a type-level decorator for all {@code EventHandlingComponent} instances. When components
- * are resolved, the decorator lazily reads the {@link DeadLetterQueueConfiguration} from the processor
- * configuration and, if DLQ is enabled, wraps the component with a {@link DeadLetteringEventHandlingComponent}.
- * <p>
- * The DLQ behavior provided by this enhancer includes:
+ * This enhancer registers:
  * <ul>
- *     <li>Creating a {@link SequencedDeadLetterQueue} per event handling component using the configured
- *         {@link SequencedDeadLetterQueueFactory}</li>
- *     <li>Optionally wrapping the queue with a {@link CachingSequencedDeadLetterQueue} for optimized
- *         {@code contains()} lookups</li>
- *     <li>Registering {@link SegmentChangeListener segment change listeners} for cache invalidation
- *         when segments are released</li>
- *     <li>Registering a {@link ComponentFactory} for {@link SequencedDeadLetterProcessor} so that
- *         DLQ-decorated components are discoverable as dead letter processors</li>
+ *     <li>A {@link ComponentFactory} for {@link SequencedDeadLetterQueue} — creates queue instances
+ *         on demand, optionally wrapped with {@link CachingSequencedDeadLetterQueue}</li>
+ *     <li>A type-level decorator for {@link EventHandlingComponent} — wraps components with
+ *         {@link DeadLetteringEventHandlingComponent} when DLQ is enabled</li>
+ *     <li>A {@link ComponentFactory} for {@link SequencedDeadLetterProcessor} — makes DLQ-decorated
+ *         components discoverable as dead letter processors</li>
  * </ul>
  * <p>
  * This enhancer operates only within module scopes that contain a
  * {@link PooledStreamingEventProcessorConfiguration}. In all other contexts (e.g., non-pooled processors),
  * the decorator returns the delegate unchanged.
- * <p>
- * The enhancer also guards against double-decoration: if a component is already wrapped in a
- * {@link DeadLetteringEventHandlingComponent} (e.g., by the module's per-name decorator during the migration
- * period), the type-level decorator from this enhancer becomes a no-op for that component.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
@@ -80,17 +70,14 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(ComponentRegistry registry) {
+        registry.registerFactory(new DeadLetterQueueComponentFactory());
         registerDeadLetterQueueDecorator(registry);
-        registerDeadLetterProcessorFactory(registry);
+        registry.registerFactory(new DeadLetterProcessorFactory());
     }
 
     /**
      * Registers a type-level decorator for {@link EventHandlingComponent} that wraps components with
      * {@link DeadLetteringEventHandlingComponent} when DLQ is enabled.
-     * <p>
-     * The decorator operates lazily: all configuration reading and DLQ construction happen at component
-     * resolution time, not at registration time. This ensures the processor configuration is fully built
-     * before the decorator inspects it.
      */
     private static void registerDeadLetterQueueDecorator(ComponentRegistry registry) {
         registry.registerDecorator(
@@ -105,25 +92,16 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
     /**
      * Decorates the given {@code delegate} with dead-lettering support if the processor configuration
      * has DLQ enabled via {@link DeadLetterQueueConfiguration}.
-     *
-     * @param config   The configuration providing access to the processor configuration and other components.
-     * @param name     The component name (e.g., {@code "EventHandlingComponent[myProcessor][myComponent]"}).
-     * @param delegate The original {@link EventHandlingComponent} to potentially wrap.
-     * @return The original delegate if DLQ is not applicable, or a {@link DeadLetteringEventHandlingComponent}
-     *         wrapping the delegate when DLQ is enabled.
      */
     private static EventHandlingComponent decorateWithDeadLettering(
             Configuration config,
             String name,
             EventHandlingComponent delegate
     ) {
-        // Guard against double-decoration during the migration period where both the module's
-        // per-name decorator and this type-level decorator may be active.
         if (delegate instanceof DeadLetteringEventHandlingComponent) {
             return delegate;
         }
 
-        // Only applicable within pooled streaming event processor modules.
         Optional<PooledStreamingEventProcessorConfiguration> optionalProcessorConfig =
                 config.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class);
         if (optionalProcessorConfig.isEmpty()) {
@@ -131,35 +109,21 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
         }
         PooledStreamingEventProcessorConfiguration processorConfig = optionalProcessorConfig.get();
 
-        // Read DLQ configuration from the extension.
         DeadLetterQueueConfiguration dlqConfig =
                 processorConfig.extend(DeadLetterQueueConfiguration.class);
         if (!dlqConfig.isEnabled()) {
             return delegate;
         }
 
-        // Build the DLQ name following the established pattern: "DeadLetterQueue[processorName][componentName]"
         String dlqName = dlqNameFrom(name);
 
-        // Create the underlying queue via the configured factory.
-        SequencedDeadLetterQueue<EventMessage> dlq = dlqConfig.factory().create(dlqName, config);
-
-        // Optionally wrap with a caching layer and register a segment change listener for cache invalidation.
-        if (dlqConfig.cacheMaxSize() > 0) {
-            var cachingDlq = new CachingSequencedDeadLetterQueue<EventMessage>(dlq, dlqConfig.cacheMaxSize());
-            processorConfig.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
-                var uow = processorConfig.unitOfWorkFactory().create();
-                return uow.executeWithResult(context -> {
-                    cachingDlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
-                    return FutureUtils.emptyCompletedFuture();
-                });
-            }));
-            dlq = cachingDlq;
-        }
+        // Look up the DLQ from the component registry (created by DeadLetterQueueComponentFactory)
+        @SuppressWarnings("unchecked")
+        SequencedDeadLetterQueue<EventMessage> dlq =
+                config.getComponent(SequencedDeadLetterQueue.class, dlqName);
 
         logger.info("Dead letter queue enabled for component [{}] with queue name [{}].", name, dlqName);
 
-        //noinspection unchecked
         return new DeadLetteringEventHandlingComponent(
                 delegate,
                 dlq,
@@ -170,51 +134,90 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
     }
 
     /**
-     * Registers a {@link ComponentFactory} for {@link SequencedDeadLetterProcessor}.
+     * Derives the DLQ name from the event handling component's registered name.
      * <p>
-     * When a component of type {@code SequencedDeadLetterProcessor} is requested by name, this factory
-     * looks up the {@link EventHandlingComponent} with the same name and checks if it implements
-     * {@link SequencedDeadLetterProcessor} (which {@link DeadLetteringEventHandlingComponent} does).
-     * If so, the component is returned; otherwise, the factory declines construction.
-     * <p>
-     * This enables external components (such as API endpoints or management tools) to discover and use
-     * dead letter processors by name.
+     * Wraps the component name in {@code "DeadLetterQueue["} and {@code "]"}, producing
+     * e.g. {@code "DeadLetterQueue[EventHandlingComponent[myProcessor][myComponent]]"}.
+     *
+     * @param componentName The full component name as registered in the configuration.
+     * @return The DLQ name.
      */
-    private static void registerDeadLetterProcessorFactory(ComponentRegistry registry) {
-        registry.registerFactory(new DeadLetterProcessorFactory());
+    static String dlqNameFrom(String componentName) {
+        return "DeadLetterQueue[" + componentName + "]";
     }
 
     /**
-     * Derives the DLQ name from the event handling component's registered name.
+     * A {@link ComponentFactory} that creates {@link SequencedDeadLetterQueue} instances on demand.
      * <p>
-     * The component name follows the format {@code "EventHandlingComponent[processorName][componentName]"}.
-     * This method replaces the {@code "EventHandlingComponent"} prefix with {@code "DeadLetterQueue"},
-     * producing {@code "DeadLetterQueue[processorName][componentName]"} to match the naming convention
-     * used by {@link org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule}.
-     * <p>
-     * If the component name does not follow the expected format, a fallback name using the full component
-     * name is returned.
-     *
-     * @param componentName The full component name as registered in the configuration
-     *                      (e.g., {@code "EventHandlingComponent[myProcessor][myComponent]"}).
-     * @return The DLQ name (e.g., {@code "DeadLetterQueue[myProcessor][myComponent]"}).
+     * When a queue is requested by name (e.g., {@code "DeadLetterQueue[processorName][componentName]"}),
+     * this factory reads the {@link DeadLetterQueueConfiguration} from the processor configuration and
+     * creates the queue using the configured {@link SequencedDeadLetterQueueFactory}. If caching is enabled,
+     * the queue is wrapped with {@link CachingSequencedDeadLetterQueue} and a {@link SegmentChangeListener}
+     * is registered for cache invalidation.
      */
-    static String dlqNameFrom(String componentName) {
-        String eventHandlingComponentPrefix = "EventHandlingComponent[";
-        if (componentName.startsWith(eventHandlingComponentPrefix)) {
-            return "DeadLetterQueue[" + componentName.substring(eventHandlingComponentPrefix.length());
+    private static class DeadLetterQueueComponentFactory implements ComponentFactory<SequencedDeadLetterQueue> {
+
+        @Override
+        public Class<SequencedDeadLetterQueue> forType() {
+            return SequencedDeadLetterQueue.class;
         }
-        // Fallback: wrap the full component name
-        return "DeadLetterQueue[" + componentName + "]";
+
+        @Override
+        public Optional<Component<SequencedDeadLetterQueue>> construct(String name, Configuration config) {
+            if (!name.startsWith("DeadLetterQueue[")) {
+                return Optional.empty();
+            }
+
+            Optional<PooledStreamingEventProcessorConfiguration> optionalProcessorConfig =
+                    config.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class);
+            if (optionalProcessorConfig.isEmpty()) {
+                return Optional.empty();
+            }
+            PooledStreamingEventProcessorConfiguration processorConfig = optionalProcessorConfig.get();
+
+            DeadLetterQueueConfiguration dlqConfig =
+                    processorConfig.extend(DeadLetterQueueConfiguration.class);
+            if (!dlqConfig.isEnabled()) {
+                return Optional.empty();
+            }
+
+            SequencedDeadLetterQueue<EventMessage> dlq = dlqConfig.factory().create(name, config);
+
+            if (dlqConfig.cacheMaxSize() > 0) {
+                var cachingDlq = new CachingSequencedDeadLetterQueue<EventMessage>(dlq, dlqConfig.cacheMaxSize());
+                processorConfig.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
+                    var uow = processorConfig.unitOfWorkFactory().create();
+                    return uow.executeWithResult(context -> {
+                        cachingDlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
+                        return FutureUtils.emptyCompletedFuture();
+                    });
+                }));
+                dlq = cachingDlq;
+            }
+
+            @SuppressWarnings("unchecked")
+            SequencedDeadLetterQueue<EventMessage> finalDlq = dlq;
+            return Optional.of(new InstantiatedComponentDefinition<>(
+                    new Component.Identifier<>(forType(), name),
+                    finalDlq
+            ));
+        }
+
+        @Override
+        public void registerShutdownHandlers(LifecycleRegistry registry) {
+        }
+
+        @Override
+        public void describeTo(ComponentDescriptor descriptor) {
+            descriptor.describeProperty("type", forType());
+            descriptor.describeProperty("description",
+                    "Creates SequencedDeadLetterQueue instances per event handling component");
+        }
     }
 
     /**
      * A {@link ComponentFactory} that provides {@link SequencedDeadLetterProcessor} instances by delegating
      * to the {@link EventHandlingComponent} registered under the same name.
-     * <p>
-     * When a {@link DeadLetteringEventHandlingComponent} decorates an event handling component, it implements
-     * {@link SequencedDeadLetterProcessor}. This factory makes those processors discoverable through the
-     * standard configuration component lookup mechanism.
      */
     private static class DeadLetterProcessorFactory implements ComponentFactory<SequencedDeadLetterProcessor> {
 
@@ -236,7 +239,6 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         @Override
         public void registerShutdownHandlers(LifecycleRegistry registry) {
-            // No shutdown actions needed — lifecycle is managed by the EventHandlingComponent decorator.
         }
 
         @Override

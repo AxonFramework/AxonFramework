@@ -25,9 +25,7 @@ import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
@@ -270,19 +268,13 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         var componentName = "component" + componentIndex;
-        var registeredName = "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]";
-        EventHandlingComponent component = startedConfiguration
-                .getModuleConfiguration(PROCESSOR_NAME)
-                .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class, registeredName))
-                .orElseThrow(() -> new IllegalStateException("EventHandlingComponent not found for component " + componentIndex));
-
-        if (component instanceof DeadLetteringEventHandlingComponent dlqComponent) {
-            return dlqComponent.queue();
-        }
-        throw new IllegalStateException(
-                "EventHandlingComponent for component " + componentIndex
-                        + " is not a DeadLetteringEventHandlingComponent; actual type: "
-                        + component.getClass().getName());
+        var dlqName = "DeadLetterQueue[EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]]";
+        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
+                                   .flatMap(m -> m.getOptionalComponent(
+                                           SequencedDeadLetterQueue.class, dlqName
+                                   ))
+                                   .orElseThrow(() -> new IllegalStateException(
+                                           "DLQ not found for component " + componentIndex));
     }
 
     @SuppressWarnings("unchecked")

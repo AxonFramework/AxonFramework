@@ -714,9 +714,9 @@ class PooledStreamingEventProcessorModuleTest {
 
             // and - custom factory was used for each component
             assertThat(createdQueues).hasSize(3);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component2]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component2]]");
         }
 
         @Test
@@ -772,8 +772,8 @@ class PooledStreamingEventProcessorModuleTest {
 
             // and - custom factory from defaults was used for each component
             assertThat(createdQueues).hasSize(2);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]");
         }
 
         @Test
