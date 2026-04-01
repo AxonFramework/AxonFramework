@@ -148,6 +148,15 @@ public class EventProcessorConfiguration implements ExtensibleConfiguration, Des
     }
 
     /**
+     * Returns the name of the processor this configuration is for.
+     *
+     * @return The processor name.
+     */
+    public String processorName() {
+        return processorName;
+    }
+
+    /**
      * Returns the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing.
      *
      * @return The {@link ErrorHandler} for this {@link EventProcessor} implementation.

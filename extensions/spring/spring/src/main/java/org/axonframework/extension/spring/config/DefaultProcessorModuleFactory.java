@@ -64,7 +64,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
-    private final List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers;
+    private final List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations;
 
     /**
      * Creates a new factory with the given processor definitions and settings.
@@ -78,19 +78,19 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
     }
 
     /**
-     * Creates a new factory with the given processor definitions, settings, and extension customizers.
+     * Creates a new factory with the given processor definitions, settings, and additional customizations.
      *
      * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
      * @param settings                  The map of processor settings, keyed by processor name.
-     * @param extensionCustomizers      The list of {@link ProcessorConfigurationExtensionCustomizer} beans to apply
-     *                                  to each processor configuration during module creation.
+     * @param additionalCustomizations  Additional {@link PooledStreamingEventProcessorModule.Customization} beans
+     *                                  (e.g., DLQ configuration) to apply to each processor during module creation.
      */
     public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
                                          Map<String, EventProcessorSettings> settings,
-                                         List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers) {
+                                         List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations) {
         this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
-        this.extensionCustomizers = extensionCustomizers;
+        this.additionalCustomizations = additionalCustomizations;
     }
 
     /**
@@ -143,8 +143,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                             (axonConfig, processorConfig) -> {
                                 var result = baseCustomization.apply(axonConfig, processorConfig);
                                 result = definitionCustomization.apply(result);
-                                for (var extensionCustomizer : extensionCustomizers) {
-                                    extensionCustomizer.customize(axonConfig, processorName, result);
+                                for (var additional : additionalCustomizations) {
+                                    result = additional.apply(axonConfig, result);
                                 }
                                 return result;
                             };

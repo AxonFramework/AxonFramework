@@ -19,8 +19,8 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.extension.spring.config.DefaultProcessorModuleFactory;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
 import org.axonframework.extension.spring.config.EventProcessorSettings;
-import org.axonframework.extension.spring.config.ProcessorConfigurationExtensionCustomizer;
 import org.axonframework.extension.spring.config.ProcessorModuleFactory;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.extension.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -63,10 +63,10 @@ public class EventProcessingAutoConfiguration {
     ProcessorModuleFactory processorModuleFactory(
             List<EventProcessorDefinition> eventProcessorDefinitions,
             EventProcessorSettings.MapWrapper eventProcessorSettings,
-            List<ProcessorConfigurationExtensionCustomizer> extensionCustomizers
+            List<PooledStreamingEventProcessorModule.Customization> additionalCustomizations
     ) {
         return new DefaultProcessorModuleFactory(
-                eventProcessorDefinitions, eventProcessorSettings.settings(), extensionCustomizers
+                eventProcessorDefinitions, eventProcessorSettings.settings(), additionalCustomizations
         );
     }
 }
