@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -174,6 +175,15 @@ public class EventProcessorConfiguration implements ExtensibleConfiguration, Des
     }
 
     @Override
+    public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
+            Class<T> type,
+            UnaryOperator<T> customization
+    ) {
+        extensions.extend(type, customization);
+        return this;
+    }
+
+    @Override
     public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
         return extensions.extend(type);
     }
@@ -183,6 +193,6 @@ public class EventProcessorConfiguration implements ExtensibleConfiguration, Des
         descriptor.describeProperty("errorHandler", errorHandler);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("interceptors", interceptors);
-        extensions.describe(descriptor);
+        extensions.describeTo(descriptor);
     }
 }

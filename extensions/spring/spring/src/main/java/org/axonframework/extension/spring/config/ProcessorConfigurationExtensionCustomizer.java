@@ -39,10 +39,9 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorCon
  *     return (axonConfig, processorName, processorConfig) -> {
  *         var dlqProps = properties.forProcessor(processorName);
  *         if (dlqProps.getDlq().isEnabled()) {
- *             processorConfig.extend(DeadLetterQueueConfigurationExtension.class)
- *                            .deadLetterQueue(dlq -> dlq.enabled()
- *                                                       .factory(factory)
- *                                                       .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
+ *             processorConfig.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled()
+ *                                                                                   .factory(factory)
+ *                                                                                   .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
  *         }
  *     };
  * }

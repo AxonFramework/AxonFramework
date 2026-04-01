@@ -18,18 +18,49 @@ package org.axonframework.common.configuration;
 
 import org.axonframework.common.AxonConfigurationException;
 
+import java.util.function.UnaryOperator;
+
 /**
- * A configuration that supports modular extensions via {@link #extend(Class)}.
+ * A configuration that supports modular extensions via {@link #extend(Class)} and
+ * {@link #extend(Class, UnaryOperator)}.
  * <p>
  * Extensions are created on first access and cached — subsequent calls to
  * {@code extend()} with the same type return the same instance. This enables
  * natural merging: defaults and per-instance overrides both mutate the same
  * extension object.
+ * <p>
+ * Two access patterns are supported:
+ * <ul>
+ *     <li>{@link #extend(Class, UnaryOperator)} — configures the extension and returns {@code this}
+ *         for chaining: {@code config.extend(A.class, a -> a.foo()).extend(B.class, b -> b.bar())}</li>
+ *     <li>{@link #extend(Class)} — returns the extension instance for reading its current state</li>
+ * </ul>
  *
  * @author Mateusz Nowak
  * @since 5.1.0
  */
 public interface ExtensibleConfiguration {
+
+    /**
+     * Configures the extension of the given type and returns {@code this} configuration for chaining.
+     * <p>
+     * The extension is created on first access via its single-argument constructor (receiving
+     * {@code this} as the parent). The {@code customization} operator is applied to the extension.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * config.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled().factory(myFactory))
+     *       .extend(MetricsExtension.class, m -> m.enabled());
+     * }</pre>
+     *
+     * @param type          The extension class.
+     * @param customization A function that configures the extension.
+     * @param <T>           The extension type.
+     * @return {@code this} configuration, for fluent chaining.
+     * @throws AxonConfigurationException if the extension cannot be created.
+     */
+    <T extends ConfigurationExtension<?>> ExtensibleConfiguration extend(Class<T> type,
+                                                                         UnaryOperator<T> customization);
 
     /**
      * Returns the extension of the given type, creating it on first access.

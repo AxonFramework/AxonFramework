@@ -16,13 +16,15 @@
 
 package org.axonframework.messaging.eventhandling.deadletter;
 
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.configuration.ConfigurationExtension;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
@@ -43,15 +45,15 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * {@code UnaryOperator.andThen()} pattern. Each setter only modifies its specific field,
  * allowing processor-specific configurations to override only selected defaults.
  * <p>
- * Example usage:
+ * Implements {@link ConfigurationExtension} for {@link PooledStreamingEventProcessorConfiguration},
+ * so it can be registered directly as a configuration extension:
  * <pre>{@code
- * config.extend(DeadLetterQueueConfigurationExtension.class)
- *       .deadLetterQueue(dlq -> dlq
+ * config.extend(DeadLetterQueueConfiguration.class, dlq -> dlq
  *           .enabled()
  *           .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
  *           .clearOnReset(false)
  *           .cacheMaxSize(2048)
- *       );
+ * );
  * }</pre>
  *
  * @author Mateusz Nowak
@@ -59,7 +61,8 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * @see CachingSequencedDeadLetterQueue
  * @since 5.1.0
  */
-public class DeadLetterQueueConfiguration implements DescribableComponent {
+public class DeadLetterQueueConfiguration
+        implements ConfigurationExtension<PooledStreamingEventProcessorConfiguration> {
 
     /**
      * The default enqueue policy that always enqueues with a truncated cause message.
@@ -84,6 +87,21 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      *     <li>Cache max size is {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE}</li>
      *     <li>Factory creates {@link InMemorySequencedDeadLetterQueue} instances</li>
      * </ul>
+     */
+    /**
+     * Creates a new {@code DeadLetterQueueConfiguration} for use as a
+     * {@link ConfigurationExtension} of the given parent.
+     * <p>
+     * This constructor is used by the extension mechanism via reflection.
+     *
+     * @param parent The parent processor configuration.
+     */
+    public DeadLetterQueueConfiguration(PooledStreamingEventProcessorConfiguration parent) {
+        // Defaults set in field initialization; parent is not stored — DLQ config is self-contained
+    }
+
+    /**
+     * Creates a new {@code DeadLetterQueueConfiguration} with default settings for standalone use.
      */
     public DeadLetterQueueConfiguration() {
         // Defaults set in field initialization
@@ -114,19 +132,13 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      * <pre>{@code
      * // Enable DLQ for all processors by default
      * configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
-     *     .defaults(d -> {
-     *         d.extend(DeadLetterQueueConfigurationExtension.class)
-     *          .deadLetterQueue(dlq -> dlq.enabled());
-     *         return d;
-     *     })
+     *     .defaults(d -> d.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled())
+     *                     .eventSource(myEventSource))
      *     // But disable for this specific processor
      *     .processor(EventProcessorModule.pooledStreaming("no-dlq-processor")
      *         .eventHandlingComponents(...)
-     *         .customized((cfg, c) -> {
-     *             c.extend(DeadLetterQueueConfigurationExtension.class)
-     *              .deadLetterQueue(dlq -> dlq.disabled());
-     *             return c;
-     *         }))
+     *         .customized((cfg, c) ->
+     *             c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.disabled())))
      * ));
      * }</pre>
      *
@@ -261,6 +273,11 @@ public class DeadLetterQueueConfiguration implements DescribableComponent {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    @Override
+    public void validate() throws AxonConfigurationException {
+        // DLQ configuration has no hard requirements — it's valid even when disabled
     }
 
     @Override

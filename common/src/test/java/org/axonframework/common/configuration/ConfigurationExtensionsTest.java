@@ -22,6 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.function.UnaryOperator;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -113,7 +115,7 @@ class ConfigurationExtensionsTest {
             RecordingDescriptor descriptor = new RecordingDescriptor();
 
             // when
-            owner.extensions.describe(descriptor);
+            owner.extensions.describeTo(descriptor);
 
             // then
             assertThat(descriptor.properties).containsEntry("stub", "value");
@@ -145,17 +147,24 @@ class ConfigurationExtensionsTest {
         final ConfigurationExtensions extensions = new ConfigurationExtensions(this);
 
         @Override
+        public <T extends ConfigurationExtension<?>> ExtensibleConfiguration extend(Class<T> type,
+                                                                                    UnaryOperator<T> customization) {
+            return extensions.extend(type, customization);
+        }
+
+        @Override
         public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
             return extensions.extend(type);
         }
     }
 
-    static class StubExtension extends ConfigurationExtension<StubExtensibleConfiguration> {
+    static class StubExtension implements ConfigurationExtension<StubExtensibleConfiguration> {
 
+        final StubExtensibleConfiguration parent;
         boolean validated = false;
 
         protected StubExtension(StubExtensibleConfiguration parent) {
-            super(parent);
+            this.parent = parent;
         }
 
         @Override
@@ -169,10 +178,9 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    static class AnotherStubExtension extends ConfigurationExtension<StubExtensibleConfiguration> {
+    static class AnotherStubExtension implements ConfigurationExtension<StubExtensibleConfiguration> {
 
         protected AnotherStubExtension(StubExtensibleConfiguration parent) {
-            super(parent);
         }
 
         @Override
@@ -189,10 +197,9 @@ class ConfigurationExtensionsTest {
     interface IncompatibleParent extends ExtensibleConfiguration {
     }
 
-    static class IncompatibleExtension extends ConfigurationExtension<IncompatibleParent> {
+    static class IncompatibleExtension implements ConfigurationExtension<IncompatibleParent> {
 
         protected IncompatibleExtension(IncompatibleParent parent) {
-            super(parent);
         }
 
         @Override

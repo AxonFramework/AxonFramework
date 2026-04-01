@@ -48,7 +48,6 @@ import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfigurationExtension;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
@@ -429,8 +428,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -461,8 +459,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -492,8 +489,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -559,8 +555,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processor1Name)
                     .eventHandlingComponents(components -> components.declarative("component1", cfg -> component1))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -568,8 +563,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processor2Name)
                     .eventHandlingComponents(components -> components.declarative("component2", cfg -> component2))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -635,8 +629,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c.eventSource(new AsyncInMemoryStreamableEventSource());
                     });
 
@@ -682,8 +675,7 @@ class PooledStreamingEventProcessorModuleTest {
                             .declarative("component1", cfg -> component1)
                             .declarative("component2", cfg -> component2))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(dlq -> dlq
+                        c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq
                                  .enabled()
                                  .factory((name, ignored) -> {
                                      SequencedDeadLetterQueue<EventMessage> queue =
@@ -744,16 +736,14 @@ class PooledStreamingEventProcessorModuleTest {
                             .declarative("component0", cfg -> component0)
                             .declarative("component1", cfg -> component1))
                     .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(DeadLetterQueueConfiguration::enabled);
+                        c.extend(DeadLetterQueueConfiguration.class, DeadLetterQueueConfiguration::enabled);
                         return c;
                     });
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> {
-                        d.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(dlq -> dlq.factory((name, ignored) -> {
+                        d.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.factory((name, ignored) -> {
                              SequencedDeadLetterQueue<EventMessage> queue =
                                      InMemorySequencedDeadLetterQueue.defaultQueue();
                              createdQueues.put(name, queue);
@@ -796,8 +786,7 @@ class PooledStreamingEventProcessorModuleTest {
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                     .defaults(d -> {
-                        d.extend(DeadLetterQueueConfigurationExtension.class)
-                         .deadLetterQueue(dlq -> dlq.enabled());
+                        d.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled());
                         return d.eventSource(new AsyncInMemoryStreamableEventSource());
                     })
                     // Processor that keeps DLQ enabled (default from defaults)
@@ -810,8 +799,7 @@ class PooledStreamingEventProcessorModuleTest {
                                        .pooledStreaming(processorWithoutDlq)
                                        .eventHandlingComponents(singleTestEventHandlingComponent())
                                        .customized((cfg, c) -> {
-                                           c.extend(DeadLetterQueueConfigurationExtension.class)
-                                            .deadLetterQueue(dlq -> dlq.disabled());
+                                           c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.disabled());
                                            return c;
                                        }))
             ));

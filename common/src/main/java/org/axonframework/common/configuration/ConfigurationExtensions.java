@@ -19,11 +19,13 @@ package org.axonframework.common.configuration;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * Internal helper that manages the lifecycle of {@link ConfigurationExtension} instances for an
@@ -39,8 +41,7 @@ import java.util.Map;
  * @author Mateusz Nowak
  * @since 5.1.0
  */
-@Internal
-public class ConfigurationExtensions {
+public class ConfigurationExtensions implements DescribableComponent {
 
     private final ExtensibleConfiguration owner;
     private final Map<Class<? extends ConfigurationExtension<?>>, ConfigurationExtension<?>> extensions =
@@ -72,6 +73,23 @@ public class ConfigurationExtensions {
     }
 
     /**
+     * Configures the extension of the given {@code type} using the {@code customization} operator
+     * and returns the owner configuration for chaining.
+     *
+     * @param type          The extension class.
+     * @param customization A function that configures the extension.
+     * @param <T>           The extension type.
+     * @return The owner configuration, for fluent chaining.
+     * @throws AxonConfigurationException if the extension cannot be created.
+     */
+    public <T extends ConfigurationExtension<?>> ExtensibleConfiguration extend(Class<T> type,
+                                                                                UnaryOperator<T> customization) {
+        T extension = extend(type);
+        customization.apply(extension);
+        return owner;
+    }
+
+    /**
      * Validates all registered extensions by calling {@link ConfigurationExtension#validate()} on each.
      *
      * @throws AxonConfigurationException if any extension's validation fails.
@@ -80,13 +98,8 @@ public class ConfigurationExtensions {
         extensions.values().forEach(ConfigurationExtension::validate);
     }
 
-    /**
-     * Describes all registered extensions by calling {@link ConfigurationExtension#describeTo(ComponentDescriptor)}
-     * on each.
-     *
-     * @param descriptor The {@link ComponentDescriptor} to describe extensions into.
-     */
-    public void describe(ComponentDescriptor descriptor) {
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
         extensions.values().forEach(extension -> extension.describeTo(descriptor));
     }
 

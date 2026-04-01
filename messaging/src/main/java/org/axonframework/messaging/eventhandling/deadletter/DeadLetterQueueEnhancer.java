@@ -45,7 +45,7 @@ import java.util.Optional;
  * {@link PooledStreamingEventProcessorConfiguration pooled streaming event processor} module.
  * <p>
  * This enhancer registers a type-level decorator for all {@code EventHandlingComponent} instances. When components
- * are resolved, the decorator lazily reads the {@link DeadLetterQueueConfigurationExtension} from the processor
+ * are resolved, the decorator lazily reads the {@link DeadLetterQueueConfiguration} from the processor
  * configuration and, if DLQ is enabled, wraps the component with a {@link DeadLetteringEventHandlingComponent}.
  * <p>
  * The DLQ behavior provided by this enhancer includes:
@@ -70,7 +70,7 @@ import java.util.Optional;
  *
  * @author Mateusz Nowak
  * @since 5.1.0
- * @see DeadLetterQueueConfigurationExtension
+ * @see DeadLetterQueueConfiguration
  * @see DeadLetteringEventHandlingComponent
  * @see CachingSequencedDeadLetterQueue
  */
@@ -104,7 +104,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
     /**
      * Decorates the given {@code delegate} with dead-lettering support if the processor configuration
-     * has DLQ enabled via {@link DeadLetterQueueConfigurationExtension}.
+     * has DLQ enabled via {@link DeadLetterQueueConfiguration}.
      *
      * @param config   The configuration providing access to the processor configuration and other components.
      * @param name     The component name (e.g., {@code "EventHandlingComponent[myProcessor][myComponent]"}).
@@ -133,7 +133,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         // Read DLQ configuration from the extension.
         DeadLetterQueueConfiguration dlqConfig =
-                processorConfig.extend(DeadLetterQueueConfigurationExtension.class).deadLetterQueue();
+                processorConfig.extend(DeadLetterQueueConfiguration.class);
         if (!dlqConfig.isEnabled()) {
             return delegate;
         }

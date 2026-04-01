@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationExtension;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -55,6 +56,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -177,7 +179,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *                    {@link PooledStreamingEventProcessor} under construction.
      * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
      */
-        public PooledStreamingEventProcessorConfiguration withInterceptor(
+    public PooledStreamingEventProcessorConfiguration withInterceptor(
             MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         this.interceptors.add(interceptor);
@@ -679,6 +681,15 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public SegmentChangeListener segmentChangeListener() {
         return segmentChangeListeners.stream()
                                      .reduce(SegmentChangeListener.noOp(), SegmentChangeListener::andThen);
+    }
+
+    @Override
+    public <T extends ConfigurationExtension<?>> PooledStreamingEventProcessorConfiguration extend(
+            Class<T> type,
+            UnaryOperator<T> customization
+    ) {
+        super.extend(type, customization);
+        return this;
     }
 
     @Override

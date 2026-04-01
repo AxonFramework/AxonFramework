@@ -24,7 +24,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfigurationExtension;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
@@ -78,8 +78,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
                         .declarative("component0", cfg -> components[0])
                         .declarative("component1", cfg -> components[1]))
                 .customized((cfg, c) -> {
-                    c.extend(DeadLetterQueueConfigurationExtension.class)
-                     .deadLetterQueue(dlq -> dlq.enabled());
+                    c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled());
                     return c;
                 });
 

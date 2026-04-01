@@ -20,7 +20,7 @@ import org.axonframework.conversion.Converter;
 import org.axonframework.extension.spring.config.ProcessorConfigurationExtensionCustomizer;
 import org.axonframework.extension.springboot.DeadLetterQueueProcessorProperties;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfigurationExtension;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.core.unitofwork.transaction.jdbc.JdbcTransactionalExecutorProvider;
 import org.axonframework.messaging.eventhandling.deadletter.jdbc.DeadLetterSchema;
@@ -117,7 +117,7 @@ public class JdbcDeadLetterQueueAutoConfiguration {
      * on each processor where {@code axon.eventhandling.processors.<name>.dlq.enabled=true}.
      * <p>
      * The customizer uses the {@link DeadLetterQueueProcessorProperties} to read per-processor DLQ settings
-     * and configures the {@link DeadLetterQueueConfigurationExtension} accordingly.
+     * and configures the {@link DeadLetterQueueConfiguration} accordingly.
      *
      * @param properties The DLQ processor properties.
      * @param factory    The {@link SequencedDeadLetterQueueFactory} to use for queue creation.
@@ -131,10 +131,9 @@ public class JdbcDeadLetterQueueAutoConfiguration {
         return (axonConfig, processorName, processorConfig) -> {
             var dlqProps = properties.forProcessor(processorName);
             if (dlqProps.getDlq().isEnabled()) {
-                processorConfig.extend(DeadLetterQueueConfigurationExtension.class)
-                               .deadLetterQueue(dlq -> dlq.enabled()
-                                                          .factory(factory)
-                                                          .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
+                processorConfig.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled()
+                                                                                    .factory(factory)
+                                                                                    .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
             }
         };
     }

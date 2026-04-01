@@ -19,58 +19,33 @@ package org.axonframework.common.configuration;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.DescribableComponent;
 
-import java.util.Objects;
-
 /**
  * A modular extension of an {@link ExtensibleConfiguration}. Parameterized with
- * the parent configuration type {@code P} so that subclasses get full typed
+ * the parent configuration type {@code P} so that implementations get full typed
  * access to the parent's API.
  * <p>
  * Extensions are pure data — they hold settings but carry no behavior.
  * Behavior that acts on extension data belongs in a {@link ConfigurationEnhancer}.
  * <p>
- * Subclasses must provide a single-argument constructor accepting their parent type.
+ * Implementations must provide a single-argument constructor accepting their parent type.
  * The constructor parameter type doubles as the parent compatibility constraint —
  * {@link ExtensibleConfiguration#extend(Class)} validates compatibility by matching
  * the constructor parameter against the calling configuration's type.
  * <p>
- * Extensions can be chained: {@code config.extend(A.class).extend(B.class)} works
- * because {@link #extend(Class)} delegates to the parent's extension map.
+ * A convenience base class {@link AbstractConfigurationExtension} is provided that stores
+ * the parent reference as a {@code protected final} field.
  *
  * @param <P> The parent configuration type this extension is designed for.
  * @author Mateusz Nowak
  * @since 5.1.0
+ * @see AbstractConfigurationExtension
  */
-public abstract class ConfigurationExtension<P extends ExtensibleConfiguration>
-        implements ExtensibleConfiguration, DescribableComponent {
-
-    /**
-     * The parent configuration this extension belongs to.
-     */
-    protected final P parent;
-
-    /**
-     * Constructs the extension with its parent configuration.
-     *
-     * @param parent The parent configuration this extension belongs to.
-     */
-    protected ConfigurationExtension(P parent) {
-        this.parent = Objects.requireNonNull(parent, "Parent configuration may not be null");
-    }
-
-    /**
-     * Delegates to the parent's extension map, enabling chaining:
-     * {@code config.extend(A.class).extend(B.class)}.
-     */
-    @Override
-    public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
-        return parent.extend(type);
-    }
+public interface ConfigurationExtension<P extends ExtensibleConfiguration> extends DescribableComponent {
 
     /**
      * Validates this extension's settings.
      *
      * @throws AxonConfigurationException if any settings are invalid.
      */
-    public abstract void validate() throws AxonConfigurationException;
+    void validate() throws AxonConfigurationException;
 }
