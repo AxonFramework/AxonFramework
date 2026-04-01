@@ -43,7 +43,7 @@ class ConfigurationExtensionsTest {
         @Test
         void createsExtensionOnFirstAccess() {
             // when
-            StubExtension result = owner.extend(StubExtension.class);
+            StubExtension result = owner.extension(StubExtension.class);
 
             // then
             assertThat(result).isNotNull();
@@ -52,8 +52,8 @@ class ConfigurationExtensionsTest {
         @Test
         void returnsSameInstanceOnSubsequentAccess() {
             // when
-            StubExtension first = owner.extend(StubExtension.class);
-            StubExtension second = owner.extend(StubExtension.class);
+            StubExtension first = owner.extension(StubExtension.class);
+            StubExtension second = owner.extension(StubExtension.class);
 
             // then
             assertThat(first).isSameAs(second);
@@ -62,7 +62,7 @@ class ConfigurationExtensionsTest {
         @Test
         void passesOwnerAsParent() {
             // when
-            StubExtension extension = owner.extend(StubExtension.class);
+            StubExtension extension = owner.extension(StubExtension.class);
 
             // then
             assertThat(extension.parent).isSameAs(owner);
@@ -71,15 +71,15 @@ class ConfigurationExtensionsTest {
         @Test
         void throwsForIncompatibleConstructor() {
             // when / then
-            assertThatThrownBy(() -> owner.extend(IncompatibleExtension.class))
+            assertThatThrownBy(() -> owner.extension(IncompatibleExtension.class))
                     .isInstanceOf(AxonConfigurationException.class);
         }
 
         @Test
         void supportsDifferentExtensionTypes() {
             // when
-            StubExtension stubExtension = owner.extend(StubExtension.class);
-            AnotherStubExtension anotherExtension = owner.extend(AnotherStubExtension.class);
+            StubExtension stubExtension = owner.extension(StubExtension.class);
+            AnotherStubExtension anotherExtension = owner.extension(AnotherStubExtension.class);
 
             // then
             assertThat(stubExtension).isNotNull();
@@ -94,8 +94,8 @@ class ConfigurationExtensionsTest {
         @Test
         void validatesAllExtensions() {
             // given
-            StubExtension extension = owner.extend(StubExtension.class);
-            owner.extend(AnotherStubExtension.class);
+            StubExtension extension = owner.extension(StubExtension.class);
+            owner.extension(AnotherStubExtension.class);
 
             // when
             owner.extensions.validate();
@@ -111,8 +111,8 @@ class ConfigurationExtensionsTest {
         @Test
         void describesExtensionsNestedUnderTheirName() {
             // given
-            var stubExtension = owner.extend(StubExtension.class);
-            var anotherExtension = owner.extend(AnotherStubExtension.class);
+            var stubExtension = owner.extension(StubExtension.class);
+            var anotherExtension = owner.extension(AnotherStubExtension.class);
             RecordingDescriptor descriptor = new RecordingDescriptor();
 
             // when
@@ -128,11 +128,11 @@ class ConfigurationExtensionsTest {
         @Test
         void extensionDescribesItsOwnProperties() {
             // given
-            owner.extend(StubExtension.class);
+            owner.extension(StubExtension.class);
             var descriptor = new MockComponentDescriptor();
 
             // when
-            owner.extend(StubExtension.class).describeTo(descriptor);
+            owner.extension(StubExtension.class).describeTo(descriptor);
 
             // then
             assertThat(descriptor.getDescribedProperties()).containsEntry("stub", "value");
@@ -145,33 +145,33 @@ class ConfigurationExtensionsTest {
         @Test
         void copiesAllExtensionsToTarget() {
             // given
-            StubExtension original = owner.extend(StubExtension.class);
-            owner.extend(AnotherStubExtension.class);
+            StubExtension original = owner.extension(StubExtension.class);
+            owner.extension(AnotherStubExtension.class);
             StubExtensibleConfiguration targetOwner = new StubExtensibleConfiguration();
 
             // when
             owner.extensions.copyTo(targetOwner.extensions);
 
             // then
-            assertThat(targetOwner.extend(StubExtension.class)).isSameAs(original);
+            assertThat(targetOwner.extension(StubExtension.class)).isSameAs(original);
         }
     }
 
     // -- test fixtures --
 
-    static class StubExtensibleConfiguration implements ExtensibleConfiguration {
+    static class StubExtensibleConfiguration implements ExtensibleConfiguration, ExtensibleConfigurer {
 
         final ConfigurationExtensions extensions = new ConfigurationExtensions(this);
 
         @Override
-        public <T extends ConfigurationExtension<?>> ExtensibleConfiguration extend(Class<T> type,
-                                                                                    UnaryOperator<T> customization) {
-            return extensions.extend(type, customization);
+        public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
+            return extensions.extension(type);
         }
 
         @Override
-        public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
-            return extensions.extend(type);
+        public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
+                                                                                 UnaryOperator<T> customization) {
+            return extensions.extend(type, customization);
         }
     }
 

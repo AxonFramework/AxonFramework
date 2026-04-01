@@ -29,7 +29,7 @@ import org.axonframework.common.infra.DescribableComponent;
  * <p>
  * Implementations must provide a single-argument constructor accepting their parent type.
  * The constructor parameter type doubles as the parent compatibility constraint —
- * {@link ExtensibleConfiguration#extend(Class)} validates compatibility by matching
+ * {@link ExtensibleConfiguration#extension(Class)} validates compatibility by matching
  * the constructor parameter against the calling configuration's type.
  * <p>
  * A convenience base class {@link AbstractConfigurationExtension} is provided that stores

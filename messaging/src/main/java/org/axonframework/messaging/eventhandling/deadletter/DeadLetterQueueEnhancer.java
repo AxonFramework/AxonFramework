@@ -110,7 +110,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
         PooledStreamingEventProcessorConfiguration processorConfig = optionalProcessorConfig.get();
 
         DeadLetterQueueConfiguration dlqConfig =
-                processorConfig.extend(DeadLetterQueueConfiguration.class);
+                processorConfig.extension(DeadLetterQueueConfiguration.class);
         if (!dlqConfig.isEnabled()) {
             return delegate;
         }
@@ -176,7 +176,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
             PooledStreamingEventProcessorConfiguration processorConfig = optionalProcessorConfig.get();
 
             DeadLetterQueueConfiguration dlqConfig =
-                    processorConfig.extend(DeadLetterQueueConfiguration.class);
+                    processorConfig.extension(DeadLetterQueueConfiguration.class);
             if (!dlqConfig.isEnabled()) {
                 return Optional.empty();
             }

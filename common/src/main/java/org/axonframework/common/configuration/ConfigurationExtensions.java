@@ -43,16 +43,20 @@ import java.util.function.UnaryOperator;
 public class ConfigurationExtensions implements DescribableComponent {
 
     private final ExtensibleConfiguration owner;
+    private final ExtensibleConfigurer ownerConfigurer;
     private final Map<Class<? extends ConfigurationExtension<?>>, ConfigurationExtension<?>> extensions =
             new LinkedHashMap<>();
 
     /**
      * Constructs a new {@code ConfigurationExtensions} for the given {@code owner}.
+     * The owner must implement both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}.
      *
-     * @param owner The {@link ExtensibleConfiguration} that owns these extensions.
+     * @param owner The configuration that owns these extensions.
+     * @param <O>   A type that implements both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}.
      */
-    public ConfigurationExtensions(ExtensibleConfiguration owner) {
+    public <O extends ExtensibleConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O owner) {
         this.owner = owner;
+        this.ownerConfigurer = owner;
     }
 
     /**
@@ -67,7 +71,7 @@ public class ConfigurationExtensions implements DescribableComponent {
      * @throws AxonConfigurationException if the extension cannot be created.
      */
     @SuppressWarnings("unchecked")
-    public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
+    public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
         return (T) extensions.computeIfAbsent(type, this::createExtension);
     }
 
@@ -78,14 +82,14 @@ public class ConfigurationExtensions implements DescribableComponent {
      * @param type          The extension class.
      * @param customization A function that configures the extension.
      * @param <T>           The extension type.
-     * @return The owner configuration, for fluent chaining.
+     * @return The owner configurer, for fluent chaining.
      * @throws AxonConfigurationException if the extension cannot be created.
      */
-    public <T extends ConfigurationExtension<?>> ExtensibleConfiguration extend(Class<T> type,
-                                                                                UnaryOperator<T> customization) {
-        T extension = extend(type);
-        customization.apply(extension);
-        return owner;
+    public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
+                                                                             UnaryOperator<T> customization) {
+        T ext = extension(type);
+        customization.apply(ext);
+        return ownerConfigurer;
     }
 
     /**

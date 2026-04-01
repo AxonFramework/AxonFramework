@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationExtension;
 import org.axonframework.common.configuration.ConfigurationExtensions;
 import org.axonframework.common.configuration.ExtensibleConfiguration;
+import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -58,7 +59,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessorConfiguration implements ExtensibleConfiguration, DescribableComponent {
+public class EventProcessorConfiguration implements ExtensibleConfiguration, ExtensibleConfigurer, DescribableComponent {
 
     protected final String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
@@ -184,17 +185,17 @@ public class EventProcessorConfiguration implements ExtensibleConfiguration, Des
     }
 
     @Override
+    public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
+        return extensions.extension(type);
+    }
+
+    @Override
     public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
             Class<T> type,
             UnaryOperator<T> customization
     ) {
         extensions.extend(type, customization);
         return this;
-    }
-
-    @Override
-    public <T extends ConfigurationExtension<?>> T extend(Class<T> type) {
-        return extensions.extend(type);
     }
 
     @Override
