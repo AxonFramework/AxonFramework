@@ -17,6 +17,7 @@
 package org.axonframework.messaging.eventhandling.deadletter;
 
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.Component;
 import org.axonframework.common.configuration.ComponentFactory;
 import org.axonframework.common.configuration.ComponentRegistry;
@@ -155,15 +156,23 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
      * the queue is wrapped with {@link CachingSequencedDeadLetterQueue} and a {@link SegmentChangeListener}
      * is registered for cache invalidation.
      */
-    private static class DeadLetterQueueComponentFactory implements ComponentFactory<SequencedDeadLetterQueue> {
+    private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> DLQ_TYPE_REF =
+            new TypeReference<>() {};
+
+    private static final TypeReference<SequencedDeadLetterProcessor<EventMessage>> DLP_TYPE_REF =
+            new TypeReference<>() {};
+
+    private static class DeadLetterQueueComponentFactory
+            implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
         @Override
-        public Class<SequencedDeadLetterQueue> forType() {
-            return SequencedDeadLetterQueue.class;
+        public Class<SequencedDeadLetterQueue<EventMessage>> forType() {
+            return DLQ_TYPE_REF.getTypeAsClass();
         }
 
         @Override
-        public Optional<Component<SequencedDeadLetterQueue>> construct(String name, Configuration config) {
+        public Optional<Component<SequencedDeadLetterQueue<EventMessage>>> construct(String name,
+                                                                                      Configuration config) {
             Optional<PooledStreamingEventProcessorConfiguration> optionalProcessorConfig =
                     config.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class);
             if (optionalProcessorConfig.isEmpty()) {
@@ -180,7 +189,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
             SequencedDeadLetterQueue<EventMessage> dlq = dlqConfig.factory().create(name, config);
 
             if (dlqConfig.cacheMaxSize() > 0) {
-                var cachingDlq = new CachingSequencedDeadLetterQueue<EventMessage>(dlq, dlqConfig.cacheMaxSize());
+                var cachingDlq = new CachingSequencedDeadLetterQueue<>(dlq, dlqConfig.cacheMaxSize());
                 processorConfig.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
                     var uow = processorConfig.unitOfWorkFactory().create();
                     return uow.executeWithResult(context -> {
@@ -191,11 +200,9 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
                 dlq = cachingDlq;
             }
 
-            @SuppressWarnings("unchecked")
-            SequencedDeadLetterQueue<EventMessage> finalDlq = dlq;
             return Optional.of(new InstantiatedComponentDefinition<>(
-                    new Component.Identifier<>(forType(), name),
-                    finalDlq
+                    new Component.Identifier<>(DLQ_TYPE_REF, name),
+                    dlq
             ));
         }
 
@@ -205,7 +212,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         @Override
         public void describeTo(ComponentDescriptor descriptor) {
-            descriptor.describeProperty("type", forType());
+            descriptor.describeProperty("type", DLQ_TYPE_REF.getType());
             descriptor.describeProperty("description",
                     "Creates SequencedDeadLetterQueue instances per event handling component");
         }
@@ -215,20 +222,26 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
      * A {@link ComponentFactory} that provides {@link SequencedDeadLetterProcessor} instances by delegating
      * to the {@link EventHandlingComponent} registered under the same name.
      */
-    private static class DeadLetterProcessorFactory implements ComponentFactory<SequencedDeadLetterProcessor> {
+    private static class DeadLetterProcessorFactory
+            implements ComponentFactory<SequencedDeadLetterProcessor<EventMessage>> {
 
         @Override
-        public Class<SequencedDeadLetterProcessor> forType() {
-            return SequencedDeadLetterProcessor.class;
+        public Class<SequencedDeadLetterProcessor<EventMessage>> forType() {
+            return DLP_TYPE_REF.getTypeAsClass();
         }
 
         @Override
-        public Optional<Component<SequencedDeadLetterProcessor>> construct(String name, Configuration config) {
+        public Optional<Component<SequencedDeadLetterProcessor<EventMessage>>> construct(String name,
+                                                                                          Configuration config) {
             return config.getOptionalComponent(EventHandlingComponent.class, name)
                          .filter(SequencedDeadLetterProcessor.class::isInstance)
-                         .map(SequencedDeadLetterProcessor.class::cast)
+                         .map(c -> {
+                             @SuppressWarnings("unchecked")
+                             var dlp = (SequencedDeadLetterProcessor<EventMessage>) c;
+                             return dlp;
+                         })
                          .map(dlp -> new InstantiatedComponentDefinition<>(
-                                 new Component.Identifier<>(forType(), name),
+                                 new Component.Identifier<>(DLP_TYPE_REF, name),
                                  dlp
                          ));
         }
@@ -239,7 +252,7 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
 
         @Override
         public void describeTo(ComponentDescriptor descriptor) {
-            descriptor.describeProperty("type", forType());
+            descriptor.describeProperty("type", DLP_TYPE_REF.getType());
             descriptor.describeProperty("description",
                     "Discovers SequencedDeadLetterProcessor instances from DLQ-decorated EventHandlingComponents");
         }
