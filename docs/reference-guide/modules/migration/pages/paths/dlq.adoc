@@ -402,7 +402,7 @@ Axon Framework 5::
 +
 [source,java]
 ----
-import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
@@ -418,7 +418,7 @@ public class DlqConfig {
     SequencedDeadLetterQueueFactory myDeadLetterQueueFactory(
             EntityManagerFactory entityManagerFactory,
             EventConverter eventConverter,
-            Converter converter
+            GeneralConverter converter
     ) {
         return (processingGroup, config) ->
                 JpaSequencedDeadLetterQueue.builder()

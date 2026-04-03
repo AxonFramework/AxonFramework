@@ -122,16 +122,16 @@ This ensures all downstream code like command handlers, event processors, dead-l
 [#converter_types]
 == Converter types
 
-Axon Framework uses a hierarchy of converters to handle different conversion needs. The lowest level is the so-called <<general_converter,general converter>>. From there, it moves to the more specific <<message_converter,message converter>>, and ends with the <<event_converter,event converter>>.
+Axon Framework provides a basic `Converter` interface that defines the contract for converting between types.
+Based on that interface, Axon Framework uses a hierarchy of converters to handle different conversion needs.
+The lowest level is the so-called <<general_converter,general converter>>.
+From there, it moves to the more specific <<message_converter,message converter>>, and ends with the <<event_converter,event converter>>.
 
 [#general_converter]
 === General converter
 
-The `Converter` interface is the foundation for all conversion in Axon Framework.
-It provides methods to:
-
-* Check if conversion between two types is possible (`canConvert`)
-* Convert an object from one type to another (`convert`)
+The `GeneralConverter` interface is the foundation for all conversion in Axon Framework.
+It provides a single method to convert an object from one type to another (`convert`).
 
 Implementations as described in more detail in the <<converter_implementations,Converter implementations>> section handle the actual conversion logic. We call this instance the general converter, is it is generally used for all non-`Message` components.
 
@@ -162,7 +162,7 @@ This converter is used by the event store and event processors.
 
 Axon Framework allows you to configure converters at three levels:
 
-1. **general** - Used for everything that needs to be converted, unless specified by other levels.
+1. **general** - Used for everything that needs to be converted, unless specified by other levels (uses `GeneralConverter`).
 2. **messages** - Used to convert all command and query messages (uses `MessageConverter`).
 3. **events** - Used to convert all event messages (uses `EventConverter`).
 
@@ -317,7 +317,8 @@ To configure converters, use the `MessagingConfigurer` and register components t
 
 [source,java]
 ----
-import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.DelegatingGeneralConverter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
@@ -328,30 +329,32 @@ import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 class AxonConfig {
 
     public void converterConfiguration(MessagingConfigurer configurer) {
-        // Register the base converter
-        configurer.componentRegistry(cr -> cr.registerComponent(
-                          Converter.class,
-                          config -> new JacksonConverter()
-                  ))
-                  // Register the message converter (wraps the base converter)
-                  .componentRegistry(cr -> cr.registerComponent(
-                          MessageConverter.class,
-                          config -> new DelegatingMessageConverter(config.getComponent(Converter.class))
-                  ))
-                  // Register the event converter (wraps the message converter)
-                  .componentRegistry(cr -> cr.registerComponent(
-                          EventConverter.class,
-                          config -> new DelegatingEventConverter(config.getComponent(MessageConverter.class))
-                  ));
+
+        configurer
+                // Register the general converter
+                .componentRegistry(cr -> cr.registerComponent(
+                        GeneralConverter.class,
+                        config -> new DelegatingGeneralConverter(new JacksonConverter())
+                ))
+                // Register the message converter (wraps the general converter)
+                .componentRegistry(cr -> cr.registerComponent(
+                        MessageConverter.class,
+                        config -> new DelegatingMessageConverter(config.getComponent(GeneralConverter.class))
+                ))
+                // Register the event converter (wraps the message converter)
+                .componentRegistry(cr -> cr.registerComponent(
+                        EventConverter.class,
+                        config -> new DelegatingEventConverter(config.getComponent(MessageConverter.class))
+                ));
     }
 }
 ----
 
 **Note:** If you don't explicitly configure converters, Axon Framework automatically registers:
 
-* A `JacksonConverter` as the default `Converter`
-* A `DelegatingMessageConverter` wrapping the `Converter`
-* A `DelegatingEventConverter` wrapping the `MessageConverter`
+* A `DelegatingGeneralConverter` wrapping a `JacksonConverter` as the **general** converter
+* A `DelegatingMessageConverter` wrapping the `GeneralConverter` as the **message** converter
+* A `DelegatingEventConverter` wrapping the `MessageConverter` as the **event** converter
 
 === Spring Boot configuration
 
@@ -365,8 +368,8 @@ In Spring environments, there are a number of ways to configure Axon's `Converte
 public class ConverterConfiguration {
 
    @Bean
-   public Converter converter() {
-      return new JacksonConverter();
+   public GeneralConverter converter() {
+       return new DelegatingGeneralConverter(new JacksonConverter());
    }
 
    @Bean
@@ -458,10 +461,12 @@ Both `JacksonConverter` and `AvroConverter` support lenient deserialization.
 ----
 public class ConverterConfiguration {
 
-    public Converter buildConverter() {
-        return new JacksonConverter(new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .findAndRegisterModules());
+    public GeneralConverter buildConverter() {
+        return new DelegatingGeneralConverter(
+                new JacksonConverter(new ObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    .findAndRegisterModules())
+            );
     }
 }
 ----
@@ -549,10 +554,10 @@ Register your custom content type converter with your main converter:
 
 [source,java]
 ----
-public Converter converterWithCustomContentTypeConverter() {
+public GeneralConverter converterWithCustomContentTypeConverter() {
     ChainingContentTypeConverter contentTypeConverter = new ChainingContentTypeConverter();
     contentTypeConverter.registerConverter(new MyContentTypeConverter());
 
-    return new JacksonConverter(new ObjectMapper(), contentTypeConverter);
+    return new DelegatingGeneralConverter(new JacksonConverter(new ObjectMapper(), contentTypeConverter));
 }
 ----
