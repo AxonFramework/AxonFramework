@@ -16,12 +16,12 @@
 
 package org.axonframework.common.configuration;
 
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A configurer that supports registering {@link ConfigurationExtension} instances.
  * <p>
- * Extensions are created eagerly when {@link #extend(Class, Function)} is called — the factory
+ * Extensions are created eagerly when {@link #extend(Class, Supplier)} is called — the factory
  * is invoked immediately and the result is stored. If {@code extend()} is called multiple times
  * for the same type, the new instance always replaces the previous one.
  * <p>
@@ -36,21 +36,20 @@ public interface ExtensibleConfigurer {
     /**
      * Registers an extension factory for the given type and returns {@code this} configurer for chaining.
      * <p>
-     * The factory receives this configurer as the parent and must return a fully configured extension instance.
      * The factory is invoked immediately — the extension is created eagerly, not lazily.
      * If called multiple times for the same type, the new instance always replaces the previous one.
      * <p>
      * Example:
      * <pre>{@code
-     * config.extend(DeadLetterQueueConfiguration.class, parent -> new DeadLetterQueueConfiguration().enabled().factory(myFactory))
-     *       .extend(MetricsExtension.class, parent -> new MetricsExtension().enabled());
+     * config.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled().factory(myFactory))
+     *       .extend(MetricsExtension.class, () -> new MetricsExtension().enabled());
      * }</pre>
      *
      * @param extensionType the extension class
-     * @param factory       a function that receives the parent configurer and returns a configured extension
+     * @param factory       a supplier that returns a configured extension
      * @param <T>           the extension type
      * @return {@code this} configurer, for fluent chaining
      */
     <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
-                                                                      Function<ExtensibleConfigurer, T> factory);
+                                                                      Supplier<T> factory);
 }

@@ -44,7 +44,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  * Implements {@link ConfigurationExtension} for {@link PooledStreamingEventProcessorConfiguration},
  * so it can be registered directly as a configuration extension:
  * <pre>{@code
- * config.extend(DeadLetterQueueConfiguration.class, parent -> new DeadLetterQueueConfiguration()
+ * config.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
  *           .enabled()
  *           .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
  *           .clearOnReset(false)
@@ -105,14 +105,14 @@ public class DeadLetterQueueConfiguration
      * // Enable DLQ for all processors by default
      * configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
      *     .defaults(d -> d.extend(DeadLetterQueueConfiguration.class,
-     *                              parent -> new DeadLetterQueueConfiguration().enabled())
+     *                              () -> new DeadLetterQueueConfiguration().enabled())
      *                     .eventSource(myEventSource))
      *     // But disable for this specific processor
      *     .processor(EventProcessorModule.pooledStreaming("no-dlq-processor")
      *         .eventHandlingComponents(...)
      *         .customized((cfg, c) ->
      *             c.extend(DeadLetterQueueConfiguration.class,
-     *                      parent -> new DeadLetterQueueConfiguration().disabled())))
+     *                      () -> new DeadLetterQueueConfiguration().disabled())))
      * ));
      * }</pre>
      *

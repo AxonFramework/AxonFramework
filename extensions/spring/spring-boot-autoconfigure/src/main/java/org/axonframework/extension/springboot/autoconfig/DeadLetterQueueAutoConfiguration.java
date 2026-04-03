@@ -61,7 +61,7 @@ public class DeadLetterQueueAutoConfiguration {
             var dlqProps = properties.forProcessor(processorConfig.processorName());
             if (dlqProps.getDlq().isEnabled()) {
                 return processorConfig.extend(DeadLetterQueueConfiguration.class,
-                        parent -> new DeadLetterQueueConfiguration().enabled()
+                        () -> new DeadLetterQueueConfiguration().enabled()
                                 .factory(factory)
                                 .cacheMaxSize(dlqProps.getDlq().getCache().getSize()));
             }

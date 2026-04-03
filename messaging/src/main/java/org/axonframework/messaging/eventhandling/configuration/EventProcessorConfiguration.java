@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -192,7 +193,7 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
     @Override
     public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
             Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
+            Supplier<T> factory
     ) {
         extensions.extend(extensionType, factory);
         return this;

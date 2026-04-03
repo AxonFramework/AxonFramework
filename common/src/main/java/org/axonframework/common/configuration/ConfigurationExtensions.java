@@ -26,13 +26,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
  * Internal helper that manages the lifecycle of {@link ConfigurationExtension} instances for an
  * {@link ExtensibleConfigurer} parent configuration.
  * <p>
- * Extensions are created eagerly when {@link #extend(Class, Function)} is called — the factory is invoked
+ * Extensions are created eagerly when {@link #extend(Class, Supplier)} is called — the factory is invoked
  * immediately and the resulting instance is stored. If {@code extend()} is called again for the same type,
  * the previous instance is replaced. {@link #extension(Class)} returns the stored instance, or {@code null}
  * if no extension of that type has been registered.
@@ -62,7 +63,7 @@ public class ConfigurationExtensions implements DescribableComponent {
 
     /**
      * Returns the extension of the given {@code extensionType}, or {@code null} if no extension of that type
-     * has been registered via {@link #extend(Class, Function)}.
+     * has been registered via {@link #extend(Class, Supplier)}.
      *
      * @param extensionType the extension class
      * @param <T>           the extension type
@@ -80,15 +81,15 @@ public class ConfigurationExtensions implements DescribableComponent {
      * overrides the previous instance.
      *
      * @param extensionType the extension class
-     * @param factory       a function that receives the parent configurer and returns a configured extension
+     * @param factory       a supplier that returns a configured extension
      * @param <T>           the extension type
      * @return the parent configurer, for fluent chaining
      */
     public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(
             Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
+            Supplier<T> factory
     ) {
-        extensions.put(extensionType, factory.apply(parentConfigurer));
+        extensions.put(extensionType, factory.get());
         return parentConfigurer;
     }
 

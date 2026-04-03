@@ -36,7 +36,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -200,7 +200,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Override
     public <T extends ConfigurationExtension<?>> SubscribingEventProcessorConfiguration extend(
             Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
+            Supplier<T> factory
     ) {
         super.extend(extensionType, factory);
         return this;

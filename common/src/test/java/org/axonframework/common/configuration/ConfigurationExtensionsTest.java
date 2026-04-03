@@ -23,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,7 +42,7 @@ class ConfigurationExtensionsTest {
         @Test
         void createsExtensionFromRegisteredFactory() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(StubExtension.class, StubExtension::new);
 
             // when
             StubExtension result = owner.extension(StubExtension.class);
@@ -54,7 +54,7 @@ class ConfigurationExtensionsTest {
         @Test
         void returnsSameInstanceOnSubsequentAccess() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(StubExtension.class, StubExtension::new);
 
             // when
             StubExtension first = owner.extension(StubExtension.class);
@@ -62,18 +62,6 @@ class ConfigurationExtensionsTest {
 
             // then
             assertThat(first).isSameAs(second);
-        }
-
-        @Test
-        void passesOwnerAsParent() {
-            // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-
-            // when
-            StubExtension extension = owner.extension(StubExtension.class);
-
-            // then
-            assertThat(extension.parent).isSameAs(owner);
         }
 
         @Test
@@ -88,9 +76,9 @@ class ConfigurationExtensionsTest {
         @Test
         void lastFactoryWinsWhenRegisteredMultipleTimes() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-            var replacement = new StubExtension((StubExtendedConfiguration) owner);
-            owner.extend(StubExtension.class, parent -> replacement);
+            owner.extend(StubExtension.class, StubExtension::new);
+            var replacement = new StubExtension();
+            owner.extend(StubExtension.class, () -> replacement);
 
             // when
             StubExtension result = owner.extension(StubExtension.class);
@@ -102,8 +90,8 @@ class ConfigurationExtensionsTest {
         @Test
         void supportsDifferentExtensionTypes() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
 
             // when
             StubExtension stubExtension = owner.extension(StubExtension.class);
@@ -122,8 +110,8 @@ class ConfigurationExtensionsTest {
         @Test
         void validatesAllExtensions() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
 
             // when
             owner.extensions.validate();
@@ -142,8 +130,8 @@ class ConfigurationExtensionsTest {
         @Test
         void describesExtensionsAsNamedMap() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
             var stubExtension = owner.extension(StubExtension.class);
             var anotherExtension = owner.extension(AnotherStubExtension.class);
             var descriptor = new MockComponentDescriptor();
@@ -162,7 +150,7 @@ class ConfigurationExtensionsTest {
         @Test
         void extensionDescribesItsOwnProperties() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(StubExtension.class, StubExtension::new);
             var descriptor = new MockComponentDescriptor();
 
             // when
@@ -179,8 +167,8 @@ class ConfigurationExtensionsTest {
         @Test
         void copiesAllExtensionsToTarget() {
             // given
-            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
-            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
             StubExtension original = owner.extension(StubExtension.class);
             StubExtendedConfiguration targetOwner = new StubExtendedConfiguration();
 
@@ -206,7 +194,7 @@ class ConfigurationExtensionsTest {
         @Override
         public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(
                 Class<T> extensionType,
-                Function<ExtensibleConfigurer, T> factory
+                Supplier<T> factory
         ) {
             return extensions.extend(extensionType, factory);
         }
@@ -214,11 +202,9 @@ class ConfigurationExtensionsTest {
 
     static class StubExtension implements ConfigurationExtension<StubExtendedConfiguration> {
 
-        final StubExtendedConfiguration parent;
         boolean validated = false;
 
-        StubExtension(StubExtendedConfiguration parent) {
-            this.parent = parent;
+        StubExtension() {
         }
 
         @Override

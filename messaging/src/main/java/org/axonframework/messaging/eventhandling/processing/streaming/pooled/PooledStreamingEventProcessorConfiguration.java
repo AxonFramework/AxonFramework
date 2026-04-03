@@ -57,7 +57,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -687,7 +686,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     @Override
     public <T extends ConfigurationExtension<?>> PooledStreamingEventProcessorConfiguration extend(
             Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
+            Supplier<T> factory
     ) {
         super.extend(extensionType, factory);
         return this;
