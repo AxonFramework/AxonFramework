@@ -140,11 +140,10 @@ class ConfigurationExtensionsTest {
             owner.extensions.describeTo(descriptor);
 
             // then
-            java.util.Map<String, ?> extensionsMap = descriptor.getProperty("extensions");
-            assertThat(extensionsMap).containsKey("stubExtension");
-            assertThat(extensionsMap).containsKey("anotherStubExtension");
-            assertThat(extensionsMap.get("stubExtension")).isSameAs(stubExtension);
-            assertThat(extensionsMap.get("anotherStubExtension")).isSameAs(anotherExtension);
+            assertThat(descriptor.getDescribedProperties()).containsKey("stubExtension");
+            assertThat(descriptor.getDescribedProperties()).containsKey("anotherStubExtension");
+            assertThat(descriptor.getDescribedProperties().get("stubExtension")).isSameAs(stubExtension);
+            assertThat(descriptor.getDescribedProperties().get("anotherStubExtension")).isSameAs(anotherExtension);
         }
 
         @Test

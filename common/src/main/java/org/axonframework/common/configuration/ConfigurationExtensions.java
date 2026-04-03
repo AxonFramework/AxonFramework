@@ -114,14 +114,6 @@ public class ConfigurationExtensions implements DescribableComponent {
 
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
-        Map<String, ConfigurationExtension<?>> namedExtensions = extensions.values()
-                .stream()
-                .collect(Collectors.toMap(
-                        ConfigurationExtension::name,
-                        Function.identity(),
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
-        descriptor.describeProperty("extensions", namedExtensions);
+        extensions.values().forEach(extension -> descriptor.describeProperty(extension.name(), extension));
     }
 }
