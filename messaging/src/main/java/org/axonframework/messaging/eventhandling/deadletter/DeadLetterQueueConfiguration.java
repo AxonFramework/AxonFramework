@@ -41,14 +41,10 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  *     <li>The maximum size of the sequence identifier cache</li>
  * </ul>
  * <p>
- * The configuration supports natural merging when combined with defaults using the
- * {@code UnaryOperator.andThen()} pattern. Each setter only modifies its specific field,
- * allowing processor-specific configurations to override only selected defaults.
- * <p>
  * Implements {@link ConfigurationExtension} for {@link PooledStreamingEventProcessorConfiguration},
  * so it can be registered directly as a configuration extension:
  * <pre>{@code
- * config.extend(DeadLetterQueueConfiguration.class, dlq -> dlq
+ * config.extend(DeadLetterQueueConfiguration.class, parent -> new DeadLetterQueueConfiguration()
  *           .enabled()
  *           .enqueuePolicy((letter, cause) -> Decisions.enqueue(cause))
  *           .clearOnReset(false)
@@ -108,13 +104,15 @@ public class DeadLetterQueueConfiguration
      * <pre>{@code
      * // Enable DLQ for all processors by default
      * configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
-     *     .defaults(d -> d.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled())
+     *     .defaults(d -> d.extend(DeadLetterQueueConfiguration.class,
+     *                              parent -> new DeadLetterQueueConfiguration().enabled())
      *                     .eventSource(myEventSource))
      *     // But disable for this specific processor
      *     .processor(EventProcessorModule.pooledStreaming("no-dlq-processor")
      *         .eventHandlingComponents(...)
      *         .customized((cfg, c) ->
-     *             c.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.disabled())))
+     *             c.extend(DeadLetterQueueConfiguration.class,
+     *                      parent -> new DeadLetterQueueConfiguration().disabled())))
      * ));
      * }</pre>
      *

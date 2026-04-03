@@ -106,7 +106,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
                         .<PooledStreamingEventProcessorConfiguration>with((config, name, delegate) -> {
                             DeadLetterQueueConfiguration dlqConfig =
                                     delegate.extension(DeadLetterQueueConfiguration.class);
-                            if (dlqConfig.isEnabled() && dlqConfig.cacheMaxSize() > 0) {
+                            if (dlqConfig != null && dlqConfig.isEnabled() && dlqConfig.cacheMaxSize() > 0) {
                                 delegate.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
                                     var uow = delegate.unitOfWorkFactory().create();
                                     return uow.executeWithResult(context -> {
@@ -163,7 +163,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
 
         DeadLetterQueueConfiguration dlqConfig =
                 processorConfig.extension(DeadLetterQueueConfiguration.class);
-        if (!dlqConfig.isEnabled()) {
+        if (dlqConfig == null || !dlqConfig.isEnabled()) {
             return delegate;
         }
 
@@ -235,7 +235,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
 
             DeadLetterQueueConfiguration dlqConfig =
                     processorConfig.extension(DeadLetterQueueConfiguration.class);
-            if (!dlqConfig.isEnabled()) {
+            if (dlqConfig == null || !dlqConfig.isEnabled()) {
                 return Optional.empty();
             }
 

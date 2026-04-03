@@ -23,10 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConfigurationExtensionsTest {
 
@@ -41,7 +40,10 @@ class ConfigurationExtensionsTest {
     class WhenExtending {
 
         @Test
-        void createsExtensionOnFirstAccess() {
+        void createsExtensionFromRegisteredFactory() {
+            // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+
             // when
             StubExtension result = owner.extension(StubExtension.class);
 
@@ -51,6 +53,9 @@ class ConfigurationExtensionsTest {
 
         @Test
         void returnsSameInstanceOnSubsequentAccess() {
+            // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+
             // when
             StubExtension first = owner.extension(StubExtension.class);
             StubExtension second = owner.extension(StubExtension.class);
@@ -61,6 +66,9 @@ class ConfigurationExtensionsTest {
 
         @Test
         void passesOwnerAsParent() {
+            // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+
             // when
             StubExtension extension = owner.extension(StubExtension.class);
 
@@ -69,14 +77,34 @@ class ConfigurationExtensionsTest {
         }
 
         @Test
-        void throwsForIncompatibleConstructor() {
-            // when / then
-            assertThatThrownBy(() -> owner.extension(IncompatibleExtension.class))
-                    .isInstanceOf(AxonConfigurationException.class);
+        void returnsNullForUnregisteredExtension() {
+            // when
+            StubExtension result = owner.extension(StubExtension.class);
+
+            // then
+            assertThat(result).isNull();
+        }
+
+        @Test
+        void lastFactoryWinsWhenRegisteredMultipleTimes() {
+            // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            var replacement = new StubExtension((StubExtendedConfiguration) owner);
+            owner.extend(StubExtension.class, parent -> replacement);
+
+            // when
+            StubExtension result = owner.extension(StubExtension.class);
+
+            // then
+            assertThat(result).isSameAs(replacement);
         }
 
         @Test
         void supportsDifferentExtensionTypes() {
+            // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
+
             // when
             StubExtension stubExtension = owner.extension(StubExtension.class);
             AnotherStubExtension anotherExtension = owner.extension(AnotherStubExtension.class);
@@ -94,13 +122,15 @@ class ConfigurationExtensionsTest {
         @Test
         void validatesAllExtensions() {
             // given
-            StubExtension stubExtension = owner.extension(StubExtension.class);
-            AnotherStubExtension anotherExtension = owner.extension(AnotherStubExtension.class);
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
 
             // when
             owner.extensions.validate();
 
             // then
+            StubExtension stubExtension = owner.extension(StubExtension.class);
+            AnotherStubExtension anotherExtension = owner.extension(AnotherStubExtension.class);
             assertThat(stubExtension.validated).isTrue();
             assertThat(anotherExtension.validated).isTrue();
         }
@@ -112,6 +142,8 @@ class ConfigurationExtensionsTest {
         @Test
         void describesExtensionsAsNamedMap() {
             // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
             var stubExtension = owner.extension(StubExtension.class);
             var anotherExtension = owner.extension(AnotherStubExtension.class);
             var descriptor = new MockComponentDescriptor();
@@ -130,7 +162,7 @@ class ConfigurationExtensionsTest {
         @Test
         void extensionDescribesItsOwnProperties() {
             // given
-            owner.extension(StubExtension.class);
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
             var descriptor = new MockComponentDescriptor();
 
             // when
@@ -147,8 +179,9 @@ class ConfigurationExtensionsTest {
         @Test
         void copiesAllExtensionsToTarget() {
             // given
+            owner.extend(StubExtension.class, parent -> new StubExtension((StubExtendedConfiguration) parent));
+            owner.extend(AnotherStubExtension.class, parent -> new AnotherStubExtension());
             StubExtension original = owner.extension(StubExtension.class);
-            owner.extension(AnotherStubExtension.class);
             StubExtendedConfiguration targetOwner = new StubExtendedConfiguration();
 
             // when
@@ -166,14 +199,16 @@ class ConfigurationExtensionsTest {
         final ConfigurationExtensions extensions = new ConfigurationExtensions(this);
 
         @Override
-        public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
-            return extensions.extension(type);
+        public <T extends ConfigurationExtension<?>> T extension(Class<T> extensionType) {
+            return extensions.extension(extensionType);
         }
 
         @Override
-        public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
-                                                                                 UnaryOperator<T> customization) {
-            return extensions.extend(extensionType, customization);
+        public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(
+                Class<T> extensionType,
+                Function<ExtensibleConfigurer, T> factory
+        ) {
+            return extensions.extend(extensionType, factory);
         }
     }
 
@@ -182,7 +217,7 @@ class ConfigurationExtensionsTest {
         final StubExtendedConfiguration parent;
         boolean validated = false;
 
-        protected StubExtension(StubExtendedConfiguration parent) {
+        StubExtension(StubExtendedConfiguration parent) {
             this.parent = parent;
         }
 
@@ -206,7 +241,7 @@ class ConfigurationExtensionsTest {
 
         boolean validated = false;
 
-        protected AnotherStubExtension(StubExtendedConfiguration parent) {
+        AnotherStubExtension() {
         }
 
         @Override
@@ -224,29 +259,4 @@ class ConfigurationExtensionsTest {
             descriptor.describeProperty("another", "data");
         }
     }
-
-    interface IncompatibleParent extends ExtendedConfiguration {
-    }
-
-    static class IncompatibleExtension implements ConfigurationExtension<IncompatibleParent> {
-
-        protected IncompatibleExtension(IncompatibleParent parent) {
-        }
-
-        @Override
-        public String name() {
-            return "incompatible";
-        }
-
-        @Override
-        public void validate() throws AxonConfigurationException {
-            // no-op
-        }
-
-        @Override
-        public void describeTo(ComponentDescriptor descriptor) {
-            // no-op
-        }
-    }
-
 }

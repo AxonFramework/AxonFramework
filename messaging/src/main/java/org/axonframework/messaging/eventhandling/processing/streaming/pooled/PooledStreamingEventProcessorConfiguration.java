@@ -21,6 +21,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationExtension;
+import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -56,7 +57,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -686,9 +687,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     @Override
     public <T extends ConfigurationExtension<?>> PooledStreamingEventProcessorConfiguration extend(
             Class<T> extensionType,
-            UnaryOperator<T> customization
+            Function<ExtensibleConfigurer, T> factory
     ) {
-        super.extend(extensionType, customization);
+        super.extend(extensionType, factory);
         return this;
     }
 

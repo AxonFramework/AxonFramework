@@ -20,6 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationExtension;
+import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.SubscribableEventSource;
@@ -35,7 +36,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -199,9 +200,9 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Override
     public <T extends ConfigurationExtension<?>> SubscribingEventProcessorConfiguration extend(
             Class<T> extensionType,
-            UnaryOperator<T> customization
+            Function<ExtensibleConfigurer, T> factory
     ) {
-        super.extend(extensionType, customization);
+        super.extend(extensionType, factory);
         return this;
     }
 }

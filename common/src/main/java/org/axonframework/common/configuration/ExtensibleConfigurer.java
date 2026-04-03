@@ -16,15 +16,14 @@
 
 package org.axonframework.common.configuration;
 
-import org.axonframework.common.AxonConfigurationException;
-
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
- * A configurer that supports modifying {@link ConfigurationExtension} instances.
+ * A configurer that supports registering {@link ConfigurationExtension} instances.
  * <p>
- * Extensions are created on first access and cached. The {@link #extend(Class, UnaryOperator)}
- * method configures an extension and returns {@code this} for fluent chaining.
+ * Extensions are created eagerly when {@link #extend(Class, Function)} is called — the factory
+ * is invoked immediately and the result is stored. If {@code extend()} is called multiple times
+ * for the same type, the new instance always replaces the previous one.
  * <p>
  * For reading extensions, see {@link ExtendedConfiguration}.
  *
@@ -35,23 +34,23 @@ import java.util.function.UnaryOperator;
 public interface ExtensibleConfigurer {
 
     /**
-     * Configures the extension of the given extensionType and returns {@code this} configurer for chaining.
+     * Registers an extension factory for the given type and returns {@code this} configurer for chaining.
      * <p>
-     * The extension is created on first access and cached. The {@code customization} operator
-     * is applied to the extension.
+     * The factory receives this configurer as the parent and must return a fully configured extension instance.
+     * The factory is invoked immediately — the extension is created eagerly, not lazily.
+     * If called multiple times for the same type, the new instance always replaces the previous one.
      * <p>
      * Example:
      * <pre>{@code
-     * config.extend(DeadLetterQueueConfiguration.class, dlq -> dlq.enabled().factory(myFactory))
-     *       .extend(MetricsExtension.class, m -> m.enabled());
+     * config.extend(DeadLetterQueueConfiguration.class, parent -> new DeadLetterQueueConfiguration().enabled().factory(myFactory))
+     *       .extend(MetricsExtension.class, parent -> new MetricsExtension().enabled());
      * }</pre>
      *
-     * @param extensionType          the extension class
-     * @param customization a function that configures the extension
-     * @param <T>           the extension extensionType
+     * @param extensionType the extension class
+     * @param factory       a function that receives the parent configurer and returns a configured extension
+     * @param <T>           the extension type
      * @return {@code this} configurer, for fluent chaining
-     * @throws AxonConfigurationException if the extension cannot be created
      */
     <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
-                                                                      UnaryOperator<T> customization);
+                                                                      Function<ExtensibleConfigurer, T> factory);
 }

@@ -27,13 +27,9 @@ import org.axonframework.common.infra.DescribableComponent;
  * Extensions are pure data — they hold settings but carry no behavior.
  * Behavior that acts on extension data belongs in a {@link ConfigurationEnhancer}.
  * <p>
- * Implementations may optionally accept their parent configuration as a constructor argument.
- * When present, {@link ExtendedConfiguration#extension(Class)} uses the constructor parameter
- * type as a compatibility constraint, matching it against the calling configuration's type.
- * A no-argument constructor is also supported for extensions that do not need parent access.
- * <p>
- * A convenience base class {@link AbstractConfigurationExtension} is provided that stores
- * the parent reference as a {@code protected final} field.
+ * Extensions are registered via {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}
+ * and retrieved via {@link ExtendedConfiguration#extension(Class)}. No reflection is used — the factory
+ * function provided at registration time is responsible for creating the extension instance.
  *
  * @param <P> the parent configuration type this extension is designed for
  * @author Mateusz Nowak

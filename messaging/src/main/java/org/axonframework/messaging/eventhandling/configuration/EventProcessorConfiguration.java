@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -185,16 +185,16 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
     }
 
     @Override
-    public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
-        return extensions.extension(type);
+    public <T extends ConfigurationExtension<?>> @Nullable T extension(Class<T> extensionType) {
+        return extensions.extension(extensionType);
     }
 
     @Override
     public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
             Class<T> extensionType,
-            UnaryOperator<T> customization
+            Function<ExtensibleConfigurer, T> factory
     ) {
-        extensions.extend(extensionType, customization);
+        extensions.extend(extensionType, factory);
         return this;
     }
 

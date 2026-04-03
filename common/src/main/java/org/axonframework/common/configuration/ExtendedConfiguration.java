@@ -16,15 +16,15 @@
 
 package org.axonframework.common.configuration;
 
-import org.axonframework.common.AxonConfigurationException;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A configuration that supports reading modular {@link ConfigurationExtension} instances.
  * <p>
- * Extensions are created on first access and cached — subsequent calls to
- * {@code extension()} with the same type return the same instance.
+ * Extensions must be registered first via {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}.
+ * If no extension of the requested type has been registered, {@code null} is returned.
  * <p>
- * For modifying extensions, see {@link ExtensibleConfigurer}.
+ * For registering extensions, see {@link ExtensibleConfigurer}.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
@@ -33,19 +33,15 @@ import org.axonframework.common.AxonConfigurationException;
 public interface ExtendedConfiguration {
 
     /**
-     * Returns the extension of the given type, creating it on first access.
+     * Returns the extension of the given type, or {@code null} if no extension of that type has been registered.
      * <p>
-     * The extension is created via its single-argument constructor, receiving
-     * {@code this} as the parent. If no compatible constructor exists (i.e., the
-     * extension's parent type is not assignable from this configuration's type),
-     * an {@link AxonConfigurationException} is thrown.
-     * <p>
-     * Subsequent calls with the same type return the cached instance.
+     * Returns the instance created by the factory registered via
+     * {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}.
      *
-     * @param type the extension class
-     * @param <T>  the extension type
-     * @return the extension instance
-     * @throws AxonConfigurationException if the extension cannot be created
+     * @param extensionType the extension class
+     * @param <T>           the extension type
+     * @return the extension instance, or {@code null} if not registered
      */
-    <T extends ConfigurationExtension<?>> T extension(Class<T> type);
+    @Nullable
+    <T extends ConfigurationExtension<?>> T extension(Class<T> extensionType);
 }
