@@ -30,7 +30,7 @@ import org.jspecify.annotations.Nullable;
  * @since 5.1.0
  * @see ExtensibleConfigurer
  */
-public interface ExtendedConfiguration<P extends ExtendedConfiguration<P>> {
+public interface ExtendedConfiguration {
 
     /**
      * Returns the extension of the given type, or {@code null} if no extension of that type has been registered.
@@ -43,5 +43,5 @@ public interface ExtendedConfiguration<P extends ExtendedConfiguration<P>> {
      * @return the extension instance, or {@code null} if not registered
      */
     @Nullable
-    <T extends ConfigurationExtension<P>> T extension(Class<T> extensionType);
+    <T extends ConfigurationExtension<?>> T extension(Class<T> extensionType);
 }

@@ -138,7 +138,7 @@ public class EventProcessingConfigurer {
      * @return This module instance for method chaining.
      */
     public EventProcessingConfigurer defaults(
-            BiFunction<Configuration, EventProcessorConfiguration<?>, EventProcessorConfiguration<?>> configureDefaults) {
+            BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> configureDefaults) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
@@ -154,7 +154,7 @@ public class EventProcessingConfigurer {
      * @param configureDefaults A function that modifies the {@link EventProcessorConfiguration} with desired defaults.
      * @return This module instance for method chaining.
      */
-    public EventProcessingConfigurer defaults(UnaryOperator<EventProcessorConfiguration<?>> configureDefaults) {
+    public EventProcessingConfigurer defaults(UnaryOperator<EventProcessorConfiguration> configureDefaults) {
         Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)

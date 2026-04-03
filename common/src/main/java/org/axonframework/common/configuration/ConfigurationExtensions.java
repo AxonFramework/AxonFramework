@@ -44,9 +44,9 @@ import java.util.stream.Collectors;
  * @since 5.1.0
  */
 @Internal
-public class ConfigurationExtensions<P extends ExtendedConfiguration<P>> implements DescribableComponent {
+public class ConfigurationExtensions implements DescribableComponent {
 
-    private final P parentConfigurer;
+    private final ExtensibleConfigurer parentConfigurer;
     private final Map<Class<? extends ConfigurationExtension<?>>, ConfigurationExtension<?>> extensions =
             new LinkedHashMap<>();
 
@@ -55,7 +55,7 @@ public class ConfigurationExtensions<P extends ExtendedConfiguration<P>> impleme
      *
      * @param parentConfigurer the parent configuration that owns these extensions
      */
-    public ConfigurationExtensions(P parentConfigurer) {
+    public ConfigurationExtensions(ExtensibleConfigurer parentConfigurer) {
         Objects.requireNonNull(parentConfigurer, "Parent configuration may not be null");
         this.parentConfigurer = parentConfigurer;
     }
@@ -69,7 +69,7 @@ public class ConfigurationExtensions<P extends ExtendedConfiguration<P>> impleme
      * @return the extension instance, or {@code null} if not registered
      */
     @SuppressWarnings("unchecked")
-    public <T extends ConfigurationExtension<P>> @Nullable T extension(Class<T> extensionType) {
+    public <T extends ConfigurationExtension<?>> @Nullable T extension(Class<T> extensionType) {
         return (T) extensions.get(extensionType);
     }
 
@@ -84,9 +84,9 @@ public class ConfigurationExtensions<P extends ExtendedConfiguration<P>> impleme
      * @param <T>           the extension type
      * @return the parent configurer, for fluent chaining
      */
-    public <T extends ConfigurationExtension<P>> P extend(
+    public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(
             Class<T> extensionType,
-            Function<P, T> factory
+            Function<ExtensibleConfigurer, T> factory
     ) {
         extensions.put(extensionType, factory.apply(parentConfigurer));
         return parentConfigurer;
@@ -122,7 +122,7 @@ public class ConfigurationExtensions<P extends ExtendedConfiguration<P>> impleme
      * @param target the target {@code ConfigurationExtensions} to copy into
      */
     @Internal
-    public void copyTo(ConfigurationExtensions<?> target) {
+    public void copyTo(ConfigurationExtensions target) {
         target.extensions.putAll(this.extensions);
     }
 }

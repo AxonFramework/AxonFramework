@@ -154,7 +154,7 @@ class PooledStreamingEventProcessorTest {
 
         TestApplicationContext testApplicationContext = new TestApplicationContext();
         testApplicationContext.addComponent(Converter.class, null, converter);
-        EventProcessorConfiguration<?> baseConfig = new EventProcessorConfiguration<>(PROCESSOR_NAME, null);
+        EventProcessorConfiguration baseConfig = new EventProcessorConfiguration(PROCESSOR_NAME, null);
         var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration(baseConfig)
                 .eventSource(stubMessageSource)
                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory(testApplicationContext))

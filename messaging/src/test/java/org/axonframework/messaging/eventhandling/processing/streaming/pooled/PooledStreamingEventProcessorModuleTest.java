@@ -916,7 +916,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
                     .customized((__, p) -> new PooledStreamingEventProcessorConfiguration(
-                                        new EventProcessorConfiguration<>(processorName, null)
+                                        new EventProcessorConfiguration(processorName, null)
                                 ).eventSource(p.eventSource())
                                  .tokenStore(instanceTokenStore)
                                  .initialSegmentCount(instanceSegmentCount)

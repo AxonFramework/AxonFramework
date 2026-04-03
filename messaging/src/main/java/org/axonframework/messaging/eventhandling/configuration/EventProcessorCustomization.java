@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
  */
 @FunctionalInterface
 public interface EventProcessorCustomization extends
-        BiFunction<Configuration, EventProcessorConfiguration<?>, EventProcessorConfiguration<?>> {
+        BiFunction<Configuration, EventProcessorConfiguration, EventProcessorConfiguration> {
 
     /**
      * Creates a no-operation customization that returns the processor configuration unchanged.

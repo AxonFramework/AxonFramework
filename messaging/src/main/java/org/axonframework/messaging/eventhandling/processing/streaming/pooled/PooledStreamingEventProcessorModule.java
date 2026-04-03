@@ -229,7 +229,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     ) {
         return new PooledStreamingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(config)
-                        .apply(config, new EventProcessorConfiguration<>(processorName, config)),
+                        .apply(config, new EventProcessorConfiguration(processorName, config)),
                 config
         );
     }

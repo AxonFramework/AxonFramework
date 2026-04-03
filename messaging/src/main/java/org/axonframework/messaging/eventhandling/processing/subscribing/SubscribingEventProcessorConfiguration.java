@@ -19,6 +19,8 @@ package org.axonframework.messaging.eventhandling.processing.subscribing;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.configuration.ConfigurationExtension;
+import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.SubscribableEventSource;
@@ -34,6 +36,7 @@ import org.axonframework.messaging.eventhandling.processing.errorhandling.Propag
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -47,8 +50,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SubscribingEventProcessorConfiguration
-        extends EventProcessorConfiguration<SubscribingEventProcessorConfiguration> {
+public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource eventSource;
     private Consumer<? super EventMessage> ignoredMessageHandler;
@@ -60,7 +62,7 @@ public class SubscribingEventProcessorConfiguration
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration<?> base) {
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base) {
         super(base);
     }
 
@@ -73,7 +75,7 @@ public class SubscribingEventProcessorConfiguration
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
     @Internal
-    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration<?> base,
+    public SubscribingEventProcessorConfiguration(EventProcessorConfiguration base,
                                                   Configuration configuration) {
         super(base);
     }
@@ -195,4 +197,12 @@ public class SubscribingEventProcessorConfiguration
         descriptor.describeProperty("eventSource", eventSource);
     }
 
+    @Override
+    public <T extends ConfigurationExtension<?>> SubscribingEventProcessorConfiguration extend(
+            Class<T> extensionType,
+            Function<ExtensibleConfigurer, T> factory
+    ) {
+        super.extend(extensionType, factory);
+        return this;
+    }
 }
