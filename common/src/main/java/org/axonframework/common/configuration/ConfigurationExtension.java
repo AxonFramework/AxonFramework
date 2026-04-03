@@ -27,7 +27,7 @@ import org.axonframework.common.infra.DescribableComponent;
  * Extensions are pure data — they hold settings but carry no behavior.
  * Behavior that acts on extension data belongs in a {@link ConfigurationEnhancer}.
  * <p>
- * Extensions are registered via {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}
+ * Extensions are registered via {@link ExtensibleConfigurer#extend(Class, java.util.function.Supplier)}
  * and retrieved via {@link ExtendedConfiguration#extension(Class)}. No reflection is used — the factory
  * function provided at registration time is responsible for creating the extension instance.
  *

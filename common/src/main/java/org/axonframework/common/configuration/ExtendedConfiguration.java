@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A configuration that supports reading modular {@link ConfigurationExtension} instances.
  * <p>
- * Extensions must be registered first via {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}.
+ * Extensions must be registered first via {@link ExtensibleConfigurer#extend(Class, java.util.function.Supplier)}.
  * If no extension of the requested type has been registered, {@code null} is returned.
  * <p>
  * For registering extensions, see {@link ExtensibleConfigurer}.
@@ -36,7 +36,7 @@ public interface ExtendedConfiguration {
      * Returns the extension of the given type, or {@code null} if no extension of that type has been registered.
      * <p>
      * Returns the instance created by the factory registered via
-     * {@link ExtensibleConfigurer#extend(Class, java.util.function.Function)}.
+     * {@link ExtensibleConfigurer#extend(Class, java.util.function.Supplier)}.
      *
      * @param extensionType the extension class
      * @param <T>           the extension type
