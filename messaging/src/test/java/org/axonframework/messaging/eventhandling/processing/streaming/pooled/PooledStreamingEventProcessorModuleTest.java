@@ -474,7 +474,7 @@ class PooledStreamingEventProcessorModuleTest {
         }
 
         @Test
-        void shouldRegisterAllSequencedDeadLetterProcessorsWhenDlqConfigured() {
+        void shouldResolveSequencedDeadLetterProcessorsViaFactoryWhenDlqConfigured() {
             // given
             var processorName = "testProcessor";
             var component0 = SimpleEventHandlingComponent.create("component0");
@@ -494,19 +494,23 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var deadLetterProcessors = configuration.getModuleConfiguration(processorName)
-                                                    .map(m -> m.getComponents(SequencedDeadLetterProcessor.class));
+            var moduleConfig = configuration.getModuleConfiguration(processorName);
+            var dlp0 = moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    SequencedDeadLetterProcessor.class,
+                    "EventHandlingComponent[" + processorName + "][component0]"
+            ));
+            var dlp1 = moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    SequencedDeadLetterProcessor.class,
+                    "EventHandlingComponent[" + processorName + "][component1]"
+            ));
 
             // then
-            assertThat(deadLetterProcessors).isPresent();
-            assertThat(deadLetterProcessors.get()).hasSize(2);
-            assertThat(deadLetterProcessors.get().values()).allSatisfy(
-                    dlp -> assertThat(dlp).isInstanceOf(SequencedDeadLetterProcessor.class)
-            );
+            assertThat(dlp0).isPresent();
+            assertThat(dlp1).isPresent();
         }
 
         @Test
-        void shouldNotRegisterSequencedDeadLetterProcessorsWhenDlqNotConfigured() {
+        void shouldNotResolveSequencedDeadLetterProcessorsWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
             var component = SimpleEventHandlingComponent.create("component");
@@ -522,16 +526,18 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var deadLetterProcessors = configuration.getModuleConfiguration(processorName)
-                                                    .map(m -> m.getComponents(SequencedDeadLetterProcessor.class));
+            var dlp = configuration.getModuleConfiguration(processorName)
+                                   .flatMap(m -> m.getOptionalComponent(
+                                           SequencedDeadLetterProcessor.class,
+                                           "EventHandlingComponent[" + processorName + "][component]"
+                                   ));
 
             // then
-            assertThat(deadLetterProcessors).isPresent();
-            assertThat(deadLetterProcessors.get().values()).allMatch(java.util.Objects::isNull);
+            assertThat(dlp).isEmpty();
         }
 
         @Test
-        void shouldRetrieveAllDeadLetterProcessorsFromRootConfigurationAcrossAllModules() {
+        void shouldResolveDeadLetterProcessorsAcrossMultipleModules() {
             // given
             var processor1Name = "processor1";
             var processor2Name = "processor2";
@@ -561,14 +567,21 @@ class PooledStreamingEventProcessorModuleTest {
                     .processor(module2)));
             var configuration = configurer.build();
 
-            // when - get all processors from root configuration (should search all modules)
-            var allDeadLetterProcessors = configuration.getComponents(SequencedDeadLetterProcessor.class);
+            // when - resolve dead letter processors from each module
+            var dlp1 = configuration.getModuleConfiguration(processor1Name)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            SequencedDeadLetterProcessor.class,
+                                            "EventHandlingComponent[" + processor1Name + "][component1]"
+                                    ));
+            var dlp2 = configuration.getModuleConfiguration(processor2Name)
+                                    .flatMap(m -> m.getOptionalComponent(
+                                            SequencedDeadLetterProcessor.class,
+                                            "EventHandlingComponent[" + processor2Name + "][component2]"
+                                    ));
 
             // then - should find processors from both modules
-            assertThat(allDeadLetterProcessors).hasSize(2);
-            assertThat(allDeadLetterProcessors.values()).allSatisfy(
-                    dlp -> assertThat(dlp).isInstanceOf(SequencedDeadLetterProcessor.class)
-            );
+            assertThat(dlp1).isPresent();
+            assertThat(dlp2).isPresent();
         }
 
         @Test
@@ -715,7 +728,6 @@ class PooledStreamingEventProcessorModuleTest {
                             .declarative("component0", cfg -> component0)
                             .declarative("component1", cfg -> component1))
                     .notCustomized();
-//                    .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled())); // todo: why doesn't work!?
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
