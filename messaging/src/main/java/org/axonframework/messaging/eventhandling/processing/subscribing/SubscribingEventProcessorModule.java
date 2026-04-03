@@ -180,7 +180,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     ) {
         return new SubscribingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(config)
-                        .apply(config, new EventProcessorConfiguration(processorName, config)),
+                        .apply(config, new EventProcessorConfiguration<>(processorName, config)),
                 config
         );
     }

@@ -32,7 +32,7 @@ class PooledStreamingEventProcessorConfigurationTest {
     void addSegmentChangeListenerAddsListenersWithoutOverriding() {
         // given
         PooledStreamingEventProcessorConfiguration testSubject = new PooledStreamingEventProcessorConfiguration(
-                new EventProcessorConfiguration("processorName", null)
+                new EventProcessorConfiguration<>("processorName", null)
         );
         AtomicInteger releaseInvocations = new AtomicInteger();
         testSubject.addSegmentChangeListener(SegmentChangeListener.runOnRelease(

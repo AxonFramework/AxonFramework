@@ -36,7 +36,7 @@ import org.axonframework.common.infra.DescribableComponent;
  * @since 5.1.0
  * @see AbstractConfigurationExtension
  */
-public interface ConfigurationExtension<P extends ExtendedConfiguration> extends DescribableComponent {
+public interface ConfigurationExtension<P extends ExtendedConfiguration<P>> extends DescribableComponent {
 
     /**
      * Returns the name of this configuration extension.

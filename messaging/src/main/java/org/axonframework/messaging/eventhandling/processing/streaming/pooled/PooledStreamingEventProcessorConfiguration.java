@@ -20,8 +20,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.common.configuration.ConfigurationExtension;
-import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.ConfigurationApplicationContext;
 import org.axonframework.messaging.core.EmptyApplicationContext;
@@ -57,7 +55,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -90,7 +87,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
+public class PooledStreamingEventProcessorConfiguration
+        extends EventProcessorConfiguration<PooledStreamingEventProcessorConfiguration> {
 
     private StreamableEventSource eventSource;
     private TokenStore tokenStore;
@@ -121,7 +119,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
     @Internal
-    public PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration base) {
+    public PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration<?> base) {
         super(base);
     }
 
@@ -135,7 +133,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     @Internal
     public PooledStreamingEventProcessorConfiguration(
-            EventProcessorConfiguration base,
+            EventProcessorConfiguration<?> base,
             Configuration configuration
     ) {
         super(base);
@@ -682,15 +680,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public SegmentChangeListener segmentChangeListener() {
         return segmentChangeListeners.stream()
                                      .reduce(SegmentChangeListener.noOp(), SegmentChangeListener::andThen);
-    }
-
-    @Override
-    public <T extends ConfigurationExtension<?>> PooledStreamingEventProcessorConfiguration extend(
-            Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
-    ) {
-        super.extend(extensionType, factory);
-        return this;
     }
 
     @Override

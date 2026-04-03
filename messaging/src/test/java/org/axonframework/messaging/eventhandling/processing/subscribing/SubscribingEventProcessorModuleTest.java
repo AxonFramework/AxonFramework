@@ -441,7 +441,7 @@ class SubscribingEventProcessorModuleTest {
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
                     .customized((__, p) -> new SubscribingEventProcessorConfiguration(
-                                        new EventProcessorConfiguration(processorName, null)
+                                        new EventProcessorConfiguration<>(processorName, null)
                                 ).eventSource(p.eventSource())
                                  .errorHandler(instanceErrorHandler)
                     );

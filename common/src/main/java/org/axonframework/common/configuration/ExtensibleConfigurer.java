@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @since 5.1.0
  * @see ExtendedConfiguration
  */
-public interface ExtensibleConfigurer {
+public interface ExtensibleConfigurer<P extends ExtendedConfiguration<P>> {
 
     /**
      * Registers an extension factory for the given type and returns {@code this} configurer for chaining.
@@ -47,10 +47,10 @@ public interface ExtensibleConfigurer {
      * }</pre>
      *
      * @param extensionType the extension class
-     * @param factory       a function that receives the parent configurer and returns a configured extension
+     * @param factory       a function that receives the typed parent configurer and returns a configured extension
      * @param <T>           the extension type
      * @return {@code this} configurer, for fluent chaining
      */
-    <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
-                                                                      Function<ExtensibleConfigurer, T> factory);
+    <T extends ConfigurationExtension<P>> P extend(Class<T> extensionType,
+                                                   Function<P, T> factory);
 }

@@ -216,7 +216,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         workerExecutor = Executors.newSingleThreadScheduledExecutor();
 
         var configuration = new PooledStreamingEventProcessorConfiguration(
-                new EventProcessorConfiguration(PROCESSING_GROUP, null)
+                new EventProcessorConfiguration<>(PROCESSING_GROUP, null)
         ).eventSource(eventSource)
          .unitOfWorkFactory(buildUnitOfWorkFactory())
          .tokenStore(new InMemoryTokenStore())

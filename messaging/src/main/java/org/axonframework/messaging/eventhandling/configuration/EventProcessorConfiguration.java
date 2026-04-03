@@ -59,7 +59,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessorConfiguration implements ExtendedConfiguration, ExtensibleConfigurer, DescribableComponent {
+public class EventProcessorConfiguration<P extends EventProcessorConfiguration<P>>
+        implements ExtendedConfiguration<P>, ExtensibleConfigurer<P>, DescribableComponent {
 
     protected final String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
@@ -69,7 +70,7 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
             (processorType, name) -> new ArrayList<>();
     protected BiFunction<Class<? extends EventProcessor>, String, MessageMonitor<? super EventMessage>> monitorBuilder =
             (processorType, name) -> NoOpMessageMonitor.INSTANCE;
-    private final ConfigurationExtensions extensions = new ConfigurationExtensions(this);
+    private final ConfigurationExtensions<P> extensions = new ConfigurationExtensions<>(self());
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with default values and retrieve global default values.
@@ -100,7 +101,7 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
      * @param base the {@code EventProcessorConfiguration} to copy properties from
      */
     @Internal
-    public EventProcessorConfiguration(EventProcessorConfiguration base) {
+    public EventProcessorConfiguration(EventProcessorConfiguration<?> base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         this.processorName = base.processorName;
         this.errorHandler = base.errorHandler();
@@ -119,10 +120,10 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
      *                     processing
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration errorHandler(ErrorHandler errorHandler) {
+    public P errorHandler(ErrorHandler errorHandler) {
         assertNonNull(errorHandler, "ErrorHandler may not be null");
         this.errorHandler = errorHandler;
-        return this;
+        return self();
     }
 
     /**
@@ -131,10 +132,10 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
      * @param unitOfWorkFactory A {@link UnitOfWorkFactory} that spawns {@link UnitOfWork}.
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
+    public P unitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         assertNonNull(unitOfWorkFactory, "UnitOfWorkFactory may not be null");
         this.unitOfWorkFactory = unitOfWorkFactory;
-        return this;
+        return self();
     }
 
     /**
@@ -185,17 +186,21 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
     }
 
     @Override
-    public <T extends ConfigurationExtension<?>> @Nullable T extension(Class<T> extensionType) {
+    public <T extends ConfigurationExtension<P>> @Nullable T extension(Class<T> extensionType) {
         return extensions.extension(extensionType);
     }
 
     @Override
-    public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
+    public <T extends ConfigurationExtension<P>> P extend(
             Class<T> extensionType,
-            Function<ExtensibleConfigurer, T> factory
+            Function<P, T> factory
     ) {
-        extensions.extend(extensionType, factory);
-        return this;
+        return extensions.extend(extensionType, factory);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected final P self() {
+        return (P) this;
     }
 
     @Override

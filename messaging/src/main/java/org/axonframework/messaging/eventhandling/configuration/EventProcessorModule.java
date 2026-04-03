@@ -88,7 +88,7 @@ public interface EventProcessorModule extends Module {
      * @param <P> The processor module type.
      * @param <C> The processor configuration type.
      */
-    interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
+    interface EventHandlingPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration<?>> {
 
         /**
          * Configures event handling components using a configurer function.
@@ -115,7 +115,7 @@ public interface EventProcessorModule extends Module {
      * @author Mateusz Nowak
      * @since 5.0.0
      */
-    interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration> {
+    interface CustomizationPhase<P extends EventProcessorModule, C extends EventProcessorConfiguration<?>> {
 
         /**
          * Customizes the processor configuration by applying modifications to the default configuration.
