@@ -386,8 +386,7 @@ public class DeadLetterProcessor {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
         var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
                 .ifPresent(dlp ->
                         dlp.process(letter -> letter.message()
                                                     .type()
@@ -416,8 +415,7 @@ public class DeadLetterProcessor {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
         var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
                 .ifPresent(dlp ->
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
@@ -443,8 +441,7 @@ public class DeadLetterProcessor {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
         var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
                 .ifPresent(this::processUntilEmpty);
     }
 
