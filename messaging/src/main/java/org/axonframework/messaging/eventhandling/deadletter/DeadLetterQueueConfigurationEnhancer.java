@@ -87,8 +87,44 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
     @Override
     public void enhance(ComponentRegistry registry) {
         registry.registerFactory(new DeadLetterQueueComponentFactory());
+        registerSegmentChangeListenerDecorator(registry);
         registerDeadLetterQueueDecorator(registry);
         registry.registerFactory(new DeadLetterProcessorFactory());
+    }
+
+    /**
+     * Registers a type-level decorator for {@link PooledStreamingEventProcessorConfiguration} that adds a
+     * {@link SegmentChangeListener} for cache invalidation when DLQ caching is enabled.
+     * <p>
+     * The listener lazily looks up all {@link CachingSequencedDeadLetterQueue} instances at invocation time
+     * (segment release), by which point all DLQs have been created by the {@link DeadLetterQueueComponentFactory}.
+     */
+    private static void registerSegmentChangeListenerDecorator(ComponentRegistry registry) {
+        registry.registerDecorator(
+                DecoratorDefinition
+                        .forType(PooledStreamingEventProcessorConfiguration.class)
+                        .<PooledStreamingEventProcessorConfiguration>with((config, name, delegate) -> {
+                            DeadLetterQueueConfiguration dlqConfig =
+                                    delegate.extension(DeadLetterQueueConfiguration.class);
+                            if (dlqConfig.isEnabled() && dlqConfig.cacheMaxSize() > 0) {
+                                delegate.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
+                                    var uow = delegate.unitOfWorkFactory().create();
+                                    return uow.executeWithResult(context -> {
+                                        config.getComponents(SequencedDeadLetterQueue.class)
+                                              .values()
+                                              .stream()
+                                              .filter(CachingSequencedDeadLetterQueue.class::isInstance)
+                                              .map(CachingSequencedDeadLetterQueue.class::cast)
+                                              .forEach(dlq -> dlq.invalidateCache(
+                                                      context.withResource(Segment.RESOURCE_KEY, segment)
+                                              ));
+                                        return FutureUtils.emptyCompletedFuture();
+                                    });
+                                }));
+                            }
+                            return delegate;
+                        })
+        );
     }
 
     /**
@@ -206,15 +242,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
             SequencedDeadLetterQueue<EventMessage> dlq = dlqConfig.factory().create(name, config);
 
             if (dlqConfig.cacheMaxSize() > 0) {
-                var cachingDlq = new CachingSequencedDeadLetterQueue<>(dlq, dlqConfig.cacheMaxSize());
-                processorConfig.addSegmentChangeListener(SegmentChangeListener.onRelease(segment -> {
-                    var uow = processorConfig.unitOfWorkFactory().create();
-                    return uow.executeWithResult(context -> {
-                        cachingDlq.invalidateCache(context.withResource(Segment.RESOURCE_KEY, segment));
-                        return FutureUtils.emptyCompletedFuture();
-                    });
-                }));
-                dlq = cachingDlq;
+                dlq = new CachingSequencedDeadLetterQueue<>(dlq, dlqConfig.cacheMaxSize());
             }
 
             return Optional.of(new InstantiatedComponentDefinition<>(
