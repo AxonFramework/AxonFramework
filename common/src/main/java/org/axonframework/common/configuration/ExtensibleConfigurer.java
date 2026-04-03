@@ -16,6 +16,8 @@
 
 package org.axonframework.common.configuration;
 
+import org.axonframework.common.annotation.Internal;
+
 import java.util.function.Supplier;
 
 /**
@@ -31,6 +33,7 @@ import java.util.function.Supplier;
  * @since 5.1.0
  * @see ExtendedConfiguration
  */
+@Internal
 public interface ExtensibleConfigurer {
 
     /**
@@ -50,6 +53,5 @@ public interface ExtensibleConfigurer {
      * @param <T>           the extension type
      * @return {@code this} configurer, for fluent chaining
      */
-    <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
-                                                                      Supplier<T> factory);
+    <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType, Supplier<T> factory);
 }

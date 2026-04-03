@@ -17,6 +17,7 @@
 package org.axonframework.common.configuration;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 
 /**
@@ -36,6 +37,7 @@ import org.axonframework.common.infra.DescribableComponent;
  * @since 5.1.0
  * @see AbstractConfigurationExtension
  */
+@Internal
 public interface ConfigurationExtension<P extends ExtendedConfiguration> extends DescribableComponent {
 
     /**

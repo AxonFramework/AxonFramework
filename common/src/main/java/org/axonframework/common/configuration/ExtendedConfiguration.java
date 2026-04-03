@@ -16,6 +16,7 @@
 
 package org.axonframework.common.configuration;
 
+import org.axonframework.common.annotation.Internal;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -30,6 +31,7 @@ import org.jspecify.annotations.Nullable;
  * @since 5.1.0
  * @see ExtensibleConfigurer
  */
+@Internal
 public interface ExtendedConfiguration {
 
     /**
