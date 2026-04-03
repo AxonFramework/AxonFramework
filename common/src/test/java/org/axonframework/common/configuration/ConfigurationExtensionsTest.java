@@ -94,14 +94,15 @@ class ConfigurationExtensionsTest {
         @Test
         void validatesAllExtensions() {
             // given
-            StubExtension extension = owner.extension(StubExtension.class);
-            owner.extension(AnotherStubExtension.class);
+            StubExtension stubExtension = owner.extension(StubExtension.class);
+            AnotherStubExtension anotherExtension = owner.extension(AnotherStubExtension.class);
 
             // when
             owner.extensions.validate();
 
             // then
-            assertThat(extension.validated).isTrue();
+            assertThat(stubExtension.validated).isTrue();
+            assertThat(anotherExtension.validated).isTrue();
         }
     }
 
@@ -203,6 +204,8 @@ class ConfigurationExtensionsTest {
 
     static class AnotherStubExtension implements ConfigurationExtension<StubExtendedConfiguration> {
 
+        boolean validated = false;
+
         protected AnotherStubExtension(StubExtendedConfiguration parent) {
         }
 
@@ -213,7 +216,7 @@ class ConfigurationExtensionsTest {
 
         @Override
         public void validate() throws AxonConfigurationException {
-            // no-op
+            validated = true;
         }
 
         @Override
