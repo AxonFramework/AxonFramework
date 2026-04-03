@@ -162,6 +162,62 @@ class ConfigurationExtensionsTest {
     }
 
 
+    @Nested
+    class WhenCopyingMissing {
+
+        @Test
+        void copiesExtensionsNotPresentOnTarget() {
+            // given
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
+            var target = new StubExtendedConfiguration();
+
+            // when
+            target.extensions.copyMissingFrom(owner.extensions);
+
+            // then
+            assertThat(target.extension(StubExtension.class))
+                    .isSameAs(owner.extension(StubExtension.class));
+            assertThat(target.extension(AnotherStubExtension.class))
+                    .isSameAs(owner.extension(AnotherStubExtension.class));
+        }
+
+        @Test
+        void doesNotOverrideExistingExtensionsOnTarget() {
+            // given
+            owner.extend(StubExtension.class, StubExtension::new);
+            var target = new StubExtendedConfiguration();
+            target.extend(StubExtension.class, StubExtension::new);
+            var targetOriginal = target.extension(StubExtension.class);
+
+            // when
+            target.extensions.copyMissingFrom(owner.extensions);
+
+            // then
+            assertThat(target.extension(StubExtension.class)).isSameAs(targetOriginal);
+            assertThat(target.extension(StubExtension.class))
+                    .isNotSameAs(owner.extension(StubExtension.class));
+        }
+
+        @Test
+        void copiesOnlyMissingWhenTargetHasSomeExtensions() {
+            // given
+            owner.extend(StubExtension.class, StubExtension::new);
+            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
+            var target = new StubExtendedConfiguration();
+            target.extend(StubExtension.class, StubExtension::new);
+            var targetStub = target.extension(StubExtension.class);
+
+            // when
+            target.extensions.copyMissingFrom(owner.extensions);
+
+            // then — StubExtension preserved, AnotherStubExtension copied from source
+            assertThat(target.extension(StubExtension.class)).isSameAs(targetStub);
+            assertThat(target.extension(AnotherStubExtension.class))
+                    .isSameAs(owner.extension(AnotherStubExtension.class));
+        }
+    }
+
     // -- test fixtures --
 
     static class StubExtendedConfiguration implements ExtendedConfiguration, ExtensibleConfigurer {
