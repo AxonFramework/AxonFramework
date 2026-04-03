@@ -173,7 +173,7 @@ class ConfigurationExtensionsTest {
             var target = new StubExtendedConfiguration();
 
             // when
-            target.extensions.copyMissingFrom(owner.extensions);
+            target.extensions.extendFrom(owner.extensions);
 
             // then
             assertThat(target.extension(StubExtension.class))
@@ -191,7 +191,7 @@ class ConfigurationExtensionsTest {
             var targetOriginal = target.extension(StubExtension.class);
 
             // when
-            target.extensions.copyMissingFrom(owner.extensions);
+            target.extensions.extendFrom(owner.extensions);
 
             // then
             assertThat(target.extension(StubExtension.class)).isSameAs(targetOriginal);
@@ -209,7 +209,7 @@ class ConfigurationExtensionsTest {
             var targetStub = target.extension(StubExtension.class);
 
             // when
-            target.extensions.copyMissingFrom(owner.extensions);
+            target.extensions.extendFrom(owner.extensions);
 
             // then — StubExtension preserved, AnotherStubExtension copied from source
             assertThat(target.extension(StubExtension.class)).isSameAs(targetStub);

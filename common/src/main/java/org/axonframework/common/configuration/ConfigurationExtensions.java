@@ -108,7 +108,7 @@ public class ConfigurationExtensions implements DescribableComponent {
      *
      * @param source The source to copy missing extensions from.
      */
-    public void copyMissingFrom(ConfigurationExtensions source) {
+    public void extendFrom(ConfigurationExtensions source) {
         source.extensions.forEach(extensions::putIfAbsent);
     }
 

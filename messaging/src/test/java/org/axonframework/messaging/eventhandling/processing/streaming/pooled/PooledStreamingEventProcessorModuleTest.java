@@ -48,7 +48,6 @@ import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
-import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -87,7 +86,7 @@ class PooledStreamingEventProcessorModuleTest {
             PooledStreamingEventProcessorModule module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component",
-                            cfg -> SimpleEventHandlingComponent.create("test")
+                                                                                  cfg -> SimpleEventHandlingComponent.create("test")
                     ))
                     .customized((cfg, c) -> c);
 
@@ -427,9 +426,9 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
-                    .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled())
-                                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                    );
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -438,11 +437,10 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             var registeredComponent = configuration.getModuleConfiguration(processorName)
                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
-                                                                                         "EventHandlingComponent[" + processorName + "][component]"));
+                                                                                        "EventHandlingComponent[" + processorName + "][component]"));
 
             // then
             assertThat(registeredComponent).isPresent();
-            assertThat(registeredComponent.get()).isInstanceOf(DeadLetteringEventHandlingComponent.class);
             assertThat(registeredComponent.get()).isInstanceOf(SequencedDeadLetterProcessor.class);
         }
 
@@ -458,10 +456,9 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -469,16 +466,15 @@ class PooledStreamingEventProcessorModuleTest {
 
             // when
             var registeredComponents = configuration.getModuleConfiguration(processorName)
-                                                   .map(m -> m.getComponents(EventHandlingComponent.class));
+                                                    .map(m -> m.getComponents(EventHandlingComponent.class));
 
             // then
             assertThat(registeredComponents).isPresent();
-            assertThat(registeredComponents.get().values()).allSatisfy(c -> assertThat(c).isInstanceOf(DeadLetteringEventHandlingComponent.class));
             assertThat(registeredComponents.get().values()).allSatisfy(c -> assertThat(c).isInstanceOf(SequencedDeadLetterProcessor.class));
         }
 
         @Test
-        void shouldResolveSequencedDeadLetterProcessorsViaFactoryWhenDlqConfigured() {
+        void shouldRegisterAllSequencedDeadLetterProcessorsWhenDlqConfigured() {
             // given
             var processorName = "testProcessor";
             var component0 = SimpleEventHandlingComponent.create("component0");
@@ -488,35 +484,29 @@ class PooledStreamingEventProcessorModuleTest {
 
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
-                    .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0)
-                                                                     .declarative("component1", cfg -> component1))
-                    .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class,
-                                                     () -> new DeadLetterQueueConfiguration().enabled())
-                                             .eventSource(new AsyncInMemoryStreamableEventSource())
-                    );
+                    .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
             var configuration = configurer.build();
 
             // when
-            var moduleConfig = configuration.getModuleConfiguration(processorName);
-            var dlp0 = moduleConfig.flatMap(m -> m.getOptionalComponent(
-                    SequencedDeadLetterProcessor.class,
-                    "EventHandlingComponent[" + processorName + "][component0]"
-            ));
-            var dlp1 = moduleConfig.flatMap(m -> m.getOptionalComponent(
-                    SequencedDeadLetterProcessor.class,
-                    "EventHandlingComponent[" + processorName + "][component1]"
-            ));
+            var deadLetterProcessors = configuration.getModuleConfiguration(processorName)
+                                                    .map(m -> m.getComponents(SequencedDeadLetterProcessor.class));
 
             // then
-            assertThat(dlp0).isPresent();
-            assertThat(dlp1).isPresent();
+            assertThat(deadLetterProcessors).isPresent();
+            assertThat(deadLetterProcessors.get()).hasSize(2);
+            assertThat(deadLetterProcessors.get().values()).allSatisfy(
+                    dlp -> assertThat(dlp).isInstanceOf(SequencedDeadLetterProcessor.class)
+            );
         }
 
         @Test
-        void shouldNotResolveSequencedDeadLetterProcessorsWhenDlqNotConfigured() {
+        void shouldNotRegisterSequencedDeadLetterProcessorsWhenDlqNotConfigured() {
             // given
             var processorName = "testProcessor";
             var component = SimpleEventHandlingComponent.create("component");
@@ -532,18 +522,16 @@ class PooledStreamingEventProcessorModuleTest {
             var configuration = configurer.build();
 
             // when
-            var dlp = configuration.getModuleConfiguration(processorName)
-                                   .flatMap(m -> m.getOptionalComponent(
-                                           SequencedDeadLetterProcessor.class,
-                                           "EventHandlingComponent[" + processorName + "][component]"
-                                   ));
+            var deadLetterProcessors = configuration.getModuleConfiguration(processorName)
+                                                    .map(m -> m.getComponents(SequencedDeadLetterProcessor.class));
 
             // then
-            assertThat(dlp).isEmpty();
+            assertThat(deadLetterProcessors).isPresent();
+            assertThat(deadLetterProcessors.get().values()).allMatch(java.util.Objects::isNull);
         }
 
         @Test
-        void shouldResolveDeadLetterProcessorsAcrossMultipleModules() {
+        void shouldRetrieveAllDeadLetterProcessorsFromRootConfigurationAcrossAllModules() {
             // given
             var processor1Name = "processor1";
             var processor2Name = "processor2";
@@ -556,18 +544,16 @@ class PooledStreamingEventProcessorModuleTest {
             var module1 = EventProcessorModule
                     .pooledStreaming(processor1Name)
                     .eventHandlingComponents(components -> components.declarative("component1", cfg -> component1))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var module2 = EventProcessorModule
                     .pooledStreaming(processor2Name)
                     .eventHandlingComponents(components -> components.declarative("component2", cfg -> component2))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
@@ -575,21 +561,14 @@ class PooledStreamingEventProcessorModuleTest {
                     .processor(module2)));
             var configuration = configurer.build();
 
-            // when - resolve dead letter processors from each module
-            var dlp1 = configuration.getModuleConfiguration(processor1Name)
-                                    .flatMap(m -> m.getOptionalComponent(
-                                            SequencedDeadLetterProcessor.class,
-                                            "EventHandlingComponent[" + processor1Name + "][component1]"
-                                    ));
-            var dlp2 = configuration.getModuleConfiguration(processor2Name)
-                                    .flatMap(m -> m.getOptionalComponent(
-                                            SequencedDeadLetterProcessor.class,
-                                            "EventHandlingComponent[" + processor2Name + "][component2]"
-                                    ));
+            // when - get all processors from root configuration (should search all modules)
+            var allDeadLetterProcessors = configuration.getComponents(SequencedDeadLetterProcessor.class);
 
             // then - should find processors from both modules
-            assertThat(dlp1).isPresent();
-            assertThat(dlp2).isPresent();
+            assertThat(allDeadLetterProcessors).hasSize(2);
+            assertThat(allDeadLetterProcessors.values()).allSatisfy(
+                    dlp -> assertThat(dlp).isInstanceOf(SequencedDeadLetterProcessor.class)
+            );
         }
 
         @Test
@@ -611,15 +590,15 @@ class PooledStreamingEventProcessorModuleTest {
             // when
             var registeredComponent = configuration.getModuleConfiguration(processorName)
                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
-                                                                                         "EventHandlingComponent[" + processorName + "][component]"));
+                                                                                        "EventHandlingComponent[" + processorName + "][component]"));
 
             // then
             assertThat(registeredComponent).isPresent();
-            assertThat(registeredComponent.get()).isNotInstanceOf(DeadLetteringEventHandlingComponent.class);
+            assertThat(registeredComponent.get()).isNotInstanceOf(SequencedDeadLetterProcessor.class);
         }
 
         @Test
-        void shouldWrapEachEventHandlingComponentWithItsOwnDeadLetteringDecorator() {
+        void shouldNotShareSequencedDeadLetterQueueBetweenEventHandlingComponentsInSingleProcessor() {
             // given
             var processorName = "testProcessor";
             var component0 = SimpleEventHandlingComponent.create("component0");
@@ -630,31 +609,30 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component0", cfg -> component0).declarative("component1", cfg -> component1))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
             var configuration = configurer.build();
 
             // when
-            var ehc0 = configuration.getModuleConfiguration(processorName)
+            var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
-            var ehc1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
 
-            // then - each component is independently wrapped
-            assertThat(ehc0).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-            assertThat(ehc1).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-            assertThat(ehc0.get()).isNotSameAs(ehc1.get());
+            // then
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
+            assertThat(dlq0.get()).isNotSameAs(dlq1.get());
         }
 
         @Test
@@ -676,17 +654,16 @@ class PooledStreamingEventProcessorModuleTest {
                             .declarative("component0", cfg -> component0)
                             .declarative("component1", cfg -> component1)
                             .declarative("component2", cfg -> component2))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
-                                 .enabled()
-                                 .factory((name, ignored) -> {
-                                     SequencedDeadLetterQueue<EventMessage> queue =
-                                             InMemorySequencedDeadLetterQueue.defaultQueue();
-                                     createdQueues.put(name, queue);
-                                     return queue;
-                                 }));
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
+                                    .enabled()
+                                    .factory((name, ignored) -> {
+                                        SequencedDeadLetterQueue<EventMessage> queue =
+                                                InMemorySequencedDeadLetterQueue.defaultQueue();
+                                        createdQueues.put(name, queue);
+                                        return queue;
+                                    })));
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -696,23 +673,29 @@ class PooledStreamingEventProcessorModuleTest {
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]"
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]"
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
             var dlq2 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component2]]"
+                                            "DeadLetterQueue[" + processorName + "][component2]"
                                     ));
 
             // then - all DLQs are present
             assertThat(dlq0).isPresent();
             assertThat(dlq1).isPresent();
             assertThat(dlq2).isPresent();
+
+            // and - custom factory was used for each component
+            assertThat(createdQueues).hasSize(3);
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component2]");
         }
 
         @Test
@@ -732,43 +715,43 @@ class PooledStreamingEventProcessorModuleTest {
                             .declarative("component0", cfg -> component0)
                             .declarative("component1", cfg -> component1))
                     .notCustomized();
+//                    .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled())); // todo: why doesn't work!?
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
-                    .defaults(d -> {
-                        d.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
-                                .enabled()
-                                .factory((name, ignored) -> {
-                                    SequencedDeadLetterQueue<EventMessage> queue =
-                                            InMemorySequencedDeadLetterQueue.defaultQueue();
-                                    createdQueues.put(name, queue);
-                                    return queue;
-                                }));
-                        return d.eventSource(new AsyncInMemoryStreamableEventSource());
-                    })
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
+                                    .enabled()
+                                    .factory((name, ignored) -> {
+                                SequencedDeadLetterQueue<EventMessage> queue =
+                                        InMemorySequencedDeadLetterQueue.defaultQueue();
+                                createdQueues.put(name, queue);
+                                return queue;
+                            })))
                     .processor(module)));
             var configuration = configurer.build();
 
-            // when - trigger component resolution to invoke the DLQ factory
-            var ehc0 = configuration.getModuleConfiguration(processorName)
+            // when
+            var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component0]"
                                     ));
-            var ehc1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[" + processorName + "][component1]"
                                     ));
 
-            // then - all components are DLQ-decorated
-            assertThat(ehc0).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-            assertThat(ehc1).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
+            // then - all DLQs are present
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
 
             // and - custom factory from defaults was used for each component
             assertThat(createdQueues).hasSize(2);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
+            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
         }
 
         @Test
@@ -780,10 +763,9 @@ class PooledStreamingEventProcessorModuleTest {
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
-                    .defaults(d -> {
-                        d.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return d.eventSource(new AsyncInMemoryStreamableEventSource());
-                    })
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()))
                     // Processor that keeps DLQ enabled (default from defaults)
                     .processor(EventProcessorModule
                                        .pooledStreaming(processorWithDlq)
@@ -793,30 +775,27 @@ class PooledStreamingEventProcessorModuleTest {
                     .processor(EventProcessorModule
                                        .pooledStreaming(processorWithoutDlq)
                                        .eventHandlingComponents(singleTestEventHandlingComponent())
-                                       .customized((cfg, c) -> {
-                                           c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().disabled());
-                                           return c;
-                                       }))
+                                       .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().disabled())))
             ));
 
             // when
             var configuration = configurer.build();
 
-            // then - processorWithDlq should have DLQ-decorated component
-            var ehcWithDlq = configuration.getModuleConfiguration(processorWithDlq)
+            // then - processorWithDlq should have DLQ
+            var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
                                           .flatMap(m -> m.getOptionalComponent(
-                                                  EventHandlingComponent.class,
-                                                  "EventHandlingComponent[" + processorWithDlq + "][eventHandlingComponent]"
+                                                  SequencedDeadLetterQueue.class,
+                                                  "DeadLetterQueue[" + processorWithDlq + "][eventHandlingComponent]"
                                           ));
-            assertThat(ehcWithDlq).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
+            assertThat(dlqEnabled).isPresent();
 
             // and - processorWithoutDlq should NOT have DLQ (disabled overrides enabled from defaults)
-            var ehcWithoutDlq = configuration.getModuleConfiguration(processorWithoutDlq)
-                                             .flatMap(m -> m.getOptionalComponent(
-                                                     EventHandlingComponent.class,
-                                                     "EventHandlingComponent[" + processorWithoutDlq + "][eventHandlingComponent]"
-                                             ));
-            assertThat(ehcWithoutDlq).isPresent().get().isNotInstanceOf(DeadLetteringEventHandlingComponent.class);
+            var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
+                                           .flatMap(m -> m.getOptionalComponent(
+                                                   SequencedDeadLetterQueue.class,
+                                                   "DeadLetterQueue[" + processorWithoutDlq + "][eventHandlingComponent]"
+                                           ));
+            assertThat(dlqDisabled).isEmpty();
         }
     }
 
@@ -971,9 +950,9 @@ class PooledStreamingEventProcessorModuleTest {
                                                ps -> ps.processor(
                                                        processorName,
                                                        p -> p.eventHandlingComponents(c -> c.declarative(
-                                                               "simpleRecordingTestComponent",
-                                                               cfg -> simpleRecordingTestComponent()
-                                                       ))
+                                                                     "simpleRecordingTestComponent",
+                                                                     cfg -> simpleRecordingTestComponent()
+                                                             ))
                                                              .notCustomized()
                                                )
                                        )
@@ -1141,7 +1120,7 @@ class PooledStreamingEventProcessorModuleTest {
                                                          .orElse(new AsyncInMemoryStreamableEventSource())));
     }
 
-        private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
+    private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {
         var eventHandlingComponent = SimpleEventHandlingComponent.create("test");
         eventHandlingComponent.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
         return (components) -> components.declarative("eventHandlingComponent", cfg -> eventHandlingComponent);
@@ -1159,7 +1138,7 @@ class PooledStreamingEventProcessorModuleTest {
                                               processorName).ifPresent(p -> assertThat(p.isRunning()).isTrue()));
     }
 
-        private @NonNull static Optional<PooledStreamingEventProcessor> processor(
+    private @NonNull static Optional<PooledStreamingEventProcessor> processor(
             AxonConfiguration configuration,
             String processorName
     ) {
