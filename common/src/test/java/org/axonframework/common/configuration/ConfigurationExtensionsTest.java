@@ -161,24 +161,6 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    @Nested
-    class WhenCopying {
-
-        @Test
-        void copiesAllExtensionsToTarget() {
-            // given
-            owner.extend(StubExtension.class, StubExtension::new);
-            owner.extend(AnotherStubExtension.class, AnotherStubExtension::new);
-            StubExtension original = owner.extension(StubExtension.class);
-            StubExtendedConfiguration targetOwner = new StubExtendedConfiguration();
-
-            // when
-            owner.extensions.copyTo(targetOwner.extensions);
-
-            // then
-            assertThat(targetOwner.extension(StubExtension.class)).isSameAs(original);
-        }
-    }
 
     // -- test fixtures --
 

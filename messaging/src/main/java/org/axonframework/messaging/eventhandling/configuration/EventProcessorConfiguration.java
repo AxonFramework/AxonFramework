@@ -109,7 +109,7 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
         this.interceptors = new ArrayList<>(base.interceptors);
         this.interceptorBuilder = base.interceptorBuilder;
         this.monitorBuilder = base.monitorBuilder;
-        base.extensions.copyTo(this.extensions);
+        this.extensions.copyMissingFrom(base.extensions);
     }
 
     /**

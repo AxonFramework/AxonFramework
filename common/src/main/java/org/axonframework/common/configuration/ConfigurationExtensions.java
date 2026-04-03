@@ -102,6 +102,16 @@ public class ConfigurationExtensions implements DescribableComponent {
         extensions.values().forEach(ConfigurationExtension::validate);
     }
 
+    /**
+     * Copies extensions from the given {@code source} that are not already present in {@code this}.
+     * Existing extensions on {@code this} are preserved.
+     *
+     * @param source The source to copy missing extensions from.
+     */
+    public void copyMissingFrom(ConfigurationExtensions source) {
+        source.extensions.forEach(extensions::putIfAbsent);
+    }
+
     @Override
     public void describeTo(ComponentDescriptor descriptor) {
         Map<String, ConfigurationExtension<?>> namedExtensions = extensions.values()
@@ -113,17 +123,5 @@ public class ConfigurationExtensions implements DescribableComponent {
                         LinkedHashMap::new
                 ));
         descriptor.describeProperty("extensions", namedExtensions);
-    }
-
-    /**
-     * Copies all registered extensions from {@code this} to the given {@code target}.
-     * <p>
-     * This is intended for use in copy constructors of {@link ExtendedConfiguration} implementations.
-     *
-     * @param target the target {@code ConfigurationExtensions} to copy into
-     */
-    @Internal
-    public void copyTo(ConfigurationExtensions target) {
-        target.extensions.putAll(this.extensions);
     }
 }
