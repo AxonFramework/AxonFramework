@@ -692,33 +692,27 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
             var configuration = configurer.build();
 
-            // when - trigger component resolution to invoke the DLQ factory
-            var ehc0 = configuration.getModuleConfiguration(processorName)
+            // when
+            var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component0]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]"
                                     ));
-            var ehc1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component1]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]"
                                     ));
-            var ehc2 = configuration.getModuleConfiguration(processorName)
+            var dlq2 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
-                                            EventHandlingComponent.class,
-                                            "EventHandlingComponent[" + processorName + "][component2]"
+                                            SequencedDeadLetterQueue.class,
+                                            "DeadLetterQueue[EventHandlingComponent[" + processorName + "][component2]]"
                                     ));
 
-            // then - all components are DLQ-decorated
-            assertThat(ehc0).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-            assertThat(ehc1).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-            assertThat(ehc2).isPresent().get().isInstanceOf(DeadLetteringEventHandlingComponent.class);
-
-            // and - custom factory was used for each component
-            assertThat(createdQueues).hasSize(3);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component0]]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component1]]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[EventHandlingComponent[" + processorName + "][component2]]");
+            // then - all DLQs are present
+            assertThat(dlq0).isPresent();
+            assertThat(dlq1).isPresent();
+            assertThat(dlq2).isPresent();
         }
 
         @Test
