@@ -35,7 +35,6 @@ import org.axonframework.common.infra.DescribableComponent;
  * @param <P> the parent configuration type this extension is designed for
  * @author Mateusz Nowak
  * @since 5.1.0
- * @see AbstractConfigurationExtension
  */
 @Internal
 public interface ConfigurationExtension<P extends ExtendedConfiguration> extends DescribableComponent {
