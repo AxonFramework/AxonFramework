@@ -39,7 +39,10 @@ import org.springframework.context.annotation.Bean;
  * @see JpaDeadLetterQueueAutoConfiguration
  * @see JdbcDeadLetterQueueAutoConfiguration
  */
-@AutoConfiguration(after = {JpaDeadLetterQueueAutoConfiguration.class, JdbcDeadLetterQueueAutoConfiguration.class})
+@AutoConfiguration(
+        after = {JpaDeadLetterQueueAutoConfiguration.class, JdbcDeadLetterQueueAutoConfiguration.class},
+        before = EventProcessingAutoConfiguration.class
+)
 @ConditionalOnBean(SequencedDeadLetterQueueFactory.class)
 @EnableConfigurationProperties(DeadLetterQueueProcessorProperties.class)
 public class DeadLetterQueueAutoConfiguration {
@@ -58,7 +61,8 @@ public class DeadLetterQueueAutoConfiguration {
             SequencedDeadLetterQueueFactory factory
     ) {
         return (axonConfig, processorConfig) -> {
-            var dlqProps = properties.forProcessor(processorConfig.processorName());
+            var processorName = processorConfig.processorName(); // in Spring it's EventProcessor[processorName]
+            var dlqProps = properties.forProcessor(processorName);
             if (dlqProps.getDlq().isEnabled()) {
                 return processorConfig.extend(DeadLetterQueueConfiguration.class,
                         () -> new DeadLetterQueueConfiguration().enabled()
