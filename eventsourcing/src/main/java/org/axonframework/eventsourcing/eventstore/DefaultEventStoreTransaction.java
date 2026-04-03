@@ -180,7 +180,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                                 return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
                                                                        current.consistencyMarker()));
                             });
-                    List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
+                    List<TaggedEventMessage<?>> eventQueue =
+                            Objects.requireNonNullElse(context.getResource(eventQueueKey), Collections.emptyList());
 
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
                                              .thenApply(DefaultEventStoreTransaction::castTransaction)
