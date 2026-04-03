@@ -54,7 +54,7 @@ public class DeadLetterQueueProcessorProperties {
     /**
      * Returns the per-processor DLQ settings map.
      *
-     * @return The map of processor names to their DLQ settings.
+     * @return the map of processor names to their DLQ settings
      */
     public Map<String, DlqProcessorSettings> getProcessors() {
         return processors;

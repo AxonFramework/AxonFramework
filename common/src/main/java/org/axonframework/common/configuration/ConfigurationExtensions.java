@@ -51,8 +51,8 @@ public class ConfigurationExtensions implements DescribableComponent {
      * Constructs a new {@code ConfigurationExtensions} for the given {@code owner}.
      * The owner must implement both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}.
      *
-     * @param owner The configuration that owns these extensions.
-     * @param <O>   A type that implements both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}.
+     * @param owner the configuration that owns these extensions
+     * @param <O>   a type that implements both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}
      */
     public <O extends ExtensibleConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O owner) {
         this.owner = owner;
@@ -65,10 +65,10 @@ public class ConfigurationExtensions implements DescribableComponent {
      * The extension is instantiated via its single-argument constructor whose parameter type is assignable from the
      * owner's class. If no such constructor exists, an {@link AxonConfigurationException} is thrown.
      *
-     * @param type The extension class.
-     * @param <T>  The extension type.
-     * @return The extension instance, never {@code null}.
-     * @throws AxonConfigurationException if the extension cannot be created.
+     * @param type the extension class
+     * @param <T>  the extension type
+     * @return the extension instance, never {@code null}
+     * @throws AxonConfigurationException if the extension cannot be created
      */
     @SuppressWarnings("unchecked")
     public <T extends ConfigurationExtension<?>> T extension(Class<T> type) {
@@ -79,11 +79,11 @@ public class ConfigurationExtensions implements DescribableComponent {
      * Configures the extension of the given {@code type} using the {@code customization} operator
      * and returns the owner configuration for chaining.
      *
-     * @param type          The extension class.
-     * @param customization A function that configures the extension.
-     * @param <T>           The extension type.
-     * @return The owner configurer, for fluent chaining.
-     * @throws AxonConfigurationException if the extension cannot be created.
+     * @param type          the extension class
+     * @param customization a function that configures the extension
+     * @param <T>           the extension type
+     * @return the owner configurer, for fluent chaining
+     * @throws AxonConfigurationException if the extension cannot be created
      */
     public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
                                                                              UnaryOperator<T> customization) {
@@ -95,7 +95,7 @@ public class ConfigurationExtensions implements DescribableComponent {
     /**
      * Validates all registered extensions by calling {@link ConfigurationExtension#validate()} on each.
      *
-     * @throws AxonConfigurationException if any extension's validation fails.
+     * @throws AxonConfigurationException if any extension's validation fails
      */
     public void validate() {
         extensions.values().forEach(ConfigurationExtension::validate);
@@ -112,7 +112,7 @@ public class ConfigurationExtensions implements DescribableComponent {
      * <p>
      * This is intended for use in copy constructors of {@link ExtensibleConfiguration} implementations.
      *
-     * @param target The target {@code ConfigurationExtensions} to copy extensions into.
+     * @param target the target {@code ConfigurationExtensions} to copy extensions into
      */
     @Internal
     public void copyTo(ConfigurationExtensions target) {

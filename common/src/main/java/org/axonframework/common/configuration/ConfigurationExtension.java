@@ -35,7 +35,7 @@ import org.axonframework.common.infra.DescribableComponent;
  * A convenience base class {@link AbstractConfigurationExtension} is provided that stores
  * the parent reference as a {@code protected final} field.
  *
- * @param <P> The parent configuration type this extension is designed for.
+ * @param <P> the parent configuration type this extension is designed for
  * @author Mateusz Nowak
  * @since 5.1.0
  * @see AbstractConfigurationExtension
@@ -43,17 +43,16 @@ import org.axonframework.common.infra.DescribableComponent;
 public interface ConfigurationExtension<P extends ExtensibleConfiguration> extends DescribableComponent {
 
     /**
-     * Returns the name of this extension, used as the property key when describing
-     * the extension in a {@link org.axonframework.common.infra.ComponentDescriptor}.
+     * Returns the name of this configuration extension.
      *
-     * @return The extension name.
+     * @return the configuration extension's name
      */
     String name();
 
     /**
      * Validates this extension's settings.
      *
-     * @throws AxonConfigurationException if any settings are invalid.
+     * @throws AxonConfigurationException if any settings are invalid
      */
     void validate() throws AxonConfigurationException;
 }

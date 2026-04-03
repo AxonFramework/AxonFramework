@@ -25,7 +25,7 @@ import java.util.Objects;
  * Stores the parent as a {@code protected final} field so that subclasses can access
  * the parent's API without casting.
  *
- * @param <P> The parent configuration type this extension is designed for.
+ * @param <P> the parent configuration type this extension is designed for
  * @author Mateusz Nowak
  * @since 5.1.0
  * @see ConfigurationExtension
@@ -41,7 +41,7 @@ public abstract class AbstractConfigurationExtension<P extends ExtensibleConfigu
     /**
      * Constructs the extension with its parent configuration.
      *
-     * @param parent The parent configuration this extension belongs to.
+     * @param parent the parent configuration this extension belongs to
      */
     protected AbstractConfigurationExtension(P parent) {
         this.parent = Objects.requireNonNull(parent, "Parent configuration may not be null");

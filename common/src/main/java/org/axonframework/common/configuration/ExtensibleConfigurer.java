@@ -46,11 +46,11 @@ public interface ExtensibleConfigurer {
      *       .extend(MetricsExtension.class, m -> m.enabled());
      * }</pre>
      *
-     * @param type          The extension class.
-     * @param customization A function that configures the extension.
-     * @param <T>           The extension type.
-     * @return {@code this} configurer, for fluent chaining.
-     * @throws AxonConfigurationException if the extension cannot be created.
+     * @param type          the extension class
+     * @param customization a function that configures the extension
+     * @param <T>           the extension type
+     * @return {@code this} configurer, for fluent chaining
+     * @throws AxonConfigurationException if the extension cannot be created
      */
     <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
                                                                       UnaryOperator<T> customization);

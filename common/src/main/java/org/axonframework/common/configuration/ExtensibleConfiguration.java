@@ -42,10 +42,10 @@ public interface ExtensibleConfiguration {
      * <p>
      * Subsequent calls with the same type return the cached instance.
      *
-     * @param type The extension class.
-     * @param <T>  The extension type.
-     * @return The extension instance.
-     * @throws AxonConfigurationException if the extension cannot be created.
+     * @param type the extension class
+     * @param <T>  the extension type
+     * @return the extension instance
+     * @throws AxonConfigurationException if the extension cannot be created
      */
     <T extends ConfigurationExtension<?>> T extension(Class<T> type);
 }
