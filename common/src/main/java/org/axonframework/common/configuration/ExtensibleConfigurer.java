@@ -35,7 +35,7 @@ import java.util.function.UnaryOperator;
 public interface ExtensibleConfigurer {
 
     /**
-     * Configures the extension of the given type and returns {@code this} configurer for chaining.
+     * Configures the extension of the given extensionType and returns {@code this} configurer for chaining.
      * <p>
      * The extension is created on first access and cached. The {@code customization} operator
      * is applied to the extension.
@@ -46,12 +46,12 @@ public interface ExtensibleConfigurer {
      *       .extend(MetricsExtension.class, m -> m.enabled());
      * }</pre>
      *
-     * @param type          the extension class
+     * @param extensionType          the extension class
      * @param customization a function that configures the extension
-     * @param <T>           the extension type
+     * @param <T>           the extension extensionType
      * @return {@code this} configurer, for fluent chaining
      * @throws AxonConfigurationException if the extension cannot be created
      */
-    <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
+    <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
                                                                       UnaryOperator<T> customization);
 }

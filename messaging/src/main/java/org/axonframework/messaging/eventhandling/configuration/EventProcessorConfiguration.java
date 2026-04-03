@@ -191,10 +191,10 @@ public class EventProcessorConfiguration implements ExtendedConfiguration, Exten
 
     @Override
     public <T extends ConfigurationExtension<?>> EventProcessorConfiguration extend(
-            Class<T> type,
+            Class<T> extensionType,
             UnaryOperator<T> customization
     ) {
-        extensions.extend(type, customization);
+        extensions.extend(extensionType, customization);
         return this;
     }
 

@@ -171,9 +171,9 @@ class ConfigurationExtensionsTest {
         }
 
         @Override
-        public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
+        public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> extensionType,
                                                                                  UnaryOperator<T> customization) {
-            return extensions.extend(type, customization);
+            return extensions.extend(extensionType, customization);
         }
     }
 

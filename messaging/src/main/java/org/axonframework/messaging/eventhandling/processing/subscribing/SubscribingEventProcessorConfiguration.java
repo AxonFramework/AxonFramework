@@ -198,10 +198,10 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     @Override
     public <T extends ConfigurationExtension<?>> SubscribingEventProcessorConfiguration extend(
-            Class<T> type,
+            Class<T> extensionType,
             UnaryOperator<T> customization
     ) {
-        super.extend(type, customization);
+        super.extend(extensionType, customization);
         return this;
     }
 }

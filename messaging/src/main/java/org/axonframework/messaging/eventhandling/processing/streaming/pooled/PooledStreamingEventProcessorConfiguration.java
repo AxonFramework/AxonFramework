@@ -685,10 +685,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     @Override
     public <T extends ConfigurationExtension<?>> PooledStreamingEventProcessorConfiguration extend(
-            Class<T> type,
+            Class<T> extensionType,
             UnaryOperator<T> customization
     ) {
-        super.extend(type, customization);
+        super.extend(extensionType, customization);
         return this;
     }
 
