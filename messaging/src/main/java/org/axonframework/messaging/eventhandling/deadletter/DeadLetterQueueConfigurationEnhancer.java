@@ -135,8 +135,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
         registry.registerDecorator(
                 DecoratorDefinition
                         .forType(EventHandlingComponent.class)
-                        .<EventHandlingComponent>with((config, name, delegate) ->
-                                decorateWithDeadLettering(config, name, delegate))
+                        .with(DeadLetterQueueConfigurationEnhancer::decorateWithDeadLettering)
                         .order(DeadLetteringEventHandlingComponent.DECORATION_ORDER)
         );
     }

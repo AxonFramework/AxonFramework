@@ -427,10 +427,9 @@ class PooledStreamingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .pooledStreaming(processorName)
                     .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
-                    .customized((cfg, c) -> {
-                        c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled());
-                        return c.eventSource(new AsyncInMemoryStreamableEventSource());
-                    });
+                    .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled())
+                                             .eventSource(new AsyncInMemoryStreamableEventSource())
+                    );
 
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
@@ -444,6 +443,7 @@ class PooledStreamingEventProcessorModuleTest {
             // then
             assertThat(registeredComponent).isPresent();
             assertThat(registeredComponent.get()).isInstanceOf(DeadLetteringEventHandlingComponent.class);
+            assertThat(registeredComponent.get()).isInstanceOf(SequencedDeadLetterProcessor.class);
         }
 
         @Test
@@ -474,6 +474,7 @@ class PooledStreamingEventProcessorModuleTest {
             // then
             assertThat(registeredComponents).isPresent();
             assertThat(registeredComponents.get().values()).allSatisfy(c -> assertThat(c).isInstanceOf(DeadLetteringEventHandlingComponent.class));
+            assertThat(registeredComponents.get().values()).allSatisfy(c -> assertThat(c).isInstanceOf(SequencedDeadLetterProcessor.class));
         }
 
         @Test
