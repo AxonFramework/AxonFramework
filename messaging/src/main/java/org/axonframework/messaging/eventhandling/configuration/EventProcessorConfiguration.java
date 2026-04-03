@@ -22,7 +22,7 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.ConfigurationExtension;
 import org.axonframework.common.configuration.ConfigurationExtensions;
-import org.axonframework.common.configuration.ExtensibleConfiguration;
+import org.axonframework.common.configuration.ExtendedConfiguration;
 import org.axonframework.common.configuration.ExtensibleConfigurer;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -59,7 +59,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessorConfiguration implements ExtensibleConfiguration, ExtensibleConfigurer, DescribableComponent {
+public class EventProcessorConfiguration implements ExtendedConfiguration, ExtensibleConfigurer, DescribableComponent {
 
     protected final String processorName;
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;

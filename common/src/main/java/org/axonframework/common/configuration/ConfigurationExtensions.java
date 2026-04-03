@@ -28,33 +28,33 @@ import java.util.function.UnaryOperator;
 
 /**
  * Internal helper that manages the lifecycle of {@link ConfigurationExtension} instances for an
- * {@link ExtensibleConfiguration} owner.
+ * {@link ExtendedConfiguration} owner.
  * <p>
  * Extensions are created lazily on first access via {@link #extend(Class)} and cached for subsequent calls.
  * The class uses reflection to find a single-argument constructor on the extension type whose parameter is
  * assignable from the owner's type, ensuring type compatibility at creation time.
  * <p>
  * This class is not part of the public API. It exists purely to encapsulate extension management so that
- * {@link ExtensibleConfiguration} implementations can delegate to it without duplicating logic.
+ * {@link ExtendedConfiguration} implementations can delegate to it without duplicating logic.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
  */
 public class ConfigurationExtensions implements DescribableComponent {
 
-    private final ExtensibleConfiguration owner;
+    private final ExtendedConfiguration owner;
     private final ExtensibleConfigurer ownerConfigurer;
     private final Map<Class<? extends ConfigurationExtension<?>>, ConfigurationExtension<?>> extensions =
             new LinkedHashMap<>();
 
     /**
      * Constructs a new {@code ConfigurationExtensions} for the given {@code owner}.
-     * The owner must implement both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}.
+     * The owner must implement both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}.
      *
      * @param owner the configuration that owns these extensions
-     * @param <O>   a type that implements both {@link ExtensibleConfiguration} and {@link ExtensibleConfigurer}
+     * @param <O>   a type that implements both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}
      */
-    public <O extends ExtensibleConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O owner) {
+    public <O extends ExtendedConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O owner) {
         this.owner = owner;
         this.ownerConfigurer = owner;
     }
@@ -110,7 +110,7 @@ public class ConfigurationExtensions implements DescribableComponent {
     /**
      * Copies all extensions from {@code this} instance to the given {@code target}.
      * <p>
-     * This is intended for use in copy constructors of {@link ExtensibleConfiguration} implementations.
+     * This is intended for use in copy constructors of {@link ExtendedConfiguration} implementations.
      *
      * @param target the target {@code ConfigurationExtensions} to copy extensions into
      */

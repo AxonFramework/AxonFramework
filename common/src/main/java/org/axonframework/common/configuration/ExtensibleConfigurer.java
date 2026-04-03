@@ -26,11 +26,11 @@ import java.util.function.UnaryOperator;
  * Extensions are created on first access and cached. The {@link #extend(Class, UnaryOperator)}
  * method configures an extension and returns {@code this} for fluent chaining.
  * <p>
- * For reading extensions, see {@link ExtensibleConfiguration}.
+ * For reading extensions, see {@link ExtendedConfiguration}.
  *
  * @author Mateusz Nowak
  * @since 5.1.0
- * @see ExtensibleConfiguration
+ * @see ExtendedConfiguration
  */
 public interface ExtensibleConfigurer {
 

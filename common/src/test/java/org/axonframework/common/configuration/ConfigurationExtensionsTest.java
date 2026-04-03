@@ -30,11 +30,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConfigurationExtensionsTest {
 
-    private StubExtensibleConfiguration owner;
+    private StubExtendedConfiguration owner;
 
     @BeforeEach
     void setUp() {
-        owner = new StubExtensibleConfiguration();
+        owner = new StubExtendedConfiguration();
     }
 
     @Nested
@@ -147,7 +147,7 @@ class ConfigurationExtensionsTest {
             // given
             StubExtension original = owner.extension(StubExtension.class);
             owner.extension(AnotherStubExtension.class);
-            StubExtensibleConfiguration targetOwner = new StubExtensibleConfiguration();
+            StubExtendedConfiguration targetOwner = new StubExtendedConfiguration();
 
             // when
             owner.extensions.copyTo(targetOwner.extensions);
@@ -159,7 +159,7 @@ class ConfigurationExtensionsTest {
 
     // -- test fixtures --
 
-    static class StubExtensibleConfiguration implements ExtensibleConfiguration, ExtensibleConfigurer {
+    static class StubExtendedConfiguration implements ExtendedConfiguration, ExtensibleConfigurer {
 
         final ConfigurationExtensions extensions = new ConfigurationExtensions(this);
 
@@ -175,12 +175,12 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    static class StubExtension implements ConfigurationExtension<StubExtensibleConfiguration> {
+    static class StubExtension implements ConfigurationExtension<StubExtendedConfiguration> {
 
-        final StubExtensibleConfiguration parent;
+        final StubExtendedConfiguration parent;
         boolean validated = false;
 
-        protected StubExtension(StubExtensibleConfiguration parent) {
+        protected StubExtension(StubExtendedConfiguration parent) {
             this.parent = parent;
         }
 
@@ -200,9 +200,9 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    static class AnotherStubExtension implements ConfigurationExtension<StubExtensibleConfiguration> {
+    static class AnotherStubExtension implements ConfigurationExtension<StubExtendedConfiguration> {
 
-        protected AnotherStubExtension(StubExtensibleConfiguration parent) {
+        protected AnotherStubExtension(StubExtendedConfiguration parent) {
         }
 
         @Override
@@ -221,7 +221,7 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    interface IncompatibleParent extends ExtensibleConfiguration {
+    interface IncompatibleParent extends ExtendedConfiguration {
     }
 
     static class IncompatibleExtension implements ConfigurationExtension<IncompatibleParent> {

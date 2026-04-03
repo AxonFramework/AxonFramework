@@ -30,7 +30,7 @@ import java.util.Objects;
  * @since 5.1.0
  * @see ConfigurationExtension
  */
-public abstract class AbstractConfigurationExtension<P extends ExtensibleConfiguration>
+public abstract class AbstractConfigurationExtension<P extends ExtendedConfiguration>
         implements ConfigurationExtension<P> {
 
     /**

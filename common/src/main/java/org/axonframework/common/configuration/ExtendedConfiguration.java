@@ -30,7 +30,7 @@ import org.axonframework.common.AxonConfigurationException;
  * @since 5.1.0
  * @see ExtensibleConfigurer
  */
-public interface ExtensibleConfiguration {
+public interface ExtendedConfiguration {
 
     /**
      * Returns the extension of the given type, creating it on first access.
