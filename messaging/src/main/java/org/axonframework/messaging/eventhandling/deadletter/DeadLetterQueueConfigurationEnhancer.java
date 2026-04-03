@@ -89,7 +89,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
         registry.registerFactory(new DeadLetterQueueComponentFactory());
         registerSegmentChangeListenerDecorator(registry);
         registerDeadLetterQueueDecorator(registry);
-        registry.registerFactory(new DeadLetterProcessorFactory());
+        registry.registerFactory(new SequencedDeadLetterProcessorFactory());
     }
 
     /**
@@ -267,7 +267,7 @@ public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhanc
      * A {@link ComponentFactory} that provides {@link SequencedDeadLetterProcessor} instances by delegating
      * to the {@link EventHandlingComponent} registered under the same name.
      */
-    private static class DeadLetterProcessorFactory
+    private static class SequencedDeadLetterProcessorFactory
             implements ComponentFactory<SequencedDeadLetterProcessor<EventMessage>> {
 
         @Override

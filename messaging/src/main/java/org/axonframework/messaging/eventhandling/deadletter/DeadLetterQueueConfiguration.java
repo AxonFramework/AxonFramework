@@ -77,30 +77,6 @@ public class DeadLetterQueueConfiguration
     private SequencedDeadLetterQueueFactory factory = (processingGroup, configuration) -> InMemorySequencedDeadLetterQueue.defaultQueue();
 
     /**
-     * Creates a new {@code DeadLetterQueueConfiguration} with default settings.
-     * <p>
-     * By default:
-     * <ul>
-     *     <li>DLQ is disabled</li>
-     *     <li>Enqueue policy always enqueues with truncated cause</li>
-     *     <li>Clear on reset is enabled</li>
-     *     <li>Cache max size is {@link SequenceIdentifierCache#DEFAULT_MAX_SIZE}</li>
-     *     <li>Factory creates {@link InMemorySequencedDeadLetterQueue} instances</li>
-     * </ul>
-     */
-    /**
-     * Creates a new {@code DeadLetterQueueConfiguration} for use as a
-     * {@link ConfigurationExtension} of the given parent.
-     * <p>
-     * This constructor is used by the extension mechanism via reflection.
-     *
-     * @param parent The parent processor configuration.
-     */
-    public DeadLetterQueueConfiguration(PooledStreamingEventProcessorConfiguration parent) {
-        // Defaults set in field initialization; parent is not stored — DLQ config is self-contained
-    }
-
-    /**
      * Creates a new {@code DeadLetterQueueConfiguration} with default settings for standalone use.
      */
     public DeadLetterQueueConfiguration() {
