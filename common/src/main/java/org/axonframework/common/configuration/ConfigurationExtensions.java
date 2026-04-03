@@ -40,6 +40,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.1.0
  */
+@Internal
 public class ConfigurationExtensions implements DescribableComponent {
 
     private final ExtendedConfiguration owner;
