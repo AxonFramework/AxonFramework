@@ -65,7 +65,7 @@ import java.util.Optional;
  * @see DeadLetteringEventHandlingComponent
  * @see CachingSequencedDeadLetterQueue
  */
-public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
+public class DeadLetterQueueConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
      * The order of this enhancer. Runs late so that the {@link DeadLetteringEventHandlingComponent} wraps
