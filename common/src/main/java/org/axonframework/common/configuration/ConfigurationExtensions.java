@@ -24,15 +24,16 @@ import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
  * Internal helper that manages the lifecycle of {@link ConfigurationExtension} instances for an
- * {@link ExtendedConfiguration} owner.
+ * {@link ExtendedConfiguration} parent configuration.
  * <p>
  * Extensions are created lazily on first access via {@link #extend(Class)} and cached for subsequent calls.
  * The class uses reflection to find a single-argument constructor on the extension type whose parameter is
- * assignable from the owner's type, ensuring type compatibility at creation time.
+ * assignable from the parent configuration's type, ensuring type compatibility at creation time.
  * <p>
  * This class is not part of the public API. It exists purely to encapsulate extension management so that
  * {@link ExtendedConfiguration} implementations can delegate to it without duplicating logic.
@@ -43,28 +44,29 @@ import java.util.function.UnaryOperator;
 @Internal
 public class ConfigurationExtensions implements DescribableComponent {
 
-    private final ExtendedConfiguration owner;
+    private final ExtendedConfiguration parentConfig;
     private final ExtensibleConfigurer ownerConfigurer;
     private final Map<Class<? extends ConfigurationExtension<?>>, ConfigurationExtension<?>> extensions =
             new LinkedHashMap<>();
 
     /**
-     * Constructs a new {@code ConfigurationExtensions} for the given {@code owner}.
-     * The owner must implement both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}.
+     * Constructs a new {@code ConfigurationExtensions} for the given {@code parentConfig}.
+     * The parent must implement both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}.
      *
-     * @param owner the configuration that owns these extensions
-     * @param <O>   a type that implements both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}
+     * @param parentConfig the parent configuration that owns these extensions
+     * @param <O>          a type that implements both {@link ExtendedConfiguration} and {@link ExtensibleConfigurer}
      */
-    public <O extends ExtendedConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O owner) {
-        this.owner = owner;
-        this.ownerConfigurer = owner;
+    public <O extends ExtendedConfiguration & ExtensibleConfigurer> ConfigurationExtensions(O parentConfig) {
+        Objects.requireNonNull(parentConfig, "Parent configuration may not be null");
+        this.parentConfig = parentConfig;
+        this.ownerConfigurer = parentConfig;
     }
 
     /**
      * Returns the extension of the given {@code type}, creating it on first access.
      * <p>
      * The extension is instantiated via its single-argument constructor whose parameter type is assignable from the
-     * owner's class. If no such constructor exists, an {@link AxonConfigurationException} is thrown.
+     * parent configuration's class. If no such constructor exists, an {@link AxonConfigurationException} is thrown.
      *
      * @param type the extension class
      * @param <T>  the extension type
@@ -78,12 +80,12 @@ public class ConfigurationExtensions implements DescribableComponent {
 
     /**
      * Configures the extension of the given {@code type} using the {@code customization} operator
-     * and returns the owner configuration for chaining.
+     * and returns the parent configurer for chaining.
      *
      * @param type          the extension class
      * @param customization a function that configures the extension
      * @param <T>           the extension type
-     * @return the owner configurer, for fluent chaining
+     * @return the parent configurer, for fluent chaining
      * @throws AxonConfigurationException if the extension cannot be created
      */
     public <T extends ConfigurationExtension<?>> ExtensibleConfigurer extend(Class<T> type,
@@ -124,12 +126,12 @@ public class ConfigurationExtensions implements DescribableComponent {
     private ConfigurationExtension<?> createExtension(Class<? extends ConfigurationExtension<?>> type) {
         try {
             return (ConfigurationExtension<?>) ConstructorUtils.factoryForTypeWithOptionalArgument(
-                    (Class) type, owner.getClass()
-            ).apply(owner);
+                    (Class) type, parentConfig.getClass()
+            ).apply(parentConfig);
         } catch (IllegalArgumentException e) {
             throw new AxonConfigurationException(
                     "No compatible constructor found on [" + type.getName()
-                            + "] for owner type [" + owner.getClass().getName() + "]", e
+                            + "] for parent type [" + parentConfig.getClass().getName() + "]", e
             );
         }
     }

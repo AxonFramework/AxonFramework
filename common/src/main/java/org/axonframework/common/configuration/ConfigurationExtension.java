@@ -27,10 +27,10 @@ import org.axonframework.common.infra.DescribableComponent;
  * Extensions are pure data — they hold settings but carry no behavior.
  * Behavior that acts on extension data belongs in a {@link ConfigurationEnhancer}.
  * <p>
- * Implementations must provide a single-argument constructor accepting their parent type.
- * The constructor parameter type doubles as the parent compatibility constraint —
- * {@link ExtendedConfiguration#extension(Class)} validates compatibility by matching
- * the constructor parameter against the calling configuration's type.
+ * Implementations may optionally accept their parent configuration as a constructor argument.
+ * When present, {@link ExtendedConfiguration#extension(Class)} uses the constructor parameter
+ * type as a compatibility constraint, matching it against the calling configuration's type.
+ * A no-argument constructor is also supported for extensions that do not need parent access.
  * <p>
  * A convenience base class {@link AbstractConfigurationExtension} is provided that stores
  * the parent reference as a {@code protected final} field.

@@ -37,8 +37,8 @@ public interface ExtensibleConfigurer {
     /**
      * Configures the extension of the given type and returns {@code this} configurer for chaining.
      * <p>
-     * The extension is created on first access via its single-argument constructor (receiving
-     * the owning configuration as the parent). The {@code customization} operator is applied to the extension.
+     * The extension is created on first access and cached. The {@code customization} operator
+     * is applied to the extension.
      * <p>
      * Example:
      * <pre>{@code
