@@ -109,20 +109,21 @@ class ConfigurationExtensionsTest {
     class WhenDescribing {
 
         @Test
-        void describesExtensionsNestedUnderTheirName() {
+        void describesExtensionsAsNamedMap() {
             // given
             var stubExtension = owner.extension(StubExtension.class);
             var anotherExtension = owner.extension(AnotherStubExtension.class);
-            RecordingDescriptor descriptor = new RecordingDescriptor();
+            var descriptor = new MockComponentDescriptor();
 
             // when
             owner.extensions.describeTo(descriptor);
 
             // then
-            assertThat(descriptor.properties).containsKey("stubExtension");
-            assertThat(descriptor.properties).containsKey("anotherStubExtension");
-            assertThat(descriptor.properties.get("stubExtension")).isSameAs(stubExtension);
-            assertThat(descriptor.properties.get("anotherStubExtension")).isSameAs(anotherExtension);
+            java.util.Map<String, ?> extensionsMap = descriptor.getProperty("extensions");
+            assertThat(extensionsMap).containsKey("stubExtension");
+            assertThat(extensionsMap).containsKey("anotherStubExtension");
+            assertThat(extensionsMap.get("stubExtension")).isSameAs(stubExtension);
+            assertThat(extensionsMap.get("anotherStubExtension")).isSameAs(anotherExtension);
         }
 
         @Test
@@ -245,46 +246,4 @@ class ConfigurationExtensionsTest {
         }
     }
 
-    /**
-     * Simple recording descriptor that captures property calls for assertion.
-     */
-    static class RecordingDescriptor implements ComponentDescriptor {
-
-        final java.util.Map<String, Object> properties = new java.util.LinkedHashMap<>();
-
-        @Override
-        public void describeProperty(String name, Object object) {
-            properties.put(name, object);
-        }
-
-        @Override
-        public void describeProperty(String name, java.util.Collection<?> collection) {
-            properties.put(name, collection);
-        }
-
-        @Override
-        public void describeProperty(String name, java.util.Map<?, ?> map) {
-            properties.put(name, map);
-        }
-
-        @Override
-        public void describeProperty(String name, String value) {
-            properties.put(name, value);
-        }
-
-        @Override
-        public void describeProperty(String name, Long value) {
-            properties.put(name, value);
-        }
-
-        @Override
-        public void describeProperty(String name, Boolean value) {
-            properties.put(name, value);
-        }
-
-        @Override
-        public String describe() {
-            return properties.toString();
-        }
-    }
 }

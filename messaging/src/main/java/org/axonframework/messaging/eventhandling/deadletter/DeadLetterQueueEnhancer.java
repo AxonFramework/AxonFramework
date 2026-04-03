@@ -164,6 +164,12 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
         return "DeadLetterQueue[" + componentName + "]";
     }
 
+    private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> DLQ_TYPE_REF =
+            new TypeReference<>() {};
+
+    private static final TypeReference<SequencedDeadLetterProcessor<EventMessage>> DLP_TYPE_REF =
+            new TypeReference<>() {};
+
     /**
      * A {@link ComponentFactory} that creates {@link SequencedDeadLetterQueue} instances on demand.
      * <p>
@@ -173,12 +179,6 @@ public class DeadLetterQueueEnhancer implements ConfigurationEnhancer {
      * the queue is wrapped with {@link CachingSequencedDeadLetterQueue} and a {@link SegmentChangeListener}
      * is registered for cache invalidation.
      */
-    private static final TypeReference<SequencedDeadLetterQueue<EventMessage>> DLQ_TYPE_REF =
-            new TypeReference<>() {};
-
-    private static final TypeReference<SequencedDeadLetterProcessor<EventMessage>> DLP_TYPE_REF =
-            new TypeReference<>() {};
-
     private static class DeadLetterQueueComponentFactory
             implements ComponentFactory<SequencedDeadLetterQueue<EventMessage>> {
 
