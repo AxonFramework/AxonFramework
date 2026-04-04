@@ -69,7 +69,10 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     private void invokeCompletionHandlerIfCompleted() {
-        if (delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
+        if (delegate().hasNextAvailable() || !delegate().isCompleted() || delegate().error().isPresent()) {
+            return;
+        }
+        if (invoked.compareAndSet(false, true)) {
             completeHandler.run();
         }
     }

@@ -72,7 +72,7 @@ class OnErrorContinueMessageStream<M extends Message> extends DelegatingMessageS
     }
 
     private MessageStream<M> resolveCurrentDelegate() {
-        if (!delegate().isCompleted() || delegate().error().isEmpty()) {
+        if (!delegate().isCompleted() || delegate().error().isEmpty() || delegate().hasNextAvailable()) {
             return delegate();
         } else if (onErrorStream.get() != null) {
             return onErrorStream.get();

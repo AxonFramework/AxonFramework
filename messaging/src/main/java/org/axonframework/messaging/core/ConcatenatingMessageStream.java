@@ -52,16 +52,24 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> next() {
-        if (first.isCompleted() && first.error().isEmpty()) {
+        if (first.hasNextAvailable()) {
+            return first.next();
+        }
+        if (first.error().isPresent()) {
+            return Optional.empty();
+        }
+        if (first.isCompleted()) {
             return second.next();
         }
-        return first.next();
+        return Optional.empty();
     }
 
     @Override
     public void setCallback(Runnable callback) {
         first.setCallback(() -> {
-            if (!(first.isCompleted() && first.error().isEmpty()) || second.hasNextAvailable()
+            if (first.hasNextAvailable()
+                    || !(first.isCompleted() && first.error().isEmpty())
+                    || second.hasNextAvailable()
                     || second.isCompleted()) {
                 if (first.error().isPresent()) {
                     second.close();
@@ -88,7 +96,13 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public boolean hasNextAvailable() {
-        return first.isCompleted() && first.error().isEmpty() ? second.hasNextAvailable() : first.hasNextAvailable();
+        if (first.hasNextAvailable()) {
+            return true;
+        }
+        if (first.error().isPresent()) {
+            return false;
+        }
+        return first.isCompleted() && second.hasNextAvailable();
     }
 
     @Override
@@ -106,9 +120,15 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
 
     @Override
     public Optional<Entry<M>> peek() {
-        if (first.isCompleted() && first.error().isEmpty()) {
+        if (first.hasNextAvailable()) {
+            return first.peek();
+        }
+        if (first.error().isPresent()) {
+            return Optional.empty();
+        }
+        if (first.isCompleted()) {
             return second.peek();
         }
-        return first.peek();
+        return Optional.empty();
     }
 }
