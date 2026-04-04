@@ -134,6 +134,17 @@ public abstract class MessageStreamTest<M extends Message> {
         return true;
     }
 
+    /**
+     * Expected {@link MessageStream#isCompleted()} after {@link #completedTestSubject(List) completedTestSubject} with
+     * at least one message and {@link MessageStream#peek()} without {@link MessageStream#next()}. For example,
+     * {@link org.axonframework.messaging.core.QueueMessageStream} completes when the producer calls
+     * {@link org.axonframework.messaging.core.QueueMessageStream#complete()}, which can occur while the queue still
+     * holds entries; iterator-based streams often complete only after the sequence is exhausted.
+     */
+    protected boolean isCompletedWhenPeekedWithoutConsumingFromCompletedSubject() {
+        return false;
+    }
+
     @Test
     void shouldInvokeSetCallback() {
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
@@ -1278,7 +1289,7 @@ public abstract class MessageStreamTest<M extends Message> {
             assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
             assertEquals(message.payload(), peekedAgain.get().message().payload());
-            assertFalse(stream.isCompleted());
+            assertEquals(isCompletedWhenPeekedWithoutConsumingFromCompletedSubject(), stream.isCompleted());
             assertTrue(stream.hasNextAvailable());
         }
 

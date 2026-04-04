@@ -86,6 +86,11 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
                                          "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
+    @Override
+    protected boolean isCompletedWhenPeekedWithoutConsumingFromCompletedSubject() {
+        return true;
+    }
+
     @Test
     void shouldInvokeConsumeCallbackWhenMessageIsConsumed() {
         QueueMessageStream<EventMessage> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
@@ -128,8 +133,8 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
         testSubject.close();
         testSubject.next();
 
-        // the stream is not completed because it still has elements.
-        assertFalse(testSubject.isCompleted());
+        // close() completes the producer; isCompleted is true even while buffered entries remain.
+        assertTrue(testSubject.isCompleted());
         assertFalse(testSubject.offer(createRandomMessage(), Context.empty()));
 
         testSubject.next();
@@ -145,13 +150,23 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
 
         assertTrue(testSubject.offer(createRandomMessage(), Context.empty()));
         testSubject.complete();
-        testSubject.next();
 
-        // the stream is not completed because it still has elements.
-        assertFalse(testSubject.isCompleted());
+        assertTrue(testSubject.isCompleted());
         assertFalse(testSubject.offer(createRandomMessage(), Context.empty()));
 
         testSubject.next();
+        assertTrue(testSubject.isCompleted());
 
-        assertTrue(testSubject.isCompleted());    }
+        testSubject.next();
+        assertTrue(testSubject.isCompleted());
+    }
+
+    @Test
+    void isCompletedDoesNotDependOnQueueEmptyWhenProducerNotFinished() {
+        QueueMessageStream<EventMessage> stream = new QueueMessageStream<>();
+        stream.offer(createRandomMessage(), Context.empty());
+        assertFalse(stream.isCompleted());
+        assertTrue(stream.next().isPresent());
+        assertFalse(stream.isCompleted());
+    }
 }

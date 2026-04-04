@@ -26,6 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * MessageStream implementation that uses a Queue to make elements available to a consumer.
+ * <p>
+ * {@linkplain #isCompleted() Completion} follows {@link AbstractMessageStream}: it becomes {@code true} when the
+ * producer has invoked {@link #complete()}, {@link #completeExceptionally(Throwable)}, or {@link #close()}, and does
+ * not depend on the queue being empty.
  *
  * @param <M> The type of Message managed by this stream.
  * @author Allard Buijze
@@ -136,11 +140,6 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
     }
 
     @Override
-    public boolean isCompleted() {
-        return queue.isEmpty() && super.isCompleted();
-    }
-
-    @Override
     public boolean hasNextAvailable() {
         return !queue.isEmpty();
     }
@@ -154,7 +153,9 @@ public class QueueMessageStream<M extends Message> extends AbstractMessageStream
     /**
      * Indicates whether this stream has been closed, either by completion or by explicit closing from the consumer.
      * <p>
-     * Unlike {@link #isCompleted()}, this may also return {@code true} when there are still messages to consume
+     * This is equivalent to {@link #isCompleted()} for this implementation: both reflect whether
+     * {@link #complete()}, {@link #completeExceptionally(Throwable)}, or {@link #close()} has been invoked on the
+     * producer side. That may be {@code true} while buffered entries are still available for consumption.
      *
      * @return {@code true} when closed or completed, otherwise {@code false}
      */
