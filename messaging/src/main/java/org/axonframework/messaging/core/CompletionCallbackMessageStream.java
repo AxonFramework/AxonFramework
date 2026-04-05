@@ -69,7 +69,10 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     private void invokeCompletionHandlerIfCompleted() {
-        if (delegate().hasNextAvailable() || !delegate().isCompleted() || delegate().error().isPresent()) {
+        // Prefer error() before hasNextAvailable(): peek/next can advance delegate state.
+        if (delegate().error().isPresent()
+                || delegate().hasNextAvailable()
+                || !delegate().isCompleted()) {
             return;
         }
         if (invoked.compareAndSet(false, true)) {
