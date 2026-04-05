@@ -104,6 +104,7 @@ public final class FluxUtils {
     static class FluxStreamAdapter<M extends Message> {
 
         private final AtomicBoolean processingGate = new AtomicBoolean(false);
+        private final AtomicBoolean terminalSignalEmitted = new AtomicBoolean(false);
         private final MessageStream<M> source;
         private final FluxSink<MessageStream.Entry<M>> emitter;
 
@@ -121,11 +122,14 @@ public final class FluxUtils {
                         source.next().ifPresent(emitter::next);
                     }
 
-                    if (source.isCompleted()) {
+                    if (source.isCompleted() && !emitter.isCancelled()
+                            && terminalSignalEmitted.compareAndSet(false, true)) {
                         source.error().ifPresentOrElse(emitter::error, emitter::complete);
                     }
                 } catch (Exception e) {
-                    emitter.error(e);
+                    if (terminalSignalEmitted.compareAndSet(false, true)) {
+                        emitter.error(e);
+                    }
                     source.close();
                 } finally {
                     processingGate.set(false);
