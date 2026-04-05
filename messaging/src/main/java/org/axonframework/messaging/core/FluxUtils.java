@@ -122,7 +122,7 @@ public final class FluxUtils {
                         source.next().ifPresent(emitter::next);
                     }
 
-                    if (source.isCompleted() && !emitter.isCancelled()
+                    if (source.isCompleted() && !source.hasNextAvailable() && !emitter.isCancelled()
                             && terminalSignalEmitted.compareAndSet(false, true)) {
                         source.error().ifPresentOrElse(emitter::error, emitter::complete);
                     }
