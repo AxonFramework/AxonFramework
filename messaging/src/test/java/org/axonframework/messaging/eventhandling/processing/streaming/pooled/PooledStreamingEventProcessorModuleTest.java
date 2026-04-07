@@ -48,6 +48,7 @@ import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetteringEventHandlingComponent;
 import org.axonframework.messaging.eventstreaming.StreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -808,6 +809,204 @@ class PooledStreamingEventProcessorModuleTest {
                                                    dlqName(processorWithoutDlq, "eventHandlingComponent")
                                            ));
             assertThat(dlqDisabled).isEmpty();
+        }
+    }
+
+    @Nested
+    class DeadLetterQueueDecorationTest {
+
+        @Test
+        void shouldDecorateEventHandlingComponentWhenDlqEnabled() {
+            // given
+            var processorName = "testProcessor";
+            var component = SimpleEventHandlingComponent.create("component");
+            component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredComponent = configuration.getModuleConfiguration(processorName)
+                                                   .flatMap(m -> m.getOptionalComponent(
+                                                           EventHandlingComponent.class,
+                                                           "EventHandlingComponent[" + processorName + "][component]"
+                                                   ));
+
+            // then
+            assertThat(registeredComponent).isPresent().get()
+                                           .isInstanceOf(DeadLetteringEventHandlingComponent.class)
+                                           .isInstanceOf(SequencedDeadLetterProcessor.class);
+        }
+
+        @Test
+        void shouldNotDecorateEventHandlingComponentWhenDlqDisabled() {
+            // given
+            var processorName = "testProcessor";
+            var component = SimpleEventHandlingComponent.create("component");
+            component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .customized((cfg, c) -> c.eventSource(new AsyncInMemoryStreamableEventSource()));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var registeredComponent = configuration.getModuleConfiguration(processorName)
+                                                   .flatMap(m -> m.getOptionalComponent(
+                                                           EventHandlingComponent.class,
+                                                           "EventHandlingComponent[" + processorName + "][component]"
+                                                   ));
+
+            // then
+            assertThat(registeredComponent).isPresent().get()
+                                           .isNotInstanceOf(DeadLetteringEventHandlingComponent.class)
+                                           .isNotInstanceOf(SequencedDeadLetterProcessor.class);
+        }
+
+        @Test
+        void shouldDecorateAllEventHandlingComponentsWhenDlqEnabled() {
+            // given
+            var processorName = "testProcessor";
+            var component0 = SimpleEventHandlingComponent.create("component0");
+            component0.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+            var component1 = SimpleEventHandlingComponent.create("component1");
+            component1.subscribe(new QualifiedName(Integer.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components
+                            .declarative("component0", cfg -> component0)
+                            .declarative("component1", cfg -> component1))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+
+            // when
+            var moduleConfig = configuration.getModuleConfiguration(processorName);
+            var ehc0 = moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    EventHandlingComponent.class,
+                    "EventHandlingComponent[" + processorName + "][component0]"
+            ));
+            var ehc1 = moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    EventHandlingComponent.class,
+                    "EventHandlingComponent[" + processorName + "][component1]"
+            ));
+
+            // then
+            assertThat(ehc0).isPresent().get()
+                            .isInstanceOf(DeadLetteringEventHandlingComponent.class)
+                            .isInstanceOf(SequencedDeadLetterProcessor.class);
+            assertThat(ehc1).isPresent().get()
+                            .isInstanceOf(DeadLetteringEventHandlingComponent.class)
+                            .isInstanceOf(SequencedDeadLetterProcessor.class);
+        }
+
+        @Test
+        void decorationCreatesDlqViaFactoryAndSubsequentLookupReturnsSameInstance() {
+            // given
+            Map<String, SequencedDeadLetterQueue<EventMessage>> createdQueues = new ConcurrentHashMap<>();
+            var processorName = "testProcessor";
+            var component = SimpleEventHandlingComponent.create("component");
+            component.subscribe(new QualifiedName(String.class), (event, context) -> MessageStream.empty());
+
+            var module = EventProcessorModule
+                    .pooledStreaming(processorName)
+                    .eventHandlingComponents(components -> components.declarative("component", cfg -> component))
+                    .customized((cfg, c) -> c
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration()
+                                    .enabled()
+                                    .factory((name, ignored) -> {
+                                        var queue = InMemorySequencedDeadLetterQueue.<EventMessage>defaultQueue();
+                                        createdQueues.put(name, queue);
+                                        return queue;
+                                    })));
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
+            var configuration = configurer.build();
+            var moduleConfig = configuration.getModuleConfiguration(processorName);
+
+            // when - resolve EventHandlingComponent (triggers lazy decoration, which creates DLQ via factory)
+            moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    EventHandlingComponent.class,
+                    "EventHandlingComponent[" + processorName + "][component]"
+            ));
+
+            // then - factory was called exactly once
+            assertThat(createdQueues).hasSize(1);
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component"));
+
+            // when - look up DLQ by name
+            moduleConfig.flatMap(m -> m.getOptionalComponent(
+                    SequencedDeadLetterQueue.class,
+                    dlqName(processorName, "component")
+            ));
+
+            // then - factory was NOT called again (DLQ was already created by the decorator)
+            assertThat(createdQueues).hasSize(1);
+        }
+
+        @Test
+        void shouldDecorateWhenDlqEnabledInDefaultsAndNotOverridden() {
+            // given
+            var processorWithDlq = "processorWithDlq";
+            var processorWithoutDlq = "processorWithoutDlq";
+
+            var configurer = MessagingConfigurer.create();
+            configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                    .defaults(d -> d
+                            .eventSource(new AsyncInMemoryStreamableEventSource())
+                            .extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()))
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .notCustomized())
+                    .processor(EventProcessorModule
+                                       .pooledStreaming(processorWithoutDlq)
+                                       .eventHandlingComponents(singleTestEventHandlingComponent())
+                                       .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class,
+                                                                        () -> new DeadLetterQueueConfiguration().disabled())))
+            ));
+            var configuration = configurer.build();
+
+            // when
+            var ehcWithDlq = configuration.getModuleConfiguration(processorWithDlq)
+                                          .flatMap(m -> m.getOptionalComponent(
+                                                  EventHandlingComponent.class,
+                                                  "EventHandlingComponent[" + processorWithDlq + "][eventHandlingComponent]"
+                                          ));
+            var ehcWithoutDlq = configuration.getModuleConfiguration(processorWithoutDlq)
+                                             .flatMap(m -> m.getOptionalComponent(
+                                                     EventHandlingComponent.class,
+                                                     "EventHandlingComponent[" + processorWithoutDlq + "][eventHandlingComponent]"
+                                             ));
+
+            // then - enabled processor's component is decorated
+            assertThat(ehcWithDlq).isPresent().get()
+                                  .isInstanceOf(DeadLetteringEventHandlingComponent.class)
+                                  .isInstanceOf(SequencedDeadLetterProcessor.class);
+
+            // and - disabled processor's component is NOT decorated
+            assertThat(ehcWithoutDlq).isPresent().get()
+                                     .isNotInstanceOf(DeadLetteringEventHandlingComponent.class)
+                                     .isNotInstanceOf(SequencedDeadLetterProcessor.class);
         }
     }
 
