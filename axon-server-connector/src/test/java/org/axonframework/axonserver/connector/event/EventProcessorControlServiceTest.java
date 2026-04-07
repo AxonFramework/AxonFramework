@@ -171,8 +171,8 @@ class EventProcessorControlServiceTest {
         void doesNotSetLoadBalancingStrategiesWhenTheTokenStoreCannotBeFound() {
             // given
             setupEventProcessors();
-            when(processingConfiguration.getModuleConfiguration(THIS_PROCESSOR)).thenReturn(Optional.empty());
-            when(processingConfiguration.getModuleConfiguration(THAT_PROCESSOR)).thenReturn(Optional.empty());
+            when(processingConfiguration.getModuleConfiguration("EventProcessor[" + THIS_PROCESSOR + "]")).thenReturn(Optional.empty());
+            when(processingConfiguration.getModuleConfiguration("EventProcessor[" + THAT_PROCESSOR + "]")).thenReturn(Optional.empty());
             setupProcessorSettings(THIS_PROCESSOR, false);
             setupProcessorSettings(THAT_PROCESSOR, false);
 
