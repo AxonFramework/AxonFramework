@@ -84,7 +84,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
@@ -105,7 +105,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
@@ -138,7 +138,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
@@ -159,7 +159,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
@@ -199,7 +199,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
             ).isPresent();
             Map<String, EventHandlingComponent> ehcs = moduleConfig.getComponents(EventHandlingComponent.class);
             assertThat(ehcs.size()).isEqualTo(1);
@@ -217,7 +217,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, ORDERS_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             Map<String, EventHandlingComponent> ehcs = moduleConfig.getComponents(EventHandlingComponent.class);
             assertThat(ehcs.size()).isEqualTo(1);
