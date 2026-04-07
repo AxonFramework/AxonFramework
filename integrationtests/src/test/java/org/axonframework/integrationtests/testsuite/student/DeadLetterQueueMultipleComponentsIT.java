@@ -24,6 +24,7 @@ import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.sequencing.SequentialPolicy;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
@@ -74,7 +75,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
                 .eventHandlingComponents(c -> c
                         .declarative("component0", cfg -> components[0])
                         .declarative("component1", cfg -> components[1]))
-                .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.enabled()));
+                .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class, () -> new DeadLetterQueueConfiguration().enabled()));
 
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
@@ -267,10 +268,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         var componentName = "component" + componentIndex;
+        var dlqName = "DeadLetterQueue[EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]]";
         return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
                                    .flatMap(m -> m.getOptionalComponent(
-                                           SequencedDeadLetterQueue.class,
-                                           "DeadLetterQueue[" + PROCESSOR_NAME + "][" + componentName + "]"
+                                           SequencedDeadLetterQueue.class, dlqName
                                    ))
                                    .orElseThrow(() -> new IllegalStateException(
                                            "DLQ not found for component " + componentIndex));
