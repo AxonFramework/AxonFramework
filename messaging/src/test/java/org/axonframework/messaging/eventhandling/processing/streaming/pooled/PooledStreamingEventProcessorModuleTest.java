@@ -634,12 +634,12 @@ class PooledStreamingEventProcessorModuleTest {
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component0]"
+                                            dlqName(processorName, "component0")
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component1]"
+                                            dlqName(processorName, "component1")
                                     ));
 
             // then
@@ -686,17 +686,17 @@ class PooledStreamingEventProcessorModuleTest {
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component0]"
+                                            dlqName(processorName, "component0")
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component1]"
+                                            dlqName(processorName, "component1")
                                     ));
             var dlq2 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component2]"
+                                            dlqName(processorName, "component2")
                                     ));
 
             // then - all DLQs are present
@@ -706,9 +706,9 @@ class PooledStreamingEventProcessorModuleTest {
 
             // and - custom factory was used for each component
             assertThat(createdQueues).hasSize(3);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component2]");
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component0"));
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component1"));
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component2"));
         }
 
         @Test
@@ -748,12 +748,12 @@ class PooledStreamingEventProcessorModuleTest {
             var dlq0 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component0]"
+                                            dlqName(processorName, "component0")
                                     ));
             var dlq1 = configuration.getModuleConfiguration(processorName)
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
-                                            "DeadLetterQueue[" + processorName + "][component1]"
+                                            dlqName(processorName, "component1")
                                     ));
 
             // then - all DLQs are present
@@ -762,8 +762,8 @@ class PooledStreamingEventProcessorModuleTest {
 
             // and - custom factory from defaults was used for each component
             assertThat(createdQueues).hasSize(2);
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component0]");
-            assertThat(createdQueues).containsKey("DeadLetterQueue[" + processorName + "][component1]");
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component0"));
+            assertThat(createdQueues).containsKey(dlqName(processorName, "component1"));
         }
 
         @Test
@@ -797,7 +797,7 @@ class PooledStreamingEventProcessorModuleTest {
             var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
                                           .flatMap(m -> m.getOptionalComponent(
                                                   SequencedDeadLetterQueue.class,
-                                                  "DeadLetterQueue[" + processorWithDlq + "][eventHandlingComponent]"
+                                                  dlqName(processorWithDlq, "eventHandlingComponent")
                                           ));
             assertThat(dlqEnabled).isPresent();
 
@@ -805,7 +805,7 @@ class PooledStreamingEventProcessorModuleTest {
             var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
                                            .flatMap(m -> m.getOptionalComponent(
                                                    SequencedDeadLetterQueue.class,
-                                                   "DeadLetterQueue[" + processorWithoutDlq + "][eventHandlingComponent]"
+                                                   dlqName(processorWithoutDlq, "eventHandlingComponent")
                                            ));
             assertThat(dlqDisabled).isEmpty();
         }
@@ -1130,6 +1130,10 @@ class PooledStreamingEventProcessorModuleTest {
                 .eventHandlingComponents(singleTestEventHandlingComponent())
                 .customized((cfg, c) -> c.eventSource(cfg.getOptionalComponent(StreamableEventSource.class)
                                                          .orElse(new AsyncInMemoryStreamableEventSource())));
+    }
+
+    private static String dlqName(String processorName, String componentName) {
+        return "DeadLetterQueue[EventHandlingComponent[" + processorName + "][" + componentName + "]]";
     }
 
     private @NonNull static Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> singleTestEventHandlingComponent() {

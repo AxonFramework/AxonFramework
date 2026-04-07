@@ -384,9 +384,9 @@ public class DeadLetterProcessor {
 
     public void retryErrorEventSequence(String processorName, String componentName) {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
-        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(dlp ->
                         dlp.process(letter -> letter.message()
                                                     .type()
@@ -413,9 +413,9 @@ public class DeadLetterProcessor {
 
     public void retryAnySequence(String processorName, String componentName) {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
-        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(dlp ->
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
@@ -439,9 +439,9 @@ public class DeadLetterProcessor {
 
     public void retryAllSequences(String processorName, String componentName) {
         // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
-        var dlqName = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(this::processUntilEmpty);
     }
 
