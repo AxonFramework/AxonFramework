@@ -86,7 +86,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * @param processorName The unique name for the pooled streaming event processor.
      */
     public PooledStreamingEventProcessorModule(String processorName) {
-        super(processorName);
+        super("EventProcessor[" + processorName + "]");
         this.processorName = processorName;
     }
 
