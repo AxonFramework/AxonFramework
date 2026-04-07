@@ -209,7 +209,7 @@ class EventProcessorControlServiceTest {
                 .thenReturn(Optional.of(tokenStore));
         when(moduleConfig.getOptionalComponent(eq(UnitOfWorkFactory.class), eq("UnitOfWorkFactory[" + processorName + "]")))
                 .thenReturn(Optional.of(unitOfWorkFactory));
-        when(processingConfiguration.getModuleConfiguration(processorName)).thenReturn(Optional.of(moduleConfig));
+        when(processingConfiguration.getModuleConfiguration("EventProcessor[" + processorName + "]")).thenReturn(Optional.of(moduleConfig));
     }
 
     private void setupProcessorSettings(String processorName, boolean automaticBalancing) {
