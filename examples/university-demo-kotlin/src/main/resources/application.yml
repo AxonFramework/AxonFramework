@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: university-demo-kotlin
+
+server:
+  port: 8084
+
+axon:
+  server:
+    enabled: true
