@@ -61,7 +61,8 @@ public class DeadLetterQueueAutoConfiguration {
             SequencedDeadLetterQueueFactory factory
     ) {
         return (axonConfig, processorConfig) -> {
-            var processorName = processorConfig.processorName(); // in Spring it's EventProcessor[processorName]
+            // FIXME #4392 - workaround, it should not be needed to unwrap the processor name
+            var processorName = unwrapProcessorName(processorConfig.processorName());
             var dlqProps = properties.forProcessor(processorName);
             if (dlqProps.getDlq().isEnabled()) {
                 return processorConfig.extend(DeadLetterQueueConfiguration.class,
@@ -72,4 +73,25 @@ public class DeadLetterQueueAutoConfiguration {
             return processorConfig;
         };
     }
+
+    /**
+     * Extracts the bare processor name from a Spring-registered configuration name.
+     * <p>
+     * In Spring, processor configurations are registered under names of the form
+     * {@code EventProcessor[processorName]}. The properties keys, however, use the bare
+     * {@code processorName}, so the wrapper must be stripped before looking up properties.
+     * If the input does not match the wrapped form, it is returned unchanged.
+     *
+     * @param name the configuration name as registered, possibly wrapped as
+     *             {@code EventProcessor[processorName]}
+     * @return the bare processor name
+     */
+    private static String unwrapProcessorName(String name) {
+        if (name.startsWith(EVENT_PROCESSOR_PREFIX) && name.endsWith("]")) {
+            return name.substring(EVENT_PROCESSOR_PREFIX.length(), name.length() - 1);
+        }
+        return name;
+    }
+
+    private static final String EVENT_PROCESSOR_PREFIX = "EventProcessor[";
 }
