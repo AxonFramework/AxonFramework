@@ -264,7 +264,7 @@ class QueryThreadingIntegrationTest {
         assertThat(result.hasNextAvailable()).isFalse();
         assertThat(result.isCompleted()).isFalse();
         queryResponse.offer(new GenericQueryResponseMessage(MESSAGE_TYPE_STRING, "c"), Context.empty());
-        queryResponse.complete();
+        queryResponse.seal();
         await().until(result::hasNextAvailable);
         await().untilAsserted(() -> {
             assertThat(result.next()).isPresent()
