@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.messaging.core.MessageStream.Entry;
+
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 
 /**
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
@@ -69,7 +69,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     }
 
     private void invokeCompletionHandlerIfCompleted() {
-        if (delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
+        if (!delegate().hasNextAvailable() && delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
         }
     }
@@ -95,17 +95,6 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
             invokeCompletionHandlerIfCompleted();
         }
         return b;
-    }
-
-    @Override
-    public <R> CompletableFuture<R> reduce(R identity,
-                                           BiFunction<R, Entry<M>, R> accumulator) {
-        return delegate().reduce(identity, accumulator)
-                         .whenComplete((result, exception) -> {
-                             if (exception == null) {
-                                 completeHandler.run();
-                             }
-                         });
     }
 
     /**

@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.messaging.core.MessageStream.Entry;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -31,6 +31,7 @@ import java.util.function.Function;
  * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<M>
@@ -59,13 +60,7 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
      */
     SingleValueMessageStream(CompletableFuture<Entry<M>> source) {
         this.source = source;
-        this.source.whenComplete((entry, throwable) -> {
-            if (throwable != null) {
-                completeExceptionally(throwable);
-            } else {
-                invokeCallbackSafely();
-            }
-        });
+        this.source.thenAccept(e -> signalProgress());
     }
 
     @Override
@@ -74,35 +69,25 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
     }
 
     @Override
-    public Optional<Entry<M>> next() {
-        if (error().isPresent()) {
-            return Optional.empty();
+    public FetchResult<Entry<M>> fetchNext() {
+        if (!source.isDone()) {
+            return FetchResult.notReady();
         }
-        if (source.isDone() && !source.isCompletedExceptionally()) {
-            Entry<M> current = source.getNow(null);
-            if (read.compareAndSet(false, true)) {
-                return Optional.of(current);
-            }
+
+        if (source.isCompletedExceptionally()) {
+            return FetchResult.error(source.exceptionNow());
         }
-        return Optional.empty();
+
+        Entry<M> current = source.getNow(null);
+
+        return read.compareAndSet(false, true) ? FetchResult.of(current) : FetchResult.completed();
     }
 
     @Override
-    public boolean isCompleted() {
-        return super.isCompleted() || source.isCompletedExceptionally() || read.get();
-    }
-
-    @Override
-    public boolean hasNextAvailable() {
-        return error().isEmpty() && source.isDone() && !source.isCompletedExceptionally() && !read.get();
-    }
-
-    @Override
-    public void close() {
+    protected final void onCompleted() {
         if (!source.isDone()) {
             source.cancel(false);
         }
-        complete();
     }
 
     @Override
@@ -112,18 +97,7 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
 
     @Override
     public <R> CompletableFuture<R> reduce(R identity,
-                                           BiFunction<R, Entry<M>, R> accumulator) {
+                                           BiFunction<R, ? super Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
-    }
-
-    @Override
-    public Optional<Entry<M>> peek() {
-        if (error().isPresent()) {
-            return Optional.empty();
-        }
-        if (source.isDone() && !source.isCompletedExceptionally() && !read.get()) {
-            return Optional.ofNullable(source.getNow(null));
-        }
-        return Optional.empty();
     }
 }

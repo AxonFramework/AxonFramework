@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -138,5 +139,43 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
         testSubject.close();
 
         assertTrue(future.isCancelled());
+    }
+
+    @Nested
+    class WhenAllElementsConsumed {
+        SingleValueMessageStream<Message> ms = new SingleValueMessageStream<>(new SimpleEntry<>(createRandomMessage()));
+
+        @BeforeEach
+        void beforeEach() {
+            assertThat(ms.hasNextAvailable()).isTrue();
+            assertThat(ms.peek()).isNotEmpty();
+            assertThat(ms.next()).isNotEmpty();
+
+            /*
+             * Expect that the stream has not completed at this point. Streams
+             * should never complete before returning their last element, even
+             * if they know it was the last element.
+             */
+
+            assertThat(ms.isCompleted()).isFalse();
+        }
+
+        @Test
+        void ensureStreamCompletesAfterHasNextAvailableCall() {
+            assertThat(ms.hasNextAvailable()).isFalse();
+            assertThat(ms.isCompleted()).isTrue();
+        }
+
+        @Test
+        void ensureStreamCompletesAfterNextCall() {
+            assertThat(ms.next()).isEmpty();
+            assertThat(ms.isCompleted()).isTrue();
+        }
+
+        @Test
+        void ensureStreamCompletesAfterPeekCall() {
+            assertThat(ms.peek()).isEmpty();
+            assertThat(ms.isCompleted()).isTrue();
+        }
     }
 }
