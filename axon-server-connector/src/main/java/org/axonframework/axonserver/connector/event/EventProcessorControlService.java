@@ -187,7 +187,7 @@ public class EventProcessorControlService {
     }
 
     private Optional<String> processorTokenStoreOrGlobal(String processorName) {
-        Optional<Configuration> moduleConfiguration = configuration.getModuleConfiguration(processorName);
+        Optional<Configuration> moduleConfiguration = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]");
 
         Optional<TokenStore> tokenStore = moduleConfiguration
                 .flatMap(m -> m.getOptionalComponent(TokenStore.class, "TokenStore[" + processorName + "]"))

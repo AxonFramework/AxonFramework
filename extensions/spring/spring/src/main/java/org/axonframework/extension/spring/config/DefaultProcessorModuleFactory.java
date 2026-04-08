@@ -125,8 +125,6 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
 
-            var processorModuleName = "EventProcessor[" + processorName + "]";
-
             var settings = Optional.ofNullable(allSettings.get(processorName))
                                    .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
             var processorMode = definitionFor(processorName).map(EventProcessorDefinition::mode)
@@ -149,7 +147,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                                 return result;
                             };
                     yield EventProcessorModule
-                            .pooledStreaming(processorModuleName)
+                            .pooledStreaming(processorName)
                             .eventHandlingComponents(componentRegistration)
                             .customized(customization)
                             .build();
@@ -157,7 +155,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                 case SUBSCRIBING -> {
                     var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
                     yield EventProcessorModule
-                            .subscribing(processorModuleName)
+                            .subscribing(processorName)
                             .eventHandlingComponents(componentRegistration)
                             .customized(SpringCustomizations.subscribingCustomizations(processorName, moduleSettings)
                                                             .andThen(customizeConfiguration(processorName)))

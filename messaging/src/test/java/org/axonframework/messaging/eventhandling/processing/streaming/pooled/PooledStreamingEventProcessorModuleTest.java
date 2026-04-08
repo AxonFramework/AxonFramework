@@ -85,7 +85,7 @@ class PooledStreamingEventProcessorModuleTest {
                     .customized((cfg, c) -> c);
 
             // then
-            assertThat(module.name()).isEqualTo(processorName);
+            assertThat(module.name()).isEqualTo("EventProcessor[" + processorName + "]");
         }
     }
 
@@ -322,7 +322,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             // when
             var registeredTokenStore =
-                    configuration.getModuleConfiguration(processorName)
+                    configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                  .flatMap(m -> m.getOptionalComponent(
                                          TokenStore.class,
                                          "TokenStore[" + processorName + "]"
@@ -351,7 +351,7 @@ class PooledStreamingEventProcessorModuleTest {
 
             // when
             var registeredUnitOfWorkFactory =
-                    configuration.getModuleConfiguration(processorName)
+                    configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                  .flatMap(m -> m.getOptionalComponent(
                                          UnitOfWorkFactory.class,
                                          "UnitOfWorkFactory[" + processorName + "]"
@@ -386,19 +386,19 @@ class PooledStreamingEventProcessorModuleTest {
 
             // when
             var registeredComponent1 =
-                    configuration.getModuleConfiguration(processorName)
+                    configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                  .flatMap(m -> m.getOptionalComponent(
                                          EventHandlingComponent.class,
                                          "EventHandlingComponent[" + processorName + "][component1]"
                                  ));
             var registeredComponent2 =
-                    configuration.getModuleConfiguration(processorName)
+                    configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                  .flatMap(m -> m.getOptionalComponent(
                                          EventHandlingComponent.class,
                                          "EventHandlingComponent[" + processorName + "][component2]"
                                  ));
             var registeredComponent3 =
-                    configuration.getModuleConfiguration(processorName)
+                    configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                  .flatMap(m -> m.getOptionalComponent(
                                          EventHandlingComponent.class,
                                          "EventHandlingComponent[" + processorName + "][component3]"
@@ -754,7 +754,7 @@ class PooledStreamingEventProcessorModuleTest {
             AxonConfiguration configuration,
             String processorName
     ) {
-        return configuration.getModuleConfiguration(processorName)
+        return configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                             .flatMap(m -> m.getOptionalComponent(StreamingEventProcessor.class, processorName))
                             .filter(PooledStreamingEventProcessor.class::isInstance)
                             .map(PooledStreamingEventProcessor.class::cast);

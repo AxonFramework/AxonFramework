@@ -269,7 +269,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     private SequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         var componentName = "component" + componentIndex;
         var dlqName = "DeadLetterQueue[EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]]";
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
+        return startedConfiguration.getModuleConfiguration("EventProcessor[" + PROCESSOR_NAME + "]")
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterQueue.class, dlqName
                                    ))
@@ -280,7 +280,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterProcessor<EventMessage> getDeadLetterProcessor(int componentIndex) {
         var componentName = "component" + componentIndex;
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
+        return startedConfiguration.getModuleConfiguration("EventProcessor[" + PROCESSOR_NAME + "]")
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterProcessor.class,
                                            "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]"

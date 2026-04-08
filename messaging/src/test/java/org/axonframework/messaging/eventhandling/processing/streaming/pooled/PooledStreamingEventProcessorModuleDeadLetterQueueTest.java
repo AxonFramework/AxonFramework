@@ -70,7 +70,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponent = configuration.getModuleConfiguration(processorName)
+            var registeredComponent = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
                                                                                         "EventHandlingComponent[" + processorName + "][component]"));
 
@@ -100,7 +100,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponents = configuration.getModuleConfiguration(processorName)
+            var registeredComponents = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                                     .map(m -> m.getComponents(EventHandlingComponent.class));
 
             // then
@@ -129,7 +129,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var moduleConfig = configuration.getModuleConfiguration(processorName);
+            var moduleConfig = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]");
             var dlp0 = moduleConfig.flatMap(m -> m.getOptionalComponent(
                     SequencedDeadLetterProcessor.class,
                     "EventHandlingComponent[" + processorName + "][component0]"
@@ -161,7 +161,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var dlp = configuration.getModuleConfiguration(processorName)
+            var dlp = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterProcessor.class,
                                            "EventHandlingComponent[" + processorName + "][component]"
@@ -203,12 +203,12 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when - resolve dead letter processors from each module
-            var dlp1 = configuration.getModuleConfiguration(processor1Name)
+            var dlp1 = configuration.getModuleConfiguration("EventProcessor[" + processor1Name + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterProcessor.class,
                                             "EventHandlingComponent[" + processor1Name + "][component1]"
                                     ));
-            var dlp2 = configuration.getModuleConfiguration(processor2Name)
+            var dlp2 = configuration.getModuleConfiguration("EventProcessor[" + processor2Name + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterProcessor.class,
                                             "EventHandlingComponent[" + processor2Name + "][component2]"
@@ -236,7 +236,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponent = configuration.getModuleConfiguration(processorName)
+            var registeredComponent = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                                    .flatMap(m -> m.getOptionalComponent(EventHandlingComponent.class,
                                                                                         "EventHandlingComponent[" + processorName + "][component]"));
 
@@ -266,12 +266,12 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var dlq0 = configuration.getModuleConfiguration(processorName)
+            var dlq0 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component0")
                                     ));
-            var dlq1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component1")
@@ -318,17 +318,17 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var dlq0 = configuration.getModuleConfiguration(processorName)
+            var dlq0 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component0")
                                     ));
-            var dlq1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component1")
                                     ));
-            var dlq2 = configuration.getModuleConfiguration(processorName)
+            var dlq2 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component2")
@@ -380,12 +380,12 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var dlq0 = configuration.getModuleConfiguration(processorName)
+            var dlq0 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component0")
                                     ));
-            var dlq1 = configuration.getModuleConfiguration(processorName)
+            var dlq1 = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                     .flatMap(m -> m.getOptionalComponent(
                                             SequencedDeadLetterQueue.class,
                                             dlqName(processorName, "component1")
@@ -429,7 +429,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // then - processorWithDlq should have DLQ
-            var dlqEnabled = configuration.getModuleConfiguration(processorWithDlq)
+            var dlqEnabled = configuration.getModuleConfiguration("EventProcessor[" + processorWithDlq + "]")
                                           .flatMap(m -> m.getOptionalComponent(
                                                   SequencedDeadLetterQueue.class,
                                                   dlqName(processorWithDlq, "eventHandlingComponent")
@@ -437,7 +437,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             assertThat(dlqEnabled).isPresent();
 
             // and - processorWithoutDlq should NOT have DLQ (disabled overrides enabled from defaults)
-            var dlqDisabled = configuration.getModuleConfiguration(processorWithoutDlq)
+            var dlqDisabled = configuration.getModuleConfiguration("EventProcessor[" + processorWithoutDlq + "]")
                                            .flatMap(m -> m.getOptionalComponent(
                                                    SequencedDeadLetterQueue.class,
                                                    dlqName(processorWithoutDlq, "eventHandlingComponent")
@@ -468,7 +468,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponent = configuration.getModuleConfiguration(processorName)
+            var registeredComponent = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                                    .flatMap(m -> m.getOptionalComponent(
                                                            EventHandlingComponent.class,
                                                            "EventHandlingComponent[" + processorName + "][component]"
@@ -497,7 +497,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var registeredComponent = configuration.getModuleConfiguration(processorName)
+            var registeredComponent = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]")
                                                    .flatMap(m -> m.getOptionalComponent(
                                                            EventHandlingComponent.class,
                                                            "EventHandlingComponent[" + processorName + "][component]"
@@ -532,7 +532,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var moduleConfig = configuration.getModuleConfiguration(processorName);
+            var moduleConfig = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]");
             var ehc0 = moduleConfig.flatMap(m -> m.getOptionalComponent(
                     EventHandlingComponent.class,
                     "EventHandlingComponent[" + processorName + "][component0]"
@@ -575,7 +575,7 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configurer = MessagingConfigurer.create();
             configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(module)));
             var configuration = configurer.build();
-            var moduleConfig = configuration.getModuleConfiguration(processorName);
+            var moduleConfig = configuration.getModuleConfiguration("EventProcessor[" + processorName + "]");
 
             // when - resolve EventHandlingComponent (triggers lazy decoration, which creates DLQ via factory)
             moduleConfig.flatMap(m -> m.getOptionalComponent(
@@ -621,12 +621,12 @@ class PooledStreamingEventProcessorModuleDeadLetterQueueTest {
             var configuration = configurer.build();
 
             // when
-            var ehcWithDlq = configuration.getModuleConfiguration(processorWithDlq)
+            var ehcWithDlq = configuration.getModuleConfiguration("EventProcessor[" + processorWithDlq + "]")
                                           .flatMap(m -> m.getOptionalComponent(
                                                   EventHandlingComponent.class,
                                                   "EventHandlingComponent[" + processorWithDlq + "][eventHandlingComponent]"
                                           ));
-            var ehcWithoutDlq = configuration.getModuleConfiguration(processorWithoutDlq)
+            var ehcWithoutDlq = configuration.getModuleConfiguration("EventProcessor[" + processorWithoutDlq + "]")
                                              .flatMap(m -> m.getOptionalComponent(
                                                      EventHandlingComponent.class,
                                                      "EventHandlingComponent[" + processorWithoutDlq + "][eventHandlingComponent]"
