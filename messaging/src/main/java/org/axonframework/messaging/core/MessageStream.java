@@ -310,9 +310,24 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Registers the callback to invoke when {@link Entry entries} are available for reading or when the stream
-     * completes (either normally or with an error). An invocation of the callback does not in any way guarantee that
-     * entries are indeed available, or that the stream has indeed been completed. Implementations may choose to
-     * suppress repeated invocations of the callback if no entries have been read in the meantime.
+     * completes (either normally or with an error), with the intent that a consumer of this stream will read the
+     * available messages completely.
+     * <p>
+     * This has the following implications:
+     * <ul>
+     *     <li>When you register the callback on an already completed stream, the callback is invoked directly.</li>
+     *     <li>When you register the callback on a stream having entries available, the callback is invoked, and
+     *     you must consume the existing entries.</li>
+     *     <li>A registered callback is invoked again when all entries were consumed and new entries arrive.</li>
+     *     <li>Depending on the implementation of the stream, your callback <i>might</i> be invoked again while you
+     *     are still consuming entries, in these cases it is your responsibility to synchronize the callback executions.
+     *     Using {@link #reduce(Object, BiFunction)} might be a better fit because it guarantees isolated execution of
+     *     callbacks using a <code>processingGate</code>.</li>
+     * </ul>
+     * <p>
+     * Note that an invocation of the callback does not in any way guarantee that entries are indeed available, or
+     * that the stream has indeed been completed. Implementations may choose to suppress repeated invocations of
+     * the callback if no entries have been read in the meantime.
      * <p>
      * Any previously registered callback is replaced with the given {@code callback}.
      * <p>

@@ -16,7 +16,8 @@
 
 package org.axonframework.messaging.core;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -29,12 +30,14 @@ import java.util.function.BiFunction;
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
-class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> {
+class ConcatenatingMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
-    private final MessageStream<M> first;
-    private final MessageStream<M> second;
+    private final List<MessageStream<M>> streams;
+
+    private MessageStream<M> active;
 
     /**
      * Construct a {@link MessageStream stream} that initially consume from the {@code first MessageStream}, followed by
@@ -46,70 +49,74 @@ class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> 
      */
     ConcatenatingMessageStream(MessageStream<M> first,
                                MessageStream<M> second) {
-        this.first = first;
-        this.second = second;
+        this.streams = new ArrayList<>(List.of(first, second));
+
+        switchStream();
     }
 
     @Override
-    public Optional<Entry<M>> next() {
-        if (!first.hasNextAvailable()  // this may trigger a completition state change, so call **before** isCompleted
-                && first.isCompleted() && first.error().isEmpty()) {
-            return second.next();
+    protected synchronized FetchResult<Entry<M>> fetchNext() {
+        do {
+            if (active.hasNextAvailable()) {
+                return FetchResult.of(active.next().orElseThrow());
+            }
+
+            if (!active.isCompleted()) {
+                return FetchResult.notReady();
+            }
+
+            if (active.error().isPresent()) {
+                return FetchResult.error(active.error().get());
+            }
+        } while(switchStream());
+
+        return FetchResult.completed();
+    }
+
+    private boolean switchStream() {
+        if (active != null) {
+            active.setCallback(() -> {});
+            active.close();
         }
-        return first.next();
-    }
 
-    @Override
-    public void setCallback(Runnable callback) {
-        first.setCallback(() -> {
-            if (!(first.isCompleted() && first.error().isEmpty()) || second.hasNextAvailable()
-                    || second.isCompleted()) {
-                if (first.error().isPresent()) {
-                    second.close();
-                }
-                callback.run();
+        if (streams.isEmpty()) {
+            return false;
+        }
+
+        this.active = streams.removeFirst();
+
+        active.setCallback(() -> {
+            boolean error = active.error().isPresent();
+
+            // Close immediately on terminal error
+            if (error) {
+                close();
+            }
+
+            // Signal progress if not completed, there was an error, or final stream was finished
+            if (!active.isCompleted() || error || streams.isEmpty()) {
+                signalProgress();
             }
         });
-        second.setCallback(() -> {
-            if (first.isCompleted() && first.error().isEmpty()) {
-                callback.run();
-            }
-        });
+
+        return true;
     }
 
     @Override
-    public Optional<Throwable> error() {
-        return first.isCompleted() ? first.error().or(second::error) : first.error();
+    public synchronized void close() {
+        active.close();
+        streams.forEach(MessageStream::close);
     }
 
     @Override
-    public boolean isCompleted() {
-        return first.isCompleted() && (second.isCompleted() || first.error().isPresent());
-    }
-
-    @Override
-    public boolean hasNextAvailable() {
-        return first.isCompleted() && first.error().isEmpty() ? second.hasNextAvailable() : first.hasNextAvailable();
-    }
-
-    @Override
-    public void close() {
-        first.close();
-        second.close();
-    }
-
-    @Override
-    public <R> CompletableFuture<R> reduce(R identity,
+    public synchronized <R> CompletableFuture<R> reduce(R identity,
                                            BiFunction<R, Entry<M>, R> accumulator) {
-        return first.reduce(identity, accumulator)
-                    .thenCompose(intermediate -> second.reduce(intermediate, accumulator));
-    }
+        CompletableFuture<R> reduction = active.reduce(identity, accumulator);
 
-    @Override
-    public Optional<Entry<M>> peek() {
-        if (first.isCompleted() && first.error().isEmpty()) {
-            return second.peek();
+        for (MessageStream<M> stream : streams) {
+            reduction = reduction.thenCompose(intermediate -> stream.reduce(intermediate, accumulator));
         }
-        return first.peek();
+
+        return reduction;
     }
 }

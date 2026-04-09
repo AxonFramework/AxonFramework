@@ -19,7 +19,6 @@ package org.axonframework.messaging.core;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.core.MessageStream.Entry;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -30,30 +29,25 @@ import java.util.function.Function;
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 class EmptyMessageStream<M extends Message> extends AbstractMessageStream<M> implements MessageStream.Empty<M> {
+
+    EmptyMessageStream() {
+        super(FetchResult.completed());
+    }
+
+    @Override
+    protected FetchResult<Entry<M>> fetchNext() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public CompletableFuture<Entry<M>> asCompletableFuture() {
         return (error().isPresent())
                 ? CompletableFuture.failedFuture(error().get())
                 : FutureUtils.emptyCompletedFuture();
-    }
-
-    @Override
-    public Optional<Entry<M>> next() {
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean isCompleted() {
-        return true;
-    }
-
-    @Override
-    public boolean hasNextAvailable() {
-        return false;
     }
 
     @Override
@@ -84,10 +78,5 @@ class EmptyMessageStream<M extends Message> extends AbstractMessageStream<M> imp
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
-    }
-
-    @Override
-    public Optional<Entry<M>> peek() {
-        return Optional.empty();
     }
 }
