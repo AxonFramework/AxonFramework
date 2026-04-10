@@ -79,7 +79,7 @@ public void configure(Configurer configurer) {
 public void configure(MessagingConfigurer configurer, ObjectMapper objectMapper) {
     configurer.componentRegistry(registry -> {
         Converter generalConverter = new JacksonConverter(objectMapper);
-        registry.registerComponent(Converter.class, c -> generalConverter);
+        registry.registerComponent(GeneralConverter.class, c -> new DelegatingGeneralConverter(generalConverter));
         registry.registerComponent(MessageConverter.class, c -> new DelegatingMessageConverter(generalConverter));
         registry.registerComponent(EventConverter.class, c -> new DelegatingEventConverter(generalConverter));
     });
@@ -107,12 +107,12 @@ public class SerializationConfig {
 public class ConversionConfig {
     @Bean
     @Primary
-    public Converter converter(ObjectMapper objectMapper) {
-        return new JacksonConverter(objectMapper);
+    public GeneralConverter converter(ObjectMapper objectMapper) {
+        return new DelegatingGeneralConverter(new JacksonConverter(objectMapper));
     }
 
     @Bean
-    public MessageConverter messageConverter(Converter generalConverter) {
+    public MessageConverter messageConverter(GeneralConverter generalConverter) {
         return new DelegatingMessageConverter(generalConverter);
     }
 

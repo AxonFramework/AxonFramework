@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import static org.axonframework.common.BuilderUtils.assertNonBlank;
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.BuilderUtils.assertNonBlank;
 
 /**
  * Default implementation of {@link EventHandlingComponentsConfigurer} providing {@link EventHandlingComponent}s`
@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 @Internal
 public class DefaultEventHandlingComponentsConfigurer
         implements EventHandlingComponentsConfigurer.RequiredComponentPhase,
-        EventHandlingComponentsConfigurer.AdditionalComponentPhase, EventHandlingComponentsConfigurer.CompletePhase {
+        EventHandlingComponentsConfigurer.AdditionalComponentPhase {
 
     private Map<String, ComponentBuilder<EventHandlingComponent>> componentBuilders = new LinkedHashMap<>();
     private int componentIndex = 0;

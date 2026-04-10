@@ -17,14 +17,20 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.StringUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
+import org.axonframework.messaging.core.annotation.Namespace;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,18 +64,33 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
 
     private final List<EventProcessorDefinition> eventProcessorDefinitions;
     private final Map<String, EventProcessorSettings> allSettings;
+    private final List<PooledStreamingEventProcessorModule.Customization> extensionsCustomizations;
 
     /**
-     * Creates a new factory with the given processor definitions, settings, and Axon configuration.
+     * Creates a new factory with the given processor definitions and settings.
      *
      * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
-     * @param settings             The map of processor settings, keyed by processor name.
-     * @param axonConfiguration    The Axon configuration to retrieve components from.
+     * @param settings                  The map of processor settings, keyed by processor name.
      */
     public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
                                          Map<String, EventProcessorSettings> settings) {
+        this(eventProcessorDefinitions, settings, Collections.emptyList());
+    }
+
+    /**
+     * Creates a new factory with the given processor definitions, settings, and additional customizations.
+     *
+     * @param eventProcessorDefinitions The list of processor definitions that define handler assignment rules.
+     * @param settings                  The map of processor settings, keyed by processor name.
+     * @param extensionsCustomizations  Additional {@link PooledStreamingEventProcessorModule.Customization} beans
+     *                                  (e.g., DLQ configuration) to apply to each processor during module creation.
+     */
+    public DefaultProcessorModuleFactory(List<EventProcessorDefinition> eventProcessorDefinitions,
+                                         Map<String, EventProcessorSettings> settings,
+                                         List<PooledStreamingEventProcessorModule.Customization> extensionsCustomizations) {
         this.eventProcessorDefinitions = eventProcessorDefinitions;
         this.allSettings = settings;
+        this.extensionsCustomizations = extensionsCustomizations;
     }
 
     /**
@@ -104,19 +125,29 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
 
-            var processorModuleName = "EventProcessor[" + processorName + "]";
-
             var settings = Optional.ofNullable(allSettings.get(processorName))
                                    .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
             var processorMode = definitionFor(processorName).map(EventProcessorDefinition::mode)
                                                             .orElse(settings.processorMode());
-            var module = switch (processorMode) {
+            EventProcessorModule module = switch (processorMode) {
                 case POOLED -> {
                     var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
-                    var customization = SpringCustomizations.pooledStreamingCustomizations(processorName, moduleSettings)
-                                                            .andThen(customizeConfiguration(processorName));
+                    var baseCustomization = SpringCustomizations.pooledStreamingCustomizations(
+                            processorName, moduleSettings
+                    );
+                    UnaryOperator<PooledStreamingEventProcessorConfiguration> definitionCustomization =
+                            customizeConfiguration(processorName);
+                    PooledStreamingEventProcessorModule.Customization customization =
+                            (axonConfig, processorConfig) -> {
+                                var result = baseCustomization.apply(axonConfig, processorConfig);
+                                result = definitionCustomization.apply(result);
+                                for (var extension : extensionsCustomizations) {
+                                    result = extension.apply(axonConfig, result);
+                                }
+                                return result;
+                            };
                     yield EventProcessorModule
-                            .pooledStreaming(processorModuleName)
+                            .pooledStreaming(processorName)
                             .eventHandlingComponents(componentRegistration)
                             .customized(customization)
                             .build();
@@ -124,7 +155,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                 case SUBSCRIBING -> {
                     var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
                     yield EventProcessorModule
-                            .subscribing(processorModuleName)
+                            .subscribing(processorName)
                             .eventHandlingComponents(componentRegistration)
                             .customized(SpringCustomizations.subscribingCustomizations(processorName, moduleSettings)
                                                             .andThen(customizeConfiguration(processorName)))
@@ -161,7 +192,15 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * <p>
      * This method evaluates the handler against all processor definitions. If exactly one definition matches, the
      * handler is assigned to that processor. If no definitions match, the handler is assigned to a processor named
-     * after its package. If multiple definitions match, an {@link AxonConfigurationException} is thrown.
+     * after its {@link Namespace} annotation value, or after its package if no namespace is present. If multiple
+     * definitions match, an {@link AxonConfigurationException} is thrown.
+     * <p>
+     * The resolution order is:
+     * <ol>
+     *     <li>Explicit {@link EventProcessorDefinition} selector match</li>
+     *     <li>{@link Namespace} annotation on the handler's type, enclosing classes, package, or module</li>
+     *     <li>Package name derived from the bean definition</li>
+     * </ol>
      *
      * @param handler The event handler descriptor.
      * @return The name of the processor this handler should be assigned to.
@@ -175,8 +214,10 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             }
         }
         if (matches.isEmpty()) {
-            // we try to detect the package from the bean definition
-            return BeanDefinitionUtils.extractPackageName(handler.beanDefinition());
+            // First, check if the handler type has a @Namespace annotation
+            return resolveNamespace(handler)
+                    // Fall back to the package name derived from the bean definition
+                    .orElseGet(() -> BeanDefinitionUtils.extractPackageName(handler.beanDefinition()));
         }
         if (matches.size() == 1) {
             return matches.iterator().next();
@@ -184,6 +225,33 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         throw new AxonConfigurationException(
                 "Handler [" + handler.beanName() + " (of type " + handler.beanDefinition().getBeanClassName()
                         + ")] matched with multiple processors selectors: " + matches);
+    }
+
+    /**
+     * Resolves the {@link Namespace} value from the handler's bean type.
+     * <p>
+     * The {@code Namespace} annotation is searched for on several levels in the following order:
+     * <ol>
+     *     <li>On the bean type itself</li>
+     *     <li>The enclosing classes (from innermost to outermost)</li>
+     *     <li>The package (via {@code package-info.java})</li>
+     *     <li>The module</li>
+     * </ol>
+     *
+     * @param handler The event handler descriptor.
+     * @return An Optional containing the namespace value if found, or empty if not found.
+     */
+    private Optional<String> resolveNamespace(EventProcessorDefinition.EventHandlerDescriptor handler) {
+        Class<?> type = handler.beanType();
+        if (type == null) {
+            return Optional.empty();
+        }
+        return AnnotationUtils.findAnnotationAttributesOnType(
+                                      type,
+                                      Namespace.class,
+                                      attrs -> !StringUtils.emptyOrNull((String) attrs.get("namespace"))
+                              )
+                              .map(attrs -> (String) attrs.get("namespace"));
     }
 
     /**

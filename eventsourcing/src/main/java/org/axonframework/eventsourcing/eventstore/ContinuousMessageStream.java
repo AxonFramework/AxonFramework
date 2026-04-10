@@ -43,6 +43,8 @@ import java.util.function.Supplier;
  * callback registration via {@link #setCallback(Runnable)}.
  *
  * @param <E> the type of the raw elements returned by the fetcher before conversion to {@link EventMessage}s
+ * @author John Hendrikx
+ * @since 5.0.0
  */
 @Internal
 public final class ContinuousMessageStream<E> implements MessageStream<EventMessage> {

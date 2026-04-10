@@ -17,12 +17,12 @@
 package org.axonframework.messaging.eventhandling.deadletter.jpa;
 
 import org.axonframework.messaging.core.Context;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -171,6 +171,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      *
      * @return The context with restored resources, or an empty context if no resources were stored.
      */
+    @Override
     public Context context() {
         return context != null ? context : Context.empty();
     }

@@ -15,8 +15,6 @@
  */
 package org.axonframework.messaging.core.timeout;
 
-import org.axonframework.messaging.core.timeout.AxonTaskJanitor;
-import org.axonframework.messaging.core.timeout.AxonTimeLimitedTask;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

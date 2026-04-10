@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandHandler;
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.entity.EntityCommandHandler;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -111,7 +111,7 @@ public interface EventSourcedEntityFactory<ID, E> {
     E create(ID id, @Nullable EventMessage firstEventMessage, ProcessingContext context);
 
     /**
-     * Creates a factory for an entity of type {@link E} using a specified no-argument constructor.
+     * Creates a factory for an entity of type {@code E} using a specified no-argument constructor.
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a no-argument constructor. All command
      * handlers of your entity should be
@@ -130,7 +130,7 @@ public interface EventSourcedEntityFactory<ID, E> {
     }
 
     /**
-     * Creates a factory for an entity of type {@link E} using a specified constructor with the identifier as
+     * Creates a factory for an entity of type {@code E} using a specified constructor with the identifier as
      * parameter.
      * <p>
      * Should be used when your entity is mutable, and you want to create it with a constructor that takes the
@@ -150,7 +150,7 @@ public interface EventSourcedEntityFactory<ID, E> {
     }
 
     /**
-     * Creates a factory for an entity of type {@link E} using a specified constructor with the identifier and the event
+     * Creates a factory for an entity of type {@code E} using a specified constructor with the identifier and the event
      * message as parameters.
      * <p>
      * Should be used if your entity is immutable, and/or you want to create it with a constructor that takes the

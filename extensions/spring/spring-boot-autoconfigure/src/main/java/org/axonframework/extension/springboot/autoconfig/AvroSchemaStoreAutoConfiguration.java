@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  * @since 4.11.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(ConverterAutoConfiguration.class)
+@AutoConfigureBefore({ConverterAutoConfiguration.class, AvroConverterAutoConfiguration.class})
 @ConditionalOnClass(name = {"org.apache.avro.message.SchemaStore"})
 public class AvroSchemaStoreAutoConfiguration {
 

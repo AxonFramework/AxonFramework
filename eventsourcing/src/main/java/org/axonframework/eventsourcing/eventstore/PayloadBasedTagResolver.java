@@ -93,8 +93,8 @@ public class PayloadBasedTagResolver<P> implements TagResolver {
     }
 
     @Override
+    @SuppressWarnings("unchecked")  // suppressing payload cast to P
     public Set<Tag> resolve(EventMessage event) {
-        //noinspection unchecked - suppressing cast warning
         return payloadType.isAssignableFrom(event.payload().getClass())
                 ? resolvers.stream()
                            .map(resolver -> resolver.apply((P) event.payload()))

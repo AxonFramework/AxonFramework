@@ -25,7 +25,6 @@ import org.axonframework.messaging.core.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -140,7 +139,7 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             }
         }
 
-        @SuppressWarnings("rawtypes,unchecked")
+        @SuppressWarnings({"rawtypes", "unchecked"})
         private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createNoArgPolicy(
                 Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
                 MessageHandlingMember<T> original
@@ -157,7 +156,7 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             }
         }
 
-        @SuppressWarnings("rawtypes,unchecked")
+        @SuppressWarnings({"rawtypes", "unchecked"})
         private org.axonframework.messaging.core.sequencing.SequencingPolicy<? super EventMessage> createParameterizedPolicy(
                 Class<? extends org.axonframework.messaging.core.sequencing.SequencingPolicy> policyType,
                 String[] parameters,

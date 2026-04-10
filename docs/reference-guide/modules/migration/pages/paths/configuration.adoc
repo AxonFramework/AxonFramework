@@ -1,0 +1,427 @@
+= Configuration Migration
+:navtitle: Configuration Migration
+
+Axon Framework 5 restructures the configuration system, splitting the monolithic `Configurer` into focused configurers and replacing the `ConfigurerModule` with the `ConfigurationEnhancer`.
+
+This path covers the migration of configuration-related code from Axon Framework 4 to Axon Framework 5.
+
+[NOTE]
+====
+The most significant changes are:
+
+* **Configurer split**: The single `Configurer` has been replaced by `MessagingConfigurer`, `ModellingConfigurer`, and `EventSourcingConfigurer`
+* **ConfigurerModule replacement**: `ConfigurerModule` has been replaced by `ConfigurationEnhancer`, which operates on a `ComponentRegistry`
+* **Component registration**: Several component-specific `Configurer` registration methods have been replaced for generic registration methods on the `ComponentRegistry`
+* **Lifecycle registration**: Lifecycle handlers are now registered through the `LifecycleRegistry`
+====
+
+[#configurer_adjustments]
+== `Configurer` adjustments
+
+The `Configurer` and `DefaultConfigurer` from Axon Framework 4 have been replaced by three focused configurers in Axon Framework 5, called `ApplicationConfigurers`, each corresponding to a layer of the framework.
+Choose the one that matches the highest-level feature your application uses:
+
+* `MessagingConfigurer` - for applications that only require messaging (commands, events, queries)
+* `ModellingConfigurer` - adds entity (formerly aggregate) and repository support on top of messaging
+* `EventSourcingConfigurer` - adds event sourcing and event store support on top of modelling
+
+These configurers form a delegation chain: `EventSourcingConfigurer` wraps `ModellingConfigurer`, which wraps `MessagingConfigurer`.
+When Axon Framework is combined with <<spring_boot_configuration,Spring>> you will typically never have to interact with any of these `ApplicationConfigurer` types.
+Instead, you take Spring's bean creation approach or adjust the configuration through the `ConfigurationEnhancer`, as explained <<configurermodule_to_configurationenhancer,here>> in more detail.
+
+When you are using Axon Framework 4's `Configurer` directly, please check the following examples on how to migrate:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        // Register components, aggregates, event handlers...
+
+        Configuration configuration = configurer.buildConfiguration();
+        configuration.start();
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+        // Register components, entities, event handlers...
+
+        AxonConfiguration configuration = configurer.build();
+        configuration.start();
+    }
+}
+----
++
+If your application does not use event sourcing, use the configurer that matches your needs:
++
+[source,java]
+----
+// Messaging only
+MessagingConfigurer configurer = MessagingConfigurer.create();
+
+// Messaging + entity modelling (no event sourcing)
+ModellingConfigurer configurer = ModellingConfigurer.create();
+----
+====
+
+Each configurer provides escape-hatch methods to access the underlying layer when needed:
+
+[source,java]
+----
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        // Access the modelling layer
+        configurer.modelling(modellingConfigurer -> modellingConfigurer.registerEntity(/*...*/));
+
+        // Access the messaging layer
+        configurer.messaging(messagingConfigurer -> messagingConfigurer.registerCommandBus(config -> /*...*/));
+    }
+}
+----
+
+[#configurermodule_to_configurationenhancer]
+== `ConfigurerModule` to `ConfigurationEnhancer`
+
+The `ConfigurerModule` interface from Axon Framework 4 allowed modules to hook into the configuration process.
+This feature was especially useful for Axon applications that integrate with <<spring_boot_configuration,Spring>>, as it allows for a hook to customize the configuration.
+In Axon Framework 5, this concept has been renamed and slightly adjusted to the `ConfigurationEnhancer`.
+
+Largest difference between both, is that the latter deals with the `ComponentRegistry` (used under the hood by the `ApplicationConfigurer` as defined <<configurer_adjustments,here>>).
+The `ConfigurationEnhancer` has an `order()` method, just as the `ConfigurerModule.` did, which dictates the order in which the module acts on the configurer directly.
+Furthermore, just as the `ConfigurerModule`, the `ConfigurationEnhancer` can be registered through the Service Loader mechanism, directly with the configurer, or as a Spring bean.
+
+Let us look at an example use of the `ConfigurerModule` and what this would look like as a `ConfigurationEnhancer`:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
+
+public class MyConfigurerModule implements ConfigurerModule {
+
+    @Override
+    public void configureModule(Configurer configurer) {
+        configurer.registerComponent(MyService.class, config -> new MyService());
+    }
+}
+----
++
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+
+public class MyConfigurationEnhancer implements ConfigurationEnhancer {
+
+    @Override
+    public void enhance(ComponentRegistry registry) {
+        registry.registerComponent(MyService.class, config -> new MyService());
+    }
+}
+----
++
+====
+
+[#component_registration_via_componentregistry]
+== Component registration via `ComponentRegistry`
+
+In Axon Framework 4, components were registered through dedicated methods on the `Configurer`.
+In Axon Framework 5, some of these methods have been replaced for generic methods on the `ComponentRegistry`, accessible from any configurer.
+Exception to this rule are made, like registration of the `CommandBus` or `EventStore`.
+Registration methods for these reside on their respective `ApplicationConfigurer` level (as explained shortly <<configurer_adjustments,here>>).
+As such, the `CommandBus` has a dedicated registration method on the `MessagingConfigurer`, whereas the `EventStore` has one on the `EventSourcingConfigurer`.
+
+If you are unable to find the specific registration methods, do not worry.
+At the core of Axon's configuration sits the `ComponentRegistry` with its generic registration operation.
+The specific registration methods are thus just convenience methods, or syntactic sugar, overlaying the `ComponentRegistry`.
+
+Let's look at some configuration solutions in Axon Framework 4 to see what they should look like in Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+        // Register a custom component
+        configurer.registerComponent(MyService.class, config -> new MyService());
+
+        // Register a command bus
+        configurer.configureCommandBus(config -> SimpleCommandBus.builder().build());
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.messaging.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        // Register a custom component via ComponentRegistry
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                MyService.class,
+                config -> new MyService())
+        );
+
+        // Register a command bus (dedicated method on MessagingConfigurer)
+        configurer.registerCommandBus(config -> new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class)));
+    }
+}
+----
+====
+
+Besides plain registration, the `ComponentRegistry` supports conditional registration to prevents overwriting previously registered components:
+
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        configurer.componentRegistry(cr -> {
+            // Only registers if no MyService is already present
+            cr.registerIfNotPresent(MyService.class, config -> new MyService());
+        });
+    }
+}
+----
+
+For richer component definitions with <<lifecycle_handler_registration,lifecycle hooks>>, use `ComponentDefinition`:
+
+[source,java]
+----
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition.ofType(MyService.class)
+                                   .withBuilder(config -> new MyService())
+                                   .onStart(0, MyService::start)
+                                   .onShutdown(0, MyService::shutdown)
+        ));
+    }
+}
+----
+
+[#lifecycle_handler_registration]
+== Lifecycle handler registration
+
+In Axon Framework 4, lifecycle handlers like `onStart` or `onShutdown` were registered directly on the `Configurer`.
+In Axon Framework 5, these have moved to the `LifecycleRegistry`, accessible from any configurer via the `lifecycleRegistry` method:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+
+import java.util.concurrent.CompletableFuture;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+
+        configurer.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {
+            // Startup logic
+            return CompletableFuture.completedFuture(null);
+        });
+
+        configurer.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {
+            // Shutdown logic
+            return CompletableFuture.completedFuture(null);
+        });
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+import java.util.concurrent.CompletableFuture;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        configurer.lifecycleRegistry(lr -> {
+            lr.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+                // Startup logic
+                return CompletableFuture.completedFuture(null);
+            });
+
+            lr.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {
+                // Shutdown logic
+                return CompletableFuture.completedFuture(null);
+            });
+        });
+    }
+}
+----
+====
+
+However, start and shutdown handlers are in most cases tied to the component you want to configure.
+You could configure this in Axon Framework 4 by having a component implement the `Lifecycle` interface.
+This interface no longer exists in Axon Framework 5. Instead, lifecycle handler registration is integrated into component registration:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.lifecycle.Lifecycle;
+import org.jetbrains.annotations.NotNull;
+
+class MyComponent implements Lifecycle {
+
+    @Override
+    public void registerLifecycleHandlers(@NotNull Lifecycle.LifecycleRegistry lifecycle) {
+        lifecycle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {});
+        lifecycle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, () -> {});
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ComponentDefinition;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+class AxonApp {
+
+    public static void main(String[] args) {
+        EventSourcingConfigurer configurer = EventSourcingConfigurer.create();
+
+        configurer.componentRegistry(cr -> cr.registerComponent(
+                ComponentDefinition.ofType(MyComponent.class)
+                                   .withBuilder(config -> new MyComponent())
+                                   .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {})
+                                   .onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, config -> {})
+        ));
+    }
+}
+----
+====
+
+[#spring_boot_configuration]
+== Spring Boot configuration
+
+When using Spring Boot, the auto-configuration automatically sets up the appropriate configurer.
+Moving from the `ConfigurerModule` to the `ConfigurationEnhancer` (as explained <<configurermodule_to_configurationenhancer,here>>) in your beans is arguably most important:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+import org.axonframework.config.ConfigurerModule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+class AxonConfig {
+
+    @Bean
+    public ConfigurerModule myModule() {
+        return configurer -> configurer.registerComponent(
+                MyService.class,
+                config -> new MyService()
+        );
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.ConfigurationEnhancer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+class AxonConfig {
+
+    @Bean
+    public ConfigurationEnhancer myEnhancer() {
+        return registry -> registry.registerComponent(
+                MyService.class,
+                config -> new MyService()
+        );
+    }
+}
+----
+====

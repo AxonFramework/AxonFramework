@@ -78,7 +78,7 @@ class DeadLetteredEventProcessingTask {
      * <p>
      * Each dead letter is processed in its own {@link UnitOfWork}, which provides proper transaction boundaries.
      * Returns an {@link EnqueueDecision} to
-     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue#evict(DeadLetter) evict} the
+     * {@link org.axonframework.messaging.deadletter.SequencedDeadLetterQueue#evict(DeadLetter, ProcessingContext) evict} the
      * {@code letter} on successful handling. On unsuccessful event handling, the configured {@link EnqueuePolicy} is
      * used to decide what to do with the {@code letter}.
      * <p>

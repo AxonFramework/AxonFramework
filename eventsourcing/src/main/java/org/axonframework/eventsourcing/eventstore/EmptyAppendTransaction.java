@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.jspecify.annotations.Nullable;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -49,7 +48,6 @@ public record EmptyAppendTransaction() implements EventStorageEngine.AppendTrans
      * Always provides the consistency marker {@link ConsistencyMarker#ORIGIN}.
      *
      * @param commitResult The result returned from the commit call.
-     * @param context The current {@link ProcessingContext}, if any.
      * @return An empty always a completed future with the consistency marker {@link ConsistencyMarker#ORIGIN}.
      */
     @Override

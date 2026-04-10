@@ -163,6 +163,8 @@ class AxonTimeLimitedTask {
      * thread was interrupted. If it was, it throws an {@link InterruptedException} to indicate that the processing was
      * aborted due to an interrupt. This effectively restores the proper error status, so upper components can handle
      * it.
+     *
+     * @throws InterruptedException when the thread was interrupted
      */
     public void ensureNoInterruptionWasSwallowed() throws InterruptedException {
         if (isInterrupted()) {
@@ -185,9 +187,9 @@ class AxonTimeLimitedTask {
     /**
      * If an exception is thrown during the handling of the message and it bubbles up, we check if the thread was
      * interrupted. If it was, we check if the task was interrupted as well. If both hold true, that must mean the
-     * exception was caused by the interruption of the task, and we throw an {@link AxonTimeoutException} to indicate
-     * that the processing was aborted due to a timeout. If the thread was not interrupted, we simply return the
-     * original exception.
+     * exception was caused by the interruption of the task, and a {@link AxonTimeoutException} is returned to indicate
+     * that the processing was aborted due to a timeout. If the thread was not interrupted, the
+     * original exception is returned.
      * <p>
      * This might happen if someone catches the {@link InterruptedException} and wraps it using a different exception,
      * or throws a different exception altogether.
@@ -195,7 +197,8 @@ class AxonTimeLimitedTask {
      * Creators of this task should use this method in their catch block to ensure that the exception is properly
      * handled and the interrupt status is restored.
      *
-     * @param e The exception that was thrown during the handling of the message.
+     * @param e the exception that was thrown during the handling of the message
+     * @return the exception that should be thrown instead
      */
     public Exception detectInterruptionInsteadOfException(Exception e) {
         if (interruptedExternally) {

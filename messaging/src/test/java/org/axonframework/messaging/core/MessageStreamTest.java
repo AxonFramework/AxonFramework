@@ -83,8 +83,9 @@ public abstract class MessageStreamTest<M extends Message> {
      * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entries} for the
      * {@link MessageStream stream} under test.
      *
-     * @param messages The {@link Message Message} of type {@code M} acting as the source for the
-     *                 {@link MessageStream stream} under construction.
+     * @param messages         The {@link Message Message} of type {@code M} acting as the source for the
+     *                         {@link MessageStream stream} under construction.
+     * @param completionMarker The completion marker to wait on.
      * @return A {@link MessageStream stream} to use for testing.
      */
     protected MessageStream<M> uncompletedTestSubject(List<M> messages, CompletableFuture<Void> completionMarker) {

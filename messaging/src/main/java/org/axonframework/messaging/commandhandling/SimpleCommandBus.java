@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +97,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param command the actual command to handle
      * @param handler the handler that must be invoked for this command
+     * @return the {@code CompletableFuture} providing the result of the command, once finished
      */
     protected CompletableFuture<CommandResultMessage> handle(CommandMessage command,
                                                              CommandHandler handler) {

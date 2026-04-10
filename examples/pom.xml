@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>5.2.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <groupId>org.axonframework.examples</groupId>
@@ -49,11 +49,26 @@
 
     <modules>
         <module>university-demo</module>
-        <module>university-java-springboot</module>
         <module>university-java</module>
+        <module>university-java-springboot-3</module>
+        <module>university-java-springboot-4</module>
     </modules>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

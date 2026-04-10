@@ -84,7 +84,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
@@ -105,7 +105,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
@@ -138,7 +138,7 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(SubscribingEventProcessorConfiguration.class)
@@ -159,10 +159,65 @@ class EventHandlerSelectorTest {
 
             assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
             assertThat(
-                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_PROCESSOR_NAME)
+                    moduleConfig.getOptionalComponent(StreamingEventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             assertThat(
                     moduleConfig.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)
+            ).isPresent();
+            Map<String, EventHandlingComponent> ehcs = moduleConfig.getComponents(EventHandlingComponent.class);
+            assertThat(ehcs.size()).isEqualTo(1);
+            EventHandlingComponent ehc = ehcs.values().stream().toList().getFirst();
+            assertThat(ehc.supportedEvents()).contains(expectedEventHandlerName);
+        }
+    }
+
+    /**
+     * Tests that {@link Namespace} annotations are resolved automatically by
+     * {@link org.axonframework.extension.spring.config.DefaultProcessorModuleFactory} when no
+     * {@link EventProcessorDefinition} beans are registered. The processor name is derived directly from the
+     * {@code @Namespace} value on the handler type or its enclosing package, without requiring an explicit
+     * {@link EventProcessorDefinition#pooledStreamingMatching(String)} or custom selector definition.
+     */
+    @Nested
+    @SpringBootTest(
+            classes = {TestContext.class},
+            properties = {"axon.axonserver.enabled=false"},
+            webEnvironment = SpringBootTest.WebEnvironment.NONE
+    )
+    class AutomaticNamespaceResolutionTest {
+
+        @Autowired
+        private ApplicationContext context;
+
+        @Test
+        void handlerWithNamespaceOnTypeIsAssignedToNamespacedProcessorWithoutExplicitDefinition() {
+            QualifiedName expectedEventHandlerName = new QualifiedName("inventory-events");
+
+            AxonConfiguration axonConfiguration = context.getBean(AxonConfiguration.class);
+            Configuration moduleConfig = axonConfiguration.getModuleConfiguration(INVENTORY_PROCESSOR_NAME)
+                                                          .orElseThrow();
+
+            assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(
+                    moduleConfig.getOptionalComponent(EventProcessor.class, INVENTORY_NAMESPACE)
+            ).isPresent();
+            Map<String, EventHandlingComponent> ehcs = moduleConfig.getComponents(EventHandlingComponent.class);
+            assertThat(ehcs.size()).isEqualTo(1);
+            EventHandlingComponent ehc = ehcs.values().stream().toList().getFirst();
+            assertThat(ehc.supportedEvents()).contains(expectedEventHandlerName);
+        }
+
+        @Test
+        void handlerWithNamespaceOnPackageIsAssignedToNamespacedProcessorWithoutExplicitDefinition() {
+            QualifiedName expectedEventHandlerName = new QualifiedName("order-events");
+
+            AxonConfiguration axonConfiguration = context.getBean(AxonConfiguration.class);
+            Configuration moduleConfig = axonConfiguration.getModuleConfiguration(ORDERS_PROCESSOR_NAME)
+                                                          .orElseThrow();
+
+            assertThat(moduleConfig.getComponents(EventProcessor.class)).isNotEmpty();
+            assertThat(
+                    moduleConfig.getOptionalComponent(EventProcessor.class, ORDERS_NAMESPACE)
             ).isPresent();
             Map<String, EventHandlingComponent> ehcs = moduleConfig.getComponents(EventHandlingComponent.class);
             assertThat(ehcs.size()).isEqualTo(1);

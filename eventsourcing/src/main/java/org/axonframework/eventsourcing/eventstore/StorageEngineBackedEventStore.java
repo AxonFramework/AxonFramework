@@ -16,18 +16,18 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.eventhandling.EventBus;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.axonframework.messaging.eventstreaming.StreamingCondition;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,12 +53,12 @@ public class StorageEngineBackedEventStore implements EventStore {
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
-     * {@link #transaction(ProcessingContext) transactions} and {@link #open(StreamingCondition) open event streams}
+     * {@link #transaction(ProcessingContext) transactions} and {@link #open(StreamingCondition, ProcessingContext) open event streams}
      * with.
      *
      * @param eventStorageEngine The {@link EventStorageEngine} used to start
      *                           {@link #transaction(ProcessingContext) transactions} and
-     *                           {@link #open(StreamingCondition) open event streams} with.
+     *                           {@link #open(StreamingCondition, ProcessingContext) open event streams} with.
      * @param eventBus           The {@link EventBus} used to publish events to the subscribers of the event store.
      * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
      *                           {@link EventStoreTransaction}.

@@ -20,7 +20,6 @@ import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
-import org.axonframework.messaging.tracing.SpanUtils;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

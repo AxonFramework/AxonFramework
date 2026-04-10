@@ -277,7 +277,7 @@ public class Metadata implements Map<String, @Nullable String> {
             return false;
         }
 
-        Map that = (Map) o;
+        Map<?, ?> that = (Map<?, ?>) o;
 
         return values.equals(that);
     }

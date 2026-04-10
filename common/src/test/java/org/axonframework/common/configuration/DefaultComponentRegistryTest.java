@@ -16,9 +16,9 @@
 
 package org.axonframework.common.configuration;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -185,6 +185,30 @@ class DefaultComponentRegistryTest {
         assertThrows(ComponentNotFoundException.class, () -> actual.getComponent(String.class, "child"));
 
         assertEquals("parent&child", actual.getModuleConfigurations().getFirst().getComponent(String.class, "child"));
+    }
+
+    @Test
+    @Timeout(5)
+    void moduleComponentUsingGetComponentWithDefaultFromParentDoesNotCauseStackOverflow() {
+        // given
+        testSubject.disableEnhancerScanning();
+        testSubject.registerComponent(String.class, c -> "root-value");
+        testSubject.registerModule(
+                new TestModule("test-module").componentRegistry(
+                        cr -> cr.registerComponent(
+                                TestComponent.class, "child",
+                                c -> new TestComponent(c.getComponent(String.class, () -> "fallback"))
+                        )
+                )
+        );
+
+        // when
+        Configuration config = testSubject.build(new StubLifecycleRegistry());
+
+        // then - should resolve "root-value" from parent without StackOverflowError
+        TestComponent result = config.getModuleConfigurations().getFirst()
+                                     .getComponent(TestComponent.class, "child");
+        assertEquals("root-value", result.state());
     }
 
     @Test

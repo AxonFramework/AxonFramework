@@ -209,7 +209,10 @@ public class StubProcessingContext implements ProcessingContext {
      * Creates a new stub {@link ProcessingContext} for the given {@link EventMessage} and aggregate-specific
      * parameters. You can use this to create a context compatible with tests that are based on Aggregates.
      *
-     * @param domainEventMessage The event message with aggregate id, sequence and type.
+     * @param domainEventMessage the event message with aggregate id, sequence and type
+     * @param aggregateId the aggregate id
+     * @param seqNo the sequence number
+     * @param aggregateType the aggregate type
      * @return A new {@link ProcessingContext} instance containing the given {@code domainEventMessage} aggregate data
      * as resources.
      */

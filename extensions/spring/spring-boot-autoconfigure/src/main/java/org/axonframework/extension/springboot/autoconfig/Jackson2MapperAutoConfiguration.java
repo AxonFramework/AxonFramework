@@ -25,7 +25,6 @@ import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 
@@ -37,13 +36,14 @@ import org.springframework.context.annotation.Conditional;
  * @since 5.0.3
  */
 @AutoConfiguration
-@AutoConfigureBefore({AxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
+@AutoConfigureBefore({AxonAutoConfiguration.class,
+        CBORMapperAutoConfiguration.class,
+        Jackson2ConverterAutoConfiguration.class})
 @AutoConfigureAfter(name = {
         "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
         "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration"
 })
 @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
-@EnableConfigurationProperties(value = ConverterProperties.class)
 public class Jackson2MapperAutoConfiguration {
 
     /**
@@ -54,7 +54,7 @@ public class Jackson2MapperAutoConfiguration {
      * {@link ConverterProperties.ConverterType#DEFAULT} or {@link ConverterProperties.ConverterType#JACKSON}
      * {@code ConverterType}.
      *
-     * @return The default Axon Framework {@link ObjectMapper}, if required.
+     * @return the default Axon Framework {@link ObjectMapper}, if required
      */
     @Bean("defaultAxonJackson2Mapper")
     @ConditionalOnMissingBean
@@ -66,8 +66,6 @@ public class Jackson2MapperAutoConfiguration {
     /**
      * An {@link AnyNestedCondition} implementation, to support the following use cases:
      * <ul>
-     *     <li>The {@code general} converter property is not set. This means Axon defaults to Jackson</li>
-     *     <li>The {@code general} converter property is set to {@code default}. This means Jackson will be used</li>
      *     <li>The {@code general} converter property is set to {@code jackson2}</li>
      *     <li>The {@code messages} converter property is set to {@code jackson2}</li>
      *     <li>The {@code events} converter property is set to {@code jackson2}</li>
@@ -80,13 +78,7 @@ public class Jackson2MapperAutoConfiguration {
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2", matchIfMissing = true)
-        static class GeneralDefaultCondition {
-
-        }
-
-        @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2", matchIfMissing = true)
+        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "jackson2")
         static class GeneralJacksonCondition {
 
         }

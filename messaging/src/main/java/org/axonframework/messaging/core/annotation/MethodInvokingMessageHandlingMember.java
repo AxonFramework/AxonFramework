@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +63,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * @param messageType              the type of message that is expected by the target method
      * @param explicitPayloadType      the expected message payload type
      * @param parameterResolverFactory factory used to resolve method parameters
+     * @param returnTypeConverter      the return type converter to apply to the handling result
      */
     public MethodInvokingMessageHandlingMember(Method method,
                                                Class<? extends Message> messageType,
@@ -135,6 +136,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * Checks if the parameter resolvers of this member are compatible with the given {@code message}.
      *
      * @param message the message to check for
+     * @param processingContext the {@link ProcessingContext} to use
      * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
      */
     protected boolean parametersMatch(Message message, ProcessingContext processingContext) {
@@ -213,7 +215,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * @return A {@link CompletableFuture} that completes with an array of resolved parameter values.
      */
     private CompletableFuture<Object[]> resolveParameterValues(ProcessingContext context) {
-        @SuppressWarnings("unchecked")
         CompletableFuture<?>[] futures = Arrays.stream(parameterResolvers)
                                                .map(resolver -> tryResolveParameterValue(resolver, context))
                                                .toArray(CompletableFuture[]::new);

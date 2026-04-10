@@ -323,6 +323,9 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(Object bean,
                                                  String beanName) throws BeansException {
+        if (!initialized.get() && isInfrastructureBean(beanName)) {
+            return bean;
+        }
         // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
         initialize();
         if (!beanFactory.containsBeanDefinition(beanName)) {
@@ -357,6 +360,40 @@ public class SpringComponentRegistry implements
         // This ensures start or shutdown handlers included through a DecoratorDefinition also become SmartLifecycle beans.
         springComponent.initLifecycle(configuration, lifecycleRegistry);
         return springComponent.resolve(configuration);
+    }
+
+    /**
+     * Checks whether the given {@code beanName} refers to a Spring infrastructure bean.
+     * <p>
+     * This is used to avoid triggering Axon's full {@link #initialize()} during Spring Boot's early internal startup
+     * phase. In Spring Boot 4, infrastructure beans involved in configuration properties binding (for example,
+     * {@code BoundConfigurationProperties}) are created very early. If Axon initializes at that moment, enhancer
+     * scanning and component lookups may eagerly request application-level {@code @ConfigurationProperties} beans such
+     * as {@code AxonServerConfiguration}. That can cause a circular dependency between early Boot binding internals and
+     * Axon's properties beans.
+     * <p>
+     * By deferring initialization while only infrastructure beans are being post-processed, we let Spring finish its
+     * internal bootstrap first. Initialization then happens on the first non-infrastructure bean, preserving normal
+     * Axon behavior.
+     * <p>
+     * We intentionally do <b>not</b> skip {@link BeanDefinition#ROLE_SUPPORT} or
+     * {@link BeanDefinition#ROLE_APPLICATION} beans:
+     * <ul>
+     *   <li>{@code ROLE_APPLICATION} contains user and framework-integrated application beans that should be eligible
+     *   for Axon decoration and lifecycle registration.</li>
+     *   <li>{@code ROLE_SUPPORT} can still participate in application wiring, so filtering it broadly could skip
+     *   required post-processing.</li>
+     * </ul>
+     *
+     * @param beanName The bean name to inspect.
+     * @return {@code true} if the bean definition role is {@link BeanDefinition#ROLE_INFRASTRUCTURE}, {@code false}
+     * otherwise.
+     */
+    private boolean isInfrastructureBean(String beanName) {
+        if (!beanFactory.containsBeanDefinition(beanName)) {
+            return false;
+        }
+        return beanFactory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE;
     }
 
     /**

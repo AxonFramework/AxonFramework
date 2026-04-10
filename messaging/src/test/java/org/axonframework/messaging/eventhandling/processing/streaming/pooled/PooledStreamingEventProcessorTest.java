@@ -20,7 +20,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.util.DelegateScheduledExecutorService;
 import org.axonframework.common.util.MockException;
-import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.DelegatingGeneralConverter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.conversion.TestConverter;
 import org.axonframework.messaging.core.ApplicationContext;
 import org.axonframework.messaging.core.Message;
@@ -116,7 +117,7 @@ class PooledStreamingEventProcessorTest {
     private ScheduledExecutorService workerExecutor;
     private SimpleEventHandlingComponent simpleEhc;
     private RecordingEventHandlingComponent defaultEventHandlingComponent;
-    private Converter converter;
+    private GeneralConverter converter;
 
     @BeforeEach
     void setUp() {
@@ -130,7 +131,7 @@ class PooledStreamingEventProcessorTest {
         simpleEhc = SimpleEventHandlingComponent.create("test");
         simpleEhc.subscribe(new QualifiedName(Integer.class), (event, ctx) -> MessageStream.empty());
         defaultEventHandlingComponent = spy(new RecordingEventHandlingComponent(simpleEhc));
-        converter = TestConverter.JACKSON.getConverter();
+        converter = new DelegatingGeneralConverter(TestConverter.JACKSON.getConverter());
         withTestSubject(List.of()); // default always applied
     }
 
@@ -153,7 +154,7 @@ class PooledStreamingEventProcessorTest {
         componentsWithDefault.add(defaultEventHandlingComponent);
 
         TestApplicationContext testApplicationContext = new TestApplicationContext();
-        testApplicationContext.addComponent(Converter.class, null, converter);
+        testApplicationContext.addComponent(GeneralConverter.class, null, converter);
         EventProcessorConfiguration baseConfig = new EventProcessorConfiguration(PROCESSOR_NAME, null);
         var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration(baseConfig)
                 .eventSource(stubMessageSource)
@@ -1044,7 +1045,7 @@ class PooledStreamingEventProcessorTest {
                 return MessageStream.empty();
             });
 
-            var replayBlockingComponent = new ReplayBlockingEventHandlingComponent(innerComponent);
+            var replayBlockingComponent = new ReplayBlockingEventHandlingComponent<>(innerComponent);
 
             // do not clear event source after close
             stubMessageSource = new AsyncInMemoryStreamableEventSource(false, false);
@@ -1750,6 +1751,7 @@ class PooledStreamingEventProcessorTest {
 
         private final Map<Key<?>, Object> components = new HashMap<>();
 
+        @Override
         @SuppressWarnings("unchecked")
         public <C> C component(@NonNull Class<C> type, @Nullable String name) {
             return (C) components.get(new Key<>(type, name));

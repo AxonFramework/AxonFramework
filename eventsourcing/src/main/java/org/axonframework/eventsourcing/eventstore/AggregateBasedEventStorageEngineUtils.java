@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -96,7 +96,7 @@ public final class AggregateBasedEventStorageEngineUtils {
      * conflict, it recursively checks the cause of the exception.
      *
      * @param consistencyMarker   The consistency marker used to identify conflicting events.
-     * @param e                   The exception to translate.
+     * @param exception           The exception to translate.
      * @param isConflictException A predicate used to check if the exception is a conflict.
      * @return The translated exception.
      */

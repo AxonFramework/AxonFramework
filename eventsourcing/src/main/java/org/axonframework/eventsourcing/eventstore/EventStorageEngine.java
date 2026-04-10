@@ -16,17 +16,16 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.TerminalEventMessage;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.MessageStream;
-import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,8 +36,8 @@ import static java.util.Arrays.asList;
 /**
  * Interface for providing storage engines for the {@link StorageEngineBackedEventStore}.
  * <p>
- * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
- * {@link EventMessage events} from an underlying storage mechanism.
+ * Provides a mechanism to {@link #appendEvents(AppendCondition, ProcessingContext, TaggedEventMessage[])}  append}
+ * as well as retrieve {@link EventMessage events} from an underlying storage mechanism.
  * <p>
  * Retrieval can be done either through {@link #source(SourcingCondition) sourcing} or
  * {@link #stream(StreamingCondition) streaming}. The former generates a <b>finite</b> stream intended to event source
@@ -61,9 +60,9 @@ public interface EventStorageEngine extends DescribableComponent {
      * {@code events} will be stored as well.
      * <p>
      * By default, this method creates a {@link List} of the offered events and then invokes
-     * {@link #appendEvents(AppendCondition, List)}.
+     * {@link #appendEvents(AppendCondition, ProcessingContext, List)}.
      * <p>
-     * Called during the {@link ProcessingLifecycle.DefaultPhases#PREPARE_COMMIT PREPARE_COMMIT} phase.
+     * Called during the {@link org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases#PREPARE_COMMIT PREPARE_COMMIT} phase.
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param context   The current {@link ProcessingContext}, if any.
@@ -87,7 +86,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * future will complete exceptionally, indicating such conflict. Other implementations may delay such checks until
      * the {@link AppendTransaction#commit()} is called.
      * <p>
-     * Called during the {@link ProcessingLifecycle.DefaultPhases#PREPARE_COMMIT PREPARE_COMMIT} phase.
+     * Called during the {@link org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases#PREPARE_COMMIT PREPARE_COMMIT} phase.
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param context   The current {@link ProcessingContext}, if any.
@@ -105,11 +104,10 @@ public interface EventStorageEngine extends DescribableComponent {
      * The final entry of the stream <b>always</b> contains a {@link ConsistencyMarker} in the
      * {@link MessageStream.Entry}'s resources, paired with a {@link TerminalEventMessage}. This
      * {@code ConsistencyMarker} should be used to construct the {@link AppendCondition} when
-     * {@link #appendEvents(AppendCondition, List) appending events}.
+     * {@link #appendEvents(AppendCondition, ProcessingContext, List) appending events}.
      * <p>
      * The {@code condition} dictates the sequence to load based on the {@link SourcingCondition#criteria()}.
-     * Additionally, an optional {@link SourcingCondition#start()} and {@link SourcingCondition#end()} position may be
-     * provided.
+     * Additionally, an optional {@link SourcingCondition#start()} position may be provided.
      * <p>
      * The returned stream is finite, i.e. it should not block to wait for further events if the end of the event stream
      * of the aggregate is reached.
@@ -178,10 +176,10 @@ public interface EventStorageEngine extends DescribableComponent {
         /**
          * Commit any underlying transactions to make the appended events visible to consumers.
          * <p>
-         * Called during the {@link ProcessingLifecycle.DefaultPhases#COMMIT COMMIT} phase.
+         * Called during the {@link org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases#COMMIT COMMIT} phase.
          *
          * @return A {@code CompletableFuture} to complete the commit asynchrously, returning a value
-         *     for {@link #afterCommit(R, ProcessingContext) afterCommit}.
+         *     for {@link #afterCommit(Object) afterCommit}.
          */
         CompletableFuture<R> commit();
 
@@ -192,9 +190,9 @@ public interface EventStorageEngine extends DescribableComponent {
 
         /**
          * Returns a {@code CompletableFuture} to calculate the consistency marker. This is called only after the
-         * transaction has been committed with the result of {@link #commit(ProcessingContext) commit}.
+         * transaction has been committed with the result of {@link #commit() commit}.
          * <p>
-         * Called during the {@link ProcessingLifecycle.DefaultPhases#AFTER_COMMIT AFTER_COMMIT} phase.
+         * Called during the {@link org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases#AFTER_COMMIT AFTER_COMMIT} phase.
          *
          * @param commitResult The result returned from the commit call.
          * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction. If

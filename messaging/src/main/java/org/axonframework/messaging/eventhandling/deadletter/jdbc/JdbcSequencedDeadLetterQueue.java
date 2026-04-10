@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jdbc.JdbcException;
@@ -35,6 +33,8 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.WrongDeadLetterTypeException;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
  * A JDBC-based implementation of the {@link SequencedDeadLetterQueue}, used for storing dead letters containing
- * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory)} operation to build
+ * {@link EventMessage event messages} durably. Use the {@link #createSchema(DeadLetterTableFactory, ProcessingContext)} operation to build
  * the table and indices required by this {@code SequencedDeadLetterQueue}, providing the desired
  * {@link DeadLetterTableFactory}. The {@link java.sql.PreparedStatement statements} used by this queues methods can be
  * optimized by providing a custom {@link DeadLetterStatementFactory}.

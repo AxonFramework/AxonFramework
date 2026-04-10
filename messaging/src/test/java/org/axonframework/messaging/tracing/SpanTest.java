@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.tracing;
 
-import org.axonframework.messaging.tracing.Span;
-import org.axonframework.messaging.tracing.SpanScope;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.*;

@@ -3,6 +3,12 @@
 Axon Framework consists of a number of modules that provide specific capabilities.
 Depending on the exact needs of your project, you will need to include one or more of these modules.
 
+.Axon Framework Modules Overview
+[excalidraw]
+....
+include::partial$framework-modules.excalidraw[]
+....
+
 There are currently two ways of obtaining the module binaries: either download the binaries from our website or preferably configure a repository for your build system (http://maven.apache.org/[Maven], https://gradle.org/[Gradle]).
 
 To not be bothered with version compatibility issues between <<Main modules,framework>> and the <<Extension modules,extensions>>, it is recommended to use the <<Axon Bill of Materials,BOM>>.

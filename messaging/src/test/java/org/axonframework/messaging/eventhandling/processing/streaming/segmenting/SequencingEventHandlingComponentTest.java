@@ -201,7 +201,7 @@ class SequencingEventHandlingComponentTest {
         private @NonNull EventHandlingComponent sequencingEventHandlingComponent() {
         return new SequencingEventHandlingComponent(
                 new SequenceOverridingEventHandlingComponent(
-                        (event, context) -> Optional.of(sequenceOf((EventMessage) event)),
+                        (event, context) -> Optional.of(sequenceOf(event)),
                         recordingComponent
                 )
         );

@@ -22,10 +22,10 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.eventhandling.processing.EventProcessor;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.eventhandling.processing.EventProcessor;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
@@ -171,8 +171,10 @@ class EventProcessorControlServiceTest {
         void doesNotSetLoadBalancingStrategiesWhenTheTokenStoreCannotBeFound() {
             // given
             setupEventProcessors();
-            when(processingConfiguration.getModuleConfiguration(THIS_PROCESSOR)).thenReturn(Optional.empty());
-            when(processingConfiguration.getModuleConfiguration(THAT_PROCESSOR)).thenReturn(Optional.empty());
+            when(processingConfiguration.getModuleConfiguration("EventProcessor[" + THIS_PROCESSOR + "]")).thenReturn(
+                    Optional.empty());
+            when(processingConfiguration.getModuleConfiguration("EventProcessor[" + THAT_PROCESSOR + "]")).thenReturn(
+                    Optional.empty());
             setupProcessorSettings(THIS_PROCESSOR, false);
             setupProcessorSettings(THAT_PROCESSOR, false);
 
@@ -209,7 +211,8 @@ class EventProcessorControlServiceTest {
                 .thenReturn(Optional.of(tokenStore));
         when(moduleConfig.getOptionalComponent(eq(UnitOfWorkFactory.class), eq("UnitOfWorkFactory[" + processorName + "]")))
                 .thenReturn(Optional.of(unitOfWorkFactory));
-        when(processingConfiguration.getModuleConfiguration(processorName)).thenReturn(Optional.of(moduleConfig));
+        when(processingConfiguration.getModuleConfiguration("EventProcessor[" + processorName + "]")).thenReturn(
+                Optional.of(moduleConfig));
     }
 
     private void setupProcessorSettings(String processorName, boolean automaticBalancing) {

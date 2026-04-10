@@ -23,7 +23,7 @@ import org.axonframework.common.AxonTransientException;
  * storage.
  *
  * @author Allard Buijze
- * @see TokenStore#retrieveStorageIdentifier()
+ * @see TokenStore#retrieveStorageIdentifier(org.axonframework.messaging.core.unitofwork.ProcessingContext)
  * @since 4.3
  */
 public class UnableToRetrieveIdentifierException extends AxonTransientException {

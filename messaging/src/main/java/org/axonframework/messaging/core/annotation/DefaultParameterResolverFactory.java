@@ -16,12 +16,12 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -41,9 +41,9 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(Executable executable,
-                                            Parameter[] parameters,
-                                            int parameterIndex) {
+    public ParameterResolver<?> createInstance(Executable executable,
+                                               Parameter[] parameters,
+                                               int parameterIndex) {
         Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
             return new MessageParameterResolver(parameterType);

@@ -229,7 +229,7 @@ This breadth of responsibility made it difficult to reason about serialization a
 
 Axon Framework 5 breaks this into focused, composable pieces and replaces `Serializer` with a three-level `Converter` hierarchy with concrete types:
 
-1. **General Converter**: Used for all conversions unless a more specific converter is provided
+1. **GeneralConverter**: Used for all conversions unless a more specific converter is provided
 2. **MessageConverter**: Specifically handles conversion of `Message` implementations
 3. **EventConverter**: Specifically handles conversion of `EventMessage` implementations
 
