@@ -19,7 +19,6 @@ package org.axonframework.test.fixture;
 import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.conversion.MessageConverter;
 import org.axonframework.test.matchers.PayloadMatcher;
@@ -44,22 +43,18 @@ class AxonTestThenCommand
     private final Message actualResult;
 
     /**
-     * Constructs an {@code AxonTestThenCommand} for the given parameters.
+     * Constructs an {@code AxonTestThenCommand} for the given {@link TestContext}.
      *
-     * @param configuration        The configuration which this test fixture phase is based on.
-     * @param customization        Collection of customizations made for this test fixture.
-     * @param recordings           The registry holding recording components for assertions.
+     * @param testContext          The per-test context holding all resolved fixture components.
      * @param lastCommandResult    The last result of command handling.
      * @param lastCommandException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenCommand(
-            AxonConfiguration configuration,
-            AxonTestFixture.Customization customization,
-            RecordingComponentsRegistry recordings,
+            TestContext testContext,
             Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
-        super(configuration, customization, recordings, lastCommandException);
+        super(testContext, lastCommandException);
         this.actualResult = lastCommandResult;
     }
 
@@ -93,7 +88,7 @@ class AxonTestThenCommand
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else {
-            var messageConverter = configuration.getComponent(MessageConverter.class);
+            var messageConverter = testContext.configuration().getComponent(MessageConverter.class);
             var convertedPayload = actualResult.payloadAs(expectedPayload.getClass(), messageConverter);
             if (!verifyPayloadEquality(expectedPayload, convertedPayload)) {
                 PayloadMatcher<CommandResultMessage> actualMatcher =
@@ -132,7 +127,7 @@ class AxonTestThenCommand
             reporter.reportUnexpectedException(actualException, expectedDescription);
         }
         try {
-            var messageConverter = configuration.getComponent(MessageConverter.class);
+            var messageConverter = testContext.configuration().getComponent(MessageConverter.class);
             T convertedPayload = actualResult.payloadAs(type, messageConverter);
             consumer.accept(convertedPayload);
         } catch (AssertionError e) {
