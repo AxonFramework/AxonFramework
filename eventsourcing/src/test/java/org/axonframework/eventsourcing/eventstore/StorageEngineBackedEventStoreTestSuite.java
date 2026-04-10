@@ -87,7 +87,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
         .thenComparing(GenericEventMessage::metadata, Comparator.comparing(Object::toString));
 
     private static final EventConverter CONVERTER = new DelegatingEventConverter(new JacksonConverter());
-    private static final AnnotationMessageTypeResolver RESOLVER = new AnnotationMessageTypeResolver();
+    protected static final AnnotationMessageTypeResolver RESOLVER = new AnnotationMessageTypeResolver();
 
     private static Instant nextEventTimestamp = Instant.EPOCH;  // tracks auto time incrementing for created events
     private static long messageId;
@@ -123,7 +123,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
      */
     protected Instant baseTime;
 
-    private StorageEngineBackedEventStore eventStore;
+    protected StorageEngineBackedEventStore eventStore;
 
     @BeforeEach
     void beforeEach() throws Exception {
@@ -550,7 +550,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
         }
     }
 
-    private void awaitLatch(CountDownLatch latch) {
+    protected void awaitLatch(CountDownLatch latch) {
         try {
             latch.await(10, TimeUnit.SECONDS);
         }
@@ -642,6 +642,21 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
                     return list;
                 }
             );
+        }).join();
+    }
+
+    /**
+     * Counts the number of events matching the given sourcing condition.
+     *
+     * @param condition The condition, cannot be {@code null}.
+     * @return The number of matching events.
+     */
+    protected final int sourceCount(SourcingCondition condition) {
+        return unitOfWork().executeWithResult(pc -> {
+            EventStoreTransaction tx = eventStore.transaction(pc);
+            MessageStream<? extends EventMessage> stream = tx.source(condition);
+
+            return stream.reduce(0, (count, entry) -> count + 1);
         }).join();
     }
 

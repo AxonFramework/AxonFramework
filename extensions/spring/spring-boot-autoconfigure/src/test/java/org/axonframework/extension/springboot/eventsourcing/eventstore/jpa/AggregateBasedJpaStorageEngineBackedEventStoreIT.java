@@ -23,7 +23,7 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.FactoryBasedEntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineBackedEventStoreTestSuite;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaPollingEventCoordinator;
 import org.axonframework.extension.spring.messaging.unitofwork.SpringTransactionManager;
@@ -57,7 +57,7 @@ import javax.sql.DataSource;
  */
 @SpringBootTest(classes = TestConfig.class)
 @ImportAutoConfiguration(JpaTransactionAutoConfiguration.class)
-class AggregateBasedJpaStorageEngineBackedEventStoreIT extends StorageEngineBackedEventStoreTestSuite<AggregateBasedJpaEventStorageEngine> {
+class AggregateBasedJpaStorageEngineBackedEventStoreIT extends AggregateBasedStorageEngineBackedEventStoreTestSuite<AggregateBasedJpaEventStorageEngine> {
 
     private static AggregateBasedJpaEventStorageEngine engine;
 
