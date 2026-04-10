@@ -17,7 +17,6 @@
 package org.axonframework.messaging.commandhandling;
 
 import org.axonframework.common.ExceptionUtils;
-import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

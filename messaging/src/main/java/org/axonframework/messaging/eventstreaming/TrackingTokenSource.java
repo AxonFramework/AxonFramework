@@ -16,11 +16,11 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.Nullable;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +41,9 @@ public interface TrackingTokenSource {
      * Creates a {@link TrackingToken} representing the <b>first</b> position of the
      * {@link MessageStream event stream}.
      * <p>
-     * As the retrieved token represents the point from which to {@link #open(StreamingCondition) open} the event
-     * stream, the first event to be streamed when opening is the one right after the returned token.
+     * As the retrieved token represents the point from which to {@link StreamableEventSource#open(StreamingCondition,
+     * ProcessingContext) open} the event stream, the first event to be streamed when opening is the one
+     * right after the returned token.
      * <p>
      * Subsequent invocation of this method will yield the same result, <em>unless</em> the stream's initial values are
      * deleted.
@@ -57,8 +58,9 @@ public interface TrackingTokenSource {
      * Creates a {@link TrackingToken} representing the <b>latest</b> position, thus pointing at the next event of the
      * {@link MessageStream event stream}.
      * <p>
-     * As the retrieved token represents the point from which to {@link #open(StreamingCondition) open} the event
-     * stream, the first event to be streamed when opening is the one right after the returned token.
+     * As the retrieved token represents the point from which to {@link StreamableEventSource#open(StreamingCondition,
+     * ProcessingContext) open} the event stream, the first event to be streamed when opening is the one right after the
+     * returned token.
      * <p>
      * Since the {@link MessageStream event stream} of this source is theoretically <em>infinite</em>, subsequent
      * invocation of this operation typically return a different token. Only if this {@code StreamableEventSource} is

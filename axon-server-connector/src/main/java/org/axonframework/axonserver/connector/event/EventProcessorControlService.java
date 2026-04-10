@@ -27,12 +27,12 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.common.lifecycle.Phase;
+import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.StreamingEventProcessor;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessor;
-import org.axonframework.common.lifecycle.Phase;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,7 +187,8 @@ public class EventProcessorControlService {
     }
 
     private Optional<String> processorTokenStoreOrGlobal(String processorName) {
-        Optional<Configuration> moduleConfiguration = configuration.getModuleConfiguration(processorName);
+        Optional<Configuration> moduleConfiguration = configuration.getModuleConfiguration(
+                "EventProcessor[" + processorName + "]");
 
         Optional<TokenStore> tokenStore = moduleConfiguration
                 .flatMap(m -> m.getOptionalComponent(TokenStore.class, "TokenStore[" + processorName + "]"))

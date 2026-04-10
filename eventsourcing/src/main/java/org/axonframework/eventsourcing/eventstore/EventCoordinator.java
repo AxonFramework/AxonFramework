@@ -25,6 +25,9 @@ import java.util.List;
  * <p>
  * Implementations can notify only within the current process, or coordinate between multiple instances using mechanisms
  * such as polling, messaging, or database notifications.
+ *
+ * @author John Hendrikx
+ * @since 5.0.0
  */
 @Internal
 public interface EventCoordinator {
@@ -73,7 +76,8 @@ public interface EventCoordinator {
         void onEventsAppended(List<TaggedEventMessage<?>> events);
 
         /**
-         * Terminates this coordination instance, releasing any resources or threads used internally.
+         * Terminates this coordination instance, releasing any resources or threads used internally. Blocks
+         * until termination completes.
          * <p>
          * After termination, the handle should not be used again.
          */

@@ -58,7 +58,7 @@ class ReplayBlockingEventHandlingComponentTest {
     private static final TrackingToken replayToken = ReplayToken.createReplayToken(regularToken);
 
     private List<String> receivedEvents;
-    private ReplayBlockingEventHandlingComponent testSubject;
+    private ReplayBlockingEventHandlingComponent<?> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -71,7 +71,7 @@ class ReplayBlockingEventHandlingComponentTest {
                     return MessageStream.empty();
                 }
         );
-        testSubject = new ReplayBlockingEventHandlingComponent(delegate);
+        testSubject = new ReplayBlockingEventHandlingComponent<>(delegate);
     }
 
     @Nested

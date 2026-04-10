@@ -176,7 +176,7 @@ class MetadataTest {
         assertThrows(UnsupportedOperationException.class, () -> values.remove("Hello"));
     }
 
-    @SuppressWarnings({"SuspiciousMethodCalls"})
+    @SuppressWarnings({"SuspiciousMethodCalls", "unlikely-arg-type"})
     @Test
     void metadataModification_EntrySet_Remove() {
         Set<Map.Entry<String, String>> entrySet = new Metadata(Collections.emptyMap()).entrySet();

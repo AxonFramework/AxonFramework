@@ -42,6 +42,7 @@ public interface MaxSegmentProvider extends Function<String, Integer> {
      * @param processorName The name of a processor for which to provide the maximum amount of segments it can claim.
      * @return The maximum number of segments that can be claimed for the given {@code processorName}.
      */
+    @Override
     default Integer apply(String processorName) {
         return getMaxSegments(processorName);
     }

@@ -35,7 +35,7 @@ import java.util.OptionalLong;
  * @author Allard Buijze
  * @since 4.1
  */
-public class MergedTrackingToken implements TrackingToken, WrappedToken {
+public class MergedTrackingToken implements WrappedToken {
 
     private final TrackingToken lowerSegmentToken;
     private final TrackingToken upperSegmentToken;
@@ -103,9 +103,10 @@ public class MergedTrackingToken implements TrackingToken, WrappedToken {
     }
 
     /**
-     * Return the estimated relative token position this Segment will have after a merge operation is complete. In case
+     * Return the estimated relative token position this Segment will have after a merge operation is completed. In case
      * no estimation can be given or no merge in progress, an {@code OptionalLong.empty()} will be returned.
      *
+     * @param trackingToken the token containing a {@link MergedTrackingToken}
      * @return the estimated relative position this Segment will reach after a merge operation is complete.
      */
     public static OptionalLong mergePosition(TrackingToken trackingToken) {

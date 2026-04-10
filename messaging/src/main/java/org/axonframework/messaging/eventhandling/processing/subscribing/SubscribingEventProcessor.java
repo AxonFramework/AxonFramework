@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling.processing.subscribing;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -35,6 +34,7 @@ import org.axonframework.messaging.eventhandling.processing.EventProcessor;
 import org.axonframework.messaging.eventhandling.processing.ProcessorEventHandlingComponents;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorContext;
 import org.axonframework.messaging.eventhandling.processing.errorhandling.ErrorHandler;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -135,7 +135,8 @@ public class SubscribingEventProcessor implements EventProcessor {
      * <p>
      * This implementation creates a Batching unit of work for the given batch of {@code eventMessages}.
      *
-     * @param eventMessages The messages to process
+     * @param eventMessages the messages to process
+     * @param context the {@link ProcessingContext} to use
      */
     protected void process(List<EventMessage> eventMessages, @Nullable ProcessingContext context) {
         try {

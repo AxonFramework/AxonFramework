@@ -1,0 +1,587 @@
+= Dead-Letter Queue Migration
+
+Axon Framework 5 introduces slight changes to how the Dead-Letter Queue (DLQ) works, reflecting the broader shift to async-first APIs and finer-grained component model in Axon Framework 5.
+
+This path covers the migration of the DLQ from Axon Framework 4 to Axon Framework 5.
+For a complete understanding of how the DLQ works in Axon Framework 5, see xref:axon-framework-reference:events:event-processors/dead-letter-queue.adoc[Dead-Letter Queue].
+
+[NOTE]
+====
+The most significant changes are:
+
+* **Database schema**: Column names in the embedded event entry changed; the schema is not backward compatible with Axon Framework 4 data.
+* **Queue scoping**: DLQs are now scoped per event handling component, not per processing group.
+Each component within a processor gets its own queue.
+* **MongoDB support removed**: The `MongoSequencedDeadLetterQueue` (previously available via the MongoDB Extension) is not available in Axon Framework 5.
+* **Configuration Changes**: The configuration APIs have changed in several places between Axon 4 and 5.
+* **Sequence Processing**: the API of the `SequencedDeadLetterProcessor` interface has been adjusted to an async-first approach.
+====
+
+== Database schema changes
+
+Dead letters persisted by Axon Framework 4 cannot be read directly by Axon Framework 5.
+If you have existing dead letters in an Axon Framework 4 database, the best way to move forward is to fully process them before migrating to Axon Framework 5.
+
+If that however is not possible, you must migrate the data to the new schema before switching to Axon Framework 5.
+
+If your dead-letter queue is empty, or you are comfortable discarding existing dead letters you can simply drop and recreate the `dead_letter_entry` table to move to the new schema.
+
+The `dead_letter_entry` table exists in both Axon Framework 4 and 5.
+However, the structure of the embedded event entry has changed, making the schema **not backwards compatible**.
+
+The following table explains the changes to the embedded event entry schema:
+
+|===
+|Axon Framework 4 column |Axon Framework 5 column |Change
+
+|(not present)
+|`type`
+|Added to hold the newly introduced xref:messaging-concepts:anatomy-message.adoc#message_type[message type]
+
+|`event_identifier`
+|`identifier`
+|Renamed for consistency
+
+|`time_stamp`
+|`timestamp`
+|Renamed for consistency
+
+|`meta_data`
+|`metadata`
+|Renamed for consistency
+
+|`type` (aggregate type)
+|`aggregate_type`
+|Renamed for consistency and to make it explicit it holds aggregate specific type information
+
+|`sequence_number`
+|`aggregate_sequence_number`
+|Renamed for consistency and to make it explicit it holds aggregate specific sequence information
+
+|`message_type`
+|(removed)
+|Removed in favor of the new `type` column
+
+|`payload_type`
+|(removed)
+|Removed since the information is now contained in the new `type` column
+
+|`payload_revision`
+|(removed)
+|Removed since the information is now contained in the new `type` column
+|===
+
+The following columns in the embedded event entry remain unchanged:
+
+|===
+|Axon Framework 4 column |Axon Framework 5 column
+|`payload`
+|`payload`
+
+|`aggregate_identifier`
+|`aggregate_identifier`
+
+|`token_type`
+|`token_type`
+
+|`token`
+|`token`
+|===
+
+The outer `DeadLetterEntry` table structure (columns `dead_letter_id`, `processing_group`, `sequence_identifier`, `sequence_index`, `enqueued_at`, `last_touched`, `processing_started`, `cause_type`, `cause_message`, `diagnostics`) remains unchanged.
+
+[#_queue_scoping_changes]
+== Queue scoping changes
+
+In Axon Framework 4, a single dead-letter queue was shared across all event handlers within the same processing group.
+When a retry was triggered, all event handlers in that processing group were invoked for the dead-lettered event.
+
+In Axon Framework 5, each Event Handling Component within a processor xref:events:event-processors/dead-letter-queue.adoc#_queue_scoping_and_naming[has its own dedicated dead-letter queue].
+This prevents interference between components and means retries only invoke the component that originally failed.
+
+Each queue is now identified by both the `processorName` and `componentName`, where `componentName` is the registered name of the Event Handling Component.
+
+[IMPORTANT]
+====
+Component names are part of the queue's persistent identity.
+Renaming a component effectively orphans any previously dead-lettered events for that component.
+In Axon Framework 4, the processing group name played this role.
+In Axon Framework 5, both the processor name and the component name together form this identity.
+====
+
+== Supported storage solutions
+
+|===
+|Implementation |Axon Framework 4 |Axon Framework 5
+
+|`InMemorySequencedDeadLetterQueue`
+|✓ (not intended for production)
+|✓ (not intended for production)
+
+|`JpaSequencedDeadLetterQueue`
+|✓
+|✓
+
+|`JdbcSequencedDeadLetterQueue`
+|✓
+|✓
+
+|`MongoSequencedDeadLetterQueue` (MongoDB Extension)
+|✓
+|✗ Not available
+|===
+
+[NOTE]
+====
+MongoDB support for the DLQ was available in Axon Framework 4 via the MongoDB Extension.
+This integration is not available in Axon Framework 5.
+If your application relied on the `MongoSequencedDeadLetterQueue`, migrate to `JpaSequencedDeadLetterQueue` or `JdbcSequencedDeadLetterQueue` alongside the schema migration described above.
+====
+
+== Configuration
+
+The configuration of DLQ has changed in Axon Framework 5 to provide a simpler API.
+
+=== Declarative configuration
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class AxonConfig {
+
+    public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
+        processingConfigurer.registerDeadLetterQueue(
+                "my-processor",
+                config -> JpaSequencedDeadLetterQueue.builder()
+                        .processingGroup("my-processor")
+                        .maxSequences(256)
+                        .maxSequenceSize(256)
+                        .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
+                        .transactionManager(config.getComponent(TransactionManager.class))
+                        .serializer(config.serializer())
+                        .build()
+        );
+    }
+}
+----
++
+Key characteristics:
++
+* Registered via `EventProcessingConfigurer.registerDeadLetterQueue(processingGroup, factory)`
+* Requires explicit `EntityManagerProvider`, `TransactionManager`, and `Serializer`
+* One queue per processing group
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(components -> components
+                                        .declarative("myHandler", cfg -> myHandlerComponent))
+                                .customized((cfg, processorConfig) -> processorConfig
+                                        .deadLetterQueue(dlq -> dlq.enabled()))
+                )
+        ));
+    }
+}
+----
++
+Key changes:
++
+* Configured via the fluent `deadLetterQueue(dlq -> ...)` builder on `PooledStreamingEventProcessorConfiguration`
+* No need to explicitly supply `TransactionManager`, `Serializer`, or `EntityManagerProvider`
+* One queue per Event Handling Component within the processor
+====
+
+=== Spring configuration
+
+[tabs]
+====
+Axon Framework 4::
++
+Explicit configuration via `ConfigurerModule` bean:
++
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public ConfigurerModule deadLetterQueueConfigurerModule() {
+        return configurer -> configurer.eventProcessing().registerDeadLetterQueue(
+                "my-processor",
+                config -> JpaSequencedDeadLetterQueue.builder()
+                        .processingGroup("my-processor")
+                        .maxSequences(256)
+                        .maxSequenceSize(256)
+                        .entityManagerProvider(config.getComponent(EntityManagerProvider.class))
+                        .transactionManager(config.getComponent(TransactionManager.class))
+                        .serializer(config.serializer())
+                        .build()
+        );
+    }
+}
+----
++
+Via Spring Boot property:
++
+[source,properties]
+----
+axon.eventhandling.processors.my-processor.dlq.enabled=true
+----
+
+Axon Framework 5::
++
+Explicit configuration via `EventProcessorDefinition` bean
++
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProcessorConfig {
+
+    @Bean
+    EventProcessorDefinition orderProcessor() {
+        return EventProcessorDefinition.pooledStreaming("order-processor")
+                .assigningHandlers(descriptor ->
+                        descriptor.beanName().startsWith("order"))
+                .customized(config -> config
+                        .deadLetterQueue(dlq -> dlq
+                                .enabled()
+                                .cacheMaxSize(2048)));
+    }
+}
+----
++
+Via Spring Boot property:
++
+[source,properties]
+----
+axon.eventhandling.processors.my-processor.dlq.enabled=true
+----
+====
+
+TIP: Axon Framework 5 now also allows to xref:events:event-processors/dead-letter-queue.adoc#_applying_defaults_across_processors[apply DLQ defaults across processors] that can be overridden by individual processors.
+
+TIP: Axon Framework 5 now caches sequence identifiers per default to speed up event processing when using dead letter queues.
+For details on this feature see the xref:events:event-processors/dead-letter-queue.adoc#_sequence_identifier_caching[reference documentation].
+
+=== Declarative custom DLQ factory configuration
+
+If you need custom configuration for certain DLQs you could still use a custom `SequencedDeadLetterQueueFactory` in Axon Framework 5. In Axon Framework 4 the factory is presented with the processor name only to identify the DLQ.
+In Axon Framework 5 the name of the DLQ is determined by both the processor name **and** event handling component name, as described xref:_queue_scoping_changes[here].
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class AxonConfig {
+    public void configureDeadLetterQueue(EventProcessingConfigurer processingConfigurer) {
+        var dlqEnabledGroups = List.of(/*...*/);
+        processingConfigurer.registerDeadLetterQueueProvider(
+                processingGroup -> {
+                    if (dlqEnabledGroups.contains(processingGrouping)) {
+                        return config -> JpaSequencedDeadLetterQueue.builder()
+                                                             .processingGroup(processingGroup)
+                                                             .entityManagerProvider(config.getComponent(
+                                                                     EntityManagerProvider.class
+                                                             ))
+                                                             .transactionManager(config.getComponent(
+                                                                     TransactionManager.class
+                                                             ))
+                                                             .serializer(config.serializer())
+                                                             .build();
+                    } else {
+                        return null;
+                    }
+                }
+        );
+    }
+}
+----
+
+Axon Framework 5::
++
+Configuration API (using `InMemorySequencedDeadLetterQueue` for brevity; replace with `JpaSequencedDeadLetterQueue` or `JdbcSequencedDeadLetterQueue` for production):
++
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
+        var dlqEnabledGroups = List.of(/*...*/);
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(components -> components
+                                        .declarative("myHandler", cfg -> myHandlerComponent))
+                                .customized((cfg, processorConfig) -> processorConfig
+                                        .deadLetterQueue(dlq -> dlq
+                                                .enabled()
+                                                .factory((name, config) -> {
+                                                            if (dlqEnabledGroups.contains(name)) {
+                                                                return conf -> InMemorySequencedDeadLetterQueue.builder()
+                                                                        .maxSequences(256)
+                                                                        .maxSequenceSize(256)
+                                                                        .build();
+                                                            } else {
+                                                                return null;
+                                                            }
+                                                        }
+
+                                                )
+                                        )))));
+    }
+}
+----
++
+Key changes:
++
+* Configuration of the factory is done via the fluent API on the `DeadLetterQueueConfiguration`
+* Axon Framework 5 provides an explicit `SequencedDeadLetterQueueFactory` interface to define a DLQ factory.
+====
+
+=== Spring custom DLQ factory configuration
+
+The configuration of a custom dead letter queue factory via Spring changes as well in Axon Framework 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+    // omitting other configuration methods...
+    @Bean
+    public ConfigurerModule deadLetterQueueConfigurerModule () {
+        return configurer -> configurer.eventProcessing().registerDeadLetterQueueProvider(
+                processingGroup -> {
+                    //dlqEnabledGroups is a collection with the groups that should have a dlq
+                    if (dlqEnabledGroups.contains(processingGrouping)) {
+                        return config -> JpaSequencedDeadLetterQueue.builder()
+                                                             .processingGroup(processingGroup)
+                                                             .entityManagerProvider(config.getComponent(
+                                                                     EntityManagerProvider.class
+                                                             ))
+                                                             .transactionManager(config.getComponent(
+                                                                     TransactionManager.class
+                                                             ))
+                                                             .serializer(config.serializer())
+                                                             .build();
+                    } else {
+                        return null;
+                    }
+                }
+        );
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.conversion.GeneralConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
+import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.messaging.core.unitofwork.transaction.jpa.JpaTransactionalExecutorProvider;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class DlqConfig {
+
+    @Bean
+    SequencedDeadLetterQueueFactory myDeadLetterQueueFactory(
+            EntityManagerFactory entityManagerFactory,
+            EventConverter eventConverter,
+            GeneralConverter converter
+    ) {
+        return (processingGroup, config) ->
+                JpaSequencedDeadLetterQueue.builder()
+                        .processingGroup(processingGroup)
+                        .maxSequences(256)
+                        .maxSequenceSize(256)
+                        .transactionalExecutorProvider(
+                                new JpaTransactionalExecutorProvider(entityManagerFactory))
+                        .eventConverter(eventConverter)
+                        .genericConverter(converter)
+                        .build();
+    }
+}
+----
++
+Key changes:
++
+* the custom factory can now be defined as `SequencedDeadLetterQueueFactory` spring bean.
+====
+
+=== Enqueue policy configuration
+
+The declarative configuration for a custom `EnqueuePolicy` has changed from Axon Framework 4 to 5:
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class AxonConfig {
+
+    public void configureEnqueuePolicy(EventProcessingConfigurer configurer) {
+        configurer.registerDeadLetterPolicy("my-processing-group",
+                config -> new CustomEnqueuePolicy());
+    }
+}
+----
++
+Spring Boot:
++
+[source,java]
+----
+@Configuration
+public class AxonConfig {
+
+    @Bean
+    public ConfigurerModule enqueuePolicyConfigurerModule() {
+        return configurer -> configurer.eventProcessing()
+                .registerDeadLetterPolicy("my-processing-group",
+                        config -> new CustomEnqueuePolicy());
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+
+public class AxonConfig {
+
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
+        configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
+                .processor(
+                        EventProcessorModule
+                                .pooledStreaming("my-processor")
+                                .eventHandlingComponents(/* ... */)
+                                .customized((cfg, processorConfig) -> processorConfig
+                                        .deadLetterQueue(dlq -> dlq
+                                                .enabled()
+                                                .enqueuePolicy(new CustomEnqueuePolicy()))))
+        ));
+    }
+}
+----
++
+Spring Boot (via `EventProcessorDefinition`):
++
+[source,java]
+----
+import org.axonframework.extension.spring.config.EventProcessorDefinition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ProcessorConfig {
+
+    @Bean
+    EventProcessorDefinition myProcessor() {
+        return EventProcessorDefinition.pooledStreaming("my-processor")
+                .assigningHandlers(descriptor -> descriptor.beanName().startsWith("my"))
+                .customized(config -> config
+                        .deadLetterQueue(dlq -> dlq
+                                .enabled()
+                                .enqueuePolicy(new CustomEnqueuePolicy())));
+    }
+}
+----
+====
+
+== Changes in the builder API of `JdbcSequencedDeadLetterQueue` and `JpaSequencedDeadLetterQueue`
+
+The changes between Axon Framework 4 and 5 also affected the builder API of the `JdbcSequencedDeadLetterQueue` and `JpaSequencedDeadLetterQueue`.
+The most notable changes are:
+
+* **Change from Serializer to Converter**: instead of an event serializer and generic serializer, the builders now take `EventConverter` and `Converter` respectively.
+* **Transaction handling**: instead of a `ConnectionProvider` and `TransactionManager` for internal transaction management, Axon Framework 5 now uses the `TransactionalExecutorProvider` for ensuring transactional execution of database tasks.
+
+== Processing dead lettered sequences
+
+Processing dead lettered sequences in Axon Framework 5 works similar to Axon Framework 4. However, the APIs slightly changed between the two versions.
+The most noticeable changes are * the move to an async-first approach for the `SequencedDeadLetterProcessor`, and * the change in the queue scoping, changing how to retrieve a `SequencedDeadLetterProcessor` can be retrieved from the configuration.
+
+TIP: https://platform.axoniq.io/[Axoniq Platform] can process dead lettered sequences without the need for custom logic as described below.
+
+[tabs]
+====
+Axon Framework 4::
++
+[source,java]
+----
+public class DeadletterProcessor {
+
+    private final EventProcessingConfiguration config;
+
+    public void retryAnySequence(String processingGroup) {
+        config.sequencedDeadLetterProcessor(processingGroup)
+              .ifPresent(SequencedDeadLetterProcessor::processAny);
+    }
+}
+----
+
+Axon Framework 5::
++
+[source,java]
+----
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
+import java.util.concurrent.TimeUnit;
+
+public class DeadLetterProcessor {
+
+    private final Configuration configuration;
+
+    public void retryAnySequence(String processorName, String componentName) {
+        configuration.getModuleConfiguration(processorName)
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, "EventHandlingComponent[" + processorName + "][" + componentName + "]"))
+                .ifPresent(dlp ->
+                        dlp.processAny()
+                           .orTimeout(30, TimeUnit.SECONDS)
+                           .join());
+    }
+}
+----
++
+Key changes:
++
+* Retrieval of a specific queue requires to use the component name
+* the processing methods on `SequencedDeadLetterProcessor` now return `CompletableFuture` instead of blocking synchronously
+====

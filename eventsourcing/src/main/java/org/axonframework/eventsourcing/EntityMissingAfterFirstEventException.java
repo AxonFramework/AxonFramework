@@ -16,12 +16,12 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 /**
  * Exception thrown by the {@link EventSourcedEntityFactory} when the entity returned by
- * {@link EventSourcedEntityFactory#create(Object, EventMessage)} is {@code null} when calling it with a non-null
+ * {@link EventSourcedEntityFactory#create(Object, EventMessage, ProcessingContext)} is {@code null} when calling it with a non-null
  * {@code firstEventMessage} during the {@link EventSourcingRepository#load(Object, ProcessingContext)} or
  * {@link EventSourcingRepository#loadOrCreate(Object, ProcessingContext)}.
  * <p>

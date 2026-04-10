@@ -19,10 +19,6 @@ package org.axonframework.messaging.tracing;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.tracing.MultiSpanFactory;
-import org.axonframework.messaging.tracing.Span;
-import org.axonframework.messaging.tracing.SpanAttributesProvider;
-import org.axonframework.messaging.tracing.SpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

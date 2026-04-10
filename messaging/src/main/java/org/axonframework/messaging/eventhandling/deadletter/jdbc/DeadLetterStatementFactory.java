@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.eventhandling.deadletter.jdbc;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,7 +42,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used for the
-     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext)} operation.
+     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, org.axonframework.messaging.core.unitofwork.ProcessingContext)} operation.
      * <p>
      * Context resources (e.g., tracking token, aggregate data) are read from {@link DeadLetter#context()}.
      *
@@ -52,8 +52,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @param letter             The letter to enqueue.
      * @param sequenceIndex      The index of the letter within the sequence, to ensure the processing order is
      *                           maintained.
-     * @return The {@link PreparedStatement} used to
-     * {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter, ProcessingContext) enqueue}.
+     * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext) enqueue}.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement enqueueStatement(Connection connection,
@@ -67,7 +67,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * {@link DeadLetterSchema#sequenceIndexColumn() index} of the sequence identified with the given
      * {@code sequenceIdentifier}.
      * <p>
-     * Used by the {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter)} to deduce the index of the
+     * Used by the {@link JdbcSequencedDeadLetterQueue#enqueue(Object, DeadLetter,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext)} to deduce the index of the
      * {@link DeadLetter} in its sequence.
      *
      * @param connection         The {@link Connection} used to create the {@link PreparedStatement}.
@@ -85,12 +86,14 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                         String sequenceIdentifier) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter)}
+     * Constructs the {@link PreparedStatement} used for the
+     * {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
      * operation.
      *
      * @param connection The {@link Connection} used to create the {@link PreparedStatement}.
      * @param identifier The identifier of the {@link DeadLetter} to evict.
-     * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter) evict}.
+     * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#evict(DeadLetter,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext) evict}.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement evictStatement(Connection connection,
@@ -98,7 +101,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used for the
-     * {@link JdbcSequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator)} operation.
+     * {@link JdbcSequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
+     * operation.
      *
      * @param connection  The {@link Connection} used to create the {@link PreparedStatement}.
      * @param identifier  The identifier of the {@link DeadLetter} to requeue.
@@ -107,7 +111,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * @param lastTouched The {@link Instant} the {@link DeadLetter} to requeue was last processed.
      * @param diagnostics The new diagnostics to attach to the {@link DeadLetter} to requeue.
      * @return The {@link PreparedStatement} used to
-     * {@link JdbcSequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator) requeue}.
+     * {@link JdbcSequencedDeadLetterQueue#requeue(DeadLetter, UnaryOperator,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext) requeue}.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement requeueStatement(Connection connection,
@@ -117,7 +122,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                        Metadata diagnostics) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#contains(Object)}
+     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#contains(Object,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext)}
      * operation.
      *
      * @param connection         The {@link Connection} used to create the {@link PreparedStatement}.
@@ -125,7 +131,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      *                           {@code sequenceIdentifier}.
      * @param sequenceIdentifier The identifier of the sequence to validate whether it is contained in the queue.
      * @return The {@link PreparedStatement} used to check whether the given {@code sequenceIdentifier} is
-     * {@link JdbcSequencedDeadLetterQueue#contains(Object) contained} in the queue.
+     * {@link JdbcSequencedDeadLetterQueue#contains(Object, org.axonframework.messaging.core.unitofwork.ProcessingContext) contained}
+     * in the queue.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement containsStatement(Connection connection,
@@ -134,7 +141,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used for the
-     * {@link JdbcSequencedDeadLetterQueue#deadLetterSequence(Object)} operation.
+     * {@link JdbcSequencedDeadLetterQueue#deadLetterSequence(Object,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext)} operation.
      * <p>
      * As dead-letter sequences can be large, the {@link JdbcSequencedDeadLetterQueue} assumes it needs to page through
      * the result set. To that end it is recommended to use the given {@code offset} to define the starting point of the
@@ -158,7 +166,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used to iterate over <b>all</b> sequences contained in the queue for the
-     * {@link JdbcSequencedDeadLetterQueue#deadLetters()} operation.
+     * {@link JdbcSequencedDeadLetterQueue#deadLetters(org.axonframework.messaging.core.unitofwork.ProcessingContext)} operation.
      *
      * @param connection      The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup The processing group for which to retrieve all sequence identifiers.
@@ -170,7 +178,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                                    String processingGroup) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#size()} operation.
+     * Constructs the {@link PreparedStatement} used for the
+     * {@link JdbcSequencedDeadLetterQueue#size(org.axonframework.messaging.core.unitofwork.ProcessingContext)} operation.
      *
      * @param connection      The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup The processing group for which to retrieve the size for.
@@ -181,8 +190,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                     String processingGroup) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#sequenceSize(Object)}
-     * operation.
+     * Constructs the {@link PreparedStatement} used for the
+     * {@link JdbcSequencedDeadLetterQueue#sequenceSize(Object,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext)} operation.
      *
      * @param connection         The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup    The processing group for which to retrieve the size of the identified sequence.
@@ -196,7 +206,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                             String sequenceIdentifier) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#amountOfSequences()}
+     * Constructs the {@link PreparedStatement} used for the
+     * {@link JdbcSequencedDeadLetterQueue#amountOfSequences(org.axonframework.messaging.core.unitofwork.ProcessingContext)}
      * operation.
      *
      * @param connection      The {@link Connection} used to create the {@link PreparedStatement}.
@@ -211,9 +222,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * Constructs the {@link PreparedStatement} used to retrieve the identifiers of the first entries of each sequence
      * with that can be claimed.
      * <p>
-     * Used by the {@link JdbcSequencedDeadLetterQueue#process(Function)} and
-     * {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function)} operations. A row may be claimed if the
-     * {@link DeadLetterSchema#processingStartedColumn() processing started} field is older than the given
+     * Used by the {@link JdbcSequencedDeadLetterQueue#process(Function, org.axonframework.messaging.core.unitofwork.ProcessingContext)} and
+     * {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
+     * operations. A row may be claimed if the {@link DeadLetterSchema#processingStartedColumn() processing started} field is older than the given
      * {@code processingStartedLimit}.
      * <p>
      * The amount of sequences in a queue can be vast, hence the {@link JdbcSequencedDeadLetterQueue} assumes it needs
@@ -241,14 +252,15 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * Constructs the {@link PreparedStatement} used to claim a {@link DeadLetter} entry.
      * <p>
      * Claiming a {@code DeadLetter} ensures only a single thread
-     * {@link JdbcSequencedDeadLetterQueue#process(Function) processes} the {@code DeadLetter}. This operation typically
-     * update the {@link DeadLetterSchema#processingStartedColumn() processing started} field with the given
-     * {@code current} {@link Instant}, marking it as claimed for a certain timeframe.
+     * {@link JdbcSequencedDeadLetterQueue#process(Function, org.axonframework.messaging.core.unitofwork.ProcessingContext) processes}
+     * the {@code DeadLetter}. This operation typically update the {@link DeadLetterSchema#processingStartedColumn() processing started}
+     * field with the given {@code current} {@link Instant}, marking it as claimed for a certain timeframe.
      * <p>
      * The returned statement is used <em>after</em> the {@link JdbcSequencedDeadLetterQueue} searched for
      * {@link #claimableSequencesStatement(Connection, String, Instant, int, int) claimable sequences} during a
-     * {@link JdbcSequencedDeadLetterQueue#process(Function)} or
-     * {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function)} invocation.
+     * {@link JdbcSequencedDeadLetterQueue#process(Function, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
+     * or {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function,
+     * org.axonframework.messaging.core.unitofwork.ProcessingContext)} invocation.
      *
      * @param connection             The {@link Connection} used to create the {@link PreparedStatement}.
      * @param identifier             The identifier of the {@link DeadLetter} to claim.
@@ -259,8 +271,8 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      *                               {@link DeadLetterSchema#processingStartedColumn() processing started} field, to
      *                               ensure it wasn't claimed by another process.
      * @return The {@link PreparedStatement} used to claim a {@link DeadLetter} with for
-     * {@link JdbcSequencedDeadLetterQueue#process(Function) processing}, ensuring no two threads are processing the
-     * same letter.
+     * {@link JdbcSequencedDeadLetterQueue#process(Function, org.axonframework.messaging.core.unitofwork.ProcessingContext) processing},
+     * ensuring no two threads are processing the same letter.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement claimStatement(Connection connection,
@@ -274,8 +286,9 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
      * <p>
      * The returned statement is used <em>after</em> the {@link JdbcSequencedDeadLetterQueue}
      * {@link #claimStatement(Connection, String, Instant, Instant) claimed} a letter <b>and</b> successfully processed
-     * it  during a {@link JdbcSequencedDeadLetterQueue#process(Function)} or
-     * {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function)} invocation.
+     * it during a {@link JdbcSequencedDeadLetterQueue#process(Function, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
+     * or {@link JdbcSequencedDeadLetterQueue#process(Predicate, Function, org.axonframework.messaging.core.unitofwork.ProcessingContext)}
+     * invocation.
      *
      * @param connection         The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup    The processing group for which to return the following {@link DeadLetter} in the
@@ -293,15 +306,16 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                                     long sequenceIndex) throws SQLException;
 
     /**
-     * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#clear() clear}
+     * Constructs the {@link PreparedStatement} used for the
+     * {@link JdbcSequencedDeadLetterQueue#clear(org.axonframework.messaging.core.unitofwork.ProcessingContext) clear}
      * operation.
      * <p>
      * Will only remove all entries for the given {@code processingGroup}.
      *
      * @param connection      The {@link Connection} used to create the {@link PreparedStatement}.
      * @param processingGroup The processing group for which to clear all entries.
-     * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#clear() clear} all entries for
-     * the given {@code processingGroup} with.
+     * @return The {@link PreparedStatement} used to {@link JdbcSequencedDeadLetterQueue#clear(org.axonframework.messaging.core.unitofwork.ProcessingContext) clear}
+     * all entries for the given {@code processingGroup} with.
      * @throws SQLException When the statement could not be created.
      */
     PreparedStatement clearStatement(Connection connection,

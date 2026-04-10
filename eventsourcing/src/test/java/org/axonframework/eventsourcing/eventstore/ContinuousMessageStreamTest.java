@@ -16,17 +16,15 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageStream.Empty;
 import org.axonframework.messaging.core.MessageStream.Single;
 import org.axonframework.messaging.core.MessageStreamTest;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.SimpleEntry;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,12 +34,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Test for {@link ContinuousMessageStream}.
+ *
+ * @author John Hendrikx
+ */
 public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage> {
 
     @Override
     protected MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
         AtomicBoolean called = new AtomicBoolean(false);
-        return new ContinuousMessageStream<EventMessage>(
+        return new ContinuousMessageStream<>(
             () -> called.getAndSet(true) ? List.of() : messages,
             m -> new SimpleEntry<>(m),
             (ms, r) -> () -> true
@@ -63,7 +66,7 @@ public class ContinuousMessageStreamTest extends MessageStreamTest<EventMessage>
     @Override
     protected MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, RuntimeException failure) {
         AtomicBoolean called = new AtomicBoolean(false);
-        return new ContinuousMessageStream<EventMessage>(
+        return new ContinuousMessageStream<>(
             () -> {
                 if (!called.getAndSet(true) && !messages.isEmpty()) {
                     return messages;

@@ -11,11 +11,12 @@ xref:axoniq-platform-reference:ROOT:index.adoc[Axoniq Platform] provides insight
 It's straightforward to see the dead letters in the queue and decide to retry them or remove them from the queue.
 You can find more information on the xref:axoniq-platform-reference:ROOT:features/dlq.adoc[Dead-Letter Queue page of Axoniq Platform].
 
+[#_queue_scoping_and_naming]
 == Queue scoping and naming
 
 Each Event Handling Component within a processor receives its own dead-letter queue instance.
 This ensures dead letters are scoped to a single component, preventing interference between different event handlers.
-Each queue is identified by a name following the pattern `DeadLetterQueue[processorName][componentName]`, where `processorName` is the name of the event processor and `componentName` is the name of the Event Handling Component within that processor.
+Each queue is identified by a name following the pattern `DeadLetterQueue[EventHandlingComponent[processorName][componentName]]`, where `processorName` is the name of the event processor and `componentName` is the name of the Event Handling Component within that processor.
 This naming convention is also used as the `processingGroup` when creating queue instances through the `SequencedDeadLetterQueueFactory`.
 
 The `componentName` is the name you provide when registering Event Handling Components.
@@ -24,7 +25,7 @@ With Spring Boot, it is the Spring bean name of the event handler.
 It is important to keep component names stable, as they are part of the queue identifier used to persist dead letters.
 Changing a component name would effectively orphan any previously dead-lettered events.
 
-For example, given a processor named `order-processor` with a component registered as `orderProjection`, the queue name would be `DeadLetterQueue[order-processor][orderProjection]`.
+For example, given a processor named `order-processor` with a component registered as `orderProjection`, the queue name would be `DeadLetterQueue[EventHandlingComponent[order-processor][orderProjection]]`.
 
 == Event ordering
 
@@ -34,7 +35,7 @@ A typical example is handling events for the same entity in publishing order: if
 Therefore, a Dead-Letter Queue must enqueue both the failed event and all subsequent events in the same sequence.
 To that end, the supported dead-letter queue is a `SequencedDeadLetterQueue`.
 
-It tracks sequences by associating each event with a sequence identifier, which is determined by the xref:event-processors/streaming.adoc#sequential-processing[sequencing policy].
+It tracks sequences by associating each event with a sequence identifier, which is determined by the xref:event-processors/streaming.adoc#sequential_processing[sequencing policy].
 
 == Implementations
 
@@ -80,8 +81,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
@@ -143,8 +143,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
@@ -170,12 +169,12 @@ Spring Boot::
 +
 --
 Define a custom `SequencedDeadLetterQueueFactory` bean and enable the DLQ via properties.
-The factory receives the queue name (following the `DeadLetterQueue[processorName][beanName]` pattern from <<Queue scoping and naming>>, where `beanName` is the Spring bean name of the event handler) as its first parameter, and is called once per Event Handling Component.
+The factory receives the queue name (following the `DeadLetterQueue[EventHandlingComponent[processorName][beanName]]` pattern from <<Queue scoping and naming>>, where `beanName` is the Spring bean name of the event handler) as its first parameter, and is called once per Event Handling Component.
 When this bean is present, it replaces the Spring Boot auto-configured factory for all processors where the DLQ is enabled:
 
 [source,java]
 ----
-import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.deadletter.SequencedDeadLetterQueueFactory;
 import org.axonframework.messaging.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
@@ -191,7 +190,7 @@ public class DlqConfig {
     SequencedDeadLetterQueueFactory myDeadLetterQueueFactory(
             EntityManagerFactory entityManagerFactory,
             EventConverter eventConverter,
-            Converter converter
+            GeneralConverter converter
     ) {
         return (processingGroup, config) ->
                 JpaSequencedDeadLetterQueue.builder()
@@ -214,6 +213,7 @@ axon.eventhandling.processors.my-processor.dlq.enabled=true
 --
 ====
 
+[#_sequence_identifier_caching]
 === Sequence identifier caching
 
 To speed up event processing, the framework caches the sequence identifiers of sequences that are currently in the dead-letter queue.
@@ -237,8 +237,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule
@@ -272,6 +271,7 @@ axon.eventhandling.processors.my-processor.dlq.cache.size=0
 --
 ====
 
+[#_applying_defaults_across_processors]
 === Applying defaults across processors
 
 [NOTE]
@@ -289,8 +289,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 // Enable DLQ for all pooled streaming processors by default
                 .defaults(d -> d.deadLetterQueue(dlq -> dlq
@@ -316,7 +315,7 @@ public class AxonConfig {
 
 When using Spring Boot with `EventProcessorDefinition` beans, you can apply custom DLQ configuration through the `customized` step.
 When enabled, the framework creates a separate dead-letter queue for each Spring bean matched by `assigningHandlers`, using the bean name as the component name.
-For example, if `assigningHandlers` matches beans `orderProjection` and `orderNotifier`, the factory will create queues named `DeadLetterQueue[order-processor][orderProjection]` and `DeadLetterQueue[order-processor][orderNotifier]`.
+For example, if `assigningHandlers` matches beans `orderProjection` and `orderNotifier`, the factory will create queues named `DeadLetterQueue[EventHandlingComponent[order-processor][orderProjection]]` and `DeadLetterQueue[EventHandlingComponent[order-processor][orderNotifier]]`.
 
 [source,java]
 ----
@@ -359,6 +358,8 @@ How the dead-lettering process reacts to this depends on the <<Enqueue policy,en
 
 You can retrieve `SequencedDeadLetterProcessor` instances from the `Configuration` based on the processor name and the component name.
 Each Event Handling Component with DLQ enabled is registered as a `SequencedDeadLetterProcessor`.
+The name to retrieve the processor follows the pattern
+`EventHandlingComponent[processorName][componentName]`.
 Below are examples of how to process dead-letter sequences for a specific component:
 
 [tabs]
@@ -383,9 +384,10 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryErrorEventSequence(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(dlp ->
                         dlp.process(letter -> letter.message()
                                                     .type()
@@ -411,9 +413,10 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryAnySequence(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(dlp ->
                         dlp.processAny()
                            .orTimeout(30, TimeUnit.SECONDS)
@@ -436,9 +439,10 @@ public class DeadLetterProcessor {
     private final Configuration configuration;
 
     public void retryAllSequences(String processorName, String componentName) {
+        // dead letter processor names follow the pattern `EventHandlingComponent[" + processorName + "][" + componentName + "]`
+        var dlqEhc = "EventHandlingComponent[" + processorName + "][" + componentName + "]";
         configuration.getModuleConfiguration(processorName)
-                .map(m -> m.getComponents(SequencedDeadLetterProcessor.class))
-                .map(processors -> processors.get(componentName))
+                .flatMap(m -> m.getOptionalComponent(SequencedDeadLetterProcessor.class, dlqEhc))
                 .ifPresent(this::processUntilEmpty);
     }
 
@@ -573,11 +577,14 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
             return Decisions.doNotEnqueue();
         }
 
-        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
+
         if (letter.message().type().qualifiedName().equals(ERROR_EVENT_TYPE)) {
-            // Important and new entry:
+            // Always enqueue this:
             return Decisions.enqueue(cause);
         }
+
+        // All others retry max 10 times:
+        int retries = (int) letter.diagnostics().getOrDefault("retries", -1);
         if (retries < 10) {
             // Let's continue and increase retries:
             return Decisions.requeue(cause, l -> l.diagnostics().and("retries", retries + 1));
@@ -591,16 +598,16 @@ public class CustomEnqueuePolicy implements EnqueuePolicy<EventMessage> {
 
 The `Decisions` utility class provides factory methods for the five possible outcomes:
 
-* `Decisions.enqueue(cause)`:Create a new dead letter for an event that failed during initial handling.
+* `Decisions.enqueue(cause)`: Create a new dead letter for an event that failed during initial handling.
 Pass the failure `Throwable` so it is stored as the letter's `cause` for inspection during retries.
-* `Decisions.requeue(cause, diagnosticsUpdater)`:Re-queue a letter that failed again during retry processing.
+* `Decisions.requeue(cause, diagnosticsUpdater)`: Re-queue a letter that failed again during retry processing.
 The `diagnosticsUpdater` function transforms the letter's current diagnostics metadata, making it the right place to track retry counts or other state.
 The key difference from `enqueue`: `requeue` updates an _existing_ letter, whereas `enqueue` creates a new one.
-* `Decisions.ignore()`:Leave an existing letter in the queue unchanged.
+* `Decisions.ignore()`: Leave an existing letter in the queue unchanged.
 Use this when you want to keep the letter for future retry without updating its cause or diagnostics.
-* `Decisions.doNotEnqueue()`:Skip the failed event entirely during initial handling.
+* `Decisions.doNotEnqueue()`: Skip the failed event entirely during initial handling.
 The event is never added to the queue; handlers that already succeeded keep their results.
-* `Decisions.evict()`:Remove an existing letter from the queue permanently during retry processing.
+* `Decisions.evict()`: Remove an existing letter from the queue permanently during retry processing.
 Use this when a letter has exhausted its retries or is otherwise no longer relevant.
 
 `doNotEnqueue()` and `evict()` are semantically distinct: `doNotEnqueue()` prevents a letter from ever being created, while `evict()` removes a letter that already exists.
@@ -621,8 +628,7 @@ import org.axonframework.messaging.eventhandling.configuration.EventProcessorMod
 
 public class AxonConfig {
 
-    public void configureDeadLetterQueue() {
-        var configurer = MessagingConfigurer.create();
+    public void configureDeadLetterQueue(MessagingConfigurer configurer) {
         configurer.eventProcessing(ep -> ep.pooledStreaming(ps -> ps
                 .processor(
                         EventProcessorModule

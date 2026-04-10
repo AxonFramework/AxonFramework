@@ -20,6 +20,7 @@ package org.axonframework.messaging.queryhandling;
  * Abstraction interface to bridge old {@code FluxSink} and {@link reactor.core.publisher.Sinks.Many} API with a common
  * API.
  *
+ * @param <T> the type of objects the sink accept
  * @author Stefan Dragisic
  * @since 4.5
  */

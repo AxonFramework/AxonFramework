@@ -67,7 +67,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * @param delegate     The {@link Message} containing {@link Message#payload() payload},
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
-     * @see GenericQueryMessage(Message, MessageType, Integer)
+     * @see GenericQueryMessage#GenericQueryMessage(Message, Integer)
      */
     public GenericQueryMessage(Message delegate) {
         this(delegate, null);

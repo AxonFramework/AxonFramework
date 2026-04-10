@@ -26,6 +26,7 @@ import java.util.List;
 /**
  * Delegates messages and callbacks to the given list of message monitors
  *
+ * @param <T> the message type
  * @author Marijn van Zelst
  * @since 3.0
  */

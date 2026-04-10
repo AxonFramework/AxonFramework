@@ -19,8 +19,6 @@ package org.axonframework.messaging.core.annotation;
 import org.axonframework.common.configuration.DefaultComponentRegistry;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.reflection.ClasspathParameterResolverConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 

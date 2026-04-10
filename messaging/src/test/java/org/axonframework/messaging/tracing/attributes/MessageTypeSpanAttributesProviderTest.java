@@ -21,7 +21,6 @@ import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.queryhandling.GenericQueryMessage;
 import org.axonframework.messaging.tracing.SpanAttributesProvider;
-import org.axonframework.messaging.tracing.attributes.MessageTypeSpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;

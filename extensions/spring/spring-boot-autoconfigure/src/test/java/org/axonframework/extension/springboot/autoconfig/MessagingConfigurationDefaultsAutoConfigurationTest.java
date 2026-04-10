@@ -19,6 +19,7 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
 import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.commandhandling.CommandMessage;
@@ -73,7 +74,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
             // The Converter, MessageConverter, and EventConverter all are Converter implementations, hence three.
             Map<String, Converter> beansOfType = context.getBeansOfType(Converter.class);
             assertThat(beansOfType.size()).isEqualTo(3);
-            assertThat(context).hasBean(Converter.class.getName());
+            assertThat(context).hasSingleBean(GeneralConverter.class);
+            assertThat(context).hasBean(GeneralConverter.class.getName());
             assertThat(context).hasSingleBean(MessageConverter.class);
             assertThat(context).hasBean(MessageConverter.class.getName());
             assertThat(context).hasSingleBean(EventConverter.class);
@@ -136,6 +138,10 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     @EnableAutoConfiguration(
             exclude = {
                     ConverterAutoConfiguration.class,
+                    AvroConverterAutoConfiguration.class,
+                    CBORConverterAutoConfiguration.class,
+                    JacksonConverterAutoConfiguration.class,
+                    Jackson2ConverterAutoConfiguration.class,
                     JpaDeadLetterQueueAutoConfiguration.class,
                     JdbcDeadLetterQueueAutoConfiguration.class
             }
@@ -166,6 +172,10 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     @EnableAutoConfiguration(
             exclude = {
                     ConverterAutoConfiguration.class,
+                    AvroConverterAutoConfiguration.class,
+                    CBORConverterAutoConfiguration.class,
+                    JacksonConverterAutoConfiguration.class,
+                    Jackson2ConverterAutoConfiguration.class,
                     JpaDeadLetterQueueAutoConfiguration.class,
                     JdbcDeadLetterQueueAutoConfiguration.class
             }
@@ -178,8 +188,8 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         }
 
         @Bean
-        public Converter customConverter() {
-            return mock(Converter.class);
+        public GeneralConverter customConverter() {
+            return mock(GeneralConverter.class);
         }
 
         @Bean

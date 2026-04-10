@@ -94,7 +94,7 @@ public class ConverterProperties {
      *
      * @return The {@link Converter} type to use for conversion of all kinds of objects
      */
-        public ConverterType getGeneral() {
+    public ConverterType getGeneral() {
         return general;
     }
 
@@ -122,7 +122,7 @@ public class ConverterProperties {
      *
      * @return The type of {@link Converter} to use for {@link Message#payload() Message payloads}.
      */
-        public ConverterType getMessages() {
+    public ConverterType getMessages() {
         return messages;
     }
 
@@ -155,7 +155,7 @@ public class ConverterProperties {
      *
      * @return The type of {@link Converter} to use for {@link EventMessage#payload() EventMessage payloads}.
      */
-        public ConverterType getEvents() {
+    public ConverterType getEvents() {
         return events;
     }
 

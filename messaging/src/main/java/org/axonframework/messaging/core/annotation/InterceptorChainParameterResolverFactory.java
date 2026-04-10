@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.Message;
@@ -24,6 +23,7 @@ import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ResourceOverridingProcessingContext;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -75,9 +75,11 @@ public class InterceptorChainParameterResolverFactory
      * Invoke the given {@code action} with the given {@code interceptorChain} being available for parameter injection.
      * Because this parameter is not bound to a message, it is important to invoke handlers using this method.
      *
-     * @param interceptorChain The InterceptorChain to consider for injection as parameter
-     * @param action           The action to invoke
-     * @return The response from the invocation of given {@code action}
+     * @param <M> the message type
+     * @param processingContext the {@link ProcessingContext} to use
+     * @param interceptorChain  the InterceptorChain to consider for injection as parameter
+     * @param action            the action to invoke
+     * @return the response from the invocation of given {@code action}
      */
     public static <M extends Message> MessageStream<?> callWithInterceptorChain(
             ProcessingContext processingContext,

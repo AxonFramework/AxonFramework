@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
@@ -335,7 +336,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
                                          startPosition,
                                          convertedResetContext(
                                                  resetContext,
-                                                 processingContext.component(Converter.class)
+                                                 processingContext.component(GeneralConverter.class)
                                          )
                                  )
                          ));

@@ -19,11 +19,12 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.extension.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import tools.jackson.dataformat.cbor.CBORMapper;
 
 /**
@@ -34,9 +35,8 @@ import tools.jackson.dataformat.cbor.CBORMapper;
  * @since 4.9.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(ConverterAutoConfiguration.class)
+@AutoConfigureBefore({ConverterAutoConfiguration.class, CBORConverterAutoConfiguration.class})
 @ConditionalOnClass(name = {"tools.jackson.dataformat.cbor.CBORMapper"})
-@EnableConfigurationProperties(value = ConverterProperties.class)
 public class CBORMapperAutoConfiguration {
 
     /**
@@ -46,12 +46,45 @@ public class CBORMapperAutoConfiguration {
      * <b>and</b> whenever the user specified the
      * {@link ConverterProperties.ConverterType#CBOR} {@code ConverterType}.
      *
-     * @return The default Axon Framework {@link CBORMapper}, if required.
+     * @return the default Axon Framework {@link CBORMapper}, if required
      */
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
-    @ConditionalOnExpression("'${axon.converter.general}' == 'cbor' || '${axon.converter.events}' == 'cbor' || '${axon.converter.messages}' == 'cbor'")
+    @Conditional(CborConfiguredCondition.class)
     public CBORMapper defaultAxonCborMapper() {
         return CBORMapper.builder().findAndAddModules().build();
+    }
+
+    /**
+     * An {@link AnyNestedCondition} implementation, to support the following use cases:
+     * <ul>
+     *     <li>The {@code general} converter property is set to {@code cbor}</li>
+     *     <li>The {@code messages} converter property is set to {@code cbor}</li>
+     *     <li>The {@code events} converter property is set to {@code cbor}</li>
+     * </ul>
+     */
+    private static class CborConfiguredCondition extends AnyNestedCondition {
+
+        public CborConfiguredCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.converter.general", havingValue = "cbor")
+        static class GeneralJacksonCondition {
+
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "cbor")
+        static class MessagesJacksonCondition {
+
+        }
+
+        @SuppressWarnings("unused")
+        @ConditionalOnProperty(name = "axon.converter.events", havingValue = "cbor")
+        static class EventsJacksonCondition {
+
+        }
     }
 }

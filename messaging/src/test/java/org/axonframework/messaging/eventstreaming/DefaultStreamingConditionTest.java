@@ -18,10 +18,6 @@ package org.axonframework.messaging.eventstreaming;
 
 import org.axonframework.messaging.eventhandling.processing.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.core.QualifiedName;
-import org.axonframework.messaging.eventstreaming.DefaultStreamingCondition;
-import org.axonframework.messaging.eventstreaming.EventCriteria;
-import org.axonframework.messaging.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;

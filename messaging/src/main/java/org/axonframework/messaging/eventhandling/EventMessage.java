@@ -17,10 +17,9 @@
 package org.axonframework.messaging.eventhandling;
 
 import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.core.Message;
 import org.axonframework.conversion.Converter;
+import org.axonframework.messaging.core.Message;
 import org.jspecify.annotations.Nullable;
-
 
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -34,7 +33,6 @@ import java.util.Map;
  * event.
  *
  * @author Allard Buijze
- * @see DomainEventMessage
  * @since 2.0.0
  */
 public interface EventMessage extends Message {

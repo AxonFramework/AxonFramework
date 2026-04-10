@@ -29,7 +29,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  * Abstract implementation of {@link MessageStream} that provides basic state management for completion, errors, and
  * callbacks.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
  * @author Jan Galinski
  * @since 5.1.0
  */

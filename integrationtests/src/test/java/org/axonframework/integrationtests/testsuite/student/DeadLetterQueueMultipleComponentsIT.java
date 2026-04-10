@@ -28,6 +28,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.messaging.eventhandling.deadletter.DeadLetterQueueConfiguration;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
@@ -74,7 +75,8 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
                 .eventHandlingComponents(c -> c
                         .declarative("component0", cfg -> components[0])
                         .declarative("component1", cfg -> components[1]))
-                .customized((cfg, c) -> c.deadLetterQueue(dlq -> dlq.enabled()));
+                .customized((cfg, c) -> c.extend(DeadLetterQueueConfiguration.class,
+                                                 () -> new DeadLetterQueueConfiguration().enabled()));
 
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
@@ -267,10 +269,10 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterQueue<EventMessage> getDlq(int componentIndex) {
         var componentName = "component" + componentIndex;
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
+        var dlqName = "DeadLetterQueue[EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]]";
+        return startedConfiguration.getModuleConfiguration("EventProcessor[" + PROCESSOR_NAME + "]")
                                    .flatMap(m -> m.getOptionalComponent(
-                                           SequencedDeadLetterQueue.class,
-                                           "DeadLetterQueue[" + PROCESSOR_NAME + "][" + componentName + "]"
+                                           SequencedDeadLetterQueue.class, dlqName
                                    ))
                                    .orElseThrow(() -> new IllegalStateException(
                                            "DLQ not found for component " + componentIndex));
@@ -279,7 +281,7 @@ class DeadLetterQueueMultipleComponentsIT extends AbstractStudentIT {
     @SuppressWarnings("unchecked")
     private SequencedDeadLetterProcessor<EventMessage> getDeadLetterProcessor(int componentIndex) {
         var componentName = "component" + componentIndex;
-        return startedConfiguration.getModuleConfiguration(PROCESSOR_NAME)
+        return startedConfiguration.getModuleConfiguration("EventProcessor[" + PROCESSOR_NAME + "]")
                                    .flatMap(m -> m.getOptionalComponent(
                                            SequencedDeadLetterProcessor.class,
                                            "EventHandlingComponent[" + PROCESSOR_NAME + "][" + componentName + "]"

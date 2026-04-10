@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.eventhandling.EventMessage;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,8 +28,9 @@ import java.util.stream.Collectors;
 
 /**
  * Describes the criteria for {@code EventStoreTransaction#source(SourcingCondition) sourcing} or
- * {@link StreamableEventSource#open(StreamingCondition) streaming} events. The criteria are used to filter the events
- * to read from a streamable event source (like an Event Store).
+ * {@link StreamableEventSource#open(StreamingCondition,
+ * org.axonframework.messaging.core.unitofwork.ProcessingContext) streaming} events. The criteria are
+ * used to filter the events to read from a streamable event source (like an Event Store).
  * <p>
  * <h3>Filtering</h3>
  * Filtering happens based on the tags of the event, indicating an association during
@@ -175,10 +176,9 @@ public sealed interface EventCriteria
      * Construct a {@code EventCriteria} that allows <b>any</b> events.
      * <p>
      * Use this instance when all events are of interest during
-     * {@link StreamableEventSource#open(StreamingCondition) streaming} or when there are no consistency boundaries to
-     * validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
-     * {@code EventCriteria} does not make sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing},
-     * as it is <b>not</b> recommended to source the entire event store.
+     * {@link StreamableEventSource#open(StreamingCondition, org.axonframework.messaging.core.unitofwork.ProcessingContext) streaming}
+     * or when there are no consistency boundaries to validate during appending. Note that this {@code EventCriteria} does not make
+     * sense for sourcing, as it is <b>not</b> recommended to source the entire event store.
      * <p>
      * Event though this criteria will not filter any tags, you can limit the types of events to be matched by using the
      * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
@@ -300,7 +300,7 @@ public sealed interface EventCriteria
 
     /**
      * Flatten this, possibly nested, {@code EventCriteria} into a {@link Set} of {@link EventCriterion}. These
-     * {@code EventCriterion} instances can be used by the {@link EventStore} to construct queries without the need
+     * {@code EventCriterion} instances can be used by event stores to construct queries without the need
      * to interpret the criteria.
      *
      * @return The flattened set of {@code EventCriteria}.

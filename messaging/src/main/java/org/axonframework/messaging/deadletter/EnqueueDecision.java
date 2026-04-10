@@ -31,7 +31,8 @@ import java.util.Optional;
  * enqueueing the letter.
  * <p>
  * If {@link #shouldEnqueue()} returns {@code false}, that means the dead letter will not be inserted in the queue to
- * begin with, or it will be {@link SequencedDeadLetterQueue#evict(DeadLetter) evicted} from the dead-letter queue.
+ * begin with, or it will be {@link SequencedDeadLetterQueue#evict(DeadLetter,
+ * org.axonframework.messaging.core.unitofwork.ProcessingContext) evicted} from the dead-letter queue.
  *
  * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead letter} that's been made a
  *            decision on.

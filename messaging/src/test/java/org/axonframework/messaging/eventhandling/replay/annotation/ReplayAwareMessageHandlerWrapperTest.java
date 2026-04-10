@@ -127,7 +127,6 @@ class ReplayAwareMessageHandlerWrapperTest {
             return EventMessage.class.isAssignableFrom(messageType);
         }
 
-        @SuppressWarnings("removal")
         @Override
         @Deprecated
         public Object handleSync(@NonNull Message message,
@@ -189,7 +188,6 @@ class ReplayAwareMessageHandlerWrapperTest {
             return CommandMessage.class.isAssignableFrom(messageType);
         }
 
-        @SuppressWarnings("removal")
         @Override
         @Deprecated
         public Object handleSync(@NonNull Message message,

@@ -16,13 +16,9 @@
 
 package org.axonframework.messaging.commandhandling.distributed;
 
-import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.distributed.CommandBusConnector;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfiguration;
-import org.axonframework.messaging.commandhandling.distributed.DistributedCommandBusConfigurationEnhancer;
-import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.commandhandling.interception.InterceptingCommandBus;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
 
