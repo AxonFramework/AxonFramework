@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.snapshot.store;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventsourcing.snapshot.api.Snapshot;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
@@ -48,10 +49,12 @@ public interface SnapshotStore {
      * @param qualifiedName the name of the snapshot to persist, cannot be {@code null}
      * @param identifier the identifier of the snapshot to persist, cannot be {@code null}
      * @param snapshot the snapshot to persist, cannot be {@code null}
+     * @param context the current {@link ProcessingContext}, if any
      * @return a {@link CompletableFuture} that completes when the snapshot has been stored
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if {@code qualifiedName}, {@code identifier}, or {@code snapshot} is {@code null}
      */
-    CompletableFuture<Void> store(QualifiedName qualifiedName, Object identifier, Snapshot snapshot);
+    CompletableFuture<Void> store(QualifiedName qualifiedName, Object identifier, Snapshot snapshot,
+                                  @Nullable ProcessingContext context);
 
     /**
      * Loads the latest snapshot for a given name and identifier.
@@ -65,8 +68,10 @@ public interface SnapshotStore {
      *
      * @param qualifiedName the name of the snapshot, cannot be {@code null}
      * @param identifier the identifier of the snapshot, cannot be {@code null}
+     * @param context the current {@link ProcessingContext}, if any
      * @return a {@link CompletableFuture} containing the snapshot, or containing {@code null} if no matching snapshot exists
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if {@code qualifiedName} or {@code identifier} is {@code null}
      */
-    CompletableFuture<@Nullable Snapshot> load(QualifiedName qualifiedName, Object identifier);
+    CompletableFuture<@Nullable Snapshot> load(QualifiedName qualifiedName, Object identifier,
+                                               @Nullable ProcessingContext context);
 }

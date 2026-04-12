@@ -101,7 +101,7 @@ public class SnapshottingSourcingHandler<I, E> implements SourcingHandler<I, E> 
         EventCriteria criteria = criteriaResolver.resolve(identifier, pc);
         long startTime = System.currentTimeMillis();
 
-        return snapshotter.load(identifier)
+        return snapshotter.load(identifier, pc)
             .exceptionally(e -> {
                 LOGGER.warn("Snapshot loading failed, falling back to full reconstruction for: {} ({})", messageType, identifier, e);
 
@@ -148,7 +148,7 @@ public class SnapshottingSourcingHandler<I, E> implements SourcingHandler<I, E> 
 
                     // Snapshot is made when specifically triggered by an event, or based on the statistics:
                     if (triggerSnapshot.get() || snapshotPolicy.shouldSnapshot(new EvolutionResult(ec, sourcingTime))) {
-                        snapshotter.store(identifier, entity, postionRef.get());
+                        snapshotter.store(identifier, entity, postionRef.get(), pc);
                     }
                 }
 
