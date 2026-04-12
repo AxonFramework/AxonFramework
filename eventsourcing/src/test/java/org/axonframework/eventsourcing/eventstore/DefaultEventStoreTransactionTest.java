@@ -169,6 +169,35 @@ class DefaultEventStoreTransactionTest {
             testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
         }
 
+        @Test
+        void appendEventCreatesAppendConditionFromTagsWhenNoneExists() {
+            // given
+            Tag eventTag = new Tag("myTag", "myValue");
+            var event = new GenericEventMessage(new MessageType(String.class), "tagged payload");
+
+            // when
+            var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage>>();
+            var uow = aUnitOfWork();
+            uow.runOnPreInvocation(context -> {
+                   // No source() call — the AppendCondition should be created by appendEvent
+                   EventStoreTransaction transaction = defaultEventStoreTransactionFor(context,
+                                                                                       m -> Set.of(eventTag));
+                   transaction.appendEvent(event);
+               })
+               .whenComplete(context -> {
+                   EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+                   afterCommitEvents.set(
+                           transaction.source(SourcingCondition.conditionFor(EventCriteria.havingTags(eventTag)))
+                   );
+               });
+            awaitSuccessfulCompletion(uow.execute());
+
+            // then
+            StepVerifier.create(FluxUtils.of(afterCommitEvents.get()))
+                        .assertNext(entry -> assertEquals("tagged payload", entry.message().payload()))
+                        .verifyComplete();
+        }
+
         private ConsistencyMarker appendEventForTag(Tag tag) {
             AppendTransaction<Object> appendTransaction = eventStorageEngine.appendEvents(
                 AppendCondition.none(),

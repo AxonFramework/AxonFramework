@@ -77,19 +77,16 @@ public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
     void canNotCreateDuplicateEmployee() {
         sendCommand(CREATE_EMPLOYEE_1_COMMAND);
 
-        assertThrowsExceptionWithText("existing entity", () -> {
-            sendCommand(CREATE_EMPLOYEE_1_COMMAND);
-        });
+        assertThrowsExceptionWithText("AppendEventsTransactionRejectedException",
+                                      () -> sendCommand(CREATE_EMPLOYEE_1_COMMAND));
     }
-
 
     @Test
     void canNotCreateDuplicateCustomer() {
         sendCommand(CREATE_CUSTOMER_1_COMMAND);
 
-        assertThrowsExceptionWithText("existing entity", () -> {
-            sendCommand(CREATE_CUSTOMER_1_COMMAND);
-        });
+        assertThrowsExceptionWithText("AppendEventsTransactionRejectedException",
+                                      () -> sendCommand(CREATE_CUSTOMER_1_COMMAND));
     }
 
     @Test

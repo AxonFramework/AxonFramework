@@ -16,15 +16,19 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.Tag;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -150,7 +154,17 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     return new CopyOnWriteArrayList<>();
                 }
         );
-        eventQueue.add(eventTagger.apply(eventMessage));
+        TaggedEventMessage<?> taggedEvent = eventTagger.apply(eventMessage);
+        eventQueue.add(taggedEvent);
+        Set<Tag> tags = taggedEvent.tags();
+        if (!tags.isEmpty()) {
+            // No AppendCondition is present, but the event contains tags.
+            // Tags make no sense without an AppendCondition, so let's create an ORIGIN call
+            processingContext.updateResource(appendConditionKey, current -> current == null
+                    ? new DefaultAppendCondition(ConsistencyMarker.ORIGIN, EventCriteria.havingTags(tags))
+                    : current
+            );
+        }
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
 
@@ -166,7 +180,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                                 return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
                                                                        current.consistencyMarker()));
                             });
-                    List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
+                    List<TaggedEventMessage<?>> eventQueue =
+                            Objects.requireNonNullElse(context.getResource(eventQueueKey), Collections.emptyList());
 
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
                                              .thenApply(DefaultEventStoreTransaction::castTransaction)
