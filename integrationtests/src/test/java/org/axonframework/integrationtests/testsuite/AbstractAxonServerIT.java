@@ -16,92 +16,19 @@
 
 package org.axonframework.integrationtests.testsuite;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.common.configuration.ApplicationConfigurer;
-import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
-import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Random;
-
 /**
- * Abstract test suite for integration tests using an AxonServerContainer. Concrete implementations have to provide a
- * specific {@link ApplicationConfigurer}. The server is started using the default {@link AxonServerConfiguration}. The
- * started configuration and the associated {@link CommandGateway} are available through member-variables.
+ * Abstract test suite for integration tests that always require a running Axon Server. Extends
+ * {@link AbstractIntegrationTest} and pins the backend to {@link AxonServerEventStorageEngineProvider} via
+ * {@link TestEventStorageEngine}.
+ * <p>
+ * Most test classes should extend {@link AbstractStudentIT} or
+ * {@link org.axonframework.integrationtests.testsuite.administration.AbstractAdministrationIT} (which extend
+ * {@link AbstractIntegrationTest} directly and use InMemory by default). Extend this class only for tests that
+ * specifically require Axon Server behavior (e.g., distributed command routing, Axon Server-specific queries).
  *
  * @author Mitchell Herrijgers
  */
-public abstract class AbstractAxonServerIT {
+@TestEventStorageEngine(AxonServerEventStorageEngineProvider.class)
+public abstract class AbstractAxonServerIT extends AbstractIntegrationTest {
 
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIT.class);
-
-    private static final AxonServerContainer container =
-            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
-                    .withAxonServerHostname("localhost")
-                    .withDevMode(true)
-                    .withReuse(true)
-                    .withDcbContext(true);
-
-    protected CommandGateway commandGateway;
-    protected AxonConfiguration startedConfiguration;
-
-    @BeforeAll
-    static void beforeAll() {
-        container.start();
-        logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
-                    container.getHttpPort());
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (startedConfiguration != null) {
-            startedConfiguration.shutdown();
-        }
-    }
-
-    protected void startApp() {
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setServers(container.getHost() + ":" + container.getGrpcPort());
-        startedConfiguration = createConfigurer().componentRegistry(cr -> cr.registerComponent(
-                                                         AxonServerConfiguration.class, c -> axonServerConfiguration
-                                                 ))
-                                                 .start();
-        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
-    }
-
-    /**
-     * Creates the {@link ApplicationConfigurer} defining the Axon Framework test context.
-     *
-     * @return The {@link ApplicationConfigurer} defining the Axon Framework test context.
-     */
-    protected abstract ApplicationConfigurer createConfigurer();
-
-    private static final Random RND = new Random();
-
-    protected static String createId(String prefix) {
-        return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
-    }
-
-    /**
-     * Purges all events from the AxonServer event storage. This method can be called before tests to ensure a clean
-     * state, preventing events from previous test runs from affecting the current test.
-     */
-    protected void purgeEventStorage() {
-        try {
-            logger.info("Purging events from Axon Server.");
-            AxonServerContainerUtils.purgeEventsFromAxonServer(
-                    container.getHost(),
-                    container.getHttpPort(),
-                    "default",
-                    AxonServerContainerUtils.DCB_CONTEXT
-            );
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to purge event storage", e);
-        }
-    }
 }
