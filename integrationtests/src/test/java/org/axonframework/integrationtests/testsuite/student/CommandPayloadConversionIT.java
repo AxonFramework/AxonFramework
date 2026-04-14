@@ -16,6 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
+import org.axonframework.integrationtests.testsuite.infrastructure.AxonServerTestInfrastructure;
+import org.axonframework.integrationtests.testsuite.infrastructure.TestInfrastructure;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -34,6 +36,15 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @author Jakob Hatzl
  */
 class CommandPayloadConversionIT extends AbstractCommandHandlingStudentIT {
+
+    // AxonServer-only: payload conversion is a distributed-bus concern.
+    // SimpleCommandBus passes the payload through without serialization, so there is no in-memory equivalent.
+    private static final TestInfrastructure INFRASTRUCTURE = new AxonServerTestInfrastructure();
+
+    @Override
+    protected TestInfrastructure createTestInfrastructure() {
+        return INFRASTRUCTURE;
+    }
 
     @Test
     void commandAndResultSupportInlinePayloadConversion()

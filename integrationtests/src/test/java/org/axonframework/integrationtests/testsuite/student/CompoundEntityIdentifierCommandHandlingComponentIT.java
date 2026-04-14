@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+abstract class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
     private final String student1 = createId("student-1");
     private final String student2 = createId("student-2");
     private final String student3 = createId("student-3");

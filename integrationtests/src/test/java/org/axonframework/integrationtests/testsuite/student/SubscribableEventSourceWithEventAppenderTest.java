@@ -43,7 +43,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentIT {
+abstract class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentIT {
 
     @Test
     void whenEventPublishedViaEventAppenderThenSubscriberReceivesEvent() {
