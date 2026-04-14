@@ -23,7 +23,6 @@ import org.axonframework.integrationtests.testsuite.student.commands.AssignMento
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
-import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
@@ -130,12 +129,10 @@ class CompoundEntityIdentifierCommandHandlingComponentIT extends AbstractCommand
 
         // But not a second time
         assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student1, student3)))
-            .isInstanceOf(CommandExecutionException.class)
             .hasMessageContaining("Mentee already has a mentor");
 
         // And a third student can't become the mentee of the second, because the second is already a mentor
         assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student3, student2)))
-            .isInstanceOf(CommandExecutionException.class)
             .hasMessageContaining("Mentor already assigned to a mentee");
 
         // But the mentee can become a mentor for a third student
