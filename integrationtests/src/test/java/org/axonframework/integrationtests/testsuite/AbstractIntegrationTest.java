@@ -22,8 +22,6 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.integrationtests.testsuite.infrastructure.TestInfrastructure;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.junit.jupiter.api.AfterEach;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -31,12 +29,12 @@ import java.util.UUID;
  * Infrastructure-agnostic base class for all integration tests in this suite.
  * <p>
  * Replaces the AxonServer-coupled {@code AbstractAxonServerIT}. The specific backend (AxonServer, in-memory, Postgres,
- * …) is supplied by leaf test classes through {@link #createTestInfrastructure()}.
+ * …) is supplied by leaf test classes through {@link #testInfrastructure()}.
  * <p>
  * Subclasses must implement:
  * <ul>
- *     <li>{@link #createTestInfrastructure()} — return the infrastructure strategy to use</li>
- *     <li>{@link #createConfigurer()} — return the domain-specific {@link ApplicationConfigurer}</li>
+ *     <li>{@link #testInfrastructure()} — return the infrastructure strategy to use</li>
+ *     <li>{@link #applicationConfigurer()} — return the domain-specific {@link ApplicationConfigurer}</li>
  * </ul>
  * and must call {@link #startApp()} (typically from a {@code @BeforeEach} method) to start the Axon configuration.
  *
@@ -45,33 +43,25 @@ import java.util.UUID;
 @Internal
 public abstract class AbstractIntegrationTest {
 
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
-
-
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
 
     /**
-     * Per-test cache of the {@link TestInfrastructure} wrapper, ensuring that {@link TestInfrastructure#start()} and
-     * {@link TestInfrastructure#stop()} always operate on the same instance.
-     */
-    private TestInfrastructure cachedInfrastructure;
-
-    /**
-     * Factory method called once per test to obtain the {@link TestInfrastructure} for this test class. Leaf classes
-     * typically return a {@code private static final} instance:
+     * Returns the {@link TestInfrastructure} for this test. Leaf classes typically return a {@code private static
+     * final} instance so the infrastructure wrapper (and any heavy resources it guards, such as a shared
+     * Testcontainer) is created once per leaf class:
      * <pre>{@code
      * private static final TestInfrastructure INFRASTRUCTURE = new AxonServerTestInfrastructure();
      *
      * @Override
-     * protected TestInfrastructure createTestInfrastructure() {
+     * protected TestInfrastructure testInfrastructure() {
      *     return INFRASTRUCTURE;
      * }
      * }</pre>
      *
      * @return the infrastructure strategy to use for this test
      */
-    protected abstract TestInfrastructure createTestInfrastructure();
+    protected abstract TestInfrastructure testInfrastructure();
 
     /**
      * Returns the domain-specific {@link ApplicationConfigurer} for this test. Called from {@link #startApp()} each
@@ -79,40 +69,22 @@ public abstract class AbstractIntegrationTest {
      *
      * @return the application configurer for this test
      */
-    protected abstract ApplicationConfigurer createConfigurer();
-
-    /**
-     * Returns the cached {@link TestInfrastructure} for the current test, initializing it on first access.
-     * <p>
-     * This accessor is {@code final} to guarantee that all internal callers ({@link #startApp()},
-     * {@link #purgeData()}, {@code @AfterEach}) share the same instance.
-     *
-     * @return the infrastructure wrapper for this test
-     */
-    protected final TestInfrastructure testInfrastructure() {
-        if (cachedInfrastructure == null) {
-            cachedInfrastructure = createTestInfrastructure();
-        }
-        return cachedInfrastructure;
-    }
+    protected abstract ApplicationConfigurer applicationConfigurer();
 
     /**
      * Shuts down the Axon configuration and releases infrastructure resources acquired during {@link #startApp()}.
+     * The infrastructure is only stopped when {@link #startApp()} actually completed, signalled by a non-null
+     * {@link #startedConfiguration}.
      */
     @AfterEach
     void tearDown() {
+        if (startedConfiguration == null) {
+            return;
+        }
         try {
-            if (startedConfiguration != null) {
-                startedConfiguration.shutdown();
-            }
+            startedConfiguration.shutdown();
         } finally {
-            try {
-                if (cachedInfrastructure != null) {
-                    cachedInfrastructure.stop();
-                }
-            } finally {
-                cachedInfrastructure = null;
-            }
+            testInfrastructure().stop();
         }
     }
 
@@ -126,7 +98,7 @@ public abstract class AbstractIntegrationTest {
     protected void startApp() {
         TestInfrastructure infra = testInfrastructure();
         infra.start();
-        startedConfiguration = createConfigurer()
+        startedConfiguration = applicationConfigurer()
                 .componentRegistry(infra::configureInfrastructure)
                 .start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);

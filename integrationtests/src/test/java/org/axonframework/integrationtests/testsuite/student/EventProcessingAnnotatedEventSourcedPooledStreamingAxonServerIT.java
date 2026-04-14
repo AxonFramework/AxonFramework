@@ -28,7 +28,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingAxonServerIT
     private static final TestInfrastructure INFRASTRUCTURE = new AxonServerTestInfrastructure();
 
     @Override
-    protected TestInfrastructure createTestInfrastructure() {
+    protected TestInfrastructure testInfrastructure() {
         return INFRASTRUCTURE;
     }
 }

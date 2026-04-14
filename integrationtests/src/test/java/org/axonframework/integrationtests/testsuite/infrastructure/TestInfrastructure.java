@@ -24,9 +24,9 @@ import org.axonframework.common.configuration.ComponentRegistry;
  * AxonServer via Testcontainers, pure in-memory, JDBC, etc.).
  * <p>
  * An implementation is provided by each concrete leaf test class via
- * {@link org.axonframework.integrationtests.testsuite.AbstractIntegrationTest#createTestInfrastructure()}. The base
- * class caches the returned instance for the duration of a single test method, so {@link #start()} and {@link #stop()}
- * are guaranteed to receive the same object.
+ * {@link org.axonframework.integrationtests.testsuite.AbstractIntegrationTest#testInfrastructure()}. Leaf classes
+ * typically return a {@code private static final} singleton, so {@link #start()} and {@link #stop()} are guaranteed to
+ * receive the same object across test methods.
  *
  * @since 5.1.0
  */

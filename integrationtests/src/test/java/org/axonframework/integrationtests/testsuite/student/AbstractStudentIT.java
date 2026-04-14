@@ -87,7 +87,7 @@ public abstract class AbstractStudentIT extends AbstractIntegrationTest {
     }
 
     @Override
-    protected ApplicationConfigurer createConfigurer() {
+    protected ApplicationConfigurer applicationConfigurer() {
         var configurer = EventSourcingConfigurer.create()
                                                 .componentRegistry(cr -> cr.registerModule(studentEntity))
                                                 .componentRegistry(cr -> cr.registerModule(courseEntity));

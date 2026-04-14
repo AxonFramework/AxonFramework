@@ -28,7 +28,7 @@ public class MultiEntityCommandHandlingComponentInMemoryIT
     private static final TestInfrastructure INFRASTRUCTURE = new InMemoryTestInfrastructure();
 
     @Override
-    protected TestInfrastructure createTestInfrastructure() {
+    protected TestInfrastructure testInfrastructure() {
         return INFRASTRUCTURE;
     }
 }

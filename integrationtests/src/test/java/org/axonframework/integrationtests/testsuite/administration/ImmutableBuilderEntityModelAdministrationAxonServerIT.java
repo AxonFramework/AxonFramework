@@ -28,7 +28,7 @@ public class ImmutableBuilderEntityModelAdministrationAxonServerIT
     private static final TestInfrastructure INFRASTRUCTURE = new AxonServerTestInfrastructure();
 
     @Override
-    protected TestInfrastructure createTestInfrastructure() {
+    protected TestInfrastructure testInfrastructure() {
         return INFRASTRUCTURE;
     }
 }

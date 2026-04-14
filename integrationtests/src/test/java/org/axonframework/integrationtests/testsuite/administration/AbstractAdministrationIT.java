@@ -56,7 +56,7 @@ public abstract class AbstractAdministrationIT extends AbstractIntegrationTest {
     }
 
     @Override
-    protected ApplicationConfigurer createConfigurer() {
+    protected ApplicationConfigurer applicationConfigurer() {
         var configurer = EventSourcingConfigurer.create();
         return testSuiteConfigurer(configurer);
     }

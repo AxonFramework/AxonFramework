@@ -37,7 +37,7 @@ abstract class SealedClassCourseIT extends AbstractIntegrationTest {
     protected UnitOfWorkFactory unitOfWorkFactory;
 
     @Override
-    protected ApplicationConfigurer createConfigurer() {
+    protected ApplicationConfigurer applicationConfigurer() {
         // configuration example see https://github.com/holixon/emn-kotlin/blob/8de05d6f3601df5de3d17e23066b2c7cef836d86/examples/university/src/main/kotlin/faculty/write/renamecoursepolymorph/RenameCoursePolymorphConfiguration.kt
         final var configurer = EventSourcingConfigurer.create();
         final var courseEntity = EventSourcedEntityModule.autodetected(String.class,

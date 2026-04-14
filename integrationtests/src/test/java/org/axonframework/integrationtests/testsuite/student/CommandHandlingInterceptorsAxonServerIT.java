@@ -27,7 +27,7 @@ public class CommandHandlingInterceptorsAxonServerIT extends CommandHandlingInte
     private static final TestInfrastructure INFRASTRUCTURE = new AxonServerTestInfrastructure();
 
     @Override
-    protected TestInfrastructure createTestInfrastructure() {
+    protected TestInfrastructure testInfrastructure() {
         return INFRASTRUCTURE;
     }
 }
