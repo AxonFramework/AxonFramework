@@ -26,7 +26,6 @@
         <module>build/parent</module>
         <module>axon-framework-bom</module>
 
-        <module>axon-server-connector</module>
         <module>common</module>
         <module>conversion</module>
         <module>extensions</module>
