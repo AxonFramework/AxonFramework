@@ -24,7 +24,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
+import java.util.UUID;
 
 /**
  * Infrastructure-agnostic base class for all integration tests in this suite.
@@ -43,7 +43,6 @@ public abstract class AbstractIntegrationTest {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
 
-    private static final Random RND = new Random();
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
@@ -145,6 +144,6 @@ public abstract class AbstractIntegrationTest {
      * @return a unique identifier string
      */
     protected static String createId(String prefix) {
-        return prefix + "-" + RND.nextInt(Integer.MAX_VALUE);
+        return prefix + "-" + UUID.randomUUID();
     }
 }
