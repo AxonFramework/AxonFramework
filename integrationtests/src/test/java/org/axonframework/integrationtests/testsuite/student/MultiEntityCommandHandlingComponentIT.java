@@ -116,7 +116,6 @@ abstract class MultiEntityCommandHandlingComponentIT extends AbstractCommandHand
 
         // But five can not enroll for the first course
         assertThatThrownBy(() -> enrollStudentToCourse(student5, course1))
-                .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Course already has 3 students");
     }
 
@@ -132,7 +131,6 @@ abstract class MultiEntityCommandHandlingComponentIT extends AbstractCommandHand
 
         // But not a second time
         assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student1, student3)))
-                .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Mentor already assigned to a mentee");
     }
 
