@@ -41,7 +41,6 @@ ____
 |<<Axon modelling>>             |`axon-modelling`                |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-modelling[available]
 |<<Axon Event Sourcing>>        |`axon-eventsourcing`            |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-eventsourcing[available]
 |<<Axon test>>                  |`axon-test`                     |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-test[available]
-|<<Axon Server connector>>      |`axon-server-connector`         |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-server-connector[available]
 |<<Axon update>>                |`axon-update`                   |`org.axonframework`       |https://central.sonatype.com/search?q=a:axon-update[available]
 |===
 
@@ -70,10 +69,6 @@ This module contains all necessary infrastructure components to support Event So
 
 This module contains test fixtures that you can use to test Axon based components, such as your command handlers and entities.
 You typically do not need this module at runtime and will only need to be added to the classpath for running tests.
-
-=== Axon Server connector
-
-This module provides infrastructure components that connect to Axon Server.
 
 === Axon update
 
