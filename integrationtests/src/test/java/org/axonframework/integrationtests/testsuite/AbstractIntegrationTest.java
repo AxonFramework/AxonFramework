@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.integrationtests.testsuite.infrastructure.TestInfrastructure;
@@ -41,6 +42,7 @@ import java.util.UUID;
  *
  * @since 5.1.0
  */
+@Internal
 public abstract class AbstractIntegrationTest {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
