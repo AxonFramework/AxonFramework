@@ -37,19 +37,36 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
-      - name: Regular Build
+      - name: Build
+        run: |
+          ./mvnw -B -U -ntp -Dstyle.color=always -Possrh clean install -DskipTests
+
+      - name: Unit Tests
+        run: |
+          ./mvnw -B -ntp -Dstyle.color=always test \
+          -Dsurefire.rerunFailingTestsCount=5 \
+          -Dparallel=classes -DthreadCount=1 -DforkCount=2
+
+      - name: Integration Tests (InMemory)
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -ntp -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true clean verify \
+          ./mvnw -B -ntp -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true verify \
           -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=5 \
           -Dparallel=classes -DthreadCount=1 -DforkCount=2
 
-      - name: Build with Coverage reports
+      - name: Integration Tests (InMemory) with Coverage
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -ntp -Dstyle.color=always -Possrh -Dcoverage clean verify \
+          ./mvnw -B -ntp -Dstyle.color=always -Possrh -Dcoverage verify \
           -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=5 \
           -Dparallel=classes -DthreadCount=1 -DforkCount=2
+
+      - name: Integration Tests (Axon Server)
+        run: |
+          ./mvnw -B -ntp -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true verify \
+          -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=5 \
+          -Dparallel=classes -DthreadCount=1 -DforkCount=2 \
+          -Daxon.test.storage-engine-provider=org.axonframework.integrationtests.testsuite.AxonServerEventStorageEngineProvider
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -65,6 +82,8 @@ jobs:
       - name: Create test summary
         uses: test-summary/action@v2
         with:
-          paths: "**/target/surefire-reports/TEST-*.xml"
+          paths: |
+            **/target/surefire-reports/TEST-*.xml
+            **/target/failsafe-reports/TEST-*.xml
           show: "fail, skip"
-        if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
+        if: always()
