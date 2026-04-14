@@ -15,6 +15,7 @@ To not be bothered with version compatibility issues between <<Main modules,fram
 
 Axon modules are available on https://central.sonatype.com/search?q=axonframework[Maven Central].
 
+[#_main_modules]
 == Main modules
 
 Axon 'Main Modules' are the modules that have been thoroughly tested and are robust enough to use in demanding production environments.
@@ -74,6 +75,7 @@ You typically do not need this module at runtime and will only need to be added 
 
 This module Axon Framework's update checker, ensuring your Axon application is as up to date as possible. For more details on this component we refer to link:https://docs.axoniq.io/axon-framework-update-checker/[this] section of our documentation.
 
+[#_extension_modules]
 == Extension modules
 
 Besides main modules, there are several extension modules which complement Axon Framework.
