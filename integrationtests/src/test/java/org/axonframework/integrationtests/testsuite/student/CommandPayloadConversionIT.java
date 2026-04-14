@@ -16,6 +16,8 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
+import org.axonframework.integrationtests.testsuite.AxonServerEventStorageEngineProvider;
+import org.axonframework.integrationtests.testsuite.TestEventStorageEngine;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
@@ -30,9 +32,13 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Integration tests validating inline command and command result payload conversion behavior.
+ * <p>
+ * Pinned to Axon Server because payload conversion (serialization/deserialization) only occurs
+ * when commands transit through {@code AxonServerCommandBus}.
  *
  * @author Jakob Hatzl
  */
+@TestEventStorageEngine(AxonServerEventStorageEngineProvider.class)
 class CommandPayloadConversionIT extends AbstractCommandHandlingStudentIT {
 
     @Test
