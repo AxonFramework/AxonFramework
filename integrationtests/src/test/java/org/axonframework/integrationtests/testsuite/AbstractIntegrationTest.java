@@ -38,6 +38,8 @@ import java.util.UUID;
  *     <li>{@link #createConfigurer()} — return the domain-specific {@link ApplicationConfigurer}</li>
  * </ul>
  * and must call {@link #startApp()} (typically from a {@code @BeforeEach} method) to start the Axon configuration.
+ *
+ * @since 5.1.0
  */
 public abstract class AbstractIntegrationTest {
 

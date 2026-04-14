@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.infrastructure;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentRegistry;
 
 /**
@@ -26,7 +27,10 @@ import org.axonframework.common.configuration.ComponentRegistry;
  * {@link org.axonframework.integrationtests.testsuite.AbstractIntegrationTest#createTestInfrastructure()}. The base
  * class caches the returned instance for the duration of a single test method, so {@link #start()} and {@link #stop()}
  * are guaranteed to receive the same object.
+ *
+ * @since 5.1.0
  */
+@Internal
 public interface TestInfrastructure {
 
     /**

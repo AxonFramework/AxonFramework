@@ -43,6 +43,8 @@ import java.io.IOException;
  *     return INFRASTRUCTURE;
  * }
  * }</pre>
+ *
+ * @since 5.1.0
  */
 public final class AxonServerTestInfrastructure implements TestInfrastructure {
 

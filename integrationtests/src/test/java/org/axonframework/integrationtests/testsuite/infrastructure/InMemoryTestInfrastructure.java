@@ -39,6 +39,8 @@ import org.axonframework.common.configuration.ComponentRegistry;
  *     return INFRASTRUCTURE;
  * }
  * }</pre>
+ *
+ * @since 5.1.0
  */
 public final class InMemoryTestInfrastructure implements TestInfrastructure {
 
