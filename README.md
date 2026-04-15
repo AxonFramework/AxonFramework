@@ -25,7 +25,7 @@
 > The Axon Framework team decided to move the Axon Framework repository from the [Axon Framework GitHub organization](https://github.com/AxonFramework/) to the [AxonIQ GitHub organization](https://github.com/AxonIQ).
 > This switch makes project management easier for the team, following from our active use of GitHub Project boards.
 >
-> GitHub Project boards do not allow to merge repositories between different organizations in a single board.
+> GitHub Project boards do not allow merging repositories between different organizations in a single board.
 > The team is actively constructing several open-core licensed modules for Axon Framework.
 > These are best placed under the AxonIQ GitHub organization due to their licensing.
 >
