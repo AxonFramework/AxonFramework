@@ -118,7 +118,7 @@ our [Privacy Policy](https://www.axoniq.io/privacy-policy) for any privacy conce
 
 ## Repository Transferred
 
-The Axon Framework team has decided to move the Axon Framework repository from the [Axon Framework GitHub organization](https://github.com/AxonFramework/) to the [AxonIQ GitHub organization](https://github.com/AxonIQ).
+The Axon Framework team has decided to move the Axon Framework repository from the [Axon Framework GitHub organization](https://github.com/AxonFramework/) to the [Axoniq GitHub organization](https://github.com/AxonIQ).
 This switch makes project management easier for the team, due to our active use of GitHub Project boards.
 
 GitHub Project boards do not allow merging repositories between different organizations in a single board.
