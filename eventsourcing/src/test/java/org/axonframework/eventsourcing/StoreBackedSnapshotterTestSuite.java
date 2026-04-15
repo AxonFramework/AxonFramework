@@ -229,15 +229,18 @@ public abstract class StoreBackedSnapshotterTestSuite {
 
         QualifiedName qualifiedName = new QualifiedName(Account.class);
 
-        snapshotStore.store(
-            qualifiedName,
-            ACCOUNT_ID,
-            new Snapshot(
-                new GlobalIndexPosition(3),
-                "42",  // unsupported version which leads to this snapshot being ignored
-                new Account(ACCOUNT_ID, "My Account", 262144),
-                Instant.now(),
-                Map.of()
+        unitOfWorkFactory.create().executeWithResult(pc ->
+            snapshotStore.store(
+                qualifiedName,
+                ACCOUNT_ID,
+                new Snapshot(
+                    new GlobalIndexPosition(3),
+                    "42",  // unsupported version which leads to this snapshot being ignored
+                    new Account(ACCOUNT_ID, "My Account", 262144),
+                    Instant.now(),
+                    Map.of()
+                ),
+                pc
             )
         ).join();
 
@@ -291,15 +294,18 @@ public abstract class StoreBackedSnapshotterTestSuite {
 
         QualifiedName qualifiedName = new QualifiedName(Account.class);
 
-        snapshotStore.store(
-            qualifiedName,
-            ACCOUNT_ID,
-            new Snapshot(
-                new GlobalIndexPosition(3),
-                "0.0.1",  // correct version
-                "Junk",  // incorrect data, which leads to deserialization error
-                Instant.now(),
-                Map.of()
+        unitOfWorkFactory.create().executeWithResult(pc ->
+            snapshotStore.store(
+                qualifiedName,
+                ACCOUNT_ID,
+                new Snapshot(
+                    new GlobalIndexPosition(3),
+                    "0.0.1",  // correct version
+                    "Junk",  // incorrect data, which leads to deserialization error
+                    Instant.now(),
+                    Map.of()
+                ),
+                pc
             )
         ).join();
 

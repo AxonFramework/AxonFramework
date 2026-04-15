@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.snapshot.api.Snapshot;
 import org.axonframework.eventsourcing.snapshot.api.SnapshotPolicy;
 import org.axonframework.eventsourcing.snapshot.api.Snapshotter;
 import org.axonframework.messaging.core.MessageType;
+import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,12 +94,12 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
     }
 
     @Override
-    public CompletableFuture<Snapshot> load(I identifier) {
+    public CompletableFuture<Snapshot> load(I identifier, ProcessingContext context) {
         Objects.requireNonNull(identifier, "The identifier parameter must not be null.");
 
         Snapshot inFlightSnapshot = inFlightSnapshots.get(identifier);
         CompletableFuture<Snapshot> loadedSnapshot = inFlightSnapshot == null
-            ? store.load(type.qualifiedName(), identifier)
+            ? store.load(type.qualifiedName(), identifier, context)
             : CompletableFuture.completedFuture(inFlightSnapshot);
 
         return loadedSnapshot
@@ -122,7 +123,8 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
     public void store(
         I identifier,
         E entity,
-        Position position
+        Position position,
+        ProcessingContext context
     ) {
         Objects.requireNonNull(identifier, "The identifier parameter must not be null.");
         Objects.requireNonNull(entity, "The entity parameter must not be null.");
@@ -131,7 +133,7 @@ public class StoreBackedSnapshotter<I, E> implements Snapshotter<I, E> {
         Snapshot newSnapshot = new Snapshot(position, type.version(), entity, GenericEventMessage.clock.instant(), Map.of());
 
         inFlightSnapshots.put(identifier, newSnapshot);
-        store.store(type.qualifiedName(), identifier, newSnapshot).whenComplete((voidResult, ex) -> {
+        store.store(type.qualifiedName(), identifier, newSnapshot, context).whenComplete((voidResult, ex) -> {
             // note: only remove inflight snapshot from cache if not replaced concurrently
             inFlightSnapshots.remove(identifier, newSnapshot);
 
