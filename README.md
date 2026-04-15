@@ -130,7 +130,7 @@ GitHub automatically redirects all links, clones, and references from the old lo
 Your existing forks, stars, and bookmarks will continue to work seamlessly, regardless of the transfer.
 
 However, it is recommended to update existing local clones to the new repository URL.
-You can do this by using git remote on the command line:
+You can do this by using `git remote` on the command line:
 
 ```
 git remote set-url origin https://github.com/AxonIQ/AxonFramework.git
