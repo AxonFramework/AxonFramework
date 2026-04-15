@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.jspecify.annotations.NonNull;
 import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStore;
-import org.axonframework.eventsourcing.eventstore.StorageEngineBackedEventStoreTestSuite;
+import org.axonframework.eventsourcing.eventstore.DcbBasedStorageEngineBackedEventStoreTestSuite;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.*;
  * @author John Hendrikx
  */
 class InMemoryStorageEngineBackedEventStoreTest
-        extends StorageEngineBackedEventStoreTestSuite<InMemoryEventStorageEngine> {
+        extends DcbBasedStorageEngineBackedEventStoreTestSuite<InMemoryEventStorageEngine> {
 
     private static final UnitOfWorkFactory FACTORY = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
