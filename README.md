@@ -19,6 +19,11 @@
 
 </p>
 
+> [!NOTE]
+> This repository has moved from the [Axon Framework GitHub organization](https://github.com/AxonFramework/) to the [AxonIQ GitHub organization](https://github.com/AxonIQ) to streamline project management.
+> All existing links, clones, forks, stars, and bookmarks will continue to work seamlessly thanks to GitHub's automatic redirects.
+> For more details, read [here](#repository-transferred) 
+
 # Axon Framework
 
 [![Maven Central](https://img.shields.io/maven-central/v/org.axonframework/axon-framework-bom)](https://central.sonatype.com/artifact/org.axonframework/axon-framework-bom)
@@ -110,3 +115,23 @@ why we collect this information, what you get in return, how to opt out, and why
 our [Privacy Policy](https://www.axoniq.io/privacy-policy) for any privacy concerns.
 
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=31ffe27e-667c-48ff-8a14-8029d44dfb66" />
+
+## Repository Transferred
+
+The Axon Framework team has decided to move the Axon Framework repository from the [Axon Framework GitHub organization](https://github.com/AxonFramework/) to the [Axoniq GitHub organization](https://github.com/AxonIQ).
+This switch makes project management easier for the team, due to our active use of GitHub Project boards.
+
+GitHub Project boards do not allow merging repositories between different organizations in a single board.
+The team is actively constructing several open-core licensed modules for Axon Framework.
+These are best placed under the AxonIQ GitHub organization due to their licensing.
+
+Users of the Axon Framework repository will not experience any disruptions from this transfer.
+GitHub automatically redirects all links, clones, and references from the old location to the new one.
+Your existing forks, stars, and bookmarks will continue to work seamlessly, regardless of the transfer.
+
+However, it is recommended to update existing local clones to the new repository URL.
+You can do this by using `git remote` on the command line:
+
+```shell
+git remote set-url origin https://github.com/AxonIQ/AxonFramework.git
+```
