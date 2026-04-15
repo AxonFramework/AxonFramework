@@ -132,6 +132,6 @@ Your existing forks, stars, and bookmarks will continue to work seamlessly, rega
 However, it is recommended to update existing local clones to the new repository URL.
 You can do this by using `git remote` on the command line:
 
-```
+```shell
 git remote set-url origin https://github.com/AxonIQ/AxonFramework.git
 ```
