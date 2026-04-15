@@ -26,7 +26,7 @@
 > This switch makes project management easier for the team, following from our active use of GitHub Project boards.
 >
 > GitHub Project boards do not allow to merge repositories between different organizations in a single board.
-> The team is actively constructing a several open-core licensed modules for Axon Framework.
+> The team is actively constructing several open-core licensed modules for Axon Framework.
 > These are best placed under the AxonIQ GitHub organization due to their licensing.
 >
 > Users of the Axon Framework repository will not experience any disruptions from this transfer.
