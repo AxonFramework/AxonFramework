@@ -33,13 +33,6 @@
     <dependencies>
         <!-- Axon dependencies -->
         <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring</artifactId>
             <version>${project.version}</version>
