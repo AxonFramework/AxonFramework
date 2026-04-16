@@ -222,6 +222,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             props.put("logging.level.root", "OFF");
             props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
             props.put("spring.main.banner-mode", "off");
+            props.put("axon.eventstorage.jpa.polling-interval", "0");
             props.putAll(parameters);
             app.setDefaultProperties(props);
             var e = assertThrows(

@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation of the {@link MessageStream} that concatenates two {@code MessageStreams}.
@@ -84,16 +86,9 @@ class ConcatenatingMessageStream<M extends Message> extends AbstractMessageStrea
     @Override
     protected synchronized FetchResult<Entry<M>> fetchNext() {
         do {
-            if (active.hasNextAvailable()) {
-                return FetchResult.of(active.next().orElseThrow());
-            }
-
-            if (!active.isCompleted()) {
-                return FetchResult.notReady();
-            }
-
-            if (active.error().isPresent()) {
-                return FetchResult.error(active.error().orElseThrow());
+            switch (FetchResult.of(active)) {
+                case FetchResult.Completed(): continue;
+                case FetchResult<Entry<M>> result: return result;
             }
         } while(switchStream());
 
@@ -133,5 +128,10 @@ class ConcatenatingMessageStream<M extends Message> extends AbstractMessageStrea
         }
 
         return reduction;
+    }
+
+    @Override
+    protected String describeDelegates() {
+        return Stream.concat(Stream.of(active), streams.stream()).map(Object::toString).collect(Collectors.joining(", ", "*", ""));
     }
 }

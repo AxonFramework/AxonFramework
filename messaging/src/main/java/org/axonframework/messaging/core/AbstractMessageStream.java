@@ -17,11 +17,12 @@
 package org.axonframework.messaging.core;
 
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.core.MessageStream.Entry;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK;
 
@@ -150,11 +151,9 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
                 return FetchResult.notReady();
             }
 
-            if (delegate.error().isEmpty()) {
-                return FetchResult.completed();
-            }
-
-            return FetchResult.error(delegate.error().orElseThrow());
+            return delegate.error()
+                .map(FetchResult::<Entry<M>>error)
+                .orElse(FetchResult.completed());
         }
 
         /**
@@ -542,5 +541,91 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
                 this.completed = true;
             }
         }
+    }
+
+    /**
+     * Returns a structured diagnostic representation of this {@link MessageStream}.
+     * <p>
+     * The output is designed for debugging complex stream compositions and focuses on
+     * three orthogonal aspects:
+     * <ul>
+     *     <li><b>Lifecycle status</b> (terminal or transitional state)</li>
+     *     <li><b>Transient flags</b> (abnormal or noteworthy conditions)</li>
+     *     <li><b>Delegation structure</b> (wrapped or composed streams)</li>
+     * </ul>
+     *
+     * <h3>Format</h3>
+     * The general structure is:
+     * <pre>
+     * SimpleName[status|P|flags]{delegates}
+     * </pre>
+     *
+     * <h3>Status section</h3>
+     * The status reflects the current terminal or transitional condition:
+     * <ul>
+     *     <li>{@code ERROR} – the stream completed exceptionally</li>
+     *     <li>{@code COMPLETED} – the stream completed normally</li>
+     *     <li>{@code NOT_READY} – the stream is awaiting data</li>
+     *     <li>absent – stream is in its normal active state</li>
+     * </ul>
+     *
+     * <h3>Additional markers</h3>
+     * <ul>
+     *     <li>{@code P} – indicates a peeked entry is currently buffered</li>
+     *     <li>{@link #describeFlags()} – optional subtype-specific diagnostic flags
+     *     separated by {@code "|"}, only used for abnormal or noteworthy conditions</li>
+     * </ul>
+     *
+     * <h3>Flags</h3>
+     * Flags are intended for rare or abnormal conditions only, not normal operating state.
+     * They should be short, human-readable identifiers separated by {@code "|"}.
+     * If no flags are present, this section is omitted.
+     *
+     * <h3>Delegates</h3>
+     * Delegates describe wrapped or composed streams that this stream builds upon.
+     * Multiple delegates are comma-separated. The currently active delegate must be
+     * prefixed with {@code "*"}.
+     * <p>
+     * This allows reconstruction of the stream pipeline structure for debugging purposes.
+     *
+     * @return a structured diagnostic string representing this stream and its composition
+     */
+    @Override
+    public synchronized String toString() {
+        String status = error != null ? "ERROR"
+                          : completed ? "COMPLETED"
+                       : awaitingData ? "NOT_READY"
+                                      : null;
+        String flags = describeFlags();  // pipe separated
+        String delegates = describeDelegates();  // comma seperated, with the active prepended with asterix
+        String statusDescription = Stream.of(status, (peekedEntry == null ? null : "P"), flags).filter(Objects::nonNull).collect(Collectors.joining("|"));
+
+        return getClass().getSimpleName().replace("MessageStream", "") + (statusDescription.isEmpty() ? "" : "[" + statusDescription + "]") + (delegates == null ? "" : "{" + delegates + "}");
+    }
+
+    /**
+     * Subtypes should override this to return flags that apply to this stream for debugging purposes.
+     * Flags should be short. Multiple flags should be separate with a pipe ("|").
+     * <p>
+     * Only include flags for abnormal states, to reduce visual noise.
+     *
+     * @return the flags that apply to this stream, or {@code null} if there are no relevant flags
+     */
+    protected String describeFlags() {
+        return null;
+    }
+
+    /**
+     * Subtypes should override this to describe any (message stream) delegates they use for
+     * debugging purposes. This allows to visual a chain of message streams, their states and
+     * how they are linked.
+     * <p>
+     * If there are multiple delegates, then they should be comma separted with the active
+     * delegate prepended with an asterix ("*").
+     *
+     * @return the description of delegate streams, or {@code null} if there are no delegates
+     */
+    protected String describeDelegates() {
+        return null;
     }
 }

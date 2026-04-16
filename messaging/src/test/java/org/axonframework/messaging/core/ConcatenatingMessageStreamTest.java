@@ -108,7 +108,7 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
         }
 
         /*
-         * TODO #XYZ
+         * TODO #4424
          *
          * If ConcatenatingMessageStream is fixed not to trigger this callback,
          * DistributedQueryBusSubscriptionQueryTest (which has some other flakey tests)

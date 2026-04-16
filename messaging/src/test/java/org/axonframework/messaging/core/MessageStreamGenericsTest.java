@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests if the generics on {@link MessageStream} methods are set correctly,
  * generally allowing methods to be called with subtypes for a message stream
  * of a specific type.
+ *
+ * @author John Hendrikx
  */
 public class MessageStreamGenericsTest {
 

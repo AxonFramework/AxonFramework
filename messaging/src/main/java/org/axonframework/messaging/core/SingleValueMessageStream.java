@@ -100,4 +100,9 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
                                            BiFunction<R, ? super Entry<M>, R> accumulator) {
         return source.thenApply(message -> accumulator.apply(identity, message));
     }
+
+    @Override
+    protected String describeFlags() {
+        return source.isDone() ? "" : "W";
+    }
 }

@@ -110,6 +110,13 @@ class AggregateBasedJpaEventStorageEngineIT
 
     private AggregateBasedJpaEventStorageEngine engine;
 
+    @AfterEach
+    void afterEach() {
+        if (testSubject != null) {
+            testSubject.close();
+        }
+    }
+
     @Override
     protected AggregateBasedJpaEventStorageEngine buildStorageEngine() {
         transactionManager = new SpringTransactionManager(platformTransactionManager, entityManagerProvider, null);

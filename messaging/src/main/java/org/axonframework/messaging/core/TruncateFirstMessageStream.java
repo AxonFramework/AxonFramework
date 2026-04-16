@@ -66,4 +66,9 @@ class TruncateFirstMessageStream<M extends Message>
     protected void onCompleted() {
         delegate.close();
     }
+
+    @Override
+    protected String describeDelegates() {
+        return delegate.toString();
+    }
 }

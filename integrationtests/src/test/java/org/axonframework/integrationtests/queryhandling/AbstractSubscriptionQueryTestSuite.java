@@ -438,7 +438,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         assertTrue(result.isCompleted() && result.error().isEmpty());
     }
 
-    // TODO this test was/is flakey sometimes, will hang indefinitely, needs further investigation
+    // TODO #4422 this test was/is flakey sometimes, will hang indefinitely, needs further investigation
 
     @Test
     void orderingOfOperationOnUpdateHandler() {

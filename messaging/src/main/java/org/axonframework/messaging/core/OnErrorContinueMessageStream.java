@@ -57,20 +57,10 @@ class OnErrorContinueMessageStream<M extends Message> extends AbstractMessageStr
     @Override
     protected synchronized FetchResult<Entry<M>> fetchNext() {
         do {
-            if (current.hasNextAvailable()) {
-                return FetchResult.of(current.next().orElseThrow());
-            }
+            FetchResult<Entry<M>> result = FetchResult.of(current);
 
-            if (!current.isCompleted()) {
-                return FetchResult.notReady();
-            }
-
-            if (current.error().isEmpty()) {
-                return FetchResult.completed();
-            }
-
-            if (switchedToContinuation) {
-                return FetchResult.error(current.error().orElseThrow());
+            if (switchedToContinuation || !(result instanceof FetchResult.Error)) {
+                return result;
             }
         } while (switchToContinuation());
 
@@ -93,5 +83,15 @@ class OnErrorContinueMessageStream<M extends Message> extends AbstractMessageStr
     @Override
     protected synchronized void onCompleted() {
         current.close();
+    }
+
+    @Override
+    protected String describeFlags() {
+        return switchedToContinuation ? "ALT" : null;
+    }
+
+    @Override
+    protected String describeDelegates() {
+        return current.toString();
     }
 }

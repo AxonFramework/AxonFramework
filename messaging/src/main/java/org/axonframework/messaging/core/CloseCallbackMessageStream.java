@@ -83,4 +83,9 @@ public class CloseCallbackMessageStream<M extends Message> extends AbstractMessa
             closeHandler.run();
         }
     }
+
+    @Override
+    public String describeDelegates() {
+        return delegate.toString();
+    }
 }
