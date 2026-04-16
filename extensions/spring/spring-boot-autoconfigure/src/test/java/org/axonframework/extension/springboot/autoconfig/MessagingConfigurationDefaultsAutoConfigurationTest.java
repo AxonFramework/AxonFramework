@@ -132,8 +132,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because
-    // its Converter parameter cannot be resolved when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
     @Configuration
     @EnableAutoConfiguration(
             exclude = {
@@ -141,9 +139,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
                     AvroConverterAutoConfiguration.class,
                     CBORConverterAutoConfiguration.class,
                     JacksonConverterAutoConfiguration.class,
-                    Jackson2ConverterAutoConfiguration.class,
-                    JpaDeadLetterQueueAutoConfiguration.class,
-                    JdbcDeadLetterQueueAutoConfiguration.class
+                    Jackson2ConverterAutoConfiguration.class
             }
     )
     public static class TestContext {
@@ -166,8 +162,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
-    // when multiple custom Converter beans are registered without @Primary.
     @Configuration
     @EnableAutoConfiguration(
             exclude = {
@@ -175,9 +169,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
                     AvroConverterAutoConfiguration.class,
                     CBORConverterAutoConfiguration.class,
                     JacksonConverterAutoConfiguration.class,
-                    Jackson2ConverterAutoConfiguration.class,
-                    JpaDeadLetterQueueAutoConfiguration.class,
-                    JdbcDeadLetterQueueAutoConfiguration.class
+                    Jackson2ConverterAutoConfiguration.class
             }
     )
     public static class CustomContext {
