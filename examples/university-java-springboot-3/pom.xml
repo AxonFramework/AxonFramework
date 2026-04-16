@@ -114,6 +114,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
+            <version>5.1.0-RC2</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
