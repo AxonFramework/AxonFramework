@@ -56,13 +56,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Serialization -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
