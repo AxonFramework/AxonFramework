@@ -46,8 +46,6 @@
             -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
         </mockito.agent.argLine>
 
-        <!-- Axon Server -->
-        <axonserver-connector-java.version>2026.0.0</axonserver-connector-java.version>
         <!-- Caching -->
         <ehcache.version>3.12.0</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
