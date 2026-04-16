@@ -49,8 +49,11 @@ public final class InMemoryTestInfrastructure implements TestInfrastructure {
      * on the {@code axon-server-connector} module. The {@link ComponentRegistry#disableEnhancer(String)} overload
      * treats "enhancer not found on classpath" and "enhancer found and disabled" identically, so this is safe even in
      * environments where the connector JAR is absent.
+     * <p>
      */
-    private static final String AXON_SERVER_ENHANCER_FQCN =
+    private static final String AXONIQ_SERVER_ENHANCER_FQCN =
+            "io.axoniq.framework.axonserver.connector.configuration.AxonServerConfigurationEnhancer";
+    private static final String AXON_SERVER_ENHANCER_FQCN = // TODO #4412 - remove as a part of this task
             "org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer";
 
     @Override
@@ -64,6 +67,7 @@ public final class InMemoryTestInfrastructure implements TestInfrastructure {
         // EventSourcingConfigurationDefaults already provides InMemoryEventStorageEngine;
         // MessagingConfigurationDefaults provides SimpleCommandBus / SimpleQueryBus.
         registry.disableEnhancer(AXON_SERVER_ENHANCER_FQCN);
+        registry.disableEnhancer(AXONIQ_SERVER_ENHANCER_FQCN);
     }
 
     @Override

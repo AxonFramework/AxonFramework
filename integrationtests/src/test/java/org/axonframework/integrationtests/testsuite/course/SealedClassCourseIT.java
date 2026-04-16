@@ -32,7 +32,7 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-abstract class SealedClassCourseIT extends AbstractIntegrationTest {
+public abstract class SealedClassCourseIT extends AbstractIntegrationTest {
 
     protected UnitOfWorkFactory unitOfWorkFactory;
 

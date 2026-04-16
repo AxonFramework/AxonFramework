@@ -28,8 +28,8 @@ import java.util.UUID;
 /**
  * Infrastructure-agnostic base class for all integration tests in this suite.
  * <p>
- * Replaces the AxonServer-coupled {@code AbstractAxonServerIT}. The specific backend (AxonServer, in-memory, Postgres,
- * …) is supplied by leaf test classes through {@link #testInfrastructure()}.
+ * The specific backend (AxonServer, InMemory, Postgres, …) is supplied by leaf test classes through
+ * {@link #testInfrastructure()}.
  * <p>
  * Subclasses must implement:
  * <ul>
@@ -38,6 +38,7 @@ import java.util.UUID;
  * </ul>
  * and must call {@link #startApp()} (typically from a {@code @BeforeEach} method) to start the Axon configuration.
  *
+ * @author Mateusz Nowak
  * @since 5.1.0
  */
 @Internal

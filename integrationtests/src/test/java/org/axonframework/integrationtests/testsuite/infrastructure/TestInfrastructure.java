@@ -28,6 +28,7 @@ import org.axonframework.common.configuration.ComponentRegistry;
  * typically return a {@code private static final} singleton, so {@link #start()} and {@link #stop()} are guaranteed to
  * receive the same object across test methods.
  *
+ * @author Mateusz Nowak
  * @since 5.1.0
  */
 @Internal

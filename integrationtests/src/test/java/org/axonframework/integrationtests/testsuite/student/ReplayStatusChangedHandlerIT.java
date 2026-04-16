@@ -55,7 +55,7 @@ import static org.awaitility.Awaitility.await;
  * @author Steven van Beelen
  * @since 5.1.0
  */
-abstract class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
+public abstract class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
     private static final String PSEP_NAME = "replayStatusChangeHandler";
 

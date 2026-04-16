@@ -51,7 +51,7 @@ public final class AxonServerTestInfrastructure implements TestInfrastructure {
     private static final Logger LOG = LoggerFactory.getLogger(AxonServerTestInfrastructure.class);
 
     private static final AxonServerContainer CONTAINER =
-            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0")
+            new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:latest")
                     .withAxonServerHostname("localhost")
                     .withDevMode(true)
                     .withReuse(true)
