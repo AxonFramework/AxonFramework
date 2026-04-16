@@ -58,10 +58,8 @@ class AvroSchemaStoreAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues(
-                "axon.axonserver.enabled=false",
-                "axon.eventstorage.jpa.polling-interval=0"
-        );
+        testApplicationContext = new ApplicationContextRunner()
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test

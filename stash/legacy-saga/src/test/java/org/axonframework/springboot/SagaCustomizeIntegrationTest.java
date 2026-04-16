@@ -50,8 +50,7 @@ import static org.awaitility.Awaitility.await;
  * @author Marc Gathier
  */
 @SpringBootTest(properties = {
-        "spring.main.banner-mode=off",
-        "axon.axonserver.enabled=false"
+        "spring.main.banner-mode=off"
 })
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {

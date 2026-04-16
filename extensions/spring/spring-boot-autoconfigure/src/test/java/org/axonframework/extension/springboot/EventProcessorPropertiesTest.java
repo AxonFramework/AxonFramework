@@ -39,12 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class EventProcessorPropertiesTest {
 
-    @SpringBootTest(
-            classes = MyContext.class,
-            properties = {
-                    "axon.axonserver.enabled=false"
-            }
-    )
+    @SpringBootTest(classes = MyContext.class)
     @Nested
     class LoadDefaultProperties {
 
@@ -64,7 +59,6 @@ class EventProcessorPropertiesTest {
     @SpringBootTest(
             classes = MyContext.class,
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors[this.is.a.package].mode=subscribing"
             }
     )
@@ -86,7 +80,6 @@ class EventProcessorPropertiesTest {
     @SpringBootTest(
             classes = MyContext.class,
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors.foo.batch-size=1",
                     "axon.eventhandling.processors.foo.initial-segment-count=2",
                     "axon.eventhandling.processors.foo.mode=pooled",
