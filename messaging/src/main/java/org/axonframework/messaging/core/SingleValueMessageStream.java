@@ -60,7 +60,7 @@ class SingleValueMessageStream<M extends Message> extends AbstractMessageStream<
      */
     SingleValueMessageStream(CompletableFuture<Entry<M>> source) {
         this.source = source;
-        this.source.thenAccept(e -> signalProgress());
+        this.source.whenComplete((e, t) -> signalProgress());
     }
 
     @Override

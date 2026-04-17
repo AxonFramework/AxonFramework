@@ -18,9 +18,6 @@ package org.axonframework.messaging.core;
 
 import org.axonframework.messaging.core.MessageStream.Entry;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Implementation of the {@link MessageStream} that invokes the given {@code completeHandler} once the
  * {@code delegate MessageStream} completes.
@@ -28,12 +25,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
-class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
+class CompletionCallbackMessageStream<M extends Message> extends AbstractMessageStream<M> {
 
     private final Runnable completeHandler;
-    private final AtomicBoolean invoked = new AtomicBoolean(false);
+    private final MessageStream<M> delegate;
 
     /**
      * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
@@ -43,58 +41,34 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
      *                        given {@code completeHandler}.
      * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
      */
-    CompletionCallbackMessageStream(MessageStream<M> delegate,
-                                    Runnable completeHandler) {
-        super(delegate);
+    CompletionCallbackMessageStream(MessageStream<M> delegate, Runnable completeHandler) {
+        this.delegate = delegate;
         this.completeHandler = completeHandler;
-        delegate.setCallback(this::invokeCompletionHandlerIfCompleted);
+
+        if (delegate.isCompleted()) {
+            initialize(delegate.error().map(FetchResult::<Entry<M>>error).orElse(FetchResult.completed()));
+        }
+
+        delegate.setCallback(this::signalProgress);
     }
 
     @Override
-    public Optional<Entry<M>> next() {
-        Optional<Entry<M>> next = delegate().next();
-        if (next.isEmpty()) {
-            invokeCompletionHandlerIfCompleted();
-        }
-        return next;
+    protected FetchResult<Entry<M>> fetchNext() {
+        return FetchResult.of(delegate);
     }
 
     @Override
-    public Optional<Entry<M>> peek() {
-        Optional<Entry<M>> peek = delegate().peek();
-        if (peek.isEmpty()) {
-            invokeCompletionHandlerIfCompleted();
-        }
-        return peek;
-    }
+    protected void onCompleted() {
+        delegate.close();
 
-    private void invokeCompletionHandlerIfCompleted() {
-        if (!delegate().hasNextAvailable() && delegate().isCompleted() && delegate().error().isEmpty() && !invoked.getAndSet(true)) {
-            completeHandler.run();
+        if (error().isEmpty()) {
+            completeHandler.run();  // may throw exception, that's allowed
         }
     }
 
     @Override
-    public void setCallback(Runnable callback) {
-        delegate().setCallback(() -> {
-            callback.run();
-            invokeCompletionHandlerIfCompleted();
-        });
-    }
-
-    @Override
-    public Optional<Throwable> error() {
-        invokeCompletionHandlerIfCompleted();
-        return delegate().error();
-    }
-
-    @Override
-    public boolean hasNextAvailable() {
-        boolean b = delegate().hasNextAvailable();
-        if (!b && delegate().isCompleted()) {
-            invokeCompletionHandlerIfCompleted();
-        }
-        return b;
+    protected String describeDelegates() {
+        return delegate.toString();
     }
 
     /**

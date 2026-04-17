@@ -69,7 +69,8 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  * acting as a consumer of another (sub)stream they own.
  * <p>
  * If the registered callback throws an exception, the stream is completed exceptionally with that
- * error. This ensures that failures in progress signaling do not leave the stream in an unusable state.
+ * error, unless the callback was called to signal completion. This ensures that failures in progress
+ * signaling do not leave the stream in an unusable state.
  * <p>
  * Implementations may optionally initialize the stream state during construction using
  * {@link #initialize(FetchResult)}. If not invoked explicitly, the stream is implicitly initialized
@@ -183,7 +184,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          * no further elements will be produced.
          *
          * @param <T> the entry type
-         * @return an {@link Completed} result
+         * @return a {@link Completed} result
          */
         @SuppressWarnings("unchecked")
         static <T extends Entry<?>> FetchResult<T> completed() {
@@ -250,6 +251,18 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      *
      * This class uses synchronized for all state access instead of Atomics or explicit Locks.
      *
+     * Lock direction: consumer-side calls (next, peek, hasNextAvailable, setCallback, close)
+     * acquire locks from outer to inner (downstream). Producer-side signals (signalProgress and
+     * the callbacks they trigger) flow in the opposite direction: inner to outer (upstream).
+     * To prevent deadlock, signalProgress releases its lock before invoking the callback rather
+     * than holding it across the call.
+     *
+     * Ordering requirement: signalProgress() must only be called after the state change it
+     * announces is fully visible via fetchNext(). This ensures that if a signal arrives while
+     * awaitingData is false (the consumer has not yet entered the waiting state), the consumer
+     * will still observe the updated state on its next fetchNext() call without needing a retry
+     * or a repeated signal. See signalProgress() for details.
+     *
      * Rationale:
      * - Multiple fields (callback, peekedEntry, error, completed, awaitingData) form a single
      *   logical state. Guarding them with a single monitor ensures consistency and avoids
@@ -299,9 +312,11 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
     private boolean completed;
 
     /**
-     * Indicates that the stream was fully consumed, and the consumer must be notified
-     * via the callback to trigger further consumption. When this flag is {@code false}
-     * external triggers that would normally lead to a callback are supressed.
+     * Indicates that no data is available downstream and that {@link #signalProgress()} must
+     * be called by the downstream producer when new data is available or a state change
+     * occurred (error or completion). This will then in turn trigger the consumer via the callback.
+     * When this flag is {@code false} external triggers that would normally lead to a callback
+     * are suppressed.
      * <p>
      * Only access while synchronized on this class.
      */
@@ -312,6 +327,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      * flag is checked in the {@link #initialize(FetchResult)} call to reject any
      * attempt to initialize the stream when it was already initialized (either by
      * calling initialize, or by any other interaction with the stream).
+     * <p>
+     * Only access while synchronized on this class.
      */
     private boolean initialized;
 
@@ -321,8 +338,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      * will throw an exception if the stream already has a valid state.
      *
      * @param initialFetchResult the initial fetch result; must not be null and must not be a Value
-     * @throws NullPointerException if {@code fetchResult} is null
-     * @throws IllegalArgumentException if {@code fetchResult} is a Value
+     * @throws NullPointerException if {@code initialFetchResult} is null
+     * @throws IllegalArgumentException if {@code initialFetchResult} is a Value
      * @throws IllegalStateException if already initialized
      */
     protected final synchronized void initialize(FetchResult<Entry<M>> initialFetchResult) {
@@ -343,19 +360,35 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
     }
 
     @Override
-    public final synchronized void setCallback(Runnable callback) {
+    public final void setCallback(Runnable callback) {
         Objects.requireNonNull(callback, "The callback parameter cannot be null.");
 
-        this.callback = callback;
+        synchronized (this) {
+            this.callback = callback;
 
-        if (hasNextAvailable() || isCompleted()) {
-            invokeCallbackSafely();
+            boolean wasCompleted = isCompleted();
+
+            if (!hasNextAvailable() && !isCompleted()) {
+                return;
+            }
+
+            if (!wasCompleted && isCompleted()) {
+
+                /*
+                 * complete() or completeExceptionally() was triggered by the hasNextAvailable()
+                 * probe above, which already fired the callback - don't fire again
+                 */
+
+                return;
+            }
         }
+
+        invokeCallbackSafely();
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This method is intended to be invoked by consumers to indicate loss of interest.
      * Implementations should not call this method directly, unless they are acting as
      * a consumer of another (sub)stream they own.
@@ -366,7 +399,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         /*
          * Close is generally called by the consumer, indicating a loss of interest
          * in any further interaction with the stream. Any buffers should be discarded
-         * and calls to hasNextAvailable, peek and next should show all indicate no
+         * and calls to #hasNextAvailable, #peek and #next should all indicate no
          * availability of further elements.
          */
 
@@ -388,19 +421,50 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      * no entry due to {@link FetchResult.NotReady}), this method invokes the registered callback.
      * Otherwise, this method has no effect.
      * <p>
-     * This method may be invoked even if the stream is not currently awaiting data.
-     * In that case, the call has no effect.
+     * This method may be invoked even if the stream is not currently awaiting data;
+     * in that case, the call has no effect.
+     *
+     * <h3>Ordering requirement</h3>
+     * Implementations <b>must ensure that any state changes that make progress observable
+     * via {@link #fetchNext()} are fully applied before invoking this method</b>.
+     * <p>
+     * In other words, <code>signalProgress()</code> must only be called <i>after</i> the
+     * stream's internal state has been updated in a way that a subsequent {@link #fetchNext()}
+     * call can observe.
+     * <p>
+     * Failing to observe this ordering may result in a lost wake-up scenario where:
+     * <ul>
+     *     <li>progress is signalled, but</li>
+     *     <li>the consumer observes no available element and returns {@link FetchResult.NotReady}</li>
+     * </ul>
+     * even though data is available.
+     * <p>
+     * This method is therefore strictly a <b>notification mechanism</b>, not a state publication
+     * mechanism. Correctness must come from state visibility in {@link #fetchNext()}, not from
+     * the timing of this signal.
      */
-    protected final synchronized void signalProgress() {
+    protected final void signalProgress() {
 
         /*
          * External progress signals should only be honored if the stream is currently
          * in a state where it is awaiting data.
+         *
+         * This method assumes that any state change that makes progress visible to
+         * fetchNext() has already been fully published before signalProgress() is called.
+         *
+         * If that ordering is violated, a race may occur where a signal is emitted
+         * without the consumer observing any available data. This is considered an
+         * implementation error in the stream producing the signal, not a failure of
+         * this method.
          */
 
-        if (awaitingData) {
-            invokeCallbackSafely();
+        synchronized (this) {
+            if (!awaitingData) {
+                return;
+            }
         }
+
+        invokeCallbackSafely();
     }
 
     @Override
@@ -492,6 +556,12 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      * state. Implementations must subsequently invoke {@link #signalProgress()} when progress may
      * be possible again (e.g., when new data arrives or the stream completes).
      * <p>
+     * Implementations must ensure that any state changes observable via this method are fully
+     * applied <em>before</em> invoking {@link #signalProgress()}. A signal that arrives before
+     * the consumer has entered the awaiting state is not replayed; correctness relies on this
+     * method returning the updated state when the consumer calls it next. See
+     * {@link #signalProgress()} for the full ordering contract.
+     * <p>
      * This method must be non-blocking. It should return immediately with the best available
      * information about the stream's current state.
      * <p>
@@ -504,9 +574,14 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
     protected abstract FetchResult<Entry<M>> fetchNext();
 
     /**
-     * Callback invoked when the stream transitions to a completed state, either
-     * successfully or exceptionally. Subclasses may override this method to
+     * Callback invoked when the stream is about to transition to a completed state,
+     * either successfully or exceptionally. Subclasses may override this method to
      * perform custom actions on completion.
+     * <p>
+     * If the implementation throws an exception, the stream still completes, but
+     * it will complete with the thrown exception. If the stream was about to
+     * complete with an error, and the callback fails as well, the exception is
+     * added as a suppressed exception.
      */
     protected void onCompleted() {
         // leave empty, don't add behavior that then must rely on a super() call!
@@ -522,23 +597,39 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
 
     private void complete() {  // keep private to guard this class's invariants
         if (!completed) {
+            try {
+                 onCompleted();
+            }
+            catch (Exception e) {
+                if (this.error == null) {
+                    this.error = e;
+                }
+                else {
+                    this.error.addSuppressed(e);
+                }
+            }
+
             this.completed = true;
             this.awaitingData = false;
             this.peekedEntry = null;
 
-            onCompleted();
             invokeCallbackSafely();
         }
     }
 
     private void invokeCallbackSafely() {
         try {
-            callback.run();
+            Runnable cb;
+
+            synchronized (this) {
+                cb = callback;
+            }
+
+            cb.run();
         }
         catch (Throwable t) {
-            if (error == null) {
-                this.error = t;
-                this.completed = true;
+            synchronized (this) {
+                completeExceptionally(t);
             }
         }
     }
@@ -597,7 +688,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
                        : awaitingData ? "NOT_READY"
                                       : null;
         String flags = describeFlags();  // pipe separated
-        String delegates = describeDelegates();  // comma seperated, with the active prepended with asterix
+        String delegates = describeDelegates();  // comma separated, with the active prepended with asterisk
         String statusDescription = Stream.of(status, (peekedEntry == null ? null : "P"), flags).filter(Objects::nonNull).collect(Collectors.joining("|"));
 
         return getClass().getSimpleName().replace("MessageStream", "") + (statusDescription.isEmpty() ? "" : "[" + statusDescription + "]") + (delegates == null ? "" : "{" + delegates + "}");
@@ -605,7 +696,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
 
     /**
      * Subtypes should override this to return flags that apply to this stream for debugging purposes.
-     * Flags should be short. Multiple flags should be separate with a pipe ("|").
+     * Flags should be short. Multiple flags should be separated with a pipe ("|").
      * <p>
      * Only include flags for abnormal states, to reduce visual noise.
      *
@@ -617,11 +708,11 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
 
     /**
      * Subtypes should override this to describe any (message stream) delegates they use for
-     * debugging purposes. This allows to visual a chain of message streams, their states and
+     * debugging purposes. This allows to visualize a chain of message streams, their states and
      * how they are linked.
      * <p>
-     * If there are multiple delegates, then they should be comma separted with the active
-     * delegate prepended with an asterix ("*").
+     * If there are multiple delegates, then they should be comma separated with the active
+     * delegate prepended with an asterisk ("*").
      *
      * @return the description of delegate streams, or {@code null} if there are no delegates
      */

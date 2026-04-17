@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author John Hendrikx
  */
-public class MessageStreamGenericsTest {
+class MessageStreamGenericsTest {
 
     @Test
     void shouldAcceptGenericSubtypesForConcatWith() {

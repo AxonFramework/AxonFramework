@@ -94,4 +94,9 @@ class FilteringMessageStream<M extends Message> extends AbstractMessageStream<M>
             super(delegate, filter);
         }
     }
+
+    @Override
+    protected String describeDelegates() {
+        return delegate.toString();
+    }
 }

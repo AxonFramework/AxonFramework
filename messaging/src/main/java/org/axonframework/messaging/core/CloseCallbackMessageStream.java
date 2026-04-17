@@ -47,6 +47,10 @@ public class CloseCallbackMessageStream<M extends Message> extends AbstractMessa
         this.delegate = delegate;
         this.closeHandler = Objects.requireNonNull(closeHandler, "Close handler may not be null.");
 
+        if (delegate.isCompleted()) {
+            initialize(delegate.error().map(FetchResult::<Entry<M>>error).orElse(FetchResult.completed()));
+        }
+
         delegate.setCallback(this::signalProgress);
     }
 

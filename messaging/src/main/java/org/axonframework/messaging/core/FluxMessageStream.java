@@ -108,7 +108,9 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
             @Override
             public void onNext(Entry<M> entry) {
                 peeked.add(FetchResult.of(entry));
+
                 signalProgress();
+
                 // If the signal triggered an error (in the callback), clear buffered entries to ensure immediate error propagation
                 if (error().isPresent()) {
                     peeked.clear();
@@ -118,7 +120,9 @@ class FluxMessageStream<M extends Message> extends AbstractMessageStream<M> {
             @Override
             public void onError(Throwable t) {
                 peeked.add(FetchResult.error(t));
+
                 seal();
+                signalProgress();
             }
 
             @Override

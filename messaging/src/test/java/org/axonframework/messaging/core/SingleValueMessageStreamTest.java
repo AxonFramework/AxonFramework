@@ -132,6 +132,21 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
     }
 
     @Test
+    void shouldInvokeSetCallbackWhenFutureFails() {
+        CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        testSubject.setCallback(() -> invoked.set(true));
+
+        assertFalse(invoked.get());
+
+        future.completeExceptionally(new RuntimeException("Expected"));
+
+        assertTrue(invoked.get());
+    }
+
+    @Test
     void closeCancelsTheCompletableFuture() {
         CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
         SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);

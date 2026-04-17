@@ -24,9 +24,11 @@ import java.util.concurrent.CompletableFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ * Tests the {@link #toString()} method of {@link AbstractMessageStream}.
+ *
  * @author John Hendrikx
  */
-public class MessageStreamToStringTest {
+class MessageStreamToStringTest {
 
     @Test
     void shouldHaveNiceToString() {
@@ -34,8 +36,6 @@ public class MessageStreamToStringTest {
             .concatWith(MessageStream.fromIterable(List.of(createMessage(), createMessage())).first())
             .onErrorContinue(t -> MessageStream.fromFuture(CompletableFuture.completedFuture(createMessage())))
             .onClose(() -> {});
-
-        System.out.println(stream.toString());
 
         assertThat(stream.toString())
             .isEqualTo("CloseCallback{OnErrorContinue[P]{Concatenating{*SingleValue, TruncateFirst{Iterator[P]}}}}");

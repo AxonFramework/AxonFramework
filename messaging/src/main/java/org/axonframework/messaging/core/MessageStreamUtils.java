@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.common.annotation.Internal;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +29,7 @@ import java.util.function.BiFunction;
  * @author Allard Buijze
  * @since 5.0.0
  */
+@Internal
 public abstract class MessageStreamUtils {
 
     private MessageStreamUtils() {

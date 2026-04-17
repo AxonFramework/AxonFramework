@@ -343,7 +343,8 @@ public interface MessageStream<M extends Message> {
      * <p>
      * The callback is called on an arbitrary thread, and it should keep work performed on this thread to a minimum
      * as this may interfere with other callbacks handled by the same thread. Any exception thrown by the callback
-     * will result in the stream completing with this exception as the error.
+     * will result in the stream completing with this exception as the error, unless the callback was called to
+     * indicate completition.
      *
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.

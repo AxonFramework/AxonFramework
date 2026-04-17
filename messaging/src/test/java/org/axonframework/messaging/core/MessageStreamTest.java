@@ -328,10 +328,14 @@ public abstract class MessageStreamTest<M extends Message> {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         CompletableFuture<Void> completionMarker = new CompletableFuture<>();
-        uncompletedTestSubject(List.of(), completionMarker).onComplete(() -> invoked.set(true));
+        MessageStream<M> stream = uncompletedTestSubject(List.of(), completionMarker).onComplete(() -> invoked.set(true));
 
+        assertFalse(stream.hasNextAvailable());
         assertFalse(invoked.get());
+
         completionMarker.complete(null);
+
+        assertFalse(stream.hasNextAvailable());
         assertTrue(invoked.get());
     }
 
