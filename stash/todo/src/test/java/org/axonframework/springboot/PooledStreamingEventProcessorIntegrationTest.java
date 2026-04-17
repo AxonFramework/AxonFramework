@@ -62,8 +62,7 @@ class PooledStreamingEventProcessorIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
-                                                               .withUserConfiguration(Context.class);
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(Context.class);
     }
 
     @Test
