@@ -52,11 +52,6 @@
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-server-connector</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
             <artifactId>axon-legacy-aggregate</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -168,6 +163,10 @@
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
         <!-- Database -->
         <dependency>
