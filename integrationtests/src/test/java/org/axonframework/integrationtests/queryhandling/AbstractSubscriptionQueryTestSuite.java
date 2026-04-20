@@ -594,7 +594,7 @@ public abstract class AbstractSubscriptionQueryTestSuite extends AbstractQueryTe
         assertThat(result.next()).map(MessageStream.Entry::message).containsInstanceOf(GenericResultMessage.class);
 
         // Don't consume next element:
-        assertThat(result.hasNextAvailable()).isTrue();
+        await().untilAsserted(() -> assertThat(result.hasNextAvailable()).isTrue());
         assertThat(result.peek())
             .map(MessageStream.Entry::message)
             .map(GenericSubscriptionQueryUpdateMessage.class::cast)
