@@ -16,16 +16,17 @@
 
 package org.axonframework.modelling.entity;
 
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.commandhandling.CommandHandlingComponent;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.DelayedMessageStream;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.QualifiedName;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityIdResolutionException;
 import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
@@ -77,16 +78,31 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
     public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
                                                              ProcessingContext context) {
         try {
-            ID id = idResolver.resolve(command, context);
+            ID id;
+            try {
+                id = idResolver.resolve(command, context);
+            } catch (EntityIdResolutionException e) {
+                // If there's no entity identifier to resolve, we might deal with a creational command.
+                // If NoHandlerForCommandException is thrown it wasn't, so we fall back to EntityIdResolutionException.
+                return metamodel.handleCreate(command, context).first()
+                                .onErrorContinue(throwable -> {
+                                    if (throwable instanceof NoHandlerForCommandException) {
+                                        return MessageStream.failed(e);
+                                    } else {
+                                        return MessageStream.failed(throwable);
+                                    }
+                                })
+                                .first();
+            }
             QualifiedName messageName = command.type().qualifiedName();
 
             var loadFuture = loadFromRepository(context, id, messageName);
             return DelayedMessageStream.createSingle(loadFuture.thenApply(me -> {
                 try {
-                    if (me.entity() != null) {
-                        return metamodel.handleInstance(command, me.entity(), context).first();
-                    }
-                    return metamodel.handleCreate(command, context).first();
+                    E entity = me.entity();
+                    return entity != null
+                            ? metamodel.handleInstance(command, entity, context).first()
+                            : metamodel.handleCreate(command, context).first();
                 } catch (Exception e) {
                     return MessageStream.failed(e);
                 }
