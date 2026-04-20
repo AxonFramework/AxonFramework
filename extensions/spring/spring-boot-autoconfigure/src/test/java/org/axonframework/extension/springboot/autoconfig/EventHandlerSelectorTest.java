@@ -66,7 +66,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class, ProcessorDefinitionWithSelectorContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class SelectorBasedMatchingTest {
@@ -120,7 +119,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class, ProcessorDefinitionNameMatchingContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class NamespaceBasedMatchingTest {
@@ -181,7 +179,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class AutomaticNamespaceResolutionTest {

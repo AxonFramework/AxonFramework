@@ -140,7 +140,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
     @SpringBootTest(
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=pooled",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].initialSegmentCount=73",
@@ -222,8 +221,8 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             props.put("server.port", port);
             props.put("logging.level.root", "OFF");
             props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
-            props.put("axon.axonserver.enabled", "false");
             props.put("spring.main.banner-mode", "off");
+            props.put("axon.eventstorage.jpa.polling-interval", "0");
             props.putAll(parameters);
             app.setDefaultProperties(props);
             var e = assertThrows(
@@ -248,7 +247,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
     @SpringBootTest(
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=subscribing",
             },
@@ -289,7 +287,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class,
                     SubscribingEventProcessorDefinitionContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0"
             },
             webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -335,7 +332,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
                     SubscribingEventProcessorDefinitionContext.class,
                     PooledStreamingEventProcessorDefinitionContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0"
             },
             webEnvironment = SpringBootTest.WebEnvironment.NONE
@@ -383,10 +379,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             var app = new SpringApplication(MyCustomContext.class,
                                             SubscribingEventProcessorDefinitionContext.class,
                                             BroadlyMatchingProcessorDefinitionContext.class);
-            app.setDefaultProperties(Map.of("axon.axonserver.enabled",
-                                            "false",
-                                            "axon.eventstorage.jpa.polling-interval",
-                                            "0"));
+            app.setDefaultProperties(Map.of("axon.eventstorage.jpa.polling-interval", "0"));
             app.setLogStartupInfo(false);
 
             app.setWebApplicationType(WebApplicationType.NONE);

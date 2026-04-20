@@ -1,3 +1,5 @@
+// TODO this is currently not referenced, but should be restructured to accompany the snapshotting docs
+// we include in Axoniq Framework. See https://github.com/AxonIQ/AxonFramework/pull/4420#discussion_r3100143396
 = Snapshots
 
 == Snapshotting

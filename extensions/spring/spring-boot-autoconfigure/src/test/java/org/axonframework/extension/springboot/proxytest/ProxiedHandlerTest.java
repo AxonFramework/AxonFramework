@@ -47,7 +47,6 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(
     classes = ProxiedHandlerTest.TestConfig.class,
     properties = {
-        "axon.axonserver.enabled=false",
         "axon.eventstorage.jpa.polling-interval=0"
     }
 )

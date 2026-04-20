@@ -1,10 +1,12 @@
 name: Axon Framework with Examples
 
-on:
-  workflow_dispatch:
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
+# TODO #4427 - enable once the first (RC) of Axon and Axoniq Framework is out
+# The module split makes the examples brittle to run at this point in time
+#on:
+#  workflow_dispatch:
+#  pull_request:
+#    paths-ignore:
+#      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
