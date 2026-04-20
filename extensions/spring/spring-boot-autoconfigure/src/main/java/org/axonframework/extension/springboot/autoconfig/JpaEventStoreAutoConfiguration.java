@@ -53,9 +53,9 @@ import java.util.function.UnaryOperator;
  * @since 4.0
  */
 @AutoConfiguration(afterName = {
+        "io.axoniq.framework.springboot.autoconfig.AxonServerAutoConfiguration",
         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
-        "org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration",
         "org.axonframework.extension.springboot.autoconfig.JpaAutoConfiguration"
 })
 @ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})

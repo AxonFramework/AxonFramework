@@ -52,7 +52,7 @@ import org.springframework.context.annotation.Bean;
         value = {AxonTracingAutoConfiguration.class},
         name = {
                 "com.github.kagkarlsson.scheduler.boot.autoconfigure.DbSchedulerAutoConfiguration",
-                "org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration"
+                "io.axoniq.framework.springboot.autoconfig.AxonServerAutoConfiguration"
         }
 )
 public class AxonDbSchedulerAutoConfiguration {
