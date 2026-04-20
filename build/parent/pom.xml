@@ -70,7 +70,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>5.0.6</dropwizard.metrics.version>
-        <micrometer.version>1.16.4</micrometer.version>
+        <micrometer.version>1.16.5</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.18.8</byte-buddy.version>
         <commons-io.version>2.21.0</commons-io.version>
@@ -78,9 +78,9 @@
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <equalsverifier.version>4.4.2</equalsverifier.version>
+        <equalsverifier.version>4.5</equalsverifier.version>
         <!-- Reactive -->
-        <projectreactor.version>3.8.4</projectreactor.version>
+        <projectreactor.version>3.8.5</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Conversion -->
         <avro.version>1.12.1</avro.version>
@@ -93,7 +93,7 @@
         <jobrunr.version>8.5.2</jobrunr.version>
         <quartz.version>2.5.2</quartz.version>
         <!-- Spring -->
-        <spring.version>6.2.17</spring.version>
+        <spring.version>6.2.18</spring.version>
         <spring.boot.version>3.5.13</spring.boot.version>
         <spring-data.version>2025.0.7</spring-data.version>
         <spring-security.version>6.5.9</spring-security.version>
@@ -104,7 +104,7 @@
         <mockito.version>5.23.0</mockito.version>
         <testcontainers.version>2.0.4</testcontainers.version>
         <assertj.version>3.27.7</assertj.version>
-        <archunit.version>1.4.1</archunit.version>
+        <archunit.version>1.4.2</archunit.version>
         <!-- Validation -->
         <hibernate-validator.version>9.1.0.Final</hibernate-validator.version>
 
