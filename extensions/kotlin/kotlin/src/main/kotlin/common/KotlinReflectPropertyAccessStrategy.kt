@@ -21,6 +21,7 @@ import org.axonframework.common.property.Property
 import org.axonframework.common.property.PropertyAccessStrategy
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
 
 /**
  * Property access strategy for fancy getter names of the inherited properties.
@@ -38,14 +39,27 @@ class KotlinReflectPropertyAccessStrategy : PropertyAccessStrategy() {
         data class KotlinReflectProperty<T : Any>(val kProperty: KProperty1<out T, *>) : Property<T> {
 
             @Suppress("UNCHECKED_CAST")
-            override fun <V : Any> getValue(target: T): V = kProperty.call(target) as V
+            override fun <V : Any> getValue(target: T): V {
+                val value = kProperty.call(target)
+                val returnClass = kProperty.returnType.classifier as? kotlin.reflect.KClass<*>
+
+                if (value != null && returnClass?.isValue == true && !returnClass.isInstance(value)) {
+                    val constructor = returnClass.primaryConstructor
+                    if (constructor != null && constructor.parameters.size == 1) {
+                        return constructor.call(value) as V
+                    }
+                }
+
+                return value as V
+            }
         }
     }
 
-    override fun getPriority(): Int = Int.MIN_VALUE
+    // needs increased priority to be able to override the default property access strategy
+    override fun getPriority(): Int = 1000
     override fun <T : Any> propertyFor(
         targetClass: Class<out T>,
         property: String
-    ): Property<T> = KotlinReflectProperty( kProperty(targetClass, property)!!)
+    ): Property<T> = KotlinReflectProperty(kProperty(targetClass, property)!!)
 
 }
