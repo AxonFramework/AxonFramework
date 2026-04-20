@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
@@ -26,7 +25,6 @@ import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.SimpleQueryBus;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryAlreadyRegisteredException;
-import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,9 +45,7 @@ public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQue
 
     @Override
     protected MessagingConfigurer createMessagingConfigurer() {
-        return MessagingConfigurer.create()
-                                  .componentRegistry(cr -> cr.disableEnhancer(
-                                          AxonServerConfigurationEnhancer.class));
+        return MessagingConfigurer.create();
     }
 
     //fixme: SimpleQueryBus throws for duplicated subscriptions, how it should work with AxonServer?

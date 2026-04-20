@@ -19,7 +19,6 @@ package org.axonframework.extension.springboot.autoconfig;
 import org.axonframework.messaging.core.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.core.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.core.correlation.SimpleCorrelationDataProvider;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +41,7 @@ class CorrelationDataProviderAutoConfigurationTest {
     @BeforeEach
     void setUp() {
         testContext = new ApplicationContextRunner()
-                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0")
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0")
                 .withUserConfiguration(TestContext.class);
     }
 

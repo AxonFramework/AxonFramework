@@ -30,7 +30,6 @@ import org.axonframework.messaging.eventhandling.processing.streaming.pooled.Poo
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,7 +65,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class, ProcessorDefinitionWithSelectorContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class SelectorBasedMatchingTest {
@@ -120,7 +118,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class, ProcessorDefinitionNameMatchingContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class NamespaceBasedMatchingTest {
@@ -181,7 +178,6 @@ class EventHandlerSelectorTest {
     @Nested
     @SpringBootTest(
             classes = {TestContext.class},
-            properties = {"axon.axonserver.enabled=false"},
             webEnvironment = SpringBootTest.WebEnvironment.NONE
     )
     class AutomaticNamespaceResolutionTest {

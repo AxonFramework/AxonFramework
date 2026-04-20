@@ -21,7 +21,6 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.extension.spring.stereotype.EventSourced;
 import org.axonframework.modelling.repository.Repository;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -29,7 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 
 /**
@@ -44,8 +42,7 @@ class RepositoryWiringTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class)
-                                                               .withPropertyValues("axon.axonserver.enabled=false");
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class);
     }
 
     @Test

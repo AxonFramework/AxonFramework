@@ -16,18 +16,17 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.transaction.Transaction;
 import org.axonframework.messaging.core.unitofwork.transaction.TransactionManager;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.spring.stereotype.Saga;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -50,8 +49,7 @@ import static org.awaitility.Awaitility.await;
  * @author Marc Gathier
  */
 @SpringBootTest(properties = {
-        "spring.main.banner-mode=off",
-        "axon.axonserver.enabled=false"
+        "spring.main.banner-mode=off"
 })
 @SpringBootConfiguration
 @EnableAutoConfiguration(exclude = {

@@ -41,7 +41,6 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends AbstractStudentIT {
+public abstract class EventProcessingDeclarativeEventSourcedPooledStreamingIT extends AbstractStudentIT {
 
     @Test
     void whenStudentEnrolled3CoursesThenSendNotificationTest() {

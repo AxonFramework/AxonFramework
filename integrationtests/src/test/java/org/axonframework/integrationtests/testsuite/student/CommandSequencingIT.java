@@ -29,7 +29,6 @@ import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
-import org.junit.jupiter.api.*;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Jakob Hatzl
  */
-class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
+public abstract class CommandSequencingIT extends AbstractCommandHandlingStudentIT {
 
     public static final String ROUTING_KEY_METADATA_KEY = "CommandSequencingIT#routingKey";
 

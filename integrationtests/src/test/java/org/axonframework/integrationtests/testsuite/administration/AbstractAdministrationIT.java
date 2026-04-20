@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
+import org.axonframework.integrationtests.testsuite.AbstractIntegrationTest;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.commands.CompleteTaskCommand;
@@ -27,7 +27,6 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Crea
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
-import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletionException;
@@ -37,7 +36,7 @@ import java.util.stream.Collectors;
  * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
  * different ways of building the {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent}.
  */
-public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
+public abstract class AbstractAdministrationIT extends AbstractIntegrationTest {
 
     private final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
             new PersonIdentifier(PersonType.EMPLOYEE, createId("employee")),
@@ -56,7 +55,7 @@ public abstract class AbstractAdministrationIT extends AbstractAxonServerIT {
     }
 
     @Override
-    protected ApplicationConfigurer createConfigurer() {
+    protected ApplicationConfigurer applicationConfigurer() {
         var configurer = EventSourcingConfigurer.create();
         return testSuiteConfigurer(configurer);
     }

@@ -17,11 +17,8 @@
 package org.axonframework.extension.springboot;
 
 import org.axonframework.common.configuration.AxonConfiguration;
-import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
-import org.axonframework.extension.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
-import org.axonframework.extension.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,10 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Mateusz Nowak
  */
-@EnableAutoConfiguration(exclude = {
-        AxonServerAutoConfiguration.class,
-        AxonServerActuatorAutoConfiguration.class
-})
+@EnableAutoConfiguration
 @SpringBootConfiguration
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,

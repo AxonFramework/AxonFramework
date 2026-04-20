@@ -32,7 +32,6 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventProcessingAnnotatedStateBasedPooledStreamingIT extends AbstractStudentIT {
+public abstract class EventProcessingAnnotatedStateBasedPooledStreamingIT extends AbstractStudentIT {
 
     @Test
     void whenStudentEnrolledThenUpdateReadModel() {

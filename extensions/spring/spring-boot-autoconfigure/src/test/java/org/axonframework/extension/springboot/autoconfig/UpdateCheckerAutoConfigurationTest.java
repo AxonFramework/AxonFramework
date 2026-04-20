@@ -21,13 +21,11 @@ import org.axonframework.update.UpdateCheckerHttpClient;
 import org.axonframework.update.UpdateCheckerReporter;
 import org.axonframework.update.configuration.EnvironmentVariableUsagePropertyProvider;
 import org.axonframework.update.configuration.UsagePropertyProvider;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.update.detection.TestEnvironmentDetector.AXONIQ_USAGE_FORCE_TEST_ENVIRONMENT;
 import static org.mockito.Mockito.*;
 
@@ -43,8 +41,7 @@ class UpdateCheckerAutoConfigurationTest {
     @BeforeEach
     void setUp() {
         this.testContext = new ApplicationContextRunner()
-                .withUserConfiguration(DefaultContext.class)
-                .withPropertyValues("axon.axonserver.enabled:false");
+                .withUserConfiguration(DefaultContext.class);
     }
 
     @AfterEach

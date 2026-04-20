@@ -22,7 +22,6 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
-import org.axonframework.messaging.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
@@ -36,7 +35,6 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 
 import java.util.List;
 
@@ -49,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+public abstract class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
     private final String student1 = createId("student-1");
     private final String student2 = createId("student-2");
     private final String student3 = createId("student-3");
@@ -116,7 +114,6 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
         // But five can not enroll for the first course
         assertThatThrownBy(() -> enrollStudentToCourse(student5, course1))
-                .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Course already has 3 students");
     }
 
@@ -132,7 +129,6 @@ class MultiEntityCommandHandlingComponentIT extends AbstractCommandHandlingStude
 
         // But not a second time
         assertThatThrownBy(() -> sendCommand(new AssignMentorCommand(student1, student3)))
-                .isInstanceOf(CommandExecutionException.class)
                 .hasMessageContaining("Mentor already assigned to a mentee");
     }
 

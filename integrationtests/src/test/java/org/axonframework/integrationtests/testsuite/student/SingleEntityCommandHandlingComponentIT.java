@@ -27,7 +27,6 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
+public abstract class SingleEntityCommandHandlingComponentIT extends AbstractCommandHandlingStudentIT {
 
     private final String student1 = createId("student-1");
     private final String student2 = createId("student-2");

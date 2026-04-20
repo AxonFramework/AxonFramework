@@ -16,16 +16,15 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.springboot.autoconfig.context.Animal;
 import org.axonframework.springboot.autoconfig.context.Cat;
 import org.axonframework.springboot.autoconfig.context.CreateCatCommand;
 import org.axonframework.springboot.autoconfig.context.CreateDogCommand;
 import org.axonframework.springboot.autoconfig.context.Dog;
 import org.axonframework.springboot.autoconfig.context.RenameAnimalCommand;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -52,8 +51,7 @@ class AggregatePolymorphismAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class)
-                                                               .withPropertyValues("axon.axonserver.enabled:false");
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class);
     }
 
     @Test

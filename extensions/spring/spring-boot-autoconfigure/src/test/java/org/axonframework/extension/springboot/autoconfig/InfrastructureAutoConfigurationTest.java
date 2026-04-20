@@ -18,7 +18,6 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.extension.spring.config.MessageHandlerLookup;
 import org.axonframework.extension.spring.config.SpringEventSourcedEntityLookup;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.EnableMBeanExport;
@@ -41,7 +40,7 @@ class InfrastructureAutoConfigurationTest {
     void setUp() {
         testApplicationContext = new ApplicationContextRunner()
                 .withUserConfiguration(DefaultContext.class)
-                .withPropertyValues("axon.axonserver.enabled:false", "axon.eventstorage.jpa.polling-interval:0");
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval:0");
     }
 
     @Test

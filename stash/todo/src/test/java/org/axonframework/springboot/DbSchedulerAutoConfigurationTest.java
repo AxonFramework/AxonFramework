@@ -18,19 +18,18 @@ package org.axonframework.springboot;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
-import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.conversion.Serializer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails;
+import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.axonframework.messaging.core.ScopeAwareProvider;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.dbscheduler.DbSchedulerHumanReadableEventData;
-import org.axonframework.messaging.core.ScopeAwareProvider;
-import org.axonframework.conversion.Serializer;
-import org.axonframework.extension.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -52,7 +51,6 @@ class DbSchedulerAutoConfigurationTest {
     @Test
     void eventSchedulerAndDeadlineManagerCreated() {
         new ApplicationContextRunner()
-                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(DefaultContext.class)
                 .run(context -> {
                     EventScheduler eventScheduler = context.getBean(EventScheduler.class);
@@ -68,7 +66,6 @@ class DbSchedulerAutoConfigurationTest {
     @Test
     void onlyTwoTaskBeansWhenOverwritten() {
         new ApplicationContextRunner()
-                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(HumanReadableContext.class)
                 .run(context -> {
                     EventScheduler eventScheduler = context.getBean(EventScheduler.class);

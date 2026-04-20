@@ -37,7 +37,6 @@ import org.axonframework.messaging.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.queryhandling.QueryBus;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +62,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0");
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test
@@ -132,8 +131,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because
-    // its Converter parameter cannot be resolved when the ConverterAutoConfiguration (which provides the @Primary Converter) is excluded.
     @Configuration
     @EnableAutoConfiguration(
             exclude = {
@@ -141,9 +138,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
                     AvroConverterAutoConfiguration.class,
                     CBORConverterAutoConfiguration.class,
                     JacksonConverterAutoConfiguration.class,
-                    Jackson2ConverterAutoConfiguration.class,
-                    JpaDeadLetterQueueAutoConfiguration.class,
-                    JdbcDeadLetterQueueAutoConfiguration.class
+                    Jackson2ConverterAutoConfiguration.class
             }
     )
     public static class TestContext {
@@ -166,8 +161,6 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
     }
 
     // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
-    // Also excludes JpaDeadLetterQueueAutoConfiguration and JdbcDeadLetterQueueAutoConfiguration because its Converter parameter cannot be resolved
-    // when multiple custom Converter beans are registered without @Primary.
     @Configuration
     @EnableAutoConfiguration(
             exclude = {
@@ -175,9 +168,7 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
                     AvroConverterAutoConfiguration.class,
                     CBORConverterAutoConfiguration.class,
                     JacksonConverterAutoConfiguration.class,
-                    Jackson2ConverterAutoConfiguration.class,
-                    JpaDeadLetterQueueAutoConfiguration.class,
-                    JdbcDeadLetterQueueAutoConfiguration.class
+                    Jackson2ConverterAutoConfiguration.class
             }
     )
     public static class CustomContext {

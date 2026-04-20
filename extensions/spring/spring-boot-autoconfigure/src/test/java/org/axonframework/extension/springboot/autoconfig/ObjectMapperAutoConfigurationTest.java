@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -32,8 +31,6 @@ import tools.jackson.databind.module.SimpleModule;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * Test class validating the {@link ObjectMapperAutoConfiguration}.
  *
@@ -45,8 +42,7 @@ class ObjectMapperAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled=false")
-                                                    .withUserConfiguration(TestContext.class);
+        testContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
     }
 
     @Test

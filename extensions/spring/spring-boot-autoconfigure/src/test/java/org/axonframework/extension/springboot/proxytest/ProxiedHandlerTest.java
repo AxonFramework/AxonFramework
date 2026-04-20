@@ -28,7 +28,7 @@ import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.queryhandling.annotation.QueryHandler;
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,7 +47,6 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(
     classes = ProxiedHandlerTest.TestConfig.class,
     properties = {
-        "axon.axonserver.enabled=false",
         "axon.eventstorage.jpa.polling-interval=0"
     }
 )

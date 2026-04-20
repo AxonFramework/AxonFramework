@@ -18,17 +18,16 @@ package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.core.annotation.MessageIdentifier;
 import org.axonframework.conversion.Serializer;
 import org.axonframework.conversion.SimpleSerializedType;
 import org.axonframework.conversion.json.JacksonSerializer;
 import org.axonframework.conversion.upcasting.event.ContextAwareEventMultiUpcaster;
 import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
+import org.axonframework.messaging.core.annotation.MessageIdentifier;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessor;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -62,8 +61,7 @@ class PooledStreamingEventProcessorIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
-                                                               .withUserConfiguration(Context.class);
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(Context.class);
     }
 
     @Test

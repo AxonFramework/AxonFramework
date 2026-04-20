@@ -111,6 +111,7 @@
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-starter</artifactId>
+            <version>5.1.0-RC2</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework</groupId>
@@ -119,11 +120,13 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
+            <version>5.1.0-RC2</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <version>5.1.0-RC2</version>
         </dependency>
 
         <!-- Database -->

@@ -28,7 +28,6 @@ import org.axonframework.messaging.eventhandling.replay.ReplayStatusChanged;
 import org.axonframework.messaging.eventhandling.replay.ResetContext;
 import org.axonframework.messaging.eventhandling.replay.annotation.ReplayStatusChangedHandler;
 import org.axonframework.messaging.eventhandling.replay.annotation.ResetHandler;
-import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.Map;
@@ -55,7 +54,7 @@ import static org.awaitility.Awaitility.await;
  * @author Steven van Beelen
  * @since 5.1.0
  */
-class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
+public abstract class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
 
     private static final String PSEP_NAME = "replayStatusChangeHandler";
 
@@ -70,7 +69,7 @@ class ReplayStatusChangedHandlerIT extends AbstractStudentIT {
         resetHandlerInvoked = new AtomicBoolean(false);
         replayStatusReference = new AtomicReference<>(null);
         statusChangedInvoked = new CountDownLatch(0);
-        purgeEventStorage();
+        purgeData();
     }
 
     @Test

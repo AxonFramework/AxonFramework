@@ -30,7 +30,6 @@ import org.axonframework.extension.spring.conversion.avro.ClasspathAvroSchemaLoa
 import org.axonframework.extension.springboot.fixture.avro.test1.ComplexObject;
 import org.axonframework.messaging.core.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -58,10 +57,8 @@ class AvroSchemaStoreAutoConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues(
-                "axon.axonserver.enabled=false",
-                "axon.eventstorage.jpa.polling-interval=0"
-        );
+        testApplicationContext = new ApplicationContextRunner()
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test

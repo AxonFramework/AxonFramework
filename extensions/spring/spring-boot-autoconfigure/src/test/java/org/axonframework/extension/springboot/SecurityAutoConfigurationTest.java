@@ -16,9 +16,8 @@
 
 package org.axonframework.extension.springboot;
 
-import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.extension.spring.authorization.SecuredMessageHandlerDefinition;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -32,7 +31,6 @@ class SecurityAutoConfigurationTest {
     void handlerEnhancerDefinitionIsRegistered() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.axonserver.enabled=false")
                 .run(context -> {
                     assertNotNull(context);
 

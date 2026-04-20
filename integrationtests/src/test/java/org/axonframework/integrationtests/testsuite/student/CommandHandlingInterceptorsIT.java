@@ -33,7 +33,6 @@ import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.StateManager;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mateusz Nowak
  */
-class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
+public abstract class CommandHandlingInterceptorsIT extends AbstractCommandHandlingStudentIT {
 
     private final String student1 = createId("student-1");
 

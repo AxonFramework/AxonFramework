@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.jspecify.annotations.NonNull;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentDecorator;
 import org.axonframework.common.configuration.ConfigurationEnhancer;
@@ -30,7 +29,7 @@ import org.axonframework.messaging.core.correlation.DefaultCorrelationDataProvid
 import org.axonframework.messaging.core.sequencing.NoOpSequencingPolicy;
 import org.axonframework.messaging.core.sequencing.SequencingPolicy;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
-import org.junit.jupiter.api.*;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -64,8 +63,7 @@ public class HierarchicalSpringContextTest {
 
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(ChildContext.class)
-                .withParent(parentContext)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withParent(parentContext);
     }
 
     @Test

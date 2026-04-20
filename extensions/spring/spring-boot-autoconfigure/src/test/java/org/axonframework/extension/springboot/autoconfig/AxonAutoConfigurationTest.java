@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.BaseModule;
@@ -42,7 +41,6 @@ import org.axonframework.messaging.commandhandling.interception.InterceptingComm
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -78,7 +76,7 @@ public class AxonAutoConfigurationTest {
     void setUp() {
         testContext = new ApplicationContextRunner()
                 .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0");
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0");
     }
 
     @Test
@@ -284,22 +282,6 @@ public class AxonAutoConfigurationTest {
     @Configuration
     @EnableAutoConfiguration
     public static class TestContext {
-
-        @Bean
-        ConfigurationEnhancer disableServerEnhancer() {
-            return new ConfigurationEnhancer() {
-
-                @Override
-                public void enhance(@NonNull ComponentRegistry registry) {
-                    registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
-                }
-
-                @Override
-                public int order() {
-                    return Integer.MIN_VALUE;
-                }
-            };
-        }
 
         @Bean
         AtomicBoolean startHandlerInvoked() {

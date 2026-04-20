@@ -39,7 +39,6 @@ import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandli
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.test.FixtureExecutionException;
-import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -87,8 +86,7 @@ class SpringBeanResolverFactoryTest {
         COUNTER.set(0);
         processingContext = new StubProcessingContext().withMessage(EVENT_MESSAGE);
 
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled=false")
-                                                               .withUserConfiguration(TestContext.class);
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(TestContext.class);
     }
 
     @Test

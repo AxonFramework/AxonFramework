@@ -39,7 +39,6 @@ import org.axonframework.messaging.queryhandling.QueryResponseMessage;
 import org.axonframework.messaging.queryhandling.QueryUpdateEmitter;
 import org.axonframework.messaging.queryhandling.SubscriptionQueryUpdateMessage;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 import reactor.core.publisher.Hooks;
 import reactor.test.StepVerifier;
 import reactor.util.concurrent.Queues;
@@ -60,7 +59,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

@@ -17,13 +17,13 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.messaging.core.SubscribableEventSource;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.junit.jupiter.api.Test;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.gateway.EventAppender;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentIT {
+public abstract class SubscribableEventSourceWithEventAppenderTest extends AbstractStudentIT {
 
     @Test
     void whenEventPublishedViaEventAppenderThenSubscriberReceivesEvent() {

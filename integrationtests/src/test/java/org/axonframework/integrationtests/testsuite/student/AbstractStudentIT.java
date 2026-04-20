@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.integrationtests.testsuite.AbstractAxonServerIT;
+import org.axonframework.integrationtests.testsuite.AbstractIntegrationTest;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
@@ -40,7 +40,6 @@ import org.axonframework.messaging.eventstreaming.Tag;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
@@ -55,7 +54,7 @@ import java.util.Objects;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-public abstract class AbstractStudentIT extends AbstractAxonServerIT {
+public abstract class AbstractStudentIT extends AbstractIntegrationTest {
 
     protected static final GenericCommandResultMessage SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage(new MessageType("empty"), "successful");
@@ -87,7 +86,7 @@ public abstract class AbstractStudentIT extends AbstractAxonServerIT {
     }
 
     @Override
-    protected ApplicationConfigurer createConfigurer() {
+    protected ApplicationConfigurer applicationConfigurer() {
         var configurer = EventSourcingConfigurer.create()
                                                 .componentRegistry(cr -> cr.registerModule(studentEntity))
                                                 .componentRegistry(cr -> cr.registerModule(courseEntity));

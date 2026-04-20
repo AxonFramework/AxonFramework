@@ -24,7 +24,6 @@ import org.axonframework.extension.spring.jdbc.SpringDataSourceConnectionProvide
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.JdbcTokenStore;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.store.jdbc.TokenSchema;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -37,7 +36,6 @@ import java.time.temporal.TemporalAmount;
 import java.util.Map;
 import javax.sql.DataSource;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -53,8 +51,7 @@ class JdbcAutoConfigurationTest {
     @BeforeEach
     void setUp() {
         testContext = new ApplicationContextRunner()
-                .withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.enabled=false");
+                .withUserConfiguration(TestContext.class);
     }
 
     @Test

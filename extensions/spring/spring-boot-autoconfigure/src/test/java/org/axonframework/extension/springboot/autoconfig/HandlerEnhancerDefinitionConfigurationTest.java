@@ -16,11 +16,10 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
-import org.jspecify.annotations.NonNull;
-import org.axonframework.messaging.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +29,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -52,7 +50,7 @@ class HandlerEnhancerDefinitionConfigurationTest {
     void handlerEnhancerDefinitionWrapsEventHandler() {
         new ApplicationContextRunner()
                 .withUserConfiguration(ContextWithHandlers.class)
-                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0")
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0")
                 .run(context -> {
                     assertThat(context).hasSingleBean(CustomHandlerEnhancerDefinition.class);
                     assertThat(context).hasSingleBean(MyEventHandlingComponent.class);
@@ -65,7 +63,7 @@ class HandlerEnhancerDefinitionConfigurationTest {
     void handlerEnhancerDefinitionDoesNotWrapInAbsenceOfMessageHandlers() {
         new ApplicationContextRunner()
                 .withUserConfiguration(ContextWithoutHandlers.class)
-                .withPropertyValues("axon.axonserver.enabled=false", "axon.eventstorage.jpa.polling-interval=0")
+                .withPropertyValues("axon.eventstorage.jpa.polling-interval=0")
                 .run(context -> {
                     assertThat(context).hasSingleBean(CustomHandlerEnhancerDefinition.class);
 

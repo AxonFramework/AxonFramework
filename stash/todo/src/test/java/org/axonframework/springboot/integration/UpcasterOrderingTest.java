@@ -19,7 +19,6 @@ package org.axonframework.springboot.integration;
 import org.axonframework.conversion.upcasting.event.EventUpcaster;
 import org.axonframework.conversion.upcasting.event.IntermediateEventRepresentation;
 import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -45,8 +44,7 @@ class UpcasterOrderingTest {
 
     @BeforeEach
     void setUp() {
-        testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
-                                                               .withUserConfiguration(
+        testApplicationContext = new ApplicationContextRunner().withUserConfiguration(
                                                                        DefaultContext.class, OtherContext.class
                                                                );
     }

@@ -21,7 +21,6 @@ import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.messaging.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
 import org.jobrunr.scheduling.JobScheduler;
-import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +37,6 @@ class JobRunrAutoConfigurationTest {
     @Test
     void eventSchedulerAndDeadlineManagercreated() {
         new ApplicationContextRunner()
-                .withPropertyValues("axon.axonserver.enabled=false")
                 .withUserConfiguration(DefaultContext.class)
                 .run(context -> {
                     EventScheduler eventScheduler = context.getBean(EventScheduler.class);

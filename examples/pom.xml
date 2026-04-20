@@ -44,6 +44,11 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-server-connector</artifactId>
+                <version>5.1.0-RC2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

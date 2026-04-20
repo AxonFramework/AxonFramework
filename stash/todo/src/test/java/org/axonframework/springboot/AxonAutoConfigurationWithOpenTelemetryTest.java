@@ -16,9 +16,8 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.messaging.tracing.SpanFactory;
 import org.axonframework.extension.tracing.opentelemetry.OpenTelemetrySpanFactory;
-import org.junit.jupiter.api.*;
+import org.axonframework.messaging.tracing.SpanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -38,7 +37,6 @@ class AxonAutoConfigurationWithOpenTelemetryTest {
     void spanFactoryIsOpenTelemetrySpanFactory() {
         new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
-                .withPropertyValues("axon.axonserver.enabled=false")
                 .run(context -> {
                     assertNotNull(context);
 

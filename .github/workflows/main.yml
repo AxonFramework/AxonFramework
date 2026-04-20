@@ -56,8 +56,8 @@ jobs:
         if: matrix.sonar-enabled
         run: |
           ./mvnw -B -ntp -Dstyle.color=always org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Dsonar.projectKey=AxonFramework_AxonFramework \
-          -Dsonar.organization=axonframework \
+          -Dsonar.projectKey=AxonIQ_AxonFramework \
+          -Dsonar.organization=axoniq \
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:

@@ -13,9 +13,11 @@ A summary of the subsections is provided below:
 |===
 |Sub-Section |Purpose
 
-|xref:snapshotting.adoc[Snapshots] |Capabilities to create snapshots, reducing the time required to load aggregates
-|xref:caching.adoc[Caching] |In-process event caching to reduce event store network traffic
 |xref:event-processing.adoc[Event Processing] |Tuning options for batching and parallel processing of events
 |xref:command-processing.adoc[Command Processing] |Configuration options for command processing, including duplicate handler resolution and sequencing
 |xref:rdbms-tuning.adoc[Relational Database Tuning] |Best practices and tuning suggestions when using Axon Framework with relational databases
+ifdef::advanced-framework[]
+|xref:snapshotting:index.adoc[Snapshots] |Capabilities to create snapshots, reducing the time required to load aggregates
+|xref:caching:index.adoc[Caching] |In-process event caching to reduce event store network traffic
+endif::[]
 |===
