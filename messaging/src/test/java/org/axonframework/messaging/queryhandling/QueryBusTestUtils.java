@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.queryhandling;
 
-import org.axonframework.messaging.queryhandling.QueryBus;
-import org.axonframework.messaging.queryhandling.SimpleQueryBus;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
 
 /**

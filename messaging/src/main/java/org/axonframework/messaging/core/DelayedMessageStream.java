@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.core;
 
+import org.axonframework.messaging.core.MessageStream.Entry;
+
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
@@ -27,7 +29,7 @@ import java.util.function.BiFunction;
 /**
  * An implementation of the {@link MessageStream} that wraps a stream that will become available asynchronously.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
@@ -49,7 +51,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
      *                 when it becomes available.
-     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param <M>      The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
      * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
@@ -80,7 +82,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to delegate to
      *                 when it becomes available.
-     * @param <M>      The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @param <M>      The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
      * @return A {@link MessageStream.Single stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
@@ -160,7 +162,7 @@ public class DelayedMessageStream<M extends Message> implements MessageStream<M>
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(R identity, BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(R identity, BiFunction<R, ? super Entry<M>, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 

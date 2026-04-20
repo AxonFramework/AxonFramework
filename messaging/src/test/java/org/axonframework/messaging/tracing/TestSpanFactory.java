@@ -161,23 +161,16 @@ public class TestSpanFactory implements SpanFactory {
     /**
      * Verifies that a span was created and was of a certain type.
      *
-     * @param name Name of the span to verify.
+     * @param name name of the span to verify
+     * @param type the expected type of the span
      * @see TestSpanType
      */
     public void verifySpanHasType(String name, TestSpanType type) {
         assertEquals(type, findSpan(name).map(s -> s.type).orElse(null));
     }
 
-    private void verifySpanExists(String name) {
-        assertTrue(findSpan(name).isPresent(), () -> createErrorMessageForSpan(name));
-    }
-
     private Optional<TestSpan> findSpan(String name) {
         return findSpan(name, testSpan -> true);
-    }
-
-    private void verifySpanExists(String name, Predicate<TestSpan> filter) {
-        assertTrue(findSpan(name, filter).isPresent(), () -> createErrorMessageForSpan(name));
     }
 
     private Optional<TestSpan> findSpan(String name, Predicate<TestSpan> filter) {

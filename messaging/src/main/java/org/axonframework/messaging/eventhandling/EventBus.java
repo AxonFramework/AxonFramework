@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.eventhandling;
 
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.core.SubscribableEventSource;
 
 /**
@@ -26,10 +25,9 @@ import org.axonframework.messaging.core.SubscribableEventSource;
  * Implementations may or may not dispatch the events to event listeners in the dispatching thread.
  *
  * @author Allard Buijze
- * @see EventMessageHandler
  * @see SimpleEventBus
  * @since 0.1
  */
-public interface EventBus extends SubscribableEventSource, EventSink, DescribableComponent {
+public interface EventBus extends SubscribableEventSource, EventSink {
 
 }

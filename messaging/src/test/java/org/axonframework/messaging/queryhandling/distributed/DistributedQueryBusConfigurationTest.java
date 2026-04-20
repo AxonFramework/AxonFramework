@@ -36,7 +36,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void defaultConfigurationHasExpectedValues() {
         // Given / When
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // Then
         assertTrue(config.preferLocalQueryHandler(),
@@ -58,7 +58,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void queryThreadsCreatesExecutorWithCorrectThreadCount() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         DistributedQueryBusConfiguration customConfig = config.queryThreads(42);
@@ -82,7 +82,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void queryQueueCapacityCreatesQueueWithCorrectCapacity() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         DistributedQueryBusConfiguration customConfig = config.queryQueueCapacity(500);
@@ -105,7 +105,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void queryExecutorServiceUsesProvidedExecutor() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
         ExecutorService customExecutor = Executors.newSingleThreadExecutor();
 
         // When
@@ -123,7 +123,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void queryExecutorServiceRejectsNullExecutor() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When / Then
         //noinspection DataFlowIssue
@@ -135,7 +135,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void preferLocalQueryHandlerStoresCorrectValue() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         DistributedQueryBusConfiguration disabledConfig = config.preferLocalQueryHandler(false);
@@ -158,7 +158,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void fluentChainingPreservesAllSettings() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         DistributedQueryBusConfiguration customConfig = config
@@ -183,7 +183,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void configurationIsImmutable() {
         // Given
-        DistributedQueryBusConfiguration original = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration original = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         DistributedQueryBusConfiguration modified1 = original.queryThreads(5);
@@ -214,7 +214,7 @@ class DistributedQueryBusConfigurationTest {
     @Test
     void multipleCallsToQueryExecutorServiceReturnDifferentInstances() {
         // Given
-        DistributedQueryBusConfiguration config = new DistributedQueryBusConfiguration();
+        DistributedQueryBusConfiguration config = DistributedQueryBusConfiguration.DEFAULT;
 
         // When
         ExecutorService executor1 = config.queryExecutorService();

@@ -20,7 +20,7 @@ import org.axonframework.messaging.core.QualifiedName;
 
 /**
  * Exception thrown whenever an {@link EventHandlingComponent} is given an {@link EventMessage} for which it does not
- * have a {@link EventHandlingComponent#subscribe(QualifiedName, EventHandler) subscribed} {@link EventHandler}.
+ * have a {@link SimpleEventHandlingComponent#subscribe(QualifiedName, EventHandler) subscribed} {@link EventHandler}.
  *
  * @author Steven van Beelen
  * @since 5.0.0

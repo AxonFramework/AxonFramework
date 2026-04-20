@@ -19,10 +19,6 @@ package org.axonframework.messaging.queryhandling.distributed;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.queryhandling.QueryBus;
-import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBus;
-import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfiguration;
-import org.axonframework.messaging.queryhandling.distributed.DistributedQueryBusConfigurationEnhancer;
-import org.axonframework.messaging.queryhandling.distributed.QueryBusConnector;
 import org.axonframework.messaging.queryhandling.interception.InterceptingQueryBus;
 import org.junit.jupiter.api.*;
 

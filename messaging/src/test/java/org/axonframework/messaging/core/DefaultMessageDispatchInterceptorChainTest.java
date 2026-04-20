@@ -67,7 +67,7 @@ class DefaultMessageDispatchInterceptorChainTest {
         Message secondMessage = message("message", "second");
 
         //noinspection Convert2Lambda | Required as anonymous class for spying
-        MessageDispatchInterceptor<Message> interceptorOne = spy(new MessageDispatchInterceptor<Message>() {
+        MessageDispatchInterceptor<Message> interceptorOne = spy(new MessageDispatchInterceptor<>() {
             @NonNull
             @Override
             public MessageStream<?> interceptOnDispatch(@NonNull Message message,
@@ -78,7 +78,7 @@ class DefaultMessageDispatchInterceptorChainTest {
             }
         });
         //noinspection Convert2Lambda | Required as anonymous class for spying
-        MessageDispatchInterceptor<Message> interceptorTwo = spy(new MessageDispatchInterceptor<Message>() {
+        MessageDispatchInterceptor<Message> interceptorTwo = spy(new MessageDispatchInterceptor<>() {
             @NonNull
             @Override
             public MessageStream<?> interceptOnDispatch(@NonNull Message message, @Nullable ProcessingContext context,

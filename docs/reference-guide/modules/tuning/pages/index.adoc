@@ -1,18 +1,23 @@
 = Tuning
 :page-aliases: README.adoc
 
-Axon framework provides capabilities to tune the performance of your Axon applications.
-This includes capabilities to take event snapshots, segment tuning, command processing, and general RDBMS tuning suggestions.
-This section of the documentation intends to detail the capabilities that Axon Framework provides to help tune your Axon applications.
+Axon Framework provides several capabilities to tune the performance of your applications.
+This includes support for snapshots, caching, segmented event processing, and command sequencing.
+Additionally, general guidance is provided for optimizing relational database usage.
 
-A summary of the various subsections is given below:
+This section details the various tools and strategies Axon Framework offers to improve the efficiency and responsiveness of your application.
+
+A summary of the subsections is provided below:
 
 [cols="<,<"]
 |===
 |Sub-Section |Purpose
 
-|xref:event-snapshots.adoc[Event Snapshots] |Axon Framework provided capabilities to create event snapshots for optimizing Aggregate loading
-|xref:event-processing.adoc[Event Processing] |Axon Framework provided capabilities for tuning batching and parallel processing of events
-|xref:command-processing.adoc[Command Processing] |Capabilities for tuning command processing including duplicate handler resolution and command sequencing
-|xref:rdbms-tuning.adoc[Relational Database Tuning] |Tuning suggestions when using Axon Framework together with a Relation Database
+|xref:event-processing.adoc[Event Processing] |Tuning options for batching and parallel processing of events
+|xref:command-processing.adoc[Command Processing] |Configuration options for command processing, including duplicate handler resolution and sequencing
+|xref:rdbms-tuning.adoc[Relational Database Tuning] |Best practices and tuning suggestions when using Axon Framework with relational databases
+ifdef::advanced-framework[]
+|xref:snapshotting:index.adoc[Snapshots] |Capabilities to create snapshots, reducing the time required to load aggregates
+|xref:caching:index.adoc[Caching] |In-process event caching to reduce event store network traffic
+endif::[]
 |===

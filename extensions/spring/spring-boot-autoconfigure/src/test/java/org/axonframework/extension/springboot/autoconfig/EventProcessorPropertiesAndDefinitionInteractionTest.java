@@ -140,7 +140,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
     @SpringBootTest(
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=pooled",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].initialSegmentCount=73",
@@ -169,14 +168,12 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(StreamingEventProcessor.class,
-                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(StreamingEventProcessor.class, KEY1)).isPresent();
 
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
-                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class, KEY2)).isPresent();
         }
     }
 
@@ -224,8 +221,8 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             props.put("server.port", port);
             props.put("logging.level.root", "OFF");
             props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
-            props.put("axon.axonserver.enabled", "false");
             props.put("spring.main.banner-mode", "off");
+            props.put("axon.eventstorage.jpa.polling-interval", "0");
             props.putAll(parameters);
             app.setDefaultProperties(props);
             var e = assertThrows(
@@ -250,7 +247,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
     @SpringBootTest(
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0",
                     "axon.eventhandling.processors[org.axonframework.extension.springboot.fixture.event.test1].mode=subscribing",
             },
@@ -277,14 +273,12 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
-                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class, KEY1)).isPresent();
 
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
-                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class, KEY2)).isPresent();
         }
     }
 
@@ -293,7 +287,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             classes = {EventProcessorPropertiesAndDefinitionInteractionTest.MyCustomContext.class,
                     SubscribingEventProcessorDefinitionContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0"
             },
             webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -316,8 +309,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
-                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class, KEY1)).isPresent();
             assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // there is an additional custom interceptor
                     config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
@@ -326,8 +318,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
-                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class, KEY2)).isPresent();
             assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // we should not see the custom interceptor here
                     config -> assertThatCollection(config.interceptors()).noneMatch(StubInterceptor.class::isInstance)
@@ -341,7 +332,6 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
                     SubscribingEventProcessorDefinitionContext.class,
                     PooledStreamingEventProcessorDefinitionContext.class},
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventstorage.jpa.polling-interval=0"
             },
             webEnvironment = SpringBootTest.WebEnvironment.NONE
@@ -364,8 +354,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig1 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY1 + "]").orElseThrow();
             assertThat(eventProcessorConfig1.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class,
-                                                                  "EventProcessor[" + KEY1 + "]")).isPresent();
+            assertThat(eventProcessorConfig1.getOptionalComponent(EventProcessor.class, KEY1)).isPresent();
             assertThat(eventProcessorConfig1.getOptionalComponent(SubscribingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // there is an additional custom interceptor
                     config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
@@ -374,8 +363,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             Configuration eventProcessorConfig2 = axonApplication.getModuleConfiguration(
                     "EventProcessor[" + KEY2 + "]").orElseThrow();
             assertThat(eventProcessorConfig2.getComponents(EventProcessor.class)).isNotEmpty();
-            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class,
-                                                                  "EventProcessor[" + KEY2 + "]")).isPresent();
+            assertThat(eventProcessorConfig2.getOptionalComponent(StreamingEventProcessor.class, KEY2)).isPresent();
             assertThat(eventProcessorConfig2.getOptionalComponent(PooledStreamingEventProcessorConfiguration.class)).hasValueSatisfying(
                     // we should not see the custom interceptor here
                     config -> assertThatCollection(config.interceptors()).anyMatch(StubInterceptor.class::isInstance)
@@ -391,10 +379,7 @@ class EventProcessorPropertiesAndDefinitionInteractionTest {
             var app = new SpringApplication(MyCustomContext.class,
                                             SubscribingEventProcessorDefinitionContext.class,
                                             BroadlyMatchingProcessorDefinitionContext.class);
-            app.setDefaultProperties(Map.of("axon.axonserver.enabled",
-                                            "false",
-                                            "axon.eventstorage.jpa.polling-interval",
-                                            "0"));
+            app.setDefaultProperties(Map.of("axon.eventstorage.jpa.polling-interval", "0"));
             app.setLogStartupInfo(false);
 
             app.setWebApplicationType(WebApplicationType.NONE);

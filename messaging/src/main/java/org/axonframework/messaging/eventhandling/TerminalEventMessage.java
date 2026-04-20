@@ -33,7 +33,7 @@ import org.axonframework.messaging.core.MessageType;
  * @since 5.0.0
  */
 @Internal
-public class TerminalEventMessage extends GenericEventMessage implements EventMessage {
+public class TerminalEventMessage extends GenericEventMessage {
 
     /**
      * The sole instance of the {@link TerminalEventMessage}.

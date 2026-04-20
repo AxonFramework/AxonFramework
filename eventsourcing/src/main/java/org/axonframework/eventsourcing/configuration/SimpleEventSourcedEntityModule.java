@@ -25,6 +25,7 @@ import org.axonframework.common.configuration.Configuration;
 import org.axonframework.common.configuration.LifecycleRegistry;
 import org.axonframework.common.lifecycle.Phase;
 import org.axonframework.conversion.Converter;
+import org.axonframework.conversion.GeneralConverter;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -190,7 +191,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
                         sourcingHandler = new SimpleSourcingHandler<>(eventStore, criteriaResolver);
                     }
                     else {
-                        Converter converter = config.getOptionalComponent(Converter.class)
+                        Converter converter = config.getOptionalComponent(GeneralConverter.class)
                             .orElseThrow(() -> new IllegalStateException("A Converter must be configured to use snapshotting."));
                         SnapshotStore snapshotStore = config.getOptionalComponent(SnapshotStore.class)
                             .orElseThrow(() -> new IllegalStateException("A SnapshotStore must be configured to use snapshotting."));

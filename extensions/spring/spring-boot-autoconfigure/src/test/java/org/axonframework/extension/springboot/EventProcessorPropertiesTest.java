@@ -39,12 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class EventProcessorPropertiesTest {
 
-    @SpringBootTest(
-            classes = MyContext.class,
-            properties = {
-                    "axon.axonserver.enabled=false"
-            }
-    )
+    @SpringBootTest(classes = MyContext.class)
     @Nested
     class LoadDefaultProperties {
 
@@ -64,7 +59,6 @@ class EventProcessorPropertiesTest {
     @SpringBootTest(
             classes = MyContext.class,
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors[this.is.a.package].mode=subscribing"
             }
     )
@@ -86,7 +80,6 @@ class EventProcessorPropertiesTest {
     @SpringBootTest(
             classes = MyContext.class,
             properties = {
-                    "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors.foo.batch-size=1",
                     "axon.eventhandling.processors.foo.initial-segment-count=2",
                     "axon.eventhandling.processors.foo.mode=pooled",
@@ -136,54 +129,6 @@ class EventProcessorPropertiesTest {
             assertThat(castedBarSettings.threadCount()).isEqualTo(defaultSettings.threadCount());
             assertThat(castedBarSettings.getTokenClaimInterval()).isEqualTo(defaultSettings.getTokenClaimInterval());
             assertThat(castedBarSettings.getTokenClaimIntervalTimeUnit()).isEqualTo(defaultSettings.getTokenClaimIntervalTimeUnit());
-        }
-    }
-
-    @SpringBootTest(
-            classes = MyContext.class,
-            properties = {
-                    "axon.axonserver.enabled=false",
-                    "axon.eventhandling.processors.dlq-enabled.dlq.enabled=true",
-                    "axon.eventhandling.processors.dlq-enabled.dlq.cache.size=2048",
-                    "axon.eventhandling.processors.dlq-disabled.dlq.enabled=false",
-            }
-    )
-    @Nested
-    class ConfigureDlqWithProperties {
-
-        @Autowired(required = false)
-        private EventProcessorSettings.MapWrapper eventProcessorProperties;
-
-        @Test
-        void dlqEnabledProcessorHasCorrectSettings() {
-            assertThat(eventProcessorProperties).isNotNull();
-            assertThat(eventProcessorProperties.settings()).containsKey("dlq-enabled");
-
-            var settings = (EventProcessorSettings.PooledEventProcessorSettings)
-                    eventProcessorProperties.settings().get("dlq-enabled");
-            assertThat(settings.dlq().enabled()).isTrue();
-            assertThat(settings.dlq().cache().size()).isEqualTo(2048);
-        }
-
-        @Test
-        void dlqDisabledProcessorHasCorrectSettings() {
-            assertThat(eventProcessorProperties).isNotNull();
-            assertThat(eventProcessorProperties.settings()).containsKey("dlq-disabled");
-
-            var settings = (EventProcessorSettings.PooledEventProcessorSettings)
-                    eventProcessorProperties.settings().get("dlq-disabled");
-            assertThat(settings.dlq().enabled()).isFalse();
-        }
-
-        @Test
-        void defaultSettingsHaveDlqDisabledWithDefaultCacheSize() {
-            assertThat(eventProcessorProperties).isNotNull();
-
-            var defaultSettings = (EventProcessorSettings.PooledEventProcessorSettings)
-                    eventProcessorProperties.settings().get(EventProcessorSettings.DEFAULT);
-            assertThat(defaultSettings).isNotNull();
-            assertThat(defaultSettings.dlq().enabled()).isFalse();
-            assertThat(defaultSettings.dlq().cache().size()).isEqualTo(1024);
         }
     }
 

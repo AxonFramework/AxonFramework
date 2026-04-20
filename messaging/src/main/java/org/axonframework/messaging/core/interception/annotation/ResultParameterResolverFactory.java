@@ -16,13 +16,13 @@
 
 package org.axonframework.messaging.core.interception.annotation;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.core.Context.ResourceKey;
 import org.axonframework.messaging.core.annotation.ParameterResolver;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.core.unitofwork.ResourceOverridingProcessingContext;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -82,8 +82,9 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
      * Performs the given {@code action} ignoring any parameters expecting a result type. This is typically used to
      * detect whether a handler is suitable for invocation prior to the result value being available.
      *
-     * @param action The action to perform
-     * @param <T>    The type of result expected from the action
+     * @param <T> the type of result expected from the action
+     * @param action            the action to perform
+     * @param processingContext the {@link ProcessingContext} to use
      * @return the result returned by the given action
      */
     public static <T> T ignoringResultParameters(ProcessingContext processingContext,

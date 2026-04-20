@@ -16,10 +16,6 @@
 
 package org.axonframework.messaging.commandhandling;
 
-import org.axonframework.messaging.commandhandling.CommandMessage;
-import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.commandhandling.MetadataRoutingStrategy;
-import org.axonframework.messaging.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.*;

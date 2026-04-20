@@ -17,10 +17,7 @@
 package org.axonframework.eventsourcing.annotation.reflection;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
+import org.axonframework.conversion.PassThroughConverter;
 import org.axonframework.messaging.core.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -29,7 +26,10 @@ import org.axonframework.messaging.core.annotation.ClasspathParameterResolverFac
 import org.axonframework.messaging.core.annotation.MetadataValue;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.unitofwork.StubProcessingContext;
-import org.axonframework.conversion.PassThroughConverter;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -368,30 +368,26 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         @Test
         void allowsFactoryMethodReturningSubtype() {
             // This should not throw an exception - the factory method returns a subtype of the entity
-            assertDoesNotThrow(() -> {
-                new AnnotationBasedEventSourcedEntityFactory<>(
-                        BaseEntity.class,
-                        String.class,
-                        Collections.singleton(SubEntity.class),
-                        parameterResolverFactory,
-                        messageTypeResolver,
-                        converter
-                );
-            });
+            assertDoesNotThrow(() -> new AnnotationBasedEventSourcedEntityFactory<>(
+                    BaseEntity.class,
+                    String.class,
+                    Collections.singleton(SubEntity.class),
+                    parameterResolverFactory,
+                    messageTypeResolver,
+                    converter
+            ));
         }
 
         @Test
         void allowsFactoryMethodReturningExactType() {
             // This should not throw an exception - the factory method returns the exact entity type
-            assertDoesNotThrow(() -> {
-                new AnnotationBasedEventSourcedEntityFactory<>(
-                        ConcreteEntity.class,
-                        String.class,
-                        parameterResolverFactory,
-                        messageTypeResolver,
-                        converter
-                );
-            });
+            assertDoesNotThrow(() -> new AnnotationBasedEventSourcedEntityFactory<>(
+                    ConcreteEntity.class,
+                    String.class,
+                    parameterResolverFactory,
+                    messageTypeResolver,
+                    converter
+            ));
         }
 
         public static abstract class BaseEntity {
@@ -440,47 +436,44 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void throwsOnNonStaticFactoryMethod() {
-            var exception = assertThrows(AxonConfigurationException.class, () -> {
-                new AnnotationBasedEventSourcedEntityFactory<>(
-                        InvalidEntityNonStaticMethod.class,
-                        String.class,
-                        Collections.singleton(InvalidEntityNonStaticMethod.class),
-                        parameterResolverFactory,
-                        messageTypeResolver,
-                        converter
-                );
-            });
+            var exception = assertThrows(AxonConfigurationException.class,
+                                         () -> new AnnotationBasedEventSourcedEntityFactory<>(
+                                                 InvalidEntityNonStaticMethod.class,
+                                                 String.class,
+                                                 Collections.singleton(InvalidEntityNonStaticMethod.class),
+                                                 parameterResolverFactory,
+                                                 messageTypeResolver,
+                                                 converter
+                                         ));
             assertTrue(exception.getMessage().contains("Method-based @EntityCreator must be static"));
         }
 
         @Test
         void throwsOnInvalidFactoryMethodReturnType() {
-            var exception = assertThrows(AxonConfigurationException.class, () -> {
-                new AnnotationBasedEventSourcedEntityFactory<>(
-                        InvalidEntityReturnType.class,
-                        String.class,
-                        Collections.singleton(InvalidEntityReturnType.class),
-                        parameterResolverFactory,
-                        messageTypeResolver,
-                        converter
-                );
-            });
+            var exception = assertThrows(AxonConfigurationException.class,
+                                         () -> new AnnotationBasedEventSourcedEntityFactory<>(
+                                                 InvalidEntityReturnType.class,
+                                                 String.class,
+                                                 Collections.singleton(InvalidEntityReturnType.class),
+                                                 parameterResolverFactory,
+                                                 messageTypeResolver,
+                                                 converter
+                                         ));
             assertTrue(exception.getMessage()
                                 .contains("@EntityCreator must return the entity type or a subtype"));
         }
 
         @Test
         void throwsOnMissingFactoryMethods() {
-            var exception = assertThrows(AxonConfigurationException.class, () -> {
-                new AnnotationBasedEventSourcedEntityFactory<>(
-                        NoAnnotatedMethodsEntity.class,
-                        String.class,
-                        Collections.singleton(NoAnnotatedMethodsEntity.class),
-                        parameterResolverFactory,
-                        messageTypeResolver,
-                        converter
-                );
-            });
+            var exception = assertThrows(AxonConfigurationException.class,
+                                         () -> new AnnotationBasedEventSourcedEntityFactory<>(
+                                                 NoAnnotatedMethodsEntity.class,
+                                                 String.class,
+                                                 Collections.singleton(NoAnnotatedMethodsEntity.class),
+                                                 parameterResolverFactory,
+                                                 messageTypeResolver,
+                                                 converter
+                                         ));
             assertTrue(exception.getMessage().contains(
                     "No @EntityCreator present on entity of type"));
         }

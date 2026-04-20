@@ -16,10 +16,10 @@
 
 package org.axonframework.messaging.commandhandling.interception;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.commandhandling.CommandHandler;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.core.MessageStream;
@@ -77,7 +77,7 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
     ) implements CommandHandler, MessageHandlerInterceptorChain<CommandMessage> {
 
         @Override
-                public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
+        public MessageStream.Single<CommandResultMessage> handle(CommandMessage command,
                                                                  ProcessingContext context) {
             //noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(command, context, (MessageHandlerInterceptorChain) this)

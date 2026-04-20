@@ -37,7 +37,7 @@ import java.util.OptionalLong;
  * @author Allard Buijze
  * @since 3.2.0
  */
-public class ReplayToken implements TrackingToken, WrappedToken {
+public class ReplayToken implements WrappedToken {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken tokenAtReset;

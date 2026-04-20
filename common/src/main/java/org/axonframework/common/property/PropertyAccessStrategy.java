@@ -108,6 +108,16 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
         return diff;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof PropertyAccessStrategy pas) && compareTo(pas) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     /**
      * The priority of this strategy. In general, implementations that have a higher certainty to provide a good
      * Property instance for any given property name should have a higher priority. When two instances have the same

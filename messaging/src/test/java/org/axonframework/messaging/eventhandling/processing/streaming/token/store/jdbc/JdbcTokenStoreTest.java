@@ -536,7 +536,7 @@ class JdbcTokenStoreTest {
     }
 
     @Test
-    void identifierReadIfAvailable() throws SQLException {
+    void identifierReadIfAvailable() {
         ConfigToken token = new ConfigToken(Collections.singletonMap("id", "test123"));
         transactionManager.executeInTransaction(
                 () -> {

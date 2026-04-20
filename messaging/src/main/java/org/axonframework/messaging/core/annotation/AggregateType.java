@@ -23,8 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation indication that a parameter on a Message Handler method should be injected with the
- * {@link org.axonframework.eventhandling.DomainEventMessage#getType() aggregate type} of a
- * {@link org.axonframework.eventhandling.DomainEventMessage}. The parameter type must be assignable
+ * aggregate type of a {@code org.axonframework.eventhandling.DomainEventMessage}. The parameter type must be assignable
  * from {@link String}.
  *
  * @author Frank Scheffler

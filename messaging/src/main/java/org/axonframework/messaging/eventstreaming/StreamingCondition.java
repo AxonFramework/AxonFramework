@@ -16,12 +16,13 @@
 
 package org.axonframework.messaging.eventstreaming;
 
-import org.jspecify.annotations.Nullable;
 import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
+import org.jspecify.annotations.Nullable;
 
 
 /**
- * Interface describing the condition to {@link StreamableEventSource#open(StreamingCondition) stream} from a streamable
+ * Interface describing the condition to {@link StreamableEventSource#open(StreamingCondition,
+ * org.axonframework.messaging.core.unitofwork.ProcessingContext) stream} from a streamable
  * event source (like an Event Store).
  * <p>
  * This condition has a mandatory {@link #position()} that dictates from what point streaming should commence.

@@ -16,10 +16,10 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.messaging.core.Metadata;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventTestUtils;
 import org.axonframework.messaging.eventstreaming.Tag;
-import org.axonframework.messaging.core.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.util.HashSet;
@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericTaggedEventMessageTest {
 
     private static final Metadata TEST_METADATA = Metadata.with("key", "value");
-    private static final EventMessage TEST_EVENT = EventTestUtils.<String>asEventMessage("event")
-                                                                         .withMetadata(TEST_METADATA);
+    private static final EventMessage TEST_EVENT = EventTestUtils.asEventMessage("event")
+                                                                 .withMetadata(TEST_METADATA);
     private static final Tag TEST_TAG = new Tag("key", "value");
     private static final Set<Tag> TEST_TAGS = Set.of(TEST_TAG);
 

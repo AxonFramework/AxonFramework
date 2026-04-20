@@ -19,8 +19,9 @@ Whether you are performing a straightforward version bump or a deep architectura
 * xref:migration:paths/test-fixtures.adoc[Test Fixture migration]
 * xref:migration:paths/serializers.adoc[Serializer migration]
 * xref:migration:paths/interceptors.adoc[Interceptor migration]
+* xref:migration:paths/configuration.adoc[Configuration migration]
 * xref:migration:paths/sequencing-policies.adoc[Sequencing Policy migration]
-* _ConfigurerModule to ConfigurationEnhancers (Coming soon)_
+* xref:migration:paths/dlq.adoc[Dead-Letter Queue migration]
 3. **What is not yet there**
 4. **Missing a Migration Path?**
 
@@ -277,7 +278,6 @@ As Axon Framework 5.0 is the first step in this new major version, not all featu
 - **Saga & Deadline Overhaul**: Sagas and Deadlines do not have a native "async-native" replacement yet. A full redesign is in progress.
 - **Event Upcasters**: Event upcasting is not yet available.
 - **Snapshots**: The snapshotting feature for entities is not yet available. Currently scheduled for 5.1.
-- **Dead-Letter Queue (DLQ)**: Support for DLQs in event processors is not yet available.
 - **Event Replaying**: The ability to replay events for streaming event processors is not yet implemented.
 - **Multiple Event Sources**: `MultiStreamableEventSource` support is not yet available. Currently scheduled for 5.1.
 - **Annotated Features (Coming in 5.2.0)**:

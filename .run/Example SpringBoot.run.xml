@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Example SpringBoot" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="university-java-springboot" />
+      <module name="university-java-springboot-3"/>
     <option name="SPRING_BOOT_MAIN_CLASS" value="org.axonframework.examples.university.UniversityExampleApplication" />
     <extension name="coverage">
       <pattern>

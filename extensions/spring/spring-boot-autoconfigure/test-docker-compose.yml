@@ -1,7 +1,7 @@
 services:
   axonserver:
     container_name: axonserver-springboot
-    image: axoniq/axonserver:2025.2.0
+    image: axoniq/axonserver:2025.2.7
     hostname: axonserver
     ports:
       - 8024

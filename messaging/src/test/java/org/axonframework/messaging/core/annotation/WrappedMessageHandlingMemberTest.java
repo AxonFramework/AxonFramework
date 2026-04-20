@@ -16,9 +16,6 @@
 
 package org.axonframework.messaging.core.annotation;
 
-import org.axonframework.messaging.core.annotation.HandlerAttributes;
-import org.axonframework.messaging.core.annotation.MessageHandlingMember;
-import org.axonframework.messaging.core.annotation.WrappedMessageHandlingMember;
 import org.axonframework.messaging.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 

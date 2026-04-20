@@ -51,7 +51,6 @@ public interface QueryUpdateEmitterSpanFactory {
      * Propagates the context of the current span to the given update message.
      *
      * @param update The update message to propagate the context to.
-     * @param <T>    The type of the payload of the update message.
      * @param <M>    The type of the update message.
      * @return The update message with the propagated context.
      */

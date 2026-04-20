@@ -19,8 +19,8 @@ package org.axonframework.messaging.queryhandling;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 
 /**
- * Exception thrown whenever {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} is
- * invoked multiple times for the same {@link SubscriptionQueryMessage}.
+ * Exception thrown whenever {@link QueryBus#subscriptionQuery(QueryMessage, ProcessingContext, int)} is
+ * invoked multiple times for the same {@link QueryMessage}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -30,7 +30,7 @@ public class SubscriptionQueryAlreadyRegisteredException extends RuntimeExceptio
     /**
      * Constructs a {@code SubscriptionQueryAlreadyRegisteredException} for the given {@code queryId}.
      *
-     * @param queryId The {@link SubscriptionQueryMessage#identifier()} of the subscription query accidentally being
+     * @param queryId The {@link QueryMessage#identifier()} of the subscription query accidentally being
      *                registered multiple times.
      */
     public SubscriptionQueryAlreadyRegisteredException(String queryId) {

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.jspecify.annotations.NonNull;
 import org.assertj.core.api.AbstractIterableAssert;
 import org.axonframework.conversion.jackson.JacksonConverter;
 import org.axonframework.eventsourcing.annotation.EventTag;
@@ -35,6 +34,7 @@ import org.axonframework.messaging.eventhandling.processing.streaming.token.Trac
 import org.axonframework.messaging.eventstreaming.EventCriteria;
 import org.axonframework.messaging.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.eventstreaming.Tag;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * are independent of each other.
  *
  * @author John Hendrikx
+ * @param <E> the event storage engine type
  */
 public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStorageEngine> {
 
@@ -149,6 +150,7 @@ public abstract class StorageEngineBackedEventStoreTestSuite<E extends EventStor
      *
      * @param converter The converter to use, cannot be {@code null}.
      * @return The {@link EventStorageEngine} used in this test suite.
+     * @throws Exception when getting the engine fails
      */
     protected abstract @NonNull E getStorageEngine(@NonNull EventConverter converter) throws Exception;
 
