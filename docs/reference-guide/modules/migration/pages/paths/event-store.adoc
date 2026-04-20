@@ -464,6 +464,7 @@ axon.eventstorage.jpa.polling-interval=1000
 ====
 
 == PostgreSQL event storage migration
+// TODO Axoniq feature
 
 If you are using PostgreSQL as your database for event storage—whether through the `JpaEventStorageEngine` or `JdbcEventStorageEngine` in Axon Framework 4—you would benefit from migrating to the dedicated `PostgresqlEventStorageEngine`.
 
