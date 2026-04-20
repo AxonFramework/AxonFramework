@@ -1,6 +1,6 @@
 services:
   axon-server:
-    image: axoniq/axonserver:2025.2.0-SNAPSHOT
+    image: docker.axoniq.io/axoniq/axonserver:2025.2.7
     ports:
       - "8024:8024"
       - "8124:8124"

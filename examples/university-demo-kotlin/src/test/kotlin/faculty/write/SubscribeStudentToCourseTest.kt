@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled("TODO: Fix")
 class SubscribeStudentToCourseTest {
 
     private lateinit var fixture: AxonTestFixture

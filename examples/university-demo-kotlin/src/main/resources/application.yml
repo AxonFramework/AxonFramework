@@ -6,5 +6,7 @@ server:
   port: 8084
 
 axon:
+  converter:
+    general: jackson2
   server:
     enabled: true
