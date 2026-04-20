@@ -44,6 +44,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@link EventStorageEngine} is part of the prepare commit phase of the {@link ProcessingContext}.
  *
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 public class DefaultEventStoreTransaction implements EventStoreTransaction {
@@ -52,11 +53,12 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final ProcessingContext processingContext;
     private final Function<EventMessage, TaggedEventMessage<?>> eventTagger;
 
-    private final List<Consumer<EventMessage>> callbacks;
+    private final List<Consumer<EventMessage>> callbacks = new CopyOnWriteArrayList<>();
 
-    private final ResourceKey<AppendCondition> appendConditionKey;
-    private final ResourceKey<List<TaggedEventMessage<?>>> eventQueueKey;
-    private final ResourceKey<ConsistencyMarker> appendPositionKey;
+    private final ResourceKey<AppendCondition> appendConditionKey = ResourceKey.withLabel("appendCondition");
+    private final ResourceKey<List<TaggedEventMessage<?>>> eventQueueKey = ResourceKey.withLabel("eventQueue");
+    private final ResourceKey<ConsistencyMarker> appendPositionKey = ResourceKey.withLabel("appendPosition");
+    private final ResourceKey<Boolean> prepareCommitExecuted = ResourceKey.withLabel("prepareCommitExecuted");
 
     /**
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
@@ -76,11 +78,6 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
         this.eventTagger = eventTagger;
-        this.callbacks = new CopyOnWriteArrayList<>();
-
-        this.appendConditionKey = ResourceKey.withLabel("appendCondition");
-        this.eventQueueKey = ResourceKey.withLabel("eventQueue");
-        this.appendPositionKey = ResourceKey.withLabel("appendPosition");
     }
 
     @Override
@@ -99,15 +96,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                         ? AppendCondition.withCriteria(condition.criteria())
                         : ac.orCriteria(condition.criteria())
         );
-        MessageStream<EventMessage> source = eventStorageEngine.source(condition);
-        if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
-            return source;
-        }
 
+        MessageStream<EventMessage> source = eventStorageEngine.source(condition);
         AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
+
         return source.onNext(entry -> {
-                         ConsistencyMarker marker;
-                         if ((marker = entry.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
+                         ConsistencyMarker marker = entry.getResource(ConsistencyMarker.RESOURCE_KEY);
+
+                         if (marker != null) {
                              markerReference.set(marker);
                          }
                      })
@@ -115,7 +111,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                      .onComplete(() -> {
                          ConsistencyMarker marker = markerReference.get();
 
-                         updateAppendPosition(marker);
+                         if (!Boolean.TRUE.equals(processingContext.getResource(prepareCommitExecuted))) {
+                             updateAppendPosition(marker);
+                         }
 
                          if (resumePositionCallback != null) {
                              resumePositionCallback.accept(marker.position());
@@ -166,6 +164,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                                 return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
                                                                        current.consistencyMarker()));
                             });
+
+                    context.putResource(prepareCommitExecuted, true);
+
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)

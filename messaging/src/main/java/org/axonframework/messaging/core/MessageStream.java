@@ -44,6 +44,14 @@ import java.util.stream.StreamSupport;
  * When clients choose not to consume a stream until completion (when {@link #isCompleted()} returns {@code true}), it
  * must be closed by calling {@link #close()}. This ensures that the producing side is notified of the closure and can
  * clean up resources.
+ * <p>
+ * A stream is terminal once completed (either normally or exceptionally).
+ * After completion:
+ * <ul>
+ *     <li>{@link #next()} will never return entries</li>
+ *     <li>{@link #hasNextAvailable()} will always return {@code false}</li>
+ *     <li>{@link #error()} will report the failure if completed exceptionally</li>
+ * </ul>
  *
  * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
@@ -51,6 +59,7 @@ import java.util.stream.StreamSupport;
  * @author Milan Savić
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ * @author John Hendrikx
  * @since 5.0.0
  */
 public interface MessageStream<M extends Message> {
@@ -67,7 +76,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code iterable}.
      */
-    static <M extends Message> MessageStream<M> fromIterable(Iterable<M> iterable) {
+    static <M extends Message> MessageStream<M> fromIterable(Iterable<? extends M> iterable) {
         return fromIterable(iterable, message -> Context.empty());
     }
 
@@ -98,12 +107,13 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code iterable} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message> MessageStream<M> fromIterable(Iterable<M> iterable,
-                                                             Function<M, Context> contextSupplier) {
+    static <M extends Message> MessageStream<M> fromIterable(Iterable<? extends M> iterable,
+                                                             Function<? super M, ? extends Context> contextSupplier) {
         return new IteratorMessageStream<>(StreamSupport.stream(iterable.spliterator(), false)
-                                                        .<Entry<M>>map(message -> new SimpleEntry<>(message,
-                                                                                                    contextSupplier.apply(
-                                                                                                            message)))
+                                                        .<Entry<M>>map(message -> new SimpleEntry<M>(
+                                                            message,
+                                                            contextSupplier.apply(message)
+                                                        ))
                                                         .iterator());
     }
 
@@ -116,7 +126,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code stream}.
      */
-    static <M extends Message> MessageStream<M> fromStream(Stream<M> stream) {
+    static <M extends Message> MessageStream<M> fromStream(Stream<? extends M> stream) {
         return fromStream(stream, message -> Context.empty());
     }
 
@@ -131,9 +141,9 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} provided by the given
      * {@code stream} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message> MessageStream<M> fromStream(Stream<M> stream,
-                                                           Function<M, Context> contextSupplier) {
-        return new IteratorMessageStream<>(stream.map(m -> (Entry<M>) new SimpleEntry<>(m, contextSupplier.apply(m)))
+    static <M extends Message> MessageStream<M> fromStream(Stream<? extends M> stream,
+                                                           Function<? super M, ? extends Context> contextSupplier) {
+        return new IteratorMessageStream<>(stream.<Entry<M>>map(m -> new SimpleEntry<>(m, contextSupplier.apply(m)))
                                                  .iterator());
     }
 
@@ -157,11 +167,11 @@ public interface MessageStream<M extends Message> {
      * @return A stream of {@link Entry entries} that return the {@link Message Messages} resulting from the given
      * {@code messageSupplier} with a {@link Context} provided by the {@code contextSupplier}.
      */
-    static <T, M extends Message> MessageStream<M> fromStream(Stream<T> stream,
-                                                              Function<T, M> messageSupplier,
-                                                              Function<T, Context> contextSupplier) {
-        return new IteratorMessageStream<>(stream.map(item -> new SimpleEntry<>(messageSupplier.apply(item),
-                                                                                contextSupplier.apply(item)))
+    static <T, M extends Message> MessageStream<M> fromStream(Stream<? extends T> stream,
+                                                              Function<? super T, ? extends M> messageSupplier,
+                                                              Function<? super T, ? extends Context> contextSupplier) {
+        return new IteratorMessageStream<>(stream.<Entry<M>>map(item -> new SimpleEntry<>(messageSupplier.apply(item),
+                                                                                          contextSupplier.apply(item)))
                                                  .iterator());
     }
 
@@ -176,7 +186,7 @@ public interface MessageStream<M extends Message> {
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code future}.
      */
-    static <M extends Message> Single<M> fromFuture(CompletableFuture<M> future) {
+    static <M extends Message> Single<M> fromFuture(CompletableFuture<? extends M> future) {
         return fromFuture(future, message -> Context.empty());
     }
 
@@ -196,7 +206,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream containing at most one {@link Entry entry} from the given {@code future} with a {@link Context}
      * provided by the {@code contextSupplier}.
      */
-    static <M extends Message> Single<M> fromFuture(CompletableFuture<M> future,
+    static <M extends Message> Single<M> fromFuture(CompletableFuture<? extends M> future,
                                                     Function<M, Context> contextSupplier) {
         return new DelayedMessageStream.Single<>(
                 future.thenApply(message -> MessageStream.just(message, contextSupplier))
@@ -318,7 +328,7 @@ public interface MessageStream<M extends Message> {
      *     <li>When you register the callback on an already completed stream, the callback is invoked directly.</li>
      *     <li>When you register the callback on a stream having entries available, the callback is invoked, and
      *     you must consume the existing entries.</li>
-     *     <li>A registered callback is invoked again when all entries where consumed and new entries arrive.</li>
+     *     <li>A registered callback is invoked again when all entries were consumed and new entries arrive.</li>
      *     <li>Depending on the implementation of the stream, your callback <i>might</i> be invoked again while you
      *     are still consuming entries, in these cases it is your responsibility to synchronize the callback executions.
      *     Using {@link #reduce(Object, BiFunction)} might be a better fit because it guarantees isolated execution of
@@ -333,7 +343,8 @@ public interface MessageStream<M extends Message> {
      * <p>
      * The callback is called on an arbitrary thread, and it should keep work performed on this thread to a minimum
      * as this may interfere with other callbacks handled by the same thread. Any exception thrown by the callback
-     * will result in the stream completing with this exception as the error.
+     * will result in the stream completing with this exception as the error, unless the callback was called to
+     * indicate completition.
      *
      * @param callback The callback to invoke when {@link Entry entries} are available for reading, or the stream
      *                 completes.
@@ -370,11 +381,32 @@ public interface MessageStream<M extends Message> {
     boolean hasNextAvailable();
 
     /**
-     * Closes this stream, freeing any possible resources occupied by the underlying stream. After invocation, some
-     * {@link Entry entries} may still be available for reading.
+     * Closes this stream, indicating that the consumer is no longer interested in receiving further entries.
      * <p>
-     * Implementations must always release resources when a stream is completed, either with an error or normally.
-     * Therefore, it is only required to {@code close()} a stream if the consumer decides to not read until the end.
+     * This is a <b>consumer-driven cancellation</b> operation. It immediately transitions the stream into a
+     * terminal state and discards any remaining or buffered entries, including any peeked entries.
+     * After this call returns:
+     * <ul>
+     *     <li>{@link #next()} will not return further entries</li>
+     *     <li>{@link #peek()} will return {@link Optional#empty()}</li>
+     *     <li>{@link #hasNextAvailable()} will return {@code false}</li>
+     * </ul>
+     * <p>
+     * This method is intended exclusively for consumer-side cancellation. It signals that no further processing
+     * is required and allows implementations to release all resources immediately.
+     * <p>
+     * This operation is fundamentally different from <i>producer-side completion</i>. When an implementation
+     * determines that no further elements will ever become available, it must <b>not</b> call {@code close()}</b>.
+     * Instead, it must:
+     * <ul>
+     *     <li>stop producing new elements,</li>
+     *     <li>allow any buffered elements to be consumed normally, and</li>
+     *     <li>transition the stream to completion using its normal terminal signaling mechanism
+     *         (e.g. completion or error through {@code next()}/{@code fetchNext()}).</li>
+     * </ul>
+     * <p>
+     * Calling this method is only required when the consumer chooses not to fully consume the stream.
+     * Streams must always release resources when they complete, regardless of whether {@code close()} is invoked.
      */
     void close();
 
@@ -427,7 +459,7 @@ public interface MessageStream<M extends Message> {
      * stream.
      * @throws UnsupportedOperationException if this stream is unbounded
      */
-    default <R> CompletableFuture<R> reduce(R identity, BiFunction<R, Entry<M>, R> accumulator) {
+    default <R> CompletableFuture<R> reduce(R identity, BiFunction<R, ? super Entry<M>, R> accumulator) {
         return MessageStreamUtils.reduce(this, identity, accumulator);
     }
 
@@ -453,7 +485,7 @@ public interface MessageStream<M extends Message> {
      *                {@code this} stream.
      * @return A stream that continues onto another stream when {@code this} stream completes with an error.
      */
-    default MessageStream<M> onErrorContinue(Function<Throwable, MessageStream<M>> onError) {
+    default MessageStream<M> onErrorContinue(Function<Throwable, MessageStream<? extends M>> onError) {
         return new OnErrorContinueMessageStream<>(this, onError);
     }
 
@@ -479,7 +511,7 @@ public interface MessageStream<M extends Message> {
      * @return A stream concatenating this stream with given {@code other}.
      * @throws UnsupportedOperationException if this stream is unbounded
      */
-    default MessageStream<M> concatWith(MessageStream<M> other) {
+    default MessageStream<M> concatWith(MessageStream<? extends M> other) {
         return new ConcatenatingMessageStream<>(this, other);
     }
 
@@ -609,20 +641,39 @@ public interface MessageStream<M extends Message> {
         }
 
         /**
-         * Returns a {@link CompletableFuture} that completes with the <b>first</b> {@link Entry entry} contained in
-         * this {@code MessageStream}, or exceptionally if the stream completes with an error before returning any
-         * entries.
+         * Returns a {@link CompletableFuture} that completes when this stream has been fully consumed,
+         * either normally or with an error.
          * <p>
-         * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes
-         * with a {@code null} value.
+         * The future completes with the first {@link Entry} observed during stream consumption,
+         * or {@code null} if no entries were produced before completion.
          * <p>
-         * The underlying stream is {@link #close() closed}  as soon as the first element is returned.
+         * This method always drives full stream execution (via {@code reduce}), even though only
+         * the first encountered entry is retained. This is required to correctly support streams
+         * that may:
+         * <ul>
+         *     <li>be composed via {@code concatWith}</li>
+         *     <li>perform side-effect-only processing via {@code ignoreEntries()}</li>
+         *     <li>defer emission until completion</li>
+         * </ul>
+         * <p>
+         * As a result, this operation is not a simple "fetch first element" operation, but a
+         * terminal stream execution that observes the first entry while ensuring complete
+         * stream traversal.
          *
-         * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it is
-         * empty, or exceptionally if the stream propagates an error.
+         * @return A {@link CompletableFuture} completed with the first observed {@link Entry},
+         * {@code null} if none were produced, or completed exceptionally if the stream fails.
+         * @throws UnsupportedOperationException if this stream is unbounded
          */
         default CompletableFuture<Entry<M>> asCompletableFuture() {
-            return MessageStreamUtils.asCompletableFuture(this);
+
+            /*
+             * NOTE: We intentionally use full reduce-based consumption instead of a single next()
+             * because the stream may be composed (concatWith), side-effecting (onNext), or
+             * value-suppressing (ignoreEntries). This ensures correct lifecycle execution
+             * regardless of stream transformations.
+             */
+
+            return reduce(null, (accumulator, entry) -> accumulator != null ? accumulator : entry);
         }
     }
 
@@ -664,9 +715,10 @@ public interface MessageStream<M extends Message> {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        default MessageStream<M> concatWith(MessageStream<M> other) {
-            return other;
+        default MessageStream<M> concatWith(MessageStream<? extends M> other) {
+            return (MessageStream<M>) other;
         }
 
         @Override
