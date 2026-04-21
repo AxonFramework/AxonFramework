@@ -1,12 +1,12 @@
 package org.axonframework.examples.university.faculty.write.subscribe_student_fmodel
 
-import org.axonframework.examples.university._ext.evolveIf
 import org.axonframework.examples.university.faculty.events.CourseCreated
 import org.axonframework.examples.university.faculty.events.FacultyEvent
 import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
 import org.axonframework.examples.university.faculty.events.StudentSubscribedToCourse
 import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.examples.university.shared.ids.StudentId
+import org.axonframework.extension.kotlin.AxonKotlinExtension.evolveIf
 
 
 const val MAX_COURSES_PER_STUDENT = 3

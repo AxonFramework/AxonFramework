@@ -13,27 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.extension.kotlin
 
-/**
- * Kotlin extension functions for Axon.
- */
-object AxonKotlinExtension {
+package org.axonframework.extension.kotlin.eventsourcing
 
-    /**
-     * Helper function to avoid boilerplate code in event sourcing handlers.
-     * Conditionally evolves the current instance.
-     *
-     * @param condition A condition to execute the evolution.
-     * @param evolver A function to be executed.
-     * @return itself or evolved version.
-     */
-    inline fun <T> T.evolveIf(
-        condition: Boolean,
-        evolver: (T) -> T
-    ): T = if (condition) {
-        evolver(this)
-    } else {
-        this
-    }
-}
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+
+typealias EventSourcingConfigurerReceiver = EventSourcingConfigurer.() -> EventSourcingConfigurer

@@ -13,27 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.extension.kotlin
+package org.axonframework.extension.kotlin.eventsourcing
 
-/**
- * Kotlin extension functions for Axon.
- */
-object AxonKotlinExtension {
+import org.axonframework.extension.kotlin.messaging.FunctionalCommandHandlerComponent
+import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule.CommandHandlerPhase
+import kotlin.reflect.KFunction
 
-    /**
-     * Helper function to avoid boilerplate code in event sourcing handlers.
-     * Conditionally evolves the current instance.
-     *
-     * @param condition A condition to execute the evolution.
-     * @param evolver A function to be executed.
-     * @return itself or evolved version.
-     */
-    inline fun <T> T.evolveIf(
-        condition: Boolean,
-        evolver: (T) -> T
-    ): T = if (condition) {
-        evolver(this)
-    } else {
-        this
-    }
+fun CommandHandlerPhase.functionalHandler(
+    function: KFunction<*>,
+    instance: Any? = null
+) = this.commandHandlingComponent { configuration ->
+    FunctionalCommandHandlerComponent(
+        function = function,
+        configuration = configuration,
+        instance = instance
+    )
 }

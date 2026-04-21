@@ -1,44 +1,39 @@
-package org.axonframework.examples.university._ext
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.extension.kotlin.messaging
 
 import org.axonframework.common.annotation.AnnotationUtils
-import org.axonframework.common.configuration.Configuration
-import org.axonframework.common.infra.ComponentDescriptor
-import org.axonframework.messaging.commandhandling.*
-import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule.CommandHandlerPhase
-import org.axonframework.messaging.core.*
+import org.axonframework.extension.kotlin.common.isTopLevel
 import org.axonframework.messaging.core.Message
-import org.axonframework.messaging.core.annotation.*
+import org.axonframework.messaging.core.MessageStream
 import org.axonframework.messaging.core.annotation.MessageHandler
-import org.axonframework.messaging.core.annotation.MessageStreamResolverUtils.resolveToStream
-import org.axonframework.messaging.core.conversion.MessageConverter
+import org.axonframework.messaging.core.annotation.MessageHandlerInvocationException
+import org.axonframework.messaging.core.annotation.MessageHandlingMember
+import org.axonframework.messaging.core.annotation.ParameterResolver
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory
+import org.axonframework.messaging.core.annotation.UnsupportedHandlerException
 import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Parameter
-import java.util.*
-import java.util.Objects.requireNonNull
+import java.util.Optional
 import java.util.concurrent.ExecutionException
 import java.util.function.Function
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.extensionReceiverParameter
-import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.jvm.javaMethod
-
-
-inline fun <reified T : Any> CommandHandlerPhase.functionalHandler(
-    function: KFunction<*>,
-    instance: T
-) = this.commandHandlingComponent { configuration ->
-    FunctionalCommandHandlerComponent(
-        function,
-        configuration,
-        instance
-    )
-}
-
-fun CommandHandlerPhase.functionalHandler(
-    function: KFunction<*>,
-) = this.commandHandlingComponent { configuration -> FunctionalCommandHandlerComponent(function, configuration, null) }
-
 
 class FunctionalCommandMessageHandlingMember<T : Any>(
     val function: KFunction<*>,
@@ -115,7 +110,6 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
                 throw e
             }
         }
-
 
     override fun handle(message: Message, context: ProcessingContext, target: T?): MessageStream<*> {
         return try {
@@ -197,85 +191,4 @@ class FunctionalCommandMessageHandlingMember<T : Any>(
             this.call(instance, *args)
         }
     }
-}
-
-/**
- * Functional command handling component.
- * @param <T> type of instance to operate on. May be omitted if the function is a top level function.
- * @param function function to call.
- * @param instance optional instance.
- * @param parameterResolverFactory resolver for function parameters.
- * @param messageTypeResolver resolver for the type of message.
- * @param converter converter for the payload.
- */
-class FunctionalCommandHandlerComponent<T : Any>(
-    function: KFunction<*>,
-    instance: T?,
-    parameterResolverFactory: ParameterResolverFactory,
-    messageTypeResolver: MessageTypeResolver,
-    converter: MessageConverter
-) : CommandHandlingComponent {
-
-    private val handlingComponent: SimpleCommandHandlingComponent = SimpleCommandHandlingComponent.create(
-        "FunctionalCommandHandlingComponent${function.name}"
-    )
-
-    constructor(function: KFunction<*>, configuration: Configuration, instance: T? = null) : this(
-        function = function,
-        instance = instance,
-        parameterResolverFactory = configuration.getComponent(ParameterResolverFactory::class.java),
-        messageTypeResolver = configuration.getComponent(MessageTypeResolver::class.java),
-        converter = configuration.getComponent(MessageConverter::class.java)
-    )
-
-    init {
-        if (!function.isTopLevel()) {
-            requireNonNull(instance) { "Member functions must be used on object instance, but none was provided." }
-        }
-        val member = FunctionalCommandMessageHandlingMember<T>(
-            function = function,
-            messageType = CommandMessage::class.java,
-            parameterResolverFactory = parameterResolverFactory,
-            returnTypeConverter = Function { resolveToStream(it, ClassBasedMessageTypeResolver()) }
-        )
-        val payloadType = member.payloadType()
-        // always deduct qualified name from the payload
-        val qualifiedName = messageTypeResolver.resolve(payloadType)
-            .orElse(MessageType(payloadType))
-            .qualifiedName()
-
-        handlingComponent.subscribe(
-            qualifiedName,
-            CommandHandler { command: CommandMessage, ctx: ProcessingContext ->
-                val result = member.handle(command.withConvertedPayload(payloadType, converter), ctx, instance)
-                result
-                    .mapMessage<CommandResultMessage> {
-                        it as? CommandResultMessage ?: GenericCommandResultMessage(it)
-                    }
-                    .first()
-                    .cast<CommandResultMessage>()
-            }
-        )
-    }
-
-    override fun supportedCommands(): Set<QualifiedName> =
-        handlingComponent.supportedCommands()
-
-    override fun handle(
-        command: CommandMessage,
-        processingContext: ProcessingContext
-    ): MessageStream.Single<CommandResultMessage> =
-        handlingComponent.handle(command, processingContext)
-
-    override fun describeTo(descriptor: ComponentDescriptor) {
-        TODO("Not yet implemented")
-    }
-}
-
-/**
- * Checks if the method is defined top level (static) or if it has a receiver type (is a member or extension).
- * @return true, if the method is not defined inside an enclosing type.
- */
-fun KFunction<*>.isTopLevel(): Boolean {
-    return this.instanceParameter == null && this.extensionReceiverParameter == null
 }

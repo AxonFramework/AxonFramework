@@ -6,6 +6,8 @@ import org.axonframework.messaging.commandhandling.configuration.CommandHandling
 import org.axonframework.messaging.eventhandling.gateway.EventAppender
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.extension.kotlin.eventsourcing.EventSourcedEntityModuleExt
+import org.axonframework.extension.kotlin.eventsourcing.EventSourcedEntityModuleExt.autodetected
 import org.axonframework.modelling.annotation.InjectEntity
 
 class CreateCourseCommandHandler {
@@ -23,10 +25,7 @@ class CreateCourseCommandHandler {
 
 fun EventSourcingConfigurer.registerCreateCourse() = apply {
     registerEntity(
-        EventSourcedEntityModule.autodetected(
-            CourseId::class.java,
-            CreateCourseState::class.java
-        )
+        autodetected<CourseId, CreateCourseState>()
     )
     registerCommandHandlingModule(
         CommandHandlingModule

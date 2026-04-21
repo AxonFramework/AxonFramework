@@ -16,7 +16,6 @@
 
 package org.axonframework.extension.kotlin.common
 
-import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import org.axonframework.common.property.Property
 import org.axonframework.common.property.PropertyAccessStrategy
 import kotlin.reflect.KProperty1
@@ -57,6 +56,7 @@ class KotlinReflectPropertyAccessStrategy : PropertyAccessStrategy() {
 
     // needs increased priority to be able to override the default property access strategy
     override fun getPriority(): Int = 1000
+
     override fun <T : Any> propertyFor(
         targetClass: Class<out T>,
         property: String

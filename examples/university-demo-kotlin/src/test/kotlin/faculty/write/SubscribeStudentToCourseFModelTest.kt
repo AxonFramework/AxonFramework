@@ -1,6 +1,6 @@
 package org.axonframework.examples.university.faculty.write
 
-import org.axonframework.examples.university.UniversityKotlinApplication
+import org.axonframework.examples.university.TestFixtures
 import org.axonframework.examples.university.faculty.events.CourseCreated
 import org.axonframework.examples.university.faculty.events.StudentEnrolledInFaculty
 import org.axonframework.examples.university.faculty.events.StudentSubscribedToCourse
@@ -12,70 +12,53 @@ import org.axonframework.examples.university.faculty.write.subscribe_student_fmo
 import org.axonframework.examples.university.faculty.write.subscribe_student_fmodel.registerSubscribeStudentToCourseFModel
 import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.examples.university.shared.ids.StudentId
+import org.axonframework.extension.kotlin.test.exception
+import org.axonframework.extension.kotlin.test.whenever
+import org.axonframework.test.extension.AxonFrameworkExtension
+import org.axonframework.test.extension.AxonTestFixtureProvider
+import org.axonframework.test.extension.ProvidedAxonTestFixture
 import org.axonframework.test.fixture.AxonTestFixture
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(AxonFrameworkExtension::class)
 class SubscribeStudentToCourseFModelTest {
 
-    private lateinit var fixture: AxonTestFixture
-
-    /**
-     * 	The @BeforeEach marks this method to be called before any test is executed in our test class.
-     * 	Adding the code to create the AxonTestFixture here will ensure that we have a fresh fixture for
-     * 	each test case, and thus we make our different tests independent.
-     */
-    @BeforeEach
-    fun beforeEach() {
-        fixture = AxonTestFixture.with(
-            UniversityKotlinApplication.Companion.configurer()
-                .registerCreateCourse()
-                .registerEnrollStudent()
-                .registerSubscribeStudentToCourseFModel(),
-            { it.disableAxonServer() }
-        )
-    }
-
-    /**
-     * Remember after each test to stop the fixture, so all resources (like Axon Server connections) are properly released.
-     */
-    @AfterEach
-    fun afterEach() {
-        fixture.stop()
+    @ProvidedAxonTestFixture
+    fun fixture(): AxonTestFixtureProvider = TestFixtures.universityFixture {
+        registerCreateCourse()
+        registerEnrollStudent()
+        registerSubscribeStudentToCourseFModel()
     }
 
     @Test
-    fun `successfully subscribe student to course`() {
+    fun `successfully subscribe student to course`(fixture: AxonTestFixture) {
         val courseId = CourseId.Companion.random()
         val studentId = StudentId.Companion.random()
         fixture
             .given()
             .event(CourseCreated(courseId, "Physics", 3))
             .event(StudentEnrolledInFaculty(studentId, "John", "Doe"))
-            .`when`()
-            .command(SubscribeStudentToCourse(studentId, courseId))
+            .whenever(SubscribeStudentToCourse(studentId, courseId))
             .then()
             .success()
             .events(StudentSubscribedToCourse(studentId, courseId))
     }
 
     @Test
-    fun `fail to subscribe student to course if it is full`() {
-        val courseId = CourseId.Companion.random()
-        val studentId = StudentId.Companion.random()
-        val studentId2 = StudentId.Companion.random()
+    fun `fail to subscribe student to course if it is full`(fixture: AxonTestFixture) {
+        val courseId = CourseId.random()
+        val studentId = StudentId.random()
+        val studentId2 = StudentId.random()
         fixture
             .given()
             .command(CreateCourse(courseId, "Physics", 1))
             .command(EnrollStudent(studentId, "John", "Doe"))
             .command(EnrollStudent(studentId2, "Kermit", "The Frog"))
             .command(SubscribeStudentToCourse(studentId, courseId))
-            .`when`()
-            .command(SubscribeStudentToCourse(studentId2, courseId))
+            .whenever(SubscribeStudentToCourse(studentId2, courseId))
             .then()
-            .exception(IllegalStateException::class.java)
+            .exception(IllegalStateException::class)
     }
 
 }

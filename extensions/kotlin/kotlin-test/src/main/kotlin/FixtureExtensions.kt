@@ -20,7 +20,7 @@ import org.axonframework.test.fixture.AxonTestPhase
 import kotlin.reflect.KClass
 
 /**
- * Alias for [AxonTestPhase.Setup.when] to avoid conflict with Kotlin's reserved `when` keyword.
+ * Alias for [AxonTestPhase.Setup.when] to avoid conflict with Kotlin's reserved whenever keyword.
  *
  * @return the [AxonTestPhase.When] phase
  * @see AxonTestPhase.Setup.when
@@ -30,7 +30,7 @@ fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
  * Convenience alias that combines [AxonTestPhase.Setup.when] and [AxonTestPhase.When.command] in one call,
- * avoiding Kotlin's reserved `when` keyword.
+ * avoiding Kotlin's reserved whenever keyword.
  *
  * @param command the command to dispatch in the when-phase
  * @return the [AxonTestPhase.When.Command] phase
@@ -38,10 +38,10 @@ fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
  * @see AxonTestPhase.When.command
  * @since 0.5.0
  */
-fun AxonTestPhase.Setup.whenever(command: Any): AxonTestPhase.When.Command = this.`when`().command(command)
+fun AxonTestPhase.Setup.whenever(command: Any): AxonTestPhase.When.Command = this.whenever().command(command)
 
 /**
- * Alias for [AxonTestPhase.Given.when] to avoid conflict with Kotlin's reserved `when` keyword.
+ * Alias for [AxonTestPhase.Given.when] to avoid conflict with Kotlin's reserved whenever keyword.
  *
  * @return the [AxonTestPhase.When] phase
  * @see AxonTestPhase.Given.when
@@ -51,7 +51,7 @@ fun AxonTestPhase.Given.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
  * Convenience alias that combines [AxonTestPhase.Given.when] and [AxonTestPhase.When.command] in one call,
- * avoiding Kotlin's reserved `when` keyword.
+ * avoiding Kotlin's reserved whenever keyword.
  *
  * @param command the command to dispatch in the when-phase
  * @return the [AxonTestPhase.When.Command] phase
@@ -59,7 +59,7 @@ fun AxonTestPhase.Given.whenever(): AxonTestPhase.When = this.`when`()
  * @see AxonTestPhase.When.command
  * @since 0.5.0
  */
-fun AxonTestPhase.Given.whenever(command: Any): AxonTestPhase.When.Command = this.`when`().command(command)
+fun AxonTestPhase.Given.whenever(command: Any): AxonTestPhase.When.Command = this.whenever().command(command)
 
 /**
  * Accepts a [KClass] exception type instead of [Class], to provide idiomatic Kotlin usage.

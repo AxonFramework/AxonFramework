@@ -29,12 +29,12 @@ internal class FixtureExtensionsTest {
     fun `Whenever on Setup should delegate to when()`() {
         val mockWhen = mockk<AxonTestPhase.When>()
         val setup = mockk<AxonTestPhase.Setup>()
-        every { setup.`when`() } returns mockWhen
+        every { setup.whenever() } returns mockWhen
 
         val result = setup.whenever()
 
         assertSame(mockWhen, result)
-        verify(exactly = 1) { setup.`when`() }
+        verify(exactly = 1) { setup.whenever() }
     }
 
     @Test
@@ -43,13 +43,13 @@ internal class FixtureExtensionsTest {
         val mockWhenCommand = mockk<AxonTestPhase.When.Command>()
         val mockWhen = mockk<AxonTestPhase.When>()
         val setup = mockk<AxonTestPhase.Setup>()
-        every { setup.`when`() } returns mockWhen
+        every { setup.whenever() } returns mockWhen
         every { mockWhen.command(cmd) } returns mockWhenCommand
 
         val result = setup.whenever(cmd)
 
         assertSame(mockWhenCommand, result)
-        verify(exactly = 1) { setup.`when`() }
+        verify(exactly = 1) { setup.whenever() }
         verify(exactly = 1) { mockWhen.command(cmd) }
     }
 
@@ -57,12 +57,12 @@ internal class FixtureExtensionsTest {
     fun `Whenever on Given should delegate to when()`() {
         val mockWhen = mockk<AxonTestPhase.When>()
         val given = mockk<AxonTestPhase.Given>()
-        every { given.`when`() } returns mockWhen
+        every { given.whenever() } returns mockWhen
 
         val result = given.whenever()
 
         assertSame(mockWhen, result)
-        verify(exactly = 1) { given.`when`() }
+        verify(exactly = 1) { given.whenever() }
     }
 
     @Test
@@ -71,13 +71,13 @@ internal class FixtureExtensionsTest {
         val mockWhenCommand = mockk<AxonTestPhase.When.Command>()
         val mockWhen = mockk<AxonTestPhase.When>()
         val given = mockk<AxonTestPhase.Given>()
-        every { given.`when`() } returns mockWhen
+        every { given.whenever() } returns mockWhen
         every { mockWhen.command(cmd) } returns mockWhenCommand
 
         val result = given.whenever(cmd)
 
         assertSame(mockWhenCommand, result)
-        verify(exactly = 1) { given.`when`() }
+        verify(exactly = 1) { given.whenever() }
         verify(exactly = 1) { mockWhen.command(cmd) }
     }
 

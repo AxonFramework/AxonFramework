@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.extension.kotlin
+package org.axonframework.extension.kotlin.eventsourcing
 
-/**
- * Kotlin extension functions for Axon.
- */
-object AxonKotlinExtension {
+import org.assertj.core.api.Assertions.assertThat
+import org.axonframework.extension.kotlin.AxonKotlinExtension.evolveIf
+import org.junit.jupiter.api.Test
 
-    /**
-     * Helper function to avoid boilerplate code in event sourcing handlers.
-     * Conditionally evolves the current instance.
-     *
-     * @param condition A condition to execute the evolution.
-     * @param evolver A function to be executed.
-     * @return itself or evolved version.
-     */
-    inline fun <T> T.evolveIf(
-        condition: Boolean,
-        evolver: (T) -> T
-    ): T = if (condition) {
-        evolver(this)
-    } else {
-        this
+internal class EvolveIfTest {
+
+    @Test
+    fun `evolveIf should evolve value when condition is true`() {
+        val result = 1.evolveIf(true) { it + 1 }
+
+        assertThat(result).isEqualTo(2)
+    }
+
+    @Test
+    fun `evolveIf should return original value when condition is false`() {
+        val result = 1.evolveIf(false) { it + 1 }
+
+        assertThat(result).isEqualTo(1)
     }
 }

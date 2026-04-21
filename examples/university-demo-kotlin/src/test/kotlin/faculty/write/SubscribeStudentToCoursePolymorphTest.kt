@@ -12,6 +12,8 @@ import org.axonframework.examples.university.faculty.write.subscribe_student_pol
 import org.axonframework.examples.university.faculty.write.subscribe_student_polymorph.registerSubscribeStudentToCoursePolymorph
 import org.axonframework.examples.university.shared.ids.CourseId
 import org.axonframework.examples.university.shared.ids.StudentId
+import org.axonframework.extension.kotlin.test.exception
+import org.axonframework.extension.kotlin.test.whenever
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -55,7 +57,7 @@ class SubscribeStudentToCoursePolymorphTest {
             .given()
             .event(CourseCreated(courseId, "Physics", 3))
             .event(StudentEnrolledInFaculty(studentId, "John", "Doe"))
-            .`when`()
+            .whenever()
             .command(SubscribeStudentToCourse(studentId, courseId))
             .then()
             .success()
@@ -73,10 +75,10 @@ class SubscribeStudentToCoursePolymorphTest {
             .command(EnrollStudent(studentId, "John", "Doe"))
             .command(EnrollStudent(studentId2, "Kermit", "The Frog"))
             .command(SubscribeStudentToCourse(studentId, courseId))
-            .`when`()
+            .whenever()
             .command(SubscribeStudentToCourse(studentId2, courseId))
             .then()
-            .exception(IllegalStateException::class.java)
+            .exception(IllegalStateException::class)
     }
 
 }

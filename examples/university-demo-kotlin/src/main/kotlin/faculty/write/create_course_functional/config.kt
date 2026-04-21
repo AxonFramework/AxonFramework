@@ -1,12 +1,12 @@
 package org.axonframework.examples.university.faculty.write.create_course_functional
 
-import org.axonframework.examples.university._ext.functionalHandler
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.examples.university.shared.ids.CourseId
+import org.axonframework.extension.kotlin.eventsourcing.EventSourcedEntityModuleExt.autodetected
+import org.axonframework.extension.kotlin.eventsourcing.functionalHandler
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.gateway.EventAppender
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.modelling.annotation.InjectEntity
 
 /**
@@ -22,12 +22,8 @@ internal fun handle(
 }
 
 fun EventSourcingConfigurer.registerCreateCourseFunctional() = apply {
-    registerEntity(
-        EventSourcedEntityModule.autodetected(
-            CourseId::class.java,
-            CreateCourseState::class.java
-        )
-    )
+    registerEntity(autodetected<CourseId, CreateCourseState>())
+
     registerCommandHandlingModule(
         CommandHandlingModule
             .named("CreateCourse")
