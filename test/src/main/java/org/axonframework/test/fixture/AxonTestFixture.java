@@ -249,7 +249,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * <p>
      * When the {@link #integrationEnabled()} is set to {@code false} (the default), certain
      * {@link org.axonframework.common.configuration.ConfigurationEnhancer ConfigurationEnhancers} will be
-     * {@link org.axonframework.common.configuration.ComponentRegistry#disableEnhancer(String) disabled}. Example of
+     * {@link org.axonframework.common.configuration.ComponentRegistry#disableEnhancer(String) disabled}. An example of
      * this is the {@code AxonServerConfigurationEnhancer}.
      *
      * @param integrationEnabled toggle describing whether this fixture should integrate with infrastructure (e.g. Axon
@@ -332,7 +332,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         /**
          * Configures the fixture to run as an integration test.
          * <p>
-         * Toggles the {@link #integrationEnabled()} to {@code true}.
+         * This ensures certain
+         * {@link org.axonframework.common.configuration.ConfigurationEnhancer ConfigurationEnhancers} that introduce
+         * "heavy" infrastructure components (like the {@code AxonServerConfigurationEnhancer}) are kept in the given
+         * {@link ApplicationConfigurer}.
          *
          * @return the current {@code Customization}, for fluent interfacing
          */
