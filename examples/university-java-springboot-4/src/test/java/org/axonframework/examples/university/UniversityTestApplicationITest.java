@@ -16,8 +16,8 @@
 
 package org.axonframework.examples.university;
 
-import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
+import io.axoniq.framework.testcontainer.AxonServerContainer;
+import io.axoniq.framework.testcontainer.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;

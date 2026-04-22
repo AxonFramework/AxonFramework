@@ -69,7 +69,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>io.axoniq.framework</groupId>
             <artifactId>axon-server-connector</artifactId>
         </dependency>
 
@@ -106,7 +106,6 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
             <scope>test</scope>
-            <version>5.1.0-RC2</version>
         </dependency>
 
     </dependencies>
