@@ -21,21 +21,20 @@ import org.axonframework.messaging.core.Metadata
 
 typealias AxonMetadata = Metadata
 
-data object AxonMetadataExt {
-    val Message.metadata: AxonMetadata get() = metadata()
+val Message.metadata: AxonMetadata get() = metadata()
 
-    fun AxonMetadata.and(entry: Pair<String,String?>): AxonMetadata = this.and(entry.first, entry.second)
+fun AxonMetadata.and(entry: Pair<String, String?>): AxonMetadata = this.and(entry.first, entry.second)
 
-    /**
-     * Checks whether this [Metadata][AxonMetadata] contains all entries from the [other] metadata.
-     *
-     * Returns `true` if every key-value pair in [other] is present in this metadata
-     * with the same value. An empty [other] metadata always returns `true`.
-     *
-     * @param other The metadata whose entries must all be present in this metadata
-     * @return `true` if this metadata contains all key-value pairs from [other], `false` otherwise
-     */
-    fun AxonMetadata.contains(other: AxonMetadata): Boolean = other.entries.all { (key, value) ->
-        this[key] == value
-    }
+/**
+ * Checks whether this [Metadata][AxonMetadata] contains all entries from the [other] metadata.
+ *
+ * Returns `true` if every key-value pair in [other] is present in this metadata
+ * with the same value. An empty [other] metadata always returns `true`.
+ *
+ * @param other The metadata whose entries must all be present in this metadata
+ * @return `true` if this metadata contains all key-value pairs from [other], `false` otherwise
+ */
+fun AxonMetadata.contains(other: AxonMetadata): Boolean = other.entries.all { (key, value) ->
+    this[key] == value
 }
+

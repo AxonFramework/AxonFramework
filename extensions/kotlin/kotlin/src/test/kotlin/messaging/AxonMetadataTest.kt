@@ -17,8 +17,6 @@
 package org.axonframework.extension.kotlin.messaging
 
 import org.assertj.core.api.Assertions.assertThat
-import org.axonframework.extension.kotlin.messaging.AxonMetadataExt.and
-import org.axonframework.extension.kotlin.messaging.AxonMetadataExt.contains
 import org.junit.jupiter.api.Test
 
 internal class AxonMetadataTest {
