@@ -109,24 +109,28 @@
 
         <!-- Axon -->
         <dependency>
-            <groupId>org.axonframework.extensions.spring</groupId>
-            <artifactId>axon-spring-boot-starter</artifactId>
-            <version>5.1.0-RC2</version>
+            <groupId>io.axoniq.framework</groupId>
+            <artifactId>axoniq-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>io.axoniq.framework</groupId>
             <artifactId>axon-server-connector</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
-            <version>5.1.0-RC2</version>
         </dependency>
         <dependency>
             <groupId>org.axonframework.extensions.spring</groupId>
             <artifactId>axon-spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <version>5.1.0-RC2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.axoniq.framework</groupId>
+            <artifactId>axoniq-testcontainer</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Database -->

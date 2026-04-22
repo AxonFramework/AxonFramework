@@ -16,8 +16,8 @@
 
 package org.axonframework.examples.university;
 
-import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
+import io.axoniq.framework.testcontainer.AxonServerContainer;
+import io.axoniq.framework.testcontainer.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,9 +48,9 @@ class UniversityTestApplicationITest {
     static void setContextUp() throws Exception {
       // Mainly needed to create DBC context now:
       AxonServerContainerUtils.purgeEventsFromAxonServer(axonServer.getHost(),
-        axonServer.getHttpPort(),
-        "default",
-        AxonServerContainerUtils.DCB_CONTEXT);
+                                                         axonServer.getHttpPort(),
+                                                         "default",
+                                                         AxonServerContainerUtils.DCB_CONTEXT);
     }
 
     @Test
