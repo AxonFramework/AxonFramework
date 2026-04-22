@@ -17,23 +17,10 @@ package org.axonframework.extension.kotlin
 
 /**
  * Kotlin extension functions for Axon.
+ *
+ * @since 5.1.0
+ * @author Jan Galinski
  */
-object AxonKotlinExtension {
-
-    /**
-     * Helper function to avoid boilerplate code in event sourcing handlers.
-     * Conditionally evolves the current instance.
-     *
-     * @param condition A condition to execute the evolution.
-     * @param evolver A function to be executed.
-     * @return itself or evolved version.
-     */
-    inline fun <T> T.evolveIf(
-        condition: Boolean,
-        evolver: (T) -> T
-    ): T = if (condition) {
-        evolver(this)
-    } else {
-        this
-    }
+internal data object AxonKotlinExtension {
+    // marker for root package
 }

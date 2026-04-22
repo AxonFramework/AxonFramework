@@ -31,7 +31,9 @@ import java.util.function.Function
 import kotlin.reflect.KFunction
 
 /**
- * Functional command handling component.
+ * Functional command handling component. As functions are first class citizens in Kotlin, this component allows
+ * registering functions as command handlers, without the need of wrapping them in a class.
+ *
  * @param <T> type of instance to operate on. May be omitted if the function is a top level function.
  * @param function function to call.
  * @param instance optional instance.
@@ -68,7 +70,7 @@ class FunctionalCommandHandlerComponent<T : Any> private constructor(
         parameterResolverFactory = parameterResolverFactory,
         messageTypeResolver = messageTypeResolver,
         converter = converter,
-        handlingComponent = SimpleCommandHandlingComponent.create("FunctionalCommandHandlingComponent${function.name}")
+        handlingComponent = SimpleCommandHandlingComponent.create("FunctionalCommandHandlingComponent[${function.name}]")
     )
 
     init {

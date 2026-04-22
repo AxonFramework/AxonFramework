@@ -205,22 +205,7 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            <!-- test -->
-<!--            <plugin>-->
-<!--                <artifactId>maven-surefire-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <includes>-->
-<!--                        <include>**/*Test.java</include>-->
-<!--                        <include>**/*Tests.java</include>-->
-<!--                        <include>**/*Test_*.java</include>-->
-<!--                        <include>**/*Tests_*.java</include>-->
-<!--                    </includes>-->
-<!--                    <systemPropertyVariables>-->
-<!--                        <slf4j.version>${slf4j.version}</slf4j.version>-->
-<!--                        <log4j.version>${log4j.version}</log4j.version>-->
-<!--                    </systemPropertyVariables>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+
             <!-- prepare package -->
             <plugin>
                 <groupId>org.jetbrains.dokka</groupId>

@@ -21,20 +21,6 @@ import org.axonframework.messaging.commandhandling.gateway.CommandResult
 import java.util.concurrent.CompletableFuture
 
 /**
- * Sends the given [command] and returns the [CommandResult] for async handling.
- *
- * @param command The command to send
- * @param C the type of the command
- * @return [CommandResult] allowing callbacks via [CommandResult.onSuccess] / [CommandResult.onError]
- * @see CommandGateway.send
- * @since 0.5.0
- */
-inline fun <reified C : Any> CommandGateway.send(command: C): CommandResult =
-    // Cast to Any to resolve the call to CommandGateway.send(Object) and avoid infinite recursion
-    // (without the cast, the Kotlin compiler would re-dispatch to this inline extension).
-    this.send(command as Any)
-
-/**
  * Sends the given [command] and returns a [CompletableFuture] with the result typed as [R].
  *
  * @param command The command to send
@@ -42,23 +28,21 @@ inline fun <reified C : Any> CommandGateway.send(command: C): CommandResult =
  * @param R the expected result type
  * @return [CompletableFuture] of [R]
  * @see CommandGateway.send
- * @since 0.5.0
+ * @since 5.1.0
  */
-inline fun <reified C : Any, reified R : Any> CommandGateway.sendForResult(command: C): CompletableFuture<R> =
+inline fun <reified C : Any, reified R : Any> CommandGateway.sendWithResult(command: C): CompletableFuture<R> =
     this.send(command as Any, R::class.java)
 
 /**
- * Sends the given [command] and blocks until a result typed as [R] is available.
- *
- * This extension resolves the JVM overload ambiguity: at the call site `gateway.sendAndWait<MyCmd, MyResult>(cmd)`
- * binds to [CommandGateway.sendAndWait] `(Object, Class<R>)`, not to the single-argument `(Object)` overload.
+ * Send the given [command] and waits for the result converted to the resultType.
+ * Uses `inline/reified` to specify Java class parameters.
  *
  * @param command The command to send
  * @param C the type of the command
- * @param R the expected result type
+ * @param R the generic type of the expected response
  * @return the result of type [R]
  * @see CommandGateway.sendAndWait
- * @since 0.5.0
+ * @since 5.1.0
  */
 inline fun <reified C : Any, reified R : Any> CommandGateway.sendAndWait(command: C): R =
     // Cast to Any to route to CommandGateway.sendAndWait(Object, Class<R>) and avoid recursion.

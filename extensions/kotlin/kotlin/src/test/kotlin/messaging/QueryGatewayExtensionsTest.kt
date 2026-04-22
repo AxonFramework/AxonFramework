@@ -59,7 +59,7 @@ internal class QueryGatewayExtensionsTest {
 
     @Test
     fun `Query should invoke query method with correct generic parameters`() {
-        val queryResult = subjectGateway.query<String, ExampleQuery>(query = exampleQuery)
+        val queryResult = subjectGateway.query<String>(query = exampleQuery)
         assertSame(instanceReturnValue, queryResult)
         verify(exactly = 1) { subjectGateway.query(exampleQuery, String::class.java) }
     }
@@ -73,7 +73,7 @@ internal class QueryGatewayExtensionsTest {
 
     @Test
     fun `QueryMany should invoke queryMany method with correct generic parameters`() {
-        val queryResult = subjectGateway.queryMany<String, ExampleQuery>(query = exampleQuery)
+        val queryResult = subjectGateway.queryMany<String>(query = exampleQuery)
         assertSame(listReturnValue, queryResult)
         verify(exactly = 1) { subjectGateway.queryMany(exampleQuery, String::class.java) }
     }
@@ -87,7 +87,7 @@ internal class QueryGatewayExtensionsTest {
 
     @Test
     fun `SubscriptionQuery should invoke subscriptionQuery method with correct generic parameters`() {
-        val result = subjectGateway.subscriptionQuery<UpdateResponseType, ExampleQuery>(query = exampleQuery)
+        val result = subjectGateway.subscriptionQuery<UpdateResponseType>(query = exampleQuery)
         assertSame(subscriptionPublisher, result)
         verify(exactly = 1) { subjectGateway.subscriptionQuery(exampleQuery, UpdateResponseType::class.java) }
     }
@@ -101,7 +101,7 @@ internal class QueryGatewayExtensionsTest {
 
     @Test
     fun `StreamingQuery should invoke streamingQuery method with correct generic parameters`() {
-        val result = subjectGateway.streamingQuery<UpdateResponseType, ExampleQuery>(query = exampleQuery)
+        val result = subjectGateway.streamingQuery<UpdateResponseType>(query = exampleQuery)
         assertSame(streamingPublisher, result)
         verify(exactly = 1) { subjectGateway.streamingQuery(exampleQuery, UpdateResponseType::class.java) }
     }

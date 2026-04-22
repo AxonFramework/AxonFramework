@@ -13,26 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.extensions.kotlin.serializer
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+package org.axonframework.extension.kotlin.eventsourcing
 
-@Serializable
-sealed interface SuperType {
-    val name: String
+/**
+ * Helper function to avoid boilerplate code in event sourcing handlers.
+ * Conditionally evolves the current instance.
+ *
+ * @param condition A condition to execute the evolution.
+ * @param evolver A function to be executed.
+ * @return itself or evolved version.
+ */
+inline fun <T> T.evolveIf(
+    condition: Boolean,
+    evolver: (T) -> T
+): T = if (condition) {
+    evolver(this)
+} else {
+    this
 }
-
-@Serializable
-@SerialName("one")
-data class TypeOne(
-    override val name: String,
-    val foo: Int,
-) : SuperType
-
-@Serializable
-@SerialName("two")
-data class TypeTwo(
-    override val name: String,
-    val bar: List<Int>,
-) : SuperType

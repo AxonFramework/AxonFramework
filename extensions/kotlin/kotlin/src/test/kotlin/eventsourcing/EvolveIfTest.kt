@@ -16,7 +16,6 @@
 package org.axonframework.extension.kotlin.eventsourcing
 
 import org.assertj.core.api.Assertions.assertThat
-import org.axonframework.extension.kotlin.AxonKotlinExtension.evolveIf
 import org.junit.jupiter.api.Test
 
 internal class EvolveIfTest {

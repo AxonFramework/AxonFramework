@@ -30,7 +30,7 @@ import org.axonframework.messaging.queryhandling.QueryUpdateEmitter
  * @param U         the type of the update
  * @see org.axonframework.messaging.queryhandling.QueryUpdateEmitter.emit
  * @author Stefan Andjelkovic
- * @since 0.1.0
+ * @since 5.1.0
  */
 @Suppress("UNCHECKED_CAST")
 inline fun <reified Q : Any, reified U : Any> QueryUpdateEmitter.emit(update: U, noinline filter: (Q) -> Boolean) =

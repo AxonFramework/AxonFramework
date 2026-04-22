@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2026. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.examples.university.faculty.write.subscribe_student_fmodel
 
 import org.axonframework.examples.university.faculty.events.CourseCreated
@@ -47,20 +63,17 @@ internal data class StateEntity @EntityCreator constructor(
         )
     }
 
-    // TODO -> can't we do better?
     @EventSourcingHandler
-    fun evolve(event: CourseCreated) = copy(this.state.evolve(event))
+    fun evolve(event: CourseCreated) = copy(state = this.state.evolve(event))
 
     @EventSourcingHandler
-    fun evolve(event: StudentEnrolledInFaculty) = copy(this.state.evolve(event))
+    fun evolve(event: StudentEnrolledInFaculty) = copy(state = this.state.evolve(event))
 
     @EventSourcingHandler
-    fun evolve(event: StudentSubscribedToCourse) = copy(this.state.evolve(event))
+    fun evolve(event: StudentSubscribedToCourse) = copy(state = this.state.evolve(event))
 
     @EventSourcingHandler
-    fun evolve(event: FacultyEvent): StateEntity {
-        return copy(this.state.evolve(event))
-    }
+    fun evolve(event: FacultyEvent): StateEntity = copy(state = this.state.evolve(event))
 }
 
 internal class SubscribeStudentToCourseFModelCommandHandler {

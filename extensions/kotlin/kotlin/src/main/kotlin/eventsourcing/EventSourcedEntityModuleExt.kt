@@ -19,6 +19,10 @@ package org.axonframework.extension.kotlin.eventsourcing
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import kotlin.reflect.KClass
 
+/**
+ * Kotlin extensions for [EventSourcedEntityModule], allowing to use the `declarative` and `autodetected` functions
+ * without the need to specify the (java) type parameters. Wrapped in data object to avoid name clashes other functions.
+ */
 data object EventSourcedEntityModuleExt {
 
     /**

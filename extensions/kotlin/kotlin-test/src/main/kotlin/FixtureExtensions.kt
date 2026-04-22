@@ -20,11 +20,11 @@ import org.axonframework.test.fixture.AxonTestPhase
 import kotlin.reflect.KClass
 
 /**
- * Alias for [AxonTestPhase.Setup.when] to avoid conflict with Kotlin's reserved whenever keyword.
+ * Alias for [AxonTestPhase.Setup.when] to avoid conflict with Kotlin's reserved `when` keyword.
  *
  * @return the [AxonTestPhase.When] phase
  * @see AxonTestPhase.Setup.when
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
 
@@ -36,28 +36,28 @@ fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
  * @return the [AxonTestPhase.When.Command] phase
  * @see AxonTestPhase.Setup.when
  * @see AxonTestPhase.When.command
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun AxonTestPhase.Setup.whenever(command: Any): AxonTestPhase.When.Command = this.whenever().command(command)
 
 /**
- * Alias for [AxonTestPhase.Given.when] to avoid conflict with Kotlin's reserved whenever keyword.
+ * Alias for [AxonTestPhase.Given.when] to avoid conflict with Kotlin's reserved `when` keyword.
  *
  * @return the [AxonTestPhase.When] phase
  * @see AxonTestPhase.Given.when
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun AxonTestPhase.Given.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
  * Convenience alias that combines [AxonTestPhase.Given.when] and [AxonTestPhase.When.command] in one call,
- * avoiding Kotlin's reserved whenever keyword.
+ * avoiding Kotlin's reserved `when` keyword.
  *
  * @param command the command to dispatch in the when-phase
  * @return the [AxonTestPhase.When.Command] phase
  * @see AxonTestPhase.Given.when
  * @see AxonTestPhase.When.command
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun AxonTestPhase.Given.whenever(command: Any): AxonTestPhase.When.Command = this.whenever().command(command)
 
@@ -68,7 +68,7 @@ fun AxonTestPhase.Given.whenever(command: Any): AxonTestPhase.When.Command = thi
  * @param expectedException the [KClass] of the expected exception
  * @return this, for fluent interfacing
  * @see AxonTestPhase.Then.MessageAssertions.exception
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun <T : AxonTestPhase.Then.MessageAssertions<T>> T.exception(expectedException: KClass<out Throwable>): T =
     this.exception(expectedException.java)
@@ -81,7 +81,7 @@ fun <T : AxonTestPhase.Then.MessageAssertions<T>> T.exception(expectedException:
  * @param message the expected exception message substring
  * @return this, for fluent interfacing
  * @see AxonTestPhase.Then.MessageAssertions.exception
- * @since 0.5.0
+ * @since 5.1.0
  */
 fun <T : AxonTestPhase.Then.MessageAssertions<T>> T.exception(expectedException: KClass<out Throwable>, message: String): T =
     this.exception(expectedException.java, message)

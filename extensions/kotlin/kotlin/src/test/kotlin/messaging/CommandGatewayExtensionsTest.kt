@@ -57,7 +57,7 @@ internal class CommandGatewayExtensionsTest {
         val future = CompletableFuture.completedFuture("result")
         every { subjectGateway.send(exampleCommand as Any, String::class.java) } returns future
 
-        val result = subjectGateway.sendForResult<ExampleCommand, String>(exampleCommand)
+        val result = subjectGateway.sendWithResult<ExampleCommand, String>(exampleCommand)
 
         assertSame(future, result)
         verify(exactly = 1) { subjectGateway.send(exampleCommand as Any, String::class.java) }

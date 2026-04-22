@@ -30,50 +30,46 @@ import java.util.concurrent.CompletableFuture
  * Reified version of [QueryGateway.query] expecting a single instance result.
  *
  * @param query Query to send
- * @param Q the type of payload of the query
  * @param R the type of result of the query
  * @return [CompletableFuture] wrapping the result of the query
  * @see QueryGateway.query
- * @since 0.5.0
+ * @since 5.1.0
  */
-inline fun <reified R : Any, reified Q : Any> QueryGateway.query(query: Q): CompletableFuture<R> =
+inline fun <reified R : Any> QueryGateway.query(query: Any): CompletableFuture<R> =
     this.query(query, R::class.java)
 
 /**
  * Reified version of [QueryGateway.queryMany] expecting a list result.
  *
  * @param query Query to send
- * @param Q the type of payload of the query
  * @param R the type of each element in the result list
  * @return [CompletableFuture] wrapping the list of results
  * @see QueryGateway.queryMany
- * @since 0.5.0
+ * @since 5.1.0
  */
-inline fun <reified R : Any, reified Q : Any> QueryGateway.queryMany(query: Q): CompletableFuture<List<R>> =
+inline fun <reified R : Any> QueryGateway.queryMany(query: Any): CompletableFuture<List<R>> =
     this.queryMany(query, R::class.java)
 
 /**
  * Reified version of [QueryGateway.subscriptionQuery] returning a [Publisher] of updates.
  *
  * @param query Query to send
- * @param Q the type of payload of the query
  * @param R the type of each update
  * @return [Publisher] of updates
  * @see QueryGateway.subscriptionQuery
  * @since 0.5.0
  */
-inline fun <reified R : Any, reified Q : Any> QueryGateway.subscriptionQuery(query: Q): Publisher<R> =
+inline fun <reified R : Any> QueryGateway.subscriptionQuery(query: Any): Publisher<R> =
     this.subscriptionQuery(query, R::class.java)
 
 /**
  * Reified version of [QueryGateway.streamingQuery] returning a [Publisher] of results.
  *
  * @param query Query to send
- * @param Q the type of payload of the query
  * @param R the type of each result element
  * @return [Publisher] of results
  * @see QueryGateway.streamingQuery
- * @since 0.5.0
+ * @since 5.1.0
  */
-inline fun <reified R : Any, reified Q : Any> QueryGateway.streamingQuery(query: Q): Publisher<R> =
+inline fun <reified R : Any> QueryGateway.streamingQuery(query: Any): Publisher<R> =
     this.streamingQuery(query, R::class.java)

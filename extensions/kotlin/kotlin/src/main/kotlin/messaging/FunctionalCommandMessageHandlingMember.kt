@@ -35,7 +35,11 @@ import java.util.function.Function
 import kotlin.reflect.KFunction
 import kotlin.reflect.jvm.javaMethod
 
-class FunctionalCommandMessageHandlingMember<T : Any>(
+/**
+ * Functional [MessageHandlingMember] used internally by [FunctionalCommandHandlerComponent] to support pure
+ * functional command handlers.
+ */
+internal class FunctionalCommandMessageHandlingMember<T : Any>(
     val function: KFunction<*>,
     val messageType: Class<out Message>,
     val returnTypeConverter: Function<Any?, MessageStream<*>>,

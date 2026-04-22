@@ -19,10 +19,22 @@ package org.axonframework.extension.kotlin.messaging
 import org.axonframework.messaging.core.Message
 import org.axonframework.messaging.core.Metadata
 
+/**
+ * An alias for [Metadata] to avoid confusion with kotlins internal [kotlin.Metadata] class.
+ */
 typealias AxonMetadata = Metadata
 
+/**
+ * Convenience extension function to access the [AxonMetadata] of a [Message].
+ * Kotlin supports `metadata["key"]` for getting a value from a map and would otherwise be `metadata()["key"]`.
+ */
 val Message.metadata: AxonMetadata get() = metadata()
 
+
+/**
+ * Convenience extension function to add a key-value pair to the [AxonMetadata] in kotlin style.
+ * @param entry The key-value pair to add to the metadata
+ */
 fun AxonMetadata.and(entry: Pair<String, String?>): AxonMetadata = this.and(entry.first, entry.second)
 
 /**
@@ -37,4 +49,3 @@ fun AxonMetadata.and(entry: Pair<String, String?>): AxonMetadata = this.and(entr
 fun AxonMetadata.contains(other: AxonMetadata): Boolean = other.entries.all { (key, value) ->
     this[key] == value
 }
-
