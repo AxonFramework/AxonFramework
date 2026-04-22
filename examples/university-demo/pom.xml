@@ -42,13 +42,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-framework-bom</artifactId>
-                <version>${project.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
@@ -87,7 +80,7 @@
         <!-- Event Store Dependencies -->
 
         <dependency>
-            <groupId>org.axonframework</groupId>
+            <groupId>io.axoniq.framework</groupId>
             <artifactId>axon-server-connector</artifactId>
         </dependency>
 
@@ -145,8 +138,13 @@
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
             <scope>test</scope>
-            <version>5.1.0-RC2</version>
         </dependency>
+        <dependency>
+            <groupId>io.axoniq.framework</groupId>
+            <artifactId>axoniq-testcontainer</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>

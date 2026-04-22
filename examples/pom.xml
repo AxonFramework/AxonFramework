@@ -37,17 +37,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- The axoniq-bom provides the framework-bom plus -->
+            <!-- additional components needed to run examples against axon-server -->
             <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-framework-bom</artifactId>
-                <version>${project.version}</version>
+                <groupId>io.axoniq.framework</groupId>
+                <artifactId>axoniq-framework-bom</artifactId>
+                <version>5.1.0-SNAPSHOT</version>
                 <scope>import</scope>
                 <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.axonframework</groupId>
-                <artifactId>axon-server-connector</artifactId>
-                <version>5.1.0-RC2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
