@@ -24,28 +24,25 @@ import java.util.concurrent.CompletableFuture
  * Sends the given [command] and returns a [CompletableFuture] with the result typed as [R].
  *
  * @param command The command to send
- * @param C the type of the command
  * @param R the expected result type
  * @return [CompletableFuture] of [R]
  * @see CommandGateway.send
  * @since 5.1.0
  */
-inline fun <reified C : Any, reified R : Any> CommandGateway.sendWithResult(command: C): CompletableFuture<R> =
-    this.send(command as Any, R::class.java)
+inline fun <reified R : Any> CommandGateway.sendWithResult(command: Any): CompletableFuture<R> =
+    this.send(command, R::class.java)
 
 /**
  * Send the given [command] and waits for the result converted to the resultType.
  * Uses `inline/reified` to specify Java class parameters.
  *
  * @param command The command to send
- * @param C the type of the command
  * @param R the generic type of the expected response
  * @return the result of type [R]
  * @see CommandGateway.sendAndWait
  * @since 5.1.0
  */
-inline fun <reified C : Any, reified R : Any> CommandGateway.sendAndWait(command: C): R =
+inline fun <reified R : Any> CommandGateway.sendAndWait(command: Any): R =
     // Cast to Any to route to CommandGateway.sendAndWait(Object, Class<R>) and avoid recursion.
     // The Java method is @Nullable; fail fast with a clear message rather than propagating null silently.
-    this.sendAndWait(command as Any, R::class.java)
-        ?: error("sendAndWait returned null; if a null result is expected, use sendForResult instead")
+    this.sendAndWait(command, R::class.java) ?: error("sendAndWait returned null; if a null result is expected, use sendForResult instead")

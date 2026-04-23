@@ -42,18 +42,7 @@ internal class CommandGatewayExtensionsTest {
     }
 
     @Test
-    fun `Send extension should return CommandResult from gateway`() {
-        val commandResult = mockk<CommandResult>()
-        every { subjectGateway.send(exampleCommand as Any) } returns commandResult
-
-        val result = subjectGateway.send(exampleCommand)
-
-        assertSame(commandResult, result)
-        verify(exactly = 1) { subjectGateway.send(exampleCommand as Any) }
-    }
-
-    @Test
-    fun `SendForResult extension should invoke send with result class`() {
+    fun `sendWithResult extension should invoke send with result class`() {
         val future = CompletableFuture.completedFuture("result")
         every { subjectGateway.send(exampleCommand as Any, String::class.java) } returns future
 
@@ -64,7 +53,7 @@ internal class CommandGatewayExtensionsTest {
     }
 
     @Test
-    fun `SendAndWait extension should invoke sendAndWait with result class`() {
+    fun `sendAndWait extension should invoke sendAndWait with result class`() {
         every { subjectGateway.sendAndWait(exampleCommand as Any, String::class.java) } returns "42"
 
         val result = subjectGateway.sendAndWait<ExampleCommand, String>(exampleCommand)
