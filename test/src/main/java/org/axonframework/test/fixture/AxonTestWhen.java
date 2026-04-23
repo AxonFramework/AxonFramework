@@ -18,18 +18,11 @@ package org.axonframework.test.fixture;
 
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
-import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.Message;
-import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.Metadata;
-import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
-import org.axonframework.messaging.core.unitofwork.UnitOfWork;
-import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
-import org.axonframework.messaging.eventhandling.EventSink;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,51 +36,20 @@ import java.util.function.Function;
  */
 class AxonTestWhen implements AxonTestPhase.When {
 
-    private final AxonConfiguration configuration;
-    private final AxonTestFixture.Customization customization;
-    private final CommandBus commandBus;
-    private final EventSink eventSink;
-    private final RecordingComponentsRegistry recordings;
-    private final MessageTypeResolver messageTypeResolver;
-    private final UnitOfWorkFactory unitOfWorkFactory;
+    private final TestContext testContext;
 
     private Message actualResult;
     private Throwable actualException;
 
     /**
-     * Constructs an {@code AxonTestWhen} for the given parameters.
+     * Constructs an {@code AxonTestWhen} for the given {@link TestContext}.
      *
-     * @param configuration       The configuration which this test fixture phase is based on.
-     * @param customization       Collection of customizations made for this test fixture.
-     * @param commandBus          The outermost {@link CommandBus}, used to dispatch commands through the full
-     *                            decorator chain (including interceptors).
-     * @param eventSink           The outermost {@link EventSink}, used to publish events through the full
-     *                            decorator chain (including interceptors).
-     * @param recordings          The registry holding recording components for assertions.
-     * @param messageTypeResolver The message type resolver used to generate the
-     *                            {@link MessageType} out of command, event, or query
-     *                            payloads provided to this phase.
-     * @param unitOfWorkFactory   The factory of the {@link UnitOfWork}, used to
-     *                            execute every test in.
+     * @param testContext The per-test context holding all resolved fixture components.
      */
-    public AxonTestWhen(
-            AxonConfiguration configuration,
-            AxonTestFixture.Customization customization,
-            CommandBus commandBus,
-            EventSink eventSink,
-            RecordingComponentsRegistry recordings,
-            MessageTypeResolver messageTypeResolver,
-            UnitOfWorkFactory unitOfWorkFactory
-    ) {
-        this.configuration = configuration;
-        this.customization = customization;
-        this.commandBus = commandBus;
-        this.eventSink = eventSink;
-        this.recordings = recordings;
-        recordings.commandBus().reset();
-        recordings.eventSink().reset();
-        this.messageTypeResolver = messageTypeResolver;
-        this.unitOfWorkFactory = unitOfWorkFactory;
+    public AxonTestWhen(TestContext testContext) {
+        this.testContext = testContext;
+        testContext.recordings().commandBus().reset();
+        testContext.recordings().eventSink().reset();
     }
 
     @Override
@@ -96,11 +58,11 @@ class AxonTestWhen implements AxonTestPhase.When {
         if (payload instanceof CommandMessage commandMessage) {
             message = commandMessage.andMetadata(metadata);
         } else {
-            var messageType = messageTypeResolver.resolveOrThrow(payload);
+            var messageType = testContext.messageTypeResolver().resolveOrThrow(payload);
             message = new GenericCommandMessage(messageType, payload, metadata);
         }
         inUnitOfWorkOnInvocation(processingContext ->
-                                         commandBus.dispatch(message, processingContext)
+                                         testContext.commandBus().dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
                                                        if (e == null) {
                                                            actualResult = r;
@@ -124,7 +86,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     private GenericEventMessage toGenericEventMessage(Object payload, Metadata metadata) {
-        var messageType = messageTypeResolver.resolveOrThrow(payload);
+        var messageType = testContext.messageTypeResolver().resolveOrThrow(payload);
         return new GenericEventMessage(
                 messageType,
                 payload,
@@ -144,12 +106,12 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Event events(EventMessage... messages) {
-        inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
+        inUnitOfWorkOnInvocation(processingContext -> testContext.eventSink().publish(processingContext, messages));
         return new Event();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = unitOfWorkFactory.create();
+        var unitOfWork = testContext.unitOfWorkFactory().create();
         unitOfWork.onInvocation(action);
         awaitCompletion(unitOfWork.execute());
     }
@@ -167,13 +129,7 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Command then() {
-            return new AxonTestThenCommand(
-                    configuration,
-                    customization,
-                    recordings,
-                    actualResult,
-                    actualException
-            );
+            return new AxonTestThenCommand(testContext, actualResult, actualException);
         }
     }
 
@@ -181,12 +137,7 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Event then() {
-            return new AxonTestThenEvent(
-                    configuration,
-                    customization,
-                    recordings,
-                    actualException
-            );
+            return new AxonTestThenEvent(testContext, actualException);
         }
     }
 
@@ -199,12 +150,7 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Nothing then() {
-            return new AxonTestThenNothing(
-                    configuration,
-                    customization,
-                    recordings,
-                    actualException
-            );
+            return new AxonTestThenNothing(testContext, actualException);
         }
     }
 }
