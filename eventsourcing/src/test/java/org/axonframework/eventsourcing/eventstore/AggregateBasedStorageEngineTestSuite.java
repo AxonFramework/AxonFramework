@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -475,8 +476,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     @Test
     void sourcingAnEmptyEventStoreReturnsAnExpectedConsistencyMarker() {
         // given...
-        ConsistencyMarker testAggregateMarker = new AggregateBasedConsistencyMarker(TEST_AGGREGATE_ID, 0);
-        ConsistencyMarker otherAggregateMarker = new AggregateBasedConsistencyMarker(OTHER_AGGREGATE_ID, 0);
+        ConsistencyMarker testAggregateMarker = new AggregateBasedConsistencyMarker(TEST_AGGREGATE_ID, -1);
+        ConsistencyMarker otherAggregateMarker = new AggregateBasedConsistencyMarker(OTHER_AGGREGATE_ID, -1);
         ConsistencyMarker expectedMarker = testAggregateMarker.upperBound(otherAggregateMarker);
         // when...
         SourcingCondition testCondition =
