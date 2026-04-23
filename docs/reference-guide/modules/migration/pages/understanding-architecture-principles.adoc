@@ -54,7 +54,7 @@ Instead of a monolithic configuration class, you now compose modular configurers
 [source,java]
 ----
 import io.axoniq.axonserver.connector.AxonServerConnection;
-import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.common.configuration.ApplicationConfigurer;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule;
@@ -240,8 +240,8 @@ Infrastructure components now enforce the use of the appropriate converter due t
 
 [source,java]
 ----
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import io.axoniq.framework.axonserver.connector.api.AxonServerConnectionManager;
+import io.axoniq.framework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.springframework.context.annotation.Bean;
