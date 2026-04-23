@@ -53,7 +53,7 @@ internal class CommandGatewayExtensionsTest {
     }
 
     @Test
-    fun `SendForResult extension should invoke send with result class`() {
+    fun `SendWithResult extension should invoke send with result class`() {
         val future = CompletableFuture.completedFuture("result")
         every { subjectGateway.send(exampleCommand as Any, String::class.java) } returns future
 
