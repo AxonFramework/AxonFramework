@@ -491,6 +491,27 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                     .verifyComplete();
     }
 
+    /**
+     * Regression test for <a href="https://github.com/AxonIQ/AxonFramework/issues/4437">#4437</a>
+     */
+    @Test
+    void appendingFirstEventAfterSourcingEmptyStreamSucceeds() {
+        // given
+        SourcingCondition sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
+        AtomicReference<ConsistencyMarker> markerFromSource = new AtomicReference<>();
+        StepVerifier.create(FluxUtils.of(testSubject.source(sourcingCondition)))
+                    .assertNext(entry -> markerFromSource.set(entry.getResource(ConsistencyMarker.RESOURCE_KEY)))
+                    .verifyComplete();
+
+        // when
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
+                                                         .withMarker(markerFromSource.get());
+        assertDoesNotThrow(
+                () -> appendEvents(appendCondition, taggedEventMessage("event-0", TEST_AGGREGATE_TAGS))
+        );
+    }
+
+
     @Test
     void transactionRejectedWithConflictingEventsInStore() {
         ConsistencyMarker consistencyMarker = appendEvents(
