@@ -48,4 +48,4 @@ inline fun <reified C : Any, reified R : Any> CommandGateway.sendAndWait(command
     // Cast to Any to route to CommandGateway.sendAndWait(Object, Class<R>) and avoid recursion.
     // The Java method is @Nullable; fail fast with a clear message rather than propagating null silently.
     this.sendAndWait(command as Any, R::class.java)
-        ?: error("sendAndWait returned null; if a null result is expected, use sendForResult instead")
+        ?: error("sendAndWait returned null; if a null result is expected, use sendWithResult instead")
