@@ -51,7 +51,13 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 3.1
  */
-@AutoConfiguration(after = JpaAutoConfiguration.class)
+@AutoConfiguration(
+        after = JpaAutoConfiguration.class,
+        afterName = {
+                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
+                "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration"
+        }
+)
 @ConditionalOnBean(DataSource.class)
 @ConditionalOnClass(SpringDataSourceConnectionProvider.class)
 @EnableConfigurationProperties(TokenStoreProperties.class)
