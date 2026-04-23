@@ -46,7 +46,7 @@ internal class CommandGatewayExtensionsTest {
         val future = CompletableFuture.completedFuture("result")
         every { subjectGateway.send(exampleCommand as Any, String::class.java) } returns future
 
-        val result = subjectGateway.sendWithResult<ExampleCommand, String>(exampleCommand)
+        val result = subjectGateway.sendWithResult<String>(exampleCommand)
 
         assertSame(future, result)
         verify(exactly = 1) { subjectGateway.send(exampleCommand as Any, String::class.java) }
@@ -56,7 +56,7 @@ internal class CommandGatewayExtensionsTest {
     fun `sendAndWait extension should invoke sendAndWait with result class`() {
         every { subjectGateway.sendAndWait(exampleCommand as Any, String::class.java) } returns "42"
 
-        val result = subjectGateway.sendAndWait<ExampleCommand, String>(exampleCommand)
+        val result = subjectGateway.sendAndWait<String>(exampleCommand)
 
         kotlin.test.assertEquals("42", result)
         verify(exactly = 1) { subjectGateway.sendAndWait(exampleCommand as Any, String::class.java) }

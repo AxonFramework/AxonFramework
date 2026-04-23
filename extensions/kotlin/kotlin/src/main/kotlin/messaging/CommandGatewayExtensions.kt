@@ -17,7 +17,6 @@
 package org.axonframework.extension.kotlin.messaging
 
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway
-import org.axonframework.messaging.commandhandling.gateway.CommandResult
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -45,4 +44,4 @@ inline fun <reified R : Any> CommandGateway.sendWithResult(command: Any): Comple
 inline fun <reified R : Any> CommandGateway.sendAndWait(command: Any): R =
     // Cast to Any to route to CommandGateway.sendAndWait(Object, Class<R>) and avoid recursion.
     // The Java method is @Nullable; fail fast with a clear message rather than propagating null silently.
-    this.sendAndWait(command, R::class.java) ?: error("sendAndWait returned null; if a null result is expected, use sendForResult instead")
+    this.sendAndWait(command, R::class.java) ?: error("sendAndWait returned null; if a null result is expected, use sendWithResult instead")
