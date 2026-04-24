@@ -152,8 +152,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
             }
 
             return delegate.error()
-                .map(FetchResult::<Entry<M>>error)
-                .orElse(FetchResult.completed());
+                           .map(FetchResult::<Entry<M>>error)
+                           .orElse(FetchResult.completed());
         }
 
         /**
@@ -210,6 +210,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          * @param value the value
          */
         record Value<T extends Entry<?>>(@Nullable T value) implements FetchResult<T> {
+
         }
 
         /**
@@ -236,6 +237,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          * @param <T> the entry type
          */
         record Completed<T extends Entry<?>>() implements FetchResult<T> {
+
             private static final Completed<?> INSTANCE = new Completed<>();
         }
 
@@ -246,6 +248,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          * @param <T> the entry type
          */
         record NotReady<T extends Entry<?>>() implements FetchResult<T> {
+
             private static final NotReady<?> INSTANCE = new NotReady<>();
         }
     }
