@@ -23,7 +23,13 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
 /**
- * Property access strategy for fancy getter names of the inherited properties.
+ * Property access strategy that uses kotlin's [KProperty1] reflection to access properties instead
+ * of java's [java.lang.reflect.Field]s.
+ * This allows to access properties that are not backed by a field, such as properties of kotlin value classes
+ * without additional configuration like `@get:JvmName("getId")`.
+ *
+ * @author Jan Galinski
+ * @since 5.1.0
  */
 class KotlinReflectPropertyAccessStrategy : PropertyAccessStrategy() {
     companion object {
