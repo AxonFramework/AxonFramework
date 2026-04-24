@@ -126,7 +126,14 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             task.ensureNoInterruptionWasSwallowed();
             return proceed;
         } catch (Exception e) {
-            throw task.detectInterruptionInsteadOfException(e);
+            Exception result = task.detectInterruptionInsteadOfException(e);
+            if (result == e) {
+                // The exception was not caused by this task's timeout, so complete it now.
+                // This cancels any still-pending interrupt and clears one that may have already fired,
+                // preventing it from leaking into the caller's retry sleep (e.g. in TrackingEventProcessor).
+                task.complete();
+            }
+            throw result;
         }
     }
 
