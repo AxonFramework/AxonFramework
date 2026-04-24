@@ -161,14 +161,15 @@ endif::[]
 
 == Axon Framework Bill of Materials
 
-In addition to the base framework modules and extensions and advanced framework modules, Axon also provides two https://en.wikipedia.org/wiki/Software_bill_of_materials[Bills of Materials], or BOM for both base and advanced framework.
+In addition to the Axon Framework modules and extensions and Axoniq Framework modules, Axon also provides two https://en.wikipedia.org/wiki/Software_bill_of_materials[Bills of Materials], or BOM for both Axon Framework and Axoniq Framework.
 The BOM is provided to ensure the use of compatible framework and extension dependencies inside an Axon application.
 As such, it is the recommended approach towards defining the overall Axon version used inside of an application.
 
-[#base-framework-bom]
-=== Base Axon Framework Bill of Materials
+// TODO anchor
+[#axon-framework-bom]
+=== Axon Framework Bill of Materials
 
-For the base framework and extensions, we provide a BOM under the `org.axonframework` Group id as follows:
+For the Axon Framework and extensions, we provide a BOM under the `org.axonframework` Group id as follows:
 
 [cols="<,<,<,^"]
 |===
