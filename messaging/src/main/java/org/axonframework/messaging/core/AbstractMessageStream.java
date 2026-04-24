@@ -693,9 +693,12 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
                                       : null;
         String flags = describeFlags();  // pipe separated
         String delegates = describeDelegates();  // comma separated, with the active prepended with asterisk
-        String statusDescription = Stream.of(status, (peekedEntry == null ? null : "P"), flags).filter(Objects::nonNull).collect(Collectors.joining("|"));
+        String statusDescription = Stream.of(status, (peekedEntry == null ? null : "P"), flags)
+                                         .filter(Objects::nonNull).collect(Collectors.joining("|"));
 
-        return getClass().getSimpleName().replace("MessageStream", "") + (statusDescription.isEmpty() ? "" : "[" + statusDescription + "]") + (delegates == null ? "" : "{" + delegates + "}");
+        return getClass().getSimpleName().replace("MessageStream", "")
+                + (statusDescription.isEmpty() ? "" : "[" + statusDescription + "]")
+                + (delegates == null ? "" : "{" + delegates + "}");
     }
 
     /**
@@ -706,6 +709,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      *
      * @return the flags that apply to this stream, or {@code null} if there are no relevant flags
      */
+    @Nullable
     protected String describeFlags() {
         return null;
     }
@@ -720,6 +724,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      *
      * @return the description of delegate streams, or {@code null} if there are no delegates
      */
+    @Nullable
     protected String describeDelegates() {
         return null;
     }
