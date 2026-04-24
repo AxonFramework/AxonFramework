@@ -322,7 +322,8 @@ public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
         TrackingToken resetLowerBound = WrappedToken.unwrapLowerBound(tokenAtReset);
         TrackingToken newTokenLowerBound = WrappedToken.unwrapLowerBound(newToken);
         TrackingToken resetTokenLowerNewToken = resetLowerBound.lowerBound(newTokenLowerBound);
-        return resetTokenLowerNewToken.samePositionAs(newTokenLowerBound);
+        return resetTokenLowerNewToken.samePositionAs(newTokenLowerBound)
+                || resetLowerBound.covers(newTokenLowerBound);
     }
 
     @Override
