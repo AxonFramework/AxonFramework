@@ -111,7 +111,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      *
      * @param <T> The type of value returned when available
      */
-    public sealed interface FetchResult<T extends Entry<?>> {
+    public sealed interface FetchResult<T extends @Nullable Entry<?>> {
 
         /**
          * Creates a {@link FetchResult} reflecting the current observable state of the given
@@ -164,7 +164,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          * @param value the non-{@code null} value
          * @return a {@link Value} containing the given value, never {@code null}
          */
-        static <T extends Entry<?>> FetchResult<T> of(T value) {
+        static <T extends @Nullable Entry<?>> FetchResult<T> of(@Nullable T value) {
             return new Value<>(value);
         }
 
