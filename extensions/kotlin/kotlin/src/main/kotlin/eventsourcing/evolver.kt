@@ -20,6 +20,8 @@ package org.axonframework.extension.kotlin.eventsourcing
  * Helper function to avoid boilerplate code in event sourcing handlers.
  * Conditionally evolves the current instance.
  *
+ * @author Simon Zambrovski
+ * @since 5.1.0
  * @param condition A condition to execute the evolution.
  * @param evolver A function to be executed.
  * @return itself or evolved version.
