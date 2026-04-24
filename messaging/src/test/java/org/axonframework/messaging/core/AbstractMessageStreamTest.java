@@ -158,6 +158,13 @@ class AbstractMessageStreamTest {
         }
 
         @Test
+        void whenNullValueAvailableThenReturnsEmptyOptional() {
+            stream.enqueue(FetchResult.of((Entry<Message>) null));
+
+            assertThat(stream.next()).isEmpty();
+        }
+
+        @Test
         void whenNotReadyThenReturnsEmptyAndDoesNotComplete() {
             assertThat(stream.next()).isEmpty();
             assertThat(stream.isCompleted()).isFalse();
