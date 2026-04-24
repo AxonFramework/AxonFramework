@@ -521,7 +521,7 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         this.awaitingData = false;
 
         return switch (fetchNext()) {
-            case FetchResult.Value(Entry<M> v) -> Optional.of(v);
+            case FetchResult.Value(Entry<M> v) -> Optional.ofNullable(v);
             case FetchResult.NotReady() -> {
                 awaitingData = true;
 
