@@ -86,7 +86,7 @@ import static org.axonframework.messaging.core.MessageStreamUtils.NO_OP_CALLBACK
  * All methods in this class are either {@code final}, {@code private}, {@code abstract} or empty to
  * protect its invariants.
  *
- * @param <M> The type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream.
+ * @param <M> the type of {@link Message} contained in the {@link MessageStream.Entry entries} of this stream
  * @author Jan Galinski
  * @author John Hendrikx
  * @since 5.1.0
@@ -109,16 +109,15 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
      * This abstraction allows implementations to distinguish between a stream that is
      * temporarily out of elements and one that has been fully exhausted.
      *
-     * @param <T> The type of value returned when available
+     * @param <T> the type of value returned when available
      */
     public sealed interface FetchResult<T extends @Nullable Entry<?>> {
 
         /**
-         * Creates a {@link FetchResult} reflecting the current observable state of the given
-         * {@link MessageStream}.
+         * Creates a {@code FetchResult} reflecting the current observable state of the given {@link MessageStream}.
          * <p>
-         * This method inspects the provided {@code delegate} in a non-blocking manner and
-         * translates its state into a corresponding {@link FetchResult}:
+         * This method inspects the provided {@code delegate} in a non-blocking manner and translates its state into a
+         * corresponding {@code FetchResult}:
          * <ul>
          *     <li>If {@link MessageStream#hasNextAvailable()} returns {@code true}, this method
          *     retrieves the next entry via {@link MessageStream#next()} and returns a
@@ -131,16 +130,16 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
          *     containing the reported error.</li>
          * </ul>
          * <p>
-         * This method effectively adapts a {@link MessageStream} to the {@link FetchResult}-based
+         * This method effectively adapts a {@link MessageStream} to the {@code FetchResult}-based
          * consumption model used by {@link AbstractMessageStream}.
          * <p>
          * Note that this method may consume an entry from the delegate when one is available,
          * as it invokes {@link MessageStream#next()}. As such, it should only be used in contexts
          * where advancing the delegate stream is intended.
          *
-         * @param <M> the message type contained in the stream
+         * @param <M>      the message type contained in the stream
          * @param delegate the {@link MessageStream} to inspect, must not be {@code null}
-         * @return a {@link FetchResult} representing the delegate's current state
+         * @return a {@code FetchResult} representing the delegate's current state
          * @throws NullPointerException if {@code delegate} is {@code null}
          */
         static <M extends Message> FetchResult<Entry<M>> of(MessageStream<M> delegate) {
@@ -158,9 +157,9 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * Creates a {@link FetchResult} representing a successfully fetched value.
+         * Creates a {@code FetchResult} representing a successfully fetched value.
          *
-         * @param <T> the entry type
+         * @param <T>   the entry type
          * @param value the non-{@code null} value
          * @return a {@link Value} containing the given value, never {@code null}
          */
@@ -169,9 +168,9 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * Creates a {@link FetchResult} representing a producer side error.
+         * Creates a {@code FetchResult} representing a producer side error.
          *
-         * @param <T> the entry type
+         * @param <T>   the entry type
          * @param error the non-{@code null} error
          * @return an {@link Error} representing the failure, never {@code null}
          */
@@ -180,8 +179,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * Returns a {@link FetchResult} indicating that no element is available and
-         * no further elements will be produced.
+         * Returns a {@code FetchResult} indicating that no element is available and no further elements will be
+         * produced.
          *
          * @param <T> the entry type
          * @return a {@link Completed} result
@@ -192,8 +191,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * Returns a {@link FetchResult} indicating that no element is currently available,
-         * but more elements may become available in the future.
+         * Returns a {@code FetchResult} indicating that no element is currently available, but more elements may become
+         * available in the future.
          *
          * @param <T> the entry type
          * @return a {@link NotReady} result
@@ -204,10 +203,10 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * A {@link FetchResult} containing a successfully fetched value. The value
-         * can be {@code null} to support {@link MessageStream#ignoreEntries()}.
+         * A {@link FetchResult} containing a successfully fetched value. The value can be {@code null} to support
+         * {@link MessageStream#ignoreEntries()}.
          *
-         * @param <T> the entry type
+         * @param <T>   the entry type
          * @param value the value
          */
         record Value<T extends Entry<?>>(@Nullable T value) implements FetchResult<T> {
@@ -216,18 +215,23 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         /**
          * A {@link FetchResult} representing a terminal error in the stream.
          *
-         * @param <T> the entry type
+         * @param <T>   the entry type
          * @param error the non-{@code null} error
          */
         record Error<T extends Entry<?>>(Throwable error) implements FetchResult<T> {
+
+            /**
+             * Compact constructor ensuring the given {@code error} is not {@code null}.
+             *
+             * @param error the non-{@code null} error
+             */
             public Error {
                 Objects.requireNonNull(error, "error");
             }
         }
 
         /**
-         * A {@link FetchResult} indicating that the stream is exhausted and no further
-         * elements will be produced.
+         * A {@link FetchResult} indicating that the stream is exhausted and no further elements will be produced.
          *
          * @param <T> the entry type
          */
@@ -236,8 +240,8 @@ public abstract class AbstractMessageStream<M extends Message> implements Messag
         }
 
         /**
-         * A {@link FetchResult} indicating that no element is currently available,
-         * but the stream may produce more elements in the future.
+         * A {@link FetchResult} indicating that no element is currently available, but the stream may produce more
+         * elements in the future.
          *
          * @param <T> the entry type
          */
