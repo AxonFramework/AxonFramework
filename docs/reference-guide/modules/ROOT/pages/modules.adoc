@@ -93,6 +93,7 @@ These extensions are part of the main Axon Framework repository and provide esse
 |<<Axon Reactor>>                       |`axon-reactor`                    |`org.axonframework.extensions.reactor`  |https://central.sonatype.com/search?q=a:axon-reactor[available]
 |<<Axon Dropwizard metrics>>            |`axon-metrics-dropwizard`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-dropwizard[available]
 |<<Axon Micrometer metrics>>            |`axon-metrics-micrometer`         |`org.axonframework.extensions.metrics`  |https://central.sonatype.com/search?q=a:axon-metrics-micrometer[available]
+|<<Axon Kotlin>>                        |`axon-kotlin`, `axon-kotlin-test`                     |`org.axonframework.extensions.kotlin`   |https://central.sonatype.com/search?q=a:axon-kotlin[available]
 |===
 
 === Axon Spring
@@ -158,6 +159,18 @@ https://micrometer.io/[Micrometer] is a dimensional-first metrics collection fac
 ifdef::advanced-framework[]
 include::ROOT:partial$modules-advanced-framework.adoc[]
 endif::[]
+
+=== Axon Kotlin
+
+The Kotlin extension provides idiomatic Kotlin support for Axon Framework, reducing boilerplate and enabling natural Kotlin API usage through extension functions and reified generics.
+
+Features include, among others:
+
+* reified generics support to eliminate explicit type parameters
+* idiomatic extension functions for messaging gateways and metadata
+* Kotlin value class support for entity identifiers
+* reduced boilerplate in event sourcing handlers
+* test fixture support tailored for Kotlin (`axon-kotlin-test`)
 
 == Axon Framework Bill of Materials
 
