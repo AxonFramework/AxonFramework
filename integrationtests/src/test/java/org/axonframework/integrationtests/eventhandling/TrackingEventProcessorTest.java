@@ -50,6 +50,7 @@ import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptor;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.tracing.TestSpanFactory;
 import org.hamcrest.CoreMatchers;
@@ -2217,6 +2218,50 @@ class TrackingEventProcessorTest {
         assertTrue(finished.await(5, TimeUnit.SECONDS), "Expected Unit of Work to have reached clean up phase");
         TrackingToken trackingToken = tokenStore.fetchToken(testSubject.getName(), 0);
         assertFalse(ReplayToken.isReplay(trackingToken), "Not a replay token: " + trackingToken);
+    }
+
+    @Test
+    @Timeout(value = 15)
+    void timeoutInterceptorRaceWithNonTimeoutExceptionDoesNotShutDownProcessor() throws Exception {
+        // Regression test for: https://github.com/AxonFramework/AxonFramework/issues/4456
+        // AxonTimeLimitedTask's scheduled interrupt lambda can fire after detectInterruptionInsteadOfException
+        // has already determined that the exception was NOT a timeout. The fix is that complete() is called
+        // early in the catch block and is synchronized with the lambda — so either the lambda never fires,
+        // or complete() clears the interrupt the lambda set before it can reach doSleepFor.
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        CountDownLatch processedAfterError = new CountDownLatch(2);
+
+        doAnswer(invocation -> {
+            if (handlerInvocations.getAndIncrement() == 0) {
+                throw new MockException("Simulated handler failure");
+            }
+            processedAfterError.countDown();
+            return null;
+        }).when(mockHandler).handle(any());
+
+        TrackingEventProcessor processorWithRealSleep =
+                TrackingEventProcessor.builder()
+                                      .name("timeoutRaceTest")
+                                      .eventHandlerInvoker(eventHandlerInvoker)
+                                      .messageSource(eventBus)
+                                      .tokenStore(new InMemoryTokenStore())
+                                      .transactionManager(NoTransactionManager.INSTANCE)
+                                      .build();
+        // A 1ms timeout maximises the chance that the interrupt lambda fires concurrently with the
+        // exception-handling path, exercising the synchronized complete() + early-complete fix.
+        processorWithRealSleep.registerHandlerInterceptor(
+                new UnitOfWorkTimeoutInterceptor("timeoutRaceTest", 1, Integer.MAX_VALUE, 1)
+        );
+        processorWithRealSleep.start();
+
+        eventBus.publish(createEvents(2));
+
+        assertTrue(
+                processedAfterError.await(10, TimeUnit.SECONDS),
+                "Processor should continue running and handle events despite timeout/exception race"
+        );
+        assertTrue(processorWithRealSleep.isRunning(), "Processor should still be running");
+        processorWithRealSleep.shutDown();
     }
 
     private void waitForStatus(String description,

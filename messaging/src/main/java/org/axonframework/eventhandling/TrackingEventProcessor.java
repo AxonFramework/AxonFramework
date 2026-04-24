@@ -879,8 +879,10 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 Thread.sleep(Math.min(timeLeft, 100));
             }
         } catch (InterruptedException e) {
-            logger.warn("Thread interrupted. Preparing to shut down event processor");
-            shutDown();
+            if (isRunning()) {
+                logger.warn("Thread interrupted. Preparing to shut down event processor");
+                setShutdownState();
+            }
             Thread.currentThread().interrupt();
         }
     }
