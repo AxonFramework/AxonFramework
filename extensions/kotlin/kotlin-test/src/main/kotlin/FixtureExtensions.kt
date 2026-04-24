@@ -30,7 +30,7 @@ fun AxonTestPhase.Setup.whenever(): AxonTestPhase.When = this.`when`()
 
 /**
  * Convenience alias that combines [AxonTestPhase.Setup.when] and [AxonTestPhase.When.command] in one call,
- * avoiding Kotlin's reserved whenever keyword.
+ * avoiding Kotlin's reserved `when` keyword.
  *
  * @param command the command to dispatch in the when-phase
  * @return the [AxonTestPhase.When.Command] phase
