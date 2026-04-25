@@ -234,6 +234,52 @@ class ReplayTokenTest {
         }
     }
 
+    /**
+     * Tests for {@link ReplayToken#advancedTo(TrackingToken)} with a windowed token whose {@code lowerBound()}
+     * computes a set-intersection (like {@code MongoTrackingToken}). When two tokens track disjoint event sets —
+     * e.g. a recent reset token vs. an old replayed event — the intersection is empty and
+     * {@code samePositionAs(empty, old)} returns {@code false}. Without the {@code covers()} fallback introduced
+     * in <a href="https://github.com/AxonFramework/AxonFramework/issues/4453">issue #4453</a>, every replayed event
+     * would be misclassified as "new", causing {@code tokenAtReset.upperBound(newToken)} to be called on every step
+     * and the stored token to grow without bound.
+     */
+    @Nested
+    class AdvancedToWithWindowedTrackingToken {
+
+        @Test
+        void replayedEventFromEarlierPeriodIsClassifiedAsReplay() {
+            // tokenAtReset tracks events from "now" (high position, recent event IDs)
+            WindowedTrackingToken tokenAtReset = new WindowedTrackingToken(1000, Set.of(900L, 950L, 1000L));
+            // old event: low position, event IDs fully disjoint from tokenAtReset's window
+            WindowedTrackingToken oldEvent = new WindowedTrackingToken(10, Set.of(5L, 8L, 10L));
+
+            // lowerBound(tokenAtReset, oldEvent) = intersection = {} — triggers the bug without the fix
+            ReplayToken replayToken = (ReplayToken) ReplayToken.createReplayToken(tokenAtReset, null);
+            TrackingToken result = replayToken.advancedTo(oldEvent);
+
+            assertInstanceOf(ReplayToken.class, result);
+            assertTrue(ReplayToken.isReplay(result),
+                       "Old event processed before reset must be classified as replay, not as new");
+        }
+
+        @Test
+        void tokenAtResetDoesNotGrowDuringReplay() {
+            // Without the fix every misclassified event triggers tokenAtReset.upperBound(newToken),
+            // merging ALL new event IDs into tokenAtReset on each step — unbounded growth.
+            WindowedTrackingToken tokenAtReset = new WindowedTrackingToken(1000, Set.of(900L, 950L, 1000L));
+
+            TrackingToken current = ReplayToken.createReplayToken(tokenAtReset, null);
+            for (long i = 1; i <= 50; i++) {
+                current = ((ReplayToken) current).advancedTo(new WindowedTrackingToken(i, Set.of(i)));
+            }
+
+            assertInstanceOf(ReplayToken.class, current);
+            assertTrue(ReplayToken.isReplay(current));
+            assertEquals(tokenAtReset, ((ReplayToken) current).getTokenAtReset(),
+                         "tokenAtReset must not grow during replay");
+        }
+    }
+
     @Nested
     class SamePositionAs {
 
@@ -315,6 +361,68 @@ class ReplayTokenTest {
             ReplayToken replayToken = new ReplayToken(tokenAtReset, currentToken, null);
 
             assertTrue(replayToken.samePositionAs(sameCurrentToken));
+        }
+    }
+
+    /**
+     * A {@link TrackingToken} whose {@code lowerBound()} returns the intersection of two event-ID sets (mirroring
+     * {@code MongoTrackingToken}). The intersection is empty when the two tokens track disjoint event sets, which
+     * is the scenario that triggers issue #4453.
+     * <p>
+     * {@code covers()} uses time/position semantics: {@code other} is covered if it is not newer than {@code this}
+     * and all its tracked events are either present in this token's window or predate the oldest event in it.
+     */
+    private static class WindowedTrackingToken implements TrackingToken {
+
+        private final long position;
+        private final Set<Long> trackedEvents;
+
+        WindowedTrackingToken(long position, Set<Long> trackedEvents) {
+            this.position = position;
+            this.trackedEvents = Collections.unmodifiableSet(new HashSet<>(trackedEvents));
+        }
+
+        @Override
+        public TrackingToken lowerBound(TrackingToken other) {
+            WindowedTrackingToken o = (WindowedTrackingToken) other;
+            Set<Long> intersection = new HashSet<>(trackedEvents);
+            intersection.retainAll(o.trackedEvents);
+            return new WindowedTrackingToken(Math.min(position, o.position), intersection);
+        }
+
+        @Override
+        public TrackingToken upperBound(TrackingToken other) {
+            WindowedTrackingToken o = (WindowedTrackingToken) other;
+            Set<Long> union = new HashSet<>(trackedEvents);
+            union.addAll(o.trackedEvents);
+            return new WindowedTrackingToken(Math.max(position, o.position), union);
+        }
+
+        @Override
+        public boolean covers(TrackingToken other) {
+            WindowedTrackingToken o = (WindowedTrackingToken) other;
+            long oldest = trackedEvents.stream().min(Comparator.naturalOrder()).orElse(0L);
+            return o.position <= this.position
+                    && o.trackedEvents.stream().allMatch(e -> trackedEvents.contains(e) || e < oldest);
+        }
+
+        @Override
+        public OptionalLong position() {
+            return OptionalLong.of(position);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof WindowedTrackingToken)) {
+                return false;
+            }
+            WindowedTrackingToken other = (WindowedTrackingToken) obj;
+            return position == other.position && trackedEvents.equals(other.trackedEvents);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(position, trackedEvents);
         }
     }
 }
