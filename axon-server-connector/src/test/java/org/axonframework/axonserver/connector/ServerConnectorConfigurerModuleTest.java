@@ -131,6 +131,8 @@ class ServerConnectorConfigurerModuleTest {
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
                .untilAsserted(() -> verify(connectionManager).getConnection());
+
+        config.shutdown();
     }
 
     /**
@@ -169,5 +171,7 @@ class ServerConnectorConfigurerModuleTest {
         await().pollDelay(Duration.ofMillis(50))
                .atMost(Duration.ofMillis(500))
                .untilAsserted(() -> verify(connectionManager, times(2)).getConnection());
+
+        config.shutdown();
     }
 }
