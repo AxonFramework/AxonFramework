@@ -93,7 +93,6 @@ With Axon Framework 5, the story changes.
 The extensions aren't afterthoughts or legacy components—they're integral to the ecosystem, rebuilt from the ground up to embrace the async-native architecture and all the philosophical improvements that Axon Framework 5 introduces.
 
 === Why this matters: the PostgreSQL extension for Axon Framework 5
-// TODO Axoniq feature
 
 Not every organization runs specialized event stores.
 Many teams have PostgreSQL at their core—a battle-tested, reliable relational database that's already part of their infrastructure.
@@ -102,8 +101,10 @@ The PostgreSQL Extension for Axon Framework 5 provides a fully compatible event 
 
 This extension:
 
-* Leverages Jakarta Persistence with modern, clean configuration
+* Provides the `PostgresqlEventStorageEngine` through the `axoniq-postgresql` artifact
+* Uses PostgreSQL as a persistent, operational event store
 * Supports Axon Framework 5's message type system natively
+* Supports Dynamic Consistency Boundaries (DCB) with event tags and criteria
 * Provides optimized querying through PostgreSQL's rich feature set
 * Integrates seamlessly with the async-native architecture for non-blocking event operations
 * Simplifies your infrastructure footprint by consolidating event storage into your existing database layer

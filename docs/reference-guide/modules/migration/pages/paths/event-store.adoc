@@ -35,7 +35,7 @@ Some of these support DCB, while others are tailored towards the previous aggreg
 | No
 
 | `PostgresqlEventStorageEngine`
-| Optimized PostgreSQL integration (coming 2026 Q1)
+| Optimized PostgreSQL integration
 | Yes
 
 | `InMemoryEventStorageEngine`
@@ -463,16 +463,57 @@ axon.eventstorage.jpa.polling-interval=1000
 --
 ====
 
+[#postgresql_event_storage_migration]
 == PostgreSQL event storage migration
-// TODO Axoniq feature
 
-If you are using PostgreSQL as your database for event storage—whether through the `JpaEventStorageEngine` or `JdbcEventStorageEngine` in Axon Framework 4—you would benefit from migrating to the dedicated `PostgresqlEventStorageEngine`.
+If you are using PostgreSQL as your database for event storage, consider migrating to the dedicated `PostgresqlEventStorageEngine`.
+This applies whether your Axon Framework 4 application used `JpaEventStorageEngine`, `JdbcEventStorageEngine`, or a custom PostgreSQL-backed storage component.
 
 This storage engine is optimized specifically for PostgreSQL and provides full support for xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[DCB].
 As such, unlike the `AggregateBasedJpaEventStorageEngine`, the `PostgresqlEventStorageEngine` allows you to leverage the flexible consistency boundaries with event tagging and criteria-based querying.
 
-[NOTE]
+=== When to choose PostgreSQL
+
+Choose the `PostgresqlEventStorageEngine` when all of the following apply:
+
+* PostgreSQL is your intended long-term event store.
+* You want to use DCB with event tags, event criteria, and consistency markers.
+* You want a database-backed alternative to Axon Server for event storage.
+
+If you only want to keep an existing aggregate-oriented JPA event table running during the first upgrade step, the `AggregateBasedJpaEventStorageEngine` is the closer migration target.
+It keeps the aggregate identifier and sequence number model, but does not support DCB.
+
+=== Dependency
+
+The PostgreSQL event storage engine is provided by the AxonIQ PostgreSQL artifact:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.axoniq.framework</groupId>
+    <artifactId>axoniq-postgresql</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+
+=== Migration approach
+
+Migrating to the `PostgresqlEventStorageEngine` is a storage-engine migration.
+Do not treat it as a simple table rename of Axon Framework 4's `domain_event_entry` table.
+The PostgreSQL engine is designed for Axon Framework 5's tag-based event model, so the migration should preserve the event payload and metadata while adding the tag information needed for DCB.
+
+A typical migration consists of these steps:
+
+1. Add the `axoniq-postgresql` dependency and configure a PostgreSQL data source for the event store.
+2. Decide how events will receive tags in Axon Framework 5.
+This can be done through annotations such as `@EventTag` or through a custom `TagResolver`.
+3. Create the PostgreSQL event storage schema required by the extension.
+4. Migrate existing events from the Axon Framework 4 storage table into the PostgreSQL engine's schema.
+During this step, keep the original event identifiers, message type information, payload, metadata, timestamp, and ordering information intact.
+5. Validate event sourcing and streaming processors against a copy of production data before switching the application.
+
+[IMPORTANT]
 ====
-The `PostgresqlEventStorageEngine` is scheduled for release in Q1 2026.
-This section will be updated with detailed migration instructions, schema changes, and configuration examples once the extension is available.
+Always perform the migration on a copy of production data first.
+PostgreSQL migrations should preserve event ordering and message identity, and DCB migrations should also verify that tags and criteria match the way your entities are sourced in Axon Framework 5.
 ====

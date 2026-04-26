@@ -36,6 +36,8 @@ The following files in `axon-5/` describe the API changes:
 - Documented extension modules organization
 - Updated dependency coordinates and groupIds
 - Added Axon Bill of Materials (BOM) recommendation
+- Added AxonIQ PostgreSQL extension coordinates for `io.axoniq.framework:axoniq-postgresql`
+- Documented `PostgresqlEventStorageEngine` as the PostgreSQL-backed DCB-capable event storage extension
 
 ### modules/ROOT/pages/serialization.adoc
 **Status:** ✅ COMPLETED
@@ -80,6 +82,7 @@ The following files in `axon-5/` describe the API changes:
 - Maintained relevant issues (PostgreSQL Large Object Storage, Sequence generation with JPA)
 - Updated cross-references to current module structure
 - Kept framework-agnostic issues that still apply
+- Updated PostgreSQL extension tip to reference `PostgresqlEventStorageEngine` and `axoniq-postgresql`
 
 ---
 
@@ -489,6 +492,11 @@ The following files in `axon-5/` describe the API changes:
 - **Updated Spring Boot auto-configuration note**: Removed JDBC references, kept only JPA
 - **Replaced DomainEventStream reference**: Changed to "transaction" in MongoEventStorageEngine description
 - **Updated EventStore introduction**: Changed "from aggregates" to "from entities", "based on aggregate identifier" to "based on given criteria"
+- **Added PostgreSQL event storage documentation**:
+  - Listed `PostgresqlEventStorageEngine` among available event storage engines
+  - Added a dedicated section before `InMemoryEventStorageEngine`
+  - Documented the `io.axoniq.framework:axoniq-postgresql` dependency
+  - Cross-referenced PostgreSQL event storage migration guidance
 - All imports updated to use correct Axon 5 packages
 
 ### modules/events/pages/event-processors/index.adoc
@@ -1049,6 +1057,25 @@ The following files in `axon-5/` describe the API changes:
 ### Old files removed:
 - commands-events.adoc (replaced by testing-with-axon-test-fixture.adoc)
 - sagas-1.adoc (sagas not available in Axon 5, alternatives covered in upgrading-from-axon-4.adoc)
+
+---
+
+## Migration Module
+
+### modules/migration/pages/why-upgrade.adoc
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated the PostgreSQL extension section to remove the placeholder marker
+- Described `PostgresqlEventStorageEngine` and the `axoniq-postgresql` artifact
+- Clarified that the extension supports PostgreSQL-backed DCB event storage
+
+### modules/migration/pages/paths/event-store.adoc
+**Status:** ✅ COMPLETED
+**Changes applied:**
+- Updated the event storage engine choice table to describe `PostgresqlEventStorageEngine` as available
+- Filled in the PostgreSQL event storage migration section
+- Added dependency coordinates for `io.axoniq.framework:axoniq-postgresql`
+- Documented when to choose PostgreSQL and how to approach migration from Axon Framework 4 storage
 
 ---
 

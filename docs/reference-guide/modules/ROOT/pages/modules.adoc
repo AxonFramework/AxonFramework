@@ -155,6 +155,25 @@ This extension provides basic implementations based on Dropwizard to collect mon
 This extension provides basic implementations based on Micrometer to collect monitoring information.
 https://micrometer.io/[Micrometer] is a dimensional-first metrics collection facade whose aim is to allow you to time, count, and gauge your code with a vendor neutral API.
 
+[#external_extensions]
+== External extensions
+
+External extensions are maintained outside the main Axon Framework repository and provide integrations for specific infrastructure choices.
+The AxonIQ PostgreSQL extension is one such extension.
+
+[cols="<,<,<,^"]
+|===
+|Module |Artifact Id |Group Id |Maven Central
+
+|<<Axon PostgreSQL>> |`axoniq-postgresql` |`io.axoniq.framework` |https://central.sonatype.com/search?q=a:axoniq-postgresql[available]
+|===
+
+=== Axon PostgreSQL
+
+This module provides the `PostgresqlEventStorageEngine`, a storage solution optimized for link:https://www.postgresql.org/[PostgreSQL].
+It supports xref:events:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundaries (DCB)] with event tagging and criteria-based querying.
+Use this extension when PostgreSQL is your chosen event store and you want a database-backed DCB-capable alternative to Axon Server.
+
 ifdef::advanced-framework[]
 include::ROOT:partial$modules-advanced-framework.adoc[]
 endif::[]
