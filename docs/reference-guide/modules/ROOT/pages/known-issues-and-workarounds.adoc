@@ -24,8 +24,8 @@ When looking to provide a pull request, be sure to adjust link:https://github.co
 [TIP]
 .PostgreSQL Extension
 ====
-// TODO Axoniq feature
-You can use Axoniq's PostgreSQL Extension instead of setting up PostgreSQL yourself as a event storage solution. For more information, please check the repository link:https://github.com/AxonIQ/extension-postgresql[here.]
+If PostgreSQL is your preferred event store, consider the AxonIQ PostgreSQL extension.
+It provides the `PostgresqlEventStorageEngine` through the `io.axoniq.framework:axoniq-postgresql` artifact and supports DCB with PostgreSQL-backed event storage.
 ====
 
 When storing the serialized formats of, for example, xref:axon-framework-reference:events:event-processors/streaming.adoc#tracking_tokens[tokens], or xref:axon-framework-reference:events:infrastructure.adoc[events], it is good to know Axon uses JPAs `@Lob` annotation for these columns.
@@ -43,7 +43,7 @@ However, even when using Axon Server, the predicament remains for tokens and sag
 
 For those cases, it would be wise to adjust the Hibernate mapping.
 The most straightforward way, is to enforce the use of the `BYTEA` column type; with some additional steps, of course.
-For a full explanation and walkthrough, please check the xref:axon-framework-reference:tuning:rdbms-tuning.adoc#_postgresql_lob_annotated_columns_and_default_hibernate_mapping[PostegreSQL, LOB annotated columns, and default Hibernate mapping] tuning page.
+For a full explanation and walkthrough, please check the xref:axon-framework-reference:tuning:rdbms-tuning.adoc#_postgresql_lob_annotated_columns_and_default_hibernate_mapping[PostgreSQL, LOB annotated columns, and default Hibernate mapping] tuning page.
 
 == Sequence generation issues with JPA Entities
 

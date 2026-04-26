@@ -83,6 +83,9 @@ endif::[]
 * **`AggregateBasedJpaEventStorageEngine`** - Stores events in a JPA-compatible database.
 Organizes events by aggregate identifier and sequence number.
 Useful when Axon Server is not available.
+* **`PostgresqlEventStorageEngine`** - Stores events in PostgreSQL through the AxonIQ PostgreSQL extension.
+Provides DCB support with event tagging and criteria-based querying.
+Useful when PostgreSQL is your chosen operational event store.
 * **`InMemoryEventStorageEngine`** - Stores events in memory.
 Ideal for testing and short-lived tools.
 Not suitable for production use.
@@ -261,6 +264,37 @@ You can use JPA's `SELECT new SomeClass(parameters) FROM ...` style queries to w
 Alternatively, call `EntityManager.flush()` and `EntityManager.clear()` after fetching a batch of events.
 Failure to do so might result in `OutOfMemoryException`s when loading large streams of events.
 ====
+
+[#postgresqleventstorageengine]
+==== `PostgresqlEventStorageEngine`
+
+The `PostgresqlEventStorageEngine` stores events in link:https://www.postgresql.org/[PostgreSQL] through the AxonIQ PostgreSQL extension.
+It is optimized for PostgreSQL and supports xref:event-store-internals.adoc#dynamic_consistency_boundaries_dcb[Dynamic Consistency Boundaries (DCB)].
+This means events can be stored with several tags and queried through criteria, instead of only being organized by aggregate identifier and sequence number.
+
+Use this storage engine when PostgreSQL is the preferred persistence technology for your application and you want to use Axon Framework 5's DCB model without running Axon Server.
+If you already use PostgreSQL for application data, this option can keep your operational footprint small while still providing a persistent event store.
+
+Declare the AxonIQ PostgreSQL extension alongside the event sourcing module:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.axoniq.framework</groupId>
+    <artifactId>axoniq-postgresql</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+<dependency>
+    <groupId>org.axonframework</groupId>
+    <artifactId>axon-eventsourcing</artifactId>
+    <version>${axon.version}</version>
+</dependency>
+----
+
+The extension contributes PostgreSQL-specific configuration infrastructure.
+After adding the dependency, configure your PostgreSQL connection according to the extension documentation and register the provided `PostgresqlEventStorageEngine` as your application's `EventStorageEngine`.
+
+For migration guidance from Axon Framework 4 event storage solutions, see xref:migration:paths/event-store.adoc#postgresql_event_storage_migration[PostgreSQL event storage migration].
 
 ==== `InMemoryEventStorageEngine`
 
