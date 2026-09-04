@@ -321,7 +321,7 @@ class WorkPackage implements SegmentProgressContext {
     private boolean canHandle(EventMessage eventMessage, ProcessingContext processingContext) {
         try {
             return eventFilter.canHandle(eventMessage, processingContext, segment);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
                                 + "Aborting Work Package...",
                         segment.getSegmentId(), name, e);
@@ -341,7 +341,31 @@ class WorkPackage implements SegmentProgressContext {
             return;
         }
         logger.debug("Scheduling Work Package [{}]-[{}] to process events.", segment.getSegmentId(), name);
-        executorService.submit(this::runWorker);
+        executorService.submit(safeguard(this::runWorker));
+    }
+
+    /**
+     * Wraps the given {@code task} so that any {@link Throwable} escaping it is logged rather than silently lost.
+     * The task submitted to {@link #executorService} has its {@code Future} discarded, since nothing polls it for a
+     * result; without this safety net, a {@link Throwable} that escapes {@link #runWorker()} before it ever produces
+     * a {@link CompletableFuture} to report on (e.g. a synchronous failure in {@link #processEvents()}) would
+     * otherwise vanish without a trace, leaving this {@code WorkPackage}'s {@link #scheduled} flag permanently set
+     * and this segment silently stuck.
+     *
+     * @param task the task to guard against an escaping {@link Throwable}
+     * @return a {@link Runnable} that never throws
+     */
+    private Runnable safeguard(Runnable task) {
+        return () -> {
+            try {
+                task.run();
+            } catch (Throwable e) {
+                logger.error(
+                        "Work Package [{}]-[{}]. Unexpected error escaped the worker task. "
+                                + "This Work Package may no longer be scheduled for further processing.",
+                        segment.getSegmentId(), name, e);
+            }
+        };
     }
 
     private void runWorker() {
@@ -398,7 +422,7 @@ class WorkPackage implements SegmentProgressContext {
         CompletableFuture<Void> result;
         try {
             result = unitOfWork.execute();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             result = CompletableFuture.failedFuture(e);
         }
         return result.whenComplete((v, t) -> processingEvents.set(false));
