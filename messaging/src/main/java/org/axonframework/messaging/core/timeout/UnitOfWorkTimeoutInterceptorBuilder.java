@@ -151,7 +151,14 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
                 task.ensureNoInterruptionWasSwallowed();
                 return proceed;
             } catch (Exception e) {
-                return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
+                Exception result = task.detectInterruptionInsteadOfException(e);
+                if (result == e) {
+                    // The exception was not caused by this task's timeout, so complete it now.
+                    // This cancels any still-pending interrupt and clears one that may have already fired,
+                    // preventing it from leaking into code that runs after this interceptor returns.
+                    task.complete();
+                }
+                return MessageStream.failed(result);
             }
         };
     }
