@@ -48,6 +48,9 @@ updates:
       versions: [ "[3.0.0,)" ]
     - dependency-name: "org.springframework.data:*"
       versions: [ "[2025.0.0,)" ]
+    - dependency-name: "org.openrewrite.recipe:*"
+      versions: [ "[3.37.0,)" ]
+
 
 - package-ecosystem: maven
   directory: "/examples/university-java-springboot-4"
