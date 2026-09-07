@@ -161,7 +161,8 @@ This makes it suitable for cross-cutting exception handling concerns such as log
 
 You can wire the exception and the full message (for example, `CommandMessage` or `EventMessage`) as parameters.
 The framework matches an exception handler based on which parameters it declares: the exception type must be assignable from the thrown exception, and the message type must be assignable from the message being handled.
-Omitting a parameter means it is not used for matching. Any value is accepted.
+Omitting a parameter means it is not used for matching.
+Any value is accepted.
 
 You can introduce `@ExceptionHandler` annotated methods in any message handling component.
 
@@ -194,8 +195,10 @@ include::example$messagingconcepts/componentmessageintercepting/exceptionproject
 An xref:commands:entities/index.adoc[entity's] own `@CommandHandler` methods can be intercepted the same way as any other component, both by an annotated method on the entity class and by a declarative interceptor registered on its `EntityMetamodelBuilder`.
 An interceptor registered on a parent entity runs before an interceptor registered on a child entity added through `@EntityMember` or `EntityMetamodelBuilder.addChild(...)`, and before the parent's own command handlers.
 
-Note that **only** command handling is covered.
-Hence, there is no interceptor support for `@EventSourcingHandler` methods.
+For a xref:commands:entities/entity-polymorphism.adoc[polymorphic entity], a concrete type's own interceptor runs before an interceptor declared on the super type, for every command reaching that concrete type's instance, whether the command is declared on the concrete type or on the super type itself.
+This is the opposite order from the `@EntityMember`/`addChild(...)` parent-before-child rule above; the two are unrelated mechanisms.
+
+Only command handling is covered: there is no interceptor support for `@EventSourcingHandler` methods.
 
 *Annotated `@CommandHandlerInterceptor` on the entity:*
 
