@@ -80,6 +80,21 @@ public record UpdateCheckRequest(
     }
 
     /**
+     * Returns the {@link #machineUserName()} percent-encoded as UTF-8, for use as an HTTP header value.
+     * <p>
+     * HTTP headers cannot carry anything outside ISO-8859-1, so a user name written in, for instance, Chinese or
+     * Cyrillic cannot be sent as-is: {@link java.net.http.HttpRequest.Builder#headers(String...)} rejects it and the
+     * whole update check fails. Encoding rather than stripping keeps the name intact and distinguishable, as every
+     * unrepresentable name would otherwise collapse onto the same placeholder. Names that are already unreserved
+     * ASCII pass through unchanged.
+     *
+     * @return the machine user name, percent-encoded as UTF-8
+     */
+    public String machineUserNameHeader() {
+        return encode(machineUserName).replace("+", "%20");
+    }
+
+    /**
      * Converts the usage request into a user agent string format.
      *
      * @return the user agent string representation of the usage request
