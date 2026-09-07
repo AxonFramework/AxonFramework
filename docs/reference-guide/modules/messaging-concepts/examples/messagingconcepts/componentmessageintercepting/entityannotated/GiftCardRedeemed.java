@@ -15,6 +15,8 @@
  */
 package messagingconcepts.componentmessageintercepting.entityannotated;
 
-public record GiftCardRedeemed(String cardId) {
+import org.axonframework.eventsourcing.annotation.EventTag;
+
+public record GiftCardRedeemed(@EventTag String cardId) {
 
 }
