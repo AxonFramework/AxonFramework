@@ -119,8 +119,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlingComponent, 
                 // successfully, so once one Saga fails, the remaining Sagas are not invoked and their side effects
                 // cannot escape a unit of work that is going to roll back.
                 result = result.concatWith(() -> saga.handle(event, context));
-                // Deliberately set before the Saga is invoked: a Saga whose handler fails still took the event,
-                // which is what Axon Framework 4's error handling meant by returning true from an invocation that threw.
+                // Tracks admission, not outcome, and cannot track outcome: every invocation above is deferred, so no
+                // Saga has run by the time the creation policy below is consulted. Axon Framework 4 answered the same
+                // question the same way, returning true because canHandle was true rather than because the handler
+                // returned. Nothing is lost by that: a failing Saga leaves the creation stream unconsumed, so no Saga
+                // is created either way.
                 sagaOfTypeInvoked = true;
             }
         }
