@@ -182,6 +182,82 @@ class AnnotatedEntityMetamodelCommandInterceptorTest {
     }
 
     /**
+     * A concrete type's own interceptor must still run when the command it intercepts is declared (and handled) on
+     * the polymorphic super type, not on the concrete type itself. Before this was fixed, dispatch never visited the
+     * concrete type's own metamodel for such a command, so its interceptor was silently skipped.
+     */
+    @Nested
+    class ConcreteTypeInterceptorWithSupertypeHandler extends AbstractAnnotatedEntityMetamodelTest<GuardedShape> {
+
+        @Override
+        protected AnnotatedEntityMetamodel<GuardedShape> getMetamodel() {
+            return AnnotatedEntityMetamodel.forPolymorphicType(
+                    GuardedShape.class,
+                    Set.of(GuardedCircle.class),
+                    parameterResolverFactory,
+                    handlerDefinition,
+                    messageTypeResolver,
+                    messageConverter,
+                    eventConverter
+            );
+        }
+
+        @Test
+        void concreteTypeInterceptorFiresForCommandHandledBySupertype() {
+            entityState = new GuardedCircle();
+
+            dispatchInstanceCommand(new RenameShape("new-name"));
+
+            assertThat(entityState.invocations).containsExactly("concrete-interceptor", "super-handled");
+        }
+    }
+
+    /**
+     * When both the polymorphic super type and a concrete type declare their own interceptor, both must fire for any
+     * command reaching that concrete type's instance, regardless of whether the command is declared on the concrete
+     * type or on the super type. Ordering here follows the concrete type first, then the super type, matching the
+     * order already observed for a command declared directly on the concrete type: there is no parent-before-child
+     * guarantee across this supertype/concrete-type axis (unlike the {@code @EntityMember} parent/child axis, which
+     * is unaffected and still runs parent-before-child).
+     */
+    @Nested
+    class InterceptorsAtBothHierarchyLevels extends AbstractAnnotatedEntityMetamodelTest<AuditedShape> {
+
+        @Override
+        protected AnnotatedEntityMetamodel<AuditedShape> getMetamodel() {
+            return AnnotatedEntityMetamodel.forPolymorphicType(
+                    AuditedShape.class,
+                    Set.of(AuditedCircle.class),
+                    parameterResolverFactory,
+                    handlerDefinition,
+                    messageTypeResolver,
+                    messageConverter,
+                    eventConverter
+            );
+        }
+
+        @Test
+        void bothLevelsFireForConcreteTypeHandledCommand() {
+            entityState = new AuditedCircle();
+
+            dispatchInstanceCommand(new ResizeShape(5));
+
+            assertThat(entityState.invocations)
+                    .containsExactly("concrete-interceptor", "super-interceptor", "concrete-handled");
+        }
+
+        @Test
+        void bothLevelsFireForSupertypeHandledCommand() {
+            entityState = new AuditedCircle();
+
+            dispatchInstanceCommand(new RenameShape("new-name"));
+
+            assertThat(entityState.invocations)
+                    .containsExactly("concrete-interceptor", "super-interceptor", "super-handled");
+        }
+    }
+
+    /**
      * Reproduces the scenario from the original bug report: an entity rejects a command based on its own current state
      * through a {@link CommandHandlerInterceptor}. Before the fix, this interceptor was silently never invoked.
      */
@@ -338,6 +414,56 @@ class AnnotatedEntityMetamodelCommandInterceptorTest {
     }
 
     @SuppressWarnings("unused")
+    abstract static class GuardedShape {
+
+        final List<String> invocations = new ArrayList<>();
+
+        @CommandHandler
+        public void handle(RenameShape command) {
+            invocations.add("super-handled");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    static class GuardedCircle extends GuardedShape {
+
+        @CommandHandlerInterceptor
+        public void guard(CommandMessage command) {
+            invocations.add("concrete-interceptor");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    abstract static class AuditedShape {
+
+        final List<String> invocations = new ArrayList<>();
+
+        @CommandHandlerInterceptor
+        public void auditOnSupertype(CommandMessage command) {
+            invocations.add("super-interceptor");
+        }
+
+        @CommandHandler
+        public void handle(RenameShape command) {
+            invocations.add("super-handled");
+        }
+    }
+
+    @SuppressWarnings("unused")
+    static class AuditedCircle extends AuditedShape {
+
+        @CommandHandlerInterceptor
+        public void auditOnConcreteType(CommandMessage command) {
+            invocations.add("concrete-interceptor");
+        }
+
+        @CommandHandler
+        public void handle(ResizeShape command) {
+            invocations.add("concrete-handled");
+        }
+    }
+
+    @SuppressWarnings("unused")
     static class GiftCard {
 
         boolean redeemed = false;
@@ -372,6 +498,14 @@ class AnnotatedEntityMetamodelCommandInterceptorTest {
     }
 
     record RedeemGiftCard(String id) {
+
+    }
+
+    record RenameShape(String name) {
+
+    }
+
+    record ResizeShape(int radius) {
 
     }
 }
