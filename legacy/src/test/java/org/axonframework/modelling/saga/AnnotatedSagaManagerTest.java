@@ -311,6 +311,17 @@ public class AnnotatedSagaManagerTest {
             assertEquals(2, sagas.iterator().next().getHandlerInvocations());
         }
 
+        @Test
+        void aSuppressedFailureInAnEndSagaHandlerStillEndsAndDeletesTheSaga() {
+            handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("123")));
+
+            handle(new GenericEventMessage(new MessageType("event"), new EndingEvent("123")));
+
+            // the saga ends despite its @EndSaga handler failing, as in Axon Framework 4, where SagaLifecycle.end()
+            // ran in a finally block; suppressing the failure lets the unit of work commit, which deletes the saga
+            assertEquals(0, suppressingRepositoryContents().size());
+        }
+
         private void handle(EventMessage event) {
             UnitOfWork unitOfWork = unitOfWorkFactory.create();
             unitOfWork.runOnInvocation(context -> suppressingTestSubject.handle(event, context));
@@ -477,6 +488,13 @@ public class AnnotatedSagaManagerTest {
         @StartSaga
         @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleStartingEvent(StartingEvent event) {
+            handlerInvocations++;
+            throw new IllegalStateException("saga handler failed");
+        }
+
+        @EndSaga
+        @SagaEventHandler(associationProperty = "myIdentifier")
+        public void handleEndingEvent(EndingEvent event) {
             handlerInvocations++;
             throw new IllegalStateException("saga handler failed");
         }

@@ -238,9 +238,10 @@ public class OrderSaga {
 }
 ```
 
-Returning normally suppresses the failure. Rethrowing propagates it. One inherited subtlety: when the failing handler
-was annotated `@EndSaga`, suppressing the failure does not end the saga, because the saga is ended only after the
-handler completes. Axon Framework 4 skipped its `SagaLifecycle.end()` call the same way.
+Returning normally suppresses the failure. Rethrowing propagates it. A failing `@EndSaga` handler still ends the saga,
+as in Axon Framework 4, where `SagaLifecycle.end()` ran in a `finally` block: when the failure propagates, the rolled
+back unit of work discards the ended instance and the store keeps the saga for the retry; when an `@ExceptionHandler`
+suppresses it, the unit of work commits and the ended saga is deleted from the store.
 
 **A `@SagaEventHandler` on a supertype no longer receives its subtypes.** Axon Framework 4 matched handlers by payload
 assignability, so a handler for `OrderEvent` also handled `OrderPlaced extends OrderEvent`. An Axon Framework 5 event

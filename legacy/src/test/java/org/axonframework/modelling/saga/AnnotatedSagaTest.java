@@ -561,7 +561,7 @@ class AnnotatedSagaTest {
         }
 
         @Test
-        void aThrowingEndSagaHandlerLeavesTheSagaActive() {
+        void aThrowingEndSagaHandlerStillEndsTheSaga() {
             // given
             AnnotatedSaga<FailingEndSaga> subject = subjectFor(FailingEndSaga.class, new FailingEndSaga());
 
@@ -569,15 +569,16 @@ class AnnotatedSagaTest {
             var event = new GenericEventMessage(new MessageType("event"), new RegularEvent("id"));
             var result = subject.handle(event, StubProcessingContext.forMessage(event));
 
-            // then the saga is not ended, because EndSagaMessageHandlerDefinition ends it from a completion callback
-            // that a failed stream never reaches. Axon Framework 4 skipped its SagaLifecycle.end() call the same way.
+            // then the failure propagates, yet the saga is ended: Axon Framework 4 called SagaLifecycle.end() in a
+            // finally block, so a throwing @EndSaga handler ended its saga all the same. When the failure rolls the
+            // unit of work back, WRITE_SAGA never runs and the store keeps the saga, exactly as it did there.
             assertThatThrownBy(() -> result.asCompletableFuture().orTimeout(50, TimeUnit.MILLISECONDS).join())
                     .hasCauseInstanceOf(SagaHandlerFailure.class);
-            assertThat(subject.isActive()).isTrue();
+            assertThat(subject.isActive()).isFalse();
         }
 
         @Test
-        void aSuppressedFailureInAnEndSagaHandlerLeavesTheSagaActive() {
+        void aSuppressedFailureInAnEndSagaHandlerStillEndsTheSaga() {
             // given
             SuppressingEndSaga saga = new SuppressingEndSaga();
             AnnotatedSaga<SuppressingEndSaga> subject = subjectFor(SuppressingEndSaga.class, saga);
@@ -587,11 +588,11 @@ class AnnotatedSagaTest {
             var result = subject.handle(event, StubProcessingContext.forMessage(event));
             result.asCompletableFuture().orTimeout(50, TimeUnit.MILLISECONDS).join();
 
-            // then handling counts as successful, yet the saga is still active: suppression happens above the
-            // completion callback that ends the saga, so the callback never ran
+            // then handling counts as successful and the saga is ended, as in Axon Framework 4, where a suppressed
+            // @EndSaga failure still ended the saga and the committing unit of work deleted it from the store
             assertThat(saga.exceptionHandlerInvoked).isTrue();
             assertThat(result.error()).isEmpty();
-            assertThat(subject.isActive()).isTrue();
+            assertThat(subject.isActive()).isFalse();
         }
 
         private <T> AnnotatedSaga<T> subjectFor(Class<T> sagaType, T sagaInstance) {

@@ -47,8 +47,10 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
     /**
      * A {@link WrappedMessageHandlingMember} implementation dedicated towards {@link MessageHandlingMember}s annotated
-     * with {@link EndSaga}. After invocation of the {@link #handle(Message, ProcessingContext, Object)} method, the saga's is ended
-     * through the {@link SagaLifecycle#end()} method.
+     * with {@link EndSaga}. After invocation of the {@link #handle(Message, ProcessingContext, Object)} method, the
+     * saga is ended through the {@link SagaLifecycle#end()} method, whether the handler succeeded or failed: Axon
+     * Framework 4 called {@code SagaLifecycle.end()} in a {@code finally} block, so a throwing {@code @EndSaga}
+     * handler ended its saga all the same.
      *
      * @param <T> the entity type wrapped by this {@link MessageHandlingMember}
      */
@@ -65,7 +67,13 @@ public class EndSagaMessageHandlerDefinition implements HandlerEnhancerDefinitio
 
         @Override
         public MessageStream<?> handle(Message message, ProcessingContext context, @Nullable T target) {
+            // The two callbacks together are Axon Framework 4's finally: onComplete only runs on an error-free stream,
+            // so a failed handler ends the saga in the error path instead, with the failure re-emitted untouched.
             return super.handle(message, context, target)
+                        .onErrorContinue(failure -> {
+                            SagaLifecycle.forContext(context).end();
+                            return MessageStream.failed(failure);
+                        })
                         .onComplete(() -> SagaLifecycle.forContext(context).end());
         }
     }
