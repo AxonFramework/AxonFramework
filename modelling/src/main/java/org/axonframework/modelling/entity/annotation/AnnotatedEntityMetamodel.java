@@ -27,6 +27,7 @@ import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.messaging.core.Message;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.MessageTypeResolver;
@@ -36,11 +37,13 @@ import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.conversion.MessageConverter;
+import org.axonframework.messaging.core.interception.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
+import org.axonframework.modelling.entity.EntityCommandHandlerInterceptorChain;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
@@ -279,6 +282,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                 entityType, inspected, eventConverter, messageTypeResolver
         ));
         initializeDetectedHandlers(builder, inspected);
+        registerCommandInterceptors(builder, inspected);
         initializeChildren(builder);
         return builder.build();
     }
@@ -306,6 +310,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
         // Commands that are present on the parent entity should not be registered again on the concrete
         // types. So we tell concrete types to skip these commands.
         LinkedList<QualifiedName> registeredCommands = initializeDetectedHandlers(builder, inspected);
+        registerCommandInterceptors(builder, inspected);
         concreteTypes.forEach(concreteType -> {
             AnnotatedEntityMetamodel<? extends E> createdConcreteEntityModel = new AnnotatedEntityMetamodel<>(
                     concreteType, Set.of(), parameterResolverFactory, handlerDefinition, messageTypeResolver,
@@ -366,6 +371,74 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                     .handle(command, context, entity)
                     .<CommandResultMessage>mapMessage(GenericCommandResultMessage::new)
                     .first()));
+        }
+    }
+
+    /**
+     * Bridges annotated {@code @CommandHandlerInterceptor}/{@code @MessageHandlerInterceptor} methods detected by the
+     * given {@code inspected} inspector into a single {@link org.axonframework.modelling.entity.EntityCommandHandlerInterceptor}
+     * registered on the declarative {@code builder}. This is the only entry point annotated interceptors have into
+     * entity command dispatch: ordering, before/surround-style handling, and comparator-based ordering between
+     * multiple annotated interceptor methods are all delegated to the existing
+     * {@link AnnotatedHandlerInspector#chainedInterceptor(Class)} machinery, which already backs
+     * {@code AnnotatedCommandHandlingComponent} for top-level annotated components.
+     */
+    private void registerCommandInterceptors(EntityMetamodelBuilder<E> builder, AnnotatedHandlerInspector<E> inspected) {
+        if (inspected.getAllInterceptors().getOrDefault(entityType, Collections.emptySortedSet()).isEmpty()) {
+            return;
+        }
+        MessageHandlerInterceptorMemberChain<E> memberChain = inspected.chainedInterceptor(entityType);
+        builder.commandHandlerInterceptor((command, entity, context, chain) ->
+                memberChain.handle(command, context, entity, new EntityDispatchHandlingMember<>(chain))
+                           .mapMessage(this::asCommandResultMessage)
+                           .first()
+                           .cast()
+        );
+    }
+
+    private CommandResultMessage asCommandResultMessage(Message result) {
+        return result instanceof CommandResultMessage commandResultMessage
+                ? commandResultMessage
+                : new GenericCommandResultMessage(result);
+    }
+
+    /**
+     * Bridges an entity's own {@link EntityCommandHandlerInterceptorChain} into the {@link MessageHandlingMember}
+     * shape that a {@link MessageHandlerInterceptorMemberChain} expects as its terminal: once every annotated
+     * interceptor has run (or short-circuited), the chain invokes this member, which simply proceeds the entity's own
+     * dispatch chain, passing the {@code target} threaded through the reflection-side chain along as the entity.
+     */
+    private static final class EntityDispatchHandlingMember<E> implements MessageHandlingMember<E> {
+
+        private final EntityCommandHandlerInterceptorChain<E> chain;
+
+        private EntityDispatchHandlingMember(EntityCommandHandlerInterceptorChain<E> chain) {
+            this.chain = chain;
+        }
+
+        @Override
+        public Class<?> payloadType() {
+            return Object.class;
+        }
+
+        @Override
+        public boolean canHandle(Message message, ProcessingContext context) {
+            return true;
+        }
+
+        @Override
+        public boolean canHandleMessageType(Class<? extends Message> messageType) {
+            return true;
+        }
+
+        @Override
+        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+            return Optional.empty();
+        }
+
+        @Override
+        public MessageStream<?> handle(Message message, ProcessingContext context, @Nullable E target) {
+            return chain.proceed((CommandMessage) message, target, context);
         }
     }
 
