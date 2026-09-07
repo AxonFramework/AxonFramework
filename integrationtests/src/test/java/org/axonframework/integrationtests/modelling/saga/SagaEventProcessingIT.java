@@ -17,6 +17,11 @@
 package org.axonframework.integrationtests.modelling.saga;
 
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.Configuration;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
@@ -324,6 +329,75 @@ class SagaEventProcessingIT {
             }
         }
         throw new IllegalStateException("No order found whose association value lands in segment " + segment);
+    }
+
+    /**
+     * The other nested classes construct their processors directly, so they can inject a recording
+     * {@link TransactionManager} and choose a segment count. This one instead registers the Saga the way an
+     * application does, through the public configuration API, and resolves the {@link SagaStore} from the
+     * {@link Configuration} rather than closing over it. That is what a dedicated
+     * Saga configurer would automate, so proving it works here shows such a configurer would be sugar rather than a
+     * missing prerequisite.
+     */
+    @Nested
+    class RegisteredThroughTheConfiguration {
+
+        private AxonConfiguration configuration;
+
+        @AfterEach
+        void tearDown() {
+            if (configuration != null) {
+                configuration.shutdown();
+            }
+        }
+
+        @Test
+        void aSagaManagerRegisteredOnAProcessorModuleHandlesAPublishedEvent() {
+            // given a SagaStore component and an event processor carrying a Saga manager built from it
+            SimpleEventBus eventBus = new SimpleEventBus();
+            MessagingConfigurer configurer = MessagingConfigurer.create();
+            configurer.componentRegistry(cr -> cr.registerComponent(SagaStore.class, cfg -> sagaStore));
+            configurer.eventProcessing(processing -> processing.subscribing(
+                    subscribing -> subscribing
+                            .defaults(defaults -> defaults.eventSource(eventBus))
+                            .processor(EventProcessorModule
+                                               .subscribing("saga-processor")
+                                               .eventHandlingComponents(
+                                                       components -> components.declarative(
+                                                               "Saga[OrderSaga]",
+                                                               this::sagaManagerFrom
+                                                       )
+                                               )
+                                               .notCustomized())
+            ));
+            configuration = configurer.build();
+            configuration.start();
+
+            // when
+            FutureUtils.joinAndUnwrap(eventBus.publish(null, List.of(orderPlaced("order-1"))), TIMEOUT);
+
+            // then
+            assertThat(sagaStore.findSagas(OrderSaga.class, ORDER_1)).hasSize(1);
+        }
+
+        @SuppressWarnings("unchecked")
+        private EventHandlingComponent sagaManagerFrom(Configuration configuration) {
+            SagaStore<Object> store = configuration.getComponent(SagaStore.class);
+            return AnnotatedSagaManager.<OrderSaga>builder()
+                                       .sagaRepository(AnnotatedSagaRepository.<OrderSaga>builder()
+                                                                              .sagaType(OrderSaga.class)
+                                                                              .sagaStore(store)
+                                                                              .parameterResolverFactory(
+                                                                                      configuration.getComponent(
+                                                                                              ParameterResolverFactory.class)
+                                                                              )
+                                                                              .build())
+                                       .sagaType(OrderSaga.class)
+                                       .sagaFactory(OrderSaga::new)
+                                       .parameterResolverFactory(
+                                               configuration.getComponent(ParameterResolverFactory.class))
+                                       .build();
+        }
     }
 
     @Nested
