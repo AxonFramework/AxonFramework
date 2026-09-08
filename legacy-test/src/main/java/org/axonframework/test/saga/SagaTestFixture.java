@@ -117,6 +117,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         this.sagaType = Objects.requireNonNull(sagaType, "The sagaType may not be null.");
     }
 
+    @Deprecated(forRemoval = true)
+    @Override
+    public FixtureConfiguration withTransienceCheckDisabled() {
+        return this;
+    }
+
     @Override
     public FixtureConfiguration customize(UnaryOperator<MessagingConfigurer> customization) {
         Objects.requireNonNull(customization, "The customization may not be null.");

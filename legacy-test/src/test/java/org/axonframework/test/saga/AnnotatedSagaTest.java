@@ -101,16 +101,17 @@ class AnnotatedSagaTest {
 //        assertTrue(e.getMessage().contains("transient"), "Got unexpected error: " + e.getMessage());
 //    }
 //
-//    @Test
-//    void fixtureApi_NonTransientResourceInjected_CheckDisabled() {
-//        FixtureConfiguration fixture = new SagaTestFixture<>(StubSaga.class)
-//                .withTransienceCheckDisabled();
-//        fixture.registerResource(new NonTransientResource());
-//        fixture.givenNoPriorActivity()
-//               .whenAggregate("id")
-//               .publishes(new TriggerSagaStartEvent("id"))
-//               .expectNoScheduledDeadlines();
-//    }
+    @SuppressWarnings("removal")
+    @Test
+    void fixtureApi_NonTransientResourceInjected_CheckDisabled() {
+        FixtureConfiguration fixture = new SagaTestFixture<>(StubSaga.class)
+                .withTransienceCheckDisabled();
+        fixture.registerResource(new NonTransientResource());
+        fixture.givenNoPriorActivity()
+               .whenAggregate("id")
+               .publishes(new TriggerSagaStartEvent("id"))
+               .expectNoScheduledDeadlines();
+    }
 //
     // Cannot be restored, and not because of deadlines. The message is built by hand with MessageType("event"),
     // so its QualifiedName is "event". Axon Framework 5 routes an event to a handler by QualifiedName, and the

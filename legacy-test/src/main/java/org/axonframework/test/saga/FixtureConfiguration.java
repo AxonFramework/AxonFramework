@@ -58,6 +58,25 @@ import java.util.function.UnaryOperator;
 public interface FixtureConfiguration {
 
     /**
+     * Does nothing, and is kept only so an Axon Framework 4 test suite still compiles.
+     * <p>
+     * Axon Framework 4 refused a Saga holding an injected resource in a field that was not {@code transient}, because
+     * the Saga is serialized into the {@link org.axonframework.modelling.saga.repository.SagaStore SagaStore} and the
+     * resource would go with it. This method turned that check off.
+     * <p>
+     * Axon Framework 5 has no such check, and rebuilding it would not help. It worked by comparing each field against
+     * the resource injector's list, and there is no injector; and its advice no longer applies, since {@code transient}
+     * is a Java serialization marker while a Saga is now serialized through a
+     * {@link org.axonframework.conversion.Converter Converter}. A Saga can still hold infrastructure in a field, but
+     * nothing puts it there on the Saga's behalf, and serializing it fails loudly.
+     *
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @deprecated There is no transience check to disable. Delete the call.
+     */
+    @Deprecated(forRemoval = true)
+    FixtureConfiguration withTransienceCheckDisabled();
+
+    /**
      * Customizes the {@link MessagingConfigurer} the fixture builds the Saga on, for anything this interface does not
      * expose.
      * <p>
