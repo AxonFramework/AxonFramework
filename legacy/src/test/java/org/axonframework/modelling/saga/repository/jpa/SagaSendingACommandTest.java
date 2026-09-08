@@ -73,8 +73,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * directions.
  * <p>
  * Both ways of reaching the command bus are covered, because a migrating project may be on either. A
- * {@link CommandGateway} in a field is what an Axon Framework 4 saga got from a {@code ResourceInjector}, and the
- * handler hands it the {@link ProcessingContext} it was invoked with. A {@link CommandDispatcher} parameter is the
+ * {@link CommandGateway} in a field is the shape an Axon Framework 4 saga had, and the handler hands it the
+ * {@link ProcessingContext} it was invoked with. Axon Framework 5 does not fill such a field in, so the saga factory
+ * passes the gateway to the constructor. A {@link CommandDispatcher} parameter is the
  * Axon Framework 5 route and is already bound to that context; it needs
  * {@link org.axonframework.messaging.commandhandling.annotation.CommandDispatcherParameterResolverFactory} in the
  * repository's {@code ParameterResolverFactory}, which the metamodel's classpath default does not contain.
@@ -276,8 +277,8 @@ class SagaSendingACommandTest {
     }
 
     /**
-     * Holds its {@link CommandGateway} in a field, as an Axon Framework 4 saga did after a {@code ResourceInjector}
-     * had filled it in.
+     * Holds its {@link CommandGateway} in a field, as an Axon Framework 4 saga did. The field is filled in by the saga
+     * factory rather than by the repository, which no longer injects anything.
      */
     public static class CommandSendingSaga {
 
