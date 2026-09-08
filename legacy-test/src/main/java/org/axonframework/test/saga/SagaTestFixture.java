@@ -16,7 +16,21 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.common.configuration.AxonConfiguration;
+import org.axonframework.common.configuration.ComponentRegistry;
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.core.configuration.reflection.HandlerDefinitionUtils;
+import org.axonframework.messaging.core.configuration.reflection.HandlerEnhancerDefinitionUtils;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -24,13 +38,19 @@ import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.fixture.AxonTestPhase;
 import org.axonframework.test.fixture.AxonTestPhase.Given;
 import org.axonframework.test.fixture.AxonTestPhase.When;
+import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 /**
  * Fixture for testing Sagas in a given-when-then style, carrying the Axon Framework 4 API so a migrating test suite
@@ -62,6 +82,19 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final InMemorySagaStore sagaStore = new InMemorySagaStore();
     private final Map<String, AggregateEventPublisher> aggregatePublishers = new HashMap<>();
 
+    // Prepended, so the last registered resource of a type wins, as in Axon Framework 4.
+    private final Deque<Object> resources = new ArrayDeque<>();
+    private final Deque<ParameterResolverFactory> parameterResolverFactories = new ArrayDeque<>();
+    private final Deque<HandlerDefinition> handlerDefinitions = new ArrayDeque<>();
+    private final Deque<HandlerEnhancerDefinition> handlerEnhancerDefinitions = new ArrayDeque<>();
+    // Appended, so interceptors are invoked in registration order, as in Axon Framework 4.
+    private final List<MessageHandlerInterceptor<? super EventMessage>> eventHandlerInterceptors = new ArrayList<>();
+    private final List<FieldFilter> fieldFilters = new ArrayList<>();
+    private final List<Runnable> startRecordingCallbacks = new ArrayList<>();
+
+    private UnaryOperator<MessagingConfigurer> customization = c -> c;
+    private boolean suppressExceptionInGivenPhase = false;
+
     @Nullable
     private AxonTestFixture fixture;
     @Nullable
@@ -79,6 +112,82 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public FixtureConfiguration customize(UnaryOperator<MessagingConfigurer> customization) {
+        Objects.requireNonNull(customization, "The customization may not be null.");
+        UnaryOperator<MessagingConfigurer> current = this.customization;
+        this.customization = configurer -> customization.apply(current.apply(configurer));
+        return this;
+    }
+
+    @Override
+    public void registerResource(Object resource) {
+        resources.addFirst(Objects.requireNonNull(resource, "The resource may not be null."));
+    }
+
+    @Override
+    public FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        parameterResolverFactories.addFirst(
+                Objects.requireNonNull(parameterResolverFactory, "The parameterResolverFactory may not be null.")
+        );
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition) {
+        handlerDefinitions.addFirst(Objects.requireNonNull(handlerDefinition, "The handlerDefinition may not be null."));
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition definition) {
+        handlerEnhancerDefinitions.addFirst(
+                Objects.requireNonNull(definition, "The handlerEnhancerDefinition may not be null.")
+        );
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerEventHandlerInterceptor(
+            MessageHandlerInterceptor<? super EventMessage> interceptor
+    ) {
+        eventHandlerInterceptors.add(Objects.requireNonNull(interceptor, "The interceptor may not be null."));
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter) {
+        fieldFilters.add(Objects.requireNonNull(fieldFilter, "The fieldFilter may not be null."));
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName) {
+        return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
+    public FixtureConfiguration registerStartRecordingCallback(Runnable callback) {
+        startRecordingCallbacks.add(Objects.requireNonNull(callback, "The callback may not be null."));
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress) {
+        this.suppressExceptionInGivenPhase = suppress;
+        return this;
+    }
+
+    @Override
+    public EventSink getEventBus() {
+        return configuration().getComponent(EventSink.class);
+    }
+
+    @Override
+    public CommandBus getCommandBus() {
+        return configuration().getComponent(CommandBus.class);
+    }
+
+    @Override
     public GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier) {
         given();
         return publisherFor(aggregateIdentifier);
@@ -86,13 +195,20 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) {
-        givenPhase = given().event(event);
-        return this;
+        return givenAPublished(event, Map.of());
     }
 
     @Override
     public ContinuedGivenState givenAPublished(Object event, Map<String, String> metadata) {
-        givenPhase = given().event(event, metadata);
+        Given phase = given();
+        try {
+            givenPhase = phase.event(event, metadata);
+        } catch (RuntimeException e) {
+            if (!suppressExceptionInGivenPhase) {
+                throw e;
+            }
+            givenPhase = phase;
+        }
         return this;
     }
 
@@ -122,6 +238,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         // Axon Framework 4 started recording here, before handing out the publisher. Entering the when-phase resets
         // the recorders, which is the same moment.
         whenPhase = given().when();
+        startRecordingCallbacks.forEach(Runnable::run);
         return publisherFor(aggregateIdentifier);
     }
 
@@ -155,7 +272,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     private Given given() {
         if (givenPhase == null) {
-            fixture = AxonTestFixture.with(configurer(), c -> c.excludeWhenPhaseMessages());
+            AxonTestFixture.Customization customization = new AxonTestFixture.Customization().excludeWhenPhaseMessages();
+            for (FieldFilter fieldFilter : fieldFilters) {
+                customization = customization.registerFieldFilter(fieldFilter);
+            }
+            AxonTestFixture.Customization fixtureCustomization = customization;
+            fixture = AxonTestFixture.with(configurer(), c -> fixtureCustomization);
             givenPhase = fixture.given();
         }
         return givenPhase;
@@ -164,6 +286,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private When when() {
         if (whenPhase == null) {
             whenPhase = given().when();
+            startRecordingCallbacks.forEach(Runnable::run);
         }
         return whenPhase;
     }
@@ -176,21 +299,77 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return aggregatePublishers.computeIfAbsent(aggregateIdentifier, AggregateEventPublisher::new);
     }
 
+    private AxonConfiguration configuration() {
+        given();
+        return fixture.configuration();
+    }
+
     private MessagingConfigurer configurer() {
-        return MessagingConfigurer
+        MessagingConfigurer configurer = MessagingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> sagaStore))
+                .componentRegistry(this::registerReflectionComponents)
                 .eventProcessing(processing -> processing.subscribing(
-                        subscribing -> subscribing.defaultProcessor(
-                                sagaType.getSimpleName(),
-                                components -> components
-                                        .declarative("Saga[" + sagaType.getSimpleName() + "]", Sagas.of(sagaType))
-                                        .intercepted(c -> LegacyAggregateEnvelope.liftingInterceptor()))
+                        subscribing -> subscribing.defaultProcessor(sagaType.getSimpleName(), this::sagaComponents)
                 ));
+        return customization.apply(configurer);
+    }
+
+    private EventHandlingComponentsConfigurer.CompletePhase sagaComponents(
+            EventHandlingComponentsConfigurer.RequiredComponentPhase components
+    ) {
+        EventHandlingComponentsConfigurer.CompletePhase phase =
+                components.declarative("Saga[" + sagaType.getSimpleName() + "]", Sagas.of(sagaType))
+                          // Registered first, so an interceptor the test registers already sees the aggregate fields
+                          // on the processing context and a message without the metadata that carried them.
+                          .intercepted(c -> LegacyAggregateEnvelope.liftingInterceptor());
+        for (MessageHandlerInterceptor<? super EventMessage> interceptor : eventHandlerInterceptors) {
+            phase = phase.intercepted(c -> interceptor);
+        }
+        return phase;
+    }
+
+    private void registerReflectionComponents(ComponentRegistry registry) {
+        if (!parameterResolverFactories.isEmpty() || !resources.isEmpty()) {
+            registry.registerDecorator(
+                    ParameterResolverFactory.class,
+                    Integer.MAX_VALUE,
+                    (config, name, classpathFactories) -> resolversPreceding(classpathFactories)
+            );
+        }
+        handlerDefinitions.forEach(
+                definition -> HandlerDefinitionUtils.registerToComponentRegistry(registry, c -> definition)
+        );
+        handlerEnhancerDefinitions.forEach(
+                definition -> HandlerEnhancerDefinitionUtils.registerToComponentRegistry(registry, c -> definition)
+        );
+    }
+
+    /**
+     * The factories registered on this fixture, ahead of the {@code classpathFactories}, in the Axon Framework 4 order:
+     * the ones registered explicitly, most recent first, and then the registered resources.
+     * <p>
+     * Composed with the plain {@link MultiParameterResolverFactory} constructor rather than
+     * {@link MultiParameterResolverFactory#ordered(List)}, because the order here is the Axon Framework 4 registration
+     * order rather than a {@link org.axonframework.common.Priority @Priority} ranking. Registering it as the outermost
+     * decorator is what makes that order hold: the configuration composes its own factories by nesting decorators, and
+     * a priority only ranks the factories within one level.
+     * <p>
+     * The precedence is load-bearing, not a preference. {@code axon-test} contributes a classpath factory that matches
+     * every parameter and fails when used, so an unregistered resource is reported by name. Consulted first, it claims
+     * the very parameters this fixture knows how to resolve.
+     */
+    private ParameterResolverFactory resolversPreceding(ParameterResolverFactory classpathFactories) {
+        List<ParameterResolverFactory> factories = new ArrayList<>(parameterResolverFactories);
+        if (!resources.isEmpty()) {
+            factories.add(new SimpleResourceParameterResolverFactory(List.copyOf(resources)));
+        }
+        factories.add(classpathFactories);
+        return new MultiParameterResolverFactory(factories);
     }
 
     private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event) {
-        return new FixtureExecutionResultImpl(sagaType, event.then(), new MatchAllFieldFilter(List.of()));
+        return new FixtureExecutionResultImpl(sagaType, event.then(), new MatchAllFieldFilter(fieldFilters));
     }
 
     /**

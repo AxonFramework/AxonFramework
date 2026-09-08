@@ -16,15 +16,157 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.messaging.commandhandling.CommandBus;
+import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.test.matchers.FieldFilter;
+
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * Interface describing action to perform on a {@link SagaTestFixture} during the configuration phase.
+ * <p>
+ * Most of what an Axon Framework 4 fixture configured is now expressible on the {@link MessagingConfigurer} an
+ * application configures itself, which {@link #customize(UnaryOperator)} hands to the caller. Only the settings that
+ * configurer cannot express are kept here. Four Axon Framework 4 methods have no counterpart at all:
+ * <ul>
+ *     <li>{@code registerResourceInjector(..)} and {@code withTransienceCheckDisabled()}: a Saga has no injected
+ *     fields to configure, since collaborators reach it as handler parameters.</li>
+ *     <li>{@code registerCommandGateway(Class)} and {@code setCallbackBehavior(..)}: Axon Framework 5 has no custom
+ *     gateway proxying. To control what a command returns, subscribe a stub command handler through
+ *     {@link #customize(UnaryOperator)}.</li>
+ *     <li>{@code registerListenerInvocationErrorHandler(..)}: Axon Framework 5 has no such component. A Saga
+ *     suppresses its own failures with an
+ *     {@link org.axonframework.messaging.core.interception.annotation.ExceptionHandler ExceptionHandler} method,
+ *     which is what the Axon Framework 4 default behaviour became.</li>
+ * </ul>
+ * Configuration is applied while building the fixture, which happens on the first {@code given} or {@code when} call.
+ * Anything registered after that is ignored, as it was in Axon Framework 4.
  *
  * @author Allard Buijze
  * @since 1.1
  */
 public interface FixtureConfiguration {
+
+    /**
+     * Customizes the {@link MessagingConfigurer} the fixture builds the Saga on, for anything this interface does not
+     * expose.
+     * <p>
+     * The Saga, its store and its event processor are registered before the given {@code customization} is applied, so
+     * it can add to them or replace what they registered.
+     *
+     * @param customization the customization to apply to the configurer
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration customize(UnaryOperator<MessagingConfigurer> customization);
+
+    /**
+     * Registers the given {@code resource}, making it available to Saga handler methods declaring a parameter of an
+     * assignable type.
+     * <p>
+     * Registering two resources of the same type makes the last one win, as it did in Axon Framework 4. Unlike Axon
+     * Framework 4, the resource is not injected into the Saga's fields.
+     *
+     * @param resource the resource to make available to the Saga's handler methods
+     */
+    void registerResource(Object resource);
+
+    /**
+     * Registers the given {@code parameterResolverFactory}, used to resolve the parameters of the Saga's handler
+     * methods.
+     *
+     * @param parameterResolverFactory the factory resolving handler method parameters
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory);
+
+    /**
+     * Registers the given {@code handlerDefinition}, used to create the Saga's handlers.
+     *
+     * @param handlerDefinition the definition creating the Saga's handlers
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerHandlerDefinition(HandlerDefinition handlerDefinition);
+
+    /**
+     * Registers the given {@code handlerEnhancerDefinition}, used to enhance the Saga's handlers.
+     *
+     * @param handlerEnhancerDefinition the definition enhancing the Saga's handlers
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerHandlerEnhancerDefinition(HandlerEnhancerDefinition handlerEnhancerDefinition);
+
+    /**
+     * Registers the given {@code interceptor}, invoked around the Saga's event handling.
+     * <p>
+     * Interceptors are invoked in registration order, as they were in Axon Framework 4.
+     *
+     * @param interceptor the interceptor to invoke around the Saga's event handling
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerEventHandlerInterceptor(MessageHandlerInterceptor<? super EventMessage> interceptor);
+
+    /**
+     * Registers the given {@code fieldFilter}, defining which fields are compared when matching messages.
+     *
+     * @param fieldFilter the filter defining which fields to compare
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter);
+
+    /**
+     * Indicates that a field with the given {@code fieldName}, declared in the given {@code declaringClass}, is ignored
+     * when comparing messages.
+     *
+     * @param declaringClass the class declaring the field
+     * @param fieldName      the name of the field to ignore
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);
+
+    /**
+     * Registers the given {@code callback}, invoked when the fixture starts recording what the Saga does, which is when
+     * the "when" phase begins.
+     *
+     * @param callback the callback to invoke when recording starts
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerStartRecordingCallback(Runnable callback);
+
+    /**
+     * Sets whether a failure of a Saga handler during the "given" phase is suppressed rather than thrown.
+     * <p>
+     * Defaults to {@code false}, meaning a failure during the "given" phase surfaces. Axon Framework 4's
+     * {@code FixtureConfiguration} documented the opposite default while its implementation did the same as this; the
+     * implementation is what is kept.
+     *
+     * @param suppress whether to suppress a failure during the "given" phase
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress);
+
+    /**
+     * The {@link EventSink} the fixture publishes on.
+     * <p>
+     * Axon Framework 4 returned an {@code EventBus}; Axon Framework 5 splits publishing off into an {@code EventSink},
+     * which is the half a test uses.
+     *
+     * @return the event sink the fixture publishes on
+     */
+    EventSink getEventBus();
+
+    /**
+     * The {@link CommandBus} the Saga dispatches on.
+     *
+     * @return the command bus the Saga dispatches on
+     */
+    CommandBus getCommandBus();
 
     /**
      * Use this method to indicate that an aggregate with given identifier published certain events.
