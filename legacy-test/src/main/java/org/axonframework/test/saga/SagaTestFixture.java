@@ -28,8 +28,8 @@ import org.axonframework.messaging.core.annotation.SimpleResourceParameterResolv
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.configuration.reflection.HandlerDefinitionUtils;
 import org.axonframework.messaging.core.configuration.reflection.HandlerEnhancerDefinitionUtils;
+import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -180,8 +180,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public EventSink getEventBus() {
-        return configuration().getComponent(EventSink.class);
+    public EventBus getEventBus() {
+        return configuration().getComponent(EventBus.class);
     }
 
     @Override

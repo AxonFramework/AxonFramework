@@ -23,6 +23,7 @@ import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.matchers.FieldFilter;
 
@@ -153,14 +154,16 @@ public interface FixtureConfiguration {
     FixtureConfiguration suppressExceptionInGivenPhase(boolean suppress);
 
     /**
-     * The {@link EventSink} the fixture publishes on.
+     * The {@link EventBus} the fixture publishes on.
      * <p>
-     * Axon Framework 4 returned an {@code EventBus}; Axon Framework 5 splits publishing off into an {@code EventSink},
-     * which is the half a test uses.
+     * Axon Framework 5 splits an {@code EventBus} into a {@link EventSink} for publishing and a
+     * {@link org.axonframework.messaging.core.SubscribableEventSource SubscribableEventSource} for subscribing. A test
+     * only needs the publishing half, but the whole bus is returned so that
+     * {@code fixture.getEventBus().subscribe(..)} keeps working, as it did in Axon Framework 4.
      *
-     * @return the event sink the fixture publishes on
+     * @return the event bus the fixture publishes on
      */
-    EventSink getEventBus();
+    EventBus getEventBus();
 
     /**
      * The {@link CommandBus} the Saga dispatches on.

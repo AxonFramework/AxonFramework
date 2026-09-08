@@ -23,6 +23,9 @@ import org.axonframework.messaging.core.LegacyResources;
 import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.QualifiedName;
+import org.axonframework.messaging.core.SubscribableEventSource;
+import org.axonframework.messaging.eventhandling.EventBus;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -247,11 +251,33 @@ class SagaTestFixtureConfigurationTest {
     @Nested
     class Components {
 
+        /**
+         * Axon Framework 4 returned the whole {@code EventBus} here, so a test could subscribe to it. Axon Framework 5
+         * splits publishing off into an {@link EventSink}, and returning only that half would break such a test.
+         */
         @Test
-        void theEventSinkAndCommandBusAreReachable() {
+        void theEventBusIsReachableAndCanBeSubscribedTo() {
             fixture.givenNoPriorActivity();
 
-            assertThat(fixture.getEventBus()).isInstanceOf(EventSink.class);
+            EventBus eventBus = fixture.getEventBus();
+            assertThat(eventBus).isInstanceOf(EventSink.class)
+                                .isInstanceOf(SubscribableEventSource.class);
+
+            List<EventMessage> seen = new CopyOnWriteArrayList<>();
+            eventBus.subscribe((events, context) -> {
+                seen.addAll(events);
+                return CompletableFuture.completedFuture(null);
+            });
+
+            fixture.whenPublishingA(new OrderPlaced("order-1")).expectActiveSagas(1);
+
+            assertThat(seen).extracting(EventMessage::payload).containsExactly(new OrderPlaced("order-1"));
+        }
+
+        @Test
+        void theCommandBusIsReachable() {
+            fixture.givenNoPriorActivity();
+
             assertThat(fixture.getCommandBus()).isNotNull();
         }
     }
