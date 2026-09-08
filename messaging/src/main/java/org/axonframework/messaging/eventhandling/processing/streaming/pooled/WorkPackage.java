@@ -61,6 +61,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.ProcessUtils.safeguard;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
@@ -341,31 +342,12 @@ class WorkPackage implements SegmentProgressContext {
             return;
         }
         logger.debug("Scheduling Work Package [{}]-[{}] to process events.", segment.getSegmentId(), name);
-        executorService.submit(safeguard(this::runWorker));
-    }
-
-    /**
-     * Wraps the given {@code task} so that any {@link Throwable} escaping it is logged rather than silently lost.
-     * The task submitted to {@link #executorService} has its {@code Future} discarded, since nothing polls it for a
-     * result; without this safety net, a {@link Throwable} that escapes {@link #runWorker()} before it ever produces
-     * a {@link CompletableFuture} to report on (e.g. a synchronous failure in {@link #processEvents()}) would
-     * otherwise vanish without a trace, leaving this {@code WorkPackage}'s {@link #scheduled} flag permanently set
-     * and this segment silently stuck.
-     *
-     * @param task the task to guard against an escaping {@link Throwable}
-     * @return a {@link Runnable} that never throws
-     */
-    private Runnable safeguard(Runnable task) {
-        return () -> {
-            try {
-                task.run();
-            } catch (Throwable e) {
-                logger.error(
-                        "Work Package [{}]-[{}]. Unexpected error escaped the worker task. "
-                                + "This Work Package may no longer be scheduled for further processing.",
-                        segment.getSegmentId(), name, e);
-            }
-        };
+        executorService.submit(safeguard(
+                this::runWorker,
+                "Work Package [" + segment.getSegmentId() + "]-[" + name + "]. "
+                        + "Unexpected error escaped the worker task. "
+                        + "This Work Package may no longer be scheduled for further processing."
+        ));
     }
 
     private void runWorker() {
