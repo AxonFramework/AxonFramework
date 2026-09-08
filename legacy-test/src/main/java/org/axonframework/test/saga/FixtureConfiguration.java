@@ -80,6 +80,34 @@ public interface FixtureConfiguration {
     void registerResource(Object resource);
 
     /**
+     * Registers a gateway implementing the given {@code gatewayInterface}, dispatching on the fixture's command bus so
+     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} sees what the Saga sent.
+     * <p>
+     * Each call dispatches its first argument as a command. What it returns is the dispatch result if that has already
+     * arrived, and {@code null} otherwise, as in Axon Framework 4. Use
+     * {@link #registerCommandGateway(Class, Object)} to decide the answer.
+     * <p>
+     * A deliberate subset of Axon Framework 4's {@code CommandGatewayFactory}: no timeouts, no retry scheduler, no
+     * metadata or callback parameters.
+     *
+     * @param gatewayInterface the interface the returned gateway implements
+     * @param <I>              the type of gateway to create
+     * @return the gateway, also registered as a resource so a Saga can declare it as a handler parameter
+     */
+    <I> I registerCommandGateway(Class<I> gatewayInterface);
+
+    /**
+     * Registers a gateway implementing the given {@code gatewayInterface} whose calls answer from the given
+     * {@code stubImplementation}, while still dispatching on the fixture's command bus.
+     *
+     * @param gatewayInterface   the interface the returned gateway implements
+     * @param stubImplementation the implementation deciding what each call returns
+     * @param <I>                the type of gateway to create
+     * @return the gateway, also registered as a resource so a Saga can declare it as a handler parameter
+     */
+    <I> I registerCommandGateway(Class<I> gatewayInterface, I stubImplementation);
+
+    /**
      * Registers the given {@code parameterResolverFactory}, used to resolve the parameters of the Saga's handler
      * methods.
      *
