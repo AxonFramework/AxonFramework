@@ -39,33 +39,38 @@ import static java.lang.String.format;
  * An {@link AnnotatedSagaManager} is an {@code EventHandlingComponent}, so a Saga needs no dedicated configuration
  * construct: it is registered on an
  * {@link org.axonframework.messaging.eventhandling.configuration.EventProcessorModule EventProcessorModule} like any
- * other component. What that leaves a user to write by hand is the manager and the
- * {@link AnnotatedSagaRepository} underneath it, wired to the {@link SagaStore} and the reflection components of the
- * running {@link Configuration}. That assembly is what this class provides.
- * <p>
- * A subscribing processor keeps handling on the publishing thread and inside the publisher's
- * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext ProcessingContext}, which is what
- * {@link AnnotatedSagaRepository#WRITE_SAGA} was ordered for:
+ * other component, and inherits everything the processor offers. What that leaves a user to write by hand is the
+ * manager and the {@link AnnotatedSagaRepository} underneath it, wired to the {@link SagaStore} and the reflection
+ * components of the running {@link Configuration}. That assembly is what this class provides:
  * <pre>{@code
  * MessagingConfigurer.create()
  *                    .componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> new InMemorySagaStore()))
  *                    .eventProcessing(processing -> processing.subscribing(
  *                            subscribing -> subscribing.defaultProcessor(
- *                                    "OrderSaga",
+ *                                    "orders",
  *                                    components -> components.declarative("Saga[OrderSaga]",
- *                                                                         SagaComponents.annotated(OrderSaga.class)))));
+ *                                                                         Sagas.of(OrderSaga.class)))));
  * }</pre>
- * A pooled streaming processor works equally well and is the choice for a Saga that has to keep up with a stream
- * rather than with its publisher.
+ * Because the result is an ordinary component builder, a processor can carry several Sagas next to other event
+ * handling components, and the whole set can be decorated:
+ * <pre>{@code
+ * components -> components.declarative("Saga[OrderSaga]", Sagas.of(OrderSaga.class))
+ *                         .declarative("Saga[ShipmentSaga]", Sagas.of(ShipmentSaga.class))
+ *                         .withExceptionHandler(c -> loggingExceptionHandler)
+ * }</pre>
+ * A subscribing processor keeps handling on the publishing thread and inside the publisher's
+ * {@link org.axonframework.messaging.core.unitofwork.ProcessingContext ProcessingContext}, which is what
+ * {@link AnnotatedSagaRepository#WRITE_SAGA} was ordered for. A pooled streaming processor works equally well, and is
+ * the choice for a Saga that has to keep up with a stream rather than with its publisher.
  * <p>
  * Sagas carry the Axon Framework 4 API, to ease migration of projects that cannot move off it in one go.
  *
  * @author Mateusz Nowak
  * @since 5.4.0
  */
-public abstract class SagaComponents {
+public abstract class Sagas {
 
-    private SagaComponents() {
+    private Sagas() {
         // Utility class, not meant to be instantiated.
     }
 
@@ -77,7 +82,7 @@ public abstract class SagaComponents {
      * @param <T>      the type of Saga the resulting component manages
      * @return a builder of the {@link EventHandlingComponent} handling events for Sagas of the given {@code sagaType}
      */
-    public static <T> ComponentBuilder<EventHandlingComponent> annotated(Class<T> sagaType) {
+    public static <T> ComponentBuilder<EventHandlingComponent> of(Class<T> sagaType) {
         Objects.requireNonNull(sagaType, "The sagaType may not be null.");
         return configuration -> managerFor(sagaType, null, sagaStoreOf(configuration, sagaType), configuration);
     }
@@ -94,7 +99,7 @@ public abstract class SagaComponents {
      * @param <T>         the type of Saga the resulting component manages
      * @return a builder of the {@link EventHandlingComponent} handling events for Sagas of the given {@code sagaType}
      */
-    public static <T> ComponentBuilder<EventHandlingComponent> annotated(Class<T> sagaType, Supplier<T> sagaFactory) {
+    public static <T> ComponentBuilder<EventHandlingComponent> of(Class<T> sagaType, Supplier<T> sagaFactory) {
         Objects.requireNonNull(sagaType, "The sagaType may not be null.");
         Objects.requireNonNull(sagaFactory, "The sagaFactory may not be null.");
         return configuration -> managerFor(sagaType, sagaFactory, sagaStoreOf(configuration, sagaType), configuration);
@@ -114,7 +119,7 @@ public abstract class SagaComponents {
      * @param <T>         the type of Saga the resulting component manages
      * @return a builder of the {@link EventHandlingComponent} handling events for Sagas of the given {@code sagaType}
      */
-    public static <T> ComponentBuilder<EventHandlingComponent> annotated(
+    public static <T> ComponentBuilder<EventHandlingComponent> of(
             Class<T> sagaType,
             Supplier<T> sagaFactory,
             ComponentBuilder<SagaStore<? super T>> sagaStore

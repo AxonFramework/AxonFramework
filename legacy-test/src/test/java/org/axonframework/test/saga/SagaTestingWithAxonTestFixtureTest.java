@@ -25,7 +25,7 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.modelling.saga.configuration.SagaComponents;
+import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.fixture.AxonTestFixture;
@@ -66,7 +66,7 @@ class SagaTestingWithAxonTestFixtureTest {
                                                    "OrderSaga",
                                                    components -> components.declarative(
                                                            "Saga[OrderSaga]",
-                                                           SagaComponents.annotated(OrderSaga.class)))
+                                                           Sagas.of(OrderSaga.class)))
                                    ));
 
         fixture = AxonTestFixture.with(configurer, c -> c.excludeWhenPhaseMessages());

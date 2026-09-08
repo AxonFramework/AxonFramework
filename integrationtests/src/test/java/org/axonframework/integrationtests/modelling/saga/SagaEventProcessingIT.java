@@ -48,7 +48,7 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
-import org.axonframework.modelling.saga.configuration.SagaComponents;
+import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -363,7 +363,7 @@ class SagaEventProcessingIT {
                                                .eventHandlingComponents(
                                                        components -> components.declarative(
                                                                "Saga[OrderSaga]",
-                                                               SagaComponents.annotated(OrderSaga.class)
+                                                               Sagas.of(OrderSaga.class)
                                                        )
                                                )
                                                .notCustomized())

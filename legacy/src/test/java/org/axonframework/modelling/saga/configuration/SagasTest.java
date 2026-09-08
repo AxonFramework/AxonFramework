@@ -20,11 +20,13 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.EventHandlingExceptionHandler;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.EndSaga;
@@ -40,17 +42,18 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Shows that a Saga registered through {@link SagaComponents} on an event processor handles published events and is
+ * Shows that a Saga registered through {@link Sagas} on an event processor handles published events and is
  * stored, which is the assembly a user would otherwise write out by hand.
  *
  * @author Mateusz Nowak
  */
-class SagaComponentsTest {
+class SagasTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final AssociationValue ORDER_1 = new AssociationValue("orderId", "order-1");
@@ -72,7 +75,7 @@ class SagaComponentsTest {
         @Test
         void aStartingEventCreatesAndStoresTheSaga() {
             // given
-            startWith(SagaComponents.annotated(OrderSaga.class));
+            startWith(Sagas.of(OrderSaga.class));
 
             // when
             publish(orderPlaced("order-1"));
@@ -84,7 +87,7 @@ class SagaComponentsTest {
         @Test
         void aFollowUpEventReachesTheSagaThatAssociatedItself() {
             // given a saga that associated itself with the shipment on creation
-            startWith(SagaComponents.annotated(OrderSaga.class));
+            startWith(Sagas.of(OrderSaga.class));
             publish(orderPlaced("order-1"));
 
             // when
@@ -97,7 +100,7 @@ class SagaComponentsTest {
         @Test
         void anEndingEventRemovesTheSagaFromTheStore() {
             // given
-            startWith(SagaComponents.annotated(OrderSaga.class));
+            startWith(Sagas.of(OrderSaga.class));
             publish(orderPlaced("order-1"));
 
             // when
@@ -110,7 +113,7 @@ class SagaComponentsTest {
         @Test
         void anEventTheSagaDoesNotHandleCreatesNothing() {
             // given
-            startWith(SagaComponents.annotated(OrderSaga.class));
+            startWith(Sagas.of(OrderSaga.class));
 
             // when
             publish(new GenericEventMessage(new MessageType(Unrelated.class), new Unrelated("order-1")));
@@ -127,8 +130,7 @@ class SagaComponentsTest {
         void theGivenFactoryConstructsTheSaga() {
             // given a saga needing a collaborator its handler cannot receive
             Collaborator collaborator = new Collaborator();
-            startWith(SagaComponents.annotated(CollaboratingSaga.class,
-                                               () -> new CollaboratingSaga(collaborator)));
+            startWith(Sagas.of(CollaboratingSaga.class, () -> new CollaboratingSaga(collaborator)));
 
             // when
             publish(orderPlaced("order-1"));
@@ -150,7 +152,7 @@ class SagaComponentsTest {
         void theGivenStoreIsUsedInsteadOfTheRegisteredComponent() {
             // given a second store, handed to the component builder directly
             InMemorySagaStore otherStore = new InMemorySagaStore();
-            startWith(SagaComponents.annotated(OrderSaga.class, OrderSaga::new, c -> otherStore));
+            startWith(Sagas.of(OrderSaga.class, OrderSaga::new, c -> otherStore));
 
             // when
             publish(orderPlaced("order-1"));
@@ -158,6 +160,73 @@ class SagaComponentsTest {
             // then
             assertThat(otherStore.findSagas(OrderSaga.class, ORDER_1)).hasSize(1);
             assertThat(sagaStore.size()).isZero();
+        }
+    }
+
+    /**
+     * The result is an ordinary component builder rather than a whole event handling phase, which is what keeps a
+     * processor able to carry more than one Saga and to decorate the lot.
+     */
+    @Nested
+    class ComposedWithOtherComponents {
+
+        @Test
+        void oneProcessorCarriesTwoSagas() {
+            // given both Saga types on the same processor
+            configuration = MessagingConfigurer
+                    .create()
+                    .componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> sagaStore))
+                    .eventProcessing(processing -> processing.subscribing(
+                            subscribing -> subscribing.defaultProcessor(
+                                    "sagas",
+                                    components -> components
+                                            .declarative("Saga[OrderSaga]", Sagas.of(OrderSaga.class))
+                                            .declarative("Saga[ShipmentSaga]", Sagas.of(ShipmentSaga.class)))
+                    ))
+                    .start();
+
+            // when a single event starts both
+            publish(orderPlaced("order-1"));
+
+            // then
+            assertThat(sagaStore.findSagas(OrderSaga.class, ORDER_1)).hasSize(1);
+            assertThat(sagaStore.findSagas(ShipmentSaga.class, ORDER_1)).hasSize(1);
+        }
+
+        /**
+         * Processor-level exception handling is not the Axon Framework 4 {@code ListenerInvocationErrorHandler}: it
+         * wraps the whole Saga manager, so by the time it runs the manager has already abandoned the remaining Sagas
+         * and skipped Saga creation. An {@code @ExceptionHandler} on the Saga catches the failure per instance and
+         * leaves both intact, which is the behaviour Axon Framework 4 had, and is pinned by
+         * {@code AnnotatedSagaManagerTest.SuppressedHandlerFailures}. What this test covers is only that the
+         * decoration is reachable at all.
+         */
+        @Test
+        void anExceptionHandlerRegisteredOnTheProcessorSeesTheSagaFailure() {
+            // given a Saga whose handler fails, behind an exception handler that swallows it
+            List<Throwable> handled = new CopyOnWriteArrayList<>();
+            configuration = MessagingConfigurer
+                    .create()
+                    .componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> sagaStore))
+                    .eventProcessing(processing -> processing.subscribing(
+                            subscribing -> subscribing.defaultProcessor(
+                                    "sagas",
+                                    components -> components
+                                            .declarative("Saga[FailingSaga]", Sagas.of(FailingSaga.class))
+                                            .withExceptionHandler(c -> (EventHandlingExceptionHandler) (
+                                                    event, context, error) -> {
+                                                handled.add(error);
+                                                return MessageStream.empty();
+                                            }))
+                    ))
+                    .start();
+
+            // when
+            publish(orderPlaced("order-1"));
+
+            // then the failure reached the handler instead of the publisher
+            assertThat(handled).hasSize(1);
+            assertThat(handled.getFirst()).hasMessage("this saga always fails");
         }
     }
 
@@ -174,7 +243,7 @@ class SagaComponentsTest {
                                                        "OrderSaga",
                                                        components -> components.declarative(
                                                                "Saga[OrderSaga]",
-                                                               SagaComponents.annotated(OrderSaga.class)))));
+                                                               Sagas.of(OrderSaga.class)))));
 
             // when / then the processor cannot be started, and says which component is missing and for which saga
             assertThatThrownBy(() -> configuration = configurer.start())
@@ -262,6 +331,26 @@ class SagaComponentsTest {
         @SagaEventHandler(associationProperty = "shipmentId")
         public void on(OrderCompleted event) {
             // Ending the saga is the whole point here.
+        }
+    }
+
+    @SuppressWarnings({"unused", "removal"})
+    public static class ShipmentSaga {
+
+        @StartSaga
+        @SagaEventHandler(associationProperty = "orderId")
+        public void on(OrderPlaced event) {
+            // A second saga type reacting to the same event.
+        }
+    }
+
+    @SuppressWarnings({"unused", "removal"})
+    public static class FailingSaga {
+
+        @StartSaga
+        @SagaEventHandler(associationProperty = "orderId")
+        public void on(OrderPlaced event) {
+            throw new IllegalStateException("this saga always fails");
         }
     }
 
