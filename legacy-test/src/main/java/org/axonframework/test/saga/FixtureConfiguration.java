@@ -284,8 +284,8 @@ public interface FixtureConfiguration {
      */
     Instant currentTime();
 
-    // Not declared at all are the two deadline interceptor registrations, because DeadlineMessage itself is not
-    // ported:
+    // TODO #5006 - not declared at all are the two deadline interceptor registrations, because DeadlineMessage
+    // itself is not ported:
     //
     //     FixtureConfiguration registerDeadlineDispatchInterceptor(MessageDispatchInterceptor<? super DeadlineMessage> interceptor);
     //     FixtureConfiguration registerDeadlineHandlerInterceptor(MessageHandlerInterceptor<? super DeadlineMessage> interceptor);

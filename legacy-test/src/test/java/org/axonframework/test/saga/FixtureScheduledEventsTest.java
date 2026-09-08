@@ -30,7 +30,7 @@ import java.util.UUID;
  *
  * @author Steven van Beelen
  */
-@Disabled("The event scheduler is not ported into axon-legacy yet")
+@Disabled("#5006 - the event scheduler is not ported into axon-legacy yet")
 class FixtureScheduledEventsTest {
 
     private static final String IDENTIFIER = UUID.randomUUID().toString();

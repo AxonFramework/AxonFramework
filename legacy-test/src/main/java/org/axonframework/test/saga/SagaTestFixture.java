@@ -287,7 +287,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public ContinuedGivenState givenCurrentTime(Instant currentTime) {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // eventScheduler.initializeAt(currentTime);
         // deadlineManager.initializeAt(currentTime);
         // return this;
@@ -296,7 +296,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public ContinuedGivenState andThenTimeElapses(Duration elapsedTime) {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
         // deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         // return this;
@@ -305,7 +305,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime) {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
         // deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
         // return this;
@@ -314,7 +314,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // try {
         //     fixtureExecutionResult.startRecording();
         //     eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
@@ -329,7 +329,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // try {
         //     fixtureExecutionResult.startRecording();
         //     eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
@@ -344,7 +344,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public Instant currentTime() {
-        // Axon Framework 4:
+        // TODO #5006 - Axon Framework 4:
         // return eventScheduler.getCurrentDateTime();
         throw NotPorted.deadlines("currentTime");
     }

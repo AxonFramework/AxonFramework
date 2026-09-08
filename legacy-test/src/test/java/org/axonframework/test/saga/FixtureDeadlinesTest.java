@@ -24,7 +24,7 @@ import org.junit.jupiter.api.*;
  * @author Milan Savic
  * @author Steven van Beelen
  */
-@Disabled("Deadlines are not ported into axon-legacy yet")
+@Disabled("#5006 - deadlines are not ported into axon-legacy yet")
 class FixtureDeadlinesTest {
 
     private static final String AGGREGATE_ID = "id";
@@ -287,11 +287,9 @@ class FixtureDeadlinesTest {
 //               .expectNoScheduledEvents();
 //    }
 //
-//    @Disabled("TODO revise after Saga support is enabled")
 //    @Test
 //    void deadlineHandlerInterceptor() {
 //
-//        // TODO #3065 revise deadline support
 //        fixture.registerDeadlineHandlerInterceptor(
 //                (message, context, chain)
 //                        -> chain.proceed(

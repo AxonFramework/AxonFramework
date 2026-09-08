@@ -42,7 +42,7 @@ final class NotPorted {
     static UnsupportedOperationException deadlines(String method) {
         return new UnsupportedOperationException(
                 "[" + method + "] is not supported: deadlines and the event scheduler have not been ported into "
-                        + "axon-legacy yet. Everything else the Axon Framework 4 saga fixture offered works."
+                        + "axon-legacy yet, see #5006. Everything else the Axon Framework 4 saga fixture offered works."
         );
     }
 }

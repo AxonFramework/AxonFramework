@@ -145,7 +145,7 @@ public interface FixtureExecutionResult {
     // because nothing can schedule anything; the rest throw an UnsupportedOperationException naming themselves. The
     // Axon Framework 4 implementation of each is kept as a comment in FixtureExecutionResultImpl.
     //
-    // Not declared at all are the overloads taking a Matcher over a DeadlineMessage, plus expectDeadlinesMetMatching,
+    // TODO #5006 - not declared at all are the overloads taking a Matcher over a DeadlineMessage, plus expectDeadlinesMetMatching,
     // expectDeadlinesMet and expectTriggeredDeadlinesMatching, because DeadlineMessage itself is not ported:
     //
     //     FixtureExecutionResult expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage> matcher);

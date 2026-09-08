@@ -63,7 +63,7 @@ class FixtureRegisteringSagaEnhancementsTest {
     }
 
     @Test
-    @Disabled("Deadlines and the event scheduler are not ported into axon-legacy yet")
+    @Disabled("#5006 - deadlines and the event scheduler are not ported into axon-legacy yet")
     void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
@@ -74,7 +74,7 @@ class FixtureRegisteringSagaEnhancementsTest {
     }
 
     @Test
-    @Disabled("Deadlines and the event scheduler are not ported into axon-legacy yet")
+    @Disabled("#5006 - deadlines and the event scheduler are not ported into axon-legacy yet")
     void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
@@ -109,7 +109,6 @@ class FixtureRegisteringSagaEnhancementsTest {
 //        this.testSubject.givenAPublished(testEvent);
 //    }
 //
-//    @Disabled("TODO revise after Saga support is enabled")
 //    @Test
 //    void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
 //        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
@@ -121,7 +120,6 @@ class FixtureRegisteringSagaEnhancementsTest {
 //    }
 //
 //    @Test
-//    @Disabled("TODO revise after Saga support is enabled")
 //    void registeredResourceInjectorIsCalledUponFirstEventPublication() {
 //        AtomicBoolean assertion = new AtomicBoolean(false);
 //        testSubject.registerResourceInjector(saga -> assertion.set(true))
