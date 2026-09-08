@@ -24,8 +24,10 @@ import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.fixture.AxonTestPhase;
 import org.axonframework.test.fixture.AxonTestPhase.Given;
 import org.axonframework.test.fixture.AxonTestPhase.When;
+import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -177,7 +179,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event) {
-        return new FixtureExecutionResultImpl(sagaType, event.then());
+        return new FixtureExecutionResultImpl(sagaType, event.then(), new MatchAllFieldFilter(List.of()));
     }
 
     /**

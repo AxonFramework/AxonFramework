@@ -16,7 +16,12 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.messaging.commandhandling.CommandMessage;
+import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
+import org.hamcrest.Matcher;
+
+import java.util.List;
 
 /**
  * Interface towards an object that contains the results of a Saga test fixture execution. Assertions are made against
@@ -66,4 +71,70 @@ public interface FixtureExecutionResult {
      * @throws AxonAssertionError when a Saga holds the association
      */
     FixtureExecutionResult expectNoAssociationWith(String associationKey, Object associationValue);
+
+    /**
+     * Asserts that the Sagas dispatched the given commands, in the exact sequence given.
+     * <p>
+     * Each element is either a {@link CommandMessage}, in which case payload and metadata are both compared, or a
+     * payload, in which case only the payload is compared.
+     *
+     * @param commands the commands expected to have been dispatched
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when another set of commands was dispatched
+     */
+    FixtureExecutionResult expectDispatchedCommands(Object... commands);
+
+    /**
+     * Asserts that the Sagas dispatched commands matching the given {@code matcher}.
+     *
+     * @param matcher the matcher validating the dispatched commands
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when the dispatched commands do not match
+     */
+    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends List<? super CommandMessage>> matcher);
+
+    /**
+     * Asserts that the Sagas dispatched no commands.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when any command was dispatched
+     */
+    FixtureExecutionResult expectNoDispatchedCommands();
+
+    /**
+     * Asserts that the Sagas published the given events, in the exact sequence given.
+     * <p>
+     * Each element is either an {@link EventMessage} or a payload; a message is unwrapped to its payload, so only
+     * payloads are compared and metadata is not, as in Axon Framework 4. The event that drove the "when" phase is not
+     * part of this set, since the test published it rather than the Saga.
+     *
+     * @param expected the events expected to have been published
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when another set of events was published
+     */
+    FixtureExecutionResult expectPublishedEvents(Object... expected);
+
+    /**
+     * Asserts that the Sagas published events matching the given {@code matcher}.
+     * <p>
+     * The event that drove the "when" phase is not part of the set the matcher sees, since the test published it
+     * rather than the Saga.
+     *
+     * @param matcher the matcher validating the published events
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when the published events do not match
+     */
+    FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends List<? super EventMessage>> matcher);
+
+    /**
+     * Asserts that the Saga handled the "when" event without failing.
+     * <p>
+     * Unlike Axon Framework 4, a failing {@code @SagaEventHandler} propagates by default rather than being logged and
+     * swallowed, so this assertion holds unless the Saga threw. A Saga that suppresses its own failures with an
+     * {@code @ExceptionHandler} passes it, as it did in Axon Framework 4.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws AxonAssertionError when handling the "when" event failed
+     */
+    FixtureExecutionResult expectSuccessfulHandlerExecution();
 }
