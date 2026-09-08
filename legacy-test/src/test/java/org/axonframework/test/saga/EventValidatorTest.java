@@ -20,22 +20,34 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.core.GenericMessage;
 import org.axonframework.messaging.core.MessageType;
-import org.axonframework.messaging.core.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.axonframework.common.util.StubDomainEvent;
 import org.junit.jupiter.api.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Ported from Axon Framework 4 with the assertions unchanged. What changed is how the validator is given the events:
+ * Axon Framework 4 subscribed it to the event bus and fed it through {@code handleSync}, while here it reads the
+ * recordings the fixture already keeps, so the test supplies them from a list.
+ */
 class EventValidatorTest {
+
+    private final List<EventMessage> published = new ArrayList<>();
 
     private EventValidator testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new EventValidator(null, AllFieldsFilter.instance());
+        testSubject = new EventValidator(() -> published, AllFieldsFilter.instance());
+    }
+
+    private record StubDomainEvent() {
+
     }
 
     @Test
@@ -57,7 +69,7 @@ class EventValidatorTest {
     @Test
     void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
         EventMessage eventMessage = asEventMessage(new StubDomainEvent());
-        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
+        published.add(eventMessage);
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
     }
@@ -65,7 +77,7 @@ class EventValidatorTest {
     @Test
     void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
         EventMessage eventMessage = asEventMessage(new StubDomainEvent());
-        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
+        published.add(eventMessage);
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
     }
@@ -73,7 +85,7 @@ class EventValidatorTest {
     @Test
     void assertPublishedEventsForEventMessages() {
         EventMessage eventMessage = asEventMessage(new StubDomainEvent());
-        testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
+        published.add(eventMessage);
 
         testSubject.assertPublishedEvents(eventMessage);
     }

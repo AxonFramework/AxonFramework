@@ -16,15 +16,20 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.messaging.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.core.annotation.MessageHandlingMember;
 import org.axonframework.modelling.saga.AssociationResolver;
 import org.axonframework.modelling.saga.PayloadAssociationResolver;
 import org.jspecify.annotations.NonNull;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+/**
+ * Delegates to the {@link PayloadAssociationResolver}, to prove a custom resolver is consulted at all.
+ * <p>
+ * Axon Framework 4 also asserted here that the message was a {@code DomainEventMessage}, which is how it checked that
+ * an aggregate publisher produced one. Axon Framework 5 has no such message, and a resolver is handed no processing
+ * context, so it cannot see the aggregate fields that replaced it. That check moved to
+ * {@code SagaTestFixtureGivenWhenTest}, where a Saga handler reads them as parameters.
+ */
 public class AssociationResolverStub implements AssociationResolver {
 
     private final PayloadAssociationResolver defaultResolver = new PayloadAssociationResolver();
@@ -37,11 +42,6 @@ public class AssociationResolverStub implements AssociationResolver {
     @Override
     public <T> Object resolve(@NonNull String associationPropertyName, @NonNull EventMessage message,
                               @NonNull MessageHandlingMember<T> handler) {
-
-
-        if (!DomainEventMessage.class.isAssignableFrom(message.getClass())) {
-            fail("message is not assignable from DomainEventMessage");
-        }
         return defaultResolver.resolve(associationPropertyName, message, handler);
     }
 }

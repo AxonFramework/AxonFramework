@@ -19,7 +19,6 @@ package org.axonframework.test.saga;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.test.fixture.AxonTestPhase;
-import org.axonframework.test.fixture.CommandValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.hamcrest.Matcher;
@@ -56,7 +55,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         this.sagaType = Objects.requireNonNull(sagaType, "The sagaType may not be null.");
         this.then = Objects.requireNonNull(then, "The then-phase may not be null.");
         Objects.requireNonNull(fieldFilter, "The fieldFilter may not be null.");
-        this.commandValidator = new CommandValidator(this::dispatchedCommands, () -> {}, fieldFilter);
+        this.commandValidator = new CommandValidator(this::dispatchedCommands, fieldFilter);
         this.eventValidator = new EventValidator(this::publishedEvents, fieldFilter);
     }
 

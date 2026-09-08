@@ -16,15 +16,14 @@
 
 package org.axonframework.test.saga;
 
-import jakarta.inject.Inject;
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.annotation.Timestamp;
-import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken;
 import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.core.annotation.SourceId;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -40,19 +39,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Stub saga used to test various scenarios of the {@link FixtureConfiguration}.
+ * <p>
+ * Axon Framework 4 received its collaborators as {@code @Inject} annotated fields, filled in by a
+ * {@code ResourceInjector}. Axon Framework 5 dropped field injection, so they arrive as handler method parameters
+ * instead, which is why every handler needing one declares it.
  *
  * @author Allard Buijze
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "removal"})
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
 //    @Inject
 //    private transient EventScheduler scheduler;
-    @Inject
-    private NonTransientResource nonTransientResource;
-    @Inject
-    private transient CommandGateway commandGateway;
 
     private final List<Object> handledEvents = new ArrayList<>();
 
@@ -61,14 +60,13 @@ public class StubSaga {
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event,
-                                TrackingToken trackingToken,
+                                SagaLifecycle lifecycle,
                                 EventMessage message,
                                 @MetadataValue("extraIdentifier") Object extraIdentifier) {
-        assertNotNull(trackingToken);
         handledEvents.add(event);
 
         if (extraIdentifier != null) {
-            associateWith("extraIdentifier", extraIdentifier.toString());
+            associateWith(lifecycle, "extraIdentifier", extraIdentifier.toString());
         }
 
 //        timer = scheduler.schedule(
@@ -92,15 +90,18 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
+    public void handleEvent(TriggerExistingSagaEvent event, EventSink eventSink, ProcessingContext context) {
         handledEvents.add(event);
-        eventBus.publish(null, new GenericEventMessage(
+        eventSink.publish(context, new GenericEventMessage(
                 new MessageType("event"), new SagaWasTriggeredEvent(this)
         ));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handle(ParameterResolvedEvent event, AtomicBoolean assertion, ProcessingContext context) {
+    public void handle(ParameterResolvedEvent event,
+                       AtomicBoolean assertion,
+                       CommandGateway commandGateway,
+                       ProcessingContext context) {
         handledEvents.add(event);
         assertFalse(assertion.get());
         assertion.set(true);
@@ -120,7 +121,9 @@ public class StubSaga {
     }
 
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleTriggerEvent(TimerTriggeredEvent event, ProcessingContext context) {
+    public void handleTriggerEvent(TimerTriggeredEvent event,
+                                   CommandGateway commandGateway,
+                                   ProcessingContext context) {
         handledEvents.add(event);
         String result = commandGateway.send("Say hi!", String.class, context).join();
         if (result != null) {
@@ -149,15 +152,15 @@ public class StubSaga {
 //        return scheduler;
 //    }
 
-    public void associateWith(String key, String value) {
-        SagaLifecycle.associateWith(key, value);
+    public void associateWith(SagaLifecycle lifecycle, String key, String value) {
+        lifecycle.associateWith(key, value);
     }
 
-    public void removeAssociationWith(String key, String value) {
-        SagaLifecycle.removeAssociationWith(key, value);
+    public void removeAssociationWith(SagaLifecycle lifecycle, String key, String value) {
+        lifecycle.removeAssociationWith(key, value);
     }
 
-    public void end() {
-        SagaLifecycle.end();
+    public void end(SagaLifecycle lifecycle) {
+        lifecycle.end();
     }
 }

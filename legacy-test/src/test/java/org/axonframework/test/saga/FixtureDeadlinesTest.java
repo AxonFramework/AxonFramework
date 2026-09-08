@@ -24,7 +24,8 @@ import org.junit.jupiter.api.*;
  * @author Milan Savic
  * @author Steven van Beelen
  */
-class FixtureTest_Deadlines {
+@Disabled("Deadlines are not ported into axon-legacy yet")
+class FixtureDeadlinesTest {
 
     private static final String AGGREGATE_ID = "id";
     private static final TriggerSagaStartEvent START_SAGA_EVENT = new TriggerSagaStartEvent(AGGREGATE_ID);

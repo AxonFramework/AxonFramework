@@ -23,10 +23,15 @@ import java.util.UUID;
 
 /**
  * Test class validating the event scheduler operations of the {@link SagaTestFixture}.
+ * <p>
+ * Every case is commented out, because the event scheduler is not ported into {@code axon-legacy} yet and the
+ * assertions they use throw. The Axon Framework 4 source is kept here rather than deleted, so porting the scheduler is
+ * a matter of uncommenting and running.
  *
  * @author Steven van Beelen
  */
-class FixtureTest_ScheduledEvents {
+@Disabled("The event scheduler is not ported into axon-legacy yet")
+class FixtureScheduledEventsTest {
 
     private static final String IDENTIFIER = UUID.randomUUID().toString();
     private static final Duration TRIGGER_DURATION_MINUTES = Duration.ofMinutes(10);

@@ -29,10 +29,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating numerous operations from the {@link SagaTestFixture}.
+ * <p>
+ * Ported from Axon Framework 4 with the test bodies unchanged. What changed is configuration: the Saga receives its
+ * collaborators as handler parameters rather than injected fields, and the cases that drive the event scheduler or
+ * deadlines stay commented out, as they were, until those are ported.
  *
  * @author Allard Buijze
  */
-@Disabled("#3710 Reenable after ParameterResolver fix")
 class AnnotatedSagaTest {
 
     private static <P> EventMessage asEventMessage(P event) {
@@ -273,7 +276,6 @@ class AnnotatedSagaTest {
 //    }
 
     @Test
-    @Disabled
     void publishEventFromSecondFixtureCall() {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -300,11 +302,15 @@ class AnnotatedSagaTest {
         assertDoesNotThrow(fixtureExecutionResult::expectSuccessfulHandlerExecution);
     }
 
+    /**
+     * Axon Framework 4 registered a no-op {@code ListenerInvocationErrorHandler} here, because its default logged and
+     * swallowed the failure and the assertion had nothing left to see. Axon Framework 5 has no such component and
+     * propagates instead, so the registration is dropped and the assertion is unchanged.
+     */
     @Test
     void exceptionThrownInHandlerMethod() {
         String identifier = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.registerListenerInvocationErrorHandler((exception, event, eventHandler) -> {/* No-op */});
 
         FixtureExecutionResult fixtureExecutionResult =
                 fixture.givenAPublished(new TriggerSagaStartEvent(identifier))
@@ -343,6 +349,12 @@ class AnnotatedSagaTest {
 //        validator.expectNoScheduledDeadlines();
 //    }
 
+    /**
+     * Axon Framework 4 named this after the {@code DomainEventMessage} an aggregate publisher produced, which
+     * {@link AssociationResolverStub} asserted on. Axon Framework 5 has no such message; what the aggregate publisher
+     * carries now is asserted in {@code SagaTestFixtureGivenWhenTest}. What is left here is that a custom
+     * {@code AssociationResolver} is consulted at all.
+     */
     @Test
     void fixtureApi_DomainEventMessageIsAssignableFromMessage() {
         String aggregate1 = UUID.randomUUID().toString();

@@ -16,14 +16,11 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.messaging.eventhandling.processing.errorhandling.ListenerInvocationErrorHandler;
-import org.axonframework.messaging.eventhandling.processing.errorhandling.LoggingErrorHandler;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.time.Duration.ofSeconds;
@@ -31,14 +28,18 @@ import static java.time.Instant.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class dedicated to validating custom, saga specific, registered components on {@link SagaTestFixture}.
+ * <p>
+ * Ported from Axon Framework 4. The cases driving the event scheduler are disabled until it is ported, and the ones
+ * configuring a {@code ListenerInvocationErrorHandler} or a {@code ResourceInjector} are kept as comments, because
+ * Axon Framework 5 has neither. A Saga suppresses its own failures with an {@code @ExceptionHandler} method now, which
+ * {@code SagaTestFixtureMessageAssertionsTest} covers.
  *
  * @author Steven van Beelen
  */
-class FixtureTest_RegisteringSagaEnhancements {
+class FixtureRegisteringSagaEnhancementsTest {
 
     private SagaTestFixture<SomeTestSaga> testSubject;
 
@@ -62,6 +63,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
+    @Disabled("Deadlines and the event scheduler are not ported into axon-legacy yet")
     void startRecordingCallbackIsInvokedOnWhenTimeAdvances() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
@@ -72,6 +74,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
+    @Disabled("Deadlines and the event scheduler are not ported into axon-legacy yet")
     void startRecordingCallbackIsInvokedOnWhenTimeElapses() {
         testSubject.registerStartRecordingCallback(startRecordingCount::getAndIncrement)
                    .givenAPublished(new SomeTestSaga.SomeEvent());
@@ -81,50 +84,52 @@ class FixtureTest_RegisteringSagaEnhancements {
         assertThat(startRecordingCount.get(), equalTo(1));
     }
 
-    @Test
-    void customListenerInvocationErrorHandlerIsUsedInWhenPhase() {
-        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
-        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
-                assertEquals(testEvent.getException().getMessage(), exception.getMessage());
-        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
-
-        this.testSubject.givenNoPriorActivity()
-                        .whenPublishingA(testEvent);
-    }
-
-    @Test
-    void customListenerInvocationErrorHandlerIsUsedInGivenPhase() {
-        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
-        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
-                assertEquals(testEvent.getException().getMessage(), exception.getMessage());
-
-        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler)
-                        .suppressExceptionInGivenPhase(true);
-
-        this.testSubject.givenAPublished(testEvent);
-    }
-
-    @Disabled("TODO revise after Saga support is enabled")
-    @Test
-    void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
-        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
-        ListenerInvocationErrorHandler testErrorHandler = spy(new LoggingErrorHandler());
-
-        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
-
-        assertThrows(FixtureExecutionException.class, () -> this.testSubject.givenAPublished(testEvent));
-    }
-
-    @Test
-    @Disabled("TODO revise after Saga support is enabled")
-    void registeredResourceInjectorIsCalledUponFirstEventPublication() {
-        AtomicBoolean assertion = new AtomicBoolean(false);
-        testSubject.registerResourceInjector(saga -> assertion.set(true))
-                   // Publishing a single event should trigger the creation and injection of resources
-                   .givenAPublished(new SomeTestSaga.SomeEvent());
-
-        assertTrue(assertion.get());
-    }
+    // Axon Framework 5 has no ListenerInvocationErrorHandler and no ResourceInjector, so these four have nothing to
+    // configure. A Saga suppresses its own failures with an @ExceptionHandler method instead.
+//    @Test
+//    void customListenerInvocationErrorHandlerIsUsedInWhenPhase() {
+//        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+//        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
+//                assertEquals(testEvent.getException().getMessage(), exception.getMessage());
+//        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
+//
+//        this.testSubject.givenNoPriorActivity()
+//                        .whenPublishingA(testEvent);
+//    }
+//
+//    @Test
+//    void customListenerInvocationErrorHandlerIsUsedInGivenPhase() {
+//        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+//        ListenerInvocationErrorHandler testErrorHandler = (exception, event, eventHandler) ->
+//                assertEquals(testEvent.getException().getMessage(), exception.getMessage());
+//
+//        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler)
+//                        .suppressExceptionInGivenPhase(true);
+//
+//        this.testSubject.givenAPublished(testEvent);
+//    }
+//
+//    @Disabled("TODO revise after Saga support is enabled")
+//    @Test
+//    void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
+//        SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
+//        ListenerInvocationErrorHandler testErrorHandler = spy(new LoggingErrorHandler());
+//
+//        this.testSubject.registerListenerInvocationErrorHandler(testErrorHandler);
+//
+//        assertThrows(FixtureExecutionException.class, () -> this.testSubject.givenAPublished(testEvent));
+//    }
+//
+//    @Test
+//    @Disabled("TODO revise after Saga support is enabled")
+//    void registeredResourceInjectorIsCalledUponFirstEventPublication() {
+//        AtomicBoolean assertion = new AtomicBoolean(false);
+//        testSubject.registerResourceInjector(saga -> assertion.set(true))
+//                   // Publishing a single event should trigger the creation and injection of resources
+//                   .givenAPublished(new SomeTestSaga.SomeEvent());
+//
+//        assertTrue(assertion.get());
+//    }
 
     public static class SomeTestSaga {
 
