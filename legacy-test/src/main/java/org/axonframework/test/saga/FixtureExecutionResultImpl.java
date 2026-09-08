@@ -24,6 +24,8 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.hamcrest.Matcher;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -114,6 +116,257 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
     public FixtureExecutionResult expectSuccessfulHandlerExecution() {
         then.success();
         return this;
+    }
+
+
+    @Override
+    public FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage> matcher) {
+        // Axon Framework 4:
+        // eventSchedulerValidator.assertScheduledEventMatching(duration, matcher);
+        // return this;
+        throw NotPorted.deadlines("expectScheduledEventMatching");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEvent(Duration duration, Object applicationEvent) {
+        // Axon Framework 4:
+        // return expectScheduledEventMatching(duration, messageWithPayload(deepEquals(applicationEvent, fieldFilter)));
+        throw NotPorted.deadlines("expectScheduledEvent");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType) {
+        // Axon Framework 4:
+        // return expectScheduledEventMatching(duration, messageWithPayload(any(eventType)));
+        throw NotPorted.deadlines("expectScheduledEventOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage> matcher) {
+        // Axon Framework 4:
+        // eventSchedulerValidator.assertScheduledEventMatching(scheduledTime, matcher);
+        // return this;
+        throw NotPorted.deadlines("expectScheduledEventMatching");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object applicationEvent) {
+        // Axon Framework 4:
+        // return expectScheduledEventMatching(scheduledTime,
+        //                                     messageWithPayload(deepEquals(applicationEvent, fieldFilter)));
+        throw NotPorted.deadlines("expectScheduledEvent");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledEventOfType(Instant scheduledTime, Class<?> eventType) {
+        // Axon Framework 4:
+        // return expectScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
+        throw NotPorted.deadlines("expectScheduledEventOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEvents() {
+        // Axon Framework 4:
+        // eventSchedulerValidator.assertNoScheduledEvents();
+        // return this;
+        throw NotPorted.deadlines("expectNoScheduledEvents");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime, Matcher<? super EventMessage> matcher) {
+        // Axon Framework 4:
+        // eventSchedulerValidator.assertNoScheduledEventMatching(durationToScheduledTime, matcher);
+        // return this;
+        throw NotPorted.deadlines("expectNoScheduledEventMatching");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event) {
+        // Axon Framework 4:
+        // return expectNoScheduledEventMatching(durationToScheduledTime,
+        //                                       messageWithPayload(deepEquals(event, fieldFilter)));
+        throw NotPorted.deadlines("expectNoScheduledEvent");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType) {
+        // Axon Framework 4:
+        // return expectNoScheduledEventMatching(durationToScheduledTime, messageWithPayload(any(eventType)));
+        throw NotPorted.deadlines("expectNoScheduledEventOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage> matcher) {
+        // Axon Framework 4:
+        // eventSchedulerValidator.assertNoScheduledEventMatching(scheduledTime, matcher);
+        // return this;
+        throw NotPorted.deadlines("expectNoScheduledEventMatching");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event) {
+        // Axon Framework 4:
+        // return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(deepEquals(event, fieldFilter)));
+        throw NotPorted.deadlines("expectNoScheduledEvent");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType) {
+        // Axon Framework 4:
+        // return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
+        throw NotPorted.deadlines("expectNoScheduledEventOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(duration, messageWithPayload(deepEquals(deadline, fieldFilter)));
+        throw NotPorted.deadlines("expectScheduledDeadline");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
+        throw NotPorted.deadlines("expectScheduledDeadlineOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(
+        //         duration,
+        //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        // );
+        throw NotPorted.deadlines("expectScheduledDeadlineWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter)));
+        throw NotPorted.deadlines("expectScheduledDeadline");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+        throw NotPorted.deadlines("expectScheduledDeadlineOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        // Axon Framework 4:
+        // return expectScheduledDeadlineMatching(
+        //         scheduledTime,
+        //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        // );
+        throw NotPorted.deadlines("expectScheduledDeadlineWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlines() {
+        // Axon Framework 4:
+        // deadlineManagerValidator.assertNoScheduledDeadlines();
+        // return this;
+        throw NotPorted.deadlines("expectNoScheduledDeadlines");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(durationToScheduledTime,
+        //                                          messageWithPayload(deepEquals(deadline, fieldFilter)));
+        throw NotPorted.deadlines("expectNoScheduledDeadline");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(durationToScheduledTime, messageWithPayload(any(deadlineType)));
+        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(
+        //         durationToScheduledTime,
+        //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        // );
+        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(scheduledTime,
+        //                                          messageWithPayload(deepEquals(deadline, fieldFilter)));
+        throw NotPorted.deadlines("expectNoScheduledDeadline");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(
+        //         scheduledTime,
+        //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+        // );
+        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
+        throw NotPorted.deadlines("expectNoScheduledDeadline");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+    }
+
+    @Override
+    public FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+        // Axon Framework 4:
+        // return expectNoScheduledDeadlineMatching(
+        //         from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
+        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlines(Object... expected) {
+        // Axon Framework 4:
+        // deadlineManagerValidator.assertTriggeredDeadlines(expected);
+        // return this;
+        throw NotPorted.deadlines("expectTriggeredDeadlines");
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
+        // Axon Framework 4:
+        // deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
+        // return this;
+        throw NotPorted.deadlines("expectTriggeredDeadlinesWithName");
+    }
+
+    @Override
+    public FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
+        // Axon Framework 4:
+        // deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
+        // return this;
+        throw NotPorted.deadlines("expectTriggeredDeadlinesOfType");
     }
 
     /**

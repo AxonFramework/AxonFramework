@@ -21,6 +21,8 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Matcher;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -137,4 +139,277 @@ public interface FixtureExecutionResult {
      * @throws AxonAssertionError when handling the "when" event failed
      */
     FixtureExecutionResult expectSuccessfulHandlerExecution();
+
+    // Deadlines and the event scheduler have not been ported into axon-legacy yet. The assertions below are declared so
+    // an Axon Framework 4 test suite still compiles, and each throws an UnsupportedOperationException naming itself.
+    // The Axon Framework 4 implementation of each is kept as a comment in FixtureExecutionResultImpl.
+    //
+    // Not declared at all are the overloads taking a Matcher over a DeadlineMessage, plus expectDeadlinesMetMatching,
+    // expectDeadlinesMet and expectTriggeredDeadlinesMatching, because DeadlineMessage itself is not ported:
+    //
+    //     FixtureExecutionResult expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectScheduledDeadlineMatching(Instant scheduledTime, Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration durationToScheduledTime, Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime, Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher);
+    //     FixtureExecutionResult expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
+    //     @Deprecated FixtureExecutionResult expectDeadlinesMetMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
+    //     @Deprecated FixtureExecutionResult expectDeadlinesMet(Object... expected);
+
+    /**
+     * Asserts that an event matching the given {@code matcher} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage> matcher);
+
+    /**
+     * Asserts that the given {@code applicationEvent} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEvent(Duration duration, Object applicationEvent);
+
+    /**
+     * Asserts that an event of the given {@code eventType} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
+
+    /**
+     * Asserts that an event matching the given {@code matcher} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage> matcher);
+
+    /**
+     * Asserts that the given {@code applicationEvent} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object applicationEvent);
+
+    /**
+     * Asserts that an event of the given {@code eventType} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
+
+    /**
+     * Asserts that no events are scheduled.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEvents();
+
+    /**
+     * Asserts that no event matching the given {@code matcher} is scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime, Matcher<? super EventMessage> matcher);
+
+    /**
+     * Asserts that the given {@code event} is not scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event);
+
+    /**
+     * Asserts that no event of the given {@code eventType} is scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType);
+
+    /**
+     * Asserts that no event matching the given {@code matcher} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage> matcher);
+
+    /**
+     * Asserts that the given {@code event} is not scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event);
+
+    /**
+     * Asserts that no event of the given {@code eventType} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
+
+    /**
+     * Asserts that the given {@code deadline} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline with the given {@code deadlineName} is scheduled after the given {@code duration}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+
+    /**
+     * Asserts that the given {@code deadline} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline);
+
+    /**
+     * Asserts that a deadline of the given {@code deadlineType} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that a deadline with the given {@code deadlineName} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+
+    /**
+     * Asserts that no deadlines are scheduled.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlines();
+
+    /**
+     * Asserts that the given {@code deadline} is not scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
+
+    /**
+     * Asserts that no deadline of the given {@code deadlineType} is scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that no deadline with the given {@code deadlineName} is scheduled after the given duration.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
+
+    /**
+     * Asserts that the given {@code deadline} is not scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
+
+    /**
+     * Asserts that no deadline of the given {@code deadlineType} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+
+    /**
+     * Asserts that no deadline with the given {@code deadlineName} is scheduled at the given {@code scheduledTime}.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+
+    /**
+     * Asserts that the given {@code deadline} is not scheduled between {@code from} and {@code to}, both inclusive.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
+
+    /**
+     * Asserts that no deadline of the given {@code deadlineType} is scheduled between {@code from} and {@code to}, both inclusive.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
+
+    /**
+     * Asserts that no deadline with the given {@code deadlineName} is scheduled between {@code from} and {@code to}, both inclusive.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
+
+    /**
+     * Asserts that the given {@code expected} deadlines were triggered.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
+
+    /**
+     * Asserts that deadlines with the given {@code expectedDeadlineNames} were triggered.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+
+    /**
+     * Asserts that deadlines of the given {@code expectedDeadlineTypes} were triggered.
+     *
+     * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 }

@@ -43,6 +43,8 @@ import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -250,6 +252,70 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata) {
         return resultOf(when().event(event, metadata));
+    }
+
+    @Override
+    public ContinuedGivenState givenCurrentTime(Instant currentTime) {
+        // Axon Framework 4:
+        // eventScheduler.initializeAt(currentTime);
+        // deadlineManager.initializeAt(currentTime);
+        // return this;
+        throw NotPorted.deadlines("givenCurrentTime");
+    }
+
+    @Override
+    public ContinuedGivenState andThenTimeElapses(Duration elapsedTime) {
+        // Axon Framework 4:
+        // eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
+        // deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
+        // return this;
+        throw NotPorted.deadlines("andThenTimeElapses");
+    }
+
+    @Override
+    public ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime) {
+        // Axon Framework 4:
+        // eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
+        // deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
+        // return this;
+        throw NotPorted.deadlines("andThenTimeAdvancesTo");
+    }
+
+    @Override
+    public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
+        // Axon Framework 4:
+        // try {
+        //     fixtureExecutionResult.startRecording();
+        //     eventScheduler.advanceTimeBy(elapsedTime, this::handleInSaga);
+        //     deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
+        // } catch (Exception e) {
+        //     throw new FixtureExecutionException("Exception occurred while trying to advance time "
+        //                                                 + "and handle scheduled events", e);
+        // }
+        // return fixtureExecutionResult;
+        throw NotPorted.deadlines("whenTimeElapses");
+    }
+
+    @Override
+    public FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) {
+        // Axon Framework 4:
+        // try {
+        //     fixtureExecutionResult.startRecording();
+        //     eventScheduler.advanceTimeTo(newDateTime, this::handleInSaga);
+        //     deadlineManager.advanceTimeTo(newDateTime, this::handleDeadline);
+        // } catch (Exception e) {
+        //     throw new FixtureExecutionException("Exception occurred while trying to advance time "
+        //                                                 + "and handle scheduled events", e);
+        // }
+        // return fixtureExecutionResult;
+        throw NotPorted.deadlines("whenTimeAdvancesTo");
+    }
+
+    @Override
+    public Instant currentTime() {
+        // Axon Framework 4:
+        // return eventScheduler.getCurrentDateTime();
+        throw NotPorted.deadlines("currentTime");
     }
 
     /**

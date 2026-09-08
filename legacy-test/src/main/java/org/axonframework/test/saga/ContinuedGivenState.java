@@ -16,6 +16,8 @@
 
 package org.axonframework.test.saga;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -55,4 +57,22 @@ public interface ContinuedGivenState extends WhenState {
      * @return an object that allows chaining of more given state
      */
     ContinuedGivenState andThenAPublished(Object event, Map<String, String> metadata);
+
+    /**
+     * Simulates a time shift in the current given state.
+     *
+     * @param elapsedTime The amount of time that will elapse
+     * @return an object that allows chaining of more given state
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    ContinuedGivenState andThenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Simulates a time shift in the current given state.
+     *
+     * @param newDateTime The time to advance the clock to
+     * @return an object that allows chaining of more given state
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime);
 }

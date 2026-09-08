@@ -16,6 +16,8 @@
 
 package org.axonframework.test.saga;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -57,4 +59,22 @@ public interface WhenState {
      * @return an object allowing you to verify the test results
      */
     FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata);
+
+    /**
+     * Mimics an elapsed time with no relevant activity for the Saga, publishing any events scheduled within it.
+     *
+     * @param elapsedTime The amount of time to elapse
+     * @return an object allowing you to verify the test results
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult whenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Mimics an elapsed time with no relevant activity for the Saga, publishing any events scheduled within it.
+     *
+     * @param newDateTime The time to advance the clock to
+     * @return an object allowing you to verify the test results
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime);
 }

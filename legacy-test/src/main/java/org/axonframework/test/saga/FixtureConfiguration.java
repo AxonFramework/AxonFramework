@@ -26,6 +26,7 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.matchers.FieldFilter;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -203,4 +204,27 @@ public interface FixtureConfiguration {
      * @return an object that allows the definition of the activity to measure Saga behavior
      */
     WhenState givenNoPriorActivity();
+
+    /**
+     * Sets the time the fixture starts from.
+     *
+     * @param currentTime The time to start the fixture at
+     * @return an object that allows chaining of more given state
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    ContinuedGivenState givenCurrentTime(Instant currentTime);
+
+    /**
+     * The time as the fixture's scheduler sees it.
+     *
+     * @return the current time of the fixture's scheduler
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    Instant currentTime();
+
+    // Not declared at all are the two deadline interceptor registrations, because DeadlineMessage itself is not
+    // ported:
+    //
+    //     FixtureConfiguration registerDeadlineDispatchInterceptor(MessageDispatchInterceptor<? super DeadlineMessage> interceptor);
+    //     FixtureConfiguration registerDeadlineHandlerInterceptor(MessageHandlerInterceptor<? super DeadlineMessage> interceptor);
 }
