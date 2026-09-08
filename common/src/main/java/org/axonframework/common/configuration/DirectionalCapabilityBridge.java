@@ -23,7 +23,14 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * PROOF OF CONCEPT.
+ * PROOF OF CONCEPT -- SUPERSEDED for the motivating {@code EventStorageEngine}/{@code SnapshotStore} case.
+ * <p>
+ * This class was the first approach tried for that case and is kept for what it documents (the reentrancy wall is
+ * real and worth knowing about), but {@link DecoratingComponent} turned out to solve AxonIQ/axoniq-framework#397's
+ * actual reported problem directly, more simply, and with no reentrancy risk at all -- see its javadoc and
+ * {@code SnapshotCapableEventStorageEngine#decorate}. Reach for this class only if a future case genuinely needs
+ * both sibling slots to expose the other's full interface set (not just correct self-hosting detection), and its
+ * {@code primary} type is verified independent of {@code secondary} first.
  * <p>
  * Addresses the narrowing problem {@link CapabilityPreservingDecorator} solves, for the case that utility explicitly
  * cannot handle: a component registered under two <em>sibling</em> types that don't extend one another -- neither is

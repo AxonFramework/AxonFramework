@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.configuration.DecoratingComponent;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.snapshot.api.Snapshot;
 import org.axonframework.eventsourcing.snapshot.store.SnapshotStore;
@@ -93,20 +94,31 @@ public class SnapshotCapableEventStorageEngine implements EventStorageEngine {
      * Any other {@code engine} is decorated, resolving the snapshot from the {@code snapshotStore} before sourcing the
      * events that follow it.
      * <p>
-     * PROOF OF CONCEPT NOTE: AxonFramework#5039 proposes changing the {@code engine == snapshotStore} check below to
-     * {@code engine instanceof SnapshotStore}, specifically to survive {@code SnapshotStore.class} being decorated
-     * (e.g. by tracing) into something no longer {@code == snapshotStore}. Applying that change verbatim and running
-     * the full test suite breaks
-     * {@code EventSourcingConfigurationDefaultsTest#decoratesEventStorageEngineWhenSnapshotStoreIsDifferentInstance_evenIfEngineImplementsSnapshotStore}:
-     * that test deliberately configures an engine that implements {@code SnapshotStore} (so {@code instanceof} is
-     * {@code true}) alongside a separate, explicitly-registered {@code SnapshotStore} that is meant to win instead
-     * ("snapshot reads must be routed to the registered SnapshotStore, not the engine itself" -- its own comment).
-     * {@code instanceof} cannot distinguish "this engine happens to also implement SnapshotStore" from "this engine
-     * IS the SnapshotStore the caller means" -- only identity (or seeing through decoration to what identity the
-     * decorated value still traces back to) can. Kept as the original, narrower-but-correct identity check here for
-     * that reason; #5039's problem (surviving decoration of the SnapshotStore.class slot) is a real, separate gap
-     * this identity check does not close either -- see {@code DirectionalCapabilityBridgeTest} for why closing it
-     * safely needs more than a decorator-level trick in this specific case.
+     * PROOF OF CONCEPT NOTE: the identity check below is widened to also recognize {@code snapshotStore} as
+     * {@code engine} when it is a {@link DecoratingComponent} chain that unwraps down to {@code engine} -- e.g. a
+     * {@code TracingSnapshotStore} wrapping the very same self-hosting engine. This is what actually closes
+     * AxonIQ/axoniq-framework#397's gap ("the single-round-trip path is silently disabled as soon as anything
+     * decorates SnapshotStore"), without the problems the two alternatives tried during this proof of concept ran
+     * into:
+     * <ul>
+     *     <li>Plain {@code engine == snapshotStore} (the original check) breaks the moment anything decorates
+     *     {@code SnapshotStore.class} -- the bug #397 reports.</li>
+     *     <li>{@code engine instanceof SnapshotStore} (AxonFramework#5039's proposal) survives that decoration, but
+     *     cannot distinguish "this engine happens to also implement SnapshotStore" from "this engine IS the
+     *     SnapshotStore in question" -- it breaks
+     *     {@code EventSourcingConfigurationDefaultsTest#decoratesEventStorageEngineWhenSnapshotStoreIsDifferentInstance_evenIfEngineImplementsSnapshotStore},
+     *     whose own comment states the intent plainly: "snapshot reads must be routed to the registered
+     *     SnapshotStore, not the engine itself".</li>
+     * </ul>
+     * Chasing the {@code DecoratingComponent} chain down to its root and comparing <em>that</em> against
+     * {@code engine} recovers the original check's precision without its fragility under decoration. Unlike
+     * {@code DirectionalCapabilityBridge} (also explored during this proof of concept, and reverted -- see
+     * {@code SnapshotSourcingConfigurationEnhancer}), this needs no {@link org.axonframework.common.configuration.Configuration#getComponent(Class)}
+     * call at all: it is a plain, synchronous walk over object references already in hand, so it carries no
+     * reentrancy or cycle risk whatsoever. Its own limit: it only sees through decorators that choose to implement
+     * {@code DecoratingComponent} (as {@code TracingSnapshotStore} now does); one that does not is indistinguishable
+     * from a genuinely different store, and {@code engine} is wrapped -- the same conservative failure mode the
+     * original check always had for unrecognized wrapping.
      *
      * @param engine        the engine to source events from
      * @param snapshotStore the store holding the snapshots of the given {@code engine}
@@ -117,7 +129,9 @@ public class SnapshotCapableEventStorageEngine implements EventStorageEngine {
     public static EventStorageEngine decorate(EventStorageEngine engine, SnapshotStore snapshotStore) {
         Objects.requireNonNull(engine, "The engine parameter cannot be null.");
         Objects.requireNonNull(snapshotStore, "The snapshotStore parameter cannot be null.");
-        return engine == snapshotStore || engine instanceof SnapshotCapableEventStorageEngine
+        return engine == snapshotStore
+                || DecoratingComponent.unwrapFully(snapshotStore) == engine
+                || engine instanceof SnapshotCapableEventStorageEngine
                 ? engine
                 : new SnapshotCapableEventStorageEngine(engine, snapshotStore);
     }

@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.configuration.DecoratingComponent;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -188,6 +189,22 @@ class SnapshotCapableEventStorageEngineTest {
             assertThat(result).isSameAs(snapshotResolvingEngine);
         }
 
+        // PROOF OF CONCEPT: reproduces, and fixes, AxonIQ/axoniq-framework#397's actual reported bug -- "the
+        // single-round-trip path is silently disabled as soon as anything decorates SnapshotStore" (e.g. tracing).
+        // A plain engine == snapshotStore check (the pre-POC baseline) fails here, since snapshotStore is no longer
+        // literally the engine once wrapped -- which is exactly what used to make the enhancer fall through to
+        // wrapping the engine in a SnapshotCapableEventStorageEngine, disabling its single-round-trip source().
+        @Test
+        void returnsAnEngineThatIsTheSnapshotStoreAsIsEvenWhenTheSnapshotStoreSlotIsDecorated() {
+            SnapshotResolvingEngine snapshotResolvingEngine = new SnapshotResolvingEngine();
+            SnapshotStore tracingLikeWrapper = new DecoratingSnapshotStore(snapshotResolvingEngine);
+
+            EventStorageEngine result =
+                    SnapshotCapableEventStorageEngine.decorate(snapshotResolvingEngine, tracingLikeWrapper);
+
+            assertThat(result).isSameAs(snapshotResolvingEngine);
+        }
+
         // A module registry receives the copied decorator definition and re-runs the enhancer that registers it, so the
         // same engine is composed twice. The second composition must not add a second snapshot load.
         @Test
@@ -225,6 +242,36 @@ class SnapshotCapableEventStorageEngineTest {
         @Override
         public CompletableFuture<Snapshot> load(QualifiedName qn, Object id, ProcessingContext context) {
             return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /** Mirrors a hand-written {@code TracingSnapshotStore}: wraps a delegate, exposing it via {@code DecoratingComponent}. */
+    private static class DecoratingSnapshotStore implements SnapshotStore, DecoratingComponent {
+
+        private final SnapshotStore delegate;
+
+        DecoratingSnapshotStore(SnapshotStore delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public CompletableFuture<Void> store(QualifiedName qn, Object id, Snapshot s, ProcessingContext context) {
+            return delegate.store(qn, id, s, context);
+        }
+
+        @Override
+        public CompletableFuture<Snapshot> load(QualifiedName qn, Object id, ProcessingContext context) {
+            return delegate.load(qn, id, context);
+        }
+
+        @Override
+        public Object decoratedDelegate() {
+            return delegate;
+        }
+
+        @Override
+        public void describeTo(ComponentDescriptor descriptor) {
+            descriptor.describeWrapperOf(delegate);
         }
     }
 
