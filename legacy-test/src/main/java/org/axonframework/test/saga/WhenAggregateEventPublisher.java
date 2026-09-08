@@ -21,9 +21,14 @@ import java.util.Map;
 /**
  * Interface to an object that publishes events on behalf of an aggregate, recording what the Saga does in reaction.
  * <p>
- * Axon Framework 5 has no {@code DomainEventMessage}, so the events are published as ordinary
- * {@link org.axonframework.messaging.eventhandling.EventMessage EventMessages}: they carry neither an aggregate
- * identifier nor a sequence number. A Saga reading either from the message it handles has no equivalent here.
+ * Axon Framework 5 has no {@code DomainEventMessage}, so the aggregate type, aggregate identifier and sequence number
+ * travel on the processing context rather than on the message. A Saga reads them as
+ * {@link org.axonframework.messaging.core.annotation.AggregateType AggregateType},
+ * {@link org.axonframework.messaging.core.annotation.SourceId SourceId} and
+ * {@link org.axonframework.messaging.eventhandling.annotation.SequenceNumber SequenceNumber} handler parameters, which
+ * is where Axon Framework 4 read them from the message. A handler declaring one of those is only invoked for an event
+ * that has an aggregate, so an event published through {@link FixtureConfiguration#givenAPublished(Object)} does not
+ * reach it.
  *
  * @author Allard Buijze
  * @since 1.1

@@ -16,7 +16,11 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.messaging.core.annotation.AggregateType;
 import org.axonframework.messaging.core.annotation.MetadataValue;
+import org.axonframework.messaging.core.annotation.SourceId;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.annotation.SequenceNumber;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
@@ -126,6 +130,57 @@ class SagaTestFixtureGivenWhenTest {
                    .expectActiveSagas(0);
         }
 
+        /**
+         * Axon Framework 4 published these on a {@code DomainEventMessage}. The three fields it carried reach a Saga
+         * handler as parameters here, with the same synthesized aggregate type and the same sequence numbering.
+         */
+        @Test
+        void theAggregateEnvelopeReachesTheSagaAsHandlerParameters() {
+            fixture.givenAggregate("order-1").published(new OrderPlaced("order-1"),
+                                                        new OrderNoted("shipment-of-order-1"))
+                   .whenPublishingA(new OrderShipped("shipment-of-order-1"))
+                   .expectAssociationWith("aggregate", "Stub_order-1/order-1/1");
+        }
+
+        @Test
+        void sequenceNumbersCountUpPerAggregateAcrossTheGivenAndWhenPhases() {
+            fixture.givenAggregate("order-1").published(new OrderPlaced("order-1"),
+                                                        new OrderNoted("shipment-of-order-1"))
+                   .whenAggregate("order-1").publishes(new OrderNoted("shipment-of-order-1"))
+                   .expectAssociationWith("sequenceNumber", 2);
+        }
+
+        @Test
+        void aSecondAggregateStartsCountingAtZero() {
+            fixture.givenAggregate("order-1").published(new OrderPlaced("order-1"))
+                   .andThenAggregate("order-2").published(new OrderNoted("shipment-of-order-1"))
+                   .whenPublishingA(new OrderShipped("shipment-of-order-1"))
+                   .expectAssociationWith("aggregate", "Stub_order-2/order-2/0");
+        }
+
+        /**
+         * The envelope travels as metadata, which the interceptor removes again so a Saga reading its own metadata is
+         * unaffected.
+         */
+        @Test
+        void theEnvelopeIsNotVisibleAsMetadata() {
+            fixture.givenAggregate("order-1").published(new OrderPlaced("order-1"))
+                   .whenAggregate("order-1").publishes(new OrderShipped("shipment-of-order-1"))
+                   .expectAssociationWith("metadataKeys", 0);
+        }
+
+        /**
+         * A handler parameter reading the envelope only resolves when the envelope is there, so a Saga declaring one
+         * is not invoked for an event published without an aggregate.
+         */
+        @Test
+        void aHandlerReadingTheEnvelopeIsNotInvokedForAnEventWithoutOne() {
+            fixture.givenAPublished(new OrderPlaced("order-1"))
+                   .whenPublishingA(new OrderNoted("shipment-of-order-1"))
+                   .expectNoAssociationWith("aggregate", "Stub_order-1/order-1/0")
+                   .expectActiveSagas(1);
+        }
+
         @Test
         void severalEventsCanBePublishedAtOnce() {
             fixture.givenAggregate("order-1").published(new OrderPlaced("order-1"),
@@ -194,6 +249,10 @@ class SagaTestFixtureGivenWhenTest {
 
     }
 
+    public record OrderNoted(String shipmentId) {
+
+    }
+
     @SuppressWarnings({"unused", "removal"})
     public static class OrderSaga {
 
@@ -209,12 +268,27 @@ class SagaTestFixtureGivenWhenTest {
         }
 
         @SagaEventHandler(associationProperty = "shipmentId")
+        public void on(OrderNoted event,
+                       SagaLifecycle lifecycle,
+                       EventMessage message,
+                       @AggregateType String aggregateType,
+                       @SourceId String aggregateIdentifier,
+                       @SequenceNumber Long sequenceNumber) {
+            lifecycle.associateWith("aggregate",
+                                    aggregateType + "/" + aggregateIdentifier + "/" + sequenceNumber);
+            lifecycle.associateWith("sequenceNumber", sequenceNumber);
+            lifecycle.associateWith("metadataKeys", message.metadata().size());
+        }
+
+        @SagaEventHandler(associationProperty = "shipmentId")
         public void on(OrderShipped event,
                        SagaLifecycle lifecycle,
+                       EventMessage message,
                        @MetadataValue("channel") String channel) {
             if (channel != null) {
                 lifecycle.associateWith("channel", channel);
             }
+            lifecycle.associateWith("metadataKeys", message.metadata().size());
         }
 
         @EndSaga

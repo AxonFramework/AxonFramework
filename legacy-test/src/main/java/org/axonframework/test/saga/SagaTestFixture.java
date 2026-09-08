@@ -27,6 +27,7 @@ import org.axonframework.test.fixture.AxonTestPhase.When;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +60,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore = new InMemorySagaStore();
+    private final Map<String, AggregateEventPublisher> aggregatePublishers = new HashMap<>();
 
     @Nullable
     private AxonTestFixture fixture;
@@ -79,7 +81,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier) {
         given();
-        return new AggregateEventPublisher();
+        return publisherFor(aggregateIdentifier);
     }
 
     @Override
@@ -120,7 +122,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         // Axon Framework 4 started recording here, before handing out the publisher. Entering the when-phase resets
         // the recorders, which is the same moment.
         whenPhase = given().when();
-        return new AggregateEventPublisher();
+        return publisherFor(aggregateIdentifier);
     }
 
     @Override
@@ -166,6 +168,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return whenPhase;
     }
 
+    /**
+     * The publisher for the given {@code aggregateIdentifier}, cached so its sequence numbers keep counting across the
+     * given and when phases, as they did in Axon Framework 4.
+     */
+    private AggregateEventPublisher publisherFor(String aggregateIdentifier) {
+        return aggregatePublishers.computeIfAbsent(aggregateIdentifier, AggregateEventPublisher::new);
+    }
+
     private MessagingConfigurer configurer() {
         return MessagingConfigurer
                 .create()
@@ -173,8 +183,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                 .eventProcessing(processing -> processing.subscribing(
                         subscribing -> subscribing.defaultProcessor(
                                 sagaType.getSimpleName(),
-                                components -> components.declarative("Saga[" + sagaType.getSimpleName() + "]",
-                                                                     Sagas.of(sagaType)))
+                                components -> components
+                                        .declarative("Saga[" + sagaType.getSimpleName() + "]", Sagas.of(sagaType))
+                                        .intercepted(c -> LegacyAggregateEnvelope.liftingInterceptor()))
                 ));
     }
 
@@ -186,27 +197,49 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      * Publishes events on behalf of an aggregate.
      * <p>
      * Axon Framework 4 wrapped these in a {@code DomainEventMessage} carrying the aggregate identifier, a synthesized
-     * aggregate type and a sequence number. Axon Framework 5 has no such message, so the aggregate identifier only
-     * shapes the test's narrative here, and nothing of it reaches the Saga.
+     * aggregate type and a sequence number. Axon Framework 5 has no such message, so the three fields travel as
+     * {@link LegacyAggregateEnvelope} instead and reach a Saga handler as
+     * {@link org.axonframework.messaging.core.annotation.SourceId SourceId},
+     * {@link org.axonframework.messaging.core.annotation.AggregateType AggregateType} and
+     * {@link org.axonframework.messaging.eventhandling.annotation.SequenceNumber SequenceNumber} parameters.
+     * <p>
+     * The aggregate type is synthesized as {@code Stub_} followed by the aggregate identifier, and sequence numbers
+     * start at zero and count up per aggregate, both as in Axon Framework 4.
      */
     private class AggregateEventPublisher implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
+
+        private final String aggregateIdentifier;
+        private final String aggregateType;
+        private long sequenceNumber = 0;
+
+        private AggregateEventPublisher(String aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+            this.aggregateType = "Stub_" + aggregateIdentifier;
+        }
 
         @Override
         public ContinuedGivenState published(Object... events) {
             for (Object event : events) {
-                givenAPublished(event);
+                givenAPublished(event, aggregateMetadata(Map.of()));
             }
             return SagaTestFixture.this;
         }
 
         @Override
         public FixtureExecutionResult publishes(Object event) {
-            return resultOf(when().event(event));
+            return publishes(event, Map.of());
         }
 
         @Override
         public FixtureExecutionResult publishes(Object event, Map<String, String> metadata) {
-            return resultOf(when().event(event, metadata));
+            return resultOf(when().event(event, aggregateMetadata(metadata)));
+        }
+
+        private Map<String, String> aggregateMetadata(Map<String, String> metadata) {
+            return LegacyAggregateEnvelope.withAggregateFields(metadata,
+                                                               aggregateType,
+                                                               aggregateIdentifier,
+                                                               sequenceNumber++);
         }
     }
 }
