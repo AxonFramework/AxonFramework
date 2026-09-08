@@ -162,7 +162,7 @@ class Coordinator {
             return ProcessUtils.executeUntilTrue(this::initializeTokenStore, tokenStoreInitRetryInterval, tokenStoreInitMaxRetries, executorService)
                     .thenRun(() -> {
                         CoordinationTask task = new CoordinationTask();
-                        executorService.submit(task);
+                        executorService.submit(safeguard(task));
                         this.coordinationTask.set(task);
                     })
                     .exceptionally(e -> {
@@ -1003,7 +1003,7 @@ class Coordinator {
                             generation);
                     scheduleCoordinationTask(100);
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.warn(
                         "Processor [{}] (Coordination Task [{}]). Exception occurred while coordinating the work packages.",
                         name,
@@ -1428,10 +1428,10 @@ class Coordinator {
                         name,
                         generation,
                         delay);
-                executorService.schedule(() -> {
+                executorService.schedule(safeguard(() -> {
                     scheduledGate.set(false);
                     this.run();
-                }, delay, TimeUnit.MILLISECONDS);
+                }), delay, TimeUnit.MILLISECONDS);
             } else {
                 logger.trace(
                         "Processor [{}] (Coordination Task [{}]). Skipped scheduling coordination task (delay={}ms). "
@@ -1451,10 +1451,10 @@ class Coordinator {
                         name,
                         generation,
                         delay);
-                executorService.schedule(() -> {
+                executorService.schedule(safeguard(() -> {
                     interruptibleScheduledGate.set(false);
                     this.run();
-                }, delay, TimeUnit.MILLISECONDS);
+                }), delay, TimeUnit.MILLISECONDS);
             } else {
                 logger.trace(
                         "Processor [{}] (Coordination Task [{}]). Skipped scheduling delayed coordination task (delay={}ms). "
@@ -1496,7 +1496,7 @@ class Coordinator {
                                 errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
-                        executorService.schedule(task, errorWaitBackOff, TimeUnit.MILLISECONDS);
+                        executorService.schedule(safeguard(task), errorWaitBackOff, TimeUnit.MILLISECONDS);
                         coordinationTask.set(task);
                         processingGate.set(false);
                     }
@@ -1596,5 +1596,23 @@ class Coordinator {
                     }
             );
         }
+    }
+
+    /**
+     * Wraps the given {@code task} so that any {@link Throwable} escaping it is logged rather than silently lost.
+     * Tasks submitted or scheduled on {@link #executorService} have their {@code Future} discarded, since nothing
+     * polls it for a result; without this safety net, a {@code Throwable} that escapes all the way out of a task
+     * (bypassing every catch inside {@link CoordinationTask#run()}) would otherwise vanish without a trace, leaving
+     * this {@code Coordinator}'s internal gating flags permanently stuck and this processor silently dead.
+     *
+     * @param task the task to guard against an escaping {@link Throwable}
+     * @return a {@link Runnable} that never throws
+     */
+    private Runnable safeguard(Runnable task) {
+        return ProcessUtils.safeguard(
+                task,
+                "Processor [" + name + "]. Unexpected error escaped a coordination task. "
+                        + "This processor may no longer make progress."
+        );
     }
 }
