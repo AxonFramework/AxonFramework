@@ -26,6 +26,8 @@ import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.util.CallbackBehavior;
+import org.axonframework.test.util.DefaultCallbackBehavior;
 
 import java.time.Instant;
 import java.util.Map;
@@ -36,18 +38,17 @@ import java.util.function.UnaryOperator;
  * <p>
  * Most of what an Axon Framework 4 fixture configured is now expressible on the {@link MessagingConfigurer} an
  * application configures itself, which {@link #customize(UnaryOperator)} hands to the caller. Only the settings that
- * configurer cannot express are kept here. Four Axon Framework 4 methods have no counterpart at all:
+ * configurer cannot express are kept here. Two Axon Framework 4 methods have no counterpart at all:
  * <ul>
- *     <li>{@code registerResourceInjector(..)} and {@code withTransienceCheckDisabled()}: a Saga has no injected
- *     fields to configure, since collaborators reach it as handler parameters.</li>
- *     <li>{@code registerCommandGateway(Class)} and {@code setCallbackBehavior(..)}: Axon Framework 5 has no custom
- *     gateway proxying. To control what a command returns, subscribe a stub command handler through
- *     {@link #customize(UnaryOperator)}.</li>
- *     <li>{@code registerListenerInvocationErrorHandler(..)}: Axon Framework 5 has no such component. A Saga
- *     suppresses its own failures with an
+ *     <li>{@code registerResourceInjector(..)}: a Saga has no injected fields to configure, since collaborators
+ *     reach it as handler parameters.</li>
+ *     <li>{@code registerListenerInvocationErrorHandler(..)}: Axon Framework 5 has no such component, and building
+ *     one would mean porting two more that a Saga manager has nothing to fill in. A Saga suppresses its own failures
+ *     with an
  *     {@link org.axonframework.messaging.core.interception.annotation.ExceptionHandler ExceptionHandler} method,
  *     which is what the Axon Framework 4 default behaviour became.</li>
  * </ul>
+ * The two deadline interceptor registrations are absent for a different reason, noted where they would sit.
  * Configuration is applied while building the fixture, which happens on the first {@code given} or {@code when} call.
  * Anything registered after that is ignored, as it was in Axon Framework 4.
  *
@@ -168,6 +169,17 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerStartRecordingCallback(Runnable callback);
+
+    /**
+     * Sets the behaviour answering commands that no subscribed handler takes.
+     * <p>
+     * Defaults to a {@link DefaultCallbackBehavior}, which answers {@code null}, as Axon Framework 4 did. A command
+     * that does reach a handler subscribed through {@link #customize(UnaryOperator)} is answered by that handler
+     * instead.
+     *
+     * @param callbackBehavior the behaviour deciding what such a command returns
+     */
+    void setCallbackBehavior(CallbackBehavior callbackBehavior);
 
     /**
      * Sets whether a failure of a Saga handler during the "given" phase is suppressed rather than thrown.

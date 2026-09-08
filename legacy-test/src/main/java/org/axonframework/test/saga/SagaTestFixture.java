@@ -40,6 +40,8 @@ import org.axonframework.test.fixture.AxonTestPhase;
 import org.axonframework.test.fixture.AxonTestPhase.Given;
 import org.axonframework.test.fixture.AxonTestPhase.When;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.util.CallbackBehavior;
+import org.axonframework.test.util.DefaultCallbackBehavior;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.jspecify.annotations.Nullable;
@@ -97,6 +99,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private UnaryOperator<MessagingConfigurer> customization = c -> c;
     private boolean suppressExceptionInGivenPhase = false;
+    private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Nullable
     private AxonTestFixture fixture;
@@ -188,6 +191,11 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public FixtureConfiguration registerStartRecordingCallback(Runnable callback) {
         startRecordingCallbacks.add(Objects.requireNonNull(callback, "The callback may not be null."));
         return this;
+    }
+
+    @Override
+    public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
+        this.callbackBehavior = Objects.requireNonNull(callbackBehavior, "The callbackBehavior may not be null.");
     }
 
     @Override
@@ -391,6 +399,17 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         MessagingConfigurer configurer = MessagingConfigurer
                 .create()
                 .componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> sagaStore))
+                // Decorating rather than replacing keeps whatever command bus the configuration builds, so a command
+                // reaching a subscribed handler is still handled by it.
+                .componentRegistry(cr -> cr.registerDecorator(
+                        CommandBus.class,
+                        Integer.MIN_VALUE,
+                        (config, name, commandBus) -> {
+                            FixtureCommandBus fixtureCommandBus = new FixtureCommandBus(commandBus);
+                            fixtureCommandBus.setCallbackBehavior(callbackBehavior);
+                            return fixtureCommandBus;
+                        }
+                ))
                 .componentRegistry(this::registerReflectionComponents)
                 .eventProcessing(processing -> processing.subscribing(
                         subscribing -> subscribing.defaultProcessor(sagaType.getSimpleName(), this::sagaComponents)
