@@ -23,6 +23,8 @@ import org.axonframework.messaging.core.MessageType;
 import org.axonframework.test.AxonAssertionError;
 import org.junit.jupiter.api.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,46 +46,46 @@ class AnnotatedSagaTest {
         );
     }
 
-//    @Test
-//    void fixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenNoPriorActivity()
-//               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
-//               .expectActiveSagas(1)
-//               .expectNoScheduledDeadlines()
-//               .expectAssociationWith("identifier", "id");
-//    }
-//
-//    @Test
-//    void fixtureApi_AggregatePublishedEventWithMetadata_NoHistoricActivity() {
-//        String extraIdentifier = UUID.randomUUID().toString();
-//        Map<String, String> metadata = new HashMap<>();
-//        metadata.put("extraIdentifier", extraIdentifier);
-//
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenNoPriorActivity()
-//               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metadata)
-//               .expectActiveSagas(1)
-//               .expectNoScheduledDeadlines()
-//               .expectAssociationWith("identifier", "id")
-//               .expectAssociationWith("extraIdentifier", extraIdentifier);
-//    }
-//
-//    @Test
-//    void fixtureApi_AggregatePublishedHistoricEventWithMetadata() {
-//        String extraIdentifier = UUID.randomUUID().toString();
-//        Map<String, String> metadata = new HashMap<>();
-//        metadata.put("extraIdentifier", extraIdentifier);
-//
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metadata)
-//               .whenPublishingA(new TriggerSagaStartEvent("id"))
-//               .expectActiveSagas(1)
-//               .expectNoScheduledDeadlines()
-//               .expectAssociationWith("identifier", "id")
-//               .expectAssociationWith("extraIdentifier", extraIdentifier);
-//    }
-//
+    @Test
+    void fixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id");
+    }
+
+    @Test
+    void fixtureApi_AggregatePublishedEventWithMetadata_NoHistoricActivity() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metadata)
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
+    }
+
+    @Test
+    void fixtureApi_AggregatePublishedHistoricEventWithMetadata() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metadata)
+               .whenPublishingA(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectNoScheduledDeadlines()
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
+    }
+
 //    @Disabled("TODO revise after Saga support is enabled")
 //    @Test
 //    void fixtureApi_NonTransientResourceInjected() {
@@ -110,6 +112,12 @@ class AnnotatedSagaTest {
 //               .expectNoScheduledDeadlines();
 //    }
 //
+    // Cannot be restored, and not because of deadlines. The message is built by hand with MessageType("event"),
+    // so its QualifiedName is "event". Axon Framework 5 routes an event to a handler by QualifiedName, and the
+    // saga only declares the name derived from TriggerSagaStartEvent, so the processor never delivers it. Axon
+    // Framework 4 routed by payload class and ignored the type name entirely, which is why the name was free to be
+    // arbitrary there. Publishing the payload rather than a hand-built message works, but that would be editing
+    // the test rather than porting it.
 //    @Test
 //    void fixtureApi_PublishedEvent_NoHistoricActivity() {
 //        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -121,41 +129,41 @@ class AnnotatedSagaTest {
 //               .expectAssociationWith("identifier", "id")
 //               .expectNoScheduledDeadlines();
 //    }
-//
-//    @Test
-//    void fixtureApi_PublishedEventWithMetadata_NoHistoricActivity() {
-//        String extraIdentifier = UUID.randomUUID().toString();
-//        Map<String, String> metadata = new HashMap<>();
-//        metadata.put("extraIdentifier", extraIdentifier);
-//
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenNoPriorActivity()
-//               .whenPublishingA(new TriggerSagaStartEvent("id"), metadata)
-//               .expectActiveSagas(1)
-//               .expectAssociationWith("identifier", "id")
-//               .expectAssociationWith("extraIdentifier", extraIdentifier)
-//               .expectNoScheduledDeadlines();
-//    }
-//
-//    @Test
-//    void fixtureApi_WithApplicationEvents() {
-//        String aggregate1 = UUID.randomUUID().toString();
-//        String aggregate2 = UUID.randomUUID().toString();
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
-//               .andThenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
-//
-//               .whenPublishingA(new TimerTriggeredEvent(UUID.randomUUID().toString()))
-//
-//               .expectActiveSagas(0)
-//               .expectNoAssociationWith("identifier", aggregate2)
-//               .expectNoAssociationWith("identifier", aggregate1)
-//               .expectNoScheduledEvents()
-//               .expectNoScheduledDeadlines()
-//               .expectDispatchedCommands()
-//               .expectPublishedEvents();
-//    }
-//
+
+    @Test
+    void fixtureApi_PublishedEventWithMetadata_NoHistoricActivity() {
+        String extraIdentifier = UUID.randomUUID().toString();
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
+
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenPublishingA(new TriggerSagaStartEvent("id"), metadata)
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", "id")
+               .expectAssociationWith("extraIdentifier", extraIdentifier)
+               .expectNoScheduledDeadlines();
+    }
+
+    @Test
+    void fixtureApi_WithApplicationEvents() {
+        String aggregate1 = UUID.randomUUID().toString();
+        String aggregate2 = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
+               .andThenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
+
+               .whenPublishingA(new TimerTriggeredEvent(UUID.randomUUID().toString()))
+
+               .expectActiveSagas(0)
+               .expectNoAssociationWith("identifier", aggregate2)
+               .expectNoAssociationWith("identifier", aggregate1)
+               .expectNoScheduledEvents()
+               .expectNoScheduledDeadlines()
+               .expectDispatchedCommands()
+               .expectPublishedEvents();
+    }
+
 //    @Test
 //    void fixtureApi_WhenEventIsPublishedToEventBus() {
 //        String aggregate1 = UUID.randomUUID().toString();
