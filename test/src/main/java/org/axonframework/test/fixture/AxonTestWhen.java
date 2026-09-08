@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.commandhandling.CommandMessage;
 import org.axonframework.messaging.commandhandling.GenericCommandMessage;
 import org.axonframework.common.configuration.AxonConfiguration;
@@ -118,7 +119,7 @@ class AxonTestWhen implements AxonTestPhase.When {
                                                            actualException = null;
                                                        } else {
                                                            actualResult = null;
-                                                           actualException = e.getCause();
+                                                           actualException = FutureUtils.unwrap(e);
                                                        }
                                                    })
         );
@@ -171,7 +172,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             completion.join();
         } catch (Exception e) {
             this.actualResult = null;
-            this.actualException = e.getCause();
+            this.actualException = FutureUtils.unwrap(e);
         }
     }
 

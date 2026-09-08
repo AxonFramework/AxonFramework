@@ -71,11 +71,11 @@ public class RecordingCommandBus implements CommandBus {
                                                             @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
-        commandResult.thenApply(result -> {
-            recorded.put(command, result);
-            return result;
+        return commandResult.whenComplete((result, exception) -> {
+            if (exception == null) {
+                recorded.put(command, result);
+            }
         });
-        return commandResult;
     }
 
     @Override
@@ -117,7 +117,8 @@ public class RecordingCommandBus implements CommandBus {
      * Returns the result of the given {@code command}.
      *
      * @param command The command for which the result is returned.
-     * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
+     * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched, is
+     * still being handled, or completed exceptionally.
      */
     @Nullable
     public Message resultOf(CommandMessage command) {

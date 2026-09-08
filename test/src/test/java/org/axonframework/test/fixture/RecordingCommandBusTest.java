@@ -122,6 +122,39 @@ class RecordingCommandBusTest {
                                                      .isEqualTo("result-of-only-one");
         }
 
+        @Test
+        void resultIsRecordedBeforeTheReturnedFutureCompletes() {
+            // given
+            CompletableFuture<CommandResultMessage> delegateResult = new CompletableFuture<>();
+            RecordingCommandBus asynchronous = new RecordingCommandBus(new CommandBus() {
+                @Override
+                public CompletableFuture<CommandResultMessage> dispatch(CommandMessage command,
+                                                                        @Nullable ProcessingContext context) {
+                    return delegateResult;
+                }
+
+                @Override
+                public CommandBus subscribe(QualifiedName name, CommandHandler commandHandler) {
+                    return this;
+                }
+
+                @Override
+                public void describeTo(ComponentDescriptor descriptor) {
+                    // No state to describe.
+                }
+            });
+            CommandMessage command = command("asynchronous");
+            CommandResultMessage expectedResult = resultFor(command);
+
+            // when a caller observes the recording from a continuation of the returned dispatch future
+            CompletableFuture<Message> recordedWhenDispatchCompletes =
+                    asynchronous.dispatch(command, null).thenApply(ignored -> asynchronous.resultOf(command));
+            delegateResult.complete(expectedResult);
+
+            // then
+            assertThat(recordedWhenDispatchCompletes).isCompletedWithValue(expectedResult);
+        }
+
         /**
          * A command whose dispatch failed never gets a result, so the recording keeps it mapped to {@code null}. The
          * recordings must still be readable, because that is exactly the state a test asserting on a failure is in.
