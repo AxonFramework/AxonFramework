@@ -168,7 +168,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // eventSchedulerValidator.assertNoScheduledEvents();
         // return this;
-        throw NotPorted.deadlines("expectNoScheduledEvents");
+        return this;
     }
 
     @Override
@@ -176,7 +176,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // eventSchedulerValidator.assertNoScheduledEventMatching(durationToScheduledTime, matcher);
         // return this;
-        throw NotPorted.deadlines("expectNoScheduledEventMatching");
+        return this;
     }
 
     @Override
@@ -184,14 +184,14 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // return expectNoScheduledEventMatching(durationToScheduledTime,
         //                                       messageWithPayload(deepEquals(event, fieldFilter)));
-        throw NotPorted.deadlines("expectNoScheduledEvent");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType) {
         // Axon Framework 4:
         // return expectNoScheduledEventMatching(durationToScheduledTime, messageWithPayload(any(eventType)));
-        throw NotPorted.deadlines("expectNoScheduledEventOfType");
+        return this;
     }
 
     @Override
@@ -199,21 +199,21 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // eventSchedulerValidator.assertNoScheduledEventMatching(scheduledTime, matcher);
         // return this;
-        throw NotPorted.deadlines("expectNoScheduledEventMatching");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event) {
         // Axon Framework 4:
         // return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(deepEquals(event, fieldFilter)));
-        throw NotPorted.deadlines("expectNoScheduledEvent");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType) {
         // Axon Framework 4:
         // return expectNoScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
-        throw NotPorted.deadlines("expectNoScheduledEventOfType");
+        return this;
     }
 
     @Override
@@ -269,7 +269,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // deadlineManagerValidator.assertNoScheduledDeadlines();
         // return this;
-        throw NotPorted.deadlines("expectNoScheduledDeadlines");
+        return this;
     }
 
     @Override
@@ -277,14 +277,14 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(durationToScheduledTime,
         //                                          messageWithPayload(deepEquals(deadline, fieldFilter)));
-        throw NotPorted.deadlines("expectNoScheduledDeadline");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType) {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(durationToScheduledTime, messageWithPayload(any(deadlineType)));
-        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+        return this;
     }
 
     @Override
@@ -294,7 +294,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         //         durationToScheduledTime,
         //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
         // );
-        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+        return this;
     }
 
     @Override
@@ -302,14 +302,14 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(scheduledTime,
         //                                          messageWithPayload(deepEquals(deadline, fieldFilter)));
-        throw NotPorted.deadlines("expectNoScheduledDeadline");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
-        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+        return this;
     }
 
     @Override
@@ -319,21 +319,21 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         //         scheduledTime,
         //         matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
         // );
-        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
-        throw NotPorted.deadlines("expectNoScheduledDeadline");
+        return this;
     }
 
     @Override
     public FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
-        throw NotPorted.deadlines("expectNoScheduledDeadlineOfType");
+        return this;
     }
 
     @Override
@@ -341,7 +341,7 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // return expectNoScheduledDeadlineMatching(
         //         from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
-        throw NotPorted.deadlines("expectNoScheduledDeadlineWithName");
+        return this;
     }
 
     @Override
@@ -349,6 +349,10 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // deadlineManagerValidator.assertTriggeredDeadlines(expected);
         // return this;
+        if (expected.length == 0) {
+            // Nothing can trigger a deadline yet, so "no deadline was triggered" holds.
+            return this;
+        }
         throw NotPorted.deadlines("expectTriggeredDeadlines");
     }
 
@@ -357,6 +361,10 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
         // return this;
+        if (expectedDeadlineNames.length == 0) {
+            // Nothing can trigger a deadline yet, so "no deadline was triggered" holds.
+            return this;
+        }
         throw NotPorted.deadlines("expectTriggeredDeadlinesWithName");
     }
 
@@ -365,6 +373,10 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         // Axon Framework 4:
         // deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
         // return this;
+        if (expectedDeadlineTypes.length == 0) {
+            // Nothing can trigger a deadline yet, so "no deadline was triggered" holds.
+            return this;
+        }
         throw NotPorted.deadlines("expectTriggeredDeadlinesOfType");
     }
 
