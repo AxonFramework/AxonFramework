@@ -241,6 +241,21 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         );
     }
 
+    /**
+     * The {@link AxonConfiguration} this fixture was built from, already
+     * {@link org.axonframework.common.configuration.ApplicationConfigurer#start() started}.
+     * <p>
+     * Use it to resolve a component outside a phase. Within a phase,
+     * {@link AxonTestPhase.Given#execute(java.util.function.Consumer)} and
+     * {@link AxonTestPhase.Then.MessageAssertions#expect(java.util.function.Consumer)} hand out this same instance,
+     * and are the better fit because they keep the assertion inside the given-when-then flow.
+     *
+     * @return The started configuration backing this fixture.
+     */
+    public AxonConfiguration configuration() {
+        return configuration;
+    }
+
     @Override
     public void stop() {
         configuration.shutdown();
