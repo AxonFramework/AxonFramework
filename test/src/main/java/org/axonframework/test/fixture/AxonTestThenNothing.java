@@ -20,6 +20,8 @@ import org.jspecify.annotations.Nullable;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.messaging.eventhandling.EventMessage;
 
+import java.util.Set;
+
 /**
  * Implementation of the {@link AxonTestThenMessage then-message-phase} for
  * {@link EventMessage EventMessages} of the {@link AxonTestFixture}.
@@ -37,14 +39,16 @@ class AxonTestThenNothing
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
      * @param recordings      The registry holding recording components for assertions.
+     * @param whenPhaseMessageIdentifiers The identifiers of the messages the when-phase published or dispatched itself.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenNothing(
             AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingComponentsRegistry recordings,
+            Set<String> whenPhaseMessageIdentifiers,
             @Nullable Throwable actualException
     ) {
-        super(configuration, customization, recordings, actualException);
+        super(configuration, customization, recordings, whenPhaseMessageIdentifiers, actualException);
     }
 }

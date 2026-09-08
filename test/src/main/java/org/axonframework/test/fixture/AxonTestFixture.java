@@ -255,21 +255,25 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * {@link org.axonframework.common.configuration.ComponentRegistry#disableEnhancer(String) disabled}. An example of
      * this is the {@code AxonServerConfigurationEnhancer}.
      *
-     * @param integrationEnabled toggle describing whether this fixture should integrate with infrastructure (e.g. Axon
-     *                           Server). Defaults to {@code false}
-     * @param fieldFilters       collections of {@link FieldFilter FieldFilters} used to adjust the matchers for
-     *                           commands, events, and result messages
+     * @param integrationEnabled       toggle describing whether this fixture should integrate with infrastructure (e.g.
+     *                                 Axon Server). Defaults to {@code false}
+     * @param fieldFilters             collections of {@link FieldFilter FieldFilters} used to adjust the matchers for
+     *                                 commands, events, and result messages
+     * @param whenPhaseMessagesExcluded toggle describing whether the messages published or dispatched by the
+     *                                 {@link AxonTestPhase.When when-phase} itself are excluded from the
+     *                                 {@link AxonTestPhase.Then then-phase} recordings. Defaults to {@code false}
      */
     public record Customization(
             boolean integrationEnabled,
-            List<FieldFilter> fieldFilters
+            List<FieldFilter> fieldFilters,
+            boolean whenPhaseMessagesExcluded
     ) {
 
         /**
          * Creates a new instance of {@code Customization}.
          */
         public Customization() {
-            this(false, new ArrayList<>());
+            this(false, new ArrayList<>(), false);
         }
 
         /**
@@ -297,7 +301,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         public Customization registerFieldFilter(FieldFilter fieldFilter) {
             List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
             fieldFiltersCopy.add(fieldFilter);
-            return new Customization(integrationEnabled, fieldFiltersCopy);
+            return new Customization(integrationEnabled, fieldFiltersCopy, whenPhaseMessagesExcluded);
         }
 
         /**
@@ -343,7 +347,30 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @return the current {@code Customization}, for fluent interfacing
          */
         public Customization asIntegrationTest() {
-            return new Customization(true, fieldFilters);
+            return new Customization(true, fieldFilters, whenPhaseMessagesExcluded);
+        }
+
+        /**
+         * Excludes the messages the {@link AxonTestPhase.When when-phase} published or dispatched itself from the
+         * {@link AxonTestPhase.Then then-phase} recordings, leaving only what the message handlers produced.
+         * <p>
+         * By default a fixture records every message that passes through the {@code EventSink} and the
+         * {@code CommandBus}, including the ones {@link AxonTestPhase.When#event(Object)} and
+         * {@link AxonTestPhase.When#command(Object)} publish on the test's behalf. That makes a test assert on a
+         * message it wrote itself. Enabling this customization narrows every recording-based assertion --
+         * {@link AxonTestPhase.Then.MessageAssertions#events}, {@code eventsSatisfy}, {@code eventsMatch},
+         * {@code noEvents}, {@link AxonTestPhase.Then.MessageAssertions#commands}, {@code commandsSatisfy},
+         * {@code commandsMatch} and {@code noCommands} -- to the output of the handlers under test.
+         * <p>
+         * Messages are excluded by {@link org.axonframework.messaging.core.Message#identifier() identifier} rather
+         * than by equality, so a handler republishing a payload equal to the when-message is still recorded.
+         * <p>
+         * The {@code given}-phase needs no such treatment: entering the when-phase already resets the recorders.
+         *
+         * @return the current {@code Customization}, for fluent interfacing
+         */
+        public Customization excludeWhenPhaseMessages() {
+            return new Customization(integrationEnabled, fieldFilters, true);
         }
     }
 }
