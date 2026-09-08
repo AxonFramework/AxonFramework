@@ -92,6 +92,21 @@ public class SnapshotCapableEventStorageEngine implements EventStorageEngine {
      * <p>
      * Any other {@code engine} is decorated, resolving the snapshot from the {@code snapshotStore} before sourcing the
      * events that follow it.
+     * <p>
+     * PROOF OF CONCEPT NOTE: AxonFramework#5039 proposes changing the {@code engine == snapshotStore} check below to
+     * {@code engine instanceof SnapshotStore}, specifically to survive {@code SnapshotStore.class} being decorated
+     * (e.g. by tracing) into something no longer {@code == snapshotStore}. Applying that change verbatim and running
+     * the full test suite breaks
+     * {@code EventSourcingConfigurationDefaultsTest#decoratesEventStorageEngineWhenSnapshotStoreIsDifferentInstance_evenIfEngineImplementsSnapshotStore}:
+     * that test deliberately configures an engine that implements {@code SnapshotStore} (so {@code instanceof} is
+     * {@code true}) alongside a separate, explicitly-registered {@code SnapshotStore} that is meant to win instead
+     * ("snapshot reads must be routed to the registered SnapshotStore, not the engine itself" -- its own comment).
+     * {@code instanceof} cannot distinguish "this engine happens to also implement SnapshotStore" from "this engine
+     * IS the SnapshotStore the caller means" -- only identity (or seeing through decoration to what identity the
+     * decorated value still traces back to) can. Kept as the original, narrower-but-correct identity check here for
+     * that reason; #5039's problem (surviving decoration of the SnapshotStore.class slot) is a real, separate gap
+     * this identity check does not close either -- see {@code DirectionalCapabilityBridgeTest} for why closing it
+     * safely needs more than a decorator-level trick in this specific case.
      *
      * @param engine        the engine to source events from
      * @param snapshotStore the store holding the snapshots of the given {@code engine}
