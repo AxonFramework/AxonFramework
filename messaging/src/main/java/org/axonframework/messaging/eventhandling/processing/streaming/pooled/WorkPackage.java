@@ -61,6 +61,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
+import static org.axonframework.common.ProcessUtils.safeguard;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
@@ -321,7 +322,7 @@ class WorkPackage implements SegmentProgressContext {
     private boolean canHandle(EventMessage eventMessage, ProcessingContext processingContext) {
         try {
             return eventFilter.canHandle(eventMessage, processingContext, segment);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.warn("Error while detecting whether event can be handled in Work Package [{}]-[{}]. "
                                 + "Aborting Work Package...",
                         segment.getSegmentId(), name, e);
@@ -341,7 +342,12 @@ class WorkPackage implements SegmentProgressContext {
             return;
         }
         logger.debug("Scheduling Work Package [{}]-[{}] to process events.", segment.getSegmentId(), name);
-        executorService.submit(this::runWorker);
+        executorService.submit(safeguard(
+                this::runWorker,
+                "Work Package [" + segment.getSegmentId() + "]-[" + name + "]. "
+                        + "Unexpected error escaped the worker task. "
+                        + "This Work Package may no longer be scheduled for further processing."
+        ));
     }
 
     private void runWorker() {
@@ -398,7 +404,7 @@ class WorkPackage implements SegmentProgressContext {
         CompletableFuture<Void> result;
         try {
             result = unitOfWork.execute();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             result = CompletableFuture.failedFuture(e);
         }
         return result.whenComplete((v, t) -> processingEvents.set(false));
