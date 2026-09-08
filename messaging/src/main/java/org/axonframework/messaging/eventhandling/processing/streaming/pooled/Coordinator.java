@@ -1609,17 +1609,10 @@ class Coordinator {
      * @return a {@link Runnable} that never throws
      */
     private Runnable safeguard(Runnable task) {
-        return () -> {
-            try {
-                task.run();
-            } catch (Throwable e) {
-                logger.error(
-                        "Processor [{}]. Unexpected error escaped a coordination task. "
-                                + "This processor may no longer make progress.",
-                        name,
-                        e
-                );
-            }
-        };
+        return ProcessUtils.safeguard(
+                task,
+                "Processor [" + name + "]. Unexpected error escaped a coordination task. "
+                        + "This processor may no longer make progress."
+        );
     }
 }
