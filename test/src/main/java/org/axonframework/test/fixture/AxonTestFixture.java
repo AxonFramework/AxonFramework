@@ -40,42 +40,42 @@ import java.util.function.UnaryOperator;
  * <p>
  * The fixture maintains two separate references for both the command bus and the event infrastructure:
  * <ol>
- *   <li><b>Outermost references</b> ({@code commandBus}, {@code eventSink}) — obtained from the configuration via
+ *   <li><b>Outermost references</b> ({@code commandBus}, {@code eventSink}) -- obtained from the configuration via
  *       {@code configuration.getComponent(...)}. These sit at the top of the decorator chain and are used by the
- *       given-phase and when-phase to <em>dispatch</em> commands and <em>publish</em> events. Dispatching through
+ *       given-phase and when-phase to {@code dispatch} commands and {@code publish} events. Dispatching through
  *       the outermost reference ensures that the message traverses all decorators, including dispatch interceptors
  *       that enrich messages with correlation metadata, tracing headers, etc.</li>
- *   <li><b>Innermost recording references</b> ({@code recordingCommandBus}, {@code recordingEventSink}) — created
+ *   <li><b>Innermost recording references</b> ({@code recordingCommandBus}, {@code recordingEventSink}) -- created
  *       by {@link MessagesRecordingConfigurationEnhancer} as the innermost decorators
- *       ({@code DECORATION_ORDER = Integer.MIN_VALUE}). These are used by the then-phase to <em>assert</em> on
+ *       ({@code DECORATION_ORDER = Integer.MIN_VALUE}). These are used by the then-phase to {@code assert} on
  *       recorded messages. Because they sit at the bottom of the decorator chain, they capture messages
- *       <em>after</em> all dispatch interceptors have enriched them.</li>
+ *       after all dispatch interceptors have enriched them.</li>
  * </ol>
  * <p>
  * For commands, the decorator chain looks like:
  * <pre>
  *   commandBus (outermost, for dispatching)
- *     → InterceptingCommandBus (applies dispatch interceptors, enriches metadata)
- *       → recordingCommandBus (innermost, captures post-interceptor commands for assertions)
- *         → raw CommandBus implementation
+ *     -> InterceptingCommandBus (applies dispatch interceptors, enriches metadata)
+ *       -> recordingCommandBus (innermost, captures post-interceptor commands for assertions)
+ *         -> raw CommandBus implementation
  * </pre>
  * <p>
  * For events, the same pattern applies. The concrete type depends on the configuration:
  * <ul>
- *   <li>With {@code EventSourcingConfigurer} — an {@code EventStore} is present, so the chain is:
+ *   <li>With {@code EventSourcingConfigurer} -- an {@code EventStore} is present, so the chain is:
  *     <pre>
  *   eventSink (outermost EventStore, for publishing)
- *     → InterceptingEventStore (applies dispatch interceptors)
- *       → RecordingEventStore (innermost, captures post-interceptor events for assertions)
- *         → raw EventStore implementation
+ *     -> InterceptingEventStore (applies dispatch interceptors)
+ *       -> RecordingEventStore (innermost, captures post-interceptor events for assertions)
+ *         -> raw EventStore implementation
  *     </pre>
  *   </li>
- *   <li>With {@code MessagingConfigurer} (no event sourcing) — an {@code EventBus} is present, so the chain is:
+ *   <li>With {@code MessagingConfigurer} (no event sourcing) -- an {@code EventBus} is present, so the chain is:
  *     <pre>
  *   eventSink (outermost EventBus, for publishing)
- *     → InterceptingEventBus (applies dispatch interceptors)
- *       → RecordingEventBus (innermost, captures post-interceptor events for assertions)
- *         → raw EventBus implementation (e.g. SimpleEventBus)
+ *     -> InterceptingEventBus (applies dispatch interceptors)
+ *       -> RecordingEventBus (innermost, captures post-interceptor events for assertions)
+ *         -> raw EventBus implementation (e.g. SimpleEventBus)
  *     </pre>
  *   </li>
  * </ul>
@@ -84,7 +84,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * <b>Why two references are necessary:</b> If recording were at the outermost position, the recorder would capture
  * the original, un-enriched message (before dispatch interceptors run). By placing recording at the innermost
- * position, the recorder sees the fully enriched message — but we can no longer use the same reference for
+ * position, the recorder sees the fully enriched message -- but we can no longer use the same reference for
  * dispatching, because dispatching through the innermost reference would skip the interceptors. Hence the fixture
  * keeps both: the outermost for dispatching and the innermost for assertions.
  *
@@ -121,7 +121,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * Registry holding the innermost recording decorators created by
      * {@link MessagesRecordingConfigurationEnhancer} at {@code DECORATION_ORDER = Integer.MIN_VALUE}. Contains the
      * {@link RecordingCommandBus} and {@link RecordingEventSink} used by the then-phase for assertions. Because they
-     * are the innermost decorators, they capture messages <em>after</em> all dispatch interceptors have enriched them
+     * are the innermost decorators, they capture messages after all dispatch interceptors have enriched them
      * with metadata.
      */
     private final RecordingComponentsRegistry recordings;
