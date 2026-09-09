@@ -78,15 +78,8 @@ class JpaAutoConfigurationTest {
             assertEquals(JpaTokenStore.class,
                          tokenStores.get("tokenStore").getClass());
 
-            /*
-            TODO re-enable as part of #3097
-            //noinspection rawtypes
-            Map<String, SagaStore> sagaStores =
-                    context.getBeansOfType(SagaStore.class);
-            assertTrue(sagaStores.containsKey("sagaStore"));
-            assertEquals(JpaSagaStore.class,
-                         sagaStores.get("sagaStore").getClass());
-             */
+            // The Saga store this used to assert on now comes from JpaSagaAutoConfiguration, and is asserted by
+            // SagaAutoConfigurationTest.
             PersistenceExceptionResolver persistenceExceptionResolver =
                     context.getBean("persistenceExceptionResolver", PersistenceExceptionResolver.class);
             assertThat(persistenceExceptionResolver).isInstanceOf(SmartLifecycle.class);

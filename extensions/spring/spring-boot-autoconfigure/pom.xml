@@ -38,6 +38,18 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--
+            Carries the Axon Framework 4 Saga stores the Saga auto configuration builds. Optional, and declared here
+            rather than inherited because an optional dependency is not transitive: an application that never had
+            Sagas should not pull the legacy module in, and every Saga bean is conditional on its presence.
+        -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-legacy</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.axonframework.extensions.reactor</groupId>
             <artifactId>axon-reactor</artifactId>
