@@ -40,12 +40,12 @@ import java.util.function.UnaryOperator;
  * <p>
  * The fixture maintains two separate references for both the command bus and the event infrastructure:
  * <ol>
- *   <li><b>Outermost references</b> ({@code commandBus}, {@code eventSink}) -- obtained from the configuration via
+ *   <li><b>Outermost references</b> ({@code commandBus}, {@code eventSink}) — obtained from the configuration via
  *       {@code configuration.getComponent(...)}. These sit at the top of the decorator chain and are used by the
  *       given-phase and when-phase to {@code dispatch} commands and {@code publish} events. Dispatching through
  *       the outermost reference ensures that the message traverses all decorators, including dispatch interceptors
  *       that enrich messages with correlation metadata, tracing headers, etc.</li>
- *   <li><b>Innermost recording references</b> ({@code recordingCommandBus}, {@code recordingEventSink}) -- created
+ *   <li><b>Innermost recording references</b> ({@code recordingCommandBus}, {@code recordingEventSink}) — created
  *       by {@link MessagesRecordingConfigurationEnhancer} as the innermost decorators
  *       ({@code DECORATION_ORDER = Integer.MIN_VALUE}). These are used by the then-phase to {@code assert} on
  *       recorded messages. Because they sit at the bottom of the decorator chain, they capture messages
@@ -62,7 +62,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * For events, the same pattern applies. The concrete type depends on the configuration:
  * <ul>
- *   <li>With {@code EventSourcingConfigurer} -- an {@code EventStore} is present, so the chain is:
+ *   <li>With {@code EventSourcingConfigurer} — an {@code EventStore} is present, so the chain is:
  *     <pre>
  *   eventSink (outermost EventStore, for publishing)
  *     -> InterceptingEventStore (applies dispatch interceptors)
@@ -70,7 +70,7 @@ import java.util.function.UnaryOperator;
  *         -> raw EventStore implementation
  *     </pre>
  *   </li>
- *   <li>With {@code MessagingConfigurer} (no event sourcing) -- an {@code EventBus} is present, so the chain is:
+ *   <li>With {@code MessagingConfigurer} (no event sourcing) — an {@code EventBus} is present, so the chain is:
  *     <pre>
  *   eventSink (outermost EventBus, for publishing)
  *     -> InterceptingEventBus (applies dispatch interceptors)
@@ -84,7 +84,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * <b>Why two references are necessary:</b> If recording were at the outermost position, the recorder would capture
  * the original, un-enriched message (before dispatch interceptors run). By placing recording at the innermost
- * position, the recorder sees the fully enriched message -- but we can no longer use the same reference for
+ * position, the recorder sees the fully enriched message — but we can no longer use the same reference for
  * dispatching, because dispatching through the innermost reference would skip the interceptors. Hence the fixture
  * keeps both: the outermost for dispatching and the innermost for assertions.
  *
