@@ -26,6 +26,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.convert.converter.Converter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
@@ -102,6 +103,7 @@ class SpringComponentRegistryConfigurationPropertiesBindingIntegrationTest {
             context.registerBean("trailingBean", Object.class, Object::new);
 
             assertThatCode(context::refresh).doesNotThrowAnyException();
+            assertThat(context.getBean(ReentrantEnhancer.class).invoked).isTrue();
         }
     }
 
@@ -118,12 +120,15 @@ class SpringComponentRegistryConfigurationPropertiesBindingIntegrationTest {
 
         private final ListableBeanFactory beanFactory;
 
+        private boolean invoked = false;
+
         private ReentrantEnhancer(ListableBeanFactory beanFactory) {
             this.beanFactory = beanFactory;
         }
 
         @Override
         public void enhance(ComponentRegistry registry) {
+            invoked = true;
             BeanFactoryAnnotationUtils.qualifiedBeansOfType(
                     beanFactory, Converter.class, CONFIGURATION_PROPERTIES_BINDING_QUALIFIER
             );
