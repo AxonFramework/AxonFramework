@@ -47,6 +47,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -102,6 +103,14 @@ public class SpringComponentRegistry implements
         ComponentRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    /**
+     * The {@link org.springframework.beans.factory.annotation.Qualifier @Qualifier} value Spring Boot's
+     * {@code ConfigurationPropertiesBinding} annotation carries. Used by {@link #shouldDeferInitialization(String)}
+     * to detect beans matching that qualifier without a compile-time dependency on Spring Boot.
+     */
+    private static final String CONFIGURATION_PROPERTIES_BINDING_QUALIFIER =
+            "org.springframework.boot.context.properties.ConfigurationPropertiesBinding";
 
     private final SpringLifecycleRegistry lifecycleRegistry;
 
@@ -324,7 +333,7 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(Object bean,
                                                  String beanName) throws BeansException {
-        if (!initialized.get() && isInfrastructureBean(beanName)) {
+        if (!initialized.get() && shouldDeferInitialization(beanName)) {
             return bean;
         }
         // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
@@ -364,37 +373,40 @@ public class SpringComponentRegistry implements
     }
 
     /**
-     * Checks whether the given {@code beanName} refers to a Spring infrastructure bean.
+     * Checks whether {@code this ComponentRegistry} should keep deferring {@link #initialize()} while post-processing
+     * the given {@code beanName}, rather than letting it trigger Axon's configuration cascade mid-construction.
      * <p>
-     * This is used to avoid triggering Axon's full {@link #initialize()} during Spring Boot's early internal startup
-     * phase. In Spring Boot 4, infrastructure beans involved in configuration properties binding (for example,
-     * {@code BoundConfigurationProperties}) are created very early. If Axon initializes at that moment, enhancer
-     * scanning and component lookups may eagerly request application-level {@code @ConfigurationProperties} beans such
-     * as {@code AxonServerConfiguration}. That can cause a circular dependency between early Boot binding internals and
-     * Axon's properties beans.
+     * Two categories of beans are deferred: {@link BeanDefinition#ROLE_INFRASTRUCTURE} beans, and beans qualified with
+     * Spring Boot's {@code @ConfigurationPropertiesBinding} (typically a {@code Converter} or {@code Formatter}
+     * contributed by a third-party auto-configuration, e.g. Flyway). The latter matters because Spring Boot's
+     * {@code ConversionServiceDeducer} eagerly resolves <b>every</b> bean carrying that qualifier whenever it builds a
+     * {@code ConversionService} for {@code @ConfigurationProperties} binding.
      * <p>
-     * By deferring initialization while only infrastructure beans are being post-processed, we let Spring finish its
-     * internal bootstrap first. Initialization then happens on the first non-infrastructure bean, preserving normal
-     * Axon behavior.
+     * When a {@link ConfigurationEnhancer} we invoke triggers such a binding while a qualified converter is still
+     * mid-construction, Spring re-enters that still-in-creation bean and throws
+     * {@code BeanCurrentlyInCreationException}. Deferring on this qualifier keeps such converters from ever being the
+     * bean that triggers {@link #initialize()} mid-construction.
      * <p>
-     * We intentionally do <b>not</b> skip {@link BeanDefinition#ROLE_SUPPORT} or
-     * {@link BeanDefinition#ROLE_APPLICATION} beans:
-     * <ul>
-     *   <li>{@code ROLE_APPLICATION} contains user and framework-integrated application beans that should be eligible
-     *   for Axon decoration and lifecycle registration.</li>
-     *   <li>{@code ROLE_SUPPORT} can still participate in application wiring, so filtering it broadly could skip
-     *   required post-processing.</li>
-     * </ul>
+     * The qualifier is matched via {@link BeanFactoryAnnotationUtils#isQualifierMatch} against the literal qualifier
+     * value rather than the annotation type, since this module has no compile-time dependency on Spring Boot.
+     * <p>
+     * {@link BeanDefinition#ROLE_SUPPORT} beans and otherwise-unqualified {@link BeanDefinition#ROLE_APPLICATION} beans
+     * are intentionally not deferred here. They remain eligible for Axon decoration and lifecycle registration.
      *
-     * @param beanName The bean name to inspect.
-     * @return {@code true} if the bean definition role is {@link BeanDefinition#ROLE_INFRASTRUCTURE}, {@code false}
-     * otherwise.
+     * @param beanName the bean name to inspect
+     * @return {@code true} if {@link #initialize()} should stay deferred while processing this bean, {@code false}
+     * otherwise
      */
-    private boolean isInfrastructureBean(String beanName) {
+    private boolean shouldDeferInitialization(String beanName) {
         if (!beanFactory.containsBeanDefinition(beanName)) {
             return false;
         }
-        return beanFactory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE;
+        if (beanFactory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE) {
+            return true;
+        }
+        return BeanFactoryAnnotationUtils.isQualifierMatch(
+                CONFIGURATION_PROPERTIES_BINDING_QUALIFIER::equals, beanName, beanFactory
+        );
     }
 
     /**
