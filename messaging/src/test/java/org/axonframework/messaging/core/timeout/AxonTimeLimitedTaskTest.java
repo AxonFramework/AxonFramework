@@ -19,7 +19,12 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,6 +71,80 @@ class AxonTimeLimitedTaskTest {
 
         assertTrue(testSubject.isInterrupted());
         assertFalse(testSubject.isCompleted());
+    }
+
+    @Test
+    void bindToCurrentThreadRedirectsTheScheduledInterruptToTheRebindThread() throws InterruptedException {
+        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask("My test task", 200, 200, 1);
+        AtomicBoolean workerWasInterrupted = new AtomicBoolean(false);
+        CountDownLatch workerBound = new CountDownLatch(1);
+
+        testSubject.start();
+        Thread worker = new Thread(() -> {
+            // Simulates a UnitOfWork phase action running on a different thread than the one that created the task.
+            testSubject.bindToCurrentThread();
+            workerBound.countDown();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                workerWasInterrupted.set(true);
+            }
+        });
+        worker.start();
+
+        assertTrue(workerBound.await(1, TimeUnit.SECONDS));
+        worker.join(1000);
+
+        assertTrue(workerWasInterrupted.get());
+        assertFalse(Thread.currentThread().isInterrupted(),
+                    "The creator (test) thread should not have been interrupted");
+        assertTrue(testSubject.isInterrupted());
+    }
+
+    @Test
+    void startIfNotStartedIsANoOpAfterTheTaskAlreadyStarted() {
+        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask("My test task", 1000, 1000, 1);
+
+        testSubject.start();
+        testSubject.startIfNotStarted();
+        testSubject.startIfNotStarted();
+
+        assertFalse(testSubject.isInterrupted());
+        testSubject.complete();
+    }
+
+    @Test
+    void startIfNotStartedStartsExactlyOnceUnderConcurrentCallers() throws InterruptedException {
+        AxonTimeLimitedTask testSubject = new AxonTimeLimitedTask("My test task", 200, 200, 1);
+        int callerCount = 10;
+        CountDownLatch readyLatch = new CountDownLatch(callerCount);
+        CountDownLatch trigger = new CountDownLatch(1);
+        CopyOnWriteArrayList<Throwable> errors = new CopyOnWriteArrayList<>();
+
+        List<Thread> callers = new ArrayList<>();
+        for (int i = 0; i < callerCount; i++) {
+            Thread caller = new Thread(() -> {
+                readyLatch.countDown();
+                try {
+                    trigger.await();
+                    testSubject.startIfNotStarted();
+                } catch (Throwable e) {
+                    errors.add(e);
+                }
+            });
+            callers.add(caller);
+            caller.start();
+        }
+
+        assertTrue(readyLatch.await(1, TimeUnit.SECONDS));
+        trigger.countDown();
+        for (Thread caller : callers) {
+            caller.join(1000);
+        }
+
+        assertTrue(errors.isEmpty(), "No concurrent caller of startIfNotStarted() should throw: " + errors);
+        assertThrows(InterruptedException.class, () -> Thread.sleep(300));
+        assertTrue(testSubject.isInterrupted());
     }
 
     @Test

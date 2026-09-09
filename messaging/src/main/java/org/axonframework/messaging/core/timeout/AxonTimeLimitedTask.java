@@ -20,6 +20,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,10 @@ class AxonTimeLimitedTask {
     @Nullable
     private final String callerClassName; // stored as name to avoid getName() on every stack frame check
 
-    private final Thread thread;
+    // Volatile because the thread actually executing the guarded work may change after construction (for example,
+    // a UnitOfWork's phase actions dispatched through a configured workScheduler), and bindToCurrentThread() rebinds
+    // this field from that worker thread while the janitor thread reads it to schedule the interrupt.
+    private volatile Thread thread;
     // These fields are written by the janitor thread (scheduled warnings/interrupts) and read by the handling
     // thread (or vice versa), so they must be volatile to guarantee cross-thread visibility. Without it, a write
     // from one thread is not guaranteed to be observed by the other, allowing a fired timeout to be misreported
@@ -62,7 +66,8 @@ class AxonTimeLimitedTask {
     private volatile boolean completed = false;
     private volatile boolean interrupted = false;
     private volatile boolean interruptedExternally = false;
-    private long startTimeMs = -1;
+    // Volatile so startIfNotStarted()'s lock-free fast path can observe another thread's completed start promptly.
+    private volatile long startTimeMs = -1;
     @Nullable
     private volatile Future<?> currentScheduledFuture = null;
 
@@ -213,11 +218,42 @@ class AxonTimeLimitedTask {
     }
 
     /**
+     * Starts the task, exactly as {@link #start()} does, unless it was already started, in which case this method is
+     * a no-op instead of throwing.
+     */
+    public void startIfNotStarted() {
+        if (startTimeMs != -1) {
+            // Lock-free fast path for the common case: every invocation after the first.
+            return;
+        }
+        synchronized (lock) {
+            if (startTimeMs != -1) {
+                return;
+            }
+            start();
+        }
+    }
+
+    /**
+     * Rebinds {@code this} task to the {@link Thread} that is about to run the work it guards.
+     * <p>
+     * Needed because the work a task guards is not always run by the {@code Thread} that constructed it. For example, a
+     * {@code UnitOfWork's} phase actions may be dispatched onto a different thread depending on the {@link Executor}
+     * configured for it.
+     * <p>
+     * Call this from the {@code Thread} that will actually perform the work, immediately before doing so, so a fired
+     * timeout interrupts the thread genuinely executing it.
+     */
+    void bindToCurrentThread() {
+        this.thread = Thread.currentThread();
+    }
+
+    /**
      * Marks the task as completed. Cancels the current future warning or interrupt if any exists.
      * <p>
-     * If the scheduled interrupt lambda won a race against this call -- i.e., it already set the interrupt flag on
-     * the task thread before {@code complete()} could cancel it -- the interrupt is cleared here so it does not leak
-     * into the caller's subsequent code.
+     * If the scheduled interrupt lambda won a race against this call -- i.e., it already set the interrupt flag on the
+     * task thread before {@code complete()} could cancel it -- the interrupt is cleared here so it does not leak into
+     * the caller's subsequent code.
      */
     public void complete() {
         synchronized (lock) {

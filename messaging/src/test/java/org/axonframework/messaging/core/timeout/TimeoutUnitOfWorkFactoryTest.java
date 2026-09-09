@@ -16,7 +16,9 @@
 package org.axonframework.messaging.core.timeout;
 
 import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.core.EmptyApplicationContext;
 import org.axonframework.messaging.core.MessageStream;
+import org.axonframework.messaging.core.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.messaging.eventhandling.EventHandler;
@@ -28,8 +30,12 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -76,6 +82,23 @@ class TimeoutUnitOfWorkFactoryTest {
         };
 
         CompletableFuture<?> result = execute(factory, fastHandler);
+
+        assertFalse(result.isCompletedExceptionally());
+    }
+
+    @Test
+    void timeoutClockStartsAtTheFirstPhaseActionNotAtCreation() throws InterruptedException {
+        TimeoutUnitOfWorkFactory factory = createTimeoutFactory(150);
+        UnitOfWork uow = factory.create(UUID.randomUUID().toString());
+        // Simulates a gap between creation and the first phase action actually running
+        Thread.sleep(200);
+
+        EventHandler fastHandler = (event, context) -> MessageStream.empty();
+        EventMessageHandlerInterceptorChain chain = new EventMessageHandlerInterceptorChain(List.of(), fastHandler);
+        EventMessage event = EventTestUtils.asEventMessage("test");
+
+        CompletableFuture<?> result =
+                uow.executeWithResult(context -> chain.proceed(event, context).first().asCompletableFuture());
 
         assertFalse(result.isCompletedExceptionally());
     }
@@ -149,6 +172,45 @@ class TimeoutUnitOfWorkFactoryTest {
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(AxonTimeoutException.class, result.exceptionNow());
+    }
+
+    @Test
+    void interruptsTheActualWorkerThreadWhenPhaseActionsRunOnAsynchronousExecutor() {
+        try (ExecutorService workScheduler = Executors.newSingleThreadExecutor()) {
+            TimeoutUnitOfWorkFactory factory = new TimeoutUnitOfWorkFactory(
+                    new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(workScheduler)),
+                    "TestComponent",
+                    100,
+                    500,
+                    10,
+                    AxonTaskJanitor.INSTANCE,
+                    AxonTaskJanitor.LOGGER
+            );
+            Thread creatorThread = Thread.currentThread();
+            AtomicReference<Thread> workerThread = new AtomicReference<>();
+            EventHandler sleepingHandler = (event, context) -> {
+                workerThread.set(Thread.currentThread());
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return MessageStream.empty();
+            };
+
+            CompletableFuture<?> result = execute(factory, sleepingHandler);
+            await().atMost(2, TimeUnit.SECONDS).until(result::isDone);
+
+            assertTrue(result.isCompletedExceptionally());
+            assertInstanceOf(AxonTimeoutException.class, result.exceptionNow());
+            assertNotNull(workerThread.get());
+            assertNotSame(creatorThread, workerThread.get(),
+                          "The phase action must run on the configured workScheduler thread, not the creator thread");
+            // Can't assert the worker thread's own flag: detectSwallowedInterruption clears it once converted into
+            // the AxonTimeoutException above. Assert the creator thread instead, which must stay untouched.
+            assertFalse(creatorThread.isInterrupted(),
+                        "The creator thread must not be interrupted; only the actual worker thread should be");
+        }
     }
 
     private CompletableFuture<?> execute(TimeoutUnitOfWorkFactory factory, EventHandler terminalHandler) {

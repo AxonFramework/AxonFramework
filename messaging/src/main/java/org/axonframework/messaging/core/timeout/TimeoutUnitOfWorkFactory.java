@@ -37,9 +37,11 @@ import java.util.function.Supplier;
  * <p>
  * If the timeout is reached, the thread processing the {@code UnitOfWork} is interrupted.
  * <p>
- * The timeout is measured from the moment {@link #create(String, Function)} is called until the {@code UnitOfWork}
- * commits or fails. Since every {@code UnitOfWork} is created exactly once, a single {@link AxonTimeLimitedTask} is
- * started per {@code UnitOfWork}, with no need to guard against multiple invocations for the same instance.
+ * The timeout starts counting from the moment the first phase action of the created {@code UnitOfWork} begins
+ * executing, not from the moment {@link #create(String, Function)} itself is called, so time spent between creation
+ * and the actual start of processing is not counted against it. Since every {@code UnitOfWork} is created exactly
+ * once, a single {@link AxonTimeLimitedTask} is used per {@code UnitOfWork}, started lazily on whichever phase action
+ * runs first for that instance.
  * <p>
  * Detecting a fired timeout whose interruption was swallowed by a phase action (for example, an event handler using the
  * default {@code LoggingErrorHandler}) is handled automatically: this factory installs a
@@ -142,7 +144,6 @@ public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
                 customization.andThen(config -> config.addLifecycleInterceptor(new TimeoutInterceptor(task)))
         );
 
-        task.start();
         unitOfWork.runOnAfterCommit(u -> task.complete());
         unitOfWork.onError((ctx, phase, error) -> task.complete());
 
@@ -168,6 +169,12 @@ public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
         public CompletableFuture<?> interceptPhase(ProcessingContext context,
                                                    Phase phase,
                                                    Supplier<CompletableFuture<?>> action) {
+            // Rebind to the thread actually running this phase action; required since the UnitOfWork may dispatch
+            // phase actions through an Executor onto a different thread than the one that created it. Also start the
+            // task lazily here, on whichever phase action runs first, instead of eagerly at create()-time, so the
+            // timeout only measures actual processing time.
+            task.bindToCurrentThread();
+            task.startIfNotStarted();
             return detectSwallowedInterruption(action.get());
         }
 
