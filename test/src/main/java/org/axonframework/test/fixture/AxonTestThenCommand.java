@@ -26,7 +26,6 @@ import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.StringDescription;
 
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -50,7 +49,6 @@ class AxonTestThenCommand
      * @param configuration        The configuration which this test fixture phase is based on.
      * @param customization        Collection of customizations made for this test fixture.
      * @param recordings           The registry holding recording components for assertions.
-     * @param whenPhaseMessageIdentifiers The identifiers of the messages the when-phase dispatched itself.
      * @param lastCommandResult    The last result of command handling.
      * @param lastCommandException The exception thrown during the when-phase, potentially {@code null}.
      */
@@ -58,11 +56,10 @@ class AxonTestThenCommand
             AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingComponentsRegistry recordings,
-            Set<String> whenPhaseMessageIdentifiers,
             Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
-        super(configuration, customization, recordings, whenPhaseMessageIdentifiers, lastCommandException);
+        super(configuration, customization, recordings, lastCommandException);
         this.actualResult = lastCommandResult;
     }
 

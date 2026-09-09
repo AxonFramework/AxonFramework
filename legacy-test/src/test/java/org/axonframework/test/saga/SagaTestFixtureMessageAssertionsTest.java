@@ -17,7 +17,9 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.interception.annotation.ExceptionHandler;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
@@ -129,6 +131,16 @@ class SagaTestFixtureMessageAssertionsTest {
         void theWhenEventIsNotCountedAsSagaOutput() {
             fixture.givenAPublished(new OrderPlaced("order-1"))
                    .whenPublishingA(new OrderShipped("shipment-of-order-1"))
+                   .expectPublishedEvents();
+        }
+
+        @Test
+        void anExplicitWhenEventMessageIsNotCountedAsSagaOutput() {
+            fixture.givenAPublished(new OrderPlaced("order-1"))
+                   .whenPublishingA(new GenericEventMessage(
+                           new MessageType(OrderShipped.class),
+                           new OrderShipped("shipment-of-order-1")
+                   ))
                    .expectPublishedEvents();
         }
 

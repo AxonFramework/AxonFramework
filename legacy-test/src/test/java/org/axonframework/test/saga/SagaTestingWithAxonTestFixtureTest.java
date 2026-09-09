@@ -69,7 +69,7 @@ class SagaTestingWithAxonTestFixtureTest {
                                                            Sagas.of(OrderSaga.class)))
                                    ));
 
-        fixture = AxonTestFixture.with(configurer, c -> c.excludeWhenPhaseMessages());
+        fixture = AxonTestFixture.with(configurer);
     }
 
     @AfterEach
@@ -150,18 +150,18 @@ class SagaTestingWithAxonTestFixtureTest {
     class PublishedEvents {
 
         /**
-         * The when-event travels through the recording event sink, so without
-         * {@link AxonTestFixture.Customization#excludeWhenPhaseMessages()} it would show up here as if the saga had
-         * published it.
+         * A plain Axon Framework 5 fixture records the event the when-phase publishes. The legacy
+         * {@link SagaTestFixture} removes that input from its Axon Framework 4-compatible event assertions.
          */
         @Test
-        void theWhenEventIsNotCountedAsSagaOutput() {
+        void theWhenEventRemainsPartOfTheAxonTestFixtureRecording() {
+            OrderShipped whenEvent = new OrderShipped("shipment-of-order-1");
             fixture.given()
                    .event(new OrderPlaced("order-1"))
                    .when()
-                   .event(new OrderShipped("shipment-of-order-1"))
+                   .event(whenEvent)
                    .then()
-                   .noEvents();
+                   .events(whenEvent);
         }
     }
 

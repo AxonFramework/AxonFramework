@@ -41,11 +41,6 @@ The `Customization` given as the second parameter allows a number of adjustments
 * `asIntegrationTest()` - Enable heavier infrastructure components, like the Axon Server connector, which are disabled by default.
 * `registerIgnoredField(Class<?> clazz, String field)` - Ignore specific fields during equality checks.
 * `registerFieldFilter(FieldFilter filter)` - Register custom field filter.
-* `excludeWhenPhaseMessages()` - Exclude the messages the `when` phase published or dispatched itself from the `then` phase recordings.
-
-By default the `then` phase records every message that passed through the `EventSink` and the `CommandBus` during the `when` phase, including the one the `when` phase published on your behalf.
-`excludeWhenPhaseMessages()` narrows `events(...)`, `eventsSatisfy(...)`, `eventsMatch(...)`, `noEvents()`, `commands(...)`, `commandsSatisfy(...)`, `commandsMatch(...)` and `noCommands()` to the output of the handlers under test.
-Messages are excluded by identifier, so a handler republishing a payload equal to the `when` message is still recorded.
 
 For more details on field filters, be sure to read the dedicated xref:matchers-and-field-filters.adoc[field filters] section.
 

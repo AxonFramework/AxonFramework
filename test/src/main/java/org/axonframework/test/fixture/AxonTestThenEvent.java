@@ -22,7 +22,6 @@ import org.axonframework.messaging.core.MessageStream;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.hamcrest.StringDescription;
 
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -42,17 +41,15 @@ class AxonTestThenEvent
      * @param configuration   The configuration which this test fixture phase is based on.
      * @param customization   Collection of customizations made for this test fixture.
      * @param recordings      The registry holding recording components for assertions.
-     * @param whenPhaseMessageIdentifiers The identifiers of the messages the when-phase published itself.
      * @param actualException The exception thrown during the when-phase, potentially {@code null}.
      */
     public AxonTestThenEvent(
             AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingComponentsRegistry recordings,
-            Set<String> whenPhaseMessageIdentifiers,
             @Nullable Throwable actualException
     ) {
-        super(configuration, customization, recordings, whenPhaseMessageIdentifiers, actualException);
+        super(configuration, customization, recordings, actualException);
     }
 
     @Override

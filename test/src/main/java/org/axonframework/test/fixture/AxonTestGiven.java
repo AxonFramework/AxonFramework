@@ -32,7 +32,6 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -191,12 +190,10 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Then.Nothing then() {
-        // Skipping the when-phase leaves nothing for it to have published, so there is nothing to exclude either.
         return new AxonTestThenNothing(
                 configuration,
                 customization,
                 recordings,
-                Set.of(),
                 null
         );
     }

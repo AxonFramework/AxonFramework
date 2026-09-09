@@ -32,12 +32,9 @@ import org.axonframework.messaging.core.unitofwork.UnitOfWork;
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.eventhandling.EventSink;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Implementation of the {@link AxonTestPhase.When when-phase} of the {@link AxonTestFixture}.
@@ -54,13 +51,6 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final RecordingComponentsRegistry recordings;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
-
-    /**
-     * Identifiers of the messages this phase published or dispatched on the test's behalf. The then-phase hides them
-     * from its recordings when {@link AxonTestFixture.Customization#excludeWhenPhaseMessages()} was configured, so a
-     * test asserts on handler output rather than on its own input.
-     */
-    private final Set<String> publishedMessageIdentifiers = new HashSet<>();
 
     private Message actualResult;
     private Throwable actualException;
@@ -110,7 +100,6 @@ class AxonTestWhen implements AxonTestPhase.When {
             var messageType = messageTypeResolver.resolveOrThrow(payload);
             message = new GenericCommandMessage(messageType, payload, metadata);
         }
-        publishedMessageIdentifiers.add(message.identifier());
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
@@ -156,7 +145,6 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Event events(EventMessage... messages) {
-        Stream.of(messages).map(Message::identifier).forEach(publishedMessageIdentifiers::add);
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
     }
@@ -184,7 +172,6 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    publishedMessageIdentifiers,
                     actualResult,
                     actualException
             );
@@ -199,7 +186,6 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    publishedMessageIdentifiers,
                     actualException
             );
         }
@@ -218,7 +204,6 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    publishedMessageIdentifiers,
                     actualException
             );
         }

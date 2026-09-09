@@ -20,6 +20,7 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
+import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.core.configuration.reflection.HandlerDefiniti
 import org.axonframework.messaging.core.configuration.reflection.HandlerEnhancerDefinitionUtils;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -267,12 +269,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
-        return resultOf(startWhenPhase().event(event));
+        return publishInWhen(startWhenPhase(), event, Map.of());
     }
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata) {
-        return resultOf(startWhenPhase().event(event, metadata));
+        return publishInWhen(startWhenPhase(), event, metadata);
     }
 
     @Override
@@ -371,7 +373,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
      */
     private Given given() {
         if (givenPhase == null) {
-            AxonTestFixture.Customization customization = new AxonTestFixture.Customization().excludeWhenPhaseMessages();
+            AxonTestFixture.Customization customization = new AxonTestFixture.Customization();
             for (FieldFilter fieldFilter : fieldFilters) {
                 customization = customization.registerFieldFilter(fieldFilter);
             }
@@ -484,8 +486,28 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return new MultiParameterResolverFactory(factories);
     }
 
-    private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event) {
-        return new FixtureExecutionResultImpl(sagaType, event.then(), new MatchAllFieldFilter(fieldFilters));
+    private FixtureExecutionResult publishInWhen(When phase,
+                                                 Object event,
+                                                 Map<String, String> metadata) {
+        EventMessage eventMessage = asEventMessage(event, metadata);
+        return resultOf(phase.event(eventMessage), eventMessage.identifier());
+    }
+
+    private EventMessage asEventMessage(Object event, Map<String, String> metadata) {
+        if (event instanceof EventMessage eventMessage) {
+            return eventMessage.andMetadata(metadata);
+        }
+        MessageTypeResolver messageTypeResolver = configuration().getComponent(MessageTypeResolver.class);
+        return new GenericEventMessage(messageTypeResolver.resolveOrThrow(event), event, metadata);
+    }
+
+    private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event, String whenEventIdentifier) {
+        return new FixtureExecutionResultImpl(
+                sagaType,
+                event.then(),
+                whenEventIdentifier,
+                new MatchAllFieldFilter(fieldFilters)
+        );
     }
 
     /**
@@ -527,7 +549,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         @Override
         public FixtureExecutionResult publishes(Object event, Map<String, String> metadata) {
-            return resultOf(when().event(event, aggregateMetadata(metadata)));
+            return publishInWhen(when(), event, aggregateMetadata(metadata));
         }
 
         private Map<String, String> aggregateMetadata(Map<String, String> metadata) {
