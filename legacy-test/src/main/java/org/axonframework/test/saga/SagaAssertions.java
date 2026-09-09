@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -56,6 +57,7 @@ import static java.lang.String.format;
  * @author Mateusz Nowak
  * @since 5.4.0
  */
+@Internal
 public final class SagaAssertions {
 
     private SagaAssertions() {
