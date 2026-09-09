@@ -77,6 +77,17 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <!--
+            Carries the Axon Framework 4 Saga, so that the @Saga stereotype has something to configure. Optional:
+            an application that never had Sagas should not pull the legacy module in, and every class here that
+            touches it is reached only from a bean that is conditional on its presence.
+        -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-legacy</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
