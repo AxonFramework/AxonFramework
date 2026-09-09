@@ -305,6 +305,22 @@ class SagaAutoConfigurationTest {
                 assertThat(sagaOf(sagaStore, ORDER_1).collaboratorFromParameter).isNotNull();
             });
         }
+
+        @Test
+        void areResolvedAsHandlerParametersForAResumedSaga() {
+            inMemoryStored().run(context -> {
+                // given a stored Saga with the value from its starting handler cleared
+                InMemorySagaStore sagaStore = sagaStore(context);
+                publish(context, new OrderPlaced("order-1"));
+                sagaOf(sagaStore, ORDER_1).collaboratorFromParameter = null;
+
+                // when a follow-up event loads and invokes the Saga
+                publish(context, new OrderShipped("shipment-of-order-1"));
+
+                // then
+                assertThat(sagaOf(sagaStore, ORDER_1).collaboratorFromParameter).isNotNull();
+            });
+        }
     }
 
     /**
@@ -422,7 +438,8 @@ class SagaAutoConfigurationTest {
             }
 
             @SagaEventHandler(associationProperty = "shipmentId")
-            void on(OrderShipped event) {
+            void on(OrderShipped event, Collaborator collaborator) {
+                this.collaboratorFromParameter = collaborator;
                 this.shipped = true;
             }
 
