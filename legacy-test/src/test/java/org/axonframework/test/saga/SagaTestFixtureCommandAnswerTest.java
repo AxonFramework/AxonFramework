@@ -29,6 +29,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * What a command dispatched by a Saga answers.
  * <p>
@@ -157,6 +159,7 @@ class SagaTestFixtureCommandAnswerTest {
             try {
                 Object payload = commands.send(new ConfirmOrder(event.orderId()))
                                          .getResultMessage()
+                                         .orTimeout(5, TimeUnit.SECONDS)
                                          .join()
                                          .payload();
                 reply = payload == null ? "none" : payload.toString();

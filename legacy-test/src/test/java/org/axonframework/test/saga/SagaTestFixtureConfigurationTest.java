@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -426,7 +427,11 @@ class SagaTestFixtureConfigurationTest {
 
         @SagaEventHandler(associationProperty = "shipmentId")
         public void on(OrderConfirmationRequested event, SagaLifecycle lifecycle, CommandDispatcher commands) {
-            Object result = commands.send(new ConfirmOrder(orderId)).getResultMessage().join().payload();
+            Object result = commands.send(new ConfirmOrder(orderId))
+                                    .getResultMessage()
+                                    .orTimeout(5, TimeUnit.SECONDS)
+                                    .join()
+                                    .payload();
             lifecycle.associateWith("commandResult", String.valueOf(result));
         }
     }
