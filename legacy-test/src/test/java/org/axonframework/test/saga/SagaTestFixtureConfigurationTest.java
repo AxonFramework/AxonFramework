@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -340,6 +341,26 @@ class SagaTestFixtureConfigurationTest {
             fixture.givenAPublished(new OrderPlaced("order-1"))
                    .whenPublishingA(new OrderNotified("shipment-of-order-1"))
                    .expectAssociationWith("notifier", "before-bus-access");
+        }
+    }
+
+    @Nested
+    class Lifecycle {
+
+        @Test
+        void closingTheFixtureRunsConfigurationShutdownHandlers() {
+            AtomicBoolean shutdown = new AtomicBoolean();
+            fixture.customize(configurer -> configurer.lifecycleRegistry(
+                    lifecycle -> lifecycle.onShutdown(() -> shutdown.set(true))
+            ));
+
+            try (fixture) {
+                fixture.givenNoPriorActivity()
+                       .whenPublishingA(new OrderPlaced("order-1"))
+                       .expectActiveSagas(1);
+            }
+
+            assertThat(shutdown).isTrue();
         }
     }
 

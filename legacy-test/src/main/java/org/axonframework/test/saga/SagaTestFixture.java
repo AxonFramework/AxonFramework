@@ -84,7 +84,7 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.4.0
  */
-public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
+public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState, AutoCloseable {
 
     private final Class<T> sagaType;
     private final InMemorySagaStore sagaStore = new InMemorySagaStore();
@@ -349,6 +349,17 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         if (fixture != null) {
             fixture.stop();
         }
+    }
+
+    /**
+     * Shuts down the configuration started by this fixture.
+     * <p>
+     * This alias for {@link #stop()} allows a fixture to be used in a try-with-resources statement, ensuring that Axon
+     * Framework 5 lifecycle handlers run even when a test fails.
+     */
+    @Override
+    public void close() {
+        stop();
     }
 
     /**
