@@ -86,5 +86,22 @@ public class SnapshotSourcingConfigurationEnhancer implements ConfigurationEnhan
                         .map(snapshotStore -> SnapshotCapableEventStorageEngine.decorate(engine, snapshotStore))
                         .orElse(engine)
         );
+        // PROOF OF CONCEPT, tried and reverted: registering DirectionalCapabilityBridge.bridgeOnto(registry,
+        // EventStorageEngine.class, SnapshotStore.class, null, Integer.MAX_VALUE) here, to reconcile
+        // SnapshotStore.class for self-hosting engines whenever something else independently decorates that slot,
+        // causes a real, reproducible StackOverflowError. The decorator above already reaches into
+        // SnapshotStore.class (config.getOptionalComponent(SnapshotStore.class), to build the
+        // SnapshotCapableEventStorageEngine wrapper when the engine is NOT self-hosting) -- so EventStorageEngine
+        // is not actually independent of SnapshotStore here, as DirectionalCapabilityBridge's contract requires of
+        // its "primary" type. Adding a decorator that makes SnapshotStore.class reach back into EventStorageEngine
+        // makes the two slots mutually, lazily dependent: A's resolution nests into B's, whose decorator nests back
+        // into A's (still mid-resolution), forever -- confirmed by the recursive
+        // SnapshotSourcingConfigurationEnhancer <-> DirectionalCapabilityBridge stack in
+        // SnapshotSourcingConfigurationEnhancerTest once this was wired in. This is exactly the "resolve() memoizes
+        // on first call, so a symmetric dependency can't be resolved lazily by decorators alone" wall
+        // DirectionalCapabilityBridge's own javadoc predicted -- except here it turns out EventStorageEngine.class
+        // was never a safe "primary" to begin with, since it already, legitimately, depends on SnapshotStore.class.
+        // Closing this gap for real needs the registry itself to know the two identifiers share one instance (see
+        // DirectionalCapabilityBridge's javadoc); it is not achievable by composing more decorators.
     }
 }
