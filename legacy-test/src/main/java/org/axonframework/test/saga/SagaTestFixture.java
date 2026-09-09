@@ -64,6 +64,10 @@ import java.util.function.UnaryOperator;
  * publishing thread, so a "when" call has already completed by the time the assertions run and no waiting is needed.
  * The Sagas are kept in an {@link InMemorySagaStore}, which the store assertions read.
  * <p>
+ * When given an event payload, the fixture resolves its Axon Framework 5 message type from that payload. When given an
+ * {@link EventMessage}, it preserves the message's declared type. Axon Framework 5 routes by that type, so it must match
+ * the type supported by the intended Saga handler even when the message payload has the handler's Java type.
+ * <p>
  * Example:
  * <pre>{@code
  * SagaTestFixture<OrderSaga> fixture = new SagaTestFixture<>(OrderSaga.class);

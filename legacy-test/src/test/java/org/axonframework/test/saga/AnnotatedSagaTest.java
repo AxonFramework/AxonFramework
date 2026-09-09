@@ -112,23 +112,20 @@ class AnnotatedSagaTest {
                .expectNoScheduledDeadlines();
     }
 //
-    // Cannot be restored, and not because of deadlines. The message is built by hand with MessageType("event"),
-    // so its QualifiedName is "event". Axon Framework 5 routes an event to a handler by QualifiedName, and the
-    // saga only declares the name derived from TriggerSagaStartEvent, so the processor never delivers it. Axon
-    // Framework 4 routed by payload class and ignored the type name entirely, which is why the name was free to be
-    // arbitrary there. Publishing the payload rather than a hand-built message works, but that would be editing
-    // the test rather than porting it.
-//    @Test
-//    void fixtureApi_PublishedEvent_NoHistoricActivity() {
-//        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-//        fixture.givenNoPriorActivity()
-//               .whenPublishingA(new GenericEventMessage(
-//                       new MessageType("event"), new TriggerSagaStartEvent("id")
-//               ))
-//               .expectActiveSagas(1)
-//               .expectAssociationWith("identifier", "id")
-//               .expectNoScheduledDeadlines();
-//    }
+    /**
+     * Axon Framework 5 routes an explicit message by its declared type rather than deriving a replacement from its
+     * payload. The arbitrary {@code event} type therefore does not reach the handler for {@link TriggerSagaStartEvent}.
+     */
+    @Test
+    void fixtureApi_ExplicitEventMessageIsRoutedByItsDeclaredType() {
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenPublishingA(new GenericEventMessage(
+                       new MessageType("event"), new TriggerSagaStartEvent("id")
+               ))
+               .expectActiveSagas(0)
+               .expectNoAssociationWith("identifier", "id");
+    }
 
     @Test
     void fixtureApi_PublishedEventWithMetadata_NoHistoricActivity() {
