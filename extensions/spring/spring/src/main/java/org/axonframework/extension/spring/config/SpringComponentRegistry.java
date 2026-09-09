@@ -382,7 +382,7 @@ public class SpringComponentRegistry implements
      * {@code ConversionServiceDeducer} eagerly resolves <b>every</b> bean carrying that qualifier whenever it builds a
      * {@code ConversionService} for {@code @ConfigurationProperties} binding.
      * <p>
-     * When a {@link ConfigurationEnhancer} we invoke triggers such a binding while a qualified converter is still
+     * When a {@link ConfigurationEnhancer} triggers such a binding while a qualified converter is still
      * mid-construction, Spring re-enters that still-in-creation bean and throws
      * {@code BeanCurrentlyInCreationException}. Deferring on this qualifier keeps such converters from ever being the
      * bean that triggers {@link #initialize()} mid-construction.
