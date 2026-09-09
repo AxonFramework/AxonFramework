@@ -262,6 +262,13 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+            <version>1.5.12</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Test-->
         <dependency>
             <groupId>org.testcontainers</groupId>
