@@ -625,6 +625,19 @@ public interface AxonTestPhase {
         interface Message<T extends Message<T>> extends MessageAssertions<T> {
 
             /**
+             * Excludes messages supplied directly through the current {@link When when-phase} from subsequent event
+             * and command assertions.
+             * <p>
+             * This changes only the assertion view. The messages remain recorded and are still handled normally.
+             * Messages produced while handling an input remain visible, including messages with a payload equal to an
+             * input payload, because inputs are identified by their
+             * {@link org.axonframework.messaging.core.Message#identifier() message identifier}.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T excludingInputs();
+
+            /**
              * Waits until the given {@code assertion} passes or the default timeout of 5 seconds is reached. The
              * assertion receives the current Then instance, allowing to invoke any of its assertion methods.
              *

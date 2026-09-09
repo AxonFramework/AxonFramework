@@ -25,7 +25,6 @@ import org.hamcrest.Matcher;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,28 +41,21 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
     private final Class<?> sagaType;
     private final AxonTestPhase.Then.Event then;
-    private final String whenEventIdentifier;
     private final CommandValidator commandValidator;
     private final EventValidator eventValidator;
 
     /**
      * Constructs a {@code FixtureExecutionResultImpl} asserting on the given {@code then} phase.
      *
-     * @param sagaType            the type of Saga under test, used to filter the store on the association assertions
-     * @param then                the then-phase of the fixture the Saga was driven through
-     * @param whenEventIdentifier the identifier of the event that drove the when-phase
-     * @param fieldFilter         the filter describing the fields to include when comparing messages
+     * @param sagaType    the type of Saga under test, used to filter the store on the association assertions
+     * @param then        the then-phase of the fixture the Saga was driven through
+     * @param fieldFilter the filter describing the fields to include when comparing messages
      */
     FixtureExecutionResultImpl(Class<?> sagaType,
                                AxonTestPhase.Then.Event then,
-                               String whenEventIdentifier,
                                FieldFilter fieldFilter) {
         this.sagaType = Objects.requireNonNull(sagaType, "The sagaType may not be null.");
         this.then = Objects.requireNonNull(then, "The then-phase may not be null.");
-        this.whenEventIdentifier = Objects.requireNonNull(
-                whenEventIdentifier,
-                "The whenEventIdentifier may not be null."
-        );
         Objects.requireNonNull(fieldFilter, "The fieldFilter may not be null.");
         this.commandValidator = new CommandValidator(this::dispatchedCommands, fieldFilter);
         this.eventValidator = new EventValidator(this::publishedEvents, fieldFilter);
@@ -378,30 +370,15 @@ class FixtureExecutionResultImpl implements FixtureExecutionResult {
         throw NotPorted.deadlines("expectTriggeredDeadlinesOfType");
     }
 
-    /**
-     * The commands the then-phase recorded, reached through its own assertion so the exclusion of the commands the
-     * "when" phase dispatched itself is applied here too.
-     */
     private List<CommandMessage> dispatchedCommands() {
         AtomicReference<List<CommandMessage>> captured = new AtomicReference<>();
         then.commandsSatisfy(captured::set);
         return captured.get();
     }
 
-    /**
-     * The events the then-phase recorded, reached through its own assertion so the exclusion of the event the "when"
-     * phase published itself is applied here too.
-     */
     private List<EventMessage> publishedEvents() {
         AtomicReference<List<EventMessage>> captured = new AtomicReference<>();
         then.eventsSatisfy(captured::set);
-        List<EventMessage> sagaOutput = new ArrayList<>(captured.get());
-        for (int i = 0; i < sagaOutput.size(); i++) {
-            if (whenEventIdentifier.equals(sagaOutput.get(i).identifier())) {
-                sagaOutput.remove(i);
-                break;
-            }
-        }
-        return List.copyOf(sagaOutput);
+        return captured.get();
     }
 }

@@ -20,7 +20,6 @@ import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
-import org.axonframework.messaging.core.MessageTypeResolver;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
@@ -31,7 +30,6 @@ import org.axonframework.messaging.core.configuration.reflection.HandlerDefiniti
 import org.axonframework.messaging.core.configuration.reflection.HandlerEnhancerDefinitionUtils;
 import org.axonframework.messaging.eventhandling.EventBus;
 import org.axonframework.messaging.eventhandling.EventMessage;
-import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -489,23 +487,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private FixtureExecutionResult publishInWhen(When phase,
                                                  Object event,
                                                  Map<String, String> metadata) {
-        EventMessage eventMessage = asEventMessage(event, metadata);
-        return resultOf(phase.event(eventMessage), eventMessage.identifier());
+        return resultOf(phase.event(event, metadata));
     }
 
-    private EventMessage asEventMessage(Object event, Map<String, String> metadata) {
-        if (event instanceof EventMessage eventMessage) {
-            return eventMessage.andMetadata(metadata);
-        }
-        MessageTypeResolver messageTypeResolver = configuration().getComponent(MessageTypeResolver.class);
-        return new GenericEventMessage(messageTypeResolver.resolveOrThrow(event), event, metadata);
-    }
-
-    private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event, String whenEventIdentifier) {
+    private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event) {
         return new FixtureExecutionResultImpl(
                 sagaType,
-                event.then(),
-                whenEventIdentifier,
+                event.then().excludingInputs(),
                 new MatchAllFieldFilter(fieldFilters)
         );
     }

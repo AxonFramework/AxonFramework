@@ -151,7 +151,8 @@ class SagaTestingWithAxonTestFixtureTest {
 
         /**
          * A plain Axon Framework 5 fixture records the event the when-phase publishes. The legacy
-         * {@link SagaTestFixture} removes that input from its Axon Framework 4-compatible event assertions.
+         * {@link SagaTestFixture} selects {@link org.axonframework.test.fixture.AxonTestPhase.Then.Message#excludingInputs()
+         * excludingInputs()} for its Axon Framework 4-compatible event assertions.
          */
         @Test
         void theWhenEventRemainsPartOfTheAxonTestFixtureRecording() {

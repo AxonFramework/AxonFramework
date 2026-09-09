@@ -418,6 +418,9 @@ configuration. This introduces the following observable differences and lifecycl
   that point. As in Axon Framework 4, registrations made after the fixture has been wired are ignored.
 - Every `whenPublishingA(...)` and `whenAggregate(...)` call starts a new observation window. Commands and events from
   a preceding when-phase are not included in the next result, and start-recording callbacks run for every when-phase.
+- Unlike the Axon Framework 4 saga fixture, `AxonTestFixture` records the command or event supplied directly to its
+  when-phase. Its then-phase exposes `excludingInputs()` for output-only assertions. The legacy `SagaTestFixture` uses
+  this view internally, preserving Axon Framework 4 expectations while keeping the Axon Framework 5 default intact.
 - `setCallbackBehavior(...)` remains effective after the fixture has started. A command handler registered through
   `customize(...)` handles matching commands first; the callback behavior answers commands for which no handler is
   registered. `getCommandBus()` returns the configured Axon Framework 5 `CommandBus`, rather than the concrete Axon
