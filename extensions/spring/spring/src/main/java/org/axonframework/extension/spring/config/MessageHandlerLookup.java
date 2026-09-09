@@ -124,7 +124,10 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
             }
 
             List<String> found = messageHandlerBeans(value.getMessageType(), beanFactory);
-            if (!found.isEmpty()) {
+            // The event configurer is registered even with nothing found, because it is also what turns
+            // EventHandlerDescriptor beans into processor modules, and those are contributed by other
+            // BeanDefinitionRegistryPostProcessors whose turn may come after this one.
+            if (!found.isEmpty() || value == MessageHandlerConfigurer.Type.EVENT) {
                 List<String> sortedFound = sortByOrder(found, beanFactory);
                 AbstractBeanDefinition beanDefinition =
                         BeanDefinitionBuilder.genericBeanDefinition(MessageHandlerConfigurer.class)

@@ -39,6 +39,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,16 +94,21 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     }
 
     private void configureEventHandlers(ComponentRegistry registry) {
-        if (handlerBeansRefs.isEmpty()) {
-            // no action needed if there are no handler beans found
-            return;
-        }
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
-        ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
         Set<EventProcessorDefinition.EventHandlerDescriptor> handlers =
                 handlerBeansRefs.stream()
-                                .map(name -> new SimpleEventHandlerDescriptor(name, beanFactory))
-                                .collect(Collectors.toSet());
+                                .map(name -> (EventProcessorDefinition.EventHandlerDescriptor)
+                                        new SimpleEventHandlerDescriptor(name, beanFactory))
+                                .collect(Collectors.toCollection(HashSet::new));
+        // Descriptors contributed as beans join the same round of module building, rather than a round of their own.
+        // Two rounds would each build a module per resolved processor name, so a contributed descriptor sharing a
+        // processor with an annotated bean would produce a second module under the same name and be rejected.
+        handlers.addAll(beanFactory.getBeansOfType(EventProcessorDefinition.EventHandlerDescriptor.class).values());
+        if (handlers.isEmpty()) {
+            // no action needed if there are no handlers found
+            return;
+        }
+        ProcessorModuleFactory processorModuleFactory = applicationContext.getBean(ProcessorModuleFactory.class);
         for (EventProcessorModule processorModule : processorModuleFactory.buildProcessorModules(handlers)) {
             registry.registerModule(processorModule);
         }

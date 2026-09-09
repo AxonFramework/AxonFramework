@@ -117,10 +117,17 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
                 for (EventProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = resultOfRegistration.autodetected(
-                            namedBeanDefinition.beanName(),
-                            namedBeanDefinition.component()
-                    );
+                    resultOfRegistration = namedBeanDefinition instanceof DeclarativeEventHandlerDescriptor declarative
+                            // Registering this one as autodetected would wrap a component that already answers
+                            // supportedEvents() in an annotation-inspecting one, which finds nothing.
+                            ? resultOfRegistration.declarative(
+                                    declarative.beanName(),
+                                    declarative.handlingComponent()
+                            )
+                            : resultOfRegistration.autodetected(
+                                    namedBeanDefinition.beanName(),
+                                    namedBeanDefinition.component()
+                            );
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
@@ -135,11 +142,15 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                     var baseCustomization = SpringCustomizations.pooledStreamingCustomizations(
                             processorName, moduleSettings
                     );
+                    UnaryOperator<PooledStreamingEventProcessorConfiguration> handlerDefaults =
+                            pooledStreamingDefaults(processorName, beanDefs);
                     UnaryOperator<PooledStreamingEventProcessorConfiguration> definitionCustomization =
                             customizeConfiguration(processorName);
                     PooledStreamingEventProcessorModule.Customization customization =
                             (axonConfig, processorConfig) -> {
-                                var result = baseCustomization.apply(axonConfig, processorConfig);
+                                // Applied ahead of the settings so that anything stated in properties overrules it.
+                                var result = handlerDefaults.apply(processorConfig);
+                                result = baseCustomization.apply(axonConfig, result);
                                 result = definitionCustomization.apply(result);
                                 for (var extension : extensionsCustomizations) {
                                     result = extension.apply(axonConfig, result);
@@ -217,6 +228,9 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         if (matches.isEmpty()) {
             // First, check if the handler type has a @Namespace annotation
             return resolveNamespace(handler)
+                    // Then the name the handler prefers, which is how a component that is not a bean of its own, and
+                    // therefore has no meaningful package to be grouped by, gets named.
+                    .or(() -> preferredProcessorName(handler))
                     // Fall back to the package name derived from the bean definition
                     .orElseGet(() -> BeanDefinitionUtils.extractPackageName(handler.beanDefinition()));
         }
@@ -253,6 +267,49 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                                       attrs -> !StringUtils.emptyOrNull((String) attrs.get("namespace"))
                               )
                               .map(attrs -> (String) attrs.get("namespace"));
+    }
+
+    /**
+     * Resolves the processor name the given {@code handler} prefers, for a handler that brings its own event handling
+     * component and can express one.
+     *
+     * @param handler The event handler descriptor.
+     * @return An Optional containing the preferred processor name, or empty when the handler expresses none.
+     */
+    private Optional<String> preferredProcessorName(EventProcessorDefinition.EventHandlerDescriptor handler) {
+        return handler instanceof DeclarativeEventHandlerDescriptor declarative
+                ? declarative.preferredProcessorName()
+                : Optional.empty();
+    }
+
+    /**
+     * Composes the pooled streaming defaults of the {@code handlers} assigned to the processor named
+     * {@code processorName}, or the identity operator when that processor is claimed by an
+     * {@link EventProcessorDefinition}.
+     * <p>
+     * Deferring to an explicit definition mirrors Axon Framework 4, which applied its Saga-specific processor defaults
+     * only when the application had not configured that processor itself.
+     *
+     * @param processorName The name of the processor.
+     * @param handlers      The event handler descriptors assigned to that processor.
+     * @return The defaults to apply before any further customization.
+     */
+    private UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults(
+            String processorName,
+            List<EventProcessorDefinition.EventHandlerDescriptor> handlers
+    ) {
+        if (definitionFor(processorName).isPresent()) {
+            return UnaryOperator.identity();
+        }
+        UnaryOperator<PooledStreamingEventProcessorConfiguration> defaults = UnaryOperator.identity();
+        for (EventProcessorDefinition.EventHandlerDescriptor handler : handlers) {
+            if (handler instanceof DeclarativeEventHandlerDescriptor declarative) {
+                UnaryOperator<PooledStreamingEventProcessorConfiguration> preceding = defaults;
+                UnaryOperator<PooledStreamingEventProcessorConfiguration> next = declarative.pooledStreamingDefaults();
+                defaults = configuration -> next.apply(preceding.apply(configuration));
+            }
+        }
+        return defaults;
     }
 
     /**
