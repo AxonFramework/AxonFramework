@@ -50,6 +50,7 @@ class AxonTimeLimitedTask {
     private final int warningInterval;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Logger logger;
+    private final Object lock = new Object();
     @Nullable
     private final String callerClassName; // stored as name to avoid getName() on every stack frame check
 
@@ -213,12 +214,22 @@ class AxonTimeLimitedTask {
 
     /**
      * Marks the task as completed. Cancels the current future warning or interrupt if any exists.
+     * <p>
+     * If the scheduled interrupt lambda won a race against this call -- i.e., it already set the interrupt flag on
+     * the task thread before {@code complete()} could cancel it -- the interrupt is cleared here so it does not leak
+     * into the caller's subsequent code.
      */
     public void complete() {
-        completed = true;
-        if (currentScheduledFuture != null) {
-            currentScheduledFuture.cancel(false);
-            currentScheduledFuture = null;
+        synchronized (lock) {
+            completed = true;
+            if (currentScheduledFuture != null) {
+                currentScheduledFuture.cancel(false);
+                currentScheduledFuture = null;
+            }
+            if (interrupted) {
+                interrupted = false;
+                Thread.interrupted(); // clear the spurious flag set by the racing lambda
+            }
         }
         if (logger.isTraceEnabled()) {
             logger.trace("{} completed", taskName);
@@ -366,14 +377,16 @@ class AxonTimeLimitedTask {
      */
     private void scheduleInterrupt(long remainingTimeout) {
         currentScheduledFuture = scheduledExecutorService.schedule(() -> {
-            if (!completed && !interrupted) {
-                logger.error(
-                        "{} has exceeded its timeout of [{}ms]. Interrupting thread.\nStacktrace of current thread:\n{}",
-                        taskName,
-                        timeout,
-                        getCurrentStackTrace());
-                interrupted = true;
-                thread.interrupt();
+            synchronized (lock) {
+                if (!completed && !interrupted) {
+                    logger.error(
+                            "{} has exceeded its timeout of [{}ms]. Interrupting thread.\nStacktrace of current thread:\n{}",
+                            taskName,
+                            timeout,
+                            getCurrentStackTrace());
+                    interrupted = true;
+                    thread.interrupt();
+                }
             }
         }, remainingTimeout, TimeUnit.MILLISECONDS);
     }

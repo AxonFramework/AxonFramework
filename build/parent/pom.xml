@@ -53,7 +53,8 @@
         <c3p0.version>0.9.1.2</c3p0.version>
         <hikari.version>7.1.0</hikari.version>
         <hsqldb.version>2.7.4</hsqldb.version>
-        <hibernate-core.version>7.4.5.Final</hibernate-core.version>
+        <hibernate-core.version>7.4.7.Final</hibernate-core.version>
+        <mongo.driver.version>5.11.0</mongo.driver.version>
         <mysql-connector-java.version>26.7.0</mysql-connector-java.version>
         <postgresql.version>42.7.13</postgresql.version>
         <ojdbc.version>23.26.3.0.0</ojdbc.version>
@@ -69,16 +70,16 @@
         <log4j.version>2.26.1</log4j.version>
         <slf4j.version>2.0.18</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>5.0.7</dropwizard.metrics.version>
+        <dropwizard.metrics.version>5.0.8</dropwizard.metrics.version>
         <micrometer.version>1.17.1</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.18.12</byte-buddy.version>
+        <byte-buddy.version>1.18.13</byte-buddy.version>
         <commons-io.version>2.22.0</commons-io.version>
         <disruptor.version>4.0.0</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
-        <javassist.version>3.32.0-GA</javassist.version>
+        <javassist.version>3.33.0-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
-        <equalsverifier.version>4.5.1</equalsverifier.version>
+        <equalsverifier.version>4.5.2</equalsverifier.version>
         <!-- Reactive -->
         <context-propagation.version>1.2.1</context-propagation.version>
         <projectreactor.version>3.8.7</projectreactor.version>
@@ -111,7 +112,7 @@
 
         <!-- Maven plugins -->
         <checkstyle-maven-plugin.version>3.6.0</checkstyle-maven-plugin.version>
-        <checkstyle.version>14.0.0</checkstyle.version>
+        <checkstyle.version>14.1.0</checkstyle.version>
     </properties>
 
     <dependencyManagement>
@@ -153,6 +154,11 @@
                 <groupId>org.hsqldb</groupId>
                 <artifactId>hsqldb</artifactId>
                 <version>${hsqldb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongo.driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
