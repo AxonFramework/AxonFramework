@@ -52,7 +52,7 @@ Note that disabling handler timeouts also disables the annotation-based timeouts
 Configuration API::
 +
 --
-To disable timeouts and warnings for an applications, register a `HandlerTimeoutConfiguration#DISABLED` and/or `TimeoutUnitOfWorkFactoryConfiguration#DISABLED` component with the `ComponentRegistry` like so:
+To disable timeouts and warnings for an application, register a `HandlerTimeoutConfiguration#DISABLED` and/or `TimeoutUnitOfWorkFactoryConfiguration#DISABLED` component with the `ComponentRegistry` like so:
 
 [source,java]
 ----
@@ -86,7 +86,7 @@ You can set a timeout on all message handlers, with unique configuration per mes
 Configuration API::
 +
 --
-You can register a `HandlerTimeoutConfigurer` with the `CompoentRegistry` with the exact settings you would like:
+You can register a `HandlerTimeoutConfigurer` with the `ComponentRegistry` with the exact settings you would like:
 
 [source,java]
 ----
