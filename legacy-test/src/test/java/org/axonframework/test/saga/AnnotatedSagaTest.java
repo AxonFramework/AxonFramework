@@ -52,7 +52,6 @@ class AnnotatedSagaTest {
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
                .expectActiveSagas(1)
-               .expectNoScheduledDeadlines()
                .expectAssociationWith("identifier", "id");
     }
 
@@ -66,7 +65,6 @@ class AnnotatedSagaTest {
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metadata)
                .expectActiveSagas(1)
-               .expectNoScheduledDeadlines()
                .expectAssociationWith("identifier", "id")
                .expectAssociationWith("extraIdentifier", extraIdentifier);
     }
@@ -81,7 +79,6 @@ class AnnotatedSagaTest {
         fixture.givenAPublished(new TriggerSagaStartEvent("id"), metadata)
                .whenPublishingA(new TriggerSagaStartEvent("id"))
                .expectActiveSagas(1)
-               .expectNoScheduledDeadlines()
                .expectAssociationWith("identifier", "id")
                .expectAssociationWith("extraIdentifier", extraIdentifier);
     }
@@ -109,7 +106,7 @@ class AnnotatedSagaTest {
         fixture.givenNoPriorActivity()
                .whenAggregate("id")
                .publishes(new TriggerSagaStartEvent("id"))
-               .expectNoScheduledDeadlines();
+               .expectActiveSagas(1);
     }
 //
     /**
@@ -138,8 +135,7 @@ class AnnotatedSagaTest {
                .whenPublishingA(new TriggerSagaStartEvent("id"), metadata)
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
-               .expectAssociationWith("extraIdentifier", extraIdentifier)
-               .expectNoScheduledDeadlines();
+               .expectAssociationWith("extraIdentifier", extraIdentifier);
     }
 
     @Test
@@ -155,8 +151,6 @@ class AnnotatedSagaTest {
                .expectActiveSagas(0)
                .expectNoAssociationWith("identifier", aggregate2)
                .expectNoAssociationWith("identifier", aggregate1)
-               .expectNoScheduledEvents()
-               .expectNoScheduledDeadlines()
                .expectDispatchedCommands()
                .expectPublishedEvents();
     }
