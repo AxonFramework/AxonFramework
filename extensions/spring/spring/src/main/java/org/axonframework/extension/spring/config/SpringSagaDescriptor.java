@@ -21,13 +21,13 @@ import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.extension.spring.saga.AutowiringSagaStore;
 import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.jspecify.annotations.Nullable;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -52,6 +52,11 @@ import static java.lang.String.format;
  * configured through {@code axon.eventhandling.processors} and able to share a processor with other event handlers
  * exactly like any other handler.
  * <p>
+ * The Saga bean definition is discovery metadata, like the prototype definition contributed by
+ * {@link org.axonframework.extension.spring.stereotype.EventSourced @EventSourced}. Axon constructs Saga instances
+ * itself without Spring bean post-processing; collaborators from the application context belong on handler-method
+ * parameters.
+ * <p>
  * Instances are bean definitions registered by {@link SpringSagaLookup}, one per {@code @Saga} bean. This class is
  * internal: an application declares {@code @Saga} and never touches this.
  *
@@ -59,7 +64,7 @@ import static java.lang.String.format;
  * @since 5.4.0
  */
 @Internal
-public class SpringSagaDescriptor implements DeclarativeEventHandlerDescriptor, ApplicationContextAware {
+public class SpringSagaDescriptor implements EventProcessorDefinition.EventHandlerDescriptor, ApplicationContextAware {
 
     /**
      * The bean name a {@link SagaStore} is resolved under when the {@link Saga#sagaStore()} attribute is unset and the
@@ -117,12 +122,12 @@ public class SpringSagaDescriptor implements DeclarativeEventHandlerDescriptor, 
     }
 
     @Override
-    public ComponentBuilder<EventHandlingComponent> handlingComponent() {
+    public ComponentBuilder<EventHandlingComponent> eventHandlingComponent() {
         return sagaComponent(sagaType);
     }
 
     private <T> ComponentBuilder<EventHandlingComponent> sagaComponent(Class<T> type) {
-        return Sagas.of(type, () -> newSaga(type), this::sagaStore);
+        return Sagas.of(type, () -> BeanUtils.instantiateClass(type), this::resolveSagaStore);
     }
 
     /**
@@ -146,33 +151,6 @@ public class SpringSagaDescriptor implements DeclarativeEventHandlerDescriptor, 
     @Override
     public UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults() {
         return configuration -> configuration.initialToken(source -> source.latestToken(null));
-    }
-
-    /**
-     * A new Saga instance, obtained from the application context rather than constructed reflectively.
-     * <p>
-     * {@code @Saga} is a prototype-scoped {@code @Component}, so the instance handed out here is autowired. That covers
-     * what Axon Framework 4's {@code SpringResourceInjector} did on creation, and covers more of it: constructor
-     * injection and the full set of annotation post processors apply, where Axon Framework 4 ran field and setter
-     * injection over a reflectively constructed instance.
-     */
-    private <T> T newSaga(Class<T> type) {
-        return type.cast(resolveBean());
-    }
-
-    /**
-     * The {@link SagaStore} the Sagas of this type are kept in, wrapped so that a Saga read back from it is autowired.
-     * <p>
-     * Wrapping here rather than decorating the store itself keeps the {@code sagaStore} bean the type the application
-     * declared, and covers a store named on the annotation just as well as the shared one. A
-     * {@link org.axonframework.common.configuration.ComponentRegistry ComponentRegistry} decorator would not work
-     * either way: it reaches components registered with the registry, and the store is a Spring bean.
-     */
-    private SagaStore<Object> sagaStore(Configuration configuration) {
-        return new AutowiringSagaStore<>(
-                resolveSagaStore(configuration),
-                Objects.requireNonNull(applicationContext).getAutowireCapableBeanFactory()
-        );
     }
 
     /**

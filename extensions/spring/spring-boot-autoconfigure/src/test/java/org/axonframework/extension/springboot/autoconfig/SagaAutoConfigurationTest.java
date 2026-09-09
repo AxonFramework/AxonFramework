@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test class validating that an Axon Framework 4 Saga, declared with nothing but {@link Saga @Saga}, runs on Axon
  * Framework 5 Spring Boot: on a processor with the name Axon Framework 4 gave it, storing into the {@link SagaStore}
- * the auto configuration provides, and with its resources injected.
+ * the auto configuration provides, and with Spring collaborators resolved as handler-method parameters.
  *
  * @author Mateusz Nowak
  */
@@ -276,10 +276,10 @@ class SagaAutoConfigurationTest {
     }
 
     @Nested
-    class SagaResources {
+    class SagaCollaborators {
 
         @Test
-        void areInjectedIntoAStartingSaga() {
+        void areNotInjectedIntoFields() {
             inMemoryStored().run(context -> {
                 // given
                 InMemorySagaStore sagaStore = sagaStore(context);
@@ -288,23 +288,7 @@ class SagaAutoConfigurationTest {
                 publish(context, new OrderPlaced("order-1"));
 
                 // then
-                assertThat(sagaOf(sagaStore, ORDER_1).collaborator).isNotNull();
-            });
-        }
-
-        @Test
-        void areInjectedIntoASagaResumedFromItsStore() {
-            inMemoryStored().run(context -> {
-                // given a stored Saga with its resource cleared, as a Saga rebuilt from stored state has
-                InMemorySagaStore sagaStore = sagaStore(context);
-                publish(context, new OrderPlaced("order-1"));
-                sagaOf(sagaStore, ORDER_1).collaborator = null;
-
-                // when a second event reaches it
-                publish(context, new OrderShipped("shipment-of-order-1"));
-
-                // then
-                assertThat(sagaOf(sagaStore, ORDER_1).collaborator).isNotNull();
+                assertThat(sagaOf(sagaStore, ORDER_1).fieldCollaborator).isNull();
             });
         }
 
@@ -319,6 +303,21 @@ class SagaAutoConfigurationTest {
 
                 // then
                 assertThat(sagaOf(sagaStore, ORDER_1).collaboratorFromParameter).isNotNull();
+            });
+        }
+
+        @Test
+        void areResolvedAsHandlerParametersForAResumedSaga() {
+            inMemoryStored().run(context -> {
+                // given
+                InMemorySagaStore sagaStore = sagaStore(context);
+                publish(context, new OrderPlaced("order-1"));
+
+                // when
+                publish(context, new OrderShipped("shipment-of-order-1"));
+
+                // then
+                assertThat(sagaOf(sagaStore, ORDER_1).collaboratorFromFollowUpParameter).isNotNull();
             });
         }
     }
@@ -424,9 +423,10 @@ class SagaAutoConfigurationTest {
         static class OrderSaga {
 
             @Autowired
-            transient @Nullable Collaborator collaborator;
+            transient @Nullable Collaborator fieldCollaborator;
 
             transient @Nullable Collaborator collaboratorFromParameter;
+            transient @Nullable Collaborator collaboratorFromFollowUpParameter;
 
             boolean shipped;
 
@@ -438,7 +438,8 @@ class SagaAutoConfigurationTest {
             }
 
             @SagaEventHandler(associationProperty = "shipmentId")
-            void on(OrderShipped event) {
+            void on(OrderShipped event, Collaborator collaborator) {
+                this.collaboratorFromFollowUpParameter = collaborator;
                 this.shipped = true;
             }
 

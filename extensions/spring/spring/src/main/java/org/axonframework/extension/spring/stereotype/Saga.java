@@ -35,9 +35,9 @@ import java.lang.annotation.Target;
  * {@code EventProcessorDefinition} says otherwise. That processor is configured through the regular
  * {@code axon.eventhandling.processors.<SagaName>Processor} properties.
  * <p>
- * Because the Saga is a prototype-scoped bean, a newly started instance is autowired by Spring, and so is an instance
- * read back from its {@link SagaStore}. Handler parameters of a {@link SagaEventHandler @SagaEventHandler} method are
- * resolved from the application context as well, which is the preferred way to reach a collaborator.
+ * Like {@link EventSourced @EventSourced}, this stereotype lets Spring discover the type while Axon owns the lifecycle
+ * of its instances. Spring collaborators are resolved as parameters of a
+ * {@link SagaEventHandler @SagaEventHandler} method; Saga fields are not dependency-injected.
  * <p>
  * Sagas carry the Axon Framework 4 API, to ease migration of projects that cannot move off it in one go.
  *

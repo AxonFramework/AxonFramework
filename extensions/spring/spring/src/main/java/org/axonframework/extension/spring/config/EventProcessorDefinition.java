@@ -17,13 +17,21 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.configuration.ComponentBuilder;
+import org.axonframework.messaging.core.MessageTypeResolver;
+import org.axonframework.messaging.core.annotation.HandlerDefinition;
+import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
+import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.config.BeanDefinition;
 
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Defines the configuration for an event processor, including which event handlers it should process and how it should
@@ -200,7 +208,47 @@ public interface EventProcessorDefinition {
          *
          * @return The component builder.
          */
-        ComponentBuilder<Object> component();
+        default ComponentBuilder<Object> component() {
+            return configuration -> resolveBean();
+        }
+
+        /**
+         * Returns the builder for the event handling component assigned to a processor.
+         * <p>
+         * By default, the resolved Spring bean is inspected for annotated event handlers. Descriptors for components
+         * that already implement their own event handling semantics can override this method and return that component
+         * directly.
+         *
+         * @return the event handling component builder
+         */
+        default ComponentBuilder<EventHandlingComponent> eventHandlingComponent() {
+            return configuration -> new AnnotatedEventHandlingComponent<>(
+                    component().build(configuration),
+                    configuration.getComponent(ParameterResolverFactory.class),
+                    configuration.getComponent(HandlerDefinition.class),
+                    configuration.getComponent(MessageTypeResolver.class),
+                    configuration.getComponent(EventConverter.class)
+            );
+        }
+
+        /**
+         * Returns the processor name to use when no processor definition or namespace assigns this component.
+         *
+         * @return the preferred fallback processor name, or empty to use the component's package
+         */
+        default Optional<String> preferredProcessorName() {
+            return Optional.empty();
+        }
+
+        /**
+         * Returns defaults to apply when this component is assigned to an otherwise unconfigured pooled streaming
+         * processor. Explicit processor definitions and application properties take precedence over these defaults.
+         *
+         * @return the pooled streaming processor defaults
+         */
+        default UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults() {
+            return UnaryOperator.identity();
+        }
     }
 
     /**

@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  * @since 4.6.0
  */
 @Internal
-public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor {
+public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor, Ordered {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerLookup.class);
 
@@ -124,10 +124,11 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
             }
 
             List<String> found = messageHandlerBeans(value.getMessageType(), beanFactory);
-            // The event configurer is registered even with nothing found, because it is also what turns
-            // EventHandlerDescriptor beans into processor modules, and those are contributed by other
-            // BeanDefinitionRegistryPostProcessors whose turn may come after this one.
-            if (!found.isEmpty() || value == MessageHandlerConfigurer.Type.EVENT) {
+            boolean hasContributedEventHandlers = value == MessageHandlerConfigurer.Type.EVENT
+                    && beanFactory.getBeanNamesForType(
+                            EventProcessorDefinition.EventHandlerDescriptor.class, false, false
+                    ).length > 0;
+            if (!found.isEmpty() || hasContributedEventHandlers) {
                 List<String> sortedFound = sortByOrder(found, beanFactory);
                 AbstractBeanDefinition beanDefinition =
                         BeanDefinitionBuilder.genericBeanDefinition(MessageHandlerConfigurer.class)
@@ -169,5 +170,10 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         // No action required.
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }

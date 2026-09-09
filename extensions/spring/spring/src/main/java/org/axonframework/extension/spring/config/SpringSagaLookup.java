@@ -25,6 +25,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.core.Ordered;
+import org.springframework.core.PriorityOrdered;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Saga types and registers a
@@ -38,7 +40,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
  * @since 4.6.0
  */
 @Internal
-public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
+public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringSagaLookup.class);
 
@@ -78,5 +80,10 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
             BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
         // No action required.
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 }
