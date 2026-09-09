@@ -21,6 +21,7 @@ import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
+import org.axonframework.extension.spring.saga.AutowiringSagaStore;
 import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
@@ -160,6 +161,21 @@ public class SpringSagaDescriptor implements DeclarativeEventHandlerDescriptor, 
     }
 
     /**
+     * The {@link SagaStore} the Sagas of this type are kept in, wrapped so that a Saga read back from it is autowired.
+     * <p>
+     * Wrapping here rather than decorating the store itself keeps the {@code sagaStore} bean the type the application
+     * declared, and covers a store named on the annotation just as well as the shared one. A
+     * {@link org.axonframework.common.configuration.ComponentRegistry ComponentRegistry} decorator would not work
+     * either way: it reaches components registered with the registry, and the store is a Spring bean.
+     */
+    private SagaStore<Object> sagaStore(Configuration configuration) {
+        return new AutowiringSagaStore<>(
+                resolveSagaStore(configuration),
+                Objects.requireNonNull(applicationContext).getAutowireCapableBeanFactory()
+        );
+    }
+
+    /**
      * The {@link SagaStore} the Sagas of this type are kept in: the bean named on the annotation when there is one,
      * otherwise the bean under the {@link #CONVENTIONAL_SAGA_STORE_BEAN_NAME conventional name}, and failing that the
      * single store bean.
@@ -170,11 +186,11 @@ public class SpringSagaDescriptor implements DeclarativeEventHandlerDescriptor, 
      * resolve a store for all the others, which is not what Axon Framework 4 did.
      */
     @SuppressWarnings("unchecked")
-    private <T> SagaStore<? super T> sagaStore(Configuration configuration) {
+    private SagaStore<Object> resolveSagaStore(Configuration configuration) {
         if (StringUtils.nonEmptyOrNull(sagaStore)) {
             return Objects.requireNonNull(applicationContext).getBean(sagaStore, SagaStore.class);
         }
-        return (SagaStore<? super T>) configuration
+        return (SagaStore<Object>) configuration
                 .getOptionalComponent(SagaStore.class, CONVENTIONAL_SAGA_STORE_BEAN_NAME)
                 .or(() -> configuration.getOptionalComponent(SagaStore.class))
                 .orElseThrow(() -> new AxonConfigurationException(format(
