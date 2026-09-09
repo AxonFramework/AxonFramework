@@ -205,7 +205,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier) {
-        given();
         return publisherFor(aggregateIdentifier);
     }
 
@@ -230,7 +229,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public WhenState givenNoPriorActivity() {
-        given().noPriorActivity();
         return this;
     }
 
@@ -346,8 +344,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     /**
      * The given-phase of the delegate fixture, starting the configuration on first use.
      * <p>
-     * Starting lazily reproduces the Axon Framework 4 behaviour that the fixture is wired once, on the first given or
-     * when call, and that anything configured after that point is ignored.
+     * Starting lazily reproduces the Axon Framework 4 behaviour that the fixture is wired once, when the first event is
+     * handled, and that anything configured after that point is ignored. Accessing a bus also starts the configuration,
+     * because Axon Framework 5 obtains both buses from the started application configuration.
      */
     private Given given() {
         if (givenPhase == null) {

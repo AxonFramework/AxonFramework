@@ -71,6 +71,26 @@ class SagaTestFixtureConfigurationTest {
                    .expectAssociationWith("notifier", "first");
         }
 
+        @Test
+        void givenNoPriorActivityDoesNotFreezeFixtureConfiguration() {
+            fixture.givenNoPriorActivity();
+            fixture.registerResource(new Notifier("registered-after-given"));
+
+            fixture.whenPublishingA(new OrderPlaced("order-1"));
+            fixture.whenPublishingA(new OrderNotified("shipment-of-order-1"))
+                   .expectAssociationWith("notifier", "registered-after-given");
+        }
+
+        @Test
+        void selectingAGivenAggregateDoesNotFreezeFixtureConfiguration() {
+            GivenAggregateEventPublisher publisher = fixture.givenAggregate("order-1");
+            fixture.registerResource(new Notifier("registered-after-aggregate"));
+
+            publisher.published(new OrderPlaced("order-1"))
+                     .whenPublishingA(new OrderNotified("shipment-of-order-1"))
+                     .expectAssociationWith("notifier", "registered-after-aggregate");
+        }
+
         /**
          * Inherited from Axon Framework 4, which prepended each registered resource so the most recently registered one
          * of a type was found first.
@@ -205,7 +225,8 @@ class SagaTestFixtureConfigurationTest {
                 return configurer;
             });
 
-            fixture.givenNoPriorActivity();
+            fixture.givenNoPriorActivity()
+                   .whenPublishingA(new OrderPlaced("order-1"));
 
             assertThat(applied).containsExactly("first", "second");
         }
@@ -308,6 +329,17 @@ class SagaTestFixtureConfigurationTest {
 
             fixture.whenPublishingA(new OrderNotified("shipment-of-order-1"))
                    .expectAssociationWith("notifier", "first");
+        }
+
+        @Test
+        void requestingABusBuildsTheAxonFramework5Configuration() {
+            fixture.registerResource(new Notifier("before-bus-access"));
+            fixture.getEventBus();
+            fixture.registerResource(new Notifier("after-bus-access"));
+
+            fixture.givenAPublished(new OrderPlaced("order-1"))
+                   .whenPublishingA(new OrderNotified("shipment-of-order-1"))
+                   .expectAssociationWith("notifier", "before-bus-access");
         }
     }
 

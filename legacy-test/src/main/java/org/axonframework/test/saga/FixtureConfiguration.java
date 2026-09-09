@@ -55,8 +55,9 @@ import java.util.function.UnaryOperator;
  *     or by setting a {@link #setCallbackBehavior(CallbackBehavior) callback behaviour}.</li>
  * </ul>
  * The two deadline interceptor registrations are absent for a different reason, noted where they would sit.
- * Configuration is applied while building the fixture, which happens on the first {@code given} or {@code when} call.
- * Anything registered after that is ignored, as it was in Axon Framework 4.
+ * Configuration is applied while building the fixture, which happens when the first event is handled or a bus is
+ * requested. Merely selecting a given aggregate or declaring that there is no prior activity does not build it.
+ * Anything registered after the fixture is built is ignored, as it was in Axon Framework 4.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -198,6 +199,9 @@ public interface FixtureConfiguration {
      * {@link org.axonframework.messaging.core.SubscribableEventSource SubscribableEventSource} for subscribing. A test
      * only needs the publishing half, but the whole bus is returned so that
      * {@code fixture.getEventBus().subscribe(..)} keeps working, as it did in Axon Framework 4.
+     * <p>
+     * Axon Framework 5 obtains the bus from the application configuration. Calling this method therefore builds and
+     * starts the fixture; make all fixture registrations before requesting the bus.
      *
      * @return the event bus the fixture publishes on
      */
@@ -205,6 +209,9 @@ public interface FixtureConfiguration {
 
     /**
      * The {@link CommandBus} the Saga dispatches on.
+     * <p>
+     * Axon Framework 5 obtains the bus from the application configuration. Calling this method therefore builds and
+     * starts the fixture; make all fixture registrations before requesting the bus.
      *
      * @return the command bus the Saga dispatches on
      */
