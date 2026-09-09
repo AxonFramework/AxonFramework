@@ -38,7 +38,7 @@ import java.util.function.UnaryOperator;
  * <p>
  * Most of what an Axon Framework 4 fixture configured is now expressible on the {@link MessagingConfigurer} an
  * application configures itself, which {@link #customize(UnaryOperator)} hands to the caller. Only the settings that
- * configurer cannot express are kept here. Two Axon Framework 4 methods have no counterpart at all:
+ * configurer cannot express are kept here. Three Axon Framework 4 methods have no counterpart at all:
  * <ul>
  *     <li>{@code registerResourceInjector(..)}: a Saga has no injected fields to configure, since collaborators
  *     reach it as handler parameters.</li>
@@ -47,6 +47,12 @@ import java.util.function.UnaryOperator;
  *     with an
  *     {@link org.axonframework.messaging.core.interception.annotation.ExceptionHandler ExceptionHandler} method,
  *     which is what the Axon Framework 4 default behaviour became.</li>
+ *     <li>{@code registerCommandGateway(..)}: Axon Framework 5 removed the {@code CommandGatewayFactory}, so a
+ *     custom gateway interface can no longer be built anywhere, test or production. A Saga sends commands through
+ *     {@link org.axonframework.messaging.commandhandling.gateway.CommandDispatcher CommandDispatcher} or
+ *     {@link org.axonframework.messaging.commandhandling.gateway.CommandGateway CommandGateway} as a handler
+ *     parameter, and a test decides the answer by subscribing a handler through {@link #customize(UnaryOperator)}
+ *     or by setting a {@link #setCallbackBehavior(CallbackBehavior) callback behaviour}.</li>
  * </ul>
  * The two deadline interceptor registrations are absent for a different reason, noted where they would sit.
  * Configuration is applied while building the fixture, which happens on the first {@code given} or {@code when} call.
@@ -99,33 +105,6 @@ public interface FixtureConfiguration {
      */
     void registerResource(Object resource);
 
-    /**
-     * Registers a gateway implementing the given {@code gatewayInterface}, dispatching on the fixture's command bus so
-     * {@link FixtureExecutionResult#expectDispatchedCommands(Object...)} sees what the Saga sent.
-     * <p>
-     * Each call dispatches its first argument as a command. What it returns is the dispatch result if that has already
-     * arrived, and {@code null} otherwise, as in Axon Framework 4. Use
-     * {@link #registerCommandGateway(Class, Object)} to decide the answer.
-     * <p>
-     * A deliberate subset of Axon Framework 4's {@code CommandGatewayFactory}: no timeouts, no retry scheduler, no
-     * metadata or callback parameters.
-     *
-     * @param gatewayInterface the interface the returned gateway implements
-     * @param <I>              the type of gateway to create
-     * @return the gateway, also registered as a resource so a Saga can declare it as a handler parameter
-     */
-    <I> I registerCommandGateway(Class<I> gatewayInterface);
-
-    /**
-     * Registers a gateway implementing the given {@code gatewayInterface} whose calls answer from the given
-     * {@code stubImplementation}, while still dispatching on the fixture's command bus.
-     *
-     * @param gatewayInterface   the interface the returned gateway implements
-     * @param stubImplementation the implementation deciding what each call returns
-     * @param <I>                the type of gateway to create
-     * @return the gateway, also registered as a resource so a Saga can declare it as a handler parameter
-     */
-    <I> I registerCommandGateway(Class<I> gatewayInterface, I stubImplementation);
 
     /**
      * Registers the given {@code parameterResolverFactory}, used to resolve the parameters of the Saga's handler

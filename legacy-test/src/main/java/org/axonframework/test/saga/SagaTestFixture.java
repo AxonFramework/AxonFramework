@@ -19,7 +19,6 @@ package org.axonframework.test.saga;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.ComponentRegistry;
 import org.axonframework.messaging.commandhandling.CommandBus;
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.core.MessageHandlerInterceptor;
 import org.axonframework.messaging.core.annotation.HandlerDefinition;
 import org.axonframework.messaging.core.annotation.HandlerEnhancerDefinition;
@@ -134,22 +133,6 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public void registerResource(Object resource) {
         resources.addFirst(Objects.requireNonNull(resource, "The resource may not be null."));
-    }
-
-    @Override
-    public <I> I registerCommandGateway(Class<I> gatewayInterface) {
-        return registerCommandGateway(gatewayInterface, null);
-    }
-
-    @Override
-    public <I> I registerCommandGateway(Class<I> gatewayInterface, @Nullable I stubImplementation) {
-        I gateway = StubCommandGatewayFactory.createGateway(
-                gatewayInterface,
-                stubImplementation,
-                () -> configuration().getComponent(CommandGateway.class)
-        );
-        registerResource(gateway);
-        return gateway;
     }
 
     @Override
