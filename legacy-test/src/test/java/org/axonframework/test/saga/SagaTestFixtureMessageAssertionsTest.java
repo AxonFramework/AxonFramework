@@ -133,6 +133,16 @@ class SagaTestFixtureMessageAssertionsTest {
         }
 
         @Test
+        void eachWhenPublishingAStartsAFreshRecording() {
+            fixture.givenAPublished(new OrderPlaced("order-1"))
+                   .whenPublishingA(new OrderNoted("shipment-of-order-1"))
+                   .expectPublishedEvents(new OrderRecorded("order-1"));
+
+            fixture.whenPublishingA(new OrderShipped("shipment-of-order-1"))
+                   .expectPublishedEvents();
+        }
+
+        @Test
         void theEventsAreMatchable() {
             fixture.givenAPublished(new OrderPlaced("order-1"))
                    .whenPublishingA(new OrderNoted("shipment-of-order-1"))

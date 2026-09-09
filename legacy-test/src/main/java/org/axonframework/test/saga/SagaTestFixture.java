@@ -253,19 +253,18 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     public WhenAggregateEventPublisher whenAggregate(String aggregateIdentifier) {
         // Axon Framework 4 started recording here, before handing out the publisher. Entering the when-phase resets
         // the recorders, which is the same moment.
-        whenPhase = given().when();
-        startRecordingCallbacks.forEach(Runnable::run);
+        startWhenPhase();
         return publisherFor(aggregateIdentifier);
     }
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
-        return resultOf(when().event(event));
+        return resultOf(startWhenPhase().event(event));
     }
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata) {
-        return resultOf(when().event(event, metadata));
+        return resultOf(startWhenPhase().event(event, metadata));
     }
 
     @Override
@@ -365,9 +364,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private When when() {
         if (whenPhase == null) {
-            whenPhase = given().when();
-            startRecordingCallbacks.forEach(Runnable::run);
+            return startWhenPhase();
         }
+        return whenPhase;
+    }
+
+    private When startWhenPhase() {
+        whenPhase = given().when();
+        startRecordingCallbacks.forEach(Runnable::run);
         return whenPhase;
     }
 

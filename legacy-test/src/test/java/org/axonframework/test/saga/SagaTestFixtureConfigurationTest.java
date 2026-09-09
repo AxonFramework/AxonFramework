@@ -246,6 +246,18 @@ class SagaTestFixtureConfigurationTest {
             fixture.whenPublishingA(new OrderShipped("shipment-of-order-1"));
             assertThat(calls).containsExactly("started");
         }
+
+        @Test
+        void theCallbackRunsForEachWhenPublishingAInvocation() {
+            List<String> calls = new CopyOnWriteArrayList<>();
+            fixture.registerStartRecordingCallback(() -> calls.add("started"));
+
+            fixture.givenAPublished(new OrderPlaced("order-1"));
+            fixture.whenPublishingA(new OrderShipped("shipment-of-order-1"));
+            fixture.whenPublishingA(new OrderShipped("shipment-of-order-1"));
+
+            assertThat(calls).containsExactly("started", "started");
+        }
     }
 
     @Nested
