@@ -43,9 +43,8 @@ public class TimeoutUnitOfWorkFactoryConfiguration {
      * <p>
      * These match the defaults Spring Boot auto-configuration applies through {@code TimeoutProperties}, so
      * unit-of-work-level timeout behavior is enabled out of the box regardless of whether an application uses Spring
-     * Boot. Construct a {@code TimeoutUnitOfWorkFactoryConfiguration} explicitly, or use
-     * {@link #TimeoutUnitOfWorkFactoryConfiguration()} for a fully disabled configuration, to opt out of these
-     * defaults.
+     * Boot. Construct a {@code TimeoutUnitOfWorkFactoryConfiguration} explicitly, or use this constant to disable the
+     * configuration.
      */
     public static final TimeoutUnitOfWorkFactoryConfiguration DEFAULT = new TimeoutUnitOfWorkFactoryConfiguration(
             new TaskTimeoutSettings(60_000, 10_000, 1_000),
