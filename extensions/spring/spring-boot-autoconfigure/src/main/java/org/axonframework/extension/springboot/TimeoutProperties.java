@@ -47,7 +47,7 @@ public class TimeoutProperties {
     /**
      * Timeout settings for the {@link UnitOfWork}.
      * <p>
-     * Default to 30-second timeout, 10-second warning threshold and a warning interval of 1 second for any
+     * Default to 60-second timeout, 10-second warning threshold and a warning interval of 1 second for any
      * {@link org.axonframework.messaging.core.Message} types backed by a {@code UnitOfWork}.
      */
     private UnitOfWorkTimeoutProperties unitOfWork = new UnitOfWorkTimeoutProperties();
@@ -253,7 +253,8 @@ public class TimeoutProperties {
          * {@link org.axonframework.messaging.eventhandling.processing.EventProcessor}, unless a more specific setting
          * is registered via the {@code event-processor} property.
          * <p>
-         * Defaults to 5-second timeout, 2-second warning threshold and a warning interval of 1 second.
+         Defaults to 60-second timeout, 10-second warning threshold and a warning interval of 1 second. This timeout
+         * is used for the entire command handling process.
          */
         @NestedConfigurationProperty
         private TaskTimeoutSettings eventProcessors = new TaskTimeoutSettings(60000, 10000, 1000);
