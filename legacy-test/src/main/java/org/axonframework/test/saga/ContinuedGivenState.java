@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -40,8 +41,28 @@ public interface ContinuedGivenState extends WhenState {
     GivenAggregateEventPublisher andThenAggregate(String aggregateIdentifier);
 
     /**
+     * Simulate time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param elapsedTime The amount of time that will elapse
+     * @return an object that allows registration of the actual events to send
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    ContinuedGivenState andThenTimeElapses(Duration elapsedTime);
+
+    /**
+     * Simulate time shifts in the current given state. This can be useful when the time between given events is of
+     * importance.
+     *
+     * @param newDateTime The time to advance the clock to
+     * @return an object that allows registration of the actual events to send
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
+     */
+    ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime);
+
+    /**
      * Indicates that the given {@code event} has been published in the past. This event is sent to the associated
-     * Sagas.
+     * sagas.
      *
      * @param event The event to publish
      * @return an object that allows chaining of more given state
@@ -49,30 +70,12 @@ public interface ContinuedGivenState extends WhenState {
     ContinuedGivenState andThenAPublished(Object event);
 
     /**
-     * Indicates that the given {@code event} with given {@code metadata} has been published in the past. This event is
-     * sent to the associated Sagas.
+     * Indicates that the given {@code event} with given {@code metadata} has been published in the past. This event is sent to the associated
+     * sagas.
      *
-     * @param event    The event to publish
+     * @param event The event to publish
      * @param metadata The metadata to attach to the event
      * @return an object that allows chaining of more given state
      */
     ContinuedGivenState andThenAPublished(Object event, Map<String, String> metadata);
-
-    /**
-     * Simulates a time shift in the current given state.
-     *
-     * @param elapsedTime The amount of time that will elapse
-     * @return an object that allows chaining of more given state
-     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
-     */
-    ContinuedGivenState andThenTimeElapses(Duration elapsedTime);
-
-    /**
-     * Simulates a time shift in the current given state.
-     *
-     * @param newDateTime The time to advance the clock to
-     * @return an object that allows chaining of more given state
-     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
-     */
-    ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime);
 }
