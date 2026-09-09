@@ -98,7 +98,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     private UnaryOperator<MessagingConfigurer> customization = c -> c;
     private boolean suppressExceptionInGivenPhase = false;
-    private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
+    private volatile CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Nullable
     private AxonTestFixture fixture;
@@ -106,6 +106,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private Given givenPhase;
     @Nullable
     private When whenPhase;
+    @Nullable
+    private volatile FixtureCommandBus fixtureCommandBus;
 
     /**
      * Creates an instance for testing Sagas of the given {@code sagaType}.
@@ -185,6 +187,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     @Override
     public void setCallbackBehavior(CallbackBehavior callbackBehavior) {
         this.callbackBehavior = Objects.requireNonNull(callbackBehavior, "The callbackBehavior may not be null.");
+        FixtureCommandBus initializedCommandBus = fixtureCommandBus;
+        if (initializedCommandBus != null) {
+            initializedCommandBus.setCallbackBehavior(callbackBehavior);
+        }
     }
 
     @Override
@@ -397,9 +403,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                         CommandBus.class,
                         Integer.MIN_VALUE,
                         (config, name, commandBus) -> {
-                            FixtureCommandBus fixtureCommandBus = new FixtureCommandBus(commandBus);
-                            fixtureCommandBus.setCallbackBehavior(callbackBehavior);
-                            return fixtureCommandBus;
+                            FixtureCommandBus decoratedCommandBus = new FixtureCommandBus(commandBus);
+                            fixtureCommandBus = decoratedCommandBus;
+                            decoratedCommandBus.setCallbackBehavior(callbackBehavior);
+                            return decoratedCommandBus;
                         }
                 ))
                 .componentRegistry(this::registerReflectionComponents)

@@ -98,6 +98,18 @@ class SagaTestFixtureCommandAnswerTest {
                    .whenPublishingA(new OrderPlaced("order-1"))
                    .expectDispatchedCommands(new ConfirmOrder("order-1"));
         }
+
+        @Test
+        void theBehaviourCanBeChangedAfterTheFixtureHasStarted() {
+            fixture.givenNoPriorActivity()
+                   .whenPublishingA(new OrderPlaced("order-1"))
+                   .expectAssociationWith("reply", "none");
+
+            fixture.setCallbackBehavior((payload, metadata) -> "changed");
+
+            fixture.whenPublishingA(new OrderPlaced("order-2"))
+                   .expectAssociationWith("reply", "changed");
+        }
     }
 
     /**
