@@ -32,17 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.any;
 
 /**
  * How the fixture answers the parts of the Axon Framework 4 API that depend on deadlines and the event scheduler.
  * <p>
- * They split in two. An assertion that <em>nothing</em> is scheduled or triggered holds, because {@code axon-legacy}
- * carries neither a scheduler nor a deadline manager and so nothing can be scheduled. Everything else throws, naming
- * itself, which keeps an Axon Framework 4 suite compiling and makes the eventual port a change of bodies rather than
- * of API.
+ * Every operation fails fast and names itself because {@code axon-legacy} carries neither a scheduler nor a deadline
+ * manager. This keeps an Axon Framework 4 suite compiling without allowing an assertion to pass without exercising
+ * the behaviour it claims to verify.
  *
  * @author Mateusz Nowak
  */
@@ -66,13 +64,6 @@ class SagaTestFixtureUnsupportedOperationsTest {
                         .isInstanceOf(UnsupportedOperationException.class)
                         .hasMessageContaining("[" + call.name() + "]")
                         .hasMessageContaining("axon-legacy")
-        ));
-    }
-
-    private static Stream<DynamicTest> holds(List<Call> calls) {
-        return calls.stream().map(call -> DynamicTest.dynamicTest(
-                call.name(),
-                () -> assertThatCode(call.invocation()::run).doesNotThrowAnyException()
         ));
     }
 
@@ -109,11 +100,11 @@ class SagaTestFixtureUnsupportedOperationsTest {
         }
 
         @TestFactory
-        Stream<DynamicTest> assertingNothingIsScheduledHolds() {
+        Stream<DynamicTest> assertingNothingIsScheduledReportsItself() {
             FixtureExecutionResult result = whenSomethingHappened();
             Instant at = Instant.EPOCH;
             Duration in = Duration.ofMinutes(10);
-            return holds(List.of(
+            return reportsItself(List.of(
                     new Call("expectNoScheduledEvents", result::expectNoScheduledEvents),
                     new Call("expectNoScheduledEventMatching",
                              () -> result.expectNoScheduledEventMatching(in, anyEvent())),
@@ -157,12 +148,12 @@ class SagaTestFixtureUnsupportedOperationsTest {
         }
 
         @TestFactory
-        Stream<DynamicTest> assertingNothingIsScheduledOrTriggeredHolds() {
+        Stream<DynamicTest> assertingNothingIsScheduledOrTriggeredReportsItself() {
             FixtureExecutionResult result = whenSomethingHappened();
             Instant at = Instant.EPOCH;
             Instant until = Instant.EPOCH.plusSeconds(60);
             Duration in = Duration.ofMinutes(10);
-            return holds(List.of(
+            return reportsItself(List.of(
                     new Call("expectNoScheduledDeadlines", result::expectNoScheduledDeadlines),
                     new Call("expectNoScheduledDeadline", () -> result.expectNoScheduledDeadline(in, "deadline")),
                     new Call("expectNoScheduledDeadlineOfType",

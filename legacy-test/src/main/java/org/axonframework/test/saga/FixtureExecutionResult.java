@@ -141,9 +141,9 @@ public interface FixtureExecutionResult {
     FixtureExecutionResult expectSuccessfulHandlerExecution();
 
     // Deadlines and the event scheduler have not been ported into axon-legacy yet. The assertions below are declared
-    // so an Axon Framework 4 test suite still compiles. Those asserting that nothing is scheduled or triggered hold,
-    // because nothing can schedule anything; the rest throw an UnsupportedOperationException naming themselves. The
-    // Axon Framework 4 implementation of each is kept as a comment in FixtureExecutionResultImpl.
+    // so an Axon Framework 4 test suite still compiles, but every call throws an UnsupportedOperationException instead
+    // of passing without exercising the requested behaviour. The Axon Framework 4 implementation of each is kept as a
+    // comment in FixtureExecutionResultImpl.
     //
     // TODO #5006 - not declared at all are the overloads taking a Matcher over a DeadlineMessage, plus expectDeadlinesMetMatching,
     // expectDeadlinesMet and expectTriggeredDeadlinesMatching, because DeadlineMessage itself is not ported:
@@ -209,84 +209,63 @@ public interface FixtureExecutionResult {
     /**
      * Asserts that no events are scheduled.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEvents();
 
     /**
      * Asserts that no event matching the given {@code matcher} is scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime, Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that the given {@code event} is not scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event);
 
     /**
      * Asserts that no event of the given {@code eventType} is scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType);
 
     /**
      * Asserts that no event matching the given {@code matcher} is scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime, Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that the given {@code event} is not scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event);
 
     /**
      * Asserts that no event of the given {@code eventType} is scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
 
@@ -341,120 +320,90 @@ public interface FixtureExecutionResult {
     /**
      * Asserts that no deadlines are scheduled.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlines();
 
     /**
      * Asserts that the given {@code deadline} is not scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
 
     /**
      * Asserts that no deadline of the given {@code deadlineType} is scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that no deadline with the given {@code deadlineName} is scheduled after the given duration.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
 
     /**
      * Asserts that the given {@code deadline} is not scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that no deadline of the given {@code deadlineType} is scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that no deadline with the given {@code deadlineName} is scheduled at the given {@code scheduledTime}.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that the given {@code deadline} is not scheduled between {@code from} and {@code to}, both inclusive.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
 
     /**
      * Asserts that no deadline of the given {@code deadlineType} is scheduled between {@code from} and {@code to}, both inclusive.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
 
     /**
      * Asserts that no deadline with the given {@code deadlineName} is scheduled between {@code from} and {@code to}, both inclusive.
      *
- * <p>
- * Holds without anything to check. {@code axon-legacy} carries no event scheduler and no deadline
- * manager yet, so nothing can be scheduled and the assertion is trivially true. It is not proof that a
- * Saga's scheduling behaviour was exercised.
-     *
      * @return the FixtureExecutionResult for method chaining
+     * @throws UnsupportedOperationException always, until deadlines and event scheduling are ported into
+     *                                       {@code axon-legacy}
      */
     FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
 
@@ -462,9 +411,7 @@ public interface FixtureExecutionResult {
      * Asserts that the given {@code expected} deadlines were triggered.
      *
      * @return the FixtureExecutionResult for method chaining
-     * @throws UnsupportedOperationException when called with arguments, until deadlines are ported into
-     *                                       {@code axon-legacy}. Called without arguments it holds, since nothing
-     *                                       can trigger a deadline yet
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
      */
     FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
 
@@ -472,9 +419,7 @@ public interface FixtureExecutionResult {
      * Asserts that deadlines with the given {@code expectedDeadlineNames} were triggered.
      *
      * @return the FixtureExecutionResult for method chaining
-     * @throws UnsupportedOperationException when called with arguments, until deadlines are ported into
-     *                                       {@code axon-legacy}. Called without arguments it holds, since nothing
-     *                                       can trigger a deadline yet
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
      */
     FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
 
@@ -482,9 +427,7 @@ public interface FixtureExecutionResult {
      * Asserts that deadlines of the given {@code expectedDeadlineTypes} were triggered.
      *
      * @return the FixtureExecutionResult for method chaining
-     * @throws UnsupportedOperationException when called with arguments, until deadlines are ported into
-     *                                       {@code axon-legacy}. Called without arguments it holds, since nothing
-     *                                       can trigger a deadline yet
+     * @throws UnsupportedOperationException always, until deadlines are ported into {@code axon-legacy}
      */
     FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 }
