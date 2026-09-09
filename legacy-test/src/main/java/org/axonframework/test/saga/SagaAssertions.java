@@ -56,7 +56,7 @@ import static java.lang.String.format;
  * @author Mateusz Nowak
  * @since 5.4.0
  */
-public abstract class SagaAssertions {
+public final class SagaAssertions {
 
     private SagaAssertions() {
         // Utility class, not meant to be instantiated.
