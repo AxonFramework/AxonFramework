@@ -49,8 +49,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating {@link DefaultProcessorModuleFactory}, including descriptors that provide a ready-made
- * {@link EventHandlingComponent} instead of an annotated bean.
+ * Test class validating {@link DefaultProcessorModuleFactory}, and specifically how it treats an event handler that
+ * brings its own {@link EventHandlingComponent} instead of a plain annotated bean.
  *
  * @author Mateusz Nowak
  */
@@ -73,7 +73,7 @@ class DefaultProcessorModuleFactoryTest {
     }
 
     @Nested
-    class APreconfiguredComponent {
+    class ADeclarativeDescriptor {
 
         @Test
         void isHandedToTheProcessorWithoutBeingWrappedForAnnotationInspection() {
@@ -81,7 +81,7 @@ class DefaultProcessorModuleFactoryTest {
             List<Object> handled = new CopyOnWriteArrayList<>();
 
             // when
-            startWith(preconfigured("orderSaga", PlainSaga.class, "PlainSagaProcessor", handled));
+            startWith(declarative("orderSaga", PlainSaga.class, "PlainSagaProcessor", handled));
             publish(new SomeEvent("order-1"));
 
             // then
@@ -92,7 +92,7 @@ class DefaultProcessorModuleFactoryTest {
         void namesItsProcessorAfterTheNameItPrefers() {
             // given
             Set<EventProcessorModule> modules = modulesOf(
-                    preconfigured("orderSaga", PlainSaga.class, "PlainSagaProcessor")
+                    declarative("orderSaga", PlainSaga.class, "PlainSagaProcessor")
             );
 
             // then the preferred name is used, rather than the bean definition's package
@@ -103,7 +103,7 @@ class DefaultProcessorModuleFactoryTest {
         void losesItsPreferredNameToANamespaceOnTheType() {
             // given a type carrying a Namespace, the Axon Framework 5 successor of @ProcessingGroup
             Set<EventProcessorModule> modules = modulesOf(
-                    preconfigured("orderSaga", NamespacedSaga.class, "NamespacedSagaProcessor")
+                    declarative("orderSaga", NamespacedSaga.class, "NamespacedSagaProcessor")
             );
 
             // then
@@ -121,7 +121,7 @@ class DefaultProcessorModuleFactoryTest {
             // when
             Set<EventProcessorModule> modules = modulesOf(
                     List.of(definition),
-                    preconfigured("orderSaga", PlainSaga.class, "PlainSagaProcessor")
+                    declarative("orderSaga", PlainSaga.class, "PlainSagaProcessor")
             );
 
             // then
@@ -133,11 +133,11 @@ class DefaultProcessorModuleFactoryTest {
     class SharingOneProcessor {
 
         @Test
-        void twoPreconfiguredComponentsResolvingToOneNameLandOnOneProcessor() {
+        void twoDeclarativeDescriptorsResolvingToOneNameLandOnOneProcessor() {
             // given two components explicitly grouped together, as @ProcessingGroup allowed in Axon Framework 4
             Set<EventProcessorModule> modules = modulesOf(
-                    preconfigured("orderSaga", NamespacedSaga.class, "OrderSagaProcessor"),
-                    preconfigured("shipmentSaga", NamespacedSaga.class, "ShipmentSagaProcessor")
+                    declarative("orderSaga", NamespacedSaga.class, "OrderSagaProcessor"),
+                    declarative("shipmentSaga", NamespacedSaga.class, "ShipmentSagaProcessor")
             );
 
             // then
@@ -145,20 +145,20 @@ class DefaultProcessorModuleFactoryTest {
         }
 
         @Test
-        void aPreconfiguredComponentAndAnAnnotatedBeanCanShareOneProcessor() {
-            // given a preconfigured component and a plain annotated bean sharing a processor
-            List<Object> handledBySaga = new CopyOnWriteArrayList<>();
+        void aDeclarativeAndAnAnnotatedDescriptorResolvingToOneNameBothHandleTheEvent() {
+            // given a declarative component and a plain annotated bean sharing a processor
+            List<Object> handledDeclaratively = new CopyOnWriteArrayList<>();
             NamespacedProjection projection = new NamespacedProjection();
 
             // when
             startWith(
-                    preconfigured("orderSaga", NamespacedSaga.class, "OrderSagaProcessor", handledBySaga),
+                    declarative("orderSaga", NamespacedSaga.class, "OrderSagaProcessor", handledDeclaratively),
                     new StubAnnotatedDescriptor("projection", NamespacedProjection.class, projection)
             );
             publish(new SomeEvent("order-1"));
 
             // then both ran, which is only possible on the single processor named after the shared namespace
-            assertThat(handledBySaga).hasSize(1);
+            assertThat(handledDeclaratively).hasSize(1);
             assertThat(projection.handled).hasSize(1);
         }
     }
@@ -185,17 +185,17 @@ class DefaultProcessorModuleFactoryTest {
         return modules.stream().map(Module::name).toList();
     }
 
-    private static StubComponentDescriptor preconfigured(String beanName,
+    private static StubDeclarativeDescriptor declarative(String beanName,
                                                          Class<?> beanType,
                                                          String preferredName) {
-        return preconfigured(beanName, beanType, preferredName, new CopyOnWriteArrayList<>());
+        return declarative(beanName, beanType, preferredName, new CopyOnWriteArrayList<>());
     }
 
-    private static StubComponentDescriptor preconfigured(String beanName,
+    private static StubDeclarativeDescriptor declarative(String beanName,
                                                          Class<?> beanType,
                                                          String preferredName,
                                                          List<Object> handled) {
-        return new StubComponentDescriptor(beanName, beanType, preferredName, handled);
+        return new StubDeclarativeDescriptor(beanName, beanType, preferredName, handled);
     }
 
     private void publish(Object payload) {
@@ -207,9 +207,9 @@ class DefaultProcessorModuleFactoryTest {
 
     /**
      * Stands in for the descriptor a Saga contributes: it carries a ready-made {@link EventHandlingComponent} whose
-     * handlers annotation inspection could not uncover.
+     * handlers no annotation inspection could uncover, which is what makes the declarative registration observable.
      */
-    private record StubComponentDescriptor(
+    private record StubDeclarativeDescriptor(
             String beanName,
             Class<?> beanType,
             String preferredName,
@@ -228,7 +228,7 @@ class DefaultProcessorModuleFactoryTest {
 
         @Override
         public Object resolveBean() {
-            throw new UnsupportedOperationException("A preconfigured component has no bean to resolve.");
+            throw new UnsupportedOperationException("A declarative descriptor has no bean to resolve.");
         }
 
         @Override

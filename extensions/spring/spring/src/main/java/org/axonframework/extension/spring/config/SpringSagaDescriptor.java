@@ -52,11 +52,6 @@ import static java.lang.String.format;
  * configured through {@code axon.eventhandling.processors} and able to share a processor with other event handlers
  * exactly like any other handler.
  * <p>
- * The Saga bean definition is discovery metadata, like the prototype definition contributed by
- * {@link org.axonframework.extension.spring.stereotype.EventSourced @EventSourced}. Axon constructs Saga instances
- * itself without Spring bean post-processing; collaborators from the application context belong on handler-method
- * parameters.
- * <p>
  * Instances are bean definitions registered by {@link SpringSagaLookup}, one per {@code @Saga} bean. This class is
  * internal: an application declares {@code @Saga} and never touches this.
  *
