@@ -38,6 +38,8 @@ import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * The rental payment process, exactly as the bike rental sample application wrote it for Axon Framework 4, ported
  * through {@code axon-legacy} with as few changes as the two APIs let it get away with.
@@ -56,10 +58,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
  *     was never asked to.</li>
  * </ul>
  * Left deliberately unchanged, warts included: {@code bikeId} and {@code renter} are kept as mutable fields exactly
- * as Axon Framework 4 stored them, and every dispatch is fire-and-forget ({@link CommandDispatcher#send(Object)}'s
- * result is never awaited), matching the original {@code commandGateway.send(...)} call it replaces. A redelivered
- * {@link BikeRequested} therefore still starts a second payment for the same rental, precisely as it did in Axon
- * Framework 4 -- a bug the four AF5-native recipes in this module all fix, and this one faithfully reproduces.
+ * as Axon Framework 4 stored them. A redelivered {@link BikeRequested} still starts a second payment for the same
+ * rental, precisely as it did in Axon Framework 4 -- a bug the four AF5-native recipes in this module all fix, and
+ * this one faithfully reproduces.
+ * <p>
+ * One dispatch is not fire-and-forget, though, and this is a deliberate departure from the original: the
+ * {@code PreparePayment} sent below is joined. Axon Framework 4 retried a failed dispatch through a scheduled
+ * deadline; with that commented out (see below), an un-joined dispatch would mean a failed {@code PreparePayment}
+ * is simply lost forever, since the event handler returns, {@code void}, before the command resolves, and the event
+ * is marked handled regardless of what happens to it afterward. Joining turns that failure into a failure of the
+ * event itself, so the processor's own redelivery retries it -- a cruder stand-in for the deadline-based retry, but
+ * not nothing. The other three dispatches ({@code ApproveRequest}, {@code RejectRequest}) remain fire-and-forget,
+ * matching the original {@code commandGateway.send(...)} calls they replace.
  * <p>
  * {@link StartSaga @StartSaga} is deprecated in {@code axon-legacy}: the module exists to let already-running Axon
  * Framework 4 Sagas finish, not to start new ones. This class uses it anyway, deliberately, because showing what
@@ -107,9 +117,16 @@ public class PaymentSaga {
         this.renter = event.renter();
         PaymentReference reference = RentalPaymentReference.forRental(event.rentalId());
         lifecycle.associateWith("paymentReference", reference.raw());
-        dispatcher.send(new PreparePayment(reference, RentalPricing.PRICE));
+        // Joined, unlike the dispatches below: with the deadline-based retry commented out, this is what turns a
+        // failed dispatch into a failed event instead of a silently lost one, so the event processor's own
+        // redelivery retries it. See the class-level Javadoc.
+        dispatcher.send(new PreparePayment(reference, RentalPricing.PRICE))
+                  .getResultMessage()
+                  .orTimeout(10, TimeUnit.SECONDS)
+                  .join();
         // TODO axon-legacy #5006: Axon Framework 4 retried a failed PreparePayment dispatch here through a
-        // scheduled "retryPayment" deadline. Reintroduce once deadlines are ported into axon-legacy:
+        // scheduled "retryPayment" deadline, instead of relying on event redelivery. Reintroduce once deadlines
+        // are ported into axon-legacy:
         //
         // ScopeDescriptor scope = Scope.describeCurrentScope();
         // dispatcher.send(new PreparePayment(reference, RentalPricing.PRICE))
