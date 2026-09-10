@@ -17,13 +17,8 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.configuration.ComponentBuilder;
-import org.axonframework.messaging.core.MessageTypeResolver;
-import org.axonframework.messaging.core.annotation.HandlerDefinition;
-import org.axonframework.messaging.core.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.annotation.AnnotatedEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
-import org.axonframework.messaging.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.jspecify.annotations.Nullable;
@@ -213,22 +208,18 @@ public interface EventProcessorDefinition {
         }
 
         /**
-         * Returns the builder for the event handling component assigned to a processor.
+         * Registers this handler with the components assigned to its event processor.
          * <p>
-         * By default, the resolved Spring bean is inspected for annotated event handlers. Descriptors for components
-         * that already implement their own event handling semantics can override this method and return that component
-         * directly.
+         * A regular Spring handler is an object whose annotated methods must be discovered. A descriptor for an
+         * already assembled event handling component can override this operation to register that component directly.
          *
-         * @return the event handling component builder
+         * @param components the components already assigned to the processor
+         * @return the phase accepting another component or completing registration
          */
-        default ComponentBuilder<EventHandlingComponent> eventHandlingComponent() {
-            return configuration -> new AnnotatedEventHandlingComponent<>(
-                    component().build(configuration),
-                    configuration.getComponent(ParameterResolverFactory.class),
-                    configuration.getComponent(HandlerDefinition.class),
-                    configuration.getComponent(MessageTypeResolver.class),
-                    configuration.getComponent(EventConverter.class)
-            );
+        default EventHandlingComponentsConfigurer.AdditionalComponentPhase registerWith(
+                EventHandlingComponentsConfigurer.ComponentsPhase components
+        ) {
+            return components.autodetected(beanName(), component());
         }
 
         /**

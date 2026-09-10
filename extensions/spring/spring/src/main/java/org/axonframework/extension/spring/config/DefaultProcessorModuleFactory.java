@@ -116,11 +116,8 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         assignments.forEach((processorName, beanDefs) -> {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
-                for (EventProcessorDefinition.EventHandlerDescriptor namedBeanDefinition : beanDefs) {
-                    resultOfRegistration = resultOfRegistration.declarative(
-                            namedBeanDefinition.beanName(),
-                            namedBeanDefinition.eventHandlingComponent()
-                    );
+                for (EventProcessorDefinition.EventHandlerDescriptor descriptor : beanDefs) {
+                    resultOfRegistration = descriptor.registerWith(resultOfRegistration);
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
@@ -204,6 +201,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * <ol>
      *     <li>Explicit {@link EventProcessorDefinition} selector match</li>
      *     <li>{@link Namespace} annotation on the handler's type, enclosing classes, package, or module</li>
+     *     <li>The handler descriptor's preferred processor name</li>
      *     <li>Package name derived from the bean definition</li>
      * </ol>
      *

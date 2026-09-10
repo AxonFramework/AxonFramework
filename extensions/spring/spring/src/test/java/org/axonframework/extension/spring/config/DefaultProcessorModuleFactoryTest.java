@@ -31,6 +31,7 @@ import org.axonframework.messaging.eventhandling.EventSink;
 import org.axonframework.messaging.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.messaging.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -47,6 +48,11 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class validating {@link DefaultProcessorModuleFactory}, and specifically how it treats an event handler that
@@ -163,6 +169,30 @@ class DefaultProcessorModuleFactoryTest {
         }
     }
 
+    @Nested
+    class AnOrdinaryDescriptor {
+
+        @Test
+        void requestsAnnotationAutodetection() {
+            // given
+            NamespacedProjection projection = new NamespacedProjection();
+            StubAnnotatedDescriptor descriptor =
+                    new StubAnnotatedDescriptor("projection", NamespacedProjection.class, projection);
+            EventHandlingComponentsConfigurer.ComponentsPhase components =
+                    mock(EventHandlingComponentsConfigurer.ComponentsPhase.class);
+            EventHandlingComponentsConfigurer.AdditionalComponentPhase registered =
+                    mock(EventHandlingComponentsConfigurer.AdditionalComponentPhase.class);
+            when(components.autodetected(eq("projection"), any())).thenReturn(registered);
+
+            // when
+            EventHandlingComponentsConfigurer.AdditionalComponentPhase result = descriptor.registerWith(components);
+
+            // then
+            assertThat(result).isSameAs(registered);
+            verify(components).autodetected(eq("projection"), any());
+        }
+    }
+
     private void startWith(EventProcessorDefinition.EventHandlerDescriptor... descriptors) {
         MessagingConfigurer configurer = MessagingConfigurer.create();
         for (EventProcessorModule module : modulesOf(descriptors)) {
@@ -232,13 +262,15 @@ class DefaultProcessorModuleFactoryTest {
         }
 
         @Override
-        public ComponentBuilder<EventHandlingComponent> eventHandlingComponent() {
-            return c -> SimpleEventHandlingComponent
+        public EventHandlingComponentsConfigurer.AdditionalComponentPhase registerWith(
+                EventHandlingComponentsConfigurer.ComponentsPhase components
+        ) {
+            return components.declarative(beanName, c -> SimpleEventHandlingComponent
                     .create(beanName)
                     .subscribe(SOME_EVENT, (event, context) -> {
                         handled.add(event.payload());
                         return MessageStream.empty();
-                    });
+                    }));
         }
 
         @Override

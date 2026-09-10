@@ -23,6 +23,7 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -117,8 +118,10 @@ public class SpringSagaDescriptor implements EventProcessorDefinition.EventHandl
     }
 
     @Override
-    public ComponentBuilder<EventHandlingComponent> eventHandlingComponent() {
-        return sagaComponent(sagaType);
+    public EventHandlingComponentsConfigurer.AdditionalComponentPhase registerWith(
+            EventHandlingComponentsConfigurer.ComponentsPhase components
+    ) {
+        return components.declarative(beanName(), sagaComponent(sagaType));
     }
 
     private <T> ComponentBuilder<EventHandlingComponent> sagaComponent(Class<T> type) {
