@@ -157,7 +157,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         return new Event();
     }
 
-    private Predicate<Message> excludingInputMessages() {
+    private Predicate<Message> whenPhaseOutputFilter() {
         Set<String> identifiers = Set.copyOf(inputMessageIdentifiers);
         return message -> !identifiers.contains(message.identifier());
     }
@@ -185,7 +185,7 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    excludingInputMessages(),
+                    whenPhaseOutputFilter(),
                     actualResult,
                     actualException
             );
@@ -200,7 +200,7 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    excludingInputMessages(),
+                    whenPhaseOutputFilter(),
                     actualException
             );
         }
@@ -219,7 +219,7 @@ class AxonTestWhen implements AxonTestPhase.When {
                     configuration,
                     customization,
                     recordings,
-                    excludingInputMessages(),
+                    whenPhaseOutputFilter(),
                     actualException
             );
         }

@@ -493,7 +493,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private FixtureExecutionResult resultOf(AxonTestPhase.When.Event event) {
         return new FixtureExecutionResultImpl(
                 sagaType,
-                event.then().excludingInputs(),
+                event.then(),
                 new MatchAllFieldFilter(fieldFilters)
         );
     }

@@ -149,20 +149,15 @@ class SagaTestingWithAxonTestFixtureTest {
     @Nested
     class PublishedEvents {
 
-        /**
-         * A plain Axon Framework 5 fixture records the event the when-phase publishes. The legacy
-         * {@link SagaTestFixture} selects {@link org.axonframework.test.fixture.AxonTestPhase.Then.Message#excludingInputs()
-         * excludingInputs()} for its Axon Framework 4-compatible event assertions.
-         */
         @Test
-        void theWhenEventRemainsPartOfTheAxonTestFixtureRecording() {
+        void theWhenEventIsNotAssertedAsOutput() {
             OrderShipped whenEvent = new OrderShipped("shipment-of-order-1");
             fixture.given()
                    .event(new OrderPlaced("order-1"))
                    .when()
                    .event(whenEvent)
                    .then()
-                   .events(whenEvent);
+                   .noEvents();
         }
     }
 

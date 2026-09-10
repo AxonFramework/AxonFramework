@@ -58,8 +58,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     protected final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingComponentsRegistry recordings;
-    private final Predicate<Message> excludingInputsFilter;
-    private Predicate<Message> assertionFilter = message -> true;
+    private final Predicate<Message> assertionFilter;
 
     private final CommandValidator commandValidator;
     protected final @Nullable Throwable actualException;
@@ -67,33 +66,27 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     /**
      * Constructs an {@code AxonTestThenMessage} for the given parameters.
      *
-     * @param configuration        The configuration which this test fixture phase is based on.
-     * @param customization        Collection of customizations made for this test fixture.
-     * @param recordings           The registry holding recording components for assertions.
-     * @param excludingInputsFilter Filter that rejects messages supplied directly through the when-phase.
-     * @param actualException      The exception thrown during the when-phase, potentially {@code null}.
+     * @param configuration   the configuration which this test fixture phase is based on
+     * @param customization   collection of customizations made for this test fixture
+     * @param recordings      the registry holding recording components for assertions
+     * @param assertionFilter filter applied to recorded messages before assertions
+     * @param actualException the exception thrown during the when-phase, potentially {@code null}
      */
     public AxonTestThenMessage(
             AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingComponentsRegistry recordings,
-            Predicate<Message> excludingInputsFilter,
+            Predicate<Message> assertionFilter,
             @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
         this.customization = customization;
         this.recordings = recordings;
-        this.excludingInputsFilter = excludingInputsFilter;
+        this.assertionFilter = assertionFilter;
         this.actualException = actualException;
         this.commandValidator = new CommandValidator(this::recordedCommands,
                                                      recordings.commandBus()::reset,
                                                      new MatchAllFieldFilter(customization.fieldFilters()));
-    }
-
-    @Override
-    public T excludingInputs() {
-        assertionFilter = excludingInputsFilter;
-        return self();
     }
 
     private List<EventMessage> recordedEvents() {

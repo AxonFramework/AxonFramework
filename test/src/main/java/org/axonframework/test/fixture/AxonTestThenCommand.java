@@ -47,22 +47,22 @@ class AxonTestThenCommand
     /**
      * Constructs an {@code AxonTestThenCommand} for the given parameters.
      *
-     * @param configuration         The configuration which this test fixture phase is based on.
-     * @param customization         Collection of customizations made for this test fixture.
-     * @param recordings            The registry holding recording components for assertions.
-     * @param excludingInputsFilter Filter that rejects messages supplied directly through the when-phase.
-     * @param lastCommandResult     The last result of command handling.
-     * @param lastCommandException  The exception thrown during the when-phase, potentially {@code null}.
+     * @param configuration        the configuration which this test fixture phase is based on
+     * @param customization        collection of customizations made for this test fixture
+     * @param recordings           the registry holding recording components for assertions
+     * @param assertionFilter      filter applied to recorded messages before assertions
+     * @param lastCommandResult    the last result of command handling
+     * @param lastCommandException the exception thrown during the when-phase, potentially {@code null}
      */
     public AxonTestThenCommand(
             AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingComponentsRegistry recordings,
-            Predicate<Message> excludingInputsFilter,
+            Predicate<Message> assertionFilter,
             Message lastCommandResult,
             @Nullable Throwable lastCommandException
     ) {
-        super(configuration, customization, recordings, excludingInputsFilter, lastCommandException);
+        super(configuration, customization, recordings, assertionFilter, lastCommandException);
         this.actualResult = lastCommandResult;
     }
 

@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class AxonTestFixtureExcludingInputsTest {
+class AxonTestFixtureWhenInputFilteringTest {
 
     private static final TestEvent INPUT_EVENT = new TestEvent("input");
     private static final TestEvent OUTPUT_EVENT = new TestEvent("output");
@@ -48,28 +48,17 @@ class AxonTestFixtureExcludingInputsTest {
     class Events {
 
         @Test
-        void inputsRemainVisibleByDefault() {
+        void eventInputIsFilteredOutByDefault() {
             var fixture = AxonTestFixture.with(configurer());
 
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .events(INPUT_EVENT);
-        }
-
-        @Test
-        void excludingInputsLeavesNoEventsWhenHandlingProducesNone() {
-            var fixture = AxonTestFixture.with(configurer());
-
-            fixture.when()
-                   .event(INPUT_EVENT)
-                   .then()
-                   .excludingInputs()
                    .noEvents();
         }
 
         @Test
-        void excludingInputsKeepsHandlerOutput() {
+        void handlerOutputRemainsVisible() {
             var configurer = configurer();
             publishOnFirstEvent(configurer, OUTPUT_EVENT);
             var fixture = AxonTestFixture.with(configurer);
@@ -77,12 +66,11 @@ class AxonTestFixtureExcludingInputsTest {
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .events(OUTPUT_EVENT);
         }
 
         @Test
-        void exclusionUsesIdentifiersSoEqualRepublishedPayloadRemainsVisible() {
+        void filteringUsesIdentifiersSoEqualRepublishedPayloadRemainsVisible() {
             var configurer = configurer();
             publishOnFirstEvent(configurer, INPUT_EVENT);
             var fixture = AxonTestFixture.with(configurer);
@@ -90,24 +78,22 @@ class AxonTestFixtureExcludingInputsTest {
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .events(INPUT_EVENT);
         }
 
         @Test
-        void explicitEventMessageIsExcludedByItsIdentifier() {
+        void explicitEventMessageIsFilteredByItsIdentifier() {
             var fixture = AxonTestFixture.with(configurer());
             EventMessage input = eventMessage(INPUT_EVENT);
 
             fixture.when()
                    .event(input, Metadata.with("key", "value"))
                    .then()
-                   .excludingInputs()
                    .noEvents();
         }
 
         @Test
-        void exclusionAppliesToCustomAssertions() {
+        void filteringAppliesToCustomAssertions() {
             var configurer = configurer();
             publishOnFirstEvent(configurer, OUTPUT_EVENT);
             var fixture = AxonTestFixture.with(configurer);
@@ -115,20 +101,18 @@ class AxonTestFixtureExcludingInputsTest {
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .eventsSatisfy(events -> assertThat(events).extracting(EventMessage::payload)
                                                               .containsExactly(OUTPUT_EVENT))
                    .eventsMatch(events -> events.size() == 1);
         }
 
         @Test
-        void allEventsInABatchAreExcluded() {
+        void allEventsInABatchAreFilteredOut() {
             var fixture = AxonTestFixture.with(configurer());
 
             fixture.when()
                    .events(INPUT_EVENT, OUTPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .noEvents();
         }
 
@@ -141,24 +125,22 @@ class AxonTestFixtureExcludingInputsTest {
                    .when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .noEvents();
         }
 
         @Test
-        void exclusionDoesNotChangeTheNextScenarioDefault() {
+        void eachScenarioFiltersItsOwnInput() {
             var fixture = AxonTestFixture.with(configurer());
 
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .noEvents()
                    .and()
                    .when()
                    .event(OUTPUT_EVENT)
                    .then()
-                   .events(OUTPUT_EVENT);
+                   .noEvents();
         }
     }
 
@@ -166,7 +148,7 @@ class AxonTestFixtureExcludingInputsTest {
     class Commands {
 
         @Test
-        void directCommandIsExcludedFromAllCommandAssertions() {
+        void directCommandIsFilteredOutFromAllCommandAssertions() {
             var configurer = configurer();
             registerNoOpCommandHandler(configurer);
             var fixture = AxonTestFixture.with(configurer);
@@ -175,7 +157,6 @@ class AxonTestFixtureExcludingInputsTest {
             fixture.when()
                    .command(input)
                    .then()
-                   .excludingInputs()
                    .noCommands()
                    .commandsSatisfy(commands -> assertThat(commands).isEmpty())
                    .commandsMatch(List::isEmpty);
@@ -191,12 +172,11 @@ class AxonTestFixtureExcludingInputsTest {
             fixture.when()
                    .event(INPUT_EVENT)
                    .then()
-                   .excludingInputs()
                    .commands(new TestCommand("output"));
         }
 
         @Test
-        void excludedCommandCannotBeAssertedAsOutput() {
+        void filteredCommandCannotBeAssertedAsOutput() {
             var configurer = configurer();
             registerNoOpCommandHandler(configurer);
             var fixture = AxonTestFixture.with(configurer);
@@ -205,7 +185,6 @@ class AxonTestFixtureExcludingInputsTest {
             assertThatThrownBy(() -> fixture.when()
                                             .command(input)
                                             .then()
-                                            .excludingInputs()
                                             .commands(input))
                     .isInstanceOf(AxonAssertionError.class);
         }
@@ -236,7 +215,9 @@ class AxonTestFixtureExcludingInputsTest {
                 (c, n, delegate) -> {
                     delegate.subscribe((events, context) -> {
                         if (!handled.getAndSet(true)) {
-                            c.getComponent(CommandGateway.class).sendAndWait(command);
+                            return c.getComponent(CommandGateway.class)
+                                    .send(command, context)
+                                    .getResultMessage();
                         }
                         return CompletableFuture.completedFuture(null);
                     });
