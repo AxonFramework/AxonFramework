@@ -91,7 +91,7 @@ public final class Sagas {
      * A builder of the {@link EventHandlingComponent} handling events for Sagas of the given {@code sagaType},
      * constructing each instance through the given {@code sagaFactory}.
      * <p>
-     * Use this when a Saga needs a collaborator its handler methods cannot receive as a parameter, or when it has no
+     * Use this when a Saga needs a collaborator its handler methods cannot receive as a parameter, or when it lacks a
      * no-argument constructor.
      *
      * @param sagaType    the type of Saga the resulting component manages

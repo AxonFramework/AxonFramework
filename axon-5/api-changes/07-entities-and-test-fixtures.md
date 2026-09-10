@@ -404,12 +404,12 @@ snapshotting, dead-letter queues, and event scheduling (to name a few). And, las
 solution towards integration testing an Axon Framework application.
 
 We acknowledge that this shift is a massive breaking changes between Axon Framework 4 and 5. Given the importance of
-test suites, we will provide a legacy installment of the old fixtures, albeit deprecated. This way, users are able to
-migrate the tests on their own pass.
+test suites, we will provide a legacy installment of the old fixtures. This way, users are able to migrate the tests
+on their own pass.
 
 ### Migrating `SagaTestFixture`
 
-The deprecated `SagaTestFixture` is available from the `axon-legacy-test` module. It retains the Axon Framework 4
+The legacy `SagaTestFixture` is available from the `axon-legacy-test` module. It retains the Axon Framework 4
 given-when-then API where possible, but delegates execution to an Axon Framework 5 `AxonTestFixture` and application
 configuration. This introduces the following observable differences and lifecycle requirements:
 
