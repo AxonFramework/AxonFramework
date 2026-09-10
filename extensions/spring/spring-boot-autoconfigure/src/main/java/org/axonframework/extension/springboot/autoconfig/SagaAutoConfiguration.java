@@ -18,9 +18,9 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.extension.spring.config.SagaProcessorConfigurer;
 import org.axonframework.extension.spring.config.SpringSagaLookup;
-import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.spring.stereotype.Saga;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

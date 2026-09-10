@@ -16,10 +16,10 @@
 
 package org.axonframework.extension.spring.config;
 
-import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventMessage;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.spring.stereotype.Saga;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.BeanDefinition;

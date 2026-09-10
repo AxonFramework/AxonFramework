@@ -17,7 +17,7 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.extension.spring.stereotype.Saga;
+import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

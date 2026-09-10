@@ -18,7 +18,6 @@ package org.axonframework.extension.springboot.autoconfig;
 
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.extension.spring.config.EventProcessorDefinition;
-import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.core.annotation.Namespace;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
 import org.axonframework.messaging.eventhandling.gateway.EventGateway;
@@ -37,6 +36,7 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.spring.stereotype.Saga;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

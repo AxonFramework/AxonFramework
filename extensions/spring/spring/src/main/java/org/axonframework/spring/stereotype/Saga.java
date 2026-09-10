@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.extension.spring.stereotype;
+package org.axonframework.spring.stereotype;
 
 import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.repository.SagaStore;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -35,11 +34,14 @@ import java.lang.annotation.Target;
  * {@code EventProcessorDefinition} says otherwise. That processor is configured through the regular
  * {@code axon.eventhandling.processors.<SagaName>Processor} properties.
  * <p>
- * Like {@link EventSourced @EventSourced}, this stereotype lets Spring discover the type while Axon owns the lifecycle
- * of its instances. Spring collaborators are resolved as parameters of a
- * {@link SagaEventHandler @SagaEventHandler} method; Saga fields are not dependency-injected.
+ * Like {@link org.axonframework.extension.spring.stereotype.EventSourced @EventSourced}, this stereotype lets Spring
+ * discover the type while Axon owns the lifecycle of its instances. Spring collaborators are resolved as parameters
+ * of a {@link SagaEventHandler @SagaEventHandler} method; Saga fields are not dependency-injected.
  * <p>
- * Sagas carry the Axon Framework 4 API, to ease migration of projects that cannot move off it in one go.
+ * Sagas carry the Axon Framework 4 API, to ease migration of projects that cannot move off it in one go. Kept under
+ * its Axon Framework 4 package, {@code org.axonframework.spring.stereotype}, rather than this module's
+ * {@code org.axonframework.extension.spring.stereotype}, unlike every other class {@code axon-legacy}'s Spring
+ * integration carries: an application migrating a Saga in place keeps its existing {@code import} unchanged.
  *
  * @author Allard Buijze
  * @since 3.0

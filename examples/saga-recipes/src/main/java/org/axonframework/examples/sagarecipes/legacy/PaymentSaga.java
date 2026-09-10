@@ -30,12 +30,12 @@ import org.axonframework.examples.sagarecipes.rental.write.approverequest.Approv
 import org.axonframework.examples.sagarecipes.rental.write.rejectrequest.RejectRequest;
 import org.axonframework.examples.sagarecipes.saga.shared.RentalPaymentReference;
 import org.axonframework.examples.sagarecipes.saga.shared.RentalPricing;
-import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
+import org.axonframework.spring.stereotype.Saga;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.util.concurrent.TimeUnit;

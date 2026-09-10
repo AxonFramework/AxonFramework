@@ -21,11 +21,11 @@ import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
-import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
+import org.axonframework.spring.stereotype.Saga;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
 
