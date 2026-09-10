@@ -183,7 +183,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     @Test
     void streamingFromLatestTrackingTokenSkipsExistingEvents() {
-        appendEvents(
+        ConsistencyMarker marker = appendEvents(
                 AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
                 taggedEventMessage("event-0", TEST_AGGREGATE_TAGS),
                 taggedEventMessage("event-1", TEST_AGGREGATE_TAGS)
@@ -194,7 +194,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         assertFalse(stream.hasNextAvailable());
 
         TaggedEventMessage<?> expectedEvent = taggedEventMessage("event-2", TEST_AGGREGATE_TAGS);
-        appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA), expectedEvent);
+        appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(marker), expectedEvent);
 
         await().untilAsserted(() -> assertTrue(stream.hasNextAvailable()));
         Optional<Entry<EventMessage>> next = stream.next();
