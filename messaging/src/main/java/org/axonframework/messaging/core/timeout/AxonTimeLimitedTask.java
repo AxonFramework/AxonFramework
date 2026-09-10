@@ -20,7 +20,8 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.Objects;
-import java.util.concurrent.Executor;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,16 +29,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents a task with a timeout.
  * <p>
- * The task will be interrupted when the {@code timeout} is reached. If the {@code warningThreshold} is lower than the
- * timeout, warnings will be logged at the configured {@code warningInterval} until the timeout is reached. All times
- * are in milliseconds.
+ * Every {@link Thread} bound via {@link #bindToCurrentThread()} will be interrupted when the {@code timeout} is
+ * reached, since more than one may be executing work guarded by this task at the same time. If the
+ * {@code warningThreshold} is lower than the timeout, warnings will be logged at the configured {@code warningInterval}
+ * until the timeout is reached. All times are in milliseconds.
  * <p>
  * Warning logging will include the task's name, the current time taken by the task and its remaining time to execute.
- * The stack trace of the thread handling the message will also be included in the log, up to the point where the task
- * was started.
+ * The stack trace of every currently bound thread will also be included in the log, up to the point where the task was
+ * started.
  * <p>
- * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the
- * message, and the thread will be interrupted. If the task is completed before the timeout, the task should be marked
+ * Once the {@code timeout} is reached, a message will be logged with the current stack trace of every currently bound
+ * thread, and each of them will be interrupted. If the task is completed before the timeout, the task should be marked
  * as completed.
  *
  * @author Mitchell Herrijgers
@@ -54,11 +56,8 @@ class AxonTimeLimitedTask {
     private final Object lock = new Object();
     @Nullable
     private final String callerClassName; // stored as name to avoid getName() on every stack frame check
+    private final Set<Thread> activeThreads = ConcurrentHashMap.newKeySet();
 
-    // Volatile because the thread actually executing the guarded work may change after construction (for example,
-    // a UnitOfWork's phase actions dispatched through a configured workScheduler), and bindToCurrentThread() rebinds
-    // this field from that worker thread while the janitor thread reads it to schedule the interrupt.
-    private volatile Thread thread;
     // These fields are written by the janitor thread (scheduled warnings/interrupts) and read by the handling
     // thread (or vice versa), so they must be volatile to guarantee cross-thread visibility. Without it, a write
     // from one thread is not guaranteed to be observed by the other, allowing a fired timeout to be misreported
@@ -193,7 +192,6 @@ class AxonTimeLimitedTask {
         );
         this.logger = Objects.requireNonNull(logger, "The logger may not be null.");
         this.callerClassName = callerClass != null ? callerClass.getName() : null;
-        this.thread = Thread.currentThread();
     }
 
     /**
@@ -218,8 +216,8 @@ class AxonTimeLimitedTask {
     }
 
     /**
-     * Starts the task, exactly as {@link #start()} does, unless it was already started, in which case this method is
-     * a no-op instead of throwing.
+     * Starts the task, exactly as {@link #start()} does, unless it was already started, in which case this method is a
+     * no-op instead of throwing.
      */
     public void startIfNotStarted() {
         if (startTimeMs != -1) {
@@ -235,17 +233,26 @@ class AxonTimeLimitedTask {
     }
 
     /**
-     * Rebinds {@code this} task to the {@link Thread} that is about to run the work it guards.
-     * <p>
-     * Needed because the work a task guards is not always run by the {@code Thread} that constructed it. For example, a
-     * {@code UnitOfWork's} phase actions may be dispatched onto a different thread depending on the {@link Executor}
-     * configured for it.
+     * Registers the current {@link Thread} as one that is about to run work guarded by this task.
      * <p>
      * Call this from the {@code Thread} that will actually perform the work, immediately before doing so, so a fired
-     * timeout interrupts the thread genuinely executing it.
+     * timeout interrupts every thread genuinely executing it. Pair with {@link #unbind(Thread)}, passing the same
+     * {@code Thread}, once that work completes.
      */
     void bindToCurrentThread() {
-        this.thread = Thread.currentThread();
+        activeThreads.add(Thread.currentThread());
+    }
+
+    /**
+     * Unregisters the given {@code thread} as no longer executing work guarded by this task.
+     * <p>
+     * Takes an explicit {@code thread} rather than defaulting to {@link Thread#currentThread()} because completion may
+     * be observed on a different thread than the one that was bound to do the work.
+     *
+     * @param thread the thread to unregister, as previously passed to {@link #bindToCurrentThread()}
+     */
+    void unbind(Thread thread) {
+        activeThreads.remove(thread);
     }
 
     /**
@@ -392,15 +399,9 @@ class AxonTimeLimitedTask {
     private void scheduleWarningOrInterrupt() {
         long takenTime = System.currentTimeMillis() - startTimeMs;
         logger.warn("""
-                            {} on thread [{}] is taking a long time to process. Current time: [{}ms]. \
-                            Will be interrupted in [{}ms].
-                            Stacktrace of current thread:
+                            {} is taking a long time to process. Current time: [{}ms]. Will be interrupted in [{}ms].
                             {}""",
-                    taskName,
-                    thread.getName(),
-                    takenTime,
-                    timeout - takenTime,
-                    getCurrentStackTrace());
+                    taskName, takenTime, timeout - takenTime, describeActiveThreads());
         if (takenTime + warningInterval < timeout) {
             scheduleWarning(warningInterval);
         } else {
@@ -417,31 +418,24 @@ class AxonTimeLimitedTask {
         currentScheduledFuture = scheduledExecutorService.schedule(() -> {
             synchronized (lock) {
                 if (!completed && !interrupted) {
-                    logger.error(
-                            "{} has exceeded its timeout of [{}ms]. Interrupting thread.\nStacktrace of current thread:\n{}",
-                            taskName,
-                            timeout,
-                            getCurrentStackTrace());
+                    logger.error("{} has exceeded its timeout of [{}ms]. Interrupting thread(s).\n{}",
+                                 taskName, timeout, describeActiveThreads());
                     interrupted = true;
-                    thread.interrupt();
+                    activeThreads.forEach(Thread::interrupt);
                 }
             }
         }, remainingTimeout, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Returns the current stack trace of the thread handling the message. Cuts off the stack trace at the point where
-     * the original {@link #start()} method was called.
-     *
-     * @return the current stack trace of the thread handling the message
-     */
-    private String getCurrentStackTrace() {
-        StackTraceElement[] stackTrace = thread.getStackTrace();
+    private String describeActiveThreads() {
         StringBuilder sb = new StringBuilder();
-        for (StackTraceElement element : stackTrace) {
-            sb.append(element).append("\n");
-            if (element.getClassName().equals(callerClassName)) {
-                break;
+        for (Thread activeThread : activeThreads) {
+            sb.append("Stacktrace of thread [").append(activeThread.getName()).append("]:\n");
+            for (StackTraceElement element : activeThread.getStackTrace()) {
+                sb.append(element).append("\n");
+                if (element.getClassName().equals(callerClassName)) {
+                    break;
+                }
             }
         }
         return sb.toString();

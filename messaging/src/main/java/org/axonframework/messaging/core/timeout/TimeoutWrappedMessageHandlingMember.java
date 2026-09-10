@@ -71,6 +71,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
                                         target != null ? target.getClass().getName() : null);
         AxonTimeLimitedTask task =
                 new AxonTimeLimitedTask(taskName, timeout, warningThreshold, warningInterval, getClass());
+        task.bindToCurrentThread();
         task.start();
         try {
             MessageStream<?> result = super.handle(message, context, target);

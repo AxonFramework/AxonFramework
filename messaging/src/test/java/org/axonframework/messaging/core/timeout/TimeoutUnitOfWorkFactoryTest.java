@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.awaitility.Awaitility.await;
@@ -210,6 +211,61 @@ class TimeoutUnitOfWorkFactoryTest {
             // the AxonTimeoutException above. Assert the creator thread instead, which must stay untouched.
             assertFalse(creatorThread.isInterrupted(),
                         "The creator thread must not be interrupted; only the actual worker thread should be");
+        }
+    }
+
+    @Test
+    void onlyTheStillActiveThreadIsInterruptedWhenMultiplePhaseActionsRunConcurrently() {
+        try (ExecutorService workScheduler = Executors.newFixedThreadPool(2)) {
+            TimeoutUnitOfWorkFactory factory = new TimeoutUnitOfWorkFactory(
+                    new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(workScheduler)),
+                    "TestComponent",
+                    100,
+                    500,
+                    10,
+                    AxonTaskJanitor.INSTANCE,
+                    AxonTaskJanitor.LOGGER
+            );
+            UnitOfWork uow = factory.create(UUID.randomUUID().toString());
+            AtomicBoolean slowActionInterrupted = new AtomicBoolean(false);
+            AtomicBoolean fastActionInterrupted = new AtomicBoolean(false);
+            AtomicReference<Thread> slowThread = new AtomicReference<>();
+            AtomicReference<Thread> fastThread = new AtomicReference<>();
+
+            // Two actions registered for the same phase run concurrently (UnitOfWork.runNextPhase()), each on its own
+            // workScheduler thread. The fast one finishes and unbinds well before the timeout fires; the slow one is
+            // still genuinely active when it does.
+            uow.onPrepareCommit(context -> {
+                slowThread.set(Thread.currentThread());
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    slowActionInterrupted.set(true);
+                    Thread.currentThread().interrupt();
+                }
+                return FutureUtils.emptyCompletedFuture();
+            });
+            uow.onPrepareCommit(context -> {
+                fastThread.set(Thread.currentThread());
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    fastActionInterrupted.set(true);
+                }
+                return FutureUtils.emptyCompletedFuture();
+            });
+
+            CompletableFuture<Void> result = uow.execute();
+            await().atMost(2, TimeUnit.SECONDS).until(result::isDone);
+
+            assertNotNull(slowThread.get());
+            assertNotNull(fastThread.get());
+            assertNotSame(slowThread.get(), fastThread.get(),
+                          "Both phase actions must run concurrently, each on its own thread");
+            assertTrue(result.isCompletedExceptionally());
+            assertInstanceOf(AxonTimeoutException.class, result.exceptionNow());
+            assertTrue(slowActionInterrupted.get(), "The still-active, genuinely slow action must be interrupted");
+            assertFalse(fastActionInterrupted.get(), "The already-finished action must not be interrupted");
         }
     }
 

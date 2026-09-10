@@ -35,13 +35,17 @@ import java.util.function.Supplier;
  * A {@link UnitOfWorkFactory} that decorates another {@code factory}, setting a timeout on every {@link UnitOfWork} it
  * creates.
  * <p>
- * If the timeout is reached, the thread processing the {@code UnitOfWork} is interrupted.
+ * If the timeout is reached, every thread currently processing the {@code UnitOfWork} is interrupted. A
+ * {@code UnitOfWork} may run more than one phase action for the same phase concurrently, each on a different thread
+ * (for example, dispatched through a configured {@code Executor}). The interceptor installed by this factory registers
+ * and unregisters each such thread with the {@link AxonTimeLimitedTask} as its phase actions start and complete, so a
+ * fired timeout reaches every thread genuinely still executing guarded work, not only the most recently started one.
  * <p>
  * The timeout starts counting from the moment the first phase action of the created {@code UnitOfWork} begins
- * executing, not from the moment {@link #create(String, Function)} itself is called, so time spent between creation
- * and the actual start of processing is not counted against it. Since every {@code UnitOfWork} is created exactly
- * once, a single {@link AxonTimeLimitedTask} is used per {@code UnitOfWork}, started lazily on whichever phase action
- * runs first for that instance.
+ * executing, not from the moment {@link #create(String, Function)} itself is called, so time spent between creation and
+ * the actual start of processing is not counted against it. Since every {@code UnitOfWork} is created exactly once, a
+ * single {@link AxonTimeLimitedTask} is used per {@code UnitOfWork}, started lazily on whichever phase action runs
+ * first for that instance.
  * <p>
  * Detecting a fired timeout whose interruption was swallowed by a phase action (for example, an event handler using the
  * default {@code LoggingErrorHandler}) is handled automatically: this factory installs a
@@ -169,13 +173,10 @@ public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
         public CompletableFuture<?> interceptPhase(ProcessingContext context,
                                                    Phase phase,
                                                    Supplier<CompletableFuture<?>> action) {
-            // Rebind to the thread actually running this phase action; required since the UnitOfWork may dispatch
-            // phase actions through an Executor onto a different thread than the one that created it. Also start the
-            // task lazily here, on whichever phase action runs first, instead of eagerly at create()-time, so the
-            // timeout only measures actual processing time.
+            Thread activeThread = Thread.currentThread();
             task.bindToCurrentThread();
             task.startIfNotStarted();
-            return detectSwallowedInterruption(action.get());
+            return detectSwallowedInterruption(action.get(), activeThread);
         }
 
         @Override
@@ -200,14 +201,17 @@ public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
          * event handler using the default {@code LoggingErrorHandler}) and reported success despite the given
          * {@code task} having timed out.
          *
-         * @param result the {@link CompletableFuture} to check
-         * @param <R>    the type of the result
+         * @param result       the {@link CompletableFuture} to check
+         * @param activeThread the thread that was {@link AxonTimeLimitedTask#bindToCurrentThread() bound} to run the
+         *                     phase action producing the given {@code result}, unregistered once it completes
+         * @param <R>          the type of the result
          * @return a {@link CompletableFuture} that fails with an {@link AxonTimeoutException} when the given
          * {@code task} was interrupted, or otherwise completes exactly as the given {@code result} did
          */
-        private <R> CompletableFuture<R> detectSwallowedInterruption(CompletableFuture<R> result) {
+        private <R> CompletableFuture<R> detectSwallowedInterruption(CompletableFuture<R> result, Thread activeThread) {
             CompletableFuture<R> converted = new CompletableFuture<>();
             result.whenComplete((value, error) -> {
+                task.unbind(activeThread);
                 if (task.isInterrupted()) {
                     // The interrupt already served its purpose of unblocking the thread; clear its transient status so
                     // it doesn't cause a spurious InterruptedException in unrelated code running on this same thread
