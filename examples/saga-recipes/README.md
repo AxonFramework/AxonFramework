@@ -40,11 +40,21 @@ Exactly one runs at a time, chosen with `saga.recipe`:
 | `eventsourced`        | its own events, recorded through a command            | `saga/eventsourced`     |
 | `eventsourced-append` | its own events, appended from the event handler       | `saga/eventsourced`     |
 | `verticalslices`      | mostly nowhere, six independent slices                | `saga/verticalslices`   |
+| `legacy`               | mutable saga fields, `axon-legacy`'s `SagaStore`      | `legacy`                |
 
 Read the class-level Javadoc of each `PaymentProcess` for what it buys, what it costs, and how the process ends. The
 two event-sourced variants share a package, their events, and their `ProcessState`; they differ only in the two lines
 that write a fact down. `verticalslices` documents itself in `package-info.java`, because it has no central class to
 document.
+
+`legacy` is not a fifth recipe: it is the original Axon Framework 4 `PaymentSaga`, ported through `axon-legacy` with
+as few changes as possible, kept here for comparison rather than as an approach to imitate. It does not run
+`SagaRecipeContractTest` -- `axon-legacy` has not yet ported deadlines (issue #5006), so it cannot satisfy the two
+scenarios that only exist because the other four recipes have no `DeadlineManager` to lean on, and it faithfully
+reproduces a redelivery bug the other four fix. See its class-level Javadoc for the details. It has its own tests
+instead: `PaymentSagaTest` (almost identical to the bike rental sample application's own, using the ported
+`SagaTestFixture`) and `PaymentSagaAxonTestFixtureTest` (the three scenarios that do hold, run through `AxonTestFixture`
+like the other recipes).
 
 `saga/deadline` sits outside the recipes. It replaces Axon Framework 4's `DeadlineManager` with a projection of outstanding
 payments plus a scheduled sweep. It applies to every recipe equally.

@@ -30,7 +30,8 @@
     <description>
         Four approaches to implementing an Axon Framework 4 Saga in Axon Framework 5, applied to the bike-rental
         payment process. Demonstrates process state held in a repository, derived through @InjectEntity, event-sourced
-        from the process's own events, and decomposed into vertical slices.
+        from the process's own events, and decomposed into vertical slices. A fifth package ports the original
+        Axon Framework 4 @Saga itself through axon-legacy, for comparison.
     </description>
 
     <properties>
@@ -104,6 +105,14 @@
             <groupId>io.axoniq.framework</groupId>
             <artifactId>axon-server-connector</artifactId>
         </dependency>
+        <!--
+        Only the legacy recipe needs this: axon-legacy carries the Axon Framework 4 @Saga API this module's
+        other recipes replace, ported with backward-compatible behavior for applications migrating gradually.
+        -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-legacy</artifactId>
+        </dependency>
 
         <!-- Database -->
         <dependency>
@@ -115,6 +124,12 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Carries SagaTestFixture, used only by the legacy recipe's tests. -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-legacy-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
