@@ -253,7 +253,9 @@ class AxonTimeLimitedTask {
      * <p>
      * If the scheduled interrupt lambda won a race against this call -- i.e., it already set the interrupt flag on the
      * task thread before {@code complete()} could cancel it -- the interrupt is cleared here so it does not leak into
-     * the caller's subsequent code.
+     * the caller's subsequent code. An interrupt {@link #ensureNoInterruptionWasSwallowed() detected as external} is
+     * left untouched: it was not raised by this task's own scheduled interrupt, so it must survive for the caller to
+     * observe instead of being silently swallowed here.
      */
     public void complete() {
         synchronized (lock) {
@@ -262,7 +264,7 @@ class AxonTimeLimitedTask {
                 currentScheduledFuture.cancel(false);
                 currentScheduledFuture = null;
             }
-            if (interrupted) {
+            if (interrupted && !interruptedExternally) {
                 interrupted = false;
                 Thread.interrupted(); // clear the spurious flag set by the racing lambda
             }
