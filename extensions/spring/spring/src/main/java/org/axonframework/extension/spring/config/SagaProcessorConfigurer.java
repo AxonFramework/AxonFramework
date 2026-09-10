@@ -33,22 +33,26 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * A {@link ConfigurationEnhancer} that builds one dedicated {@link EventProcessorModule} per {@link Saga @Saga} bean.
+ * A {@link ConfigurationEnhancer} that builds one dedicated {@link EventProcessorModule} per resolved processor name
+ * among the {@link Saga @Saga} beans in the application.
  * <p>
- * A Saga is never grouped onto a processor with another Saga or with a regular event handling component: Axon
- * Framework 4 offered that grouping only as a thread-sharing workaround from an era with a single, per-processor
- * threading event processor implementation, not as a feature applications relied on for its own sake. An application
- * that wants several Saga processors to share a thread pool can still do so today, by giving each of them the same
- * {@code Executor} through a matching {@link EventProcessorDefinition}. Keeping this wiring entirely separate from
- * {@link DefaultProcessorModuleFactory} keeps that shared, regular-handler pipeline free of Saga-specific concerns.
+ * Several Sagas whose processor name resolves to the same value -- e.g. because they share an explicit
+ * {@link org.axonframework.messaging.core.annotation.Namespace} -- are grouped onto that one processor, matching how
+ * Axon Framework 4 let several Sagas share a {@code @ProcessingGroup}. A Saga's processor is never shared with a
+ * regular event handling component, though: that grouping is built entirely separately, by
+ * {@link DefaultProcessorModuleFactory}, so a Saga and a regular handler resolving to the same processor name is a
+ * configuration error -- {@link org.axonframework.common.configuration.DuplicateModuleRegistrationException} -- rather
+ * than a silent merge.
  * <p>
  * Resolves each Saga's processor name from a {@link org.axonframework.messaging.core.annotation.Namespace} on its
  * type, falling back to {@link SpringSagaDescriptor#preferredProcessorName()}. A matching {@link EventProcessorDefinition}
  * (by that name) may still override the processor's mode and settings, e.g. to replay from the start of the stream or
- * to assign a shared {@code Executor} -- but, unlike a regular handler, a Saga can never be selected into a processor
- * by such a definition's selector: it does not participate in that shared assignment mechanism at all.
+ * to assign a shared {@code Executor} to several Saga processors -- but, unlike a regular handler, a Saga can never be
+ * selected into a processor by such a definition's selector: it does not participate in that shared assignment
+ * mechanism at all.
  * <p>
  * Registered as a bean by {@code SagaAutoConfiguration}; an application never creates this itself.
  * <p>
@@ -80,26 +84,35 @@ public class SagaProcessorConfigurer implements ConfigurationEnhancer, Applicati
         Map<String, EventProcessorSettings> settingsMap =
                 context.getBean(EventProcessorSettings.MapWrapper.class).settings();
 
-        for (SpringSagaDescriptor saga : sagas.values()) {
-            String processorName = EventProcessorModuleAssembler.resolveNamespace(saga.beanType())
-                                                                 .or(saga::preferredProcessorName)
-                                                                 .orElseThrow();
+        Map<String, List<SpringSagaDescriptor>> sagasByProcessor =
+                sagas.values().stream().collect(Collectors.groupingBy(this::processorNameOf));
+
+        sagasByProcessor.forEach((processorName, sagasForProcessor) -> {
             var settings = Optional.ofNullable(settingsMap.get(processorName))
                                    .orElseGet(() -> settingsMap.get(EventProcessorSettings.DEFAULT));
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase>
-                    componentRegistration = phase ->
-                    (EventHandlingComponentsConfigurer.CompletePhase) phase.declarative(
-                            saga.beanName(), saga.handlingComponent()
-                    );
+                    componentRegistration = phase -> {
+                EventHandlingComponentsConfigurer.ComponentsPhase result = phase;
+                for (SpringSagaDescriptor saga : sagasForProcessor) {
+                    result = result.declarative(saga.beanName(), saga.handlingComponent());
+                }
+                return (EventHandlingComponentsConfigurer.CompletePhase) result;
+            };
             registry.registerModule(EventProcessorModuleAssembler.assemble(
                     processorName,
                     settings,
                     definitions,
                     List.of(), // no DLQ for Sagas -- Axon Framework 4 never supported dead-lettering for them
-                    saga.pooledStreamingDefaults(),
+                    sagasForProcessor.getFirst().pooledStreamingDefaults(),
                     componentRegistration
             ));
-        }
+        });
+    }
+
+    private String processorNameOf(SpringSagaDescriptor saga) {
+        return EventProcessorModuleAssembler.resolveNamespace(saga.beanType())
+                                            .or(saga::preferredProcessorName)
+                                            .orElseThrow();
     }
 
     @Override

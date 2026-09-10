@@ -16,10 +16,20 @@
 
 package org.axonframework.extension.spring.config;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.configuration.AxonConfiguration;
 import org.axonframework.common.configuration.DuplicateModuleRegistrationException;
+import org.axonframework.messaging.core.MessageType;
 import org.axonframework.messaging.core.annotation.Namespace;
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
+import org.axonframework.messaging.eventhandling.EventMessage;
+import org.axonframework.messaging.eventhandling.EventSink;
+import org.axonframework.messaging.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.modelling.saga.AssociationValue;
+import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.jspecify.annotations.Nullable;
@@ -28,6 +38,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,16 +48,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Test class validating {@link SagaProcessorConfigurer}: the dedicated, Saga-only event processor wiring, kept
- * entirely separate from {@link DefaultProcessorModuleFactory}'s shared handler-assignment pipeline.
+ * entirely separate from {@link DefaultProcessorModuleFactory}'s shared handler-assignment pipeline. Sagas resolving
+ * to the same processor name share that processor; a Saga and a regular handler never do.
  *
  * @author Mateusz Nowak
  */
 class SagaProcessorConfigurerTest {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final EventProcessorSettings.SubscribingEventProcessorSettings SUBSCRIBING_SETTINGS = () -> null;
 
     private @Nullable AxonConfiguration configuration;
     private @Nullable GenericApplicationContext applicationContext;
+    private @Nullable InMemorySagaStore sagaStore;
 
     @AfterEach
     void tearDown() {
@@ -95,35 +110,78 @@ class SagaProcessorConfigurerTest {
     }
 
     @Nested
-    class TwoSagasClaimingTheSameProcessor {
+    class TwoSagasResolvingToTheSameProcessor {
+
+        @Test
+        void shareThatOneProcessor() {
+            // given two Sagas whose Namespace resolves to the same processor name, as Axon Framework 4 allowed
+            // under a shared @ProcessingGroup
+            enhance(context(
+                    saga("orderSaga", NamespacedSaga.class),
+                    saga("shipmentSaga", AlsoNamespacedSaga.class)
+            ));
+            assertThat(hasProcessor("orders")).isTrue();
+
+            // when a matching event is published on that one processor
+            publish(new OrderPlaced("order-1"));
+
+            // then both Sagas started from it, proving both are handled by the same processor
+            AssociationValue orderId = new AssociationValue("orderId", "order-1");
+            assertThat(sagaStore.findSagas(NamespacedSaga.class, orderId)).hasSize(1);
+            assertThat(sagaStore.findSagas(AlsoNamespacedSaga.class, orderId)).hasSize(1);
+        }
+    }
+
+    @Nested
+    class ASagaAndAPlainHandlerResolvingToTheSameProcessor {
 
         @Test
         void isRejectedRatherThanSilentlyMerged() {
-            // given two Sagas whose Namespace resolves to the same processor name
-            GenericApplicationContext context = context(
-                    saga("orderSaga", NamespacedSaga.class),
-                    saga("shipmentSaga", AlsoNamespacedSaga.class)
-            );
+            // given a Saga resolving to "orders", and a plain (non-Saga) module already claiming that name --
+            // built the way DefaultProcessorModuleFactory would, entirely separately from the Saga wiring
+            GenericApplicationContext context = context(saga("orderSaga", NamespacedSaga.class));
+            SagaProcessorConfigurer configurer = new SagaProcessorConfigurer();
+            configurer.setApplicationContext(context);
+            applicationContext = context;
 
-            // then, unlike Axon Framework 4, a Saga is never grouped with anything else
-            assertThatThrownBy(() -> enhance(context))
+            MessagingConfigurer messaging = MessagingConfigurer.create();
+            messaging.componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> new InMemorySagaStore()));
+            messaging.componentRegistry(cr -> cr.registerModule(
+                    EventProcessorModule.subscribing("orders")
+                                        .eventHandlingComponents(phase -> phase.declarative(
+                                                "plainHandler",
+                                                c -> SimpleEventHandlingComponent.create("plainHandler")
+                                        ))
+                                        .notCustomized()
+            ));
+
+            // then, a Saga is never silently grouped with a regular event handler
+            assertThatThrownBy(() -> messaging.componentRegistry(configurer::enhance))
                     .isInstanceOf(DuplicateModuleRegistrationException.class);
         }
     }
 
     private void enhance(GenericApplicationContext context) {
         applicationContext = context;
+        sagaStore = new InMemorySagaStore();
         SagaProcessorConfigurer configurer = new SagaProcessorConfigurer();
         configurer.setApplicationContext(context);
         MessagingConfigurer messaging = MessagingConfigurer.create();
         // The SagaStore Sagas are kept in is an Axon component, resolved from the Configuration, not a Spring bean.
-        messaging.componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> new InMemorySagaStore()));
+        messaging.componentRegistry(cr -> cr.registerComponent(SagaStore.class, c -> sagaStore));
         messaging.componentRegistry(configurer::enhance);
         configuration = messaging.start();
     }
 
     private boolean hasProcessor(String processorName) {
         return configuration.getModuleConfiguration("EventProcessor[" + processorName + "]").isPresent();
+    }
+
+    private void publish(Object payload) {
+        EventMessage event = new GenericEventMessage(new MessageType(payload.getClass()), payload);
+        FutureUtils.joinAndUnwrap(
+                configuration.getComponent(EventSink.class).publish(null, List.of(event)), TIMEOUT
+        );
     }
 
     private static GenericApplicationContext context(SpringSagaDescriptor... sagas) {
@@ -148,12 +206,28 @@ class SagaProcessorConfigurerTest {
     }
 
     @Namespace("orders")
+    @SuppressWarnings("unused")
     private static class NamespacedSaga {
 
+        @StartSaga
+        @SagaEventHandler(associationProperty = "orderId")
+        void on(OrderPlaced event) {
+            // Only its presence matters here.
+        }
     }
 
     @Namespace("orders")
+    @SuppressWarnings("unused")
     private static class AlsoNamespacedSaga {
+
+        @StartSaga
+        @SagaEventHandler(associationProperty = "orderId")
+        void on(OrderPlaced event) {
+            // Only its presence matters here.
+        }
+    }
+
+    private record OrderPlaced(String orderId) {
 
     }
 }
