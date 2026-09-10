@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package messagingconcepts.timeouts;
+package migration.paths.timeouts;
 
 import org.axonframework.messaging.core.configuration.MessagingConfigurer;
 import org.axonframework.messaging.core.timeout.TaskTimeoutSettings;
