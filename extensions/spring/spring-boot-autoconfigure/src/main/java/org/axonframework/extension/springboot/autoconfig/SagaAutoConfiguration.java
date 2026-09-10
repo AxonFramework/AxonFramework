@@ -16,6 +16,7 @@
 
 package org.axonframework.extension.springboot.autoconfig;
 
+import org.axonframework.extension.spring.config.SagaProcessorConfigurer;
 import org.axonframework.extension.spring.config.SpringSagaLookup;
 import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -51,6 +52,17 @@ public class SagaAutoConfiguration {
     @Bean
     public static SpringSagaLookup springSagaLookup() {
         return new SpringSagaLookup();
+    }
+
+    /**
+     * Provides the Saga processor wiring, building one dedicated event processor per {@link Saga @Saga} bean.
+     *
+     * @return the enhancer building a Saga's dedicated event processor
+     */
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    @Bean
+    public static SagaProcessorConfigurer sagaProcessorConfigurer() {
+        return new SagaProcessorConfigurer();
     }
 
     /**

@@ -28,12 +28,6 @@ import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -42,15 +36,14 @@ import java.util.function.UnaryOperator;
 import static java.lang.String.format;
 
 /**
- * The {@link EventProcessorDefinition.EventHandlerDescriptor} of a {@link Saga @Saga} annotated bean, contributed by
- * the {@link SpringSagaLookup}.
+ * The descriptor of a {@link Saga @Saga} annotated bean, contributed by the {@link SpringSagaLookup}.
  * <p>
  * A Saga is not an event handling bean whose handlers can be uncovered by annotation inspection: an
  * {@code AnnotatedSagaManager} decides for itself which events reach which Saga instance, and it needs a
  * {@code SagaRepository} and a {@link SagaStore} underneath it. {@link Sagas} builds that assembly, and this descriptor
- * is what carries it into the regular Spring event processor configuration, so that a Saga is assigned to a processor,
- * configured through {@code axon.eventhandling.processors} and able to share a processor with other event handlers
- * exactly like any other handler.
+ * is what carries it into the dedicated, Saga-only event processor {@link SagaProcessorConfigurer} builds for it --
+ * configured through {@code axon.eventhandling.processors} exactly like any other processor, but never shared with
+ * another Saga or a regular event handler.
  * <p>
  * Instances are bean definitions registered by {@link SpringSagaLookup}, one per {@code @Saga} bean. This class is
  * internal: an application declares {@code @Saga} and never touches this.
@@ -59,7 +52,7 @@ import static java.lang.String.format;
  * @since 5.4.0
  */
 @Internal
-public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, ApplicationContextAware {
+public class SpringSagaDescriptor {
 
     /**
      * The bean name a {@link SagaStore} is resolved under when the {@link Saga#sagaStore()} attribute is unset and the
@@ -73,7 +66,6 @@ public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, A
     private final String sagaBeanName;
     private final Class<?> sagaType;
     private @Nullable String sagaStore;
-    private @Nullable ApplicationContext applicationContext;
 
     /**
      * Initializes a descriptor for the Saga of the given {@code sagaType}, held by the bean named
@@ -96,27 +88,29 @@ public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, A
         this.sagaStore = sagaStore;
     }
 
-    @Override
+    /**
+     * The name of the bean holding the Saga.
+     *
+     * @return the Saga bean name
+     */
     public String beanName() {
         return sagaBeanName;
     }
 
-    @Override
-    public BeanDefinition beanDefinition() {
-        return beanFactory().getBeanDefinition(sagaBeanName);
-    }
-
-    @Override
+    /**
+     * The type of Saga this descriptor describes.
+     *
+     * @return the Saga type
+     */
     public Class<?> beanType() {
         return sagaType;
     }
 
-    @Override
-    public Object resolveBean() {
-        return Objects.requireNonNull(applicationContext).getBean(sagaBeanName);
-    }
-
-    @Override
+    /**
+     * Builds the assembled Saga handling component.
+     *
+     * @return the Saga handling component builder
+     */
     public ComponentBuilder<EventHandlingComponent> handlingComponent() {
         return sagaComponent(sagaType);
     }
@@ -126,24 +120,27 @@ public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, A
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the processor name to use when no {@link org.axonframework.messaging.core.annotation.Namespace} on the
+     * Saga type overrides it.
      * <p>
      * The name Axon Framework 4 derived from the Saga type. Preserving it is what keeps a migrating application's
      * token store row claimable and its {@code axon.eventhandling.processors.<SagaName>Processor} settings in effect.
+     *
+     * @return the preferred fallback processor name
      */
-    @Override
     public Optional<String> preferredProcessorName() {
         return Optional.of(sagaType.getSimpleName() + "Processor");
     }
 
     /**
-     * {@inheritDoc}
+     * Returns defaults to apply when this Saga's processor is otherwise unconfigured.
      * <p>
      * Starts a Saga processor at the head of the event stream, as Axon Framework 4 did. Replaying an existing stream
      * from the start would create a Saga instance per historic event, so the Axon Framework 5 default of the first
      * token is the wrong one for a Saga that is only now being deployed.
+     *
+     * @return the pooled streaming processor defaults
      */
-    @Override
     public UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults() {
         return configuration -> configuration.initialToken(source -> source.latestToken(null));
     }
@@ -157,11 +154,15 @@ public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, A
      * {@link org.axonframework.messaging.eventhandling.processing.streaming.token.store.TokenStore} is resolved for an
      * event processor. Without it, an application declaring a second store for one Saga would stop being able to
      * resolve a store for all the others, which is not what Axon Framework 4 did.
+     * <p>
+     * A named lookup goes through the given {@code configuration} rather than a Spring {@code ApplicationContext}:
+     * Spring's own bean factory backs it, so a named Spring bean resolves exactly the same way, without this
+     * descriptor needing an {@code ApplicationContext} reference of its own.
      */
     @SuppressWarnings("unchecked")
     private SagaStore<Object> resolveSagaStore(Configuration configuration) {
         if (StringUtils.nonEmptyOrNull(sagaStore)) {
-            return Objects.requireNonNull(applicationContext).getBean(sagaStore, SagaStore.class);
+            return (SagaStore<Object>) configuration.getComponent(SagaStore.class, sagaStore);
         }
         return (SagaStore<Object>) configuration
                 .getOptionalComponent(SagaStore.class, CONVENTIONAL_SAGA_STORE_BEAN_NAME)
@@ -171,14 +172,5 @@ public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, A
                         SagaStore.class.getName(),
                         sagaType.getName()
                 )));
-    }
-
-    private ConfigurableListableBeanFactory beanFactory() {
-        return ((ConfigurableApplicationContext) Objects.requireNonNull(applicationContext)).getBeanFactory();
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 }

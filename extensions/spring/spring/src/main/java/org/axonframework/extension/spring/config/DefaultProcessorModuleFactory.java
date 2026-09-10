@@ -17,15 +17,11 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.StringUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.extension.spring.BeanDefinitionUtils;
 import org.axonframework.messaging.core.annotation.Namespace;
 import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
-import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,85 +113,26 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
                 for (EventProcessorDefinition.EventHandlerDescriptor descriptor : beanDefs) {
-                    if (descriptor instanceof LegacySagaEventHandlerDescriptor legacySaga) {
-                        // TODO axon-legacy: Remove LegacySagaEventHandlerDescriptor and all its branches when
-                        // axon-legacy is removed.
-                        resultOfRegistration = legacySaga.registerWith(resultOfRegistration);
-                    } else {
-                        resultOfRegistration = resultOfRegistration.autodetected(
-                                descriptor.beanName(),
-                                descriptor.component()
-                        );
-                    }
+                    resultOfRegistration = resultOfRegistration.autodetected(
+                            descriptor.beanName(),
+                            descriptor.component()
+                    );
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
 
             var settings = Optional.ofNullable(allSettings.get(processorName))
                                    .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
-            var processorMode = definitionFor(processorName).map(EventProcessorDefinition::mode)
-                                                            .orElse(settings.processorMode());
-            EventProcessorModule module = switch (processorMode) {
-                case POOLED -> {
-                    var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
-                    var baseCustomization = SpringCustomizations.pooledStreamingCustomizations(
-                            processorName, moduleSettings
-                    );
-                    UnaryOperator<PooledStreamingEventProcessorConfiguration> handlerDefaults =
-                            pooledStreamingDefaults(processorName, beanDefs);
-                    UnaryOperator<PooledStreamingEventProcessorConfiguration> definitionCustomization =
-                            customizeConfiguration(processorName);
-                    PooledStreamingEventProcessorModule.Customization customization =
-                            (axonConfig, processorConfig) -> {
-                                // Applied ahead of the settings so that anything stated in properties overrules it.
-                                var result = handlerDefaults.apply(processorConfig);
-                                result = baseCustomization.apply(axonConfig, result);
-                                result = definitionCustomization.apply(result);
-                                for (var extension : extensionsCustomizations) {
-                                    result = extension.apply(axonConfig, result);
-                                }
-                                SpringCustomizations.requireResolvedTokenStore(processorName, result);
-                                return result;
-                            };
-                    yield EventProcessorModule
-                            .pooledStreaming(processorName)
-                            .eventHandlingComponents(componentRegistration)
-                            .customized(customization)
-                            .build();
-                }
-                case SUBSCRIBING -> {
-                    var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
-                    yield EventProcessorModule
-                            .subscribing(processorName)
-                            .eventHandlingComponents(componentRegistration)
-                            .customized(SpringCustomizations.subscribingCustomizations(processorName, moduleSettings)
-                                                            .andThen(customizeConfiguration(processorName)))
-                            .build();
-                }
-            };
-
-            modules.add(module);
+            modules.add(EventProcessorModuleAssembler.assemble(
+                    processorName,
+                    settings,
+                    eventProcessorDefinitions,
+                    extensionsCustomizations,
+                    UnaryOperator.identity(),
+                    componentRegistration
+            ));
         });
         return modules;
-    }
-
-    /**
-     * Returns a configuration customizer function for a subscribing processor with the given name.
-     * <p>
-     * If a processor definition exists for this processor, its configuration is applied. Otherwise, the identity
-     * function is returned (no customization).
-     *
-     * @param processorName The name of the processor.
-     * @return A function that customizes the subscribing processor configuration.
-     */
-    @SuppressWarnings({"unchecked"})
-    private <T extends EventProcessorConfiguration> UnaryOperator<T> customizeConfiguration(String processorName) {
-        for (EventProcessorDefinition eventProcessorDefinition : eventProcessorDefinitions) {
-            if (eventProcessorDefinition.name().equals(processorName)) {
-                return c -> (T) eventProcessorDefinition.applySettings(c);
-            }
-        }
-        return UnaryOperator.identity();
     }
 
     /**
@@ -210,7 +147,6 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
      * <ol>
      *     <li>Explicit {@link EventProcessorDefinition} selector match</li>
      *     <li>{@link Namespace} annotation on the handler's type, enclosing classes, package, or module</li>
-     *     <li>The handler descriptor's preferred processor name</li>
      *     <li>Package name derived from the bean definition</li>
      * </ol>
      *
@@ -228,7 +164,6 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         if (matches.isEmpty()) {
             // First, check if the handler type has a @Namespace annotation
             return resolveNamespace(handler)
-                    .or(() -> preferredProcessorName(handler))
                     // Fall back to the package name derived from the bean definition
                     .orElseGet(() -> BeanDefinitionUtils.extractPackageName(handler.beanDefinition()));
         }
@@ -259,62 +194,6 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         if (type == null) {
             return Optional.empty();
         }
-        return AnnotationUtils.findAnnotationAttributesOnType(
-                                      type,
-                                      Namespace.class,
-                                      attrs -> !StringUtils.emptyOrNull((String) attrs.get("namespace"))
-                              )
-                              .map(attrs -> (String) attrs.get("namespace"));
-    }
-
-    private Optional<String> preferredProcessorName(EventProcessorDefinition.EventHandlerDescriptor handler) {
-        return handler instanceof LegacySagaEventHandlerDescriptor legacySaga
-                ? legacySaga.preferredProcessorName()
-                : Optional.empty();
-    }
-
-    /**
-     * Composes the pooled streaming defaults of the {@code handlers} assigned to the processor named
-     * {@code processorName}, or the identity operator when that processor is claimed by an
-     * {@link EventProcessorDefinition}.
-     * <p>
-     * Deferring to an explicit definition mirrors Axon Framework 4, which applied its Saga-specific processor defaults
-     * only when the application had not configured that processor itself.
-     *
-     * @param processorName The name of the processor.
-     * @param handlers      The event handler descriptors assigned to that processor.
-     * @return The defaults to apply before any further customization.
-     */
-    private UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults(
-            String processorName,
-            List<EventProcessorDefinition.EventHandlerDescriptor> handlers
-    ) {
-        if (definitionFor(processorName).isPresent()) {
-            return UnaryOperator.identity();
-        }
-        UnaryOperator<PooledStreamingEventProcessorConfiguration> defaults = UnaryOperator.identity();
-        for (EventProcessorDefinition.EventHandlerDescriptor handler : handlers) {
-            if (handler instanceof LegacySagaEventHandlerDescriptor legacySaga) {
-                UnaryOperator<PooledStreamingEventProcessorConfiguration> preceding = defaults;
-                UnaryOperator<PooledStreamingEventProcessorConfiguration> next = legacySaga.pooledStreamingDefaults();
-                defaults = configuration -> next.apply(preceding.apply(configuration));
-            }
-        }
-        return defaults;
-    }
-
-    /**
-     * Finds the processor definition for the given processor name.
-     *
-     * @param name The processor name.
-     * @return An Optional containing the processor definition if found, or empty if not found.
-     */
-    private Optional<EventProcessorDefinition> definitionFor(String name) {
-        for (EventProcessorDefinition eventProcessorDefinition : eventProcessorDefinitions) {
-            if (eventProcessorDefinition.name().equals(name)) {
-                return Optional.of(eventProcessorDefinition);
-            }
-        }
-        return Optional.empty();
+        return EventProcessorModuleAssembler.resolveNamespace(type);
     }
 }
