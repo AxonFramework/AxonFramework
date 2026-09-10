@@ -57,8 +57,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Saga discovered in a Spring application context.
  * <p>
  * The tests pin the Axon Framework 4 behavior the configurer reproduces: the derived processor name, the head-token
- * default with its back-off on an explicit processor entry, and the co-location of Sagas deriving the same processor
- * name on one processor.
+ * default, and the co-location of Sagas deriving the same processor name on one processor. They also pin the one
+ * deliberate deviation: the head token survives explicit processor entries, since the properties cannot express an
+ * initial token, and only a code-level customization may switch a Saga to replaying the stream.
  *
  * @author Mateusz Nowak
  */
@@ -151,7 +152,7 @@ class SpringSagaConfigurerTest {
         }
 
         @Test
-        void keepsTheGenericDefaultWhenAnExplicitProcessorEntryExists() {
+        void keepsTheHeadTokenWhenAnExplicitProcessorEntryExists() {
             // given
             try (GenericApplicationContext context = springContext(ctx -> {
                 registrar(ctx, "mySaga", MySaga.class);
@@ -164,9 +165,33 @@ class SpringSagaConfigurerTest {
                 PooledStreamingEventProcessorConfiguration pooled = pooledConfiguration(module);
                 pooled.initialToken().apply(source);
 
-                // then - configuring the Saga's processor replaces the Saga defaults, as in Axon Framework 4
-                assertThat(source.invocations()).containsExactly("firstToken");
+                // then - the entry tunes the processor without expressing an initial token, so tuning must not flip
+                // the Saga into processing the stream from the start (deliberate deviation from Axon Framework 4,
+                // where any customization of the processor name replaced the Saga defaults)
+                assertThat(source.invocations()).containsExactly("latestToken");
                 assertThat(pooled.batchSize()).isEqualTo(7);
+            }
+        }
+
+        @Test
+        void aCustomizationBeanOverridesTheHeadToken() {
+            // given - replaying into a Saga is possible, but only as an explicit code-level decision
+            PooledStreamingEventProcessorModule.Customization replayFromStart =
+                    (axonConfig, processorConfig) -> processorConfig.initialToken(source -> source.firstToken(null));
+            try (GenericApplicationContext context = springContext(ctx -> {
+                registrar(ctx, "mySaga", MySaga.class);
+                ctx.registerBean("replayFromStart",
+                                 PooledStreamingEventProcessorModule.Customization.class,
+                                 () -> replayFromStart);
+            })) {
+                Configuration module = moduleConfiguration(axonConfiguration(context), MY_SAGA_MODULE);
+
+                // when
+                RecordingTrackingTokenSource source = new RecordingTrackingTokenSource();
+                pooledConfiguration(module).initialToken().apply(source);
+
+                // then - the customization runs after the head-token base and wins
+                assertThat(source.invocations()).containsExactly("firstToken");
             }
         }
 

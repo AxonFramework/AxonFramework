@@ -58,8 +58,12 @@ import java.util.function.Function;
  * switches a Saga to a subscribing processor. A pooled Saga processor additionally starts at the head of the stream
  * (the {@link org.axonframework.messaging.eventstreaming.TrackingTokenSource#latestToken latest token}) instead of
  * replaying it, reproducing the Axon Framework 4 default that new Sagas ignore history.
- * An explicit {@code axon.eventhandling.processors.<name>} entry for the Saga's processor drops that head-token
- * default, mirroring how any Axon Framework 4 customization of a Saga's processor replaced the Saga defaults.
+ * The head token survives {@code axon.eventhandling.processors.<name>} entries: those properties cannot express an
+ * initial token, so an entry that only tunes the processor carries no intent to replay. This deliberately deviates
+ * from Axon Framework 4, where any customization of a Saga's processor name replaced the Saga defaults and made the
+ * Saga process the stream from the start. Replaying into a Saga requires code: a
+ * {@link PooledStreamingEventProcessorModule.Customization} bean overriding the initial token, applied after this
+ * configurer's base customization.
  * <p>
  * This class is internal wiring: it is instantiated by {@code SpringSagaLookup} as a bean definition and never
  * referenced from application code, so its shape may change with the Saga support it serves.
@@ -169,13 +173,11 @@ public class SpringSagaConfigurer implements ConfigurationEnhancer, ApplicationC
                 var baseCustomization = SpringCustomizations.pooledStreamingCustomizations(
                         processorName, pooledSettings
                 );
-                boolean headToken = explicitSettings == null;
                 PooledStreamingEventProcessorModule.Customization customization =
                         (axonConfig, processorConfig) -> {
-                            var result = processorConfig;
-                            if (headToken) {
-                                result = result.initialToken(source -> source.latestToken(null));
-                            }
+                            // Always start at the head: the settings cannot express an initial token, so no entry
+                            // carries an intent to replay. A Customization bean below may still override this.
+                            var result = processorConfig.initialToken(source -> source.latestToken(null));
                             result = baseCustomization.apply(axonConfig, result);
                             for (var extension : extensionCustomizations()) {
                                 result = extension.apply(axonConfig, result);
