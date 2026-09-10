@@ -17,16 +17,13 @@
 package org.axonframework.extension.spring.config;
 
 import org.axonframework.common.configuration.ComponentBuilder;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.messaging.eventhandling.processing.subscribing.SubscribingEventProcessorConfiguration;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.config.BeanDefinition;
 
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 /**
  * Defines the configuration for an event processor, including which event handlers it should process and how it should
@@ -203,43 +200,7 @@ public interface EventProcessorDefinition {
          *
          * @return The component builder.
          */
-        default ComponentBuilder<Object> component() {
-            return configuration -> resolveBean();
-        }
-
-        /**
-         * Registers this handler with the components assigned to its event processor.
-         * <p>
-         * A regular Spring handler is an object whose annotated methods must be discovered. A descriptor for an
-         * already assembled event handling component can override this operation to register that component directly.
-         *
-         * @param components the components already assigned to the processor
-         * @return the phase accepting another component or completing registration
-         */
-        default EventHandlingComponentsConfigurer.AdditionalComponentPhase registerWith(
-                EventHandlingComponentsConfigurer.ComponentsPhase components
-        ) {
-            return components.autodetected(beanName(), component());
-        }
-
-        /**
-         * Returns the processor name to use when no processor definition or namespace assigns this component.
-         *
-         * @return the preferred fallback processor name, or empty to use the component's package
-         */
-        default Optional<String> preferredProcessorName() {
-            return Optional.empty();
-        }
-
-        /**
-         * Returns defaults to apply when this component is assigned to an otherwise unconfigured pooled streaming
-         * processor. Explicit processor definitions and application properties take precedence over these defaults.
-         *
-         * @return the pooled streaming processor defaults
-         */
-        default UnaryOperator<PooledStreamingEventProcessorConfiguration> pooledStreamingDefaults() {
-            return UnaryOperator.identity();
-        }
+        ComponentBuilder<Object> component();
     }
 
     /**

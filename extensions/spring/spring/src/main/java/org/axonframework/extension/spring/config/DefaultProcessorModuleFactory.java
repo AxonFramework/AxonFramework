@@ -117,7 +117,16 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
             Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (EventHandlingComponentsConfigurer.RequiredComponentPhase phase) -> {
                 EventHandlingComponentsConfigurer.ComponentsPhase resultOfRegistration = phase;
                 for (EventProcessorDefinition.EventHandlerDescriptor descriptor : beanDefs) {
-                    resultOfRegistration = descriptor.registerWith(resultOfRegistration);
+                    if (descriptor instanceof LegacySagaEventHandlerDescriptor legacySaga) {
+                        // TODO axon-legacy: Remove LegacySagaEventHandlerDescriptor and all its branches when
+                        // axon-legacy is removed.
+                        resultOfRegistration = legacySaga.registerWith(resultOfRegistration);
+                    } else {
+                        resultOfRegistration = resultOfRegistration.autodetected(
+                                descriptor.beanName(),
+                                descriptor.component()
+                        );
+                    }
                 }
                 return (EventHandlingComponentsConfigurer.CompletePhase) resultOfRegistration;
             };
@@ -219,7 +228,7 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         if (matches.isEmpty()) {
             // First, check if the handler type has a @Namespace annotation
             return resolveNamespace(handler)
-                    .or(handler::preferredProcessorName)
+                    .or(() -> preferredProcessorName(handler))
                     // Fall back to the package name derived from the bean definition
                     .orElseGet(() -> BeanDefinitionUtils.extractPackageName(handler.beanDefinition()));
         }
@@ -258,6 +267,12 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
                               .map(attrs -> (String) attrs.get("namespace"));
     }
 
+    private Optional<String> preferredProcessorName(EventProcessorDefinition.EventHandlerDescriptor handler) {
+        return handler instanceof LegacySagaEventHandlerDescriptor legacySaga
+                ? legacySaga.preferredProcessorName()
+                : Optional.empty();
+    }
+
     /**
      * Composes the pooled streaming defaults of the {@code handlers} assigned to the processor named
      * {@code processorName}, or the identity operator when that processor is claimed by an
@@ -279,9 +294,11 @@ public class DefaultProcessorModuleFactory implements ProcessorModuleFactory {
         }
         UnaryOperator<PooledStreamingEventProcessorConfiguration> defaults = UnaryOperator.identity();
         for (EventProcessorDefinition.EventHandlerDescriptor handler : handlers) {
-            UnaryOperator<PooledStreamingEventProcessorConfiguration> preceding = defaults;
-            UnaryOperator<PooledStreamingEventProcessorConfiguration> next = handler.pooledStreamingDefaults();
-            defaults = configuration -> next.apply(preceding.apply(configuration));
+            if (handler instanceof LegacySagaEventHandlerDescriptor legacySaga) {
+                UnaryOperator<PooledStreamingEventProcessorConfiguration> preceding = defaults;
+                UnaryOperator<PooledStreamingEventProcessorConfiguration> next = legacySaga.pooledStreamingDefaults();
+                defaults = configuration -> next.apply(preceding.apply(configuration));
+            }
         }
         return defaults;
     }

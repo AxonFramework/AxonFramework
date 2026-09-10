@@ -23,7 +23,6 @@ import org.axonframework.common.configuration.ComponentBuilder;
 import org.axonframework.common.configuration.Configuration;
 import org.axonframework.extension.spring.stereotype.Saga;
 import org.axonframework.messaging.eventhandling.EventHandlingComponent;
-import org.axonframework.messaging.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.messaging.eventhandling.processing.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.modelling.saga.configuration.Sagas;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -60,7 +59,7 @@ import static java.lang.String.format;
  * @since 5.4.0
  */
 @Internal
-public class SpringSagaDescriptor implements EventProcessorDefinition.EventHandlerDescriptor, ApplicationContextAware {
+public class SpringSagaDescriptor implements LegacySagaEventHandlerDescriptor, ApplicationContextAware {
 
     /**
      * The bean name a {@link SagaStore} is resolved under when the {@link Saga#sagaStore()} attribute is unset and the
@@ -118,10 +117,8 @@ public class SpringSagaDescriptor implements EventProcessorDefinition.EventHandl
     }
 
     @Override
-    public EventHandlingComponentsConfigurer.AdditionalComponentPhase registerWith(
-            EventHandlingComponentsConfigurer.ComponentsPhase components
-    ) {
-        return components.declarative(beanName(), sagaComponent(sagaType));
+    public ComponentBuilder<EventHandlingComponent> handlingComponent() {
+        return sagaComponent(sagaType);
     }
 
     private <T> ComponentBuilder<EventHandlingComponent> sagaComponent(Class<T> type) {
