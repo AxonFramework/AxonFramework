@@ -16,7 +16,9 @@
 package org.axonframework.messaging.core.timeout;
 
 import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.core.unitofwork.ProcessingContext;
+import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.DefaultPhases;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycle.Phase;
 import org.axonframework.messaging.core.unitofwork.ProcessingLifecycleInterceptor;
 import org.axonframework.messaging.core.unitofwork.UnitOfWork;
@@ -45,7 +47,8 @@ import java.util.function.Supplier;
  * executing, not from the moment {@link #create(String, Function)} itself is called, so time spent between creation and
  * the actual start of processing is not counted against it. Since every {@code UnitOfWork} is created exactly once, a
  * single {@link AxonTimeLimitedTask} is used per {@code UnitOfWork}, started lazily on whichever phase action runs
- * first for that instance.
+ * first for that instance, and completed in a dedicated phase ordered after every other phase, so it keeps guarding the
+ * {@code UnitOfWork} for the full duration of its {@code AFTER_COMMIT} phase actions.
  * <p>
  * Detecting a fired timeout whose interruption was swallowed by a phase action (for example, an event handler using the
  * default {@code LoggingErrorHandler}) is handled automatically: this factory installs a
@@ -62,6 +65,12 @@ import java.util.function.Supplier;
  * @since 5.4.0
  */
 public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
+
+    /**
+     * The phase in which the {@link AxonTimeLimitedTask} guarding a created {@code UnitOfWork} is completed, ordered
+     * after {@link DefaultPhases#AFTER_COMMIT} to ensure it includes any after commit hooks added.
+     */
+    private static final Phase TIMEOUT_CLEANUP_PHASE = () -> DefaultPhases.AFTER_COMMIT.order() + 1;
 
     private final UnitOfWorkFactory delegate;
     private final String componentName;
@@ -148,7 +157,10 @@ public class TimeoutUnitOfWorkFactory implements UnitOfWorkFactory {
                 customization.andThen(config -> config.addLifecycleInterceptor(new TimeoutInterceptor(task)))
         );
 
-        unitOfWork.runOnAfterCommit(u -> task.complete());
+        unitOfWork.on(TIMEOUT_CLEANUP_PHASE, context -> {
+            task.complete();
+            return FutureUtils.emptyCompletedFuture();
+        });
         unitOfWork.onError((ctx, phase, error) -> task.complete());
 
         return unitOfWork;

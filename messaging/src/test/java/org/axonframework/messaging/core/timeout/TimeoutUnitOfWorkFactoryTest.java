@@ -176,6 +176,26 @@ class TimeoutUnitOfWorkFactoryTest {
     }
 
     @Test
+    void surfacesTimeoutForASlowActionInTheAfterCommitPhase() {
+        // The factory's own cleanup action also runs in an AFTER_COMMIT-adjacent phase; this proves it no longer
+        // races ahead of a slow, concurrently-registered AFTER_COMMIT action and cancels the timeout prematurely.
+        TimeoutUnitOfWorkFactory factory = createTimeoutFactory(100);
+        UnitOfWork uow = factory.create(UUID.randomUUID().toString());
+        uow.runOnAfterCommit(context -> {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                // Ignored, not re-interrupted
+            }
+        });
+
+        CompletableFuture<Void> result = uow.execute();
+
+        assertTrue(result.isCompletedExceptionally());
+        assertInstanceOf(AxonTimeoutException.class, result.exceptionNow());
+    }
+
+    @Test
     void interruptsTheActualWorkerThreadWhenPhaseActionsRunOnAsynchronousExecutor() {
         try (ExecutorService workScheduler = Executors.newSingleThreadExecutor()) {
             TimeoutUnitOfWorkFactory factory = new TimeoutUnitOfWorkFactory(
