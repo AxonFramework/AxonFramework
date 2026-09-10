@@ -53,7 +53,7 @@ public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
         for (String saga : sagas) {
             if (beanFactory.containsBeanDefinition(saga + "$$Registrar")) {
                 logger.info("Registrar for {} already available. Skipping configuration", saga);
-                break;
+                continue;
             }
 
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);

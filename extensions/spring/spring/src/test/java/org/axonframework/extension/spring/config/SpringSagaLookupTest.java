@@ -27,6 +27,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -140,7 +142,7 @@ class SpringSagaLookupTest {
         }
 
         @Test
-        void stopsEveryLaterSagaFromBeingRegistered() {
+        void doesNotStopLaterSagasFromBeingRegistered() {
             // given a registrar already present for the Saga that happens to be visited first
             DefaultListableBeanFactory beanFactory = beanFactoryWith(OrderSaga.class, ShipmentSaga.class);
             beanFactory.registerBeanDefinition(
@@ -151,14 +153,21 @@ class SpringSagaLookupTest {
             // when
             new SpringSagaLookup().postProcessBeanFactory(beanFactory);
 
-            // then no descriptor at all, because Axon Framework 4 broke out of the loop where it meant to continue.
-            // Carried over rather than corrected: the registrar is only ever contributed by this lookup, so the
-            // branch is unreachable in practice, and this test is here to state that it was not an oversight.
-            assertThat(beanFactory.getBeanNamesForType(SpringSagaDescriptor.class)).isEmpty();
+            // then the existing registrar is preserved without making registration depend on traversal order
+            assertThat(beanFactory.getBeanNamesForType(SpringSagaDescriptor.class))
+                    .containsExactly(firstNotVisited(beanFactory) + "$$Registrar");
         }
 
         private String firstVisited(DefaultListableBeanFactory beanFactory) {
             return beanFactory.getBeanNamesForAnnotation(Saga.class)[0];
+        }
+
+        private String firstNotVisited(DefaultListableBeanFactory beanFactory) {
+            String first = firstVisited(beanFactory);
+            return Arrays.stream(beanFactory.getBeanNamesForAnnotation(Saga.class))
+                         .filter(name -> !name.equals(first))
+                         .findFirst()
+                         .orElseThrow();
         }
     }
 
